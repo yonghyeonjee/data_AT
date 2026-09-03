@@ -25,7 +25,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 #pinScreen{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
 .pin-card{width:100%;max-width:380px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:36px 28px;text-align:center}
 .pin-card .logo{font-size:12px;letter-spacing:.18em;color:var(--muted);font-weight:600}
-.pin-card h1{font-size:22px;font-weight:800;margin:8px 0 22px;letter-spacing:-.02em}
+.pin-card h1{font-size:22px;font-weight:800;margin:8px 0 4px;letter-spacing:-.02em}
+    .pin-card .sub{font-size:13px;color:var(--muted);margin-bottom:18px}
 .pin-card input{width:100%;text-align:center;font-size:28px;letter-spacing:.4em;padding:14px;border:1.5px solid var(--line-2);border-radius:10px;outline:none;font-variant-numeric:tabular-nums}
 .pin-card input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 .pin-card button{width:100%;margin-top:14px;padding:14px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;cursor:pointer}
@@ -113,6 +114,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;transition:.25s;z-index:99;box-shadow:var(--shadow);max-width:90%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.ok{background:var(--ok)} .toast.bad{background:var(--bad)}
+.note-in{font-size:12px;color:var(--muted);margin:14px 0 4px}
 .foot{color:var(--faint);font-size:11px;text-align:center;padding:12px}
 .foot a{color:var(--muted)}
 </style>
@@ -124,7 +126,8 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
   <div class="pin-card">
     <div class="logo">SAMSUNG&amp;TECH · 시흥점</div>
     <h1>판매·상담 입력</h1>
-    <input id="pinInput" type="tel" inputmode="numeric" maxlength="8" placeholder="입력 코드" autocomplete="off">
+    <p class="sub">담당자 코드 4자리를 입력하세요</p>
+    <input id="pinInput" type="tel" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
     <button onclick="enterPin()">시작하기</button>
     <div class="err" id="pinErr"></div>
   </div>
@@ -134,7 +137,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 <div id="app" class="hidden">
   <div class="topbar">
     <div class="row">
-      <h1>시흥점 <small id="todayLabel"></small></h1>
+      <h1><span id="meName">시흥점</span> <small id="todayLabel"></small></h1>
       <div style="display:flex;gap:6px">
         <span class="pill" id="pillToday">오늘 0건</span>
         <span class="pill warn hidden" id="pillUnclosed"></span>
@@ -153,7 +156,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
       <h2>판매 1건 <span>필수 6개 · 30초</span></h2>
       <div class="grid2">
         <div class="f"><label>판매일 <span class="req">*</span></label><input class="in" type="date" id="s_date"></div>
-        <div class="f"><label>담당 프로 <span class="req">*</span></label><select class="in" id="s_handler"></select></div>
+        <div class="f"><label>담당 프로 <span class="hint" id="s_handlerHint"></span></label><select class="in" id="s_handler"></select></div>
       </div>
       <div class="f"><label>구분 <span class="req">*</span></label>
         <div class="seg" id="s_kind">
@@ -198,7 +201,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
       <h2>상담 · 가망고객 <span>사려다 만 고객도 남기기</span></h2>
       <div class="grid2">
         <div class="f"><label>상담일 <span class="req">*</span></label><input class="in" type="date" id="c_date"></div>
-        <div class="f"><label>상담사 <span class="req">*</span></label><select class="in" id="c_handler"></select></div>
+        <div class="f"><label>상담사 <span class="hint" id="c_handlerHint"></span></label><select class="in" id="c_handler"></select></div>
       </div>
       <div class="grid2">
         <div class="f"><label>고객명 <span class="req">*</span></label><input class="in" id="c_name" placeholder="홍길동" autocomplete="off"></div>
@@ -255,7 +258,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
       <div style="font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:600">프로별 직판</div>
       <div id="d_direct"></div>
       <button class="btn ghost sm" onclick="addDirectRow()">+ 프로 추가</button>
-      <div class="f" style="margin-top:14px"><label>입력자</label><select class="in" id="d_by"></select></div>
+      <p class="note-in" id="d_byNote"></p>
       <button class="btn" id="d_btn" onclick="submitDaily()">마감 저장</button>
     </div>
     <div class="card">
@@ -264,7 +267,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
     </div>
   </section>
 
-  <div class="foot">삼성앤텍 시흥점 · 입력 문의 온라인사업부 · <a href="#" onclick="localStorage.removeItem('store_pin');location.reload();return false">코드 재입력</a></div>
+  <div class="foot">삼성앤텍 시흥점 · 입력 문의 온라인사업부 · <a href="#" onclick="localStorage.removeItem('staff_code');location.reload();return false">담당자 변경</a></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -285,30 +288,35 @@ let toastT; function toast(msg, cls=''){ const t=$('toast'); t.textContent=msg; 
 async function rpc(fn, args){ const {data,error} = await sb.rpc(fn, args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
 
 /* ═══ PIN ═══ */
-let PIN = localStorage.getItem('store_pin') || '';
-let STATUS = null;
-async function enterPin(){ const v=$('pinInput').value.trim(); if(!v) return; $('pinErr').textContent=''; try{ await loadStatus(v); PIN=v; localStorage.setItem('store_pin',v); start(); }catch(e){ $('pinErr').textContent=e.message; } }
+let CODE = localStorage.getItem('staff_code') || '';
+let ME = '', STATUS = null;
+async function enterPin(){ const v=$('pinInput').value.trim(); if(v.length!==4) return $('pinErr').textContent='4자리를 입력하세요';
+  $('pinErr').textContent=''; try{ await loadStatus(v); CODE=v; localStorage.setItem('staff_code',v); start(); }catch(e){ $('pinErr').textContent=e.message; } }
 $('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') enterPin(); });
-async function loadStatus(pin){ STATUS = await rpc('fn_store_status', {p_pin: pin||PIN}); return STATUS; }
+$('pinInput').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value.length===4) enterPin(); });
+async function loadStatus(code){ STATUS = await rpc('fn_store_status', {p_code: code||CODE}); ME = STATUS.me; return STATUS; }
 
 /* ═══ 시작 ═══ */
 async function start(){
   $('pinScreen').classList.add('hidden'); $('app').classList.remove('hidden');
   const t=new Date(); $('todayLabel').textContent = `${t.getMonth()+1}월 ${t.getDate()}일 (${'일월화수목금토'[t.getDay()]})`;
+  $('meName').textContent = ME + '님';
   $('s_date').value = todayStr(); $('c_date').value = todayStr(); $('d_date').value = todayStr(-1);
   render();
 }
 function render(){
   const s = STATUS;
-  const handlers = (s.handlers||'').split(',').map(x=>x.trim()).filter(Boolean);
-  const saved = localStorage.getItem('store_handler') || '';
-  ['s_handler','c_handler','d_by'].forEach(id=>{ const el=$(id); el.innerHTML = '<option value="">선택</option>' + handlers.map(h=>`<option ${h===saved?'selected':''}>${h}</option>`).join(''); });
+  const handlers = s.staff || [];
+  ['s_handler','c_handler'].forEach(id=>{ const el=$(id); const keep=el.value;
+    el.innerHTML = handlers.map(h=>`<option ${h===(keep||ME)?'selected':''}>${h}</option>`).join(''); });
+  ['s_handlerHint','c_handlerHint'].forEach(id=>$(id).textContent='기본 '+ME);
+  $('d_byNote').textContent = `입력자 ${ME} 로 기록됩니다`;
   $('pillToday').textContent = `오늘 ${s.today_sales.length}건`;
   const sum = s.today_sales.reduce((a,x)=>a+Number(x.amount),0);
   $('todaySum').textContent = s.today_sales.length ? won(sum) : '';
   $('todayList').innerHTML = s.today_sales.length ? s.today_sales.map(x=>`
     <div class="item"><div class="t">${x.time}</div>
-      <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}</div></div>
+      <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}</div></div>
       <div class="a">${won(x.amount)}</div></div>`).join('') : '<div class="empty">아직 없습니다</div>';
   const un = s.unclosed_days || [];
   if(un.length){ $('pillUnclosed').textContent = `미마감 ${un.length}일`; $('pillUnclosed').classList.remove('hidden');
@@ -317,7 +325,7 @@ function render(){
   } else { $('pillUnclosed').classList.add('hidden'); $('d_unclosedWrap').classList.add('hidden'); }
   $('d_recent').innerHTML = (s.closed_recent||[]).length ? s.closed_recent.map(x=>`
     <div class="item"><div class="t">${x.d.slice(5).replace('-','/')}</div><div class="p">마감 완료</div><div class="a">${won(x.net)}</div></div>`).join('') : '<div class="empty">최근 7일 마감 없음</div>';
-  if(!$('d_direct').children.length) addDirectRow();
+  if(!$('d_direct').children.length) addDirectRow(ME);
   document.querySelectorAll('.tab').forEach(b=>{ if(b.dataset.tab==='daily'){ b.innerHTML = '일 마감' + (un.length?`<span class="n">${un.length}</span>`:''); } });
 }
 
@@ -330,7 +338,7 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
 $('s_kind').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
   $('s_kind').querySelectorAll('button').forEach(x=>x.className=''); b.className='on '+(b.dataset.v==='구독'?'sub':b.dataset.v==='직판'?'direct':''); });
 $('c_cat').addEventListener('click', e=>{ const c=e.target.closest('.chip'); if(!c) return; $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); c.classList.add('on'); });
-['s_handler','c_handler','d_by'].forEach(id=>$(id).addEventListener('change', e=>{ if(e.target.value) localStorage.setItem('store_handler', e.target.value); }));
+
 
 /* ═══ 판매 저장 ═══ */
 async function submitSale(){
@@ -340,16 +348,15 @@ async function submitSale(){
     product_name:$('s_product').value.trim(), model_code:$('s_model').value.trim(),
     qty:Number($('s_qty').value)||1, gross_amount:num($('s_amount')), payment_method:$('s_pay').value,
     consult_ref:$('s_consult').value.trim(), consent_marketing:$('s_consent').classList.contains('on'), notes:$('s_notes').value.trim() };
-  if(!p.handler) return toast('담당 프로를 선택하세요','bad');
   if(!p.product_name) return toast('상품명을 입력하세요','bad');
   if(p.gross_amount<=0) return toast('판매가를 입력하세요','bad');
   if(p.customer_phone && !/^01\d-\d{3,4}-\d{4}$/.test(p.customer_phone)) return toast('휴대폰 번호를 확인하세요','bad');
   const b=$('s_btn'); b.disabled=true; b.textContent='저장 중…';
-  try{ await rpc('fn_store_sale_submit',{p_pin:PIN,p_data:p});
-    toast(`저장됨 · ${p.product_name} ${won(p.gross_amount)}`,'ok');
+  try{ const r = await rpc('fn_store_sale_submit',{p_code:CODE,p_data:p});
+    toast(`저장됨 · ${r.handler} · ${p.product_name} ${won(p.gross_amount)}`,'ok');
     ['s_name','s_phone','s_product','s_model','s_amount','s_consult','s_notes'].forEach(id=>$(id).value=''); $('s_qty').value=1; $('s_pay').value=''; $('s_total').textContent='0원';
     await loadStatus(); render(); $('s_product').focus();
-  }catch(e){ toast(e.message,'bad'); if(/코드/.test(e.message)){ localStorage.removeItem('store_pin'); setTimeout(()=>location.reload(),1500);} }
+  }catch(e){ toast(e.message,'bad'); if(/코드/.test(e.message)){ localStorage.removeItem('staff_code'); setTimeout(()=>location.reload(),1500);} }
   b.disabled=false; b.textContent='저장';
 }
 
@@ -360,11 +367,10 @@ async function submitConsult(){
     interest_category: cat?cat.dataset.v:'', interest_model_code:$('c_model').value.trim(), inflow_route:$('c_route').value, result:$('c_result').value,
     expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(),
     consent_marketing:$('c_consent').classList.contains('on') };
-  if(!p.handler) return toast('상담사를 선택하세요','bad');
   if(!p.customer_name) return toast('고객명을 입력하세요','bad');
   if(!p.interest_category) return toast('관심 품목을 선택하세요','bad');
   const b=$('c_btn'); b.disabled=true; b.textContent='저장 중…';
-  try{ const r = await rpc('fn_store_consult_submit',{p_pin:PIN,p_data:p});
+  try{ const r = await rpc('fn_store_consult_submit',{p_code:CODE,p_data:p});
     toast('상담 저장됨','ok');
     $('c_ref').classList.remove('hidden'); $('c_ref').innerHTML = `상담번호 <b style="color:var(--ink);font-size:15px">${r.ref}</b><br>구매로 이어지면 판매 입력의 "상담번호"에 적어주세요`;
     ['c_name','c_phone','c_model','c_amount','c_expect','c_content'].forEach(id=>$(id).value=''); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
@@ -376,7 +382,7 @@ async function submitConsult(){
 /* ═══ 일 마감 ═══ */
 function setDaily(d){ $('d_date').value = todayStr(d); }
 function addDirectRow(name=''){
-  const handlers = (STATUS.handlers||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const handlers = STATUS.staff || [];
   const row=document.createElement('div'); row.className='handler-row';
   row.innerHTML = `<select class="in dh"><option value="">프로</option>${handlers.map(h=>`<option ${h===name?'selected':''}>${h}</option>`).join('')}</select>
     <input class="in num ds" inputmode="numeric" placeholder="매출" oninput="comma(this)"><input class="in num dr" inputmode="numeric" placeholder="환불" oninput="comma(this)">
@@ -390,16 +396,16 @@ async function submitDaily(){
   const total = rows.reduce((a,x)=>a+x.sales-x.refund,0);
   if(!confirm(`${d} 마감 순매출 ${won(total)}\n저장할까요? (같은 날짜는 덮어씁니다)`)) return;
   const b=$('d_btn'); b.disabled=true; b.textContent='저장 중…';
-  try{ await rpc('fn_store_daily_submit',{p_pin:PIN,p_date:d,p_rows:rows,p_entered_by:$('d_by').value||null});
+  try{ await rpc('fn_store_daily_submit',{p_code:CODE,p_date:d,p_rows:rows});
     toast(`${d} 마감 저장 · ${won(total)}`,'ok');
-    ['d_cash_s','d_cash_r','d_sub_s','d_sub_r'].forEach(id=>$(id).value=''); $('d_direct').innerHTML=''; addDirectRow();
+    ['d_cash_s','d_cash_r','d_sub_s','d_sub_r'].forEach(id=>$(id).value=''); $('d_direct').innerHTML=''; addDirectRow(ME);
     await loadStatus(); render();
   }catch(e){ toast(e.message,'bad'); }
   b.disabled=false; b.textContent='마감 저장';
 }
 
 /* ═══ 부팅 ═══ */
-(async()=>{ if(PIN){ try{ await loadStatus(); start(); return; }catch(e){ localStorage.removeItem('store_pin'); PIN=''; } } $('pinInput').focus(); })();
+(async()=>{ if(CODE){ try{ await loadStatus(); start(); return; }catch(e){ localStorage.removeItem('staff_code'); CODE=''; } } $('pinInput').focus(); })();
 </script>
 </body>
 </html>

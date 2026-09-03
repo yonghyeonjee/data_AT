@@ -161,7 +161,7 @@ td.wrap{white-space:normal;max-width:320px}
   <div class="login-card">
     <div class="eyebrow">SAMSUNG&amp;TECH · DATA</div>
     <h1>통합 매출 &amp; CRM</h1>
-    <label>이메일</label><input type="email" id="lEmail" autocomplete="username" placeholder="name@company.com">
+    <label>아이디 또는 이메일</label><input type="text" id="lEmail" autocomplete="username" placeholder="samsunat">
     <label>비밀번호</label><input type="password" id="lPw" autocomplete="current-password" placeholder="••••••••">
     <button onclick="login()">로그인</button>
     <div class="err" id="lErr"></div>
@@ -284,7 +284,8 @@ td.wrap{white-space:normal;max-width:320px}
         <div class="grid g32">
           <div>
             <div class="card">
-              <h3>원본 파일 업로드 <span>형식 자동 인식 · 재업로드해도 중복 없음</span></h3>
+              <h3>원본 파일 업로드 <span>형식 자동 인식 · 재업로드해도 중복 없음</span>
+                <div class="actions"><button class="btn ghost sm" onclick="downloadTemplates()">양식 엑셀 받기</button></div></h3>
               <div class="drop" id="drop" onclick="document.getElementById('file').click()"><b>파일을 끌어다 놓거나 클릭</b>샵링커 주문 · 이카운트 판매현황 · 이카운트 가망고객 · 렌탈 · 고도몰 회원 · 매장 일별(Manual) · xlsx / xls / csv</div>
               <input type="file" id="file" class="hidden" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])">
               <div id="upPreview" class="hidden" style="margin-top:14px">
@@ -312,15 +313,16 @@ td.wrap{white-space:normal;max-width:320px}
 
       <!-- ═══ 설정 ═══ -->
       <div class="view hidden" id="v-settings">
-        <div class="grid g2">
-          <div class="card"><h3>매장 입력 설정</h3>
-            <div class="fgrid"><div><label>매장 입력 코드 (PIN)</label><input class="in" id="setPin"></div><div><label>담당 프로 목록 (쉼표 구분)</label><input class="in" id="setHandlers"></div></div>
-            <button class="btn" onclick="saveSettings()">저장</button>
-            <p class="note" style="margin-top:10px">PIN을 바꾸면 매장 기기에서 다시 입력해야 합니다. 프로 목록은 매장 화면 드롭다운과 원장 담당 필터에 쓰입니다.</p>
+        <div class="grid g32">
+          <div class="card"><h3>담당자 · 매장 입력 코드 <span>매장 화면은 이 4자리로 로그인합니다</span>
+            <div class="actions"><button class="btn sm ghost" onclick="addStaffRow()">+ 담당자 추가</button></div></h3>
+            <div class="tw"><table><thead><tr><th>이름</th><th>코드</th><th>비고</th><th>활성</th><th></th></tr></thead><tbody id="tbStaff"></tbody></table></div>
+            <p class="note" style="margin-top:10px">코드는 숫자 4자리, 중복 불가. 담당자가 매장 화면에서 코드를 넣으면 <b>판매·상담의 담당자가 자동으로 본인</b>이 됩니다. 비활성으로 바꾸면 로그인만 막히고 기존 원장 기록은 그대로 남습니다.</p>
           </div>
-          <div class="card"><h3>계정 · 권한 <span>Supabase Auth → Users 에서 초대 후 여기서 권한 지정</span></h3>
-            <div class="tw"><table><thead><tr><th>이메일</th><th>권한</th><th>담당명</th><th>활성</th><th></th></tr></thead><tbody id="tbProfiles"></tbody></table></div>
-            <p class="note" style="margin-top:10px"><b>admin</b> 삭제·일괄 적재·설정 · <b>user</b> 조회·입력·승인. 실번호 표시는 권한이 아니라 화면 토글이며 켤 때마다 감사로그에 남습니다.</p>
+          <div class="card"><h3>계정 · 권한 <span>아이디 로그인 가능</span></h3>
+            <div class="tw"><table><thead><tr><th>아이디 / 이메일</th><th>권한</th><th>담당명</th><th>활성</th><th></th></tr></thead><tbody id="tbProfiles"></tbody></table></div>
+            <p class="note" style="margin-top:10px"><b>admin</b> 삭제·일괄 적재·설정 · <b>user</b> 조회·입력·승인. 실번호 표시는 권한이 아니라 화면 토글이며 켤 때마다 감사로그에 남습니다.<br>
+            계정 추가는 Supabase → Authentication → Users → Add user. 이메일을 <code>아이디@samsungat.local</code> 로 만들면 로그인 화면에서 아이디만 입력하면 됩니다.</p>
           </div>
         </div>
       </div>
@@ -401,20 +403,27 @@ function closeModal(id){ $(id).classList.add('hidden'); }
 const tip=$('tip'); function showTip(e,html){ tip.innerHTML=html; tip.style.opacity=1; tip.style.left=(e.clientX+12)+'px'; tip.style.top=(e.clientY-10)+'px'; } function hideTip(){ tip.style.opacity=0; }
 
 /* ═══════════════ 인증 ═══════════════ */
-let ME=null, HANDLERS=[];
+let ME=null, STAFF=[];
+function fillHandlerOptions(){
+  $('oHd').innerHTML='<option value="">전체 담당</option>'+STAFF.map(h=>`<option>${esc(h.name)}</option>`).join('');
+  $('handlerList').innerHTML=STAFF.filter(x=>x.active).map(h=>`<option value="${esc(h.name)}">`).join('');
+}
 async function boot(){
   const {data:{session}} = await sb.auth.getSession();
   if(!session){ $('login').classList.remove('hidden'); $('app').classList.add('hidden'); return; }
   try{ ME = await rpc('fn_me'); }catch(e){ ME=null; }
   if(!ME){ $('lErr').textContent='프로필이 없습니다. 관리자에게 문의하세요.'; await sb.auth.signOut(); return; }
   $('login').classList.add('hidden'); $('app').classList.remove('hidden');
-  $('uEmail').textContent=ME.email; $('uRole').textContent=ME.role.toUpperCase();
-  try{ HANDLERS=((await rpc('fn_setting_get',{p_key:'store_handlers'}))||'').split(',').map(x=>x.trim()).filter(Boolean); }catch(e){}
-  $('oHd').innerHTML='<option value="">전체 담당</option>'+HANDLERS.map(h=>`<option>${h}</option>`).join('');
-  $('handlerList').innerHTML=HANDLERS.map(h=>`<option value="${h}">`).join('');
+  $('uEmail').textContent=ME.email.replace(ID_DOMAIN,''); $('uRole').textContent=ME.role.toUpperCase();
+  try{ STAFF=await rpc('fn_staff_list'); }catch(e){ STAFF=[]; }
+  fillHandlerOptions();
   setPreset('30'); show('dash');
 }
-async function login(){ $('lErr').textContent=''; const {error}=await sb.auth.signInWithPassword({email:$('lEmail').value.trim(),password:$('lPw').value}); if(error){ $('lErr').textContent='로그인 실패: '+error.message; return; } boot(); }
+const ID_DOMAIN='@samsungat.local';   // 아이디만 입력하면 붙는 사내 전용 도메인
+async function login(){ $('lErr').textContent='';
+  let id=$('lEmail').value.trim(); if(id && !id.includes('@')) id+=ID_DOMAIN;
+  const {error}=await sb.auth.signInWithPassword({email:id,password:$('lPw').value});
+  if(error){ $('lErr').textContent='로그인 실패: '+error.message; return; } boot(); }
 async function logout(){ await sb.auth.signOut(); location.reload(); }
 $('lPw').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
 
@@ -609,7 +618,8 @@ function mapRows(u){
 async function runUpload(){
   if(!UP) return; const rows=mapRows(UP); const btn=$('upBtn'); btn.disabled=true; let done=0, res={};
   try{
-    if(UP.kind==='store_manual'){ const pin=await rpc('fn_setting_get',{p_key:'store_pin'}); const raw=UP.data.map(r=>({date:excelDate(H(r,'날짜')),rows:[]})); const mapped=mapRows(UP); for(const m of mapped){ await rpc('fn_store_daily_submit',{p_pin:pin,p_date:m.date,p_rows:JSON.parse(m.rows),p_entered_by:'엑셀'}); done++; $('upBar').style.width=(100*done/mapped.length)+'%'; } res={inserted:done}; }
+    if(UP.kind==='store_manual'){ const st=(STAFF.find(x=>x.active)||{}).code; if(!st) throw new Error('활성 담당자가 없습니다. 설정에서 담당자를 먼저 등록하세요.');
+      const mapped=mapRows(UP); for(const m of mapped){ await rpc('fn_store_daily_submit',{p_code:st,p_date:m.date,p_rows:JSON.parse(m.rows)}); done++; $('upBar').style.width=(100*done/mapped.length)+'%'; } res={적재일수:done}; }
     else { const fn={shoplinker:'fn_orders_bulk_upsert',ecount_sales:'fn_orders_bulk_upsert',rental:'fn_orders_bulk_upsert',ecount_prospect:'fn_consults_bulk_upsert',godo_member:'fn_customers_bulk_upsert'}[UP.kind];
       const src={shoplinker:'shoplinker',ecount_sales:'ecount',rental:'rental',ecount_prospect:'ecount_prospect',godo_member:$('upMall')?.value||'godo'}[UP.kind];
       const CH=500; for(let i=0;i<rows.length;i+=CH){ const r=await rpc(fn,{p_source:src,p_file_name:UP.file,p_rows:rows.slice(i,i+CH)}); Object.keys(r).forEach(k=>{ if(typeof r[k]==='number' && k!=='upload_id') res[k]=(res[k]||0)+r[k]; }); done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; $('upMsg').textContent=`${n(done)} / ${n(rows.length)}`; } }
@@ -619,14 +629,81 @@ async function runUpload(){
 }
 async function loadUploads(){ try{ const r=await rpc('fn_upload_list',{p_limit:30}); $('tbUploads').innerHTML=r.map(u=>`<tr><td class="mono" style="font-size:12px">${new Date(u.uploaded_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td><td>${esc(u.source)}</td><td class="wrap" style="font-size:12px">${esc(u.file_name||'')}</td><td class="num">${n(u.row_count)}</td><td class="num">${u.error_count?n(u.error_count):''}</td></tr>`).join('')||'<tr><td colspan="5" class="note">없음</td></tr>'; }catch(e){} }
 
-/* ═══════════════ 설정 ═══════════════ */
+/* ═══════════════ 설정 · 담당자 ═══════════════ */
 async function loadSettings(){
-  try{ $('setPin').value=await rpc('fn_setting_get',{p_key:'store_pin'})||''; $('setHandlers').value=await rpc('fn_setting_get',{p_key:'store_handlers'})||''; }catch(e){}
-  try{ const ps=await rpc('fn_profile_list'); $('tbProfiles').innerHTML=ps.map(p=>`<tr><td>${esc(p.email)}</td><td><select class="in" style="padding:3px 6px" id="pr_${p.id}">${['admin','user','analyst','send'].map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}</select></td><td><input class="in" style="padding:3px 6px;width:90px" id="ph_${p.id}" value="${esc(p.handler_name||'')}" list="handlerList"></td><td><input type="checkbox" id="pa_${p.id}" ${p.active?'checked':''}></td><td><button class="btn sm" onclick="saveProfile('${p.id}')">저장</button></td></tr>`).join(''); }
-  catch(e){ $('tbProfiles').innerHTML=`<tr><td colspan="5" class="note">${ME.role==='admin'?e.message:'관리자만 볼 수 있습니다'}</td></tr>`; }
+  try{ STAFF=await rpc('fn_staff_list'); renderStaff(); fillHandlerOptions(); }
+  catch(e){ $('tbStaff').innerHTML=`<tr><td colspan="5" class="note">${esc(e.message)}</td></tr>`; }
+  try{ const ps=await rpc('fn_profile_list');
+    $('tbProfiles').innerHTML=ps.map(p=>`<tr>
+      <td><b>${esc(p.email.replace(ID_DOMAIN,''))}</b>${p.email.includes(ID_DOMAIN)?' <span class="tag n">아이디</span>':''}</td>
+      <td><select class="in" style="padding:3px 6px" id="pr_${p.id}">${['admin','user','analyst','send'].map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}</select></td>
+      <td><input class="in" style="padding:3px 6px;width:90px" id="ph_${p.id}" value="${esc(p.handler_name||'')}" list="handlerList"></td>
+      <td><input type="checkbox" id="pa_${p.id}" ${p.active?'checked':''}></td>
+      <td><button class="btn sm" onclick="saveProfile('${p.id}')">저장</button></td></tr>`).join('');
+  }catch(e){ $('tbProfiles').innerHTML=`<tr><td colspan="5" class="note">${ME.role==='admin'?esc(e.message):'관리자만 볼 수 있습니다'}</td></tr>`; }
 }
-async function saveSettings(){ try{ await rpc('fn_setting_set',{p_key:'store_pin',p_value:$('setPin').value.trim()}); await rpc('fn_setting_set',{p_key:'store_handlers',p_value:$('setHandlers').value.trim()}); toast('저장됨','ok'); }catch(e){ toast(e.message,'bad'); } }
+function renderStaff(){
+  $('tbStaff').innerHTML=STAFF.map(x=>`<tr>
+    <td><input class="in" style="padding:4px 8px;width:90px" id="sn_${x.id}" value="${esc(x.name)}"></td>
+    <td><input class="in mono" style="padding:4px 8px;width:72px;text-align:center;letter-spacing:.12em" id="sc_${x.id}" value="${esc(x.code)}" maxlength="4" inputmode="numeric"></td>
+    <td><input class="in" style="padding:4px 8px;width:110px" id="sr_${x.id}" value="${esc(x.role_note||'')}" placeholder="예: 점장"></td>
+    <td><input type="checkbox" id="sa_${x.id}" ${x.active?'checked':''}></td>
+    <td><button class="btn sm" onclick="saveStaff(${x.id})">저장</button></td></tr>`).join('')
+    || '<tr><td colspan="5" class="note">담당자가 없습니다</td></tr>';
+}
+async function addStaffRow(){
+  const name=prompt('담당자 이름'); if(!name) return;
+  const used=new Set(STAFF.map(x=>x.code)); let c=1001; while(used.has(String(c))) c++;
+  const code=prompt('매장 입력 코드 (숫자 4자리)', String(c)); if(!code) return;
+  try{ await rpc('fn_staff_save',{p_id:null,p_name:name,p_code:code,p_active:true,p_role_note:null}); toast('추가됨','ok'); loadSettings(); }
+  catch(e){ toast(e.message,'bad'); }
+}
+async function saveStaff(id){
+  try{ await rpc('fn_staff_save',{p_id:id,p_name:$('sn_'+id).value,p_code:$('sc_'+id).value,p_active:$('sa_'+id).checked,p_role_note:$('sr_'+id).value||null});
+    toast('저장됨','ok'); loadSettings(); }catch(e){ toast(e.message,'bad'); }
+}
 async function saveProfile(id){ try{ await rpc('fn_profile_set',{p_id:id,p_role:$('pr_'+id).value,p_handler_name:$('ph_'+id).value||null,p_active:$('pa_'+id).checked}); toast('권한 저장됨','ok'); }catch(e){ toast(e.message,'bad'); } }
+
+/* ═══════════════ 업로드 양식 엑셀 ═══════════════ */
+const TEMPLATES={
+ '샵링커_주문':{cols:['주문번호','자사주문번호','주문일자','배송상태','쇼핑몰','쇼핑몰아이디','상품코드','모델명','주문 상품명','옵션','수량','쇼핑몰 판매가','주문금액','결제','주문자명','주문자연락처1','주문자연락처2','주문자이메일주소','수취인 주소','클레임여부'],
+  rows:[['2608181744360815','1323871046','20260818174436','송장전송완료','고도몰5','samsungsh','prd177089707','HAF-HIN','정품 삼성 비스포크 정수기필터','제품선택/ 미개봉새상품',2,149000,298000,'네이버페이','염승엽','010-7202-0910','010-4613-1702','lje84@naver.com','경기도 용인시 수지구 …','NO'],
+        ['20260818758862','1323871047','20260818174641','배송전취소','스마트스토어','samsung_pmall','prd176878037','HAF-HIM','삼성 비스포크 정수기 일체형 필터','',1,82000,82000,'간편결제','김민준','','010-3841-9281','','서울특별시 강남구 …','자동:취소관련']]},
+ '이카운트_판매현황':{note:'1행이 회사명 등 머리글이어도 됩니다. 헤더 행만 아래와 같으면 자동 인식합니다.',
+  cols:['일자-No.','거래처명','대표자명','영업담당명','창고명','판매담당자','주소2','모바일','일반전화','품목명(규격)','수량','단가','공급가액','부가세','합계','사용기종'],
+  rows:[['20260801-1','태성인아웃코리아','김우철','박은지','본사창고','박은지','서울특별시 금천구 …','01047692580','028082580','AR60F13C13WS',1,1300000,1300000,130000,1430000,'SL-J2165W/260'],
+        ['20260802-1','(주)선릉엘7해우리','오유택','고병재','본사창고','이효진','서울특별시 강남구 …','01093260655','025394997','MLT-D111S/TND [1,000매]',2,90000,180000,18000,198000,'']]},
+ '이카운트_가망고객':{cols:['일자-No.','연락처','고객명','구분명','구매 품목명','관심 품목코드','관심 품목명','상담사명','유입경로명','결과명','멤버쉽명','구매예정일','상담내용','비고','예상금액'],
+  rows:[['2026/09/02 -1','010-5223-3009','김기현','TV','TV',20,'TV','권혁찬','매장고객-매장고객 소개','구매완료','완료','2026/09/03','KMR85RH95 문의','9월 2~3일 방문예정',6800000],
+        ['2026/09/01 -2','01041502705','김준홍','TV','TV',30,'냉장고','송희봉','쇼핑몰-전화','진행중','','2026/09/10','KQ85QNH80 가격비교','삼성카드 혜택가 360만원',3600000]]},
+ '렌탈':{cols:['계약번호','계약명','청구시작일','청구종료일','거래처','항목','금액','유형'],
+  rows:[['2026/08/20 -1','칼라추가요금','2026-08-20','2026-08-20','에이블차터링','칼라추가요금',48000,'카드매출'],
+        ['2026/08/14 -7','모노추가요금','2026-08-14','2026-08-14','계피부과의원','모노추가요금',62000,'세금계산서']]},
+ '고도몰_회원':{note:'파일명에 p·s·at·sh 를 넣으면 몰이 자동 선택됩니다 (예: p몰.xlsx).',
+  cols:['회원번호','등록일','최종로그인일','회원구분','아이디','이름','이메일','휴대폰번호','전화번호','주소','SMS수신여부','성별','생일','사업자번호'],
+  rows:[[4692,'2026-08-28 14:20:12','2026-08-28 14:22:01','personal','jisu3153','이진숙','ljs3153@naver.com','010-7275-3153','','경기도 성남시 …','y','','',''],
+        [4691,'2026-08-28 13:10:00','2026-08-28 13:12:00','business','sonnim90','김윤정','mayck@naver.com','010-5513-5535','02-555-1234','서울특별시 …','n','','','123-45-67890']]},
+ '매장_일별':{note:'현행 대시보드 Manual 시트와 같은 구조입니다. 프로별 직판은 "이름-직판" 열을 늘려 쓰세요.',
+  cols:['날짜','매장-일시불','매장-일시불_환불','매장-구독','매장-구독_환불','장은희-직판','장은희-직판_환불','강민정-직판','강민정-직판_환불'],
+  rows:[['2026-08-19',8724580,0,4197600,0,44222162,0,6650000,0],['2026-08-20',4015100,0,6478560,0,4830000,0,0,0]]}
+};
+function downloadTemplates(){
+  const wb=XLSX.utils.book_new();
+  const dest=['core.orders (통합 원장)','core.orders (원장 · 채널 VMS)','crm.consult (상담·가망고객)','core.orders (원장 · 채널 렌탈)','crm.customer (고객 마스터)','core.store_daily (매장 일마감)'];
+  const guide=[['삼성앤텍 통합 매출 & CRM · 업로드 양식'],[],
+    ['· 시트 하나가 형식 하나입니다. 원본 시스템에서 받은 파일을 그대로 올려도 됩니다.'],
+    ['· 업로드 화면이 헤더(열 이름 행)를 보고 형식을 자동 인식합니다. 열 순서는 달라도 되고, 없는 열은 비워도 됩니다.'],
+    ['· 같은 파일을 다시 올려도 중복되지 않습니다 (주문번호·일자No 기준으로 덮어씀).'],[],['시트','핵심 열','들어가는 곳']];
+  Object.entries(TEMPLATES).forEach(([k,v],i)=>guide.push([k,v.cols.slice(0,3).join(' / '),dest[i]]));
+  const ws0=XLSX.utils.aoa_to_sheet(guide); ws0['!cols']=[{wch:22},{wch:48},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws0,'0_안내');
+  for(const [k,v] of Object.entries(TEMPLATES)){
+    const aoa=v.note?[[v.note],[],v.cols,...v.rows]:[v.cols,...v.rows];
+    const ws=XLSX.utils.aoa_to_sheet(aoa); ws['!cols']=v.cols.map(c=>({wch:Math.max(11,Math.min(28,String(c).length*2+7))}));
+    XLSX.utils.book_append_sheet(wb,ws,k);
+  }
+  XLSX.writeFile(wb,'삼성앤텍_업로드양식.xlsx'); toast('양식 다운로드','ok');
+}
 
 boot();
 </script>
