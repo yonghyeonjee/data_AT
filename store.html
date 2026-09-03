@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>시흥점 판매 입력</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --ground:#F2F3F5; --surface:#FFFFFF; --surface-2:#F7F8FA; --line:#E3E6EB; --line-2:#CBD1DA;
+  --ink:#141820; --ink-2:#3A4250; --muted:#6B7482; --faint:#9AA3B1;
+  --accent:#1B4FA0; --accent-ink:#FFFFFF; --accent-soft:#E8EFFA;
+  --ok:#1F7A4D; --ok-soft:#E4F2EA; --warn:#A8620B; --warn-soft:#FBF0DC; --bad:#B23A48; --bad-soft:#F9E7EA;
+  --sub:#7A3EB8; --sub-soft:#F0E8F8;
+  --r:12px; --shadow:0 1px 2px rgba(20,24,32,.05), 0 8px 24px rgba(20,24,32,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;background:var(--ground);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+
+/* ── PIN ── */
+#pinScreen{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+.pin-card{width:100%;max-width:380px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:36px 28px;text-align:center}
+.pin-card .logo{font-size:12px;letter-spacing:.18em;color:var(--muted);font-weight:600}
+.pin-card h1{font-size:22px;font-weight:800;margin:8px 0 22px;letter-spacing:-.02em}
+.pin-card input{width:100%;text-align:center;font-size:28px;letter-spacing:.4em;padding:14px;border:1.5px solid var(--line-2);border-radius:10px;outline:none;font-variant-numeric:tabular-nums}
+.pin-card input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.pin-card button{width:100%;margin-top:14px;padding:14px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;cursor:pointer}
+.pin-card .err{color:var(--bad);font-size:13px;margin-top:10px;min-height:18px}
+
+/* ── App ── */
+#app{max-width:720px;margin:0 auto;padding:0 0 120px}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(242,243,245,.92);backdrop-filter:blur(8px);padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.topbar .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.topbar h1{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.topbar h1 small{font-weight:500;color:var(--muted);font-size:13px;margin-left:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--surface);border:1px solid var(--line)}
+.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.tabs{display:flex;gap:4px;margin-top:12px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--line)}
+.tab{flex:1;padding:10px 6px;border:0;background:transparent;border-radius:9px;font-weight:600;color:var(--muted);cursor:pointer;font-size:14px}
+.tab.active{background:var(--ink);color:#fff}
+.tab .n{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:rgba(255,255,255,.2);font-size:11px;margin-left:4px}
+
+section.panel{padding:16px 18px}
+.card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;margin-bottom:14px}
+.card h2{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.card h2 span{font-size:12px;color:var(--faint);font-weight:500}
+
+.f{margin-bottom:14px}
+.f label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.f label .req{color:var(--bad);margin-left:2px}
+.f label .hint{color:var(--faint);font-weight:400;margin-left:6px;font-size:12px}
+.in{width:100%;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:10px;background:#fff;outline:none;font-size:16px;transition:.15s}
+.in:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.in.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+textarea.in{min-height:72px;resize:vertical;font-size:15px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:480px){.grid3{grid-template-columns:1fr 1fr}}
+
+.seg{display:flex;gap:6px}
+.seg button{flex:1;padding:11px 8px;border:1.5px solid var(--line-2);background:#fff;border-radius:10px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.seg button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.seg button.on.sub{border-color:var(--sub);background:var(--sub-soft);color:var(--sub)}
+.seg button.on.direct{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:8px 12px;border:1.5px solid var(--line-2);border-radius:999px;background:#fff;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.chip.on{border-color:var(--accent);background:var(--accent);color:#fff}
+
+.toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:10px;background:var(--surface-2);cursor:pointer}
+.toggle b{font-size:14px}
+.toggle small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.sw{width:46px;height:26px;border-radius:13px;background:#CBD1DA;position:relative;transition:.2s;flex-shrink:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on .sw{background:var(--ok)}
+.toggle.on .sw::after{left:23px}
+
+.btn{width:100%;padding:15px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:700;font-size:16px;cursor:pointer;margin-top:6px}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:var(--surface);color:var(--ink-2);border:1.5px solid var(--line-2)}
+.btn.sm{width:auto;padding:8px 14px;font-size:13px;margin:0}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px;background:var(--surface-2);border-radius:10px;margin-bottom:12px}
+.total b{font-size:20px;font-variant-numeric:tabular-nums}
+
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.item .t{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.item .p{font-weight:600;font-size:14px}
+.item .m{font-size:12px;color:var(--muted)}
+.item .a{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.item .a small{display:block;font-weight:500;color:var(--muted);font-size:11px}
+.tag{display:inline-block;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:700;margin-right:4px}
+.tag.일시불{background:var(--accent-soft);color:var(--accent)}
+.tag.구독{background:var(--sub-soft);color:var(--sub)}
+.tag.직판{background:var(--warn-soft);color:var(--warn)}
+.empty{color:var(--faint);text-align:center;padding:20px;font-size:13px}
+
+.daterow{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.daterow .in{flex:1}
+.unclosed{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.unclosed .chip{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.trow{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:8px;align-items:center;margin-bottom:8px}
+.trow .lab{font-weight:600;font-size:14px}
+.trow .lab small{display:block;color:var(--faint);font-weight:400;font-size:11px}
+.trow.head{color:var(--faint);font-size:12px;margin-bottom:4px}
+.handler-row{display:grid;grid-template-columns:1fr 1.2fr 1fr 32px;gap:8px;align-items:center;margin-bottom:8px}
+.x{border:0;background:transparent;color:var(--faint);font-size:18px;cursor:pointer}
+
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;transition:.25s;z-index:99;box-shadow:var(--shadow);max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--ok)} .toast.bad{background:var(--bad)}
+.foot{color:var(--faint);font-size:11px;text-align:center;padding:12px}
+.foot a{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- ═══ PIN ═══ -->
+<div id="pinScreen">
+  <div class="pin-card">
+    <div class="logo">SAMSUNG&amp;TECH · 시흥점</div>
+    <h1>판매·상담 입력</h1>
+    <input id="pinInput" type="tel" inputmode="numeric" maxlength="8" placeholder="입력 코드" autocomplete="off">
+    <button onclick="enterPin()">시작하기</button>
+    <div class="err" id="pinErr"></div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="row">
+      <h1>시흥점 <small id="todayLabel"></small></h1>
+      <div style="display:flex;gap:6px">
+        <span class="pill" id="pillToday">오늘 0건</span>
+        <span class="pill warn hidden" id="pillUnclosed"></span>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="sale">판매 입력</button>
+      <button class="tab" data-tab="consult">상담 입력</button>
+      <button class="tab" data-tab="daily">일 마감</button>
+    </div>
+  </div>
+
+  <!-- ── 판매 입력 ── -->
+  <section class="panel" id="tab-sale">
+    <div class="card">
+      <h2>판매 1건 <span>필수 6개 · 30초</span></h2>
+      <div class="grid2">
+        <div class="f"><label>판매일 <span class="req">*</span></label><input class="in" type="date" id="s_date"></div>
+        <div class="f"><label>담당 프로 <span class="req">*</span></label><select class="in" id="s_handler"></select></div>
+      </div>
+      <div class="f"><label>구분 <span class="req">*</span></label>
+        <div class="seg" id="s_kind">
+          <button type="button" data-v="일시불" class="on">일시불</button>
+          <button type="button" data-v="구독">구독</button>
+          <button type="button" data-v="직판">직판</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="f"><label>고객명 <span class="hint">비워도 됨</span></label><input class="in" id="s_name" placeholder="홍길동" autocomplete="off"></div>
+        <div class="f"><label>휴대폰 <span class="hint">CRM 연결 키</span></label><input class="in" type="tel" id="s_phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)"></div>
+      </div>
+      <div class="f"><label>상품명 <span class="req">*</span><span class="hint">DPS 화면 그대로</span></label><input class="in" id="s_product" placeholder="예: 비스포크 AI 콤보 세탁건조기" autocomplete="off"></div>
+      <div class="grid3">
+        <div class="f"><label>모델코드</label><input class="in" id="s_model" placeholder="WD90F" style="text-transform:uppercase" autocomplete="off"></div>
+        <div class="f"><label>수량</label><input class="in num" type="number" id="s_qty" value="1" min="1"></div>
+        <div class="f"><label>판매가 <span class="req">*</span></label><input class="in num" inputmode="numeric" id="s_amount" placeholder="0" oninput="comma(this)"></div>
+      </div>
+      <div class="total"><span style="color:var(--muted);font-size:13px">합계 (VAT 포함)</span><b id="s_total">0원</b></div>
+      <div class="grid2">
+        <div class="f"><label>결제</label>
+          <select class="in" id="s_pay"><option value="">선택 안 함</option><option>삼성카드</option><option>타사카드</option><option>현금</option><option>구독(월납)</option><option>기타</option></select></div>
+        <div class="f"><label>상담번호 <span class="hint">있으면 자동 연결</span></label><input class="in" id="s_consult" placeholder="SC260902-000001" autocomplete="off"></div>
+      </div>
+      <div class="f">
+        <div class="toggle on" id="s_consent" onclick="this.classList.toggle('on')">
+          <div><b>마케팅 수신 동의</b><small>고객이 동의한 경우에만 켜두세요</small></div><div class="sw"></div>
+        </div>
+      </div>
+      <div class="f"><label>메모</label><input class="in" id="s_notes" placeholder="설치일, 사은품 등"></div>
+      <button class="btn" id="s_btn" onclick="submitSale()">저장</button>
+    </div>
+    <div class="card">
+      <h2>오늘 입력한 판매 <span id="todaySum"></span></h2>
+      <div class="list" id="todayList"><div class="empty">아직 없습니다</div></div>
+    </div>
+  </section>
+
+  <!-- ── 상담 입력 ── -->
+  <section class="panel hidden" id="tab-consult">
+    <div class="card">
+      <h2>상담 · 가망고객 <span>사려다 만 고객도 남기기</span></h2>
+      <div class="grid2">
+        <div class="f"><label>상담일 <span class="req">*</span></label><input class="in" type="date" id="c_date"></div>
+        <div class="f"><label>상담사 <span class="req">*</span></label><select class="in" id="c_handler"></select></div>
+      </div>
+      <div class="grid2">
+        <div class="f"><label>고객명 <span class="req">*</span></label><input class="in" id="c_name" placeholder="홍길동" autocomplete="off"></div>
+        <div class="f"><label>휴대폰</label><input class="in" type="tel" id="c_phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)"></div>
+      </div>
+      <div class="f"><label>관심 품목 <span class="req">*</span></label>
+        <div class="chips" id="c_cat">
+          <span class="chip" data-v="TV">TV</span><span class="chip" data-v="냉장고">냉장고</span><span class="chip" data-v="세탁·건조">세탁·건조</span>
+          <span class="chip" data-v="에어컨">에어컨</span><span class="chip" data-v="청소기">청소기</span><span class="chip" data-v="주방가전">주방가전</span>
+          <span class="chip" data-v="휴대폰·태블릿">휴대폰·태블릿</span><span class="chip" data-v="PC·모니터">PC·모니터</span><span class="chip" data-v="입주패키지">입주패키지</span><span class="chip" data-v="기타">기타</span>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="f"><label>관심 모델</label><input class="in" id="c_model" placeholder="KQ85QNH80" style="text-transform:uppercase" autocomplete="off"></div>
+        <div class="f"><label>유입경로 <span class="req">*</span></label>
+          <select class="in" id="c_route">
+            <option>매장고객-기존고객</option><option>매장고객-매장고객 소개</option><option>검색광고-방문</option><option>검색광고-전화</option>
+            <option>지인소개</option><option>쇼핑몰-전화</option><option>카카오채널</option><option>간판·지나가다</option><option>기타</option>
+          </select></div>
+      </div>
+      <div class="grid3">
+        <div class="f"><label>결과</label>
+          <select class="in" id="c_result"><option>진행중</option><option>보류</option><option>구매완료</option><option>종료</option></select></div>
+        <div class="f"><label>예상 금액</label><input class="in num" inputmode="numeric" id="c_amount" placeholder="0" oninput="comma(this)"></div>
+        <div class="f"><label>구매 예정일</label><input class="in" type="date" id="c_expect"></div>
+      </div>
+      <div class="f"><label>상담 내용</label><textarea class="in" id="c_content" placeholder="문의 모델, 가격 비교 대상, 다음 연락 시점 등"></textarea></div>
+      <div class="f">
+        <div class="toggle" id="c_consent" onclick="this.classList.toggle('on')">
+          <div><b>마케팅 수신 동의</b><small>동의 받은 경우에만</small></div><div class="sw"></div>
+        </div>
+      </div>
+      <button class="btn" id="c_btn" onclick="submitConsult()">저장</button>
+      <div id="c_ref" class="empty hidden"></div>
+    </div>
+  </section>
+
+  <!-- ── 일 마감 ── -->
+  <section class="panel hidden" id="tab-daily">
+    <div class="card">
+      <h2>일 마감 · DPS 합계 전기 <span>매일 영업 종료 후</span></h2>
+      <div class="daterow">
+        <input class="in" type="date" id="d_date">
+        <button class="btn ghost sm" onclick="setDaily(-1)">어제</button>
+        <button class="btn ghost sm" onclick="setDaily(0)">오늘</button>
+      </div>
+      <div id="d_unclosedWrap" class="hidden" style="margin-bottom:12px">
+        <div style="font-size:12px;color:var(--warn);font-weight:600">미마감 날짜 — 눌러서 입력</div>
+        <div class="unclosed" id="d_unclosed"></div>
+      </div>
+      <div class="trow head"><div>구분</div><div style="text-align:right">매출</div><div style="text-align:right">환불</div></div>
+      <div class="trow"><div class="lab">매장 일시불<small>DPS 일시불 합계</small></div><input class="in num" inputmode="numeric" id="d_cash_s" placeholder="0" oninput="comma(this)"><input class="in num" inputmode="numeric" id="d_cash_r" placeholder="0" oninput="comma(this)"></div>
+      <div class="trow"><div class="lab">매장 구독<small>DPS 구독 합계</small></div><input class="in num" inputmode="numeric" id="d_sub_s" placeholder="0" oninput="comma(this)"><input class="in num" inputmode="numeric" id="d_sub_r" placeholder="0" oninput="comma(this)"></div>
+      <div style="font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:600">프로별 직판</div>
+      <div id="d_direct"></div>
+      <button class="btn ghost sm" onclick="addDirectRow()">+ 프로 추가</button>
+      <div class="f" style="margin-top:14px"><label>입력자</label><select class="in" id="d_by"></select></div>
+      <button class="btn" id="d_btn" onclick="submitDaily()">마감 저장</button>
+    </div>
+    <div class="card">
+      <h2>최근 마감 <span>7일</span></h2>
+      <div class="list" id="d_recent"><div class="empty">없음</div></div>
+    </div>
+  </section>
+
+  <div class="foot">삼성앤텍 시흥점 · 입력 문의 온라인사업부 · <a href="#" onclick="localStorage.removeItem('store_pin');location.reload();return false">코드 재입력</a></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══ 설정 ═══ */
+const SUPABASE_URL = "https://wdahskrcpjooqhwwxjiu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ═══ 유틸 ═══ */
+const $ = id => document.getElementById(id);
+const todayStr = (d=0) => { const t=new Date(); t.setDate(t.getDate()+d); return new Date(t.getTime()-t.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const won = v => (Number(v)||0).toLocaleString('ko-KR') + '원';
+const num = el => Number(String(el.value).replace(/[^0-9]/g,'')) || 0;
+function comma(el){ const v=el.value.replace(/[^0-9]/g,''); el.value = v ? Number(v).toLocaleString('ko-KR') : ''; if(el.id==='s_amount') $('s_total').textContent = won(num(el)); }
+function hyphen(el){ el.value = el.value.replace(/[^0-9]/g,'').replace(/^(\d{0,3})(\d{0,4})(\d{0,4})$/,'$1-$2-$3').replace(/-{1,2}$/,''); }
+let toastT; function toast(msg, cls=''){ const t=$('toast'); t.textContent=msg; t.className='toast show '+cls; clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast',2600); }
+async function rpc(fn, args){ const {data,error} = await sb.rpc(fn, args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
+
+/* ═══ PIN ═══ */
+let PIN = localStorage.getItem('store_pin') || '';
+let STATUS = null;
+async function enterPin(){ const v=$('pinInput').value.trim(); if(!v) return; $('pinErr').textContent=''; try{ await loadStatus(v); PIN=v; localStorage.setItem('store_pin',v); start(); }catch(e){ $('pinErr').textContent=e.message; } }
+$('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') enterPin(); });
+async function loadStatus(pin){ STATUS = await rpc('fn_store_status', {p_pin: pin||PIN}); return STATUS; }
+
+/* ═══ 시작 ═══ */
+async function start(){
+  $('pinScreen').classList.add('hidden'); $('app').classList.remove('hidden');
+  const t=new Date(); $('todayLabel').textContent = `${t.getMonth()+1}월 ${t.getDate()}일 (${'일월화수목금토'[t.getDay()]})`;
+  $('s_date').value = todayStr(); $('c_date').value = todayStr(); $('d_date').value = todayStr(-1);
+  render();
+}
+function render(){
+  const s = STATUS;
+  const handlers = (s.handlers||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const saved = localStorage.getItem('store_handler') || '';
+  ['s_handler','c_handler','d_by'].forEach(id=>{ const el=$(id); el.innerHTML = '<option value="">선택</option>' + handlers.map(h=>`<option ${h===saved?'selected':''}>${h}</option>`).join(''); });
+  $('pillToday').textContent = `오늘 ${s.today_sales.length}건`;
+  const sum = s.today_sales.reduce((a,x)=>a+Number(x.amount),0);
+  $('todaySum').textContent = s.today_sales.length ? won(sum) : '';
+  $('todayList').innerHTML = s.today_sales.length ? s.today_sales.map(x=>`
+    <div class="item"><div class="t">${x.time}</div>
+      <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}</div></div>
+      <div class="a">${won(x.amount)}</div></div>`).join('') : '<div class="empty">아직 없습니다</div>';
+  const un = s.unclosed_days || [];
+  if(un.length){ $('pillUnclosed').textContent = `미마감 ${un.length}일`; $('pillUnclosed').classList.remove('hidden');
+    $('d_unclosedWrap').classList.remove('hidden');
+    $('d_unclosed').innerHTML = un.map(d=>`<span class="chip" onclick="$('d_date').value='${d}'">${d.slice(5).replace('-','/')}</span>`).join('');
+  } else { $('pillUnclosed').classList.add('hidden'); $('d_unclosedWrap').classList.add('hidden'); }
+  $('d_recent').innerHTML = (s.closed_recent||[]).length ? s.closed_recent.map(x=>`
+    <div class="item"><div class="t">${x.d.slice(5).replace('-','/')}</div><div class="p">마감 완료</div><div class="a">${won(x.net)}</div></div>`).join('') : '<div class="empty">최근 7일 마감 없음</div>';
+  if(!$('d_direct').children.length) addDirectRow();
+  document.querySelectorAll('.tab').forEach(b=>{ if(b.dataset.tab==='daily'){ b.innerHTML = '일 마감' + (un.length?`<span class="n">${un.length}</span>`:''); } });
+}
+
+/* ═══ 탭 ═══ */
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  ['sale','consult','daily'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==b.dataset.tab));
+  window.scrollTo({top:0});
+}));
+$('s_kind').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+  $('s_kind').querySelectorAll('button').forEach(x=>x.className=''); b.className='on '+(b.dataset.v==='구독'?'sub':b.dataset.v==='직판'?'direct':''); });
+$('c_cat').addEventListener('click', e=>{ const c=e.target.closest('.chip'); if(!c) return; $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); c.classList.add('on'); });
+['s_handler','c_handler','d_by'].forEach(id=>$(id).addEventListener('change', e=>{ if(e.target.value) localStorage.setItem('store_handler', e.target.value); }));
+
+/* ═══ 판매 저장 ═══ */
+async function submitSale(){
+  const kind = $('s_kind').querySelector('.on').dataset.v;
+  const p = { sale_date:$('s_date').value, sale_kind:kind, handler:$('s_handler').value,
+    customer_name:$('s_name').value.trim(), customer_phone:$('s_phone').value.trim(),
+    product_name:$('s_product').value.trim(), model_code:$('s_model').value.trim(),
+    qty:Number($('s_qty').value)||1, gross_amount:num($('s_amount')), payment_method:$('s_pay').value,
+    consult_ref:$('s_consult').value.trim(), consent_marketing:$('s_consent').classList.contains('on'), notes:$('s_notes').value.trim() };
+  if(!p.handler) return toast('담당 프로를 선택하세요','bad');
+  if(!p.product_name) return toast('상품명을 입력하세요','bad');
+  if(p.gross_amount<=0) return toast('판매가를 입력하세요','bad');
+  if(p.customer_phone && !/^01\d-\d{3,4}-\d{4}$/.test(p.customer_phone)) return toast('휴대폰 번호를 확인하세요','bad');
+  const b=$('s_btn'); b.disabled=true; b.textContent='저장 중…';
+  try{ await rpc('fn_store_sale_submit',{p_pin:PIN,p_data:p});
+    toast(`저장됨 · ${p.product_name} ${won(p.gross_amount)}`,'ok');
+    ['s_name','s_phone','s_product','s_model','s_amount','s_consult','s_notes'].forEach(id=>$(id).value=''); $('s_qty').value=1; $('s_pay').value=''; $('s_total').textContent='0원';
+    await loadStatus(); render(); $('s_product').focus();
+  }catch(e){ toast(e.message,'bad'); if(/코드/.test(e.message)){ localStorage.removeItem('store_pin'); setTimeout(()=>location.reload(),1500);} }
+  b.disabled=false; b.textContent='저장';
+}
+
+/* ═══ 상담 저장 ═══ */
+async function submitConsult(){
+  const cat = $('c_cat').querySelector('.on');
+  const p = { consult_at:$('c_date').value, handler:$('c_handler').value, customer_name:$('c_name').value.trim(), customer_phone:$('c_phone').value.trim(),
+    interest_category: cat?cat.dataset.v:'', interest_model_code:$('c_model').value.trim(), inflow_route:$('c_route').value, result:$('c_result').value,
+    expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(),
+    consent_marketing:$('c_consent').classList.contains('on') };
+  if(!p.handler) return toast('상담사를 선택하세요','bad');
+  if(!p.customer_name) return toast('고객명을 입력하세요','bad');
+  if(!p.interest_category) return toast('관심 품목을 선택하세요','bad');
+  const b=$('c_btn'); b.disabled=true; b.textContent='저장 중…';
+  try{ const r = await rpc('fn_store_consult_submit',{p_pin:PIN,p_data:p});
+    toast('상담 저장됨','ok');
+    $('c_ref').classList.remove('hidden'); $('c_ref').innerHTML = `상담번호 <b style="color:var(--ink);font-size:15px">${r.ref}</b><br>구매로 이어지면 판매 입력의 "상담번호"에 적어주세요`;
+    ['c_name','c_phone','c_model','c_amount','c_expect','c_content'].forEach(id=>$(id).value=''); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
+    await loadStatus(); render();
+  }catch(e){ toast(e.message,'bad'); }
+  b.disabled=false; b.textContent='저장';
+}
+
+/* ═══ 일 마감 ═══ */
+function setDaily(d){ $('d_date').value = todayStr(d); }
+function addDirectRow(name=''){
+  const handlers = (STATUS.handlers||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const row=document.createElement('div'); row.className='handler-row';
+  row.innerHTML = `<select class="in dh"><option value="">프로</option>${handlers.map(h=>`<option ${h===name?'selected':''}>${h}</option>`).join('')}</select>
+    <input class="in num ds" inputmode="numeric" placeholder="매출" oninput="comma(this)"><input class="in num dr" inputmode="numeric" placeholder="환불" oninput="comma(this)">
+    <button class="x" onclick="this.parentNode.remove()">×</button>`;
+  $('d_direct').appendChild(row);
+}
+async function submitDaily(){
+  const d=$('d_date').value; if(!d) return toast('마감일을 선택하세요','bad');
+  const rows=[ {sale_kind:'일시불', sales:num($('d_cash_s')), refund:num($('d_cash_r'))}, {sale_kind:'구독', sales:num($('d_sub_s')), refund:num($('d_sub_r'))} ];
+  $('d_direct').querySelectorAll('.handler-row').forEach(r=>{ const h=r.querySelector('.dh').value; const s=num(r.querySelector('.ds')), f=num(r.querySelector('.dr')); if(h && (s||f)) rows.push({sale_kind:'직판',handler:h,sales:s,refund:f}); });
+  const total = rows.reduce((a,x)=>a+x.sales-x.refund,0);
+  if(!confirm(`${d} 마감 순매출 ${won(total)}\n저장할까요? (같은 날짜는 덮어씁니다)`)) return;
+  const b=$('d_btn'); b.disabled=true; b.textContent='저장 중…';
+  try{ await rpc('fn_store_daily_submit',{p_pin:PIN,p_date:d,p_rows:rows,p_entered_by:$('d_by').value||null});
+    toast(`${d} 마감 저장 · ${won(total)}`,'ok');
+    ['d_cash_s','d_cash_r','d_sub_s','d_sub_r'].forEach(id=>$(id).value=''); $('d_direct').innerHTML=''; addDirectRow();
+    await loadStatus(); render();
+  }catch(e){ toast(e.message,'bad'); }
+  b.disabled=false; b.textContent='마감 저장';
+}
+
+/* ═══ 부팅 ═══ */
+(async()=>{ if(PIN){ try{ await loadStatus(); start(); return; }catch(e){ localStorage.removeItem('store_pin'); PIN=''; } } $('pinInput').focus(); })();
+</script>
+</body>
+</html>

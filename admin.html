@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼성앤텍 · 통합 매출 & CRM</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --ground:#F2F3F5; --surface:#FFFFFF; --surface-2:#F7F8FA; --surface-3:#EEF0F3; --line:#E3E6EB; --line-2:#CBD1DA;
+  --ink:#141820; --ink-2:#3A4250; --muted:#6B7482; --faint:#9AA3B1;
+  --accent:#1B4FA0; --accent-soft:#E8EFFA; --ok:#1F7A4D; --ok-soft:#E4F2EA; --warn:#A8620B; --warn-soft:#FBF0DC; --bad:#B23A48; --bad-soft:#F9E7EA;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c6:#008300; --c7:#4a3aa7; --c8:#e34948;
+  --side:#0F1522; --shadow:0 1px 2px rgba(20,24,32,.04), 0 6px 20px rgba(20,24,32,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;background:var(--ground);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+.mono{font-variant-numeric:tabular-nums}
+.r{text-align:right}
+
+/* ── login ── */
+#login{position:fixed;inset:0;background:var(--side);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
+.login-card{background:#fff;padding:36px 32px;border-radius:16px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-card .eyebrow{font-size:11px;letter-spacing:.18em;color:var(--muted);font-weight:700}
+.login-card h1{font-size:22px;font-weight:800;margin:6px 0 22px;letter-spacing:-.02em}
+.login-card label{font-size:12px;font-weight:700;color:var(--ink-2)}
+.login-card input{width:100%;padding:12px 14px;margin:6px 0 14px;border:1.5px solid var(--line-2);border-radius:10px;font-size:15px;outline:none}
+.login-card input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.login-card button{width:100%;padding:13px;background:var(--accent);color:#fff;border:0;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer}
+.login-card .err{color:var(--bad);font-size:13px;margin-top:10px;min-height:18px}
+.login-card .links{margin-top:16px;text-align:center;font-size:12px;color:var(--faint)}
+.login-card .links a{color:var(--muted);text-decoration:none;margin:0 6px}
+
+/* ── layout ── */
+#app{display:flex;height:100vh}
+aside{width:232px;background:var(--side);color:#9AA3B1;display:flex;flex-direction:column;flex-shrink:0}
+.brand{padding:22px 20px 16px;color:#fff;font-weight:800;font-size:15px;letter-spacing:-.01em;border-bottom:1px solid rgba(255,255,255,.06)}
+.brand small{display:block;font-weight:500;color:#6B7482;font-size:11px;letter-spacing:.14em;margin-bottom:4px}
+nav{padding:12px 10px;flex:1;overflow-y:auto}
+.nav{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:2px;border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:500;transition:.15s;position:relative}
+.nav:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav.active{background:var(--accent);color:#fff;font-weight:600}
+.nav .ic{width:20px;text-align:center;opacity:.85}
+.nav .badge{margin-left:auto;background:var(--bad);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:9px}
+.nav .sep{color:#4A5260;font-size:10px;letter-spacing:.14em;padding:12px 12px 4px;display:block;cursor:default}
+.userbar{padding:14px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:12px}
+.userbar b{display:block;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.userbar .role{color:#5FA8FF;font-size:11px;font-weight:600}
+.userbar button{margin-top:8px;width:100%;padding:6px;background:transparent;border:1px solid #2C3444;color:#9AA3B1;border-radius:6px;cursor:pointer;font-size:12px}
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+header{background:var(--surface);padding:0 28px;height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
+header h2{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.content{padding:24px 28px 60px;overflow-y:auto;flex:1}
+.view{max-width:1360px}
+
+/* ── period picker ── */
+.period{display:flex;align-items:center;gap:6px}
+.period .preset{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:2px}
+.period .preset button{padding:5px 10px;border:0;background:transparent;border-radius:6px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer}
+.period .preset button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.period input[type=date]{padding:6px 8px;border:1px solid var(--line-2);border-radius:7px;font-size:12px;background:#fff}
+
+/* ── cards & kpi ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);border-left:3px solid transparent}
+.kpi .t{font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.kpi .v{font-size:21px;white-space:nowrap;font-weight:800;letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:11.5px;color:var(--faint);margin-top:2px}
+.kpi.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.kpi.warn .v{color:var(--warn)}
+.grid{display:grid;gap:14px;margin-bottom:14px}
+.g2{grid-template-columns:1fr 1fr} .g32{grid-template-columns:3fr 2fr} .g23{grid-template-columns:2fr 3fr}
+@media(max-width:1000px){.g2,.g32,.g23{grid-template-columns:1fr}}
+.card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:20px;margin-bottom:14px;min-width:0}
+.card h3{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.card h3 span{font-size:12px;color:var(--faint);font-weight:500}
+.card h3 .actions{display:flex;gap:6px;align-items:center}
+
+/* ── table ── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+th{font-size:11px;color:var(--muted);font-weight:600;background:var(--surface-2);letter-spacing:.03em;position:sticky;top:0}
+tbody tr:hover{background:var(--surface-2)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.wrap{white-space:normal;max-width:320px}
+.tag{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;white-space:nowrap}
+.tag.매장{background:#E8EFFA;color:#1B4FA0} .tag.직판{background:#FBF0DC;color:#A8620B} .tag.자사몰{background:#E4F2EA;color:#1F7A4D}
+.tag.오픈마켓{background:#FDEBE3;color:#C24E20} .tag.VMS{background:#FFF4D6;color:#8A6300} .tag.렌탈{background:#EEEAF8;color:#4A3AA7} .tag.직배{background:#F1F2F4;color:#4A5260}
+.tag.접수{background:#FFF4D6;color:#8A6300} .tag.승인{background:#E4F2EA;color:#1F7A4D} .tag.반려{background:#F1F2F4;color:#6B7482}
+.tag.진행중{background:#E8EFFA;color:#1B4FA0} .tag.보류{background:#FFF4D6;color:#8A6300} .tag.구매완료{background:#E4F2EA;color:#1F7A4D} .tag.종료{background:#F1F2F4;color:#6B7482}
+.tag.y{background:#E4F2EA;color:#1F7A4D} .tag.n{background:#F1F2F4;color:#9AA3B1}
+.pager{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--muted)}
+.pager .btns{display:flex;gap:4px}
+
+/* ── controls ── */
+.in{padding:8px 11px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;outline:none;font-size:13px}
+.in:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.in.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{padding:8px 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:var(--surface);color:var(--ink-2);border:1.5px solid var(--line-2)}
+.btn.sm{padding:4px 9px;font-size:12px;border-radius:6px}
+.btn.danger{background:var(--bad-soft);color:var(--bad)}
+.btn.ok{background:var(--ok)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.filters .in{min-width:120px}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer;padding:6px 10px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;user-select:none}
+.switch .sw{width:34px;height:20px;border-radius:10px;background:#CBD1DA;position:relative;transition:.2s}
+.switch .sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on .sw{background:var(--bad)} .switch.on .sw::after{left:16px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px}
+.fgrid label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.fgrid .in{width:100%}
+.note{font-size:12px;color:var(--muted);line-height:1.6}
+.note b{color:var(--ink)}
+.callout{padding:12px 14px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;line-height:1.6;margin-bottom:12px}
+.callout.warn{background:var(--warn-soft);color:var(--warn)}
+.callout.ok{background:var(--ok-soft);color:var(--ok)}
+
+/* ── charts ── */
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:inherit;font-size:11px;fill:var(--muted)}
+.chart .lbl{fill:var(--ink);font-weight:600}
+.chart .grid line{stroke:var(--line);stroke-width:1}
+.chart .axis{stroke:var(--line-2)}
+.hbars{display:flex;flex-direction:column;gap:9px}
+.hbar{display:grid;grid-template-columns:90px 1fr 150px;gap:10px;align-items:center;font-size:12.5px}
+.hbar .b{height:14px;border-radius:4px;background:var(--c1);min-width:2px;transition:.3s}
+.hbar .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.hbar .v small{color:var(--faint);font-weight:400;margin-left:4px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:#fff;padding:6px 10px;border-radius:7px;font-size:12px;z-index:50;opacity:0;transition:.1s;white-space:nowrap}
+
+/* ── modal ── */
+.overlay{position:fixed;inset:0;background:rgba(20,24,32,.5);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.modal .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;font-size:13px;opacity:0;transition:.25s;z-index:900;max-width:80%}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)} .toast.ok{background:var(--ok)} .toast.bad{background:var(--bad)}
+.drop{border:2px dashed var(--line-2);border-radius:12px;padding:32px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s;background:var(--surface-2)}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.drop b{display:block;font-size:15px;color:var(--ink);margin-bottom:4px}
+.prog{height:8px;background:var(--surface-3);border-radius:4px;overflow:hidden;margin:10px 0}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:.2s}
+.daily-grid td.miss{background:var(--warn-soft);color:var(--warn);font-weight:600}
+.copybox{width:100%;min-height:120px;font-family:ui-monospace,monospace;font-size:12px;padding:10px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface-2)}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login">
+  <div class="login-card">
+    <div class="eyebrow">SAMSUNG&amp;TECH · DATA</div>
+    <h1>통합 매출 &amp; CRM</h1>
+    <label>이메일</label><input type="email" id="lEmail" autocomplete="username" placeholder="name@company.com">
+    <label>비밀번호</label><input type="password" id="lPw" autocomplete="current-password" placeholder="••••••••">
+    <button onclick="login()">로그인</button>
+    <div class="err" id="lErr"></div>
+    <div class="links"><a href="store.html" target="_blank">매장 입력 ↗</a>·<a href="index.html" target="_blank">고객 폼 ↗</a></div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><small>SAMSUNG&amp;TECH</small>통합 매출 &amp; CRM</div>
+    <nav>
+      <div class="nav active" data-v="dash"><span class="ic">▦</span>매출 대시보드</div>
+      <div class="nav" data-v="orders"><span class="ic">≡</span>통합 원장</div>
+      <div class="nav" data-v="daily"><span class="ic">◫</span>매장 일마감</div>
+      <span class="nav sep">CRM</span>
+      <div class="nav" data-v="inbox"><span class="ic">✉</span>고객 접수함<span class="badge hidden" id="badgeInbox"></span></div>
+      <div class="nav" data-v="consults"><span class="ic">☎</span>상담·가망고객</div>
+      <div class="nav" data-v="crm"><span class="ic">◎</span>발송 대상 추출</div>
+      <span class="nav sep">데이터</span>
+      <div class="nav" data-v="upload"><span class="ic">⇪</span>원본 파일 업로드</div>
+      <div class="nav" data-v="settings"><span class="ic">⚙</span>설정 · 담당자</div>
+    </nav>
+    <div class="userbar"><b id="uEmail">-</b><span class="role" id="uRole"></span><button onclick="logout()">로그아웃</button></div>
+  </aside>
+  <main>
+    <header>
+      <h2 id="title">매출 대시보드</h2>
+      <div class="period" id="periodBar">
+        <div class="preset">
+          <button data-p="tm">이번 달</button><button data-p="lm">지난 달</button><button data-p="30" class="on">최근 30일</button><button data-p="90">90일</button><button data-p="y">올해</button>
+        </div>
+        <input type="date" id="pFrom"><span style="color:var(--faint)">~</span><input type="date" id="pTo">
+        <button class="btn sm ghost" onclick="applyPeriod()">적용</button>
+      </div>
+    </header>
+    <div class="content">
+
+      <!-- ═══ 대시보드 ═══ -->
+      <div class="view" id="v-dash">
+        <div class="kpis" id="kpis"></div>
+        <div class="grid g32">
+          <div class="card"><h3>일별 순매출 <span id="dayHint"></span></h3><div id="chDay"></div></div>
+          <div class="card"><h3>채널별 순매출</h3><div class="hbars" id="chChannel"></div></div>
+        </div>
+        <div class="grid g2">
+          <div class="card"><h3>매장 일마감 <span>DPS 합계 전기 · 원장과 별도</span></h3><div id="storeDaily"></div></div>
+          <div class="card"><h3>담당 프로별 <span>원장 기준</span></h3><div class="hbars" id="chHandler"></div></div>
+        </div>
+        <div class="grid g23">
+          <div class="card"><h3>채널 상세</h3><div class="tw"><table><thead><tr><th>구분</th><th>채널</th><th class="num">건수</th><th class="num">순매출</th></tr></thead><tbody id="tbChannel"></tbody></table></div></div>
+          <div class="card"><h3>상품 순위 <span>TOP 20</span></h3><div class="tw"><table><thead><tr><th>#</th><th>모델</th><th>상품</th><th class="num">수량</th><th class="num">순매출</th></tr></thead><tbody id="tbTop"></tbody></table></div></div>
+        </div>
+      </div>
+
+      <!-- ═══ 원장 ═══ -->
+      <div class="view hidden" id="v-orders">
+        <div class="card">
+          <div class="filters">
+            <select class="in" id="oCh"><option value="">전체 구분</option><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select>
+            <select class="in" id="oHd"><option value="">전체 담당</option></select>
+            <input class="in" id="oQ" placeholder="고객명 · 전화 · 상품 검색" style="min-width:220px" onkeydown="if(event.key==='Enter')loadOrders(0)">
+            <button class="btn" onclick="loadOrders(0)">조회</button>
+            <label class="switch" id="oUnmask" onclick="this.classList.toggle('on');loadOrders(0)"><span class="sw"></span>실번호 표시</label>
+            <span style="flex:1"></span>
+            <button class="btn ghost" onclick="openOrderModal()">+ 수동 등록</button>
+            <button class="btn ghost" onclick="exportOrders()">엑셀 내보내기</button>
+          </div>
+          <div class="tw"><table><thead><tr><th>주문일</th><th>구분</th><th>채널</th><th>고객</th><th>연락처</th><th>상품</th><th class="num">수량</th><th class="num">매출</th><th class="num">환불</th><th class="num">순매출</th><th>담당</th><th>상태</th><th></th></tr></thead><tbody id="tbOrders"></tbody></table></div>
+          <div class="pager"><span id="oCount"></span><div class="btns"><button class="btn sm ghost" onclick="loadOrders(oPage-1)">‹ 이전</button><button class="btn sm ghost" onclick="loadOrders(oPage+1)">다음 ›</button></div></div>
+        </div>
+      </div>
+
+      <!-- ═══ 매장 일마감 ═══ -->
+      <div class="view hidden" id="v-daily">
+        <div class="callout">매장 매출은 <b>일마감(DPS 합계)</b>이 1차 출처입니다. 건별 입력(원장)은 고객·상품 분석용이며, 두 값의 차이가 크면 미입력을 의심하세요.</div>
+        <div class="card"><h3>일별 마감 현황 <span>노란 칸 = 미마감</span></h3>
+          <div class="tw"><table class="daily-grid"><thead><tr><th>날짜</th><th class="num">일시불</th><th class="num">구독</th><th class="num">직판</th><th class="num">환불</th><th class="num">순매출</th><th>입력자</th></tr></thead><tbody id="tbDaily"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ═══ 접수함 ═══ -->
+      <div class="view hidden" id="v-inbox">
+        <div class="card"><h3>고객 폼 접수 <span>승인하면 원장에 들어갑니다 · 금액은 승인 시 입력</span>
+          <div class="actions"><select class="in" id="ibStatus" onchange="loadInbox()"><option>접수</option><option>승인</option><option>반려</option></select></div></h3>
+          <div class="tw"><table><thead><tr><th>접수</th><th>고객</th><th>연락처</th><th>채널</th><th>담당</th><th>상품</th><th>만족</th><th>리뷰</th><th>관심상품</th><th>동의</th><th></th></tr></thead><tbody id="tbInbox"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ═══ 상담 ═══ -->
+      <div class="view hidden" id="v-consults">
+        <div class="card">
+          <div class="filters">
+            <select class="in" id="cRes"><option value="">전체 결과</option><option>진행중</option><option>보류</option><option>구매완료</option><option>종료</option></select>
+            <input class="in" id="cQ" placeholder="고객명 · 내용 · 품목" style="min-width:200px" onkeydown="if(event.key==='Enter')loadConsults(0)">
+            <button class="btn" onclick="loadConsults(0)">조회</button>
+            <label class="switch" id="cUnmask" onclick="this.classList.toggle('on');loadConsults(0)"><span class="sw"></span>실번호 표시</label>
+          </div>
+          <div class="tw"><table><thead><tr><th>상담일</th><th>번호</th><th>고객</th><th>연락처</th><th>관심</th><th>유입경로</th><th>상담사</th><th class="num">예상금액</th><th>예정일</th><th>결과</th><th>내용</th></tr></thead><tbody id="tbConsults"></tbody></table></div>
+          <div class="pager"><span id="cCount"></span><div class="btns"><button class="btn sm ghost" onclick="loadConsults(cPage-1)">‹ 이전</button><button class="btn sm ghost" onclick="loadConsults(cPage+1)">다음 ›</button></div></div>
+        </div>
+      </div>
+
+      <!-- ═══ CRM 발송 대상 ═══ -->
+      <div class="view hidden" id="v-crm">
+        <div class="card"><h3>발송 대상 추출 <span>수신동의 고객만 · 조회는 감사로그에 기록</span></h3>
+          <div class="filters">
+            <input class="in" id="crmReason" placeholder="캠페인명 (예: 9월 정수기필터 재구매)" style="min-width:280px">
+            <label class="switch on" id="crmNext" onclick="this.classList.toggle('on')"><span class="sw"></span>관심상품 있는 고객만</label>
+            <button class="btn" onclick="loadTargets()">추출</button>
+            <button class="btn ghost" onclick="copyTargets()">CSV 복사</button>
+          </div>
+          <div class="tw"><table><thead><tr><th>고객</th><th>연락처</th><th>최근 구매</th><th>관심 상품</th><th>담당</th></tr></thead><tbody id="tbTargets"></tbody></table></div>
+          <textarea class="copybox hidden" id="targetsCsv"></textarea>
+        </div>
+      </div>
+
+      <!-- ═══ 업로드 ═══ -->
+      <div class="view hidden" id="v-upload">
+        <div class="grid g32">
+          <div>
+            <div class="card">
+              <h3>원본 파일 업로드 <span>형식 자동 인식 · 재업로드해도 중복 없음</span></h3>
+              <div class="drop" id="drop" onclick="document.getElementById('file').click()"><b>파일을 끌어다 놓거나 클릭</b>샵링커 주문 · 이카운트 판매현황 · 이카운트 가망고객 · 렌탈 · 고도몰 회원 · 매장 일별(Manual) · xlsx / xls / csv</div>
+              <input type="file" id="file" class="hidden" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])">
+              <div id="upPreview" class="hidden" style="margin-top:14px">
+                <div class="callout" id="upDetect"></div>
+                <div class="fgrid" id="upOpts"></div>
+                <div class="tw" style="max-height:220px;overflow:auto"><table><thead id="upHead"></thead><tbody id="upBody"></tbody></table></div>
+                <div class="prog"><i id="upBar"></i></div>
+                <div style="display:flex;gap:8px;align-items:center"><button class="btn" id="upBtn" onclick="runUpload()">적재 실행</button><span class="note" id="upMsg"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card"><h3>업로드 이력</h3><div class="tw"><table><thead><tr><th>일시</th><th>원천</th><th>파일</th><th class="num">행</th><th class="num">건너뜀</th></tr></thead><tbody id="tbUploads"></tbody></table></div></div>
+        </div>
+        <div class="card"><h3>형식별 매핑 규칙</h3>
+          <div class="note">
+            <b>샵링커</b> 주문번호+자사주문번호 → 원장 라인 · 쇼핑몰×아이디 → 채널 · 배송상태가 취소/반품 완료면 환불 처리 · 주문자연락처2 우선<br>
+            <b>이카운트 판매현황</b> 일자-No.+순번 → 라인 · 합계(VAT포함)=매출 · 거래처명+모바일 → 고객 · 사용기종 보관 · 채널 VMS<br>
+            <b>이카운트 가망고객</b> 일자-No. → 상담번호 · 결과명 그대로 · 관심 품목명 → 관심 분류<br>
+            <b>렌탈</b> 계약번호 → 주문번호 · 거래처 → 고객(전화 없음) · 금액 → 매출<br>
+            <b>고도몰 회원</b> 이름+휴대폰 → 고객 키 · SMS수신여부 y → 수신동의 · 몰별 회원번호 보관 · 휴대폰 없는 회원은 건너뜀<br>
+            <b>매장 일별(Manual 시트)</b> 날짜 × 매장-일시불/구독/프로-직판 → 일마감
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ 설정 ═══ -->
+      <div class="view hidden" id="v-settings">
+        <div class="grid g2">
+          <div class="card"><h3>매장 입력 설정</h3>
+            <div class="fgrid"><div><label>매장 입력 코드 (PIN)</label><input class="in" id="setPin"></div><div><label>담당 프로 목록 (쉼표 구분)</label><input class="in" id="setHandlers"></div></div>
+            <button class="btn" onclick="saveSettings()">저장</button>
+            <p class="note" style="margin-top:10px">PIN을 바꾸면 매장 기기에서 다시 입력해야 합니다. 프로 목록은 매장 화면 드롭다운과 원장 담당 필터에 쓰입니다.</p>
+          </div>
+          <div class="card"><h3>계정 · 권한 <span>Supabase Auth → Users 에서 초대 후 여기서 권한 지정</span></h3>
+            <div class="tw"><table><thead><tr><th>이메일</th><th>권한</th><th>담당명</th><th>활성</th><th></th></tr></thead><tbody id="tbProfiles"></tbody></table></div>
+            <p class="note" style="margin-top:10px"><b>admin</b> 삭제·일괄 적재·설정 · <b>user</b> 조회·입력·승인. 실번호 표시는 권한이 아니라 화면 토글이며 켤 때마다 감사로그에 남습니다.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ═══ 원장 수정 모달 ═══ -->
+<div class="overlay hidden" id="orderModal"><div class="modal">
+  <h3 id="omTitle">주문 수정</h3>
+  <input type="hidden" id="omId">
+  <div class="fgrid">
+    <div><label>구분</label><select class="in" id="omCh"><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select></div>
+    <div><label>주문일</label><input class="in" type="date" id="omDate"></div>
+    <div><label>담당</label><input class="in" id="omHandler" list="handlerList"></div>
+    <div><label>상태</label><select class="in" id="omStatus"><option>결제완료</option><option>신규</option><option>발송</option><option>취소</option><option>반품</option></select></div>
+  </div>
+  <div class="fgrid">
+    <div><label>고객명</label><input class="in" id="omName"></div>
+    <div><label>휴대폰</label><input class="in" id="omPhone" placeholder="010-0000-0000"></div>
+    <div><label>매장 구분</label><select class="in" id="omKind"><option value="">-</option><option>일시불</option><option>구독</option><option>직판</option></select></div>
+  </div>
+  <div class="fgrid">
+    <div style="grid-column:span 2"><label>상품명</label><input class="in" id="omProduct"></div>
+    <div><label>모델코드</label><input class="in" id="omModel"></div>
+  </div>
+  <div class="fgrid">
+    <div><label>수량</label><input class="in num" type="number" id="omQty" value="1"></div>
+    <div><label>매출 (VAT포함)</label><input class="in num" type="number" id="omGross"></div>
+    <div><label>환불</label><input class="in num" type="number" id="omRefund" value="0"></div>
+  </div>
+  <div class="fgrid"><div style="grid-column:1/-1"><label>비고</label><input class="in" id="omNotes"></div></div>
+  <div class="foot"><button class="btn ghost" onclick="closeModal('orderModal')">취소</button><button class="btn" onclick="saveOrder()">저장</button></div>
+</div></div>
+
+<!-- ═══ 승인 모달 ═══ -->
+<div class="overlay hidden" id="approveModal"><div class="modal" style="max-width:420px">
+  <h3>접수 승인 → 원장 등록</h3>
+  <input type="hidden" id="apId">
+  <div class="fgrid"><div><label>매출 금액 (VAT포함)</label><input class="in num" type="number" id="apGross" placeholder="0"></div><div><label>모델코드 (선택)</label><input class="in" id="apModel"></div></div>
+  <p class="note" id="apInfo"></p>
+  <div class="foot"><button class="btn ghost" onclick="closeModal('approveModal')">취소</button><button class="btn ok" onclick="approve()">승인</button></div>
+</div></div>
+
+<datalist id="handlerList"></datalist>
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════ 설정 ═══════════════ */
+const SUPABASE_URL = "https://wdahskrcpjooqhwwxjiu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* 샵링커 (쇼핑몰, 쇼핑몰아이디) → 채널. 새 계정이 생기면 여기에 추가 */
+const SHOP_MAP = {
+  '고도몰5|pcnik35-P':'P몰|자사몰', '고도몰5|pcnik35-S':'S몰|자사몰', '고도몰5|pcnik35-AT':'AT몰|자사몰', '고도몰5|samsungsh':'시흥몰|자사몰',
+  '스마트스토어|samsung_pmall':'E스토어|오픈마켓', '스마트스토어|samsungat@naver.com':'B2B스토어|오픈마켓', '스마트스토어|samsungshmall@naver.com':'시흥스토어|오픈마켓',
+  'SSG몰|samsungat1':'SSG|오픈마켓', '롯데온|samsungat1':'롯데온|오픈마켓', '쿠팡|samsungat':'쿠팡|오픈마켓', '11번가|samsungat':'11번가|오픈마켓',
+  '지마켓|samsungat':'지마켓|오픈마켓', '(주)옥션|samsungat':'옥션|오픈마켓', '(주)현대홈쇼핑|samsungat':'현대홈쇼핑|오픈마켓',
+  'SK스토아|E131250':'SK스토아|오픈마켓', '토스쇼핑|samsungat@naver.com':'토스쇼핑|오픈마켓', '가전시장|*':'가전시장|오픈마켓', '한퓨어|*':'한퓨어|오픈마켓'
+};
+const REFUND_STATES = ['배송전취소','취소완료','주문취소완료','입금전취소','반품완료','반품입고'];
+const C = {매장:'var(--c1)',직판:'var(--c4)',자사몰:'var(--c3)',오픈마켓:'var(--c2)',VMS:'var(--c6)',렌탈:'var(--c7)',직배:'var(--c5)'};
+
+/* ═══════════════ 유틸 ═══════════════ */
+const $ = id => document.getElementById(id);
+const won = v => Math.round(Number(v)||0).toLocaleString('ko-KR') + '원';
+const wonK = v => { v=Number(v)||0; const a=Math.abs(v); return a>=1e8 ? (v/1e8).toFixed(2).replace(/\.?0+$/,'')+'억원' : a>=1e4 ? Math.round(v/1e4).toLocaleString('ko-KR')+'만원' : won(v); };
+const n = v => Math.round(Number(v)||0).toLocaleString('ko-KR');
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const iso = d => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const dfmt = s => s ? String(s).slice(0,10) : '-';
+let toastT; function toast(m,c=''){ const t=$('toast'); t.textContent=m; t.className='toast show '+c; clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast',3000); }
+async function rpc(fn,args={}){ const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
+function closeModal(id){ $(id).classList.add('hidden'); }
+const tip=$('tip'); function showTip(e,html){ tip.innerHTML=html; tip.style.opacity=1; tip.style.left=(e.clientX+12)+'px'; tip.style.top=(e.clientY-10)+'px'; } function hideTip(){ tip.style.opacity=0; }
+
+/* ═══════════════ 인증 ═══════════════ */
+let ME=null, HANDLERS=[];
+async function boot(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ $('login').classList.remove('hidden'); $('app').classList.add('hidden'); return; }
+  try{ ME = await rpc('fn_me'); }catch(e){ ME=null; }
+  if(!ME){ $('lErr').textContent='프로필이 없습니다. 관리자에게 문의하세요.'; await sb.auth.signOut(); return; }
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  $('uEmail').textContent=ME.email; $('uRole').textContent=ME.role.toUpperCase();
+  try{ HANDLERS=((await rpc('fn_setting_get',{p_key:'store_handlers'}))||'').split(',').map(x=>x.trim()).filter(Boolean); }catch(e){}
+  $('oHd').innerHTML='<option value="">전체 담당</option>'+HANDLERS.map(h=>`<option>${h}</option>`).join('');
+  $('handlerList').innerHTML=HANDLERS.map(h=>`<option value="${h}">`).join('');
+  setPreset('30'); show('dash');
+}
+async function login(){ $('lErr').textContent=''; const {error}=await sb.auth.signInWithPassword({email:$('lEmail').value.trim(),password:$('lPw').value}); if(error){ $('lErr').textContent='로그인 실패: '+error.message; return; } boot(); }
+async function logout(){ await sb.auth.signOut(); location.reload(); }
+$('lPw').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
+
+/* ═══════════════ 기간 ═══════════════ */
+let P={from:null,to:null};
+function setPreset(p){
+  const t=new Date(); let f,to=new Date(t);
+  if(p==='tm'){ f=new Date(t.getFullYear(),t.getMonth(),1); }
+  else if(p==='lm'){ f=new Date(t.getFullYear(),t.getMonth()-1,1); to=new Date(t.getFullYear(),t.getMonth(),0); }
+  else if(p==='y'){ f=new Date(t.getFullYear(),0,1); }
+  else { f=new Date(t); f.setDate(f.getDate()-Number(p)); }
+  P={from:iso(f),to:iso(to)}; $('pFrom').value=P.from; $('pTo').value=P.to;
+  document.querySelectorAll('.preset button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  refreshView();
+}
+document.querySelectorAll('.preset button').forEach(b=>b.addEventListener('click',()=>setPreset(b.dataset.p)));
+function applyPeriod(){ P={from:$('pFrom').value,to:$('pTo').value}; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); refreshView(); }
+
+/* ═══════════════ 네비 ═══════════════ */
+const TITLES={dash:'매출 대시보드',orders:'통합 원장',daily:'매장 일마감',inbox:'고객 접수함',consults:'상담 · 가망고객',crm:'발송 대상 추출',upload:'원본 파일 업로드',settings:'설정 · 담당자'};
+let VIEW='dash';
+function show(v){ VIEW=v; document.querySelectorAll('.view').forEach(x=>x.classList.toggle('hidden',x.id!=='v-'+v));
+  document.querySelectorAll('.nav[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===v)); $('title').textContent=TITLES[v];
+  $('periodBar').classList.toggle('hidden', !['dash','orders','daily','consults'].includes(v)); refreshView(); }
+document.querySelectorAll('.nav[data-v]').forEach(x=>x.addEventListener('click',()=>show(x.dataset.v)));
+function refreshView(){ ({dash:loadDash,orders:()=>loadOrders(0),daily:loadDaily,inbox:loadInbox,consults:()=>loadConsults(0),crm:()=>{},upload:loadUploads,settings:loadSettings})[VIEW](); }
+
+/* ═══════════════ 대시보드 ═══════════════ */
+async function loadDash(){
+  let k; try{ k=await rpc('fn_dashboard_kpi',{p_from:P.from,p_to:P.to}); }catch(e){ return toast(e.message,'bad'); }
+  const sd=k.store_daily||{sum:[],unclosed:0}; const sdNet=sd.sum.reduce((a,x)=>a+Number(x.net),0);
+  const pend=Number(k.pending_submissions||0); $('badgeInbox').textContent=pend; $('badgeInbox').classList.toggle('hidden',!pend);
+  $('kpis').innerHTML=`
+    <div class="kpi"><div class="t">순매출 · 원장</div><div class="v">${wonK(k.total.net)}</div><div class="s">${won(k.total.net)} · 환불 ${n(k.total.refund)}</div></div>
+    <div class="kpi"><div class="t">거래 건수</div><div class="v">${n(k.total.cnt)}건</div><div class="s">구매자 ${n(k.total.buyers)}명 (연락처 식별 기준)</div></div>
+    <div class="kpi"><div class="t">매장 일마감 순매출</div><div class="v">${wonK(sdNet)}</div><div class="s">${sd.sum.length?sd.sum.map(x=>x.sale_kind+(x.handler?'('+x.handler+')':'')+' '+n(x.net)).join(' · '):'마감 없음'}</div></div>
+    <div class="kpi ${sd.unclosed?'warn':''}"><div class="t">미마감 일수</div><div class="v">${sd.unclosed}일</div><div class="s">최근 60일 내 · 매장 일마감 탭</div></div>
+    <div class="kpi"><div class="t">상담 · 가망</div><div class="v">${n(k.consults.open)}건 진행</div><div class="s">예상 ${wonK(k.consults.open_amount)} · 구매전환 ${n(k.consults.won)}건</div></div>
+    <div class="kpi ${pend?'warn':''}"><div class="t">고객 폼 미처리</div><div class="v">${pend}건</div><div class="s">접수함에서 승인 필요</div></div>`;
+  // 채널 막대
+  const max=Math.max(1,...k.by_channel.map(x=>Number(x.net)));
+  $('chChannel').innerHTML=k.by_channel.length?k.by_channel.map(x=>`<div class="hbar"><span class="tag ${x.channel_type}">${x.channel_type}</span><div class="b" style="width:${Math.max(2,100*Number(x.net)/max)}%;background:${C[x.channel_type]||'var(--c8)'}"></div><div class="v">${n(x.net)}<small>${n(x.cnt)}건</small></div></div>`).join('')
+    :'<div class="note">기간 내 데이터 없음</div>';
+  const hmax=Math.max(1,...k.by_handler.map(x=>Number(x.net)));
+  $('chHandler').innerHTML=k.by_handler.length?k.by_handler.slice(0,10).map(x=>`<div class="hbar"><span style="font-weight:600">${esc(x.handler)}</span><div class="b" style="width:${Math.max(2,100*Number(x.net)/hmax)}%"></div><div class="v">${n(x.net)}<small>${n(x.cnt)}건</small></div></div>`).join(''):'<div class="note">담당자 기록 없음</div>';
+  $('chDay').innerHTML=lineChart(k.by_day.map(x=>({x:x.d,y:Number(x.net),c:x.cnt})));
+  $('dayHint').textContent=`${P.from} ~ ${P.to}`;
+  $('tbChannel').innerHTML=k.by_channel_name.map(x=>`<tr><td><span class="tag ${x.channel_type}">${x.channel_type}</span></td><td>${esc(x.channel_name)}</td><td class="num">${n(x.cnt)}</td><td class="num"><b>${n(x.net)}</b></td></tr>`).join('')||'<tr><td colspan="4" class="note">없음</td></tr>';
+  $('tbTop').innerHTML=k.top_products.map((x,i)=>`<tr><td class="num" style="color:var(--faint)">${i+1}</td><td class="mono">${esc(x.model_code||'-')}</td><td class="wrap">${esc(x.name||'')}</td><td class="num">${n(x.qty)}</td><td class="num"><b>${n(x.net)}</b></td></tr>`).join('')||'<tr><td colspan="5" class="note">없음</td></tr>';
+  $('storeDaily').innerHTML=sd.sum.length?`<div class="hbars">${sd.sum.map(x=>`<div class="hbar"><span class="tag ${x.sale_kind==='직판'?'직판':'매장'}">${x.sale_kind}${x.handler?' · '+esc(x.handler):''}</span><div class="b" style="width:${Math.max(2,100*Number(x.net)/Math.max(1,sdNet))}%;background:${x.sale_kind==='구독'?'var(--c7)':x.sale_kind==='직판'?'var(--c4)':'var(--c1)'}"></div><div class="v">${n(x.net)}<small>${x.days}일</small></div></div>`).join('')}</div>`
+    :'<div class="note">기간 내 마감 없음 — 매장 화면에서 일 마감을 입력하면 여기에 집계됩니다.</div>';
+}
+function lineChart(pts){
+  if(!pts.length) return '<div class="note" style="padding:30px 0;text-align:center">기간 내 데이터 없음</div>';
+  const W=720,H=220,l=56,r=12,t=14,b=30; const max=Math.max(1,...pts.map(p=>p.y)); const xs=i=>l+(W-l-r)*(pts.length===1?.5:i/(pts.length-1)); const ys=v=>t+(H-t-b)*(1-v/max);
+  const path=pts.map((p,i)=>(i?'L':'M')+xs(i).toFixed(1)+' '+ys(p.y).toFixed(1)).join(' ');
+  const area=path+` L${xs(pts.length-1).toFixed(1)} ${ys(0)} L${xs(0).toFixed(1)} ${ys(0)} Z`;
+  const ticks=[0,.5,1].map(f=>`<line x1="${l}" x2="${W-r}" y1="${ys(max*f)}" y2="${ys(max*f)}"/><text x="${l-8}" y="${ys(max*f)+4}" text-anchor="end">${fmtShort(max*f)}</text>`).join('');
+  const step=Math.ceil(pts.length/8); const xl=pts.map((p,i)=>(i%step===0 && (pts.length-1-i)>=step/2)||i===pts.length-1?`<text x="${xs(i)}" y="${H-8}" text-anchor="middle">${p.x.slice(5).replace('-','/')}</text>`:'').join('');
+  const dots=pts.map((p,i)=>`<circle cx="${xs(i)}" cy="${ys(p.y)}" r="9" fill="transparent" onmousemove="showTip(event,'${p.x}<br><b>${won(p.y)}</b> · ${p.c}건')" onmouseleave="hideTip()"/>`).join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}"><g class="grid">${ticks}</g><path d="${area}" fill="var(--accent-soft)"/><path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>${xl}${dots}</svg>`;
+}
+function fmtShort(v){ return v>=1e8?(v/1e8).toFixed(1)+'억':v>=1e4?Math.round(v/1e4)+'만':Math.round(v); }
+
+/* ═══════════════ 원장 ═══════════════ */
+let oPage=0, oRows=[];
+async function loadOrders(page){
+  oPage=Math.max(0,page); const unmask=$('oUnmask').classList.contains('on');
+  try{ oRows=await rpc('fn_order_list',{p_from:P.from,p_to:P.to,p_channel:$('oCh').value||null,p_handler:$('oHd').value||null,p_q:$('oQ').value||null,p_limit:50,p_offset:oPage*50,p_unmask:unmask}); }catch(e){ return toast(e.message,'bad'); }
+  const total=oRows[0]?.total_count||0;
+  $('oCount').textContent=`총 ${n(total)}건 · ${oPage*50+1}~${Math.min(total,(oPage+1)*50)}`;
+  $('tbOrders').innerHTML=oRows.map(o=>`<tr>
+    <td class="mono">${dfmt(o.order_at)}</td><td><span class="tag ${o.channel_type}">${o.channel_type}</span></td><td>${esc(o.channel_name)}</td>
+    <td><b>${esc(o.customer_name)}</b></td><td class="mono" style="color:${unmask?'var(--bad)':'var(--muted)'}">${esc(o.customer_phone||'-')}</td>
+    <td class="wrap">${esc(o.product_name||'')}</td><td class="num">${n(o.qty)}</td><td class="num">${n(o.gross_amount)}</td><td class="num" style="color:var(--bad)">${Number(o.refund_amount)?n(o.refund_amount):''}</td>
+    <td class="num"><b>${n(o.net_amount)}</b></td><td>${esc(o.handler||'')}</td><td style="color:var(--muted);font-size:12px">${esc(o.status)}</td>
+    <td><button class="btn sm ghost" onclick="openOrderModal(${o.id})">수정</button>${ME.can_delete?`<button class="btn sm danger" style="margin-left:4px" onclick="delOrder(${o.id})">삭제</button>`:''}</td></tr>`).join('')||'<tr><td colspan="13" class="note" style="text-align:center;padding:24px">조건에 맞는 주문 없음</td></tr>';
+}
+function openOrderModal(id){
+  const o=id?oRows.find(x=>x.id===id):null; $('omTitle').textContent=o?'주문 수정':'수동 등록'; $('omId').value=o?o.id:'';
+  $('omCh').value=o?.channel_type||'매장'; $('omDate').value=o?dfmt(o.order_at):iso(new Date()); $('omHandler').value=o?.handler||''; $('omStatus').value=o?.status||'결제완료';
+  $('omName').value=o&&o.customer_name!=='(비회원)'?o.customer_name:''; $('omPhone').value=o?.customer_phone&&!/\*/.test(o.customer_phone)?o.customer_phone:''; $('omKind').value='';
+  $('omProduct').value=o?.product_name||''; $('omModel').value=''; $('omQty').value=o?.qty||1; $('omGross').value=o?Number(o.gross_amount):''; $('omRefund').value=o?Number(o.refund_amount):0; $('omNotes').value=o?.notes||'';
+  $('orderModal').classList.remove('hidden');
+}
+async function saveOrder(){
+  const id=$('omId').value?Number($('omId').value):null;
+  const d={channel_type:$('omCh').value,order_at:$('omDate').value,handler:$('omHandler').value,status:$('omStatus').value,customer_name:$('omName').value,customer_phone:$('omPhone').value,sale_kind:$('omKind').value,
+    product_name:$('omProduct').value,model_code:$('omModel').value,qty:Number($('omQty').value)||1,gross_amount:Number($('omGross').value)||0,refund_amount:Number($('omRefund').value)||0,notes:$('omNotes').value};
+  if(!d.product_name) return toast('상품명을 입력하세요','bad');
+  try{ await rpc('fn_order_save',{p_id:id,p_data:d}); toast('저장됨','ok'); closeModal('orderModal'); loadOrders(oPage); }catch(e){ toast(e.message,'bad'); }
+}
+async function delOrder(id){ if(!confirm('이 주문을 삭제할까요? 되돌릴 수 없습니다.')) return; try{ await rpc('fn_order_delete',{p_id:id}); toast('삭제됨'); loadOrders(oPage); }catch(e){ toast(e.message,'bad'); } }
+async function exportOrders(){
+  const unmask=$('oUnmask').classList.contains('on');
+  if(!confirm(`${P.from} ~ ${P.to} 원장을 엑셀로 내보냅니다.${unmask?'\n실번호 포함 — 감사로그에 기록됩니다.':''}`)) return;
+  try{ const rows=await rpc('fn_order_export',{p_from:P.from,p_to:P.to,p_unmask:unmask});
+    const ws=XLSX.utils.json_to_sheet(rows); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'원장'); XLSX.writeFile(wb,`통합원장_${P.from}_${P.to}.xlsx`); toast(`${n(rows.length)}행 내보냄`,'ok');
+  }catch(e){ toast(e.message,'bad'); }
+}
+
+/* ═══════════════ 매장 일마감 ═══════════════ */
+async function loadDaily(){
+  let rows; try{ rows=await rpc('fn_store_daily_list',{p_from:P.from,p_to:P.to}); }catch(e){ return toast(e.message,'bad'); }
+  const by={}; rows.forEach(r=>{ const d=by[r.biz_date]||(by[r.biz_date]={일시불:0,구독:0,직판:0,refund:0,by:r.entered_by}); by[r.biz_date][r.sale_kind]+=Number(r.sales); by[r.biz_date].refund+=Number(r.refund); });
+  const out=[]; const end=new Date(P.to+'T00:00:00'); const today=iso(new Date());
+  for(let d=new Date(P.from+'T00:00:00'); d<=end; d.setDate(d.getDate()+1)){ const k=iso(d); if(k>=today) continue; const r=by[k];
+    out.push(r?`<tr><td class="mono">${k}</td><td class="num">${n(r.일시불)}</td><td class="num">${n(r.구독)}</td><td class="num">${n(r.직판)}</td><td class="num" style="color:var(--bad)">${r.refund?n(r.refund):''}</td><td class="num"><b>${n(r.일시불+r.구독+r.직판-r.refund)}</b></td><td style="color:var(--muted)">${esc(r.by||'')}</td></tr>`
+                :`<tr><td class="mono">${k}</td><td class="miss" colspan="6">미마감</td></tr>`); }
+  $('tbDaily').innerHTML=out.reverse().join('')||'<tr><td colspan="7" class="note">기간 없음</td></tr>';
+}
+
+/* ═══════════════ 접수함 ═══════════════ */
+let ibRows=[];
+async function loadInbox(){
+  try{ ibRows=await rpc('fn_submission_list',{p_status:$('ibStatus').value,p_limit:100,p_offset:0}); }catch(e){ return toast(e.message,'bad'); }
+  $('tbInbox').innerHTML=ibRows.map(s=>`<tr><td class="mono">${dfmt(s.submitted_at)}</td><td><b>${esc(s.customer_name)}</b></td><td class="mono">${esc(s.customer_phone)}</td><td><span class="tag ${s.channel_type||'매장'}">${esc(s.channel_type||'-')}</span></td><td>${esc(s.handler||'-')}</td><td class="wrap">${esc(s.product_name||'')}</td><td>${'★'.repeat(s.rating||0)}</td><td style="font-size:12px">${esc(s.review_status||'')}${s.review_url?` <a href="${esc(s.review_url)}" target="_blank" title="${esc(s.review_url)}">↗</a>`:''}</td><td style="color:var(--ok);font-weight:600">${esc(s.next_product||'')}</td><td><span class="tag ${s.consent_marketing?'y':'n'}">${s.consent_marketing?'동의':'미동의'}</span></td>
+    <td>${s.status==='접수'?`<button class="btn sm ok" onclick="openApprove(${s.id})">승인</button> <button class="btn sm ghost" onclick="reject(${s.id})">반려</button>`:`<span class="tag ${s.status}">${s.status}</span>`}</td></tr>`).join('')||'<tr><td colspan="11" class="note" style="text-align:center;padding:24px">없음</td></tr>';
+}
+function openApprove(id){ const s=ibRows.find(x=>x.id===id); $('apId').value=id; $('apGross').value=''; $('apModel').value=''; $('apInfo').textContent=`${s.customer_name} · ${s.product_name||'-'} · ${s.channel_type||''} · 담당 ${s.handler||'-'}`; $('approveModal').classList.remove('hidden'); }
+async function approve(){ try{ await rpc('fn_submission_approve',{p_id:Number($('apId').value),p_gross:Number($('apGross').value)||0,p_model_code:$('apModel').value||null}); toast('원장에 등록됨','ok'); closeModal('approveModal'); loadInbox(); }catch(e){ toast(e.message,'bad'); } }
+async function reject(id){ if(!confirm('반려할까요?')) return; try{ await rpc('fn_submission_reject',{p_id:id}); loadInbox(); }catch(e){ toast(e.message,'bad'); } }
+
+/* ═══════════════ 상담 ═══════════════ */
+let cPage=0;
+async function loadConsults(page){
+  cPage=Math.max(0,page); const unmask=$('cUnmask').classList.contains('on'); let rows;
+  try{ rows=await rpc('fn_consult_list',{p_from:P.from,p_to:P.to,p_result:$('cRes').value||null,p_q:$('cQ').value||null,p_limit:50,p_offset:cPage*50,p_unmask:unmask}); }catch(e){ return toast(e.message,'bad'); }
+  const total=rows[0]?.total_count||0; $('cCount').textContent=`총 ${n(total)}건`;
+  $('tbConsults').innerHTML=rows.map(c=>`<tr><td class="mono">${dfmt(c.consult_at)}</td><td class="mono" style="font-size:11px;color:var(--muted)">${esc(c.source_ref)}</td><td><b>${esc(c.customer_name||'-')}</b></td><td class="mono">${esc(c.phone||'-')}</td><td>${esc(c.interest_category||'')}${c.interest_model_code?' <span class="mono" style="color:var(--muted)">'+esc(c.interest_model_code)+'</span>':''}</td><td style="font-size:12px">${esc(c.inflow_route||'')}</td><td>${esc(c.handler||'')}</td><td class="num">${c.expected_amount?n(c.expected_amount):''}</td><td class="mono">${dfmt(c.expected_purchase_date)}</td>
+    <td><select class="in" style="padding:3px 6px;font-size:12px" onchange="setResult(${c.id},this.value)">${['진행중','보류','구매완료','종료'].map(r=>`<option ${r===c.result?'selected':''}>${r}</option>`).join('')}</select></td><td class="wrap" style="font-size:12px;color:var(--ink-2)">${esc(c.content||'')}</td></tr>`).join('')||'<tr><td colspan="11" class="note" style="text-align:center;padding:24px">없음</td></tr>';
+}
+async function setResult(id,v){ try{ await rpc('fn_consult_save',{p_id:id,p_data:{result:v}}); toast('결과 변경됨','ok'); }catch(e){ toast(e.message,'bad'); } }
+
+/* ═══════════════ CRM 발송 대상 ═══════════════ */
+let tRows=[];
+async function loadTargets(){
+  const reason=$('crmReason').value.trim(); if(reason.length<3) return toast('캠페인명을 3자 이상 입력하세요','bad');
+  try{ tRows=await rpc('fn_crm_targets',{p_reason:reason,p_next_product:$('crmNext').classList.contains('on'),p_limit:1000}); }catch(e){ return toast(e.message,'bad'); }
+  $('tbTargets').innerHTML=tRows.map(t=>`<tr><td><b>${esc(t.name)}</b></td><td class="mono" style="color:var(--bad)">${esc(t.phone)}</td><td class="wrap">${esc(t.last_product||'')}</td><td style="color:var(--ok);font-weight:600">${esc(t.next_product||'')}</td><td>${esc(t.handler||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="note" style="text-align:center;padding:24px">대상 없음</td></tr>';
+  toast(`${tRows.length}명 추출 · 감사로그 기록됨`,'ok');
+}
+function copyTargets(){ if(!tRows.length) return toast('먼저 추출하세요','bad'); const csv='이름,연락처,최근구매,관심상품,담당\n'+tRows.map(t=>[t.name,t.phone,t.last_product,t.next_product,t.handler].map(x=>`"${String(x||'').replace(/"/g,'""')}"`).join(',')).join('\n'); navigator.clipboard.writeText(csv).then(()=>toast('CSV 복사됨','ok')); }
+
+/* ═══════════════ 업로드 ═══════════════ */
+let UP=null;
+const drop=$('drop'); ['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')})); ['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')})); drop.addEventListener('drop',ev=>handleFile(ev.dataTransfer.files[0]));
+const H = (row,...names)=>{ for(const k of names){ const key=Object.keys(row).find(c=>c.replace(/\s/g,'')===k.replace(/\s/g,'')); if(key!==undefined && row[key]!==undefined && row[key]!=='') return row[key]; } return ''; };
+const str=v=>v===undefined||v===null?'':String(v).trim();
+function excelDate(v){ if(v===''||v==null) return null; if(v instanceof Date) return iso(v); if(typeof v==='number' && v>=19000101) v=String(Math.round(v)); if(typeof v==='number'){ const d=XLSX.SSF.parse_date_code(v); return d?`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`:null; } const s=String(v).trim(); let m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/); if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`; m=s.match(/^(\d{4})(\d{2})(\d{2})(\d{2})?(\d{2})?(\d{2})?/); if(m) return `${m[1]}-${m[2]}-${m[3]}${m[4]?`T${m[4]}:${m[5]||'00'}:${m[6]||'00'}+09:00`:''}`; return null; }
+function detect(cols){
+  const has=(...k)=>k.every(x=>cols.some(c=>c.replace(/\s/g,'')===x.replace(/\s/g,'')));
+  if(has('쇼핑몰아이디','주문번호','자사주문번호')) return 'shoplinker';
+  if(has('일자-No.','품목명(규격)','공급가액')) return 'ecount_sales';
+  if(has('일자-No.','관심 품목명','유입경로명')) return 'ecount_prospect';
+  if(has('계약번호','청구시작일','거래처')) return 'rental';
+  if(has('회원번호','휴대폰번호','이름')) return 'godo_member';
+  if(has('날짜','매장-일시불')) return 'store_manual';
+  return null;
+}
+const DETECT_LABEL={shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감'};
+function handleFile(file){
+  if(!file) return; const rd=new FileReader();
+  rd.onload=e=>{ try{ const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+    let sheet=wb.Sheets[wb.SheetNames[0]]; let rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+    // 헤더 행 탐색 (이카운트는 1행이 회사명)
+    let hi=rows.findIndex(r=>r.filter(x=>x!=='').length>=5 && r.some(x=>typeof x==='string' && /No\.|번호|날짜|계약번호/.test(x))); if(hi<0) hi=0;
+    const cols=rows[hi].map(c=>String(c).trim()); const kind=detect(cols);
+    if(!kind){ $('upPreview').classList.remove('hidden'); $('upDetect').className='callout warn'; $('upDetect').textContent='형식을 인식하지 못했습니다. 열: '+cols.slice(0,12).join(', '); $('upBtn').disabled=true; return; }
+    const data=rows.slice(hi+1).filter(r=>r.some(x=>x!=='')).map(r=>Object.fromEntries(cols.map((c,i)=>[c,r[i]])));
+    UP={kind,file:file.name,data,cols};
+    $('upPreview').classList.remove('hidden'); $('upDetect').className='callout ok'; $('upDetect').innerHTML=`<b>${DETECT_LABEL[kind]}</b> · ${n(data.length)}행 · ${esc(file.name)}`;
+    $('upOpts').innerHTML = kind==='godo_member' ? `<div><label>몰 구분</label><select class="in" id="upMall">${['P몰','S몰','AT몰','시흥몰'].map(m=>`<option ${new RegExp(m[0]==='시'?'sh':m.toLowerCase().replace('몰',''),'i').test(file.name)?'selected':''}>${m}</option>`).join('')}</select></div>` : '';
+    const mapped=mapRows(UP).slice(0,5); const keys=mapped.length?Object.keys(mapped[0]):[];
+    $('upHead').innerHTML='<tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>'; $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
+    $('upBtn').disabled=false; $('upBar').style.width='0'; $('upMsg').textContent='';
+  }catch(err){ toast('파일 읽기 실패: '+err.message,'bad'); } };
+  rd.readAsArrayBuffer(file);
+}
+function mapRows(u){
+  const d=u.data;
+  if(u.kind==='shoplinker'){ const seq={}; return d.map(r=>{ const no=str(H(r,'주문번호')); seq[no]=(seq[no]||0)+1; const ch=SHOP_MAP[`${str(H(r,'쇼핑몰'))}|${str(H(r,'쇼핑몰아이디'))}`]||SHOP_MAP[`${str(H(r,'쇼핑몰'))}|*`]||`${str(H(r,'쇼핑몰'))}|오픈마켓`; const [cn,ct]=ch.split('|'); const st=str(H(r,'배송상태')); const gross=Number(H(r,'주문금액'))||0; const refund=REFUND_STATES.some(s=>st.includes(s))?gross:0;
+    return {order_no:no,line_no:seq[no],order_at:excelDate(H(r,'주문일자')),channel_type:ct,channel_name:cn,channel_account:str(H(r,'쇼핑몰아이디')),status:st,product_code:str(H(r,'상품코드')),model_code:str(H(r,'모델명')).toUpperCase()||null,product_name:str(H(r,'주문 상품명','자사 상품명')),option_text:str(H(r,'옵션')),qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'쇼핑몰 판매가'))||null,gross_amount:gross,refund_amount:refund,payment_method:str(H(r,'결제')),customer_name:str(H(r,'주문자명')),customer_phone:str(H(r,'주문자연락처2'))||str(H(r,'주문자연락처1')),email:str(H(r,'주문자이메일주소')),address:str(H(r,'수취인 주소')),notes:str(H(r,'클레임여부')).replace(/\n/g,' ').slice(0,80)||null}; }); }
+  if(u.kind==='ecount_sales'){ const seq={}; return d.filter(r=>/^\d{8}-\d+/.test(str(H(r,'일자-No.')))).map(r=>{ const no=str(H(r,'일자-No.')); seq[no]=(seq[no]||0)+1; const biz=str(H(r,'거래처명')); const rep=str(H(r,'대표자명')).replace(/ /g,'');
+    return {order_no:no,line_no:seq[no],order_at:excelDate(no.slice(0,8)),channel_type:'VMS',channel_name:'VMS',status:'결제완료',product_name:str(H(r,'품목명(규격)')),qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'단가'))||null,supply_amount:Number(H(r,'공급가액'))||null,vat_amount:Number(H(r,'부가세'))||null,gross_amount:Number(H(r,'합계'))||((Number(H(r,'공급가액'))||0)+(Number(H(r,'부가세'))||0)),customer_name:biz,customer_phone:str(H(r,'모바일')).replace(/ /g,'')||str(H(r,'일반전화')).replace(/ /g,''),address:str(H(r,'주소2')).replace(/ /g,''),account_type:rep&&rep!==biz?'business':'personal',handler:str(H(r,'판매담당자','판매담당')).replace(/ /g,'')||null,device_model:str(H(r,'사용기종')).replace(/^\.$/,'')||null,notes:str(H(r,'영업담당명'))?'영업:'+str(H(r,'영업담당명')):null}; }); }
+  if(u.kind==='ecount_prospect'){ return d.filter(r=>str(H(r,'일자-No.'))).map(r=>{ const ref=str(H(r,'일자-No.')); return {source_ref:ref,consult_at:excelDate(ref.split(' ')[0]),customer_name:str(H(r,'고객명')),phone:str(H(r,'연락처')),handler:str(H(r,'상담사명')),inflow_route:str(H(r,'유입경로명')),interest_category:str(H(r,'관심 품목명')),purchase_item:str(H(r,'구매 품목명')),result:str(H(r,'결과명')),membership_status:str(H(r,'멤버쉽명')),expected_amount:Number(H(r,'예상금액'))||null,expected_purchase_date:excelDate(H(r,'구매예정일')),content:str(H(r,'상담내용')),notes:[str(H(r,'구분명')),str(H(r,'비고'))].filter(Boolean).join(' / ')||null}; }); }
+  if(u.kind==='rental'){ return d.filter(r=>str(H(r,'계약번호'))).map(r=>({order_no:str(H(r,'계약번호')),line_no:1,order_at:excelDate(H(r,'청구시작일')),channel_type:'렌탈',channel_name:'렌탈',status:'결제완료',product_name:str(H(r,'항목','계약명')),qty:1,gross_amount:Number(H(r,'금액'))||0,payment_method:str(H(r,'유형')),customer_name:str(H(r,'거래처')),account_type:'business',notes:str(H(r,'청구종료일'))?'청구 ~'+excelDate(H(r,'청구종료일')):null})); }
+  if(u.kind==='godo_member'){ return d.map(r=>({member_no:str(H(r,'회원번호')),name:str(H(r,'이름')),phone:str(H(r,'휴대폰번호'))||str(H(r,'전화번호')),email:str(H(r,'이메일')),address:str(H(r,'주소')),consent_sms:/^(y|Y|동의)/.test(str(H(r,'SMS수신여부'))),joined_at:excelDate(H(r,'등록일')),last_login_at:excelDate(H(r,'최종로그인일')),gender:str(H(r,'성별')).slice(0,1)||null,birth:(b=>b&&!/^0000/.test(b)?b:null)(excelDate(H(r,'생일'))),business_no:str(H(r,'사업자번호'))||null})); }
+  if(u.kind==='store_manual'){ const out=[]; d.forEach(r=>{ const date=excelDate(H(r,'날짜')); if(!date) return; const rows=[]; Object.keys(r).forEach(k=>{ const v=Number(r[k]); if(!v||/_환불$/.test(k)) return; const refund=Number(r[k+'_환불'])||0; if(k==='매장-일시불') rows.push({sale_kind:'일시불',sales:v,refund}); else if(k==='매장-구독') rows.push({sale_kind:'구독',sales:v,refund}); else if(/-직판$/.test(k)) rows.push({sale_kind:'직판',handler:k.replace(/프로?-직판$/,''),sales:v,refund}); }); if(rows.length) out.push({date,rows}); }); return out.map(x=>({date:x.date,rows:JSON.stringify(x.rows)})); }
+  return [];
+}
+async function runUpload(){
+  if(!UP) return; const rows=mapRows(UP); const btn=$('upBtn'); btn.disabled=true; let done=0, res={};
+  try{
+    if(UP.kind==='store_manual'){ const pin=await rpc('fn_setting_get',{p_key:'store_pin'}); const raw=UP.data.map(r=>({date:excelDate(H(r,'날짜')),rows:[]})); const mapped=mapRows(UP); for(const m of mapped){ await rpc('fn_store_daily_submit',{p_pin:pin,p_date:m.date,p_rows:JSON.parse(m.rows),p_entered_by:'엑셀'}); done++; $('upBar').style.width=(100*done/mapped.length)+'%'; } res={inserted:done}; }
+    else { const fn={shoplinker:'fn_orders_bulk_upsert',ecount_sales:'fn_orders_bulk_upsert',rental:'fn_orders_bulk_upsert',ecount_prospect:'fn_consults_bulk_upsert',godo_member:'fn_customers_bulk_upsert'}[UP.kind];
+      const src={shoplinker:'shoplinker',ecount_sales:'ecount',rental:'rental',ecount_prospect:'ecount_prospect',godo_member:$('upMall')?.value||'godo'}[UP.kind];
+      const CH=500; for(let i=0;i<rows.length;i+=CH){ const r=await rpc(fn,{p_source:src,p_file_name:UP.file,p_rows:rows.slice(i,i+CH)}); Object.keys(r).forEach(k=>{ if(typeof r[k]==='number' && k!=='upload_id') res[k]=(res[k]||0)+r[k]; }); done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; $('upMsg').textContent=`${n(done)} / ${n(rows.length)}`; } }
+    $('upMsg').textContent='완료 · '+Object.entries(res).map(([k,v])=>`${k} ${n(v)}`).join(' · '); toast('적재 완료','ok'); loadUploads();
+  }catch(e){ toast('적재 중 오류: '+e.message,'bad'); $('upMsg').textContent='오류: '+e.message+` (${n(done)}행까지 처리)`; }
+  btn.disabled=false;
+}
+async function loadUploads(){ try{ const r=await rpc('fn_upload_list',{p_limit:30}); $('tbUploads').innerHTML=r.map(u=>`<tr><td class="mono" style="font-size:12px">${new Date(u.uploaded_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td><td>${esc(u.source)}</td><td class="wrap" style="font-size:12px">${esc(u.file_name||'')}</td><td class="num">${n(u.row_count)}</td><td class="num">${u.error_count?n(u.error_count):''}</td></tr>`).join('')||'<tr><td colspan="5" class="note">없음</td></tr>'; }catch(e){} }
+
+/* ═══════════════ 설정 ═══════════════ */
+async function loadSettings(){
+  try{ $('setPin').value=await rpc('fn_setting_get',{p_key:'store_pin'})||''; $('setHandlers').value=await rpc('fn_setting_get',{p_key:'store_handlers'})||''; }catch(e){}
+  try{ const ps=await rpc('fn_profile_list'); $('tbProfiles').innerHTML=ps.map(p=>`<tr><td>${esc(p.email)}</td><td><select class="in" style="padding:3px 6px" id="pr_${p.id}">${['admin','user','analyst','send'].map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}</select></td><td><input class="in" style="padding:3px 6px;width:90px" id="ph_${p.id}" value="${esc(p.handler_name||'')}" list="handlerList"></td><td><input type="checkbox" id="pa_${p.id}" ${p.active?'checked':''}></td><td><button class="btn sm" onclick="saveProfile('${p.id}')">저장</button></td></tr>`).join(''); }
+  catch(e){ $('tbProfiles').innerHTML=`<tr><td colspan="5" class="note">${ME.role==='admin'?e.message:'관리자만 볼 수 있습니다'}</td></tr>`; }
+}
+async function saveSettings(){ try{ await rpc('fn_setting_set',{p_key:'store_pin',p_value:$('setPin').value.trim()}); await rpc('fn_setting_set',{p_key:'store_handlers',p_value:$('setHandlers').value.trim()}); toast('저장됨','ok'); }catch(e){ toast(e.message,'bad'); } }
+async function saveProfile(id){ try{ await rpc('fn_profile_set',{p_id:id,p_role:$('pr_'+id).value,p_handler_name:$('ph_'+id).value||null,p_active:$('pa_'+id).checked}); toast('권한 저장됨','ok'); }catch(e){ toast(e.message,'bad'); } }
+
+boot();
+</script>
+</body>
+</html>

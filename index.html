@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>구매 고객 리뷰 & 혜택 신청</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{--ground:#F2F3F5;--surface:#fff;--line:#E3E6EB;--line-2:#CBD1DA;--ink:#141820;--ink-2:#3A4250;--muted:#6B7482;--faint:#9AA3B1;
+  --accent:#1B4FA0;--accent-soft:#E8EFFA;--ok:#1F7A4D;--bad:#B23A48;--shadow:0 1px 2px rgba(20,24,32,.05),0 8px 24px rgba(20,24,32,.06)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;background:var(--ground);color:var(--ink);padding:24px 16px 60px;display:flex;justify-content:center;font-size:15px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{width:100%;max-width:520px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.head{background:linear-gradient(135deg,#141820 0%,#1B2A44 100%);color:#fff;padding:30px 24px;text-align:center}
+.head .eyebrow{font-size:11px;letter-spacing:.18em;color:#9AA3B1;font-weight:600}
+.head h1{font-size:21px;font-weight:800;margin:8px 0 6px;letter-spacing:-.02em}
+.head p{font-size:13px;color:#B8C0CC;line-height:1.5}
+.body{padding:26px 24px}
+.f{margin-bottom:16px}
+.f label{display:block;font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:6px}
+.f label .req{color:var(--bad);margin-left:2px}
+.in{width:100%;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:10px;outline:none;font-size:15px;background:#fff;transition:.15s}
+.in:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+textarea.in{min-height:70px;resize:vertical}
+.stars{display:flex;gap:8px;font-size:30px;cursor:pointer;color:#D5D9E0;user-select:none}
+.stars span.on{color:#F5B301}
+.radio{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.radio label{border:1.5px solid var(--line-2);border-radius:10px;padding:11px 12px;font-size:13px;display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500}
+.radio label:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+.agree{background:#F7F8FA;border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.agree div{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--ink-2);margin-bottom:8px}
+.agree div:last-child{margin-bottom:0}
+.agree input{margin-top:3px}
+.btn{width:100%;padding:15px;background:var(--accent);color:#fff;border:0;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:6px}
+.btn:disabled{opacity:.6}
+#done{position:fixed;inset:0;background:rgba(20,24,32,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal{background:#fff;padding:32px 24px;border-radius:16px;width:100%;max-width:360px;text-align:center}
+.modal h2{font-size:20px;color:var(--ok);margin-bottom:8px}
+.modal p{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:20px}
+.modal button{width:100%;padding:12px;background:var(--ink);color:#fff;border:0;border-radius:10px;font-weight:700;cursor:pointer}
+.hidden{display:none!important}
+.err{color:var(--bad);font-size:13px;margin-top:8px;min-height:18px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="eyebrow">SAMSUNG&amp;TECH</div>
+    <h1>구매 고객 리뷰 &amp; 혜택 신청</h1>
+    <p>구매 만족도와 리뷰를 남겨주시면<br>담당 프로가 확인 후 혜택을 전달해 드립니다.</p>
+  </div>
+  <form class="body" id="form" onsubmit="submitForm(event)">
+    <div class="f"><label>성함 <span class="req">*</span></label><input class="in" id="name" placeholder="홍길동" required autocomplete="name"></div>
+    <div class="f"><label>휴대폰 번호 <span class="req">*</span></label><input class="in" type="tel" id="phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)" required autocomplete="tel"></div>
+    <div class="f"><label>구매 채널 <span class="req">*</span></label>
+      <select class="in" id="channel"><option value="매장">시흥점 매장 방문</option><option value="자사몰">온라인 공식몰</option><option value="오픈마켓">스마트스토어 · 오픈마켓</option><option value="렌탈">렌탈 · 구독</option><option value="VMS">기업(B2B) · 복합기 소모품</option></select></div>
+    <div class="f"><label>담당 프로</label>
+      <select class="in" id="handler"><option value="">모름 · 온라인</option><option>장은희</option><option>강민정</option><option>박은지</option><option>송희봉</option><option>권혁찬</option><option>김규완</option></select></div>
+    <div class="f"><label>구매하신 제품 <span class="req">*</span></label><input class="in" id="product" placeholder="예: 갤럭시 Z 폴드8, 비스포크 냉장고" required></div>
+    <div class="f"><label>만족도</label><div class="stars" id="stars"><span class="on">★</span><span class="on">★</span><span class="on">★</span><span class="on">★</span><span class="on">★</span></div></div>
+    <div class="f"><label>리뷰 작성 <span class="req">*</span></label>
+      <div class="radio">
+        <label><input type="radio" name="rv" value="작성완료" checked> 영수증·포토 리뷰 완료</label>
+        <label><input type="radio" name="rv" value="작성예정"> 3일 내 작성 예정</label>
+        <label><input type="radio" name="rv" value="블로그/SNS"> 블로그·SNS 후기</label>
+        <label><input type="radio" name="rv" value="미작성"> 리뷰 미작성</label>
+      </div></div>
+    <div class="f"><label>리뷰 링크 또는 한줄 후기</label><textarea class="in" id="review" placeholder="리뷰 URL 또는 이용 후기"></textarea></div>
+    <div class="f"><label>다음에 관심 있는 제품 <span style="color:var(--faint);font-weight:400">(선택)</span></label><input class="in" id="next" placeholder="예: 사운드바, 워치, 정수기 필터"></div>
+    <div class="agree">
+      <div><input type="checkbox" id="privacy" checked required><label for="privacy"><b>[필수]</b> 개인정보 수집·이용 동의 (혜택 안내 목적, 1년 보관)</label></div>
+      <div><input type="checkbox" id="marketing" checked><label for="marketing"><b>[선택]</b> 맞춤 프로모션·재구매 할인 정보 수신 동의</label></div>
+    </div>
+    <button type="submit" class="btn" id="btn">혜택 신청 완료</button>
+    <div class="err" id="err"></div>
+  </form>
+</div>
+<div id="done" class="hidden"><div class="modal"><h2>접수되었습니다</h2><p>담당 프로가 확인 후<br>혜택을 안내해 드리겠습니다.</p><button onclick="document.getElementById('done').classList.add('hidden')">확인</button></div></div>
+<script>
+const sb = window.supabase.createClient("https://wdahskrcpjooqhwwxjiu.supabase.co","sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW");
+const $=id=>document.getElementById(id);
+let rating=5;
+$('stars').addEventListener('click',e=>{ const s=[...$('stars').children]; const i=s.indexOf(e.target); if(i<0)return; rating=i+1; s.forEach((x,j)=>x.classList.toggle('on',j<=i)); });
+function hyphen(el){ el.value=el.value.replace(/[^0-9]/g,'').replace(/^(\d{0,3})(\d{0,4})(\d{0,4})$/,'$1-$2-$3').replace(/-{1,2}$/,''); }
+async function submitForm(e){
+  e.preventDefault(); const b=$('btn'); b.disabled=true; b.textContent='등록 중…'; $('err').textContent='';
+  const p={ customer_name:$('name').value.trim(), customer_phone:$('phone').value.trim(), channel_type:$('channel').value, handler:$('handler').value,
+    product_name:$('product').value.trim(), rating, review_status:document.querySelector('input[name=rv]:checked').value,
+    review_url:$('review').value.trim(), next_product:$('next').value.trim(), consent_privacy:$('privacy').checked, consent_marketing:$('marketing').checked };
+  const {error}=await sb.rpc('fn_submit_customer',{p_data:p});
+  if(error){ $('err').textContent=error.message.replace(/^.*?: /,''); }
+  else { $('done').classList.remove('hidden'); $('form').reset(); rating=5; [...$('stars').children].forEach(x=>x.classList.add('on')); }
+  b.disabled=false; b.textContent='혜택 신청 완료';
+}
+</script>
+</body>
+</html>
