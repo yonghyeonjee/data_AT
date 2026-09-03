@@ -286,7 +286,7 @@ td.wrap{white-space:normal;max-width:320px}
             <div class="card">
               <h3>원본 파일 업로드 <span>형식 자동 인식 · 재업로드해도 중복 없음</span>
                 <div class="actions"><button class="btn ghost sm" onclick="downloadTemplates()">양식 엑셀 받기</button></div></h3>
-              <div class="drop" id="drop" onclick="document.getElementById('file').click()"><b>파일을 끌어다 놓거나 클릭</b>샵링커 주문 · 이카운트 판매현황 · 이카운트 가망고객 · 렌탈 · 고도몰 회원 · 매장 일별(Manual) · xlsx / xls / csv</div>
+              <div class="drop" id="drop" onclick="document.getElementById('file').click()"><b>파일을 끌어다 놓거나 클릭</b>샵링커 주문 · 이카운트 판매현황 · 이카운트 가망고객 · 렌탈 · 고도몰 회원 · 매장 일별(Manual)<br><span style="font-size:11.5px">xlsx / xls / csv · 파일 안 모든 시트를 훑어 형식을 자동 인식합니다</span></div>
               <input type="file" id="file" class="hidden" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])">
               <div id="upPreview" class="hidden" style="margin-top:14px">
                 <div class="callout" id="upDetect"></div>
@@ -633,6 +633,7 @@ function useSheet(i, keepPicker){
   $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
   $('upBtn').disabled=false; $('upMsg').textContent='';
 }
+
 function mapRows(u){
   const d=u.data;
   if(u.kind==='shoplinker'){ const seq={}; return d.map(r=>{ const no=str(H(r,'주문번호')); seq[no]=(seq[no]||0)+1; const ch=SHOP_MAP[`${str(H(r,'쇼핑몰'))}|${str(H(r,'쇼핑몰아이디'))}`]||SHOP_MAP[`${str(H(r,'쇼핑몰'))}|*`]||`${str(H(r,'쇼핑몰'))}|오픈마켓`; const [cn,ct]=ch.split('|'); const st=str(H(r,'배송상태')); const gross=Number(H(r,'주문금액'))||0; const refund=REFUND_STATES.some(s=>st.includes(s))?gross:0;
@@ -721,8 +722,9 @@ function downloadTemplates(){
   const wb=XLSX.utils.book_new();
   const dest=['core.orders (통합 원장)','core.orders (원장 · 채널 VMS)','crm.consult (상담·가망고객)','core.orders (원장 · 채널 렌탈)','crm.customer (고객 마스터)','core.store_daily (매장 일마감)'];
   const guide=[['삼성앤텍 통합 매출 & CRM · 업로드 양식'],[],
-    ['· 시트 하나가 형식 하나입니다. 원본 시스템에서 받은 파일을 그대로 올려도 됩니다.'],
-    ['· 업로드 화면이 헤더(열 이름 행)를 보고 형식을 자동 인식합니다. 열 순서는 달라도 되고, 없는 열은 비워도 됩니다.'],
+    ['· 시트 하나가 형식 하나입니다. 이 파일을 통째로 올려도 되고, 원본 시스템에서 받은 파일을 그대로 올려도 됩니다.'],
+    ['· 업로드 화면이 모든 시트를 훑어 형식을 자동 인식하므로 시트 이름·순서는 상관없습니다. 여러 개가 인식되면 버튼으로 골라 하나씩 올리면 됩니다.'],
+    ['· 인식 기준은 헤더(열 이름 행)입니다. 열 순서는 달라도 되고, 없는 열은 비워도 됩니다.'],
     ['· 같은 파일을 다시 올려도 중복되지 않습니다 (주문번호·일자No 기준으로 덮어씀).'],[],['시트','핵심 열','들어가는 곳']];
   Object.entries(TEMPLATES).forEach(([k,v],i)=>guide.push([k,v.cols.slice(0,3).join(' / '),dest[i]]));
   const ws0=XLSX.utils.aoa_to_sheet(guide); ws0['!cols']=[{wch:22},{wch:48},{wch:30}];
