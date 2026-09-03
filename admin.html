@@ -585,23 +585,53 @@ function detect(cols){
   return null;
 }
 const DETECT_LABEL={shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감'};
+// 파일 안의 모든 시트를 훑어 인식 가능한 것을 찾는다. 여러 개면 사용자가 고른다.
+let SHEETS=[];
+function parseSheet(wb, name){
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:''});
+  let hi=rows.findIndex(r=>r.filter(x=>x!=='').length>=5 && r.some(x=>typeof x==='string' && /No\.|번호|날짜|계약번호/.test(x)));
+  if(hi<0) hi=0;
+  const cols=(rows[hi]||[]).map(c=>String(c).trim());
+  const kind=detect(cols);
+  if(!kind) return null;
+  const data=rows.slice(hi+1).filter(r=>r.some(x=>x!=='')).map(r=>Object.fromEntries(cols.map((c,i)=>[c,r[i]])));
+  return {sheet:name, kind, cols, data};
+}
 function handleFile(file){
   if(!file) return; const rd=new FileReader();
-  rd.onload=e=>{ try{ const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-    let sheet=wb.Sheets[wb.SheetNames[0]]; let rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
-    // 헤더 행 탐색 (이카운트는 1행이 회사명)
-    let hi=rows.findIndex(r=>r.filter(x=>x!=='').length>=5 && r.some(x=>typeof x==='string' && /No\.|번호|날짜|계약번호/.test(x))); if(hi<0) hi=0;
-    const cols=rows[hi].map(c=>String(c).trim()); const kind=detect(cols);
-    if(!kind){ $('upPreview').classList.remove('hidden'); $('upDetect').className='callout warn'; $('upDetect').textContent='형식을 인식하지 못했습니다. 열: '+cols.slice(0,12).join(', '); $('upBtn').disabled=true; return; }
-    const data=rows.slice(hi+1).filter(r=>r.some(x=>x!=='')).map(r=>Object.fromEntries(cols.map((c,i)=>[c,r[i]])));
-    UP={kind,file:file.name,data,cols};
-    $('upPreview').classList.remove('hidden'); $('upDetect').className='callout ok'; $('upDetect').innerHTML=`<b>${DETECT_LABEL[kind]}</b> · ${n(data.length)}행 · ${esc(file.name)}`;
-    $('upOpts').innerHTML = kind==='godo_member' ? `<div><label>몰 구분</label><select class="in" id="upMall">${['P몰','S몰','AT몰','시흥몰'].map(m=>`<option ${new RegExp(m[0]==='시'?'sh':m.toLowerCase().replace('몰',''),'i').test(file.name)?'selected':''}>${m}</option>`).join('')}</select></div>` : '';
-    const mapped=mapRows(UP).slice(0,5); const keys=mapped.length?Object.keys(mapped[0]):[];
-    $('upHead').innerHTML='<tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>'; $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
-    $('upBtn').disabled=false; $('upBar').style.width='0'; $('upMsg').textContent='';
+  rd.onload=e=>{ try{
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+    SHEETS=wb.SheetNames.map(nm=>parseSheet(wb,nm)).filter(x=>x && x.data.length);
+    $('upPreview').classList.remove('hidden'); $('upBar').style.width='0'; $('upMsg').textContent='';
+    if(!SHEETS.length){
+      const first=(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''})[0]||[]).slice(0,12).join(', ');
+      $('upDetect').className='callout warn';
+      $('upDetect').innerHTML=`<b>형식을 인식하지 못했습니다.</b><br>시트: ${esc(wb.SheetNames.join(', '))}<br>첫 시트 헤더: ${esc(first)}<br>[양식 엑셀 받기] 의 열 이름과 맞는지 확인하세요.`;
+      $('upOpts').innerHTML=''; $('upHead').innerHTML=''; $('upBody').innerHTML=''; $('upBtn').disabled=true; return;
+    }
+    UPFILE=file.name;
+    if(SHEETS.length>1){
+      $('upDetect').className='callout';
+      $('upDetect').innerHTML=`<b>인식된 시트 ${SHEETS.length}개</b> — 적재할 시트를 고르세요. 여러 개면 하나씩 차례로 올리면 됩니다.<br>`
+        + SHEETS.map((x,i)=>`<button class="btn ghost sm" style="margin:6px 6px 0 0" onclick="useSheet(${i})">${esc(x.sheet)} · ${DETECT_LABEL[x.kind].split(' →')[0]} · ${n(x.data.length)}행</button>`).join('');
+    }
+    useSheet(0, SHEETS.length>1);
   }catch(err){ toast('파일 읽기 실패: '+err.message,'bad'); } };
   rd.readAsArrayBuffer(file);
+}
+let UPFILE='';
+function useSheet(i, keepPicker){
+  const sh=SHEETS[i]; if(!sh) return;
+  UP={kind:sh.kind, file:UPFILE+(SHEETS.length>1?` [${sh.sheet}]`:''), data:sh.data, cols:sh.cols};
+  if(!keepPicker){ $('upDetect').className='callout ok';
+    $('upDetect').innerHTML=`<b>${DETECT_LABEL[sh.kind]}</b> · ${n(sh.data.length)}행 · ${esc(UPFILE)}${SHEETS.length>1?` <b>[${esc(sh.sheet)}]</b>`:''}`; }
+  else { document.querySelectorAll('#upDetect .btn').forEach((b,j)=>b.className='btn sm '+(j===i?'':'ghost')); }
+  $('upOpts').innerHTML = sh.kind==='godo_member'
+    ? `<div><label>몰 구분</label><select class="in" id="upMall">${['P몰','S몰','AT몰','시흥몰'].map(m=>`<option ${new RegExp(m[0]==='시'?'sh':m.toLowerCase().replace('몰',''),'i').test(UPFILE)?'selected':''}>${m}</option>`).join('')}</select></div>` : '';
+  const mapped=mapRows(UP).slice(0,5); const keys=mapped.length?Object.keys(mapped[0]):[];
+  $('upHead').innerHTML='<tr>'+keys.map(k=>`<th>${esc(k)}</th>`).join('')+'</tr>';
+  $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
+  $('upBtn').disabled=false; $('upMsg').textContent='';
 }
 function mapRows(u){
   const d=u.data;
