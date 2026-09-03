@@ -2,16 +2,17 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>시흥점 판매 입력</title>
+<title>ATLAS · 매장</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 :root{
-  --ground:#F2F3F5; --surface:#FFFFFF; --surface-2:#F7F8FA; --line:#E3E6EB; --line-2:#CBD1DA;
-  --ink:#141820; --ink-2:#3A4250; --muted:#6B7482; --faint:#9AA3B1;
-  --accent:#1B4FA0; --accent-ink:#FFFFFF; --accent-soft:#E8EFFA;
-  --ok:#1F7A4D; --ok-soft:#E4F2EA; --warn:#A8620B; --warn-soft:#FBF0DC; --bad:#B23A48; --bad-soft:#F9E7EA;
+  --ground:#F3F4F7; --surface:#FFFFFF; --surface-2:#F7F8FA; --line:#E4E7EE; --line-2:#CDD3DE;
+  --ink:#141820; --ink-2:#2E3542; --muted:#646D7C; --faint:#98A1B0;
+  --accent:#1428A0; --navy:#1428A0; --navy-ink:#0E1A6B; --accent-ink:#FFFFFF; --accent-soft:#EAEEFB;
+  --ok:#0F7B6C; --ok-soft:#E3F3F0; --warn:#8A5D00; --warn-soft:#FBF1DC; --bad:#B3261E; --bad-soft:#FBE9E7;
   --sub:#7A3EB8; --sub-soft:#F0E8F8;
   --r:12px; --shadow:0 1px 2px rgba(20,24,32,.05), 0 8px 24px rgba(20,24,32,.06);
 }
@@ -22,9 +23,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .hidden{display:none!important}
 
 /* ── PIN ── */
-#pinScreen{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+#pinScreen{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#0B0F2E 0%,#141E64 60%,#1428A0 100%)}
 .pin-card{width:100%;max-width:380px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:36px 28px;text-align:center}
-.pin-card .logo{font-size:12px;letter-spacing:.18em;color:var(--muted);font-weight:600}
+.pin-card .logo{font-size:11px;letter-spacing:.2em;color:var(--navy);font-weight:700}
 .pin-card h1{font-size:22px;font-weight:800;margin:8px 0 4px;letter-spacing:-.02em}
     .pin-card .sub{font-size:13px;color:var(--muted);margin-bottom:18px}
 .pin-card input{width:100%;text-align:center;font-size:28px;letter-spacing:.4em;padding:14px;border:1.5px solid var(--line-2);border-radius:10px;outline:none;font-variant-numeric:tabular-nums}
@@ -34,7 +35,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* ── App ── */
 #app{max-width:720px;margin:0 auto;padding:0 0 120px}
-.topbar{position:sticky;top:0;z-index:20;background:rgba(242,243,245,.92);backdrop-filter:blur(8px);padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(243,244,247,.94);backdrop-filter:blur(8px);padding:14px 18px 10px;border-bottom:1px solid var(--line)}
 .topbar .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .topbar h1{font-size:18px;font-weight:800;letter-spacing:-.02em}
 .topbar h1 small{font-weight:500;color:var(--muted);font-size:13px;margin-left:6px}
@@ -43,10 +44,19 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .tabs{display:flex;gap:4px;margin-top:12px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--line)}
 .tab{flex:1;padding:10px 6px;border:0;background:transparent;border-radius:9px;font-weight:600;color:var(--muted);cursor:pointer;font-size:14px}
-.tab.active{background:var(--ink);color:#fff}
+.tab.active{background:var(--navy);color:#fff}
 .tab .n{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:rgba(255,255,255,.2);font-size:11px;margin-left:4px}
 
 section.panel{padding:16px 18px}
+.intro{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:var(--ink-2);line-height:1.55}
+.intro b{color:var(--ink)}
+.intro details{margin-top:6px}
+.intro summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--navy);list-style:none;display:inline-flex;align-items:center;gap:6px}
+.intro summary::-webkit-details-marker{display:none}
+.intro summary::before{content:"?";display:inline-flex;width:16px;height:16px;border-radius:50%;background:var(--accent-soft);color:var(--navy);font-size:10px;align-items:center;justify-content:center;font-weight:800}
+.intro ol{margin:8px 0 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.intro ol li{display:flex;gap:8px;font-size:12.5px}
+.intro ol li i{flex-shrink:0;width:18px;height:18px;border-radius:50%;background:var(--navy);color:#fff;font-style:normal;font-size:10.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;margin-top:1px}
 .card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;margin-bottom:14px}
 .card h2{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
 .card h2 span{font-size:12px;color:var(--faint);font-weight:500}
@@ -70,7 +80,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .seg button.on.direct{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{padding:8px 12px;border:1.5px solid var(--line-2);border-radius:999px;background:#fff;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
-.chip.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.chip.on{border-color:var(--navy);background:var(--navy);color:#fff}
 
 .toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:10px;background:var(--surface-2);cursor:pointer}
 .toggle b{font-size:14px}
@@ -152,6 +162,9 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 
   <!-- ── 판매 입력 ── -->
   <section class="panel" id="tab-sale">
+    <div class="intro">판매 1건을 <b>DPS 입력 직후 같은 자리에서</b> 남기는 화면입니다. 여기 들어간 건이 본사 대시보드의 상품·고객 분석 재료가 됩니다.
+      <details><summary>사용 방법</summary><ol><li><i>1</i><span>필수 항목은 상품명·판매가·구분·판매일 4개입니다. 상품명은 DPS 화면 그대로 옮겨 적으세요.</span></li><li><i>2</i><span>고객명·번호는 <b>동의받은 경우만</b> 넣습니다. 넣으면 온라인·VMS 이력과 한 사람으로 묶입니다.</span></li><li><i>3</i><span>상담 후 구매면 상담번호(SC…)를 적어 두세요. 그 상담이 자동으로 구매완료가 됩니다.</span></li><li><i>4</i><span>담당 프로는 로그인한 본인으로 자동 채워집니다. 대신 입력할 때만 바꾸세요.</span></li></ol></details>
+    </div>
     <div class="card">
       <h2>판매 1건 <span>필수 6개 · 30초</span></h2>
       <div class="grid2">
@@ -197,6 +210,9 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 
   <!-- ── 상담 입력 ── -->
   <section class="panel hidden" id="tab-consult">
+    <div class="intro">견적·상담 후 <b>구매로 이어지지 않은 건</b>을 당일 기록하는 화면입니다. 여기 쌓인 상담이 재연락 대상 목록이 됩니다.
+      <details><summary>사용 방법</summary><ol><li><i>1</i><span>관심품목·유입경로·예상금액 3개는 꼭 적어 주세요. 유입경로별 실매출 계산의 키입니다.</span></li><li><i>2</i><span>수신동의는 고객이 구두·서면으로 동의한 경우에만 켭니다. 기본은 꺼짐입니다.</span></li><li><i>3</i><span>나중에 구매하면 판매 입력에서 상담번호를 적으면 됩니다. 여기서 결과를 바꿀 필요는 없습니다.</span></li></ol></details>
+    </div>
     <div class="card">
       <h2>상담 · 가망고객 <span>사려다 만 고객도 남기기</span></h2>
       <div class="grid2">
@@ -241,6 +257,9 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 
   <!-- ── 일 마감 ── -->
   <section class="panel hidden" id="tab-daily">
+    <div class="intro">영업 종료 후 <b>DPS 일 합계</b>(일시불·구독·프로별 직판)를 전기하는 화면입니다. 대시보드 매장 매출의 1차 출처입니다.
+      <details><summary>사용 방법</summary><ol><li><i>1</i><span>늦어도 익일 오전 10시까지 입력합니다. 미마감 날짜는 위 노란 배지와 관리자 화면에 표시됩니다.</span></li><li><i>2</i><span>건별 입력과 별개입니다. 건별을 빠뜨렸어도 일마감만 맞으면 대시보드 매출은 맞습니다.</span></li><li><i>3</i><span>환불이 있으면 환불 칸에 따로 적습니다. 매출에서 빼서 넣지 마세요.</span></li></ol></details>
+    </div>
     <div class="card">
       <h2>일 마감 · DPS 합계 전기 <span>매일 영업 종료 후</span></h2>
       <div class="daterow">
