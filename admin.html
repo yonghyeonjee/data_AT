@@ -60,15 +60,36 @@ button,input,select,textarea{font:inherit;color:inherit}
 aside{width:236px;background:var(--side);color:#AEB6CC;display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid rgba(255,255,255,.04)}
 .brand{padding:22px 20px 18px;color:#fff;font-weight:800;font-size:15px;letter-spacing:-.015em;border-bottom:1px solid rgba(255,255,255,.07)}
 .brand small{display:block;font-weight:700;color:#7A8CE8;font-size:10.5px;letter-spacing:.18em;margin-bottom:5px}
-nav{padding:12px 10px;flex:1;overflow-y:auto}
-.nav{display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:2px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500;transition:.12s;position:relative;color:#AEB6CC}
+nav{padding:12px 10px;flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.16) transparent}
+nav::-webkit-scrollbar{width:6px} nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:3px}
+.nav{display:flex;align-items:center;gap:10px;padding:7.5px 12px;margin-bottom:2px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500;transition:.12s;position:relative;color:#AEB6CC}
 .nav:hover{background:rgba(255,255,255,.06);color:#fff}
 .nav.active{background:var(--navy);color:#fff;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
 .nav .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;opacity:.8;flex-shrink:0}
 .nav .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav.active .ic{opacity:1}
 .nav .badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:9px}
-.nav .sep{color:#5B647A;font-size:10.5px;letter-spacing:.16em;padding:14px 12px 5px;display:block;cursor:default;font-weight:700}
+.nav.sep{color:#5B647A;font-size:10.5px;letter-spacing:.16em;padding:12px 12px 4px;display:block;cursor:default;font-weight:700}
+.nav.dev{color:#6E7893;cursor:pointer}
+.nav.dev .ic{opacity:.4}
+.nav.dev .devtag{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.04em;color:#F0B23A;background:rgba(240,178,58,.14);border:1px solid rgba(240,178,58,.3);padding:1px 6px;border-radius:6px}
+.nav.dev.active{background:rgba(240,178,58,.1);color:#F0D08A;box-shadow:inset 0 0 0 1px rgba(240,178,58,.22)}
+/* 공사 중 안내 */
+.uc{max-width:640px;margin:40px auto;border-radius:14px;overflow:hidden;background:var(--card,#fff);box-shadow:0 1px 3px rgba(16,24,40,.08),0 8px 24px rgba(16,24,40,.06)}
+.uc-tape{height:16px;background:repeating-linear-gradient(45deg,#F4C23D 0 14px,#2B2F3A 14px 28px)}
+.uc-body{padding:40px 32px;text-align:center}
+.uc-ic{width:64px;height:64px;margin:0 auto 18px;border-radius:16px;background:#FFF6E3;display:flex;align-items:center;justify-content:center}
+.uc-ic svg{width:32px;height:32px;stroke:#D89A16;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.uc-body h4{margin:0 0 8px;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.uc-body p{margin:0;font-size:13.5px;line-height:1.75;color:var(--muted)}
+.uc-cones{margin:20px 0 22px;font-size:26px;letter-spacing:14px;user-select:none}
+.uc-cones span{display:inline-block;animation:ucb 1.6s ease-in-out infinite}
+.uc-cones span:nth-child(2){animation-delay:.2s} .uc-cones span:nth-child(3){animation-delay:.4s}
+@keyframes ucb{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+/* 메뉴 관리 */
+.mnrow.mnhd span:nth-child(3),.mnrow.mnhd span:nth-child(4){text-align:center}
+.mnrow.grp:first-child{margin-top:0}
+.mnrow .mnic svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav.sep:hover{background:transparent;color:#5B647A}
 .userbar{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);font-size:12px}
 .userbar b{display:block;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -150,7 +171,33 @@ tr.low td{background:#FFF7F5} tr.off td{opacity:.55}
 .period .preset button{font-size:12.5px;padding:6px 11px}
 .period input[type=date]{font-size:12.5px;padding:7px 9px}
 .content{padding:24px 28px 72px;overflow-y:auto;flex:1}
-.view{max-width:1400px}
+.view,#pageIntro{max-width:1720px;margin-left:auto;margin-right:auto;width:100%}
+@media(min-width:1900px){.view,#pageIntro{max-width:1840px}}
+.foldcard{margin-bottom:16px}
+.foldcard>summary{list-style:none;cursor:pointer;padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:8px;user-select:none}
+.foldcard>summary::-webkit-details-marker{display:none}
+.foldcard>summary::before{content:'▸';color:var(--muted);font-size:11px;transition:.15s}
+.foldcard[open]>summary::before{transform:rotate(90deg)}
+.foldcard>summary:hover{border-color:var(--line-2)}
+.foldcard[open]>summary{border-radius:12px 12px 0 0;border-bottom:0}
+.foldcard[open]>.card{border-radius:0 0 12px 12px;margin-top:0}
+.permlg{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:4px 18px;margin-bottom:12px}
+.permlg>div{font-size:11.5px;line-height:1.8;color:var(--muted)}
+.permlg b{color:var(--ink);font-weight:600;margin-right:6px}
+.permlg>div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+table.iqt{table-layout:fixed}
+table.iqt td{padding:7px 9px;font-size:12.5px;vertical-align:middle}
+table.iqt th{padding:8px 9px;font-size:11.5px}
+table.iqt td .ell{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.iqt td .sub{font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+table.iqt tbody tr{cursor:pointer}
+table.iqt tbody tr:hover{background:var(--surface-2)}
+table.iqt .acts{opacity:0;transition:.12s;white-space:nowrap;text-align:right}
+table.iqt tr:hover .acts,table.iqt tr:focus-within .acts{opacity:1}
+@media(max-width:1400px){table.iqt th:nth-child(6),table.iqt td:nth-child(6){display:none}}
+@media(max-width:1150px){table.iqt th:nth-child(5),table.iqt td:nth-child(5){display:none}}
+@media(min-width:1500px){.content{padding:26px 40px 72px}header{padding:0 40px}}
+
 
 /* ── 기간 ── */
 .period{display:flex;align-items:center;gap:6px}
@@ -467,31 +514,7 @@ textarea.in{height:auto}
   <div class="navmask" id="navMask" onclick="toggleNav(false)"></div>
   <aside id="aside">
     <div class="brand"><small>SAMSUNG&amp;TECH</small>Datacenter</div>
-    <nav>
-      <div class="nav active" data-v="home"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>홈</div>
-      <span class="nav sep">매출</span>
-      <div class="nav" data-v="dash"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>매출 대시보드</div>
-      <div class="nav" data-v="orders"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>통합 원장</div>
-      <div class="nav" data-v="online"><span class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg></span>온라인 채널</div>
-      <div class="nav" data-v="daily"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span>매장 일마감</div>
-      <span class="nav sep">CRM</span>
-      <div class="nav" data-v="inbox"><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg></span>문의 관리<span class="badge hidden" id="badgeInbox"></span></div>
-      <div class="nav" data-v="consults"><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span>상담·가망고객</div>
-      <div class="nav" data-v="customers"><span class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></span>고객 통합</div>
-      <div class="nav" data-v="crm"><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></span>발송 대상 추출</div>
-      <span class="nav sep">재고</span>
-      <div class="nav" data-v="stock"><span class="ic"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span>재고 현황</div>
-      <div class="nav" data-v="moves"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg></span>입출고</div>
-      <div class="nav" data-v="items"><span class="ic"><svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg></span>품목</div>
-      <div class="nav" data-v="oq"><span class="ic"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></span>주문서 · 전송<span class="badge hidden" id="badgeOq"></span></div>
-      <span class="nav sep">데이터</span>
-      <div class="nav" data-v="upload"><span class="ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg></span>데이터 가져오기</div>
-      <div class="nav" data-v="log"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg></span>서비스 로그</div>
-      <div class="nav" data-v="settings"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>설정 · 담당자</div>
-      <span class="nav sep">운영</span>
-      <div class="nav" data-v="option"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg></span>옵션 · 권한</div>
-      <div class="nav" data-v="notify"><span class="ic"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>알림 관리</div>
-    </nav>
+    <nav id="navBox"></nav>
     <div class="userbar"><b id="uEmail">-</b><span class="role" id="uRole"></span><button onclick="logout()">로그아웃</button></div>
   </aside>
   <main>
@@ -751,11 +774,23 @@ textarea.in{height:auto}
             <button class="btn" onclick="loadInquiry(0)">조회</button>
             <label class="switch" id="iqPeriod" onclick="this.classList.toggle('on');loadInquiry(0)"><span class="sw"></span>상단 기간 적용</label>
             <label class="switch" id="iqUnmask" onclick="this.classList.toggle('on');loadInquiry(0)"><span class="sw"></span>연락처 보기</label>
+            <span style="flex:1"></span>
+            <div class="seg2" id="iqShow">
+              <button type="button" class="on" data-s="real">실제</button>
+              <button type="button" data-s="test">테스트</button>
+              <button type="button" data-s="hidden">삭제됨</button>
+              <button type="button" data-s="all">전체</button>
+            </div>
           </div>
           <div class="qmeta" id="iqMeta"></div>
-          <div class="tw"><table><thead><tr><th>접수</th><th>구분</th><th>고객</th><th>연락처</th><th>종류</th><th>내용</th><th>담당</th><th>상태</th></tr></thead><tbody id="tbInquiry"></tbody></table></div>
-          <div class="pager"><button class="btn sm ghost" onclick="loadInquiry(iqPage-1)">이전</button><span id="iqCount"></span><button class="btn sm ghost" onclick="loadInquiry(iqPage+1)">다음</button></div>
+          <div class="tw"><table class="iqt"><thead><tr>
+            <th style="width:96px">접수</th><th style="width:104px">구분</th><th style="width:150px">고객</th>
+            <th>관심 · 상품</th><th style="width:120px">목적</th><th style="width:130px">지역</th>
+            <th>메모</th><th style="width:74px">담당</th><th style="width:78px">상태</th><th style="width:150px"></th>
+          </tr></thead><tbody id="tbInquiry"></tbody></table></div>
+          <div class="pager"><button class="btn sm ghost" onclick="loadInquiry(iqPage-1)">‹ 이전</button><span id="iqCount"></span><button class="btn sm ghost" onclick="loadInquiry(iqPage+1)">다음 ›</button></div>
         </div>
+        <details class="foldcard"><summary>매장 방문 통계 <span class="note">키오스크·태블릿 방문 접수 기준</span></summary>
         <div class="card" id="visitCard">
           <h3>매장 방문 통계 <span id="vsSub">키오스크·태블릿 방문 접수 기준</span>
             <span style="margin-left:auto;display:flex;gap:6px"><a class="btn sm ghost" href="visit/" target="_blank">키오스크 열기 ↗</a><button class="btn sm ghost" onclick="loadVisitStats()">새로고침</button></span></h3>
@@ -768,6 +803,8 @@ textarea.in{height:auto}
             <div style="grid-column:span 2"><div class="vs-t">시간대별</div><div id="vsHour"></div></div>
           </div>
         </div>
+        </details>
+        <details class="foldcard"><summary>고객 접수함 <span class="note">리뷰·혜택 승인/반려 처리 화면 (기존)</span></summary>
         <div class="card"><h3>고객 접수함 <span>리뷰·혜택은 승인 시 원장에, 상담·견적/설치·A/S/구독·렌탈은 승인 시 상담·가망고객으로 넘어갑니다</span></h3>
           <div class="filters">
             <select class="in" id="ibStatus" onchange="loadInbox()"><option value="">전체 상태</option><option selected>접수</option><option>기록</option><option>승인</option><option>반려</option></select>
@@ -779,6 +816,7 @@ textarea.in{height:auto}
           </div>
           <div class="tw"><table><thead><tr><th>접수</th><th>종류</th><th>고객</th><th>연락처</th><th>채널</th><th>담당</th><th>상품 · 내용</th><th>만족</th><th>리뷰</th><th>관심상품</th><th>동의</th><th></th></tr></thead><tbody id="tbInbox"></tbody></table></div>
         </div>
+        </details>
       </div>
 
       <!-- ═══ 상담 ═══ -->
@@ -990,7 +1028,8 @@ textarea.in{height:auto}
           <h3>주문서 · 이카운트 전송 <span>샵링커 주문 → 현행 시스템(재고 차감) → 이카운트. 등록하면 재고가 먼저 빠지고, 전송은 따로 누릅니다</span>
             <span style="margin-left:auto;display:flex;gap:6px">
               <button class="btn sm ghost" onclick="openEcDiag()">연동 진단</button>
-              <button class="btn sm" onclick="openOrderModal()">+ 주문서 등록</button></span></h3>
+              <button class="btn sm ghost" onclick="openOrderModal()">+ 직접 입력</button>
+              <button class="btn sm" onclick="openSlPick()">샵링커 주문 가져오기<span class="badge hidden" id="badgeSl"></span></button></span></h3>
           <div class="qsum" id="oqSum"></div>
           <div class="filters">
             <select class="in" id="oqStatus" onchange="loadOq(0)"><option value="">전체 상태</option><option value="ready">전송 대기</option><option value="sent">전송 완료</option><option value="failed">전송 실패</option><option value="void">취소</option></select>
@@ -1006,6 +1045,8 @@ textarea.in{height:auto}
       </div>
 
       <!-- ═══ 옵션 · 권한 ═══ -->
+      <div class="view hidden" id="v-dev"></div>
+
       <div class="view hidden" id="v-option">
         <div class="card">
           <h3>담당자 권한 <span>담당자마다 <b>/store</b> 에서 보이는 메뉴가 달라집니다. 체크를 지우면 그 사람 화면에서 메뉴가 사라집니다</span>
@@ -1137,14 +1178,15 @@ const iso = d => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString()
 const dfmt = s => s ? String(s).slice(0,10) : '-';
 const dtfmt = s => { if(!s) return '-'; const d=new Date(s); if(isNaN(d)) return String(s).slice(0,16); const k=new Date(d.getTime()+9*3600e3); return k.toISOString().slice(0,16).replace('T',' '); };   // KST 표시
 /* 오버레이 확인창 — 브라우저 confirm() 대신 사용. requireText 를 주면 그 글자를 똑같이 입력해야 확인 버튼이 열린다 */
-function modal({title, html, ok='확인', cancel='취소', danger=false, requireText=null, collect=null, init=null, wide=false}){
+function modal({title, html, ok='확인', cancel='취소', danger=false, requireText=null, collect=null, init=null, wide=false, xwide=false}){
   return new Promise(res=>{
     const host=$('modalHost'); const id='m'+Date.now();
     host.innerHTML=`<div class="mask" id="${id}"><div class="dlg" role="dialog" aria-modal="true"><h4>${esc(title)}</h4><div class="body">${html}${requireText?`<div style="margin-top:12px;font-size:12.5px;color:var(--muted)">확인하려면 <b style="color:var(--ink)">${esc(requireText)}</b> 을(를) 그대로 입력하세요</div><input class="in mono" id="${id}_in" autocomplete="off" placeholder="${esc(requireText)}">`:''}</div>
       <div class="btns">${cancel?`<button class="btn ghost" id="${id}_no">${esc(cancel)}</button>`:''}<button class="btn ${danger?'danger':''}" id="${id}_ok" ${requireText?'disabled':''}>${esc(ok)}</button></div></div></div>`;
     const fin=v=>{ let out=v; if(v && collect){ try{ out=collect(); }catch(e){ toast(e.message,'bad'); return; } if(out===false) return; }
       host.innerHTML=''; document.removeEventListener('keydown',onKey,true); res(out); };
-    if(wide) host.querySelector('.dlg').style.maxWidth='720px';
+    if(xwide) host.querySelector('.dlg').style.maxWidth='min(1140px, 94vw)';
+    else if(wide) host.querySelector('.dlg').style.maxWidth='720px';
     if(init) try{ init(); }catch(e){}
     const onKey=e=>{ if(e.key==='Escape'){ e.stopPropagation(); fin(false); } };
     document.addEventListener('keydown',onKey,true);
@@ -1155,7 +1197,20 @@ function modal({title, html, ok='확인', cancel='취소', danger=false, require
   });
 }
 let toastT; function toast(m,c=''){ const t=$('toast'); t.textContent=m; t.className='toast show '+c; clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast',3000); }
-async function rpc(fn,args={}){ const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
+/* 같은 화면을 왔다갔다 할 때 같은 질의를 다시 던지지 않게 45초만 담아둔다.
+   저장·수정 계열(fn_*_save 등)은 담지 않고, 실행되면 캐시를 통째로 비운다. */
+const RPC_CACHE=new Map(), RPC_TTL=45000;
+const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle)/i;
+function rpcClear(){ RPC_CACHE.clear(); }
+async function rpcRaw(fn,args={}){ const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
+async function rpc(fn,args={},opt={}){
+  if(RPC_NOCACHE.test(fn)){ const d=await rpcRaw(fn,args); rpcClear(); return d; }
+  if(opt.fresh) RPC_CACHE.delete(fn+'|'+JSON.stringify(args));
+  const k=fn+'|'+JSON.stringify(args), hit=RPC_CACHE.get(k), now=Date.now();
+  if(hit && now-hit.t < RPC_TTL) return hit.p;
+  const p=rpcRaw(fn,args); RPC_CACHE.set(k,{t:now,p});
+  try{ return await p; }catch(e){ RPC_CACHE.delete(k); throw e; }
+}
 function closeModal(id){ $(id).classList.add('hidden'); }
 const tip=$('tip'); function showTip(e,html){ tip.innerHTML=html; tip.style.opacity=1; tip.style.left=(e.clientX+12)+'px'; tip.style.top=(e.clientY-10)+'px'; } function hideTip(){ tip.style.opacity=0; }
 
@@ -1180,8 +1235,8 @@ async function boot(){
   if(!ME){ $('lErr').textContent='프로필이 없습니다. 관리자에게 문의하세요.'; await sb.auth.signOut(); reveal('login'); return; }
   reveal('app');
   $('uEmail').textContent=ME.email.replace(ID_DOMAIN,''); $('uRole').textContent=ME.role.toUpperCase();
-  try{ STAFF=await rpc('fn_staff_list'); }catch(e){ STAFF=[]; }
-  fillHandlerOptions();
+  rpc('fn_staff_list').then(x=>{ STAFF=x||[]; fillHandlerOptions(); }).catch(()=>{ STAFF=[]; });
+  await loadMenu();
   loadStamp(); setPreset('30', true); show(location.hash.replace('#','')||'home');
 }
 const ID_DOMAIN='@samsungat.local';   // 아이디만 입력하면 붙는 사내 전용 도메인
@@ -1374,34 +1429,111 @@ async function openMoveModal(code){
 }
 
 /* ═══════════════ 문의 관리 (홈페이지 폼 통합) ═══════════════ */
-let iqPage=0, IQ_FORM='';
-document.addEventListener('click', e=>{ const b=e.target.closest('#iqForm button'); if(!b) return;
-  $('iqForm').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); IQ_FORM=b.dataset.f||''; loadInquiry(0); });
+let iqPage=0, IQ_FORM='', IQ_SHOW='real', IQ_ROWS=[];
+document.addEventListener('click', e=>{
+  const b=e.target.closest('#iqForm button'); if(b){ $('iqForm').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); IQ_FORM=b.dataset.f||''; loadInquiry(0); return; }
+  const c=e.target.closest('#iqShow button'); if(c){ $('iqShow').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===c)); IQ_SHOW=c.dataset.s; loadInquiry(0); }
+});
 const IQ_TONE={quote:'a',subscribe:'b',supply:'c',b2b:'d',store:'n'};
 async function loadInquiry(page){
   iqPage=Math.max(0,page||0);
   const usePeriod=$('iqPeriod').classList.contains('on');
   const args={p_form:IQ_FORM||null,p_q:$('iqQ').value.trim()||null,p_limit:50,p_offset:iqPage*50,
-              p_unmask:$('iqUnmask').classList.contains('on'),
+              p_unmask:$('iqUnmask').classList.contains('on'), p_show:IQ_SHOW,
               p_from:usePeriod?P.from:null,p_to:usePeriod?P.to:null};
   let d; try{ d=await rpc('fn_inquiry_list',args); }catch(e){ return toast(e.message,'bad'); }
-  const m=d.summary||{}, bf=d.by_form||{};
-  $('iqSum').innerHTML=[qcard('문의',n(m.total||0),'건','', usePeriod?'선택 기간':'전체 기간'),
+  IQ_ROWS=d.rows||[];
+  const m=d.summary||{}, bf=d.by_form||{}, cc=d.counts||{};
+  $('iqSum').innerHTML=[qcard('문의',n(m.total||0),'건','', {real:'테스트 제외',test:'테스트만',hidden:'삭제된 건',all:'전부'}[IQ_SHOW]),
     qcard('오늘',n(m.today||0),'건','ok'), qcard('미배정',n(m.unassigned||0),'건',(m.unassigned>0?'warn':'')),
     qcard('열린 건',n(m.open||0),'건'), qcard('마지막 접수',m.last_at||'—','')].join('');
+  $('iqShow').querySelectorAll('button').forEach(b=>{
+    const k=b.dataset.s, v=k==='all'?((cc.real||0)+(cc.test||0)+(cc.hidden||0)):cc[k];
+    b.textContent={real:'실제',test:'테스트',hidden:'삭제됨',all:'전체'}[k] + (v!=null?' '+n(v):''); });
   $('iqMeta').innerHTML=(d.forms||[]).map(f=>`<span class="tag ${IQ_TONE[f.code]||''}">${esc(f.label)} ${n(bf[f.code]||0)}</span>`).join(' ');
-  const rows=d.rows||[];
-  $('iqCount').textContent=`총 ${n(d.total||0)}건 · ${d.total?iqPage*50+1:0}~${Math.min(d.total||0,(iqPage+1)*50)}`;
-  $('tbInquiry').innerHTML=rows.map(r=>`<tr>
-      <td class="mono" style="font-size:11.5px;white-space:nowrap">${esc(r.at)}</td>
-      <td><span class="tag ${IQ_TONE[r.form]||''}">${esc(r.form_label)}</span></td>
-      <td><b>${esc(r.name||'—')}</b></td>
-      <td class="mono" style="font-size:12px">${r.tel?`<a href="tel:${esc(r.tel)}">${esc(r.phone)}</a>`:esc(r.phone||'')}</td>
-      <td style="font-size:12.5px">${esc(r.kind||'')}</td>
-      <td class="wrap" style="font-size:12.5px;color:var(--ink-2);max-width:380px">${esc(r.summary||'')}</td>
-      <td style="font-size:12.5px">${esc(r.handler||'')||'<span class="note">미배정</span>'}</td>
-      <td>${r.status?`<span class="tag">${esc(r.status)}</span>`:''}</td></tr>`).join('')
-    ||'<tr><td colspan="8" class="note" style="text-align:center;padding:24px">이 조건에 해당하는 문의가 없습니다</td></tr>';
+  const LIM=d.limit||25;
+  $('iqCount').textContent=`총 ${n(d.total||0)}건 · ${d.total?iqPage*LIM+1:0}~${Math.min(d.total||0,(iqPage+1)*LIM)}`;
+  const cell=(v,cls)=>`<td><span class="ell ${cls||''}" title="${esc(v||'')}">${esc(v||'')||'<span class="note">—</span>'}</span></td>`;
+  $('tbInquiry').innerHTML=IQ_ROWS.map((r,i)=>`<tr${r.hidden?' style="opacity:.45"':''} onclick="if(!event.target.closest('button,a'))openInquiry(${i})">
+      <td><span class="mono" style="font-size:11.5px">${esc(r.at)}</span></td>
+      <td><span class="tag ${IQ_TONE[r.form]||''}">${esc((r.form_label||'').replace(' 문의','').replace(' 접수',''))}</span>${r.is_test?'<span class="tag n" style="margin-left:3px">T</span>':''}${r.hidden?'<span class="tag bad" style="margin-left:3px">삭제</span>':''}</td>
+      <td><b class="ell">${esc(r.name||'—')}</b>${r.tel?`<a class="sub" href="tel:${esc(r.tel)}" onclick="event.stopPropagation()">${esc(r.phone)}</a>`:''}</td>
+      ${cell(r.kind)}${cell(r.purpose)}${cell(r.region)}${cell(r.memo)}
+      <td><span class="ell">${esc(r.handler||'')||'<span class="note">—</span>'}</span></td>
+      <td>${r.status?`<span class="tag">${esc(r.status)}</span>`:'<span class="note">—</span>'}</td>
+      <td class="acts">
+        <button class="btn sm ghost" onclick="editInquiry(${i})">수정</button>
+        <button class="btn sm ghost" onclick="markInquiryTest(${i},${!r.is_test})">${r.is_test?'실제':'테스트'}</button>
+        ${r.hidden?`<button class="btn sm ghost" onclick="restoreInquiry(${i})">복구</button>`
+                  :`<button class="btn sm danger" onclick="delInquiry(${i})">삭제</button>`}</td></tr>`).join('')
+    ||'<tr><td colspan="10" class="note" style="text-align:center;padding:24px">이 조건에 해당하는 문의가 없습니다</td></tr>';
+}
+/* 행을 누르면 전체 내용을 펼쳐 본다 (표는 한 줄로 잘려 있으므로) */
+async function openInquiry(i){
+  const r=IQ_ROWS[i]; if(!r) return;
+  const row=(k,v)=>v?`<tr><th style="text-align:left;white-space:nowrap;color:var(--muted);font-weight:600;padding:6px 14px 6px 0;vertical-align:top;font-size:12.5px;width:88px">${k}</th><td style="padding:6px 0;font-size:13px;line-height:1.7;word-break:break-word;white-space:pre-wrap">${esc(v)}</td></tr>`:'';
+  await modal({title:`${r.form_label} · ${r.at_full||r.at}`, cancel:null, ok:'닫기', wide:true,
+    html:`<table style="width:100%;table-layout:fixed">${
+      row('접수번호', r.ref)+row('고객', r.name)+row('연락처', r.phone)+row('관심 · 상품', r.kind)+
+      row('목적', r.purpose)+row('지역', r.region)+row('메모', r.memo)+row('담당', r.handler)+row('상태', r.status)+
+      row('표시', [r.is_test?'테스트':null, r.hidden?'삭제됨':null, r.flagged?'수동 지정':null].filter(Boolean).join(' · '))}</table>
+      <div class="btns" style="margin-top:16px;display:flex;gap:6px">
+        <button class="btn sm ghost" onclick="closeAllModals();setTimeout(()=>editInquiry(${i}),80)">수정</button>
+        <button class="btn sm ghost" onclick="closeAllModals();setTimeout(()=>markInquiryTest(${i},${!r.is_test}),80)">${r.is_test?'실제로 되돌리기':'테스트로 표시'}</button>
+        ${r.tel?`<a class="btn sm ghost" href="tel:${esc(r.tel)}">전화</a>`:''}
+      </div>`});
+}
+function closeAllModals(){ const h=$('modalHost'); if(h) h.innerHTML=''; }
+
+async function markInquiryTest(i, on){
+  const r=IQ_ROWS[i]; if(!r) return;
+  try{ await rpc('fn_inquiry_flag',{p_form:r.form,p_ids:[r.id],p_is_test:on});
+    toast(on?'테스트로 표시했습니다':'실제 문의로 되돌렸습니다','ok'); loadInquiry(iqPage);
+  }catch(e){ toast(e.message,'bad'); }
+}
+async function restoreInquiry(i){
+  const r=IQ_ROWS[i]; if(!r) return;
+  try{ await rpc('fn_inquiry_flag',{p_form:r.form,p_ids:[r.id],p_hidden:false}); toast('되살렸습니다','ok'); loadInquiry(iqPage); }
+  catch(e){ toast(e.message,'bad'); }
+}
+async function delInquiry(i){
+  const r=IQ_ROWS[i]; if(!r) return;
+  const mode=await modal({title:'문의 삭제', ok:'목록에서 숨기기', cancel:'취소', wide:true,
+    html:`<p style="font-size:13.5px;line-height:1.8"><b>${esc(r.form_label)}</b> · ${esc(r.at)} · ${esc(r.name)}<br>
+      <span class="note">${esc((r.summary||'').slice(0,120))}</span></p>
+      <div style="margin-top:12px;padding:10px 12px;background:var(--bg2);border-radius:10px;font-size:12.5px;line-height:1.8">
+        <b>목록에서 숨기기</b> — 되돌릴 수 있습니다. [삭제됨] 탭에서 다시 살릴 수 있습니다.<br>
+        <b>완전 삭제</b> — 원본까지 지웁니다. 되돌릴 수 없습니다.
+      </div>
+      <label class="switch" id="iq_hard" onclick="this.classList.toggle('on')" style="margin-top:12px"><span class="sw"></span>완전 삭제 (되돌릴 수 없음)</label>`,
+    collect:()=>({hard:$('iq_hard').classList.contains('on')})});
+  if(!mode) return;
+  if(mode.hard && !await modal({title:'정말 완전 삭제할까요?', ok:'완전 삭제', danger:true, requireText:'삭제',
+    html:`<p style="font-size:13.5px">원본 데이터가 지워집니다. 시트에는 남아 있으니 필요하면 다시 가져올 수 있습니다.</p>`})) return;
+  try{ await rpc('fn_inquiry_delete',{p_form:r.form,p_ids:[r.id],p_hard:mode.hard});
+    toast(mode.hard?'완전 삭제했습니다':'목록에서 숨겼습니다','ok'); loadInquiry(iqPage);
+  }catch(e){ toast(e.message,'bad'); }
+}
+async function editInquiry(i){
+  const r=IQ_ROWS[i]; if(!r) return;
+  const data=await modal({title:`문의 수정 — ${r.form_label}`, ok:'저장', wide:true,
+    html:`<div class="note" style="margin:0 0 10px">${esc(r.at)} · 접수번호 ${esc(r.ref||'-')}</div>
+      <div class="fgrid" style="grid-template-columns:1fr 1fr">
+        <div><label>고객명</label><input class="in" id="iq_name" value="${esc(r.name||'')}"></div>
+        <div><label>연락처</label><input class="in mono" id="iq_phone" value="${esc(r.tel||'')}" placeholder="숫자만"></div>
+        <div><label>담당</label><input class="in" id="iq_hand" list="handlerList" value="${esc(r.handler||'')}"></div>
+        <div><label>상태</label><input class="in" id="iq_status" value="${esc(r.status||'')}" placeholder="진행중 · 보류 · 구매완료 · 종료"></div>
+        <div style="grid-column:span 2"><label>종류 · 관심</label><input class="in" id="iq_kind" value="${esc(r.kind||'')}"></div>
+      </div>
+      <label style="display:block;margin-top:10px;font-size:12px;color:var(--muted)">내용</label>
+      <textarea class="in" id="iq_summary" style="width:100%;height:100px;resize:vertical;font-size:13px">${esc(r.summary||'')}</textarea>
+      <p class="note" style="margin-top:8px">이름·연락처를 고치면 이 시스템의 값만 바뀝니다. 원본 시트는 그대로입니다.</p>`,
+    collect:()=>({name:$('iq_name').value.trim(),phone:$('iq_phone').value.trim(),
+      handler:$('iq_hand').value.trim(),status:$('iq_status').value.trim(),
+      kind:$('iq_kind').value.trim(),summary:$('iq_summary').value.trim()})});
+  if(!data) return;
+  try{ await rpc('fn_inquiry_save',{p_form:r.form,p_id:r.id,p_data:data}); toast('저장됨','ok'); loadInquiry(iqPage); }
+  catch(e){ toast(e.message,'bad'); }
 }
 
 /* ═══════════════ 주문서 · 이카운트 전송 ═══════════════ */
@@ -1416,6 +1548,7 @@ async function loadOq(page){
   $('oqSum').innerHTML=[qcard('전송 대기',n(sm.ready||0),'건',(sm.ready>0?'warn':''),'재고는 이미 차감됨'),
     qcard('전송 완료',n(sm.sent||0),'건','ok'), qcard('전송 실패',n(sm.failed||0),'건',(sm.failed>0?'bad':'')),
     qcard('취소',n(sm.void||0),'건'), qcard('전체',n(d.total||0),'건')].join('');
+  rpc('fn_sl_pending',{p_days:7,p_limit:1}).then(x=>{ const b=$('badgeSl'); if(b){ b.textContent=n(x.ready||0); b.classList.toggle('hidden',!(x.ready||0)); } }).catch(()=>{});
   const badge=$('badgeOq'); const wait=(sm.ready||0)+(sm.failed||0);
   badge.textContent=n(wait); badge.classList.toggle('hidden', !wait);
   const rows=d.rows||[];
@@ -1458,6 +1591,98 @@ async function voidOq(id){
   if(!reason) return;
   try{ await rpc('fn_order_void',{p_id:id,p_reason:reason}); toast('취소했습니다 · 재고 복구','ok'); loadOq(oqPage); }
   catch(e){ toast(e.message,'bad'); }
+}
+/* ── 샵링커 자동 수집 주문 → 주문서 ─────────────────────────
+   수집된 주문을 골라 이카운트 품목코드까지 붙여 주문서로 만든다.
+   상품명 → 품목코드 매칭은 ec.product_alias(1,005쌍) 를 쓰고, 못 찾으면 그 자리에서 연결할 수 있다. */
+let SL_ROWS=[], SL_PICK=new Set();
+async function openSlPick(){
+  await ensureWh();
+  const whOpt=WH.map(w=>`<option value="${esc(w.code)}"${w.code==='00001'?' selected':''}>${esc(w.name)}</option>`).join('');
+  await modal({title:'샵링커 주문 가져오기', ok:'닫기', cancel:null, xwide:true,
+    html:`<p class="note" style="margin:0 0 10px">자동 수집된 주문 중 <b>아직 주문서로 만들지 않은 것</b>만 나옵니다. 고른 건이 주문서가 되고 재고가 빠집니다.</p>
+      <div class="filters" style="margin-bottom:10px">
+        <select class="in" id="sl_days" onchange="loadSl2()"><option value="3">최근 3일</option><option value="7" selected>최근 7일</option><option value="14">최근 14일</option><option value="30">최근 30일</option></select>
+        <select class="in" id="sl_ch" onchange="loadSl2()"><option value="">전체 채널</option></select>
+        <input class="in" id="sl_q" placeholder="주문번호 · 구매자 · 상품" style="min-width:200px" onkeydown="if(event.key==='Enter')loadSl2()">
+        <button class="btn sm" onclick="loadSl2()">조회</button>
+        <span style="flex:1"></span>
+        <select class="in" id="sl_wh" title="출하 창고">${whOpt}</select>
+        <button class="btn sm" onclick="slMake()">선택한 건 주문서로</button>
+      </div>
+      <div class="qsum" id="sl_sum" style="margin-bottom:10px"></div>
+      <div class="tw" style="max-height:52vh;overflow:auto"><table class="iqt"><thead><tr>
+        <th style="width:32px"><input type="checkbox" id="sl_all" onchange="slToggleAll(this.checked)"></th>
+        <th style="width:140px">주문번호</th><th style="width:70px">채널</th><th style="width:66px">구매자</th>
+        <th style="min-width:340px">품목 (이카운트 코드)</th><th style="width:46px" class="num">수량</th><th style="width:84px" class="num">금액</th><th style="width:76px">접수</th>
+      </tr></thead><tbody id="sl_rows"></tbody></table></div>`,
+    init:()=>{ SL_PICK.clear(); loadSl2(); }});
+}
+async function loadSl2(){
+  const box=$('sl_rows'); if(!box) return;
+  box.innerHTML='<tr><td colspan="8" class="note" style="text-align:center;padding:20px">불러오는 중…</td></tr>';
+  let d; try{ d=await rpc('fn_sl_pending',{p_days:Number($('sl_days').value),p_q:$('sl_q').value.trim()||null,
+    p_channel:$('sl_ch').value||null,p_limit:200},{fresh:true}); }
+  catch(e){ box.innerHTML=`<tr><td colspan="8" class="note" style="text-align:center;padding:20px;color:var(--bad)">${esc(e.message)}</td></tr>`; return; }
+  SL_ROWS=d.rows||[];
+  if($('sl_ch').options.length<=1) $('sl_ch').innerHTML='<option value="">전체 채널</option>'+(d.channels||[]).map(c=>`<option>${esc(c)}</option>`).join('');
+  $('sl_sum').innerHTML=[qcard('가져올 주문',n(d.total||0),'건','','아직 주문서 아님'),
+    qcard('바로 가능',n(d.ready||0),'건','ok','품목코드 매칭됨'),
+    qcard('코드 없음',n(d.unmapped||0),'건',(d.unmapped>0?'warn':''),'연결하면 가져올 수 있음')].join('');
+  const bg=$('badgeSl'); if(bg){ bg.textContent=n(d.ready||0); bg.classList.toggle('hidden', !(d.ready||0)); }
+  box.innerHTML=SL_ROWS.map((r,i)=>{
+    const lines=(r.lines||[]).map(l=>l.item_code
+      ? `<div class="ell" title="${esc(l.product)}"><span class="mono" style="color:var(--ok);font-size:11px">${esc(l.item_code)}</span> ${esc(l.item_name||l.product)} <span class="note">×${n(l.qty)}</span></div>`
+      : `<div class="ell" title="${esc(l.product)}"><span class="tag bad">코드 없음</span> ${esc(l.product)} <button class="btn sm ghost" onclick="event.stopPropagation();slLink(${i},${l.line})">연결</button></div>`).join('');
+    return `<tr onclick="slPick(${i},!SL_PICK.has('${esc(r.order_no)}'))" style="${r.ready?'':'background:#FFF9F2'}">
+      <td><input type="checkbox" ${SL_PICK.has(r.order_no)?'checked':''} ${r.ready?'':'disabled'} onclick="event.stopPropagation();slPick(${i},this.checked)"></td>
+      <td class="mono" style="font-size:11.5px">${esc(r.order_no)}</td>
+      <td>${esc(r.channel||'')}</td><td>${esc(r.buyer||'')}</td>
+      <td style="font-size:12px;line-height:1.7">${lines}</td>
+      <td class="num">${n(r.qty)}</td><td class="num">${n(r.amount)}</td>
+      <td class="mono" style="font-size:11px">${esc(r.at)}</td></tr>`;
+  }).join('')||'<tr><td colspan="8" class="note" style="text-align:center;padding:24px">가져올 주문이 없습니다 — 모두 주문서로 만들었거나 기간 안에 주문이 없습니다</td></tr>';
+}
+function slPick(i,on){ const r=SL_ROWS[i]; if(!r||!r.ready) return; on?SL_PICK.add(r.order_no):SL_PICK.delete(r.order_no); loadSlMark(); }
+function slToggleAll(on){ SL_PICK.clear(); if(on) SL_ROWS.filter(r=>r.ready).forEach(r=>SL_PICK.add(r.order_no)); loadSlMark(); }
+function loadSlMark(){ $('sl_rows').querySelectorAll('tr').forEach((tr,i)=>{ const c=tr.querySelector('input[type=checkbox]'); const r=SL_ROWS[i]; if(c&&r) c.checked=SL_PICK.has(r.order_no); }); }
+async function slLink(i,line){
+  const r=SL_ROWS[i]; const l=(r.lines||[]).find(x=>x.line===line); if(!l) return;
+  const data=await modal({title:'품목코드 연결', ok:'연결', wide:true,
+    html:`<p class="note" style="margin:0 0 10px">이 상품명을 이카운트 품목코드에 붙여 두면, 앞으로 같은 상품은 자동으로 매칭됩니다.</p>
+      <label style="display:block;font-size:12px;color:var(--muted)">샵링커 상품명</label>
+      <input class="in" style="width:100%" id="al_name" value="${esc(l.product||'')}">
+      <label style="display:block;margin-top:10px;font-size:12px;color:var(--muted)">이카운트 품목코드 <span class="note">코드·상품명·모델로 검색</span></label>
+      <input class="in mono" style="width:100%" id="al_code" list="al_list" placeholder="예: AT-00079" autocomplete="off"><datalist id="al_list"></datalist>
+      <div id="al_hint" class="note" style="margin-top:4px">${esc(l.model?'모델코드: '+l.model:'')}</div>`,
+    init:()=>{ const q=$('al_code'), dl=$('al_list'), hint=$('al_hint'); let t;
+      const search=async()=>{ const rows=await itemOptions(q.value||l.model||''); 
+        dl.innerHTML=rows.map(x=>`<option value="${esc(x.code)}">${esc(x.name)}${x.model?' · '+esc(x.model):''}</option>`).join('');
+        const hit=rows.find(x=>x.code===q.value.trim().toUpperCase());
+        hint.textContent=hit?`${hit.name}${hit.model?' · '+hit.model:''}`:`${rows.length}개 검색됨 — 목록에서 고르세요`; };
+      q.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(search,220);}); search(); setTimeout(()=>q.focus(),30); },
+    collect:()=>{ const c=$('al_code').value.trim().toUpperCase(); if(!c) throw new Error('품목코드를 고르세요');
+      return {alias:$('al_name').value.trim(), code:c}; }});
+  if(!data) return;
+  try{ await rpc('fn_alias_add',{p_alias:data.alias,p_code:data.code}); toast('연결했습니다','ok'); loadSl2(); }
+  catch(e){ toast(e.message,'bad'); }
+}
+async function slMake(){
+  if(!SL_PICK.size) return toast('가져올 주문을 고르세요','bad');
+  const nos=[...SL_PICK];
+  if(!await modal({title:'주문서로 만들기', ok:`${n(nos.length)}건 만들기`,
+    html:`<p style="font-size:13.5px;line-height:1.8">고른 <b>${n(nos.length)}건</b>을 주문서로 만듭니다.<br>
+      만드는 즉시 <b>재고가 빠지고</b>, 이카운트 전송은 목록에서 따로 누릅니다.<br>
+      <span class="note">재고가 모자란 건은 건너뛰고 사유를 알려줍니다.</span></p>`})) return;
+  toast('만드는 중…');
+  try{ const r=await rpc('fn_sl_to_order',{p_order_nos:nos,p_wh:$('sl_wh').value});
+    const sk=r.skipped||[];
+    toast(`주문서 ${n(r.made)}건 생성${sk.length?` · 건너뜀 ${sk.length}`:''}`, r.made?'ok':'bad');
+    SL_PICK.clear(); rpcClear(); loadSl2(); if(VIEW==='oq') loadOq(0);
+    if(sk.length) await modal({title:'건너뛴 주문', cancel:null, ok:'닫기', wide:true,
+      html:`<div class="tw"><table><thead><tr><th>주문번호</th><th>사유</th></tr></thead><tbody>${
+        sk.map(x=>`<tr><td class="mono">${esc(x.order_no)}</td><td>${esc(x.reason)}${x.shortage?` <span class="note">(${esc(JSON.stringify(x.shortage))})</span>`:''}</td></tr>`).join('')}</tbody></table></div>`});
+  }catch(e){ toast(e.message,'bad'); }
 }
 async function openOrderModal(){
   await ensureWh();
@@ -1520,10 +1745,12 @@ function parseOrderLines(txt){
 
 /* ═══════════════ 옵션 · 권한 ═══════════════ */
 let PERM=null;
+/* 관리자 메뉴 관리는 /admin/option (개발자 전용 독립 페이지) 에 있다 — 여기엔 없음 */
 async function loadOption(){
   try{ PERM=await rpc('fn_staff_perms'); }catch(e){ return toast(e.message,'bad'); }
   const ps=PERM.perms||[], st=PERM.staff||[];
-  $('permLegend').innerHTML=ps.map(p=>`<b style="color:var(--ink)">${esc(p.label)}</b> ${esc(p.note||'')}`).join(' &nbsp;·&nbsp; ');
+  $('permLegend').innerHTML='<div class="permlg">'+ps.map(p=>
+    `<div><b>${esc(p.label)}</b><span>${esc(p.note||'')}</span></div>`).join('')+'</div>';
   $('permHead').innerHTML=`<tr><th style="min-width:110px">담당자</th><th>부서 · 직함</th><th>코드</th>${ps.map(p=>`<th style="text-align:center;font-size:11px">${esc(p.label)}</th>`).join('')}<th></th></tr>`;
   $('permBody').innerHTML=st.map(x=>`<tr${x.active?'':' style="opacity:.45"'}>
       <td><b>${esc(x.name)}</b>${x.custom?'':' <span class="tag n" title="기본 묶음을 그대로 씁니다">기본값</span>'}</td>
@@ -1740,11 +1967,67 @@ document.querySelectorAll('.preset button').forEach(b=>b.addEventListener('click
 function applyPeriod(){ if(!$('pFrom').value||!$('pTo').value) return toast('시작일과 종료일을 넣어주세요','bad'); P={from:$('pFrom').value,to:$('pTo').value}; PRESET='custom'; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); periodLabel(); refreshView(); }
 
 /* ═══════════════ 네비 ═══════════════ */
+const NAV_ICON={home:`<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,dash:`<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,orders:`<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,online:`<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg>`,daily:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,inbox:`<svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg>`,consults:`<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>`,customers:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>`,crm:`<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>`,stock:`<svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>`,moves:`<svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg>`,items:`<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>`,oq:`<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,upload:`<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>`,log:`<svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,option:`<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>`,notify:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`};
+/* 메뉴는 DB(core.menu_group / core.menu_item)에서 그린다.
+   state: on 정상 · dev 개발 중(눌러도 공사중 안내) · off 숨김 */
+let MENU=[], MENU_STATE={};
+/* DB를 못 읽어도 화면은 떠야 하므로 기본 구성을 갖고 있는다 */
+const NAV_FALLBACK=[
+  {group:'_top',group_label:'',items:[{code:'home',label:'홈',state:'on'}]},
+  {group:'sales',group_label:'매출',items:[{code:'dash',label:'매출 대시보드',state:'on'},{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'}]},
+  {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출',state:'on'}]},
+  {group:'inv',group_label:'재고',items:[{code:'stock',label:'재고 현황',state:'on'},{code:'moves',label:'입출고',state:'on'},{code:'items',label:'품목',state:'on'},{code:'oq',label:'주문서 · 전송',state:'on'}]},
+  {group:'data',group_label:'데이터',items:[{code:'upload',label:'데이터 가져오기',state:'on'},{code:'log',label:'서비스 로그',state:'on'},{code:'settings',label:'설정 · 담당자',state:'on'}]},
+  {group:'ops',group_label:'운영',items:[{code:'option',label:'옵션 · 권한',state:'on'},{code:'notify',label:'알림 관리',state:'on'}]}];
+const NAV_BADGE={inbox:'badgeInbox'};   // 뱃지를 다는 메뉴
+async function loadMenu(){
+  try{ MENU=await rpc('fn_menu'); }catch(e){ MENU=null; }
+  if(!Array.isArray(MENU) || !MENU.length) MENU=NAV_FALLBACK;
+  MENU_STATE={};
+  MENU.forEach(g=>(g.items||[]).forEach(i=>{ MENU_STATE[i.code]={state:i.state||'on',label:i.label,note:i.note,group:g.group_label||''};
+    if(i.label) TITLES[i.code]=i.label; }));
+  renderNav();
+}
+function renderNav(){
+  const h=[];
+  MENU.forEach(g=>{
+    const items=(g.items||[]).filter(i=>i.state!=='off' && TITLES[i.code]);
+    if(!items.length) return;
+    if(g.group!=='_top' && g.group_label) h.push(`<span class="nav sep">${esc(g.group_label)}</span>`);
+    items.forEach(i=>{
+      const dev=i.state==='dev', bid=NAV_BADGE[i.code];
+      h.push(`<div class="nav${dev?' dev':''}" data-v="${i.code}"${dev?' title="개발 중입니다"':''}>`
+        +`<span class="ic">${NAV_ICON[i.code]||NAV_ICON.settings}</span>${esc(i.label||TITLES[i.code])}`
+        +(dev?'<span class="devtag">개발중</span>':(bid?`<span class="badge hidden" id="${bid}"></span>`:''))+`</div>`);
+    });
+  });
+  $('navBox').innerHTML=h.join('');
+}
+/* 개발 중인 메뉴를 눌렀을 때 나오는 공사장 안내 */
+function renderUnderConstruction(v){
+  const m=MENU_STATE[v]||{};
+  $('v-dev').innerHTML=`<div class="uc">
+      <div class="uc-tape"></div>
+      <div class="uc-body">
+        <div class="uc-ic"><svg viewBox="0 0 24 24"><path d="M2 18h20"/><path d="M4 18v-2a8 8 0 0 1 16 0v2"/><path d="M9.5 5.2A8 8 0 0 1 12 4.8a8 8 0 0 1 2.5.4"/><path d="M9.5 5.2V9M14.5 5.2V9"/></svg></div>
+        <h4>${esc(m.label||TITLES[v]||'이 메뉴')} — 공사 중입니다</h4>
+        <p>${m.note?esc(m.note):'아직 만드는 중이에요. 다 되면 이 자리에 바로 열립니다.'}</p>
+        <div class="uc-cones"><span>🚧</span><span>🚧</span><span>🚧</span></div>
+        <button class="btn sm ghost" onclick="show('home')">홈으로 가기</button>
+      </div>
+      <div class="uc-tape"></div>
+    </div>`;
+}
 const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',dash:'매출 대시보드',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리'};
 let VIEW='home';
 function toggleNav(force){ const on = force===undefined ? !document.body.classList.contains('nav-open') : !!force; document.body.classList.toggle('nav-open', on); }
-function show(v){ if(!TITLES[v]) v='home'; toggleNav(false); VIEW=v; document.querySelectorAll('.view').forEach(x=>x.classList.toggle('hidden',x.id!=='v-'+v));
-  document.querySelectorAll('.nav[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===v)); $('title').textContent=TITLES[v];
+function show(v){ if(!TITLES[v]) v='home'; toggleNav(false);
+  const dev=(MENU_STATE[v]||{}).state==='dev'; VIEW=v;
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('hidden', dev ? x.id!=='v-dev' : x.id!=='v-'+v));
+  document.querySelectorAll('.nav[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===v));
+  $('title').textContent=TITLES[v];
+  if(dev){ $('periodBar').classList.add('hidden'); $('pageIntro').classList.add('hidden'); renderUnderConstruction(v);
+           if(history.replaceState) history.replaceState(null,'','#'+v); return; }
   placePeriodBar(v); renderIntro(v); refreshView(); if(history.replaceState) history.replaceState(null,'','#'+v); }
 /* 기간 바는 그 페이지의 첫 카드 맨 위(필터 바로 위)로 옮겨 붙인다 */
 const PERIOD_VIEWS=['orders','daily','consults','log','moves','inbox'];
@@ -1753,7 +2036,7 @@ function placePeriodBar(v){
   const card=document.querySelector('#v-'+v+' .card'); if(card && pb.parentNode!==card){ card.insertBefore(pb, card.firstChild); }
   pb.classList.remove('hidden');
 }
-document.querySelectorAll('.nav[data-v]').forEach(x=>x.addEventListener('click',()=>show(x.dataset.v)));
+$('navBox').addEventListener('click',e=>{ const n=e.target.closest('.nav[data-v]'); if(n) show(n.dataset.v); });
 function refreshView(){ ({home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>loadItems(0),oq:()=>loadOq(0),dash:loadDash,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:loadCrmFunnel,upload:loadUploads,log:()=>loadLog(0),settings:loadSettings,option:loadOption,notify:loadNotify})[VIEW](); }
 
 /* ═══════════════ 온라인 채널 ═══════════════ */
@@ -1960,7 +2243,7 @@ async function loadDashLite(){
 function paint(){
   const k=DK, T=k.total, V=k.prev, mv=Number(T[M])||0, pv=Number(V[M])||0;
   const pend=Number(k.pending_submissions||0);
-  $('badgeInbox').textContent=pend; $('badgeInbox').classList.toggle('hidden',!pend);
+  const bi=$('badgeInbox'); if(bi){ bi.textContent=pend; bi.classList.toggle('hidden',!pend); }
 
   $('mHero').innerHTML=fmtW(mv);
   $('mSub').innerHTML=`${MLBL[M]} · ${k.period.from} ~ ${k.period.to} (${k.period.days}일) &nbsp; ${chip(mv,pv,M==='refund')} 전기 ${fmtT(pv)}원`;

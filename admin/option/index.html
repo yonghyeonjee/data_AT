@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datacenter · 메뉴 관리</title>
+<link rel="icon" href="../../favicon.ico?v=3">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{--ground:#F3F4F7;--surface:#fff;--line:#E4E7EE;--line-2:#CDD3DE;--ink:#141820;--ink-2:#2E3542;--muted:#646D7C;--faint:#98A1B0;
+  --navy:#1428A0;--navy-ink:#0E1A6B;--navy-soft:#EAEEFB;--amber:#C88A0E;--amber-soft:#FBF1DC;--ok:#0F7B6C;--red:#B3261E;--side:#101528;
+  --shadow:0 1px 2px rgba(20,24,32,.04),0 8px 28px rgba(20,24,32,.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;background:var(--ground);color:var(--ink);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input,select{font:inherit;color:inherit}
+.hidden{display:none!important}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* 헤더 */
+header{background:var(--side);color:#fff;padding:0 24px;height:58px;display:flex;align-items:center;gap:14px}
+header .bk{color:#AEB6CC;text-decoration:none;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;transition:.12s}
+header .bk:hover{background:rgba(255,255,255,.08);color:#fff}
+header .bk svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+header .sp{width:1px;height:20px;background:rgba(255,255,255,.14)}
+header h1{font-size:15px;font-weight:700;letter-spacing:-.015em}
+header .dev{font-size:9.5px;font-weight:800;letter-spacing:.08em;color:#F0B23A;background:rgba(240,178,58,.14);border:1px solid rgba(240,178,58,.32);padding:2px 7px;border-radius:6px}
+header .who{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:#AEB6CC}
+header .who button{background:transparent;border:1px solid rgba(255,255,255,.16);color:#AEB6CC;border-radius:7px;padding:5px 10px;cursor:pointer;font-size:11.5px;transition:.12s}
+header .who button:hover{border-color:rgba(255,255,255,.4);color:#fff}
+
+.wrap{max-width:1060px;margin:24px auto 60px;padding:0 20px}
+.card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:22px 24px;margin-bottom:16px}
+.card h2{font-size:15.5px;font-weight:700;letter-spacing:-.015em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card h2 span.sub{font-size:12.5px;font-weight:500;color:var(--muted);letter-spacing:0}
+.card h2 .act{margin-left:auto;display:flex;gap:6px}
+.note{font-size:12.5px;color:var(--muted);line-height:1.75}
+.btn{border:1.5px solid var(--navy);background:var(--navy);color:#fff;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.12s}
+.btn:hover{background:var(--navy-ink);border-color:var(--navy-ink)}
+.btn.ghost{background:#fff;color:var(--ink-2);border-color:var(--line-2)}
+.btn.ghost:hover{background:#F7F8FB;border-color:var(--navy);color:var(--navy)}
+.btn:disabled{opacity:.5;cursor:default}
+.in{border:1.5px solid var(--line-2);border-radius:8px;height:34px;padding:0 10px;background:#fff;width:100%;min-width:0;transition:.12s}
+.in:focus{outline:0;border-color:var(--navy);box-shadow:0 0 0 3px var(--navy-soft)}
+
+/* 로그인 */
+#login{max-width:380px;margin:14vh auto;padding:0 20px}
+#login .card{padding:30px 28px}
+#login h2{justify-content:center;margin-bottom:4px}
+#login p.lead{text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:22px}
+#login label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin:12px 0 5px}
+#login .btn{width:100%;height:40px;margin-top:18px}
+#lErr{color:var(--red);font-size:12.5px;margin-top:12px;text-align:center;min-height:18px}
+
+/* 범례 */
+.legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin:14px 0 16px;padding:11px 14px;background:#F7F8FB;border-radius:10px}
+
+/* 목록 */
+.row{display:grid;grid-template-columns:26px minmax(150px,1fr) 70px 218px minmax(170px,1.25fr);gap:10px;align-items:center;padding:7px 10px;border-radius:8px}
+.row+.row{margin-top:2px}
+.row.hd{font-size:11px;font-weight:700;color:var(--muted);padding-bottom:2px}
+.row.hd span:nth-child(3){text-align:center}
+.row.grp{background:#F3F5F9;font-weight:700;margin-top:16px}
+.row.grp:first-of-type{margin-top:0}
+.row.off{opacity:.42}
+.row .ic{width:22px;height:22px;display:flex;align-items:center;justify-content:center;opacity:.55}
+.row .ic svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.row .in{height:30px;font-size:12.5px}
+.row input[type=number]{text-align:center;padding:0 4px}
+.ctl{display:flex;align-items:center;gap:12px}
+.sw{width:34px;height:19px;border-radius:10px;background:#C9CFDC;position:relative;cursor:pointer;flex-shrink:0;transition:.18s}
+.sw i{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.22)}
+.sw.on{background:var(--navy)} .sw.on i{left:17px}
+.st{font-size:11.5px;font-weight:600;color:var(--muted)}
+.rd{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+.rd input{width:13px;height:13px;margin:0;accent-color:var(--navy);cursor:pointer}
+.rd.on{color:var(--navy)}
+.rd.dev input{accent-color:#E8A21C} .rd.dev.on{color:var(--amber)}
+.rd.mute{opacity:.3;cursor:default}
+
+/* 미리보기 */
+.prev{background:var(--side);border-radius:12px;padding:12px 10px;max-height:calc(100vh - 160px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.16) transparent}
+.prev::-webkit-scrollbar{width:6px} .prev::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:3px}
+.grid2>div:last-child{position:sticky;top:16px}
+.pv{display:flex;align-items:center;gap:10px;padding:7.5px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#AEB6CC}
+.pv .ic{opacity:.8} .pv .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pv.sep{color:#5B647A;font-size:10.5px;letter-spacing:.16em;padding:12px 12px 4px;font-weight:700}
+.pv.dev{color:#6E7893} .pv.dev .ic{opacity:.4}
+.pv .tag{margin-left:auto;font-size:9.5px;font-weight:700;color:#F0B23A;background:rgba(240,178,58,.14);border:1px solid rgba(240,178,58,.3);padding:1px 6px;border-radius:6px}
+.grid2{display:grid;grid-template-columns:1fr 268px;gap:16px;align-items:start}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}.row{grid-template-columns:26px 1fr;row-gap:8px}.row>span:nth-child(3),.row>span:nth-child(4),.row>span:nth-child(5){grid-column:2}.row.hd{display:none}}
+
+/* 토스트 */
+#toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:50}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#toast.bad{background:var(--red)} #toast.ok{background:var(--ok)}
+#boot{display:flex;align-items:center;justify-content:center;height:100vh;color:var(--faint);font-size:13px}
+</style>
+</head>
+<body>
+
+<div id="boot">불러오는 중…</div>
+
+<!-- ═══ 로그인 ═══ -->
+<div id="login" class="hidden">
+  <div class="card">
+    <h2>메뉴 관리 <span class="dev" style="color:var(--amber);background:var(--amber-soft);border:1px solid #EBD9AE;padding:2px 7px;border-radius:6px;font-size:9.5px;font-weight:800;letter-spacing:.08em">개발자 전용</span></h2>
+    <p class="lead">Datacenter 관리자 메뉴를 켜고 끄는 곳입니다</p>
+    <label for="lId">아이디</label>
+    <input class="in mono" id="lId" autocomplete="username" placeholder="yonghyeon">
+    <label for="lPw">비밀번호</label>
+    <input class="in" id="lPw" type="password" autocomplete="current-password">
+    <button class="btn" onclick="login()">로그인</button>
+    <div id="lErr"></div>
+  </div>
+</div>
+
+<!-- ═══ 본문 ═══ -->
+<div id="app" class="hidden">
+  <header>
+    <a class="bk" href="../../admin.html"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>관리자 화면</a>
+    <span class="sp"></span>
+    <h1>관리자 메뉴 관리</h1><span class="dev">개발자 전용</span>
+    <div class="who"><b id="uEmail" style="color:#fff;font-weight:600">-</b><button onclick="logout()">로그아웃</button></div>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <h2>메뉴 구성 <span class="sub">왼쪽 메뉴에 무엇을 어떤 순서로 보일지 정합니다</span>
+        <span class="act"><button class="btn ghost" onclick="load(true)">되돌리기</button><button class="btn" id="btnSave" onclick="save()">저장</button></span></h2>
+      <div class="legend">
+        <span><b>토글</b> 메뉴에 보일지 말지</span>
+        <span><b style="color:var(--navy)">공개</b> 평소대로 보이고 눌립니다</span>
+        <span><b style="color:var(--amber)">개발 중</b> 보이지만 눌러도 공사 중 화면만 나옵니다</span>
+      </div>
+      <div class="grid2">
+        <div id="list"></div>
+        <div>
+          <div class="note" style="margin-bottom:8px;font-weight:600;color:var(--ink-2)">이렇게 보입니다</div>
+          <div class="prev" id="prev"></div>
+        </div>
+      </div>
+      <p class="note" style="margin-top:14px">토글을 끄면 메뉴에서 사라집니다(주소로 <span class="mono">#코드</span>를 직접 치면 열림 — 완전 차단이 아니라 정리용). 다시 켜면 끄기 직전 상태로 돌아옵니다. 그룹을 끄면 그 아래 메뉴가 통째로 사라집니다. 순서 숫자가 작을수록 위로 갑니다. <b>안내 문구</b>를 적으면 공사 중 화면에 그 문장이 나옵니다. 저장하면 모든 관리자 화면에 바로 반영됩니다.</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://wdahskrcpjooqhwwxjiu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const ID_DOMAIN='@samsungat.local', SESSION_MAX_H=12;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let TO=null;
+function toast(m,k){ const t=$('toast'); t.textContent=m; t.className='on '+(k||''); clearTimeout(TO); TO=setTimeout(()=>t.className='',2600); }
+async function rpc(fn,args={}){ const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
+
+const ICON={home:'M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z',dash:'M4 20V10M10 20V4M16 20v-7M22 20H2',orders:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',online:'M2 5h20v12H2zM8 21h8M12 17v4',daily:'M3 4h18v17H3zM3 9h18M8 2v4M16 2v4',inbox:'M22 12h-6l-2 3h-4l-2-3H2M5 5h14l3 7v7H2v-7z',consults:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z',customers:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M23 21v-2a4 4 0 0 0-3-3.9',crm:'M22 2 11 13M22 2l-7 20-4-9-9-4z',stock:'M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8',moves:'M4 7h11l-3-3M20 17H9l3 3M4 7v10M20 7v10',items:'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7 7h.01',oq:'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9',upload:'M3 5c0 1.7 4 3 9 3s9-1.3 9-3-4-3-9-3-9 1.3-9 3M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5',log:'M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z',settings:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8 2 2 0 1 1-2.8 2.8 1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2 2 2 0 1 1-2.8-2.8A1.7 1.7 0 0 0 3.1 14a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9 2 2 0 1 1 2.8-2.8A1.7 1.7 0 0 0 10 3.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2 2 2 0 1 1 2.8 2.8A1.7 1.7 0 0 0 20.9 10a2 2 0 1 1 0 4 1.7 1.7 0 0 0-1.5 1z',option:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1',notify:'M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0'};
+const svg=c=>`<svg viewBox="0 0 24 24"><path d="${ICON[c]||ICON.settings}"/></svg>`;
+
+/* ═══ 인증 ═══ */
+let ME=null, D=null;
+function reveal(w){ $('boot').classList.add('hidden'); $('login').classList.toggle('hidden',w!=='login'); $('app').classList.toggle('hidden',w!=='app'); }
+async function boot(){
+  let session=null;
+  try{ ({data:{session}} = await sb.auth.getSession()); }catch(e){}
+  if(session){ const at=+localStorage.getItem('dc_login_at')||0;
+    if(!at || Date.now()-at > SESSION_MAX_H*3600e3){ await sb.auth.signOut(); localStorage.removeItem('dc_login_at'); session=null; } }
+  if(!session){ reveal('login'); $('lId').focus(); return; }
+  try{ ME=await rpc('fn_me'); }catch(e){ ME=null; }
+  if(!ME){ $('lErr').textContent='프로필이 없습니다.'; await sb.auth.signOut(); reveal('login'); return; }
+  if(!ME.is_dev){ reveal('login');
+    $('lErr').innerHTML='이 화면은 <b>개발자 계정</b>만 쓸 수 있습니다.<br>운영 작업은 <a href="../../admin.html" style="color:var(--navy)">관리자 화면</a>에서 하세요.';
+    await sb.auth.signOut(); localStorage.removeItem('dc_login_at'); return; }
+  reveal('app');
+  $('uEmail').textContent=ME.email.replace(ID_DOMAIN,'');
+  load(true);
+}
+async function login(){ $('lErr').textContent='';
+  let id=$('lId').value.trim(); if(!id) return $('lId').focus();
+  if(!id.includes('@')) id+=ID_DOMAIN;
+  const {error}=await sb.auth.signInWithPassword({email:id,password:$('lPw').value});
+  if(error){ $('lErr').textContent='로그인 실패: '+error.message; return; }
+  localStorage.setItem('dc_login_at',String(Date.now())); boot(); }
+async function logout(){ await sb.auth.signOut(); localStorage.removeItem('dc_login_at'); location.reload(); }
+$('lPw').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
+$('lId').addEventListener('keydown',e=>{ if(e.key==='Enter') $('lPw').focus(); });
+
+/* ═══ 메뉴 ═══ */
+async function load(){
+  try{ D=await rpc('fn_menu_admin'); }catch(e){ toast(e.message,'bad'); return; }
+  render();
+}
+function ctl(kind,code,cur,hasDev){
+  const on=cur!=='off';
+  const t=`<span class="sw${on?' on':''}" role="switch" aria-checked="${on}" title="${on?'메뉴에 보입니다':'메뉴에서 숨깁니다'}" onclick="setState('${kind}','${code}','${on?'off':'on'}')"><i></i></span>`;
+  if(!hasDev) return `<div class="ctl">${t}<b class="st">${on?'보임':'숨김'}</b></div>`;
+  const r=(v,lb)=>`<label class="rd${cur===v?' on':''}${v==='dev'?' dev':''}${on?'':' mute'}"><input type="radio" name="s_${code}" ${cur===v?'checked':''} ${on?'':'disabled'} onchange="setState('${kind}','${code}','${v}')"><span>${lb}</span></label>`;
+  return `<div class="ctl">${t}${r('on','공개')}${r('dev','개발 중')}</div>`;
+}
+function render(){
+  if(!D) return;
+  const h=['<div class="row hd"><span></span><span>메뉴 이름</span><span>순서</span><span>메뉴에 보이기</span><span>개발 중 안내 문구</span></div>'];
+  D.forEach(g=>{
+    const top=g.code==='_top';
+    h.push(`<div class="row grp${g.state==='off'?' off':''}">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
+      <span>${top?'<span style="color:var(--muted);font-weight:500">(그룹 없이 맨 위)</span>':`<input class="in" value="${esc(g.label||'')}" oninput="field('g','${g.code}','label',this.value)">`}</span>
+      <span>${top?'':`<input class="in" type="number" step="10" value="${g.sort}" oninput="field('g','${g.code}','sort',this.value)" title="순서">`}</span>
+      <span>${top?'':ctl('g',g.code,g.state,false)}</span><span></span></div>`);
+    (g.items||[]).forEach(i=>{
+      h.push(`<div class="row item${i.state==='off'?' off':''}">
+        <span class="ic">${svg(i.code)}</span>
+        <span><input class="in" value="${esc(i.label||'')}" oninput="field('i','${i.code}','label',this.value)"></span>
+        <span><input class="in" type="number" step="10" value="${i.sort}" oninput="field('i','${i.code}','sort',this.value)" title="순서"></span>
+        <span>${ctl('i',i.code,i.state,true)}</span>
+        <span><input class="in" value="${esc(i.note||'')}" placeholder="안내 문구" oninput="field('i','${i.code}','note',this.value)" title="개발 중일 때 공사 중 화면에 나오는 문장"></span></div>`);
+    });
+  });
+  $('list').innerHTML=h.join('');
+  preview();
+}
+function preview(){
+  const p=[];
+  [...D].sort((a,b)=>a.sort-b.sort).forEach(g=>{
+    if(g.state==='off') return;
+    const items=(g.items||[]).filter(i=>i.state!=='off').sort((a,b)=>a.sort-b.sort);
+    if(!items.length) return;
+    if(g.code!=='_top' && g.label) p.push(`<div class="pv sep">${esc(g.label)}</div>`);
+    items.forEach(i=>p.push(`<div class="pv${i.state==='dev'?' dev':''}"><span class="ic">${svg(i.code)}</span>${esc(i.label)}${i.state==='dev'?'<span class="tag">개발중</span>':''}</div>`));
+  });
+  $('prev').innerHTML=p.join('')||'<div class="pv sep">보일 메뉴가 없습니다</div>';
+}
+function find(kind,code){
+  if(kind==='g') return D.find(g=>g.code===code);
+  for(const g of D){ const i=(g.items||[]).find(x=>x.code===code); if(i) return i; }
+  return null;
+}
+function field(kind,code,f,v){ const o=find(kind,code); if(!o) return; o[f]=(f==='sort'?(parseInt(v,10)||0):v); if(f!=='note') preview(); }
+function setState(kind,code,v){ const o=find(kind,code); if(!o) return;
+  if(v==='off'){ o._prev = o.state==='off' ? (o._prev||'on') : o.state; o.state='off'; }
+  else if(v==='on' && o.state==='off'){ o.state = o._prev || 'on'; }
+  else o.state=v;
+  render(); }
+async function save(){
+  if(!D) return;
+  const b=$('btnSave'); b.disabled=true; b.textContent='저장 중…';
+  const groups=D.map(g=>({code:g.code,label:g.label,state:g.state,sort:g.sort}));
+  const items=[]; D.forEach(g=>(g.items||[]).forEach(i=>items.push({code:i.code,label:i.label,state:i.state,sort:i.sort,note:i.note||null})));
+  try{ const r=await rpc('fn_menu_save',{p_data:{groups,items}}); toast(`저장됨 · ${r.updated}개 반영`,'ok'); await load(); }
+  catch(e){ toast(e.message,'bad'); }
+  finally{ b.disabled=false; b.textContent='저장'; }
+}
+boot();
+</script>
+</body>
+</html>

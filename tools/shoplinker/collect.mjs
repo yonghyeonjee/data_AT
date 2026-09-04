@@ -425,6 +425,16 @@ async function main() {
   }
 
   console.log(`\n합계 — 수신 ${grand.fetched} · 신규 ${grand.ins} · 갱신 ${grand.upd} · ${((Date.now() - started) / 1000).toFixed(0)}초`);
+
+  // 주문이 들어오면 대시보드 캐시가 비워진다 → 여기서 미리 다시 만들어 두면
+  // 사람이 대시보드를 열 때 1초가 아니라 몇 ms 만에 뜬다.
+  if (!DRY && (grand.ins > 0 || grand.upd > 0)) {
+    try {
+      const t = Date.now();
+      const r = await rpc("fn_dash_refresh", { p_months: 6 });
+      console.log(`대시보드 캐시 예열 — ${((Date.now() - t) / 1000).toFixed(1)}초`, r ?? "");
+    } catch (e) { console.log("대시보드 캐시 예열 실패(무시):", e.message); }
+  }
 }
 
 main().catch((e) => { console.error("실패:", e.message); process.exit(1); });

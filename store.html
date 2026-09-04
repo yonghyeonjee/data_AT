@@ -183,6 +183,15 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .empty{color:var(--faint);text-align:center;padding:20px;font-size:13px}
 .lbl{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
 .sk-row{display:grid;grid-template-columns:minmax(0,1fr) 74px 84px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.sl-row{display:grid;grid-template-columns:26px minmax(0,1fr) 84px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.sl-row:last-child{border-bottom:0}
+.sl-row.off{opacity:.55}
+.sl-row input[type=checkbox]{width:18px;height:18px}
+.sl-row .nm{min-width:0;font-size:13.5px;line-height:1.5}
+.sl-row .nm small{display:block;color:var(--faint);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sl-row .nm .code{color:var(--ok);font-family:ui-monospace,monospace;font-size:11px}
+.sl-row .nm .miss{color:var(--bad);font-weight:700;font-size:11px}
+.sl-row .am{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px}
 .sk-row:last-child{border-bottom:0}
 .sk-row .nm{font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .sk-row .nm small{display:block;color:var(--faint);font-weight:400;font-size:11px}
@@ -466,7 +475,20 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
       </ol></details>
     </div>
     <div class="card">
-      <h2>주문서 등록 <span id="or_me"></span></h2>
+      <h2>샵링커 주문 가져오기 <span id="sl_me"></span></h2>
+      <p class="note-in" style="margin-top:0">자동 수집된 주문 중 <b>아직 주문서로 만들지 않은 것</b>만 나옵니다. 고르면 재고가 빠지고 이카운트 전송 대기가 됩니다.</p>
+      <div class="daterow">
+        <select class="in" id="sl_days" onchange="loadSlList()"><option value="3">최근 3일</option><option value="7" selected>최근 7일</option><option value="14">최근 14일</option></select>
+        <select class="in" id="sl_ch" onchange="loadSlList()"><option value="">전체 채널</option></select>
+        <input class="in" id="sl_q" placeholder="주문번호 · 구매자 · 상품" onkeydown="if(event.key==='Enter')loadSlList()">
+      </div>
+      <div class="oc-sum"><div><div class="k">가져올 주문</div><div class="v" id="sl_cnt">-</div></div><div><div class="k">바로 가능</div><div class="v" id="sl_ready">-</div></div></div>
+      <div id="sl_rows"><div class="empty">불러오는 중…</div></div>
+      <button class="btn" id="sl_btn" onclick="slMakeStore()" style="margin-top:10px">선택한 건 주문서로</button>
+    </div>
+
+    <div class="card">
+      <h2>직접 입력 <span id="or_me"></span></h2>
       <div class="daterow">
         <select class="in" id="or_origin"><option value="online">온라인 쇼핑몰</option><option value="rental">렌탈 방문</option><option value="store">매장</option><option value="vms">통신판매</option><option value="manual">직접 입력</option></select>
         <input class="in" type="date" id="or_date">
@@ -692,6 +714,44 @@ async function stkMove(code, kind, name){
   }catch(e){ toast(e.message,'bad'); }
 }
 
+/* ═══ 샵링커 주문 가져오기 ═══ */
+let SL_ROWS=[], SL_PICK=new Set(), SL_INIT=false;
+async function loadSlList(){
+  const box=$('sl_rows'); if(!box) return;
+  box.innerHTML='<div class="empty">불러오는 중…</div>';
+  let d; try{ d=await rpc('fn_store_sl_pending',{p_code:CODE,p_days:Number($('sl_days').value),
+    p_q:$('sl_q').value.trim()||null,p_channel:$('sl_ch').value||null,p_limit:60}); }
+  catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  SL_ROWS=d.rows||[];
+  if($('sl_ch').options.length<=1) $('sl_ch').innerHTML='<option value="">전체 채널</option>'+(d.channels||[]).map(c=>`<option>${esc(c)}</option>`).join('');
+  $('sl_cnt').textContent=(d.total||0)+'건';
+  $('sl_ready').textContent=(d.ready||0)+'건'+((d.unmapped||0)?` (코드없음 ${d.unmapped})`:'');
+  box.innerHTML = SL_ROWS.length ? SL_ROWS.map((r,i)=>{
+    const ln=(r.lines||[]).map(l=> l.item_code
+      ? `<span class="code">${esc(l.item_code)}</span> ${esc(l.item_name||l.product)} ×${Number(l.qty)}`
+      : `<span class="miss">코드없음</span> ${esc(l.product)}`).join(' / ');
+    return `<div class="sl-row ${r.ready?'':'off'}">
+      <input type="checkbox" ${SL_PICK.has(r.order_no)?'checked':''} ${r.ready?'':'disabled'} onchange="slPickStore(${i},this.checked)">
+      <div class="nm">${esc(r.channel||'')} · ${esc(r.buyer||'')}<small>${esc(r.order_no)} · ${ln}</small></div>
+      <div class="am">${won(r.amount)}<small style="display:block;color:var(--faint);font-weight:400;font-size:11px">${esc(r.at)}</small></div>
+    </div>`; }).join('')
+    : '<div class="empty">가져올 주문이 없습니다</div>';
+}
+function slPickStore(i,on){ const r=SL_ROWS[i]; if(!r||!r.ready) return; on?SL_PICK.add(r.order_no):SL_PICK.delete(r.order_no); }
+async function slMakeStore(){
+  if(!SL_PICK.size) return toast('가져올 주문을 고르세요','bad');
+  const nos=[...SL_PICK];
+  if(!confirm(`${nos.length}건을 주문서로 만듭니다.\n만드는 즉시 재고가 빠집니다. 계속할까요?`)) return;
+  const b=$('sl_btn'); b.disabled=true; b.textContent='만드는 중…';
+  try{ const r=await rpc('fn_store_sl_to_order',{p_code:CODE,p_order_nos:nos,p_wh:$('or_wh').value||'00001'});
+    const sk=r.skipped||[];
+    toast(`주문서 ${r.made}건 생성${sk.length?` · 건너뜀 ${sk.length}`:''}`, r.made?'ok':'bad');
+    if(sk.length) alert('건너뛴 주문\n\n'+sk.map(x=>`${x.order_no} — ${x.reason}`).join('\n'));
+    SL_PICK.clear(); STK_LOADED=false; loadSlList(); loadOrRecent();
+  }catch(e){ toast(e.message,'bad'); }
+  b.disabled=false; b.textContent='선택한 건 주문서로';
+}
+
 /* ═══ 주문서 ═══ */
 let OR_INIT=false;
 async function initOrderTab(){
@@ -704,6 +764,7 @@ async function initOrderTab(){
     $('or_origin').value = (STATUS && STATUS.dept === '온라인사업부') ? 'online' : 'store';
     orPreview();
   }
+  if(!SL_INIT){ SL_INIT=true; loadSlList(); }
   loadOrRecent();
 }
 function orLines(){

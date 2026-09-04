@@ -70,3 +70,95 @@
 --                                   30분 자동 정지 + 이후 호출 거부 (errcode 55006)
 --   ec.config.paused_until          정지 해제 시각 · fn_ec_resume() 으로 관리자가 수동 해제
 --   재로그인 쿨다운 60초 · 재시도는 호출당 1회
+
+-- mvp_60_inquiry_edit_flags ───────────────────────────────────────
+--   crm.inquiry_flag(form, src_id, is_test, hidden, note)  원본 3개 테이블을 건드리지 않는 오버레이
+--   core.f_looks_test(name, phone, text, handler)          테스트 자동 판별
+--       · 이름/내용에 test·테스트·더미 · 홍길동/이순신/김철수 같은 더미 이름
+--       · **고객명이 우리 직원 이름이면 본인 테스트로 본다** (지용현·차효범 등)
+--       · 알려진 테스트 번호, 010XXXX 반복 패턴, 10자리 미만 번호
+--   crm.v_inquiry 확장 : web_subscription(구독문의) 추가 · 견적은 **최신 버전만** · auto_test 컬럼
+--   fn_inquiry_list(..., p_show)  real(기본) | test | hidden | all  + counts
+--   fn_inquiry_flag(form, ids[], is_test, hidden, note)
+--   fn_inquiry_save(form, id, data)   원본 테이블에 이름·연락처·담당·상태·내용 반영
+--   fn_inquiry_delete(form, ids[], hard)  기본은 숨김(되돌리기 가능) · hard=true 는 관리자만
+--
+-- mvp_61_quote_number_parse ───────────────────────────────────────
+--   [버그] 견적 GAS 가 시트 셀 값을 그대로 보내는데 "6,019,200" 처럼 **콤마가 든 문자열**이라
+--          fn_submit_quote 의 ::numeric 캐스팅이 터졌다. GAS 는 muteHttpExceptions 로 삼켜서
+--          "시트에는 쌓이는데 현행 시스템에는 안 들어오는" 상태가 계속됐다.
+--   core.f_num(text) / core.f_int(text) 로 숫자만 뽑아 캐스팅하도록 교체.
+--
+-- 시트 백필 (2026-09-05) ──────────────────────────────────────────
+--   견적내역        19건(견적번호 8개, 버전 포함)  → crm.quote
+--   구독문의 상담관리 45건                          → crm.consult(web_subscription)
+--   소모품·렌탈      2건 (테스트 4건은 함수가 자동 제외) → crm.consult(web_supply)
+--   VMS·B2B         2건 (테스트 1건 자동 제외)       → crm.consult(web_b2b)
+--   결과 : 실제 48건 / 테스트 12건
+
+-- mvp_62_inquiry_columns ──────────────────────────────────────────
+--   문의 목록이 "목적: X / 지역: Y / 메모" 한 덩어리라 읽기 어려웠다.
+--   crm.v_inquiry 를 다시 만들어 kind(관심·상품) · purpose(목적) · region(지역) · memo 로 분리.
+--   구독문의는 consult.content 에서 regexp 로 "목적:" "지역:" 을 뽑아내고 나머지를 메모로.
+--   견적은 purpose 자리에 최종가·월구독료·버전을 넣는다.
+--   fn_inquiry_list 기본 페이지 크기 50 → 25, 응답에 limit 포함.
+
+-- mvp_63_dash_warm_presets ────────────────────────────────────────
+--   [발견] 대시보드 캐시(core.dash_cache)는 정상 동작하나(예열 시 1~9ms, 미예열 1.5초)
+--          fn_dash_refresh 가 "N개월 전 1일~오늘" 한 칸만 만들어서
+--          화면 기본값인 **30일** 은 늘 캐시 미스였다.
+--   화면이 실제로 쓰는 기간 버튼 6종 × 모드 2종 = 12칸을 미리 만들도록 교체.
+--   샵링커 수집(collect.mjs)이 주문을 넣으면 캐시가 비워지므로,
+--   수집 끝에서 fn_dash_refresh 를 불러 다시 예열한다.
+
+-- mvp_64_pg_cron_jobs ─────────────────────────────────────────────
+--   [발견] GitHub 예약 실행이 3~4.5시간씩 밀린다 (13:10 KST 슬롯 → 실제 17:48,
+--          23:10 슬롯 → 실제 02:18/02:34). 그래서 Supabase pg_cron(설치돼 있음)으로 옮김.
+--   core.f_dash_warm()  대시보드 캐시 12칸 예열
+--   cron 'dash-warm'         매시 25분
+--   cron 'ecount-stock-sync' 매일 03:00 KST — 창고별 재고현황 → kind='sync'
+--   cron 'ecount-unpause'    15분마다 — 차단기 자동 해제
+--   fn_cron_status(limit)    화면에서 실행 이력 확인
+--
+-- mvp_65_sl_order_pull ────────────────────────────────────────────
+--   자동 수집된 샵링커 주문을 골라 주문서로 만드는 경로 (수기 입력 대체)
+--   core.f_ec_code_of(name, model)  상품명/모델 → 이카운트 품목코드 4단계 매칭
+--       ① 상품명 전체가 별칭과 일치 ② 모델코드가 별칭과 일치
+--       ③ 모델코드가 품목 코드/모델과 일치 ④ 상품명 안에 별칭이 포함(긴 것 우선)
+--       → 최근 3일 239건 중 201건(84%) 자동 매칭 확인
+--   core.f_sl_pending(days,q,channel,limit)  아직 주문서로 안 만든 샵링커 주문 (주문번호 단위)
+--   core.f_sl_to_order(order_nos[], wh, by)  골라서 큐 생성 + 재고 차감 (미매칭·재고부족은 건너뛰고 사유 반환)
+--   fn_sl_pending / fn_sl_to_order          관리자
+--   fn_store_sl_pending / fn_store_sl_to_order  담당자 PIN (perm='order')
+--   fn_alias_add(alias, code)               못 찾은 상품명을 화면에서 바로 코드에 연결
+
+-- mvp_66_menu_manager ─────────────────────────────────────────────
+--   관리자 메뉴(왼쪽 네비)를 DB에서 관리한다. /admin → 옵션·권한 → "관리자 메뉴"
+--   core.menu_group(code,label,sort,state,note)   6그룹 : _top/sales/crm/inv/data/ops
+--   core.menu_item (code,group_code,label,sort,state,note)  18메뉴
+--   state : 'on' 정상 · 'dev' 메뉴엔 보이되 누르면 공사 중 안내 · 'off' 메뉴에서 숨김
+--   fn_menu()        로그인한 사람이 볼 메뉴 (off 제외) — admin.html 이 부팅 때 호출
+--   fn_menu_admin()  관리자 편집용 (off 포함, sort/note 포함)
+--   fn_menu_save(jsonb {groups:[],items:[]})  라벨·순서·상태·안내문구 일괄 저장
+--   화면쪽: NAV_ICON(코드→아이콘), NAV_FALLBACK(DB를 못 읽어도 뜨는 기본 구성),
+--          renderNav() / renderUnderConstruction() / #v-dev (공사 중 화면)
+--
+-- (화면) RPC 45초 캐시 ─────────────────────────────────────────────
+--   admin.html 의 rpc() 가 조회 계열 결과를 45초 담아둔다. 저장 계열
+--   (save/_set/delete/submit/sync/… )은 담지 않고, 실행되면 캐시를 통째로 비운다.
+--   화면을 왔다갔다 할 때 같은 질의가 다시 나가지 않아 체감 속도가 붙는다.
+
+-- mvp_67_dev_gate_menu ────────────────────────────────────────────
+--   "메뉴를 보이게 할지 말지"는 개발자만 만진다.
+--   개발자 계정  yonghyeon@samsungat.local (로그인 아이디 `yonghyeon`) · role=admin
+--   core.app_setting['dev_users'] = 쉼표로 구분한 이메일 목록. 비우면 admin 전원 허용
+--   core.f_is_dev()  admin 이면서 dev_users 에 든 계정만 true
+--   fn_me() 에 is_dev 추가 → 화면이 [관리자 메뉴] 카드를 보일지 정한다
+--   fn_menu_admin / fn_menu_save 는 f_is_dev() 로 잠금 (일반 admin 은 카드도 안 보이고 호출도 막힘)
+--   화면: 3단 세그먼트 → **토글(메뉴에 보이기) + 라디오(공개 / 개발 중)**.
+--         토글을 껐다 켜면 끄기 직전 상태로 돌아온다(o._prev). 그룹은 토글만.
+--
+--   [경로] 메뉴 관리는 관리자 화면 안이 아니라 **/admin/option** 독립 페이지.
+--          web/admin/option/index.html (자체 로그인 · 미리보기 패널 포함)
+--          web/admin/index.html 은 ../admin.html 로 보내는 리다이렉트 (경로 충돌 방지)
+--          admin.html 의 [옵션·권한] 에는 링크 배너만 남고, 개발자 계정에만 보인다
