@@ -5,6 +5,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Datacenter · 매장</title>
+<link rel="icon" href="favicon.ico?v=3">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
@@ -143,7 +144,13 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .rep-ctl{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
 .rep-ctl .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .copybox{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5;padding:12px;border:1.5px solid var(--line-2);border-radius:10px;background:var(--surface-2);resize:vertical;white-space:pre-wrap}
-.tab{font-size:12.5px;padding:9px 0;white-space:nowrap;letter-spacing:-.02em}
+.tab{font-size:12px;padding:9px 0;white-space:nowrap;letter-spacing:-.03em}
+.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.oc-row{display:grid;grid-template-columns:minmax(0,1fr) 112px 92px;gap:6px;align-items:center;margin-bottom:8px}
+.oc-row .lab{font-weight:600;font-size:14px;min-width:0}.oc-row .lab small{display:block;color:var(--faint);font-weight:400;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oc-row .in{padding:10px 8px;font-size:14px;text-align:right;min-width:0;font-variant-numeric:tabular-nums}
+.oc-row .in.gap{border-color:#F0A070;background:#FFF4EC}.oc-row .in.dirty{background:#FFF9CC;border-color:#E3B60C}
+.oc-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.oc-sum div{background:var(--surface-2);border-radius:10px;padding:10px 12px}.oc-sum .k{font-size:11px;color:var(--muted)}.oc-sum .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
 /* 내 고객 */
 .home-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .home-kpi button{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;box-shadow:var(--shadow)}
@@ -224,6 +231,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
       <button class="tab" data-tab="consult">상담 입력</button>
       <button class="tab" data-tab="daily">일 마감</button>
       <button class="tab" data-tab="report">판매현황</button>
+      <button class="tab" data-tab="online">온라인</button>
     </div>
   </div>
 
@@ -241,6 +249,10 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
     <div class="card">
       <h2>진행중 상담 · 내 건 <span id="ocSub">최근 90일</span></h2>
       <div class="list" id="ocList"><div class="empty">없음</div></div>
+    </div>
+    <div class="card">
+      <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
+      <div class="list" id="qtList"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
     </div>
     <div class="card">
       <h2>내 고객 <span id="mcSub"></span></h2>
@@ -407,6 +419,30 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
   </section>
 
   <!-- ── 판매현황 ── -->
+  <!-- ── 온라인 채널 일별 ── -->
+  <section class="panel hidden" id="tab-online">
+    <div class="intro">온라인 담당자가 <b>각 마켓 관리자에서 확인한 그날 매출·환불</b>을 채널별로 적는 화면입니다. 예전 '온라인 매출' 시트를 대신하며, 대시보드의 온라인 채널 숫자가 됩니다.
+      <details><summary>사용 방법</summary><ol><li><i>1</i><span>날짜를 고르고(기본 어제) 채널마다 매출·환불을 넣은 뒤 <b>저장</b>. 안 판 채널은 비워 두면 됩니다.</span></li><li><i>2</i><span>채널 이름 아래 작은 글씨는 <b>샵링커로 자동 수집된 원장 합계</b>입니다. 20% 이상 다르면 주황 테두리 — 마켓 관리자 화면과 다시 맞춰 보세요. 샵링커 미연동 채널(가전시장·카카오 등)은 원장이 없습니다.</span></li><li><i>3</i><span>위 "빠진 날"을 누르면 그 날짜로 이동합니다. 관리자 콘솔 [온라인 채널]에서는 한 달 전체를 표로 보고 고칠 수 있습니다.</span></li></ol></details>
+    </div>
+    <div class="card">
+      <h2>채널별 일별 매출 <span id="oc_me"></span></h2>
+      <div class="daterow">
+        <input class="in" type="date" id="oc_date" onchange="loadOnlineDay()">
+        <button class="btn ghost sm" onclick="setOcDate(-1)">어제</button>
+        <button class="btn ghost sm" onclick="setOcDate(0)">오늘</button>
+      </div>
+      <div id="oc_missWrap" class="hidden" style="margin-bottom:12px">
+        <div style="font-size:12px;color:var(--warn);font-weight:600">빠진 날 (최근 14일) — 눌러서 입력</div>
+        <div class="unclosed" id="oc_miss"></div>
+      </div>
+      <div class="oc-sum"><div><div class="k">이 달 입력</div><div class="v" id="oc_days">-</div></div><div><div class="k">이 달 순매출 (수기 · 원장)</div><div class="v" id="oc_tot" style="font-size:14px">-</div></div></div>
+      <div class="oc-row" style="color:var(--faint);font-size:12px;margin-bottom:4px"><div>채널</div><div style="text-align:right">매출</div><div style="text-align:right">환불</div></div>
+      <div id="oc_rows"><div class="empty">불러오는 중…</div></div>
+      <p class="note-in" id="oc_note"></p>
+      <button class="btn" id="oc_btn" onclick="saveOnlineDay()">저장</button>
+    </div>
+  </section>
+
   <section class="panel hidden" id="tab-report">
     <div class="intro">매장에서 입력한 판매를 <b>일별·주별·월별, 담당 프로별</b>로 보는 화면입니다. 아래 <b>보고용 텍스트 복사</b>로 일일보고를 바로 붙여 넣을 수 있습니다.
       <details><summary>사용 방법</summary><ol><li><i>1</i><span>기간 버튼(일별·주별·월별)을 고르면 기본 기간이 자동으로 잡힙니다. 날짜를 직접 바꿔도 됩니다.</span></li><li><i>2</i><span>담당을 "나"로 두면 내 건만, "전체"로 두면 프로별로 나뉘어 나옵니다.</span></li><li><i>3</i><span>"보고용 복사"는 카톡·메일에 붙여 넣기 좋은 텍스트입니다. 일별 모드에서는 건별 목록까지 들어갑니다.</span></li><li><i>4</i><span>여기 숫자는 건별 입력 기준입니다. DPS 일마감 합계와 다르면 빠진 건이 있는 것입니다.</span></li></ol></details>
@@ -471,7 +507,9 @@ async function enterPin(){ const v=$('pinInput').value.trim(); if(v.length!==4) 
   $('pinErr').textContent=''; try{ await loadStatus(v); CODE=v; localStorage.setItem('staff_code',v); start(); }catch(e){ $('pinErr').textContent=e.message; } }
 $('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') enterPin(); });
 $('pinInput').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value.length===4) enterPin(); });
-async function loadStatus(code){ STATUS = await rpc('fn_store_status', {p_code: code||CODE}); ME = STATUS.me; return STATUS; }
+async function loadStatus(code){
+  const [st, qt] = await Promise.all([rpc('fn_store_status', {p_code: code||CODE}), rpc('fn_store_quotes', {p_code: code||CODE}).catch(()=>[])]);
+  STATUS = st; STATUS.quotes = qt||[]; ME = STATUS.me; return STATUS; }
 
 /* ═══ 시작 ═══ */
 async function start(){
@@ -520,8 +558,9 @@ function render(){
 /* ═══ 탭 ═══ */
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  ['home','sale','consult','daily','report'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==b.dataset.tab));
+  ['home','sale','consult','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==b.dataset.tab));
   if(b.dataset.tab==='report' && !REPORT_LOADED) loadReport();
+  if(b.dataset.tab==='online' && !OC_LOADED) loadOnlineDay();
   window.scrollTo({top:0});
 }));
 $('s_kind').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
@@ -577,9 +616,15 @@ function renderHome(s){
         <div class="row">${x.tel?`<a class="call" href="tel:${x.tel}">📞 전화</a>`:''}<button class="done" onclick="cbAction(${x.id},'done')">완료</button><button onclick="cbAction(${x.id},'tomorrow')">내일로</button><button onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button></div></div>
     </div>`; }).join(''):'<div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div>';
   $('ocList').innerHTML=oc.length?oc.map(x=>`
-    <div class="item oc"><div><div class="p">${esc(x.name)} <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}</div>
+    <div class="item oc"><div><div class="p">${esc(x.name)} <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}${String(x.route||'').startsWith('홈페이지')?'<span class="mine">홈페이지 문의</span>':''}</div>
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.route||'')}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.expect_date?` · 예정 ${String(x.expect_date).slice(5).replace('-','/')}`:''}${x.callback_at?` · 콜백 ${fmtWhen(x.callback_at).join(' ')}`:''}</div></div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button></div></div>`).join(''):'<div class="empty">진행중인 상담이 없습니다</div>';
+  const qt=s.quotes||[];
+  $('qtSub').textContent=qt.length?`${qt.length}건 · 최근 90일`:'최근 90일';
+  $('qtList').innerHTML=qt.length?qt.map(x=>`
+    <div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span></div>
+      <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.models||'')}${x.final?` · 최종 ${won(x.final)}`:''}${x.monthly?` · 월 ${won(x.monthly)}`:''}${x.memo?' · '+esc(x.memo):''}</div></div>
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}')">상담 입력</button>`:''}</div></div>`).join(''):'<div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div>';
   $('mcSub').textContent=s.my_customer_count?`${s.my_customer_count}명 · 최근 ${mc.length}명 표시`:'';
   $('mcList').innerHTML=mc.length?mc.map(x=>`
     <div class="item oc"><div><div class="p">${esc(x.name)} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small>${x.consent?'<span class="mine">수신동의</span>':''}</div>
@@ -720,6 +765,36 @@ async function submitConsult(){
 
 /* ═══ 일 마감 ═══ */
 function setDaily(d){ $('d_date').value = todayStr(d); }
+/* ── 온라인 채널 일별 ── */
+let OC_LOADED=false, OC_DAY=null;
+function setOcDate(d){ $('oc_date').value=todayStr(d); loadOnlineDay(); }
+async function loadOnlineDay(){
+  if(!$('oc_date').value) $('oc_date').value=todayStr(-1);
+  OC_LOADED=true; $('oc_rows').innerHTML='<div class="empty">불러오는 중…</div>';
+  try{ OC_DAY=await rpc('fn_store_channel_day',{p_code:CODE,p_date:$('oc_date').value}); }catch(e){ $('oc_rows').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  const d=OC_DAY; $('oc_me').textContent=d.me?`입력자 ${d.me}`:'';
+  $('oc_days').textContent=`${d.month.done_days}일 / ${String(d.month.to).slice(8)}일`;
+  $('oc_tot').textContent=`${wonS(d.month.total)} · ${wonS(d.month.ledger_total)}`;
+  const miss=(d.missing_days||[]).filter(x=>x!==$('oc_date').value);
+  $('oc_missWrap').classList.toggle('hidden',!miss.length);
+  $('oc_miss').innerHTML=miss.map(x=>`<span class="chip" onclick="$('oc_date').value='${x}';loadOnlineDay()">${x.slice(5).replace('-','/')}</span>`).join('');
+  $('oc_rows').innerHTML=(d.rows||[]).map((x,i)=>{ const ls=x.ls!=null?Number(x.ls):null; const s=x.s!=null?Number(x.s):null;
+    const gap=ls!=null&&ls>0&&(s==null||Math.abs((s||0)-ls)/ls>0.2);
+    return `<div class="oc-row"><div class="lab">${esc(x.c)}<small>${ls!=null?`원장 ${wonS(ls)} · ${x.ln}건${Number(x.lr)?` · 환불 ${wonS(x.lr)}`:''}`:'원장 없음'}</small></div>
+      <input class="in${gap?' gap':''}" inputmode="numeric" data-c="${esc(x.c)}" data-k="s" value="${s!=null&&s!==0?s.toLocaleString('ko-KR'):(s===0&&x.src?'0':'')}" placeholder="0" oninput="comma(this);this.classList.add('dirty')">
+      <input class="in" inputmode="numeric" data-c="${esc(x.c)}" data-k="r" value="${x.r!=null&&Number(x.r)!==0?Number(x.r).toLocaleString('ko-KR'):''}" placeholder="0" oninput="comma(this);this.classList.add('dirty')"></div>`; }).join('');
+  $('oc_note').textContent=`${$('oc_date').value} · 비워 둔 채널은 0으로 저장됩니다`;
+}
+async function saveOnlineDay(){
+  if(!OC_DAY) return; const rows={};
+  document.querySelectorAll('#oc_rows input').forEach(el=>{ const c=el.dataset.c; rows[c]=rows[c]||{channel:c,sales:0,refund:0}; rows[c][el.dataset.k==='s'?'sales':'refund']=num(el); });
+  const list=Object.values(rows).filter(x=>{ const orig=(OC_DAY.rows||[]).find(y=>y.c===x.channel)||{}; return x.sales||x.refund||orig.src; });
+  if(!list.length) return toast('입력된 채널이 없습니다','bad');
+  const b=$('oc_btn'); b.disabled=true;
+  try{ const r=await rpc('fn_store_channel_save',{p_code:CODE,p_date:$('oc_date').value,p_rows:list}); toast(`${r.rows}개 채널 저장 (${r.by})`,'ok'); await loadOnlineDay(); }
+  catch(e){ toast(e.message,'bad'); }
+  b.disabled=false;
+}
 function addDirectRow(name=''){
   const handlers = STATUS.staff || [];
   const row=document.createElement('div'); row.className='handler-row';
