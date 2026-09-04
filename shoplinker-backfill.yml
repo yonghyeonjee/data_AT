@@ -1,0 +1,48 @@
+name: 샵링커 과거분 채우기
+
+# 지정한 달부터 과거로 한 달씩 내려가며, 빈 달이 연속으로 나오면 멈춘다.
+# 샵링커 조회는 3개월 제한이 있어 반드시 월 단위로 쪼개야 한다.
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "시작 달 YYYYMM — 여기서부터 과거로 내려감"
+        required: true
+        default: "202512"
+      floor:
+        description: "여기보다 과거로는 가지 않음 YYYYMM"
+        required: false
+        default: "201801"
+      empty_stop:
+        description: "빈 달이 몇 번 연속되면 멈출지"
+        required: false
+        default: "2"
+      dry:
+        description: "적재하지 않고 건수만 보기"
+        type: boolean
+        default: false
+
+concurrency:
+  group: shoplinker
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: 과거분 수집
+        env:
+          SL_CUSTOMER_ID: ${{ secrets.SL_CUSTOMER_ID }}
+          SL_REQ_URL: ${{ secrets.SL_REQ_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SL_EMPTY_STOP: ${{ inputs.empty_stop }}
+          SL_SLEEP_MS: "300"
+        run: |
+          ARGS="--back ${{ inputs.start }} --floor ${{ inputs.floor }}"
+          [ "${{ inputs.dry }}" = "true" ] && ARGS="$ARGS --dry"
+          node tools/shoplinker/collect.mjs $ARGS
