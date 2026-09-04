@@ -353,6 +353,50 @@ body.embed .wrap{padding:10px 12px 40px} body.embed #b-pres{display:none}
 #gate .err{font-family:var(--mono);font-size:12.5px;color:var(--red);min-height:18px;margin-top:10px}
 #gate .err.wait{color:var(--navy)}
 #gate .ft{font-size:11.5px;color:var(--muted);margin-top:14px}
+
+/* ═══════════════════════════════════════════════════════════════════
+   현행 시스템(Datacenter) 시각 다듬기 — 구성·기능은 GAS v4 와 동일, 표현만 정돈
+   (DOM·JS 무변경 · CSS 오버라이드만)
+   ═══════════════════════════════════════════════════════════════════ */
+body{background:
+  radial-gradient(900px 420px at 100% -120px, rgba(20,40,160,.07), transparent 65%),
+  radial-gradient(700px 360px at -10% 100%, rgba(15,123,108,.05), transparent 60%),
+  var(--ground)}
+.card{border-color:#DFE3EA;border-radius:14px;
+  box-shadow:0 1px 2px rgba(14,17,22,.04),0 8px 24px -14px rgba(20,40,160,.16)}
+.card-h{padding-top:16px}
+.card-h h2{display:inline-flex;align-items:center;gap:9px}
+.card-h h2::before{content:'';width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,var(--navy),var(--navy-3))}
+.rangebar{border-color:#DFE3EA;border-radius:14px;box-shadow:0 1px 2px rgba(14,17,22,.04),0 8px 24px -14px rgba(20,40,160,.14)}
+.chips button{border-radius:8px}
+.chips button[aria-pressed="true"]{box-shadow:0 4px 12px -4px rgba(20,40,160,.45)}
+.tabs button{border-radius:8px}
+
+/* KPI: 타일형 + 상단 강조선 */
+.kpis{gap:10px;background:transparent;padding:14px 16px 4px}
+.kpi{position:relative;border:1px solid #E3E7EE;border-radius:12px;padding:15px 16px 13px;
+  background:linear-gradient(180deg,#FFFFFF 0%,#FAFBFD 100%);box-shadow:0 1px 2px rgba(14,17,22,.03)}
+.kpi::before{content:'';position:absolute;left:14px;right:14px;top:0;height:3px;border-radius:0 0 3px 3px;
+  background:linear-gradient(90deg,var(--navy),var(--navy-3));opacity:.85}
+.kpi:nth-child(3)::before{background:linear-gradient(90deg,var(--red),#E07A73)}
+.kpi:nth-child(4)::before,.kpi:nth-child(5)::before{background:linear-gradient(90deg,var(--ink-2),#8A94A3)}
+.kpi:nth-child(6)::before{background:linear-gradient(90deg,var(--teal),#5BB8AA)}
+.kpi .k{letter-spacing:.09em;color:#7A8290}
+.kpi .v{font-size:clamp(24px,2.8vw,34px);letter-spacing:-.045em}
+.kpi .v small{color:#8A94A3}
+.kpi .sp{margin-top:10px;opacity:.9}
+@media(max-width:720px){.kpis{gap:8px;padding:12px 12px 2px}}
+
+/* 표: 줄무늬·고정 헤더 */
+.tbl th{padding-top:2px;color:#7A8290}
+.tbl tbody tr:nth-child(even){background:#FAFBFD}
+.tbl tbody tr:hover{background:#EEF1FA}
+.tbl td{font-size:13.5px}
+.tbl thead th{position:sticky;top:0;background:#fff;z-index:1}
+
+/* 마스트: 살짝 더 깊은 광택 */
+.mast{border-radius:16px;box-shadow:0 1px 3px rgba(14,17,22,.08),0 16px 40px -14px rgba(20,40,160,.35)}
+.mast::after{width:360px;height:360px;background:radial-gradient(circle,rgba(122,140,232,.42),transparent 68%)}
 </style>
 </head>
 <body>
@@ -387,9 +431,13 @@ body.embed .wrap{padding:10px 12px 40px} body.embed #b-pres{display:none}
       <button id="b-g" aria-pressed="false">총매출</button>
       <button id="b-r" aria-pressed="false">환불</button>
     </div>
-    <div class="seg" role="group" aria-label="데이터 출처" id="srcseg" title="기존 = 구글시트(GAS) 대시보드 원본 · 자체 = Datacenter(Supabase) 적재 데이터">
-      <button id="s-dc" aria-pressed="true">자체</button>
-      <button id="s-gas" aria-pressed="false">기존</button>
+    <div class="seg" role="group" aria-label="데이터 출처" id="srcseg" title="현행 시스템 = Datacenter(Supabase) 적재 데이터 · 대시보드 v4 = 구글시트(GAS) 기존 앱 원본">
+      <button id="s-dc" aria-pressed="true">현행 시스템</button>
+      <button id="s-gas" aria-pressed="false">대시보드 v4 (기존 app)</button>
+    </div>
+    <div class="seg" role="group" aria-label="집계 기준" id="basisseg" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커 등)에서 집계한 값">
+      <button id="m-manual" aria-pressed="true">수기입력</button>
+      <button id="m-ledger" aria-pressed="false">원장</button>
     </div>
     <button class="ghost" id="b-refresh" title="원본을 다시 읽어 대시보드를 새로 만듭니다">데이터 갱신</button>
       <button class="ghost" id="b-pres">발표 모드</button>
@@ -596,6 +644,7 @@ const SHARE_URL = '__PASTE_ANYONE_DEPLOY_EXEC_URL__';
 const DC_URL = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_dash_payload_pub';
 const DC_ANON = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 const DC_MONTHS = 12;   // 자체 모드로 불러올 기간(개월)
+function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='ledger'?'ledger':'manual'; }
 function dashSrc(){ let v=''; try{ v=new URLSearchParams(location.search).get('src')||sessionStorage.getItem('dash_src')||''; }catch(e){} return v==='gas'?'gas':'dc'; }
 let DATA = null;
 </script>
@@ -1733,12 +1782,14 @@ buildControls();drawFinds();a=firstA;b=lastA;render();
   if(EMBED){
     $('#gate').style.display='none';
     const ss=document.getElementById('srcseg'); if(ss) ss.style.display='none';
+    const bss=document.getElementById('basisseg'); if(bss) bss.style.display='none';
+    /* 임베드에서는 GAS 원본 화면과 완전히 같아야 하므로 출처 표기도 숨긴다 (출처는 부모 툴바가 표시) */
+    const sn0=document.getElementById('srcnote'); if(sn0) sn0.style.display='none';
     document.body.classList.add('embed');
     window.addEventListener('message', e=>{
       const d=e.data; if(!d || d.type!=='dash-payload' || !d.data || !d.data.days) return;
       if(DATA) { location.reload(); return; }
       DATA=d.data; startDash();
-      const sn=document.getElementById('srcnote'); if(sn) sn.textContent='출처 · Datacenter (콘솔 로그인 데이터 · '+(DATA.from||'')+' ~ '+(DATA.to||'')+')';
     });
     window.__dashReady=true;
     try{ parent.postMessage({type:'dash-ready'}, '*'); }catch(e){}
@@ -1749,7 +1800,7 @@ buildControls();drawFinds();a=firstA;b=lastA;render();
     const v=pw.value.trim();
     if(!v){ err.className='err'; err.textContent='비밀번호를 입력하세요.'; pw.focus(); return; }
     const src=dashSrc();
-    if(src==='gas' && SHARE_URL.indexOf('http')!==0){ err.className='err'; err.textContent='기존(GAS) 공유 주소가 아직 설정되지 않았습니다. "자체"로 여세요.'; return; }
+    if(src==='gas' && SHARE_URL.indexOf('http')!==0){ err.className='err'; err.textContent='기존 app(GAS) 공유 주소가 아직 설정되지 않았습니다. "현행 시스템"으로 여세요.'; return; }
     busy=true; btn.disabled=true; err.className='err wait'; err.textContent='데이터를 불러오는 중… (첫 열람은 수 초 걸립니다)';
     try{
       let j;
@@ -1763,9 +1814,9 @@ buildControls();drawFinds();a=firstA;b=lastA;render();
         const to=new Date(); const from=new Date(to.getFullYear(), to.getMonth()-DC_MONTHS+1, 1);
         const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
         const r=await fetch(DC_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':DC_ANON,'Authorization':'Bearer '+DC_ANON},
-          body:JSON.stringify({p_pw:v,p_from:iso(from),p_to:iso(to)})});
+          body:JSON.stringify({p_pw:v,p_from:iso(from),p_to:iso(to),p_mode:dashBasis()})});
         if(r.status===401||r.status===403||r.status===400){ const t=await r.text(); if(/unauthorized|권한/.test(t)){ err.className='err'; err.textContent='비밀번호가 올바르지 않습니다.'; pw.value=''; pw.focus(); busy=false; btn.disabled=false; return; } throw new Error('불러오지 못했습니다 ('+r.status+')'); }
-        if(!r.ok) throw new Error('불러오지 못했습니다 ('+r.status+')');
+        if(!r.ok){ let d=''; try{ d=(JSON.parse(await r.text()).message)||''; }catch(e){} throw new Error('불러오지 못했습니다 ('+r.status+')'+(d?' · '+d:'')); }
         j=await r.json(); if(typeof j==='string') j=JSON.parse(j);
         if(!j||!j.days) throw new Error('데이터 형식이 올바르지 않습니다');
       }
@@ -1777,7 +1828,18 @@ buildControls();drawFinds();a=firstA;b=lastA;render();
       if(sb){ sb.querySelector('#s-dc').setAttribute('aria-pressed', src==='dc'); sb.querySelector('#s-gas').setAttribute('aria-pressed', src==='gas');
         sb.querySelectorAll('button').forEach(b=>b.onclick=()=>{ const want=b.id==='s-gas'?'gas':'dc'; if(want===src) return;
           try{ sessionStorage.setItem('dash_src', want); }catch(e){} const u=new URL(location.href); u.searchParams.set('src', want); location.href=u.toString(); }); }
-      const sn=document.getElementById('srcnote'); if(sn) sn.textContent='출처 · '+(src==='gas'?'기존 (구글시트 대시보드 원본)':'자체 (Datacenter 적재 데이터 · 최근 '+DC_MONTHS+'개월)');
+      const bs=document.getElementById('basisseg'), mode=dashBasis();
+      if(bs){
+        bs.style.opacity = src==='dc'?'1':'.35'; bs.style.pointerEvents = src==='dc'?'auto':'none';
+        bs.querySelector('#m-manual').setAttribute('aria-pressed', mode==='manual');
+        bs.querySelector('#m-ledger').setAttribute('aria-pressed', mode==='ledger');
+        bs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ const want=b.id==='m-ledger'?'ledger':'manual'; if(want===mode) return;
+          try{ sessionStorage.setItem('dash_basis', want); }catch(e){} const u=new URL(location.href); u.searchParams.set('mode', want); location.href=u.toString(); });
+      }
+      const sn=document.getElementById('srcnote');
+      if(sn) sn.textContent='출처 · '+(src==='gas'
+        ? '대시보드 v4 (기존 app · 구글시트 원본)'
+        : '현행 시스템 (Datacenter · 최근 '+DC_MONTHS+'개월 · '+(mode==='ledger'?'원장 기준':'수기입력 기준')+')');
     }catch(e){
       err.className='err'; err.textContent=(e&&e.message)||'불러오지 못했습니다.';
       busy=false; btn.disabled=false;

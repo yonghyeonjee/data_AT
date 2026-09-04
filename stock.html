@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Datacenter · 재고</title>
+<link rel="icon" href="favicon.ico?v=3">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --ground:#F3F4F7; --surface:#FFFFFF; --surface-2:#F7F8FA; --line:#E4E7EE; --line-2:#CDD3DE;
+  --ink:#141820; --ink-2:#2E3542; --muted:#646D7C; --faint:#98A1B0;
+  --accent:#1428A0; --navy:#1428A0; --navy-ink:#0E1A6B; --accent-ink:#FFFFFF; --accent-soft:#EAEEFB;
+  --ok:#0F7B6C; --ok-soft:#E3F3F0; --warn:#8A5D00; --warn-soft:#FBF1DC; --bad:#B3261E; --bad-soft:#FBE9E7;
+  --sub:#7A3EB8; --sub-soft:#F0E8F8;
+  --r:12px; --shadow:0 1px 2px rgba(20,24,32,.05), 0 8px 24px rgba(20,24,32,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;background:var(--ground);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+
+/* ── PIN ── */
+#pinScreen{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#0B0F2E 0%,#141E64 60%,#1428A0 100%)}
+.pin-card{width:100%;max-width:380px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:36px 28px;text-align:center}
+.pin-card .logo{font-size:11px;letter-spacing:.2em;color:var(--navy);font-weight:700}
+.pin-card h1{font-size:22px;font-weight:800;margin:8px 0 4px;letter-spacing:-.02em}
+.pin-card .sub{font-size:13px;color:var(--muted);margin-bottom:18px}
+.pin-card input{width:100%;text-align:center;font-size:28px;letter-spacing:.4em;padding:14px;border:1.5px solid var(--line-2);border-radius:10px;outline:none;font-variant-numeric:tabular-nums}
+.pin-card input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.pin-card button{width:100%;margin-top:14px;padding:14px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;cursor:pointer}
+.pin-card .err{color:var(--bad);font-size:13px;margin-top:10px;min-height:18px}
+.pin-card .links{margin-top:16px;font-size:12.5px;color:var(--faint)} .pin-card .links a{color:var(--navy);text-decoration:none;font-weight:600}
+
+/* ── App ── */
+#app{max-width:720px;margin:0 auto;padding:0 0 120px}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(243,244,247,.94);backdrop-filter:blur(8px);padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.topbar .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.topbar h1{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.topbar h1 small{font-weight:500;color:var(--muted);font-size:13px;margin-left:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--surface);border:1px solid var(--line)}
+.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.pill.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.tabs{display:flex;gap:4px;margin-top:12px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--line)}
+.tab{flex:1;padding:10px 6px;border:0;background:transparent;border-radius:9px;font-weight:600;color:var(--muted);cursor:pointer;font-size:14px}
+.tab.active{background:var(--navy);color:#fff}
+
+section.panel{padding:16px 18px}
+.intro{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:var(--ink-2);line-height:1.55}
+.intro b{color:var(--ink)}
+.card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+.card h2{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.card h2 span{font-size:12px;color:var(--faint);font-weight:500}
+.f{margin-bottom:12px}
+.f label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.f label .hint{color:var(--faint);font-weight:400;margin-left:6px;font-size:12px}
+.in{width:100%;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:10px;background:#fff;outline:none;font-size:16px;transition:.15s}
+.in:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.in.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;padding:11px 4px;border:1.5px solid var(--line-2);background:#fff;border-radius:10px;font-weight:600;cursor:pointer;color:var(--ink-2);font-size:13.5px}
+.seg button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.seg button.on.out{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.seg button.on.move{border-color:var(--sub);background:var(--sub-soft);color:var(--sub)}
+.seg button.on.adjust{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+.btn{width:100%;padding:15px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:700;font-size:16px;cursor:pointer;margin-top:6px}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:var(--surface);color:var(--ink-2);border:1.5px solid var(--line-2)}
+.btn.sm{width:auto;padding:8px 14px;font-size:13px;margin:0}
+.kpi3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.kpi3 div{background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.kpi3 .k{font-size:11.5px;color:var(--muted);font-weight:600} .kpi3 .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px;letter-spacing:-.02em}
+.kpi3 .v small{font-size:11px;color:var(--muted);font-weight:600;margin-left:2px}
+.kpi3 .v.bad{color:var(--bad)} .kpi3 .v.ok{color:var(--ok)}
+
+/* 품목 검색 */
+.csearch{position:relative}
+.csearch .in{padding-right:44px}
+.csearch .go{position:absolute;right:6px;top:6px;bottom:6px;width:34px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-weight:800;cursor:pointer}
+.list{display:flex;flex-direction:column;gap:8px}
+.it{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+.it:active{background:var(--accent-soft)}
+.it.sel{border-color:var(--navy);box-shadow:0 0 0 3px var(--accent-soft)}
+.it.low{border-color:#F0C9C5;background:#FFF9F8}
+.it .nm{font-weight:700;font-size:14px;line-height:1.3}
+.it .cd{font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums;margin-top:2px}
+.it .cd b{color:var(--muted);font-weight:600}
+.it .q{text-align:right;font-variant-numeric:tabular-nums}
+.it .q b{font-size:20px;font-weight:800;display:block;line-height:1.1}
+.it .q small{font-size:11px;color:var(--muted);display:block}
+.it.low .q b{color:var(--bad)}
+.it .wh{font-size:11px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px}
+.it .wh span{background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.badge{display:inline-block;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle}
+.badge.low{background:var(--bad-soft);color:var(--bad)}
+.badge.no{background:var(--surface-2);color:var(--faint)}
+.sel-box{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--navy);font-size:13.5px;font-weight:700;margin-bottom:12px}
+.sel-box button{border:0;background:transparent;color:var(--navy);font-weight:800;cursor:pointer;font-size:13px}
+.sel-box small{display:block;font-weight:500;color:var(--ink-2);font-size:12px}
+.qty-row{display:grid;grid-template-columns:52px 1fr 52px;gap:8px;align-items:stretch}
+.qty-row button{border:1.5px solid var(--line-2);background:#fff;border-radius:10px;font-size:22px;font-weight:700;cursor:pointer;color:var(--ink-2)}
+.qty-row button:active{background:var(--accent-soft)}
+/* 내역 */
+.mv{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.mv .t{font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums;line-height:1.3}
+.mv .p{font-weight:600;font-size:13.5px}
+.mv .m{font-size:12px;color:var(--muted)}
+.mv .a{font-weight:800;font-variant-numeric:tabular-nums;text-align:right;font-size:17px}
+.mv.in .a{color:var(--ok)} .mv.out .a{color:var(--bad)} .mv.move .a{color:var(--sub)} .mv.adjust .a{color:var(--warn)}
+.mv .mine{font-size:10.5px;color:var(--navy);font-weight:700}
+.kind{display:inline-block;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:700;margin-right:6px}
+.kind.in{background:var(--ok-soft);color:var(--ok)}.kind.out{background:var(--bad-soft);color:var(--bad)}.kind.move{background:var(--sub-soft);color:var(--sub)}.kind.adjust{background:var(--warn-soft);color:var(--warn)}.kind.sync{background:var(--surface-2);color:var(--muted)}
+.note{font-size:12.5px;color:var(--muted)}
+.empty{text-align:center;padding:26px 10px;color:var(--faint);font-size:13.5px}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:99;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%)}
+#toast.bad{background:var(--bad)} #toast.ok{background:var(--ok)}
+</style>
+</head>
+<body>
+
+<div id="pinScreen">
+  <div class="pin-card">
+    <div class="logo">SAMSUNG&amp;TECH</div>
+    <h1>재고</h1>
+    <div class="sub">담당자 코드 4자리를 입력하세요</div>
+    <input id="pinInput" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off" onkeydown="if(event.key==='Enter')enterPin()">
+    <button onclick="enterPin()">시작</button>
+    <div class="err" id="pinErr"></div>
+    <div class="links"><a href="store.html">매장 화면</a> · 코드는 관리자 설정에서</div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="row">
+      <h1>재고 <small id="meName"></small></h1>
+      <div style="display:flex;gap:6px">
+        <span class="pill" id="pillLast">—</span>
+        <span class="pill bad hidden" id="pillLow"></span>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="stock">현재고</button>
+      <button class="tab" data-tab="move">입출고 등록</button>
+      <button class="tab" data-tab="hist">내역</button>
+    </div>
+  </div>
+
+  <!-- ── 현재고 ── -->
+  <section class="panel" id="tab-stock">
+    <div class="intro"><b>지금 몇 개 있는지</b> 보는 화면입니다. 현재고 = 입고 − 출고 ± 조정. 이카운트와 연동되면 창고별 수량이 자동으로 맞춰집니다.</div>
+    <div class="kpi3" id="stKpi"></div>
+    <div class="card">
+      <div class="csearch"><input class="in" id="stQ" placeholder="품목코드 · 상품명 · 모델 검색" onkeydown="if(event.key==='Enter')searchStock()" autocomplete="off"><button class="go" onclick="searchStock()">→</button></div>
+      <div class="grid2" style="margin-top:8px">
+        <select class="in" id="stWh" onchange="searchStock()"><option value="">전체 창고</option></select>
+        <button class="btn ghost sm" id="stLow" style="width:100%;padding:12px" onclick="this.classList.toggle('on');LOW_ONLY=this.classList.contains('on');this.style.borderColor=LOW_ONLY?'var(--bad)':'';this.style.color=LOW_ONLY?'var(--bad)':'';searchStock()">안전재고 미달만</button>
+      </div>
+    </div>
+    <div class="list" id="stList"><div class="empty">검색하거나 그대로 → 를 눌러 전체를 보세요</div></div>
+  </section>
+
+  <!-- ── 입출고 등록 ── -->
+  <section class="panel hidden" id="tab-move">
+    <div class="card">
+      <h2>구분</h2>
+      <div class="seg" id="mvKind">
+        <button class="on" data-k="in">입고</button><button data-k="out">출고</button><button data-k="move">창고이동</button><button data-k="adjust">재고조정</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>품목 <span id="mvItemHint">검색 후 목록에서 선택</span></h2>
+      <div id="mvSel" class="sel-box hidden"><div><span id="mvSelName"></span><small id="mvSelSub"></small></div><button onclick="pickItem(null)">바꾸기</button></div>
+      <div id="mvSearchWrap">
+        <div class="csearch"><input class="in" id="mvQ" placeholder="품목코드 · 상품명 · 모델" oninput="mvSearchDebounced()" autocomplete="off"><button class="go" onclick="mvSearch()">→</button></div>
+        <div class="list" id="mvList" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="grid2">
+        <div class="f"><label id="mvWhLbl">입고 창고</label><select class="in" id="mvWh"></select></div>
+        <div class="f hidden" id="mvToWrap"><label>이동할 창고</label><select class="in" id="mvTo"></select></div>
+      </div>
+      <div class="f"><label id="mvQtyLbl">수량</label>
+        <div class="qty-row"><button onclick="bump(-1)">−</button><input class="in num" id="mvQty" inputmode="numeric" placeholder="0"><button onclick="bump(1)">+</button></div>
+      </div>
+      <div class="grid2">
+        <div class="f"><label>참조번호 <span class="hint">주문·발주·전표 (선택)</span></label><input class="in" id="mvRef" placeholder=""></div>
+        <div class="f"><label>메모 <span class="hint">선택</span></label><input class="in" id="mvNote" placeholder=""></div>
+      </div>
+      <button class="btn" id="mvBtn" onclick="submitMove()">등록</button>
+    </div>
+  </section>
+
+  <!-- ── 내역 ── -->
+  <section class="panel hidden" id="tab-hist">
+    <div class="kpi3" id="hsKpi"></div>
+    <div class="card">
+      <h2>안전재고 미달 <span id="lowSub"></span></h2>
+      <div class="list" id="lowList"></div>
+    </div>
+    <div class="card">
+      <h2>최근 입출고 <span>최근 14일 · 전체 담당자</span></h2>
+      <div class="list" id="histList"></div>
+    </div>
+  </section>
+</div>
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://wdahskrcpjooqhwwxjiu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n=v=>Number(v||0).toLocaleString('ko-KR');
+let toastT; function toast(m,c=''){ const t=$('toast'); t.textContent=m; t.className='show '+c; clearTimeout(toastT); toastT=setTimeout(()=>t.className='',2600); }
+async function rpc(fn,args={}){ const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
+
+let CODE=localStorage.getItem('staff_code')||'', ME='', WH=[], LOW_ONLY=false, SEL=null, KIND='in';
+const KIND_NM={in:'입고',out:'출고',move:'창고이동',adjust:'재고조정',sync:'이카운트'};
+async function enterPin(){ const v=$('pinInput').value.trim(); if(v.length!==4) return $('pinErr').textContent='4자리를 입력하세요';
+  $('pinErr').textContent=''; try{ await loadMy(v); CODE=v; localStorage.setItem('staff_code',v); start(); }catch(e){ $('pinErr').textContent=e.message; } }
+async function loadMy(code){ const d=await rpc('fn_stock_my',{p_code:code||CODE,p_days:14}); ME=d.me; renderMy(d); return d; }
+async function start(){
+  $('pinScreen').classList.add('hidden'); $('app').classList.remove('hidden'); $('meName').textContent=ME;
+  try{ WH=await rpc('fn_inv_warehouses')||[]; }catch(e){ WH=[]; }
+  const opt=WH.map(w=>`<option value="${esc(w.code)}">${esc(w.name)}</option>`).join('');
+  $('stWh').innerHTML='<option value="">전체 창고</option>'+opt; $('mvWh').innerHTML=opt; $('mvTo').innerHTML=opt;
+  const pref=localStorage.getItem('stock_wh'); if(pref && WH.some(w=>w.code===pref)) $('mvWh').value=pref;
+  searchStock();
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));
+  ['stock','move','hist'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==b.dataset.tab));
+  if(b.dataset.tab==='hist') loadMy(); if(b.dataset.tab==='move' && !SEL) setTimeout(()=>$('mvQ').focus(),50);
+}));
+function whName(c){ const w=WH.find(x=>x.code===c); return w?w.name:c; }
+
+/* ── 현재고 ── */
+function itemCard(r, onclick){
+  const low=r.track && r.safety>0 && r.qty<r.safety;
+  const wh=Object.entries(r.by_wh||{}).map(([c,q])=>`<span>${esc(whName(c))} ${n(q)}</span>`).join('');
+  return `<div class="it ${low?'low':''} ${SEL&&SEL.code===r.code?'sel':''}" ${onclick?`onclick="${onclick}"`:''}>
+    <div><div class="nm">${esc(r.name)}${!r.track?'<span class="badge no">재고관리 제외</span>':''}${low?'<span class="badge low">미달</span>':''}</div>
+      <div class="cd"><b>${esc(r.code)}</b>${r.model?' · '+esc(r.model):''}${r.spec?' · '+esc(r.spec):''}</div>
+      ${wh?`<div class="wh">${wh}</div>`:''}</div>
+    <div class="q"><b>${n(r.qty)}</b><small>${esc(r.unit||'EA')}${r.safety?' · 안전 '+n(r.safety):''}</small></div></div>`;
+}
+async function searchStock(){
+  let d; try{ d=await rpc('fn_stock_search',{p_code:CODE,p_q:$('stQ').value.trim(),p_warehouse:$('stWh').value||null}); }catch(e){ return toast(e.message,'bad'); }
+  let rows=d.rows||[]; if(LOW_ONLY) rows=rows.filter(r=>r.track&&r.safety>0&&r.qty<r.safety);
+  const low=rows.filter(r=>r.track&&r.safety>0&&r.qty<r.safety).length;
+  $('stKpi').innerHTML=`<div><div class="k">품목</div><div class="v">${n(rows.length)}<small>개</small></div></div><div><div class="k">보유 수량</div><div class="v">${n(rows.reduce((a,r)=>a+Number(r.qty||0),0))}</div></div><div><div class="k">안전재고 미달</div><div class="v ${low?'bad':'ok'}">${n(low)}<small>개</small></div></div>`;
+  $('stList').innerHTML=rows.map(r=>itemCard(r, `goMove('${esc(r.code)}')`)).join('')||'<div class="empty">해당하는 품목이 없습니다</div>';
+}
+function goMove(code){ document.querySelector('.tab[data-tab="move"]').click(); pickItemByCode(code); }
+
+/* ── 입출고 등록 ── */
+document.querySelectorAll('#mvKind button').forEach(b=>b.addEventListener('click',()=>{
+  KIND=b.dataset.k; document.querySelectorAll('#mvKind button').forEach(x=>{ x.className=(x===b?'on '+KIND:''); });
+  $('mvToWrap').classList.toggle('hidden', KIND!=='move');
+  $('mvWhLbl').textContent=KIND==='move'?'보내는 창고':KIND==='in'?'입고 창고':KIND==='out'?'출고 창고':'창고';
+  $('mvQtyLbl').textContent=KIND==='adjust'?'조정 수량 (+/− 현재고에 더해짐)':'수량';
+}));
+let mvT; function mvSearchDebounced(){ clearTimeout(mvT); mvT=setTimeout(mvSearch,220); }
+let MV_ROWS=[];
+async function mvSearch(){ const q=$('mvQ').value.trim(); if(!q){ $('mvList').innerHTML=''; return; }
+  try{ const d=await rpc('fn_stock_search',{p_code:CODE,p_q:q}); MV_ROWS=d.rows||[]; }catch(e){ return toast(e.message,'bad'); }
+  $('mvList').innerHTML=MV_ROWS.slice(0,12).map(r=>itemCard(r, `pickItem(${JSON.stringify(r).replace(/"/g,'&quot;')})`)).join('')||'<div class="empty">검색 결과 없음</div>'; }
+async function pickItemByCode(code){ try{ const d=await rpc('fn_stock_search',{p_code:CODE,p_q:code}); const r=(d.rows||[]).find(x=>x.code===code)||(d.rows||[])[0]; if(r) pickItem(r); }catch(e){} }
+function pickItem(r){ SEL=r;
+  $('mvSel').classList.toggle('hidden',!r); $('mvSearchWrap').classList.toggle('hidden',!!r);
+  if(r){ $('mvSelName').textContent=r.name; $('mvSelSub').textContent=`${r.code}${r.model?' · '+r.model:''} · 현재 ${n(r.qty)} ${r.unit||'EA'}`+(Object.keys(r.by_wh||{}).length?' ('+Object.entries(r.by_wh).map(([c,q])=>whName(c)+' '+n(q)).join(', ')+')':'');
+    $('mvItemHint').textContent='선택됨'; setTimeout(()=>$('mvQty').focus(),50); }
+  else { $('mvItemHint').textContent='검색 후 목록에서 선택'; $('mvQ').value=''; $('mvList').innerHTML=''; setTimeout(()=>$('mvQ').focus(),50); } }
+function bump(d){ const i=$('mvQty'); i.value=String((Number(i.value)||0)+d); }
+async function submitMove(){
+  if(!SEL) return toast('품목을 먼저 고르세요','bad');
+  const qty=Number($('mvQty').value); if(!qty) return toast('수량을 넣으세요','bad');
+  if(KIND!=='adjust' && qty<0) return toast('수량은 양수로 넣으세요. 빼려면 출고를 쓰세요','bad');
+  if(KIND==='move' && $('mvTo').value===$('mvWh').value) return toast('이동할 창고가 같습니다','bad');
+  const row={kind:KIND,item_code:SEL.code,warehouse:$('mvWh').value,to_warehouse:KIND==='move'?$('mvTo').value:null,qty:KIND==='adjust'?qty:Math.abs(qty),ref_type:'manual',ref_no:$('mvRef').value.trim()||null,note:$('mvNote').value.trim()||null};
+  const b=$('mvBtn'); b.disabled=true;
+  try{ await rpc('fn_stock_move',{p_code:CODE,p_rows:[row]}); localStorage.setItem('stock_wh',$('mvWh').value);
+    toast(`${KIND_NM[KIND]} ${n(Math.abs(qty))} 등록됨 · ${SEL.name}`,'ok'); $('mvQty').value=''; $('mvRef').value=''; $('mvNote').value='';
+    const code=SEL.code; pickItem(null); await pickItemByCode(code); loadMy(); }
+  catch(e){ toast(e.message,'bad'); } finally{ b.disabled=false; }
+}
+
+/* ── 내역 ── */
+function renderMy(d){
+  const s=d.summary||{};
+  $('pillLast').textContent=s.last?`최근 ${s.last}`:'기록 없음';
+  $('pillLow').classList.toggle('hidden',!s.low_count); $('pillLow').textContent=`안전재고 미달 ${n(s.low_count)}`;
+  $('hsKpi').innerHTML=`<div><div class="k">오늘 입고</div><div class="v ok">${n(s.today_in)}</div></div><div><div class="k">오늘 출고</div><div class="v bad">${n(s.today_out)}</div></div><div><div class="k">안전재고 미달</div><div class="v ${s.low_count?'bad':''}">${n(s.low_count)}<small>개</small></div></div>`;
+  const low=d.low||[]; $('lowSub').textContent=low.length?`${low.length}개 · 발주 검토`:'없음';
+  $('lowList').innerHTML=low.map(r=>`<div class="it low" onclick="goMove('${esc(r.code)}')"><div><div class="nm">${esc(r.name)}</div><div class="cd"><b>${esc(r.code)}</b>${r.model?' · '+esc(r.model):''}</div></div><div class="q"><b>${n(r.qty)}</b><small>안전 ${n(r.safety)}</small></div></div>`).join('')||'<div class="empty">안전재고 미달 품목이 없습니다</div>';
+  const rows=d.rows||[];
+  $('histList').innerHTML=rows.map(r=>`<div class="mv ${r.kind}"><div class="t">${esc(r.at)}${r.mine?'<div class="mine">내 기록</div>':''}</div><div><div class="p"><span class="kind ${r.kind}">${KIND_NM[r.kind]||r.kind}</span>${esc(r.item_name)}</div><div class="m">${esc(r.wh)}${r.kind==='move'?' → '+esc(r.to_wh||''):''}${r.note?' · '+esc(r.note):''} · ${esc(r.by||'')}</div></div><div class="a">${r.kind==='out'?'−':r.kind==='in'?'+':''}${n(r.qty)}</div></div>`).join('')||'<div class="empty">최근 14일 입출고가 없습니다</div>';
+}
+
+(async()=>{ if(CODE){ try{ await loadMy(); start(); return; }catch(e){ localStorage.removeItem('staff_code'); CODE=''; } } $('pinInput').focus(); })();
+</script>
+</body>
+</html>
