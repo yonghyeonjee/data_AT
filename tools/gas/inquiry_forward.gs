@@ -7,7 +7,7 @@
  *        dcForwardInquiry_(data, assignedStaff, mgmtRow, isTest);
  *     (isTest 면 함수가 알아서 건너뜀 · 실패해도 접수 흐름은 안 끊김)
  *
- *  ② 편집기에서 backfillDatacenter() 를 1회 실행 → '상담관리' 탭 전체를 Datacenter 에 적재
+ *  ② 편집기에서 backfillInquiryToDatacenter() 를 1회 실행 → '상담관리' 탭 전체를 Datacenter 에 적재
  *     (같은 문의는 문의시간+뒷4자리로 식별하므로 몇 번 돌려도 중복되지 않음)
  *
  *  ③ 트리거 → 트리거 추가 → 함수 onMgmtEdit · 이벤트 소스 '스프레드시트' · 유형 '수정 시'
@@ -19,9 +19,9 @@
  *   상담결과 미처리·부재중 → 진행중 / 상담완료-계약 → 구매완료 / 상담완료-보류 → 보류 / 상담거절·기타 → 종료
  *   담당자 → 매장 화면(store) '내 고객'에 그 담당자 진행중 상담으로 표시 · 테스트 접수는 저장하지 않음
  ***********************************************************************/
-const DC_URL  = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
-const DC_ANON = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';   // 공개키 (브라우저에도 있는 값)
-const DC_KEY  = 'dc_15a3039ac89b4cf5045b62688391e85099ea9a63';         // 서버간 전달 키 (Datacenter core.api_key 해시와 대조)
+var DC_URL  = typeof DC_URL  !== 'undefined' ? DC_URL  : 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
+var DC_ANON = typeof DC_ANON !== 'undefined' ? DC_ANON : 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';   // 공개키 (브라우저에도 있는 값)
+var DC_KEY  = typeof DC_KEY  !== 'undefined' ? DC_KEY  : 'dc_15a3039ac89b4cf5045b62688391e85099ea9a63';         // 서버간 전달 키 (Datacenter core.api_key 해시와 대조)
 
 function dcRpc_(fn, payload) {
   const res = UrlFetchApp.fetch(DC_URL + fn, {
@@ -79,7 +79,7 @@ function onMgmtEdit(e) {
 }
 
 /** 편집기에서 1회 실행: 상담관리 전체를 Datacenter 로 (재실행해도 중복 없음) */
-function backfillDatacenter() {
+function backfillInquiryToDatacenter() {
   const sh = getOrCreateManagementSheet();
   const last = getRealLastRow_(sh);
   if (last < 2) { Logger.log('데이터 없음'); return; }

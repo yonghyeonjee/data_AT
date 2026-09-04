@@ -1,0 +1,72 @@
+-- mvp_52~57 (요약본) — 이카운트 API 배관 · 담당자 권한 · 알림 · 주문서 큐 · CRM 세그먼트 · 문의 통합
+-- 실제 적용본은 Supabase → Database → Migrations 에 있음. 이 파일은 무엇이 왜 생겼는지 기록용.
+--
+-- mvp_52_ecount_api ────────────────────────────────────────────────
+--   ec.config      회사코드·아이디·인증키·Zone (인증키는 여기서만 산다. 브라우저로 안 나감)
+--   ec.api_def     엔드포인트 경로 표 — 문서와 다르면 [옵션·권한] 화면에서 고친다
+--   ec.session     SESSION_ID 50분 캐시
+--   ec.api_log     호출 기록 (성공/실패·메시지·소요 ms)
+--   core.f_ec_login(force)          로그인 → SESSION_ID
+--   core.f_ec_call(code, body)      호출 + 로깅 + 세션 만료 시 1회 재시도
+--   fn_ec_diag()                    Zone → 로그인 → 재고조회 단계별 진단 (관리자)
+--   fn_ec_config() / fn_ec_config_save(jsonb)
+--   ※ 호출은 Supabase DB 고정 IP(43.201.156.141)에서 나간다. GitHub Actions 는 IP 가 바뀌어 못 씀.
+--
+-- mvp_53_perms_and_notify ──────────────────────────────────────────
+--   core.perm_def   store 화면 메뉴 단위 권한 11종
+--   core.staff_perm 담당자 × 권한 (행이 없고 perm_set=false 면 default_on 묶음을 씀)
+--   core.f_staff_perms(name) / core.f_has_perm(name, perm)
+--   fn_staff_perms() / fn_staff_perm_save(id, perms[], use_default) / fn_staff_save(jsonb)
+--   core.notify_channel / core.notify_rule / core.notify_log
+--   core.f_notify(event, vars)      규칙에 걸린 채널로 발송 + 로깅
+--   fn_notify_config() / fn_notify_save(jsonb) / fn_notify_test(rule)
+--
+-- mvp_54_order_queue ───────────────────────────────────────────────
+--   ec.order_queue / ec.order_queue_line
+--   core.f_order_submit(data, by)   전 줄 검증 → 재고 부족이면 등록 안 함(shortage 반환)
+--                                   → 통과하면 큐 적재 + 라인마다 inv.movement(out) 기록
+--   fn_order_submit(jsonb)          관리자·직원 계정
+--   fn_store_order_submit(code, jsonb)  담당자 PIN (perm='order' 필요)
+--   fn_order_queue(...) / fn_order_send(ids[]) / fn_order_void(id, reason)
+--   ※ 취소는 전송 전에만 가능하고, 빠졌던 재고를 in 으로 되돌린다.
+--
+-- mvp_55_crm_segment ───────────────────────────────────────────────
+--   crm.segment                     조건 묶음을 이름 붙여 저장 (기본 6종)
+--   fn_crm_segments() / fn_crm_segment_save(jsonb) / fn_crm_segment_delete(code)
+--   fn_crm_segment_run(code, reason, ...)  last_days_min/max(오늘 기준 상대 기간)를
+--                                          절대 날짜로 바꿔 fn_crm_targets_v2 를 호출
+--   fn_crm_pool()                   모수 깔때기 (전체→동의→번호→구매이력 연결)
+--   [버그 수정] fn_crm_targets_v2 의 by_category 집계가 'group by 1' 로 집계함수를
+--              GROUP BY 에 넣어 함수 전체가 실패하고 있었다 → group by 표현식으로 교정
+--
+-- mvp_56_inquiry_unified ───────────────────────────────────────────
+--   crm.v_inquiry                   견적(quote) + 구독·매장(submission) + 소모품/VMS(consult) 통합 뷰
+--   fn_inquiry_list(form, status, q, from, to, limit, offset, unmask)
+--
+-- mvp_57_store_perm_guards ─────────────────────────────────────────
+--   fn_store_orders(code, limit)    담당자 화면 최근 주문서 (perm='order')
+--   fn_stock_search / fn_stock_move 에 perm='stock' / 'stock_move' 검사 추가
+--   fn_store_status 에 perms·dept 추가 → /store 가 메뉴를 스스로 감춘다
+
+-- mvp_58_ecount_sync ──────────────────────────────────────────────
+--   ec.sync_log                     가져오기 이력
+--   core.f_ec_product_sync(by)      품목 조회 → inv.item upsert (2,433건 확인)
+--   core.f_ec_stock_sync(whs[], by) 창고별 재고현황 → inv.movement kind='sync' (차이만, 멱등)
+--                                   · 이카운트에 없는 품목은 자동 생성
+--                                   · 이카운트에 잔고 없는데 우리 원장에 남은 건 0 으로 정리
+--                                   · 창고 하나가 실패하면 즉시 중단 (오류를 12건 쌓지 않기 위해)
+--   core.f_ec_customer_sync(by)     거래처 조회 → ec.customer
+--   fn_ec_sync(what, whs[]) / fn_ec_sync_log(limit)
+--
+-- mvp_58b/c ────────────────────────────────────────────────────────
+--   [발견] 이카운트 세션이 죽으면 JSON 이 아니라 IIS 412 HTML 이 온다 → 세션 만료로 판정해 재로그인
+--   [발견] 로그인 성공 코드는 Data.Code = '00' 이다 ('000' 만 보고 있어 항상 실패로 기록됐다)
+--   [발견] 세션 유효시간이 짧다 → 캐시를 50분에서 10분으로 줄임
+--   응답의 QUANTITY_INFO(일일 허용량)를 ec.api_log.quota 에 저장
+--
+-- mvp_59_ec_circuit_breaker ────────────────────────────────────────
+--   이카운트 제한 : **시간당 연속 오류 30건 / 1일 5,000건**. 넘기면 계정이 시간 단위로 막힌다.
+--   core.f_ec_guard()               마지막 성공 이후 연속 실패가 ec.config.max_fail(기본 8) 이상이면
+--                                   30분 자동 정지 + 이후 호출 거부 (errcode 55006)
+--   ec.config.paused_until          정지 해제 시각 · fn_ec_resume() 으로 관리자가 수동 해제
+--   재로그인 쿨다운 60초 · 재시도는 호출당 1회
