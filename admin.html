@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ATLAS · Console</title>
+<title>Datacenter · Console</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -96,8 +96,9 @@ header h2{font-size:16px;font-weight:800;letter-spacing:-.02em}
 .kpi .s{font-size:11.5px;color:var(--faint);margin-top:2px}
 .kpi.warn{border-top-color:var(--amber);background:var(--amber-soft)} .kpi.warn .v{color:var(--amber)}
 .grid{display:grid;gap:14px;margin-bottom:14px}
-.g2{grid-template-columns:1fr 1fr} .g32{grid-template-columns:3fr 2fr} .g23{grid-template-columns:2fr 3fr}
-@media(max-width:1000px){.g2,.g32,.g23{grid-template-columns:1fr}}
+.g2{grid-template-columns:1fr 1fr} .g32{grid-template-columns:3fr 2fr} .g23{grid-template-columns:2fr 3fr} .g3{grid-template-columns:repeat(3,1fr)}
+.vs-t{font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+@media(max-width:1000px){.g2,.g32,.g23,.g3{grid-template-columns:1fr}.g3>div{grid-column:auto!important}}
 .card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--line);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:14px;min-width:0}
 .card h3{font-size:14px;font-weight:800;margin:-2px 0 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;letter-spacing:-.01em}
 .card h3 span{font-size:12px;color:var(--faint);font-weight:500}
@@ -300,7 +301,7 @@ textarea.in{height:auto}
 <div id="login">
   <div class="login-card">
     <div class="eyebrow">SAMSUNG&amp;TECH</div>
-    <h1>ATLAS <span style="font-weight:500;color:var(--faint);font-size:15px;margin-left:4px">Console</span></h1>
+    <h1>Datacenter <span style="font-weight:500;color:var(--faint);font-size:15px;margin-left:4px">Console</span></h1>
     <label>아이디 또는 이메일</label><input type="text" id="lEmail" autocomplete="username" placeholder="samsungat">
     <label>비밀번호</label><input type="password" id="lPw" autocomplete="current-password" placeholder="••••••••">
     <button onclick="login()">로그인</button>
@@ -312,7 +313,7 @@ textarea.in{height:auto}
 <!-- ═══ APP ═══ -->
 <div id="app" class="hidden">
   <aside>
-    <div class="brand"><small>SAMSUNG&amp;TECH</small>ATLAS</div>
+    <div class="brand"><small>SAMSUNG&amp;TECH</small>Datacenter</div>
     <nav>
       <div class="nav active" data-v="dash"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>매출 대시보드</div>
       <div class="nav" data-v="orders"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>통합 원장</div>
@@ -442,10 +443,22 @@ textarea.in{height:auto}
 
       <!-- ═══ 접수함 ═══ -->
       <div class="view hidden" id="v-inbox">
+        <div class="card" id="visitCard">
+          <h3>매장 방문 통계 <span id="vsSub">키오스크·태블릿 방문 접수 기준</span>
+            <span style="margin-left:auto;display:flex;gap:6px"><a class="btn sm ghost" href="visit/" target="_blank">키오스크 열기 ↗</a><button class="btn sm ghost" onclick="loadVisitStats()">새로고침</button></span></h3>
+          <div class="kpis" id="vsKpi" style="margin-bottom:14px"></div>
+          <div class="grid g3" style="margin-bottom:0">
+            <div><div class="vs-t">방문 목적</div><div id="vsPurpose"></div></div>
+            <div><div class="vs-t">방문 경로</div><div id="vsRoute"></div></div>
+            <div><div class="vs-t">관심 가전</div><div id="vsInterest"></div></div>
+            <div><div class="vs-t">일별 방문 (최근 14일)</div><div id="vsDay"></div></div>
+            <div style="grid-column:span 2"><div class="vs-t">시간대별</div><div id="vsHour"></div></div>
+          </div>
+        </div>
         <div class="card"><h3>고객 접수함 <span>리뷰·혜택은 승인 시 원장에, 상담·견적/설치·A/S/구독·렌탈은 승인 시 상담·가망고객으로 넘어갑니다</span></h3>
           <div class="filters">
-            <select class="in" id="ibStatus" onchange="loadInbox()"><option value="">전체 상태</option><option selected>접수</option><option>승인</option><option>반려</option></select>
-            <select class="in" id="ibType" onchange="loadInbox()"><option value="">전체 종류</option><option>리뷰·혜택</option><option>상담·견적</option><option>설치·A/S</option><option>구독·렌탈</option><option>기타 문의</option></select>
+            <select class="in" id="ibStatus" onchange="loadInbox()"><option value="">전체 상태</option><option selected>접수</option><option>기록</option><option>승인</option><option>반려</option></select>
+            <select class="in" id="ibType" onchange="loadInbox()"><option value="">전체 종류</option><option>리뷰·혜택</option><option>상담·견적</option><option>설치·A/S</option><option>구독·렌탈</option><option>매장방문</option><option>기타 문의</option></select>
             <input class="in" id="ibQ" placeholder="고객명 · 전화 · 상품 · 관심상품 · 담당" style="min-width:260px" onkeydown="if(event.key==='Enter')loadInbox()">
             <button class="btn" onclick="loadInbox()">조회</button>
             <label class="switch" id="ibPeriod" onclick="this.classList.toggle('on');loadInbox()"><span class="sw"></span>상단 기간 적용</label>
@@ -470,7 +483,7 @@ textarea.in{height:auto}
             <button class="btn ghost" onclick="exportConsults()">엑셀 내보내기</button>
           </div>
           <div id="cChips" class="legend" style="margin:-4px 0 10px"></div>
-          <div class="tw"><table><thead><tr><th>상담일</th><th>번호</th><th>고객</th><th>연락처</th><th>관심</th><th>유입경로</th><th>상담사</th><th class="num">예상금액</th><th>예정일</th><th>결과</th><th>내용</th></tr></thead><tbody id="tbConsults"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>상담일</th><th>번호</th><th>고객</th><th>연락처</th><th>관심</th><th>유입경로</th><th>상담사</th><th class="num">예상금액</th><th>예정일</th><th>콜백</th><th>결과</th><th>내용</th></tr></thead><tbody id="tbConsults"></tbody></table></div>
           <div class="pager"><span id="cCount"></span><div class="btns"><button class="btn sm ghost" onclick="loadConsults(cPage-1)">‹ 이전</button><button class="btn sm ghost" onclick="loadConsults(cPage+1)">다음 ›</button></div></div>
         </div>
       </div>
@@ -800,6 +813,7 @@ function fmt(v){ v=Number(v)||0; const a=Math.abs(v);
   if(a>=1e4) return Math.round(v/1e4).toLocaleString('ko-KR')+'<small>만</small>';
   return Math.round(v).toLocaleString('ko-KR'); }
 function fmtT(v){ return fmt(v).replace(/<\/?small>/g,''); }
+function fmtW(v){ const s=fmt(v); return /<\/small>$/.test(s) ? s.replace(/<\/small>$/,'원</small>') : s+'<small>원</small>'; }
 function pctS(v){ return (v>0?'+':'')+v.toFixed(v>=100||v<=-100?0:1)+'%'; }
 function dRate(cur,prv){ cur=Number(cur)||0; prv=Number(prv)||0; if(!prv) return cur?null:0; return (cur-prv)/Math.abs(prv)*100; }
 function chip(cur,prv,inv){ const r=dRate(cur,prv);
@@ -848,7 +862,7 @@ function paint(){
   const pend=Number(k.pending_submissions||0);
   $('badgeInbox').textContent=pend; $('badgeInbox').classList.toggle('hidden',!pend);
 
-  $('mHero').innerHTML=fmt(mv)+'원';
+  $('mHero').innerHTML=fmtW(mv);
   $('mSub').innerHTML=`${MLBL[M]} · ${k.period.from} ~ ${k.period.to} (${k.period.days}일) &nbsp; ${chip(mv,pv,M==='refund')} 전기 ${fmtT(pv)}원`;
   $('mCmp').innerHTML=`${k.cmp.from} ~ ${k.cmp.to} <span style="opacity:.7">(${k.cmp.days}일)</span>`;
   $('mScopeNote').textContent = SCOPE==='전체' ? '전 채널' : SCOPE+' 채널만';
@@ -857,11 +871,11 @@ function paint(){
   const rr = T.gross ? T.refund/T.gross*100 : 0, prr = V.gross ? V.refund/V.gross*100 : 0;
   const sd=k.store_daily||{sum:[],unclosed:0}, sdNet=sd.sum.reduce((a,x)=>a+Number(x.net),0);
   $('mKpis').innerHTML=`
-    <div class="mk"><div class="t">${MLBL[M]}</div><div class="v">${fmt(mv)}<small>원</small></div>
+    <div class="mk"><div class="t">${MLBL[M]}</div><div class="v">${fmtW(mv)}</div>
       <div class="s">${chip(mv,pv,M==='refund')} 전기 ${fmtT(pv)}원</div></div>
     <div class="mk t2"><div class="t">주문 건수 <span style="color:var(--faint)">· 라인 ${n(T.cnt)}</span></div><div class="v">${n(k.total_orders)}<small>건</small></div>
       <div class="s">${chip(k.total_orders,k.prev_orders)} 전기 ${n(k.prev_orders)}건</div></div>
-    <div class="mk t3"><div class="t">객단가</div><div class="v">${fmt(aov)}<small>원</small></div>
+    <div class="mk t3"><div class="t">객단가</div><div class="v">${fmtW(aov)}</div>
       <div class="s">${chip(aov,paov)} 전기 ${fmtT(paov)}원</div></div>
     <div class="mk t4"><div class="t">환불률</div><div class="v">${rr.toFixed(1)}<small>%</small></div>
       <div class="s">${chip(rr,prr,true)} 환불 ${fmtT(T.refund)}원</div></div>
@@ -1158,12 +1172,14 @@ async function loadDaily(){
 let ibRows=[];
 async function loadInbox(){
   const usePeriod=$('ibPeriod').classList.contains('on');
+  loadVisitStats(usePeriod);
   try{ ibRows=await rpc('fn_submission_list',{p_status:$('ibStatus').value||null,p_limit:200,p_offset:0,
     p_q:$('ibQ').value||null, p_from:usePeriod?P.from:null, p_to:usePeriod?P.to:null, p_type:$('ibType').value||null}); }catch(e){ return toast(e.message,'bad'); }
   $('ibCount').textContent=`총 ${n(ibRows[0]?.total_count||0)}건`;
-  const RT={'리뷰·혜택':'y','상담·견적':'진행중','설치·A/S':'보류','구독·렌탈':'렌탈','기타 문의':'n'};
-  $('tbInbox').innerHTML=ibRows.map(s=>`<tr><td class="mono">${dfmt(s.submitted_at)}</td><td><span class="tag ${RT[s.request_type]||'n'}">${esc(s.request_type||'리뷰·혜택')}</span></td><td><b>${esc(s.customer_name)}</b></td><td class="mono">${esc(s.customer_phone)}</td><td><span class="tag ${s.channel_type||'매장'}">${esc(s.channel_type||'-')}</span></td><td>${esc(s.handler||'-')}</td><td class="wrap">${esc(s.product_name||'')}${s.message?`<div style="font-size:12px;color:var(--muted)">${esc(s.message)}</div>`:''}${s.preferred_at?`<div style="font-size:11.5px;color:var(--navy)">희망 ${esc(s.preferred_at)}</div>`:''}</td><td>${s.rating?'★'.repeat(s.rating):''}</td><td style="font-size:12px">${esc(s.review_status||'')}${s.review_url?` <a href="${esc(s.review_url)}" target="_blank" title="${esc(s.review_url)}">↗</a>`:''}</td><td style="color:var(--ok);font-weight:600">${esc(s.next_product||'')}</td><td><span class="tag ${s.consent_marketing?'y':'n'}">${s.consent_marketing?'동의':'미동의'}</span></td>
-    <td style="white-space:nowrap">${s.status==='접수'
+  const RT={'리뷰·혜택':'y','상담·견적':'진행중','설치·A/S':'보류','구독·렌탈':'렌탈','매장방문':'매장','기타 문의':'n'};
+  const visitCell=s=>s.request_type!=='매장방문'?'':`<div style="font-size:12px"><b>${esc(s.visit_purpose||'')}</b>${s.inflow_route?` · 경로 ${esc(s.inflow_route)}`:''}</div>`;
+  $('tbInbox').innerHTML=ibRows.map(s=>`<tr><td class="mono">${dfmt(s.submitted_at)}</td><td><span class="tag ${RT[s.request_type]||'n'}">${esc(s.request_type||'리뷰·혜택')}</span></td><td><b>${esc(s.customer_name||'(미기재)')}</b></td><td class="mono">${esc(s.customer_phone||'')}</td><td><span class="tag ${s.channel_type||'매장'}">${esc(s.channel_type||'-')}</span></td><td>${esc(s.handler||'-')}</td><td class="wrap">${visitCell(s)}${esc(s.product_name||'')}${s.message?`<div style="font-size:12px;color:var(--muted)">${esc(s.message)}</div>`:''}${s.preferred_at?`<div style="font-size:11.5px;color:var(--navy)">희망 ${esc(s.preferred_at)}</div>`:''}</td><td>${s.rating?'★'.repeat(s.rating):''}</td><td style="font-size:12px">${esc(s.review_status||'')}${s.review_url?` <a href="${esc(s.review_url)}" target="_blank" title="${esc(s.review_url)}">↗</a>`:''}</td><td style="color:var(--ok);font-weight:600">${esc(s.next_product||(s.interests||[]).join(', '))}</td><td><span class="tag ${s.consent_marketing?'y':'n'}">${s.consent_marketing?'동의':'미동의'}</span></td>
+    <td style="white-space:nowrap">${s.status==='기록' ? '<span class="tag n" title="연락처 없이 남긴 방문 기록">기록</span>' : s.status==='접수'
       ? ((s.request_type||'리뷰·혜택')==='리뷰·혜택'
           ? `<button class="btn sm ok" onclick="openApprove(${s.id})">원장 등록</button>`
           : `<button class="btn sm" onclick="toConsult(${s.id})">상담으로</button>`)
@@ -1174,6 +1190,23 @@ function openApprove(id){ const s=ibRows.find(x=>x.id===id); $('apId').value=id;
 async function approve(){ try{ await rpc('fn_submission_approve',{p_id:Number($('apId').value),p_gross:Number($('apGross').value)||0,p_model_code:$('apModel').value||null}); toast('원장에 등록됨','ok'); closeModal('approveModal'); loadInbox(); }catch(e){ toast(e.message,'bad'); } }
 async function toConsult(id){ try{ const r=await rpc('fn_submission_to_consult',{p_id:id}); toast('상담·가망고객에 등록됨 (#'+r.consult_id+')','ok'); loadInbox(); }catch(e){ toast(e.message,'bad'); } }
 async function reject(id){ if(!confirm('반려할까요?')) return; try{ await rpc('fn_submission_reject',{p_id:id}); loadInbox(); }catch(e){ toast(e.message,'bad'); } }
+
+async function loadVisitStats(usePeriod){
+  if(usePeriod===undefined) usePeriod=$('ibPeriod').classList.contains('on');
+  let v; try{ v=await rpc('fn_visit_stats',{p_from:usePeriod?P.from:null,p_to:usePeriod?P.to:null}); }catch(e){ $('vsKpi').innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
+  $('vsSub').textContent=`${v.from} ~ ${v.to} · 키오스크·태블릿 방문 접수 기준`;
+  const kp=(t,val,sub,cls='')=>`<div class="mk ${cls}"><div class="t">${t}</div><div class="v">${val}</div><div class="s">${sub||''}</div></div>`;
+  const tot=Number(v.total)||0, wc=Number(v.with_contact)||0, cs=Number(v.consent)||0;
+  const topP=(v.by_purpose||[])[0], topR=(v.by_route||[])[0];
+  $('vsKpi').innerHTML=kp('방문 접수',n(tot)+'<small>건</small>','기간 합계')+kp('연락처 남김',n(wc)+'<small>명</small>',tot?`${(wc/tot*100).toFixed(0)}% · 상담 전환 가능`:'','t3')
+    +kp('마케팅 동의',n(cs)+'<small>명</small>',wc?`연락처 중 ${(cs/wc*100).toFixed(0)}%`:'','t4')
+    +kp('주 방문 목적',esc(topP?.k||'—'),topP?`${n(topP.n)}건`:'')+kp('주 방문 경로',esc(topR?.k||'—'),topR?`${n(topR.n)}건`:'');
+  $('vsPurpose').innerHTML=simpleBars((v.by_purpose||[]).map(x=>({k:x.k,v:x.n,unit:'건',color:'var(--navy)'})));
+  $('vsRoute').innerHTML=simpleBars((v.by_route||[]).map(x=>({k:x.k,v:x.n,unit:'건',color:'var(--teal)'})));
+  $('vsInterest').innerHTML=simpleBars((v.by_interest||[]).map(x=>({k:x.k,v:x.n,unit:'건',color:'#8E6FD8'})));
+  $('vsDay').innerHTML=simpleBars((v.by_day||[]).slice(-14).map(x=>({k:String(x.d).slice(5),v:x.n,unit:'건',color:'var(--navy)'})));
+  $('vsHour').innerHTML=simpleBars((v.by_hour||[]).map(x=>({k:String(x.h).padStart(2,'0')+'시',v:x.n,unit:'건',color:'var(--amber)'})));
+}
 
 /* ═══════════════ 상담 ═══════════════ */
 let cPage=0;
@@ -1190,8 +1223,8 @@ async function loadConsults(page){
   $('cCount').textContent=`총 ${n(total)}건 · 이 페이지 예상금액 ${wonK(sum)} · ${total?cPage*50+1:0}–${cPage*50+rows.length}`;
   renderConsultChips(total);
   CONSULT_ROWS=rows;
-  $('tbConsults').innerHTML=rows.map(c=>`<tr><td class="mono">${dfmt(c.consult_at)}</td><td class="mono" style="font-size:11px;color:var(--muted)">${esc(c.source_ref)}</td><td><b>${esc(c.customer_name||'-')}</b></td><td class="mono">${esc(c.phone||'-')}</td><td>${esc(c.interest_category||'')}${c.interest_model_code?' <span class="mono" style="color:var(--muted)">'+esc(c.interest_model_code)+'</span>':''}</td><td style="font-size:12px">${esc(c.inflow_route||'')}</td><td>${esc(c.handler||'')}</td><td class="num">${c.expected_amount?n(c.expected_amount):''}</td><td class="mono">${dfmt(c.expected_purchase_date)}</td>
-    <td><select class="in" style="padding:3px 6px;font-size:12px" onchange="setResult(${c.id},this.value)">${['진행중','보류','구매완료','종료'].map(r=>`<option ${r===c.result?'selected':''}>${r}</option>`).join('')}</select></td><td class="wrap" style="font-size:12px;color:var(--ink-2)">${esc(c.content||'')}</td></tr>`).join('')||'<tr><td colspan="11" class="note" style="text-align:center;padding:24px">없음</td></tr>';
+  $('tbConsults').innerHTML=rows.map(c=>`<tr><td class="mono">${dfmt(c.consult_at)}</td><td class="mono" style="font-size:11px;color:var(--muted)">${esc(c.source_ref)}</td><td><b>${esc(c.customer_name||'-')}</b></td><td class="mono">${esc(c.phone||'-')}</td><td>${esc(c.interest_category||'')}${c.interest_model_code?' <span class="mono" style="color:var(--muted)">'+esc(c.interest_model_code)+'</span>':''}</td><td style="font-size:12px">${esc(c.inflow_route||'')}</td><td>${esc(c.handler||'')}</td><td class="num">${c.expected_amount?n(c.expected_amount):''}</td><td class="mono">${dfmt(c.expected_purchase_date)}</td><td style="font-size:11.5px;white-space:nowrap">${c.callback_at?(c.callback_done_at?`<span class="tag y">완료</span>`:(new Date(c.callback_at)<new Date()?`<span class="tag n">지남</span>`:`<span class="tag 보류">예정</span>`))+' '+String(c.callback_at).slice(5,16).replace('T',' '):''}</td>
+    <td><select class="in" style="padding:3px 6px;font-size:12px" onchange="setResult(${c.id},this.value)">${['진행중','보류','구매완료','종료'].map(r=>`<option ${r===c.result?'selected':''}>${r}</option>`).join('')}</select></td><td class="wrap" style="font-size:12px;color:var(--ink-2)">${esc(c.content||'')}</td></tr>`).join('')||'<tr><td colspan="12" class="note" style="text-align:center;padding:24px">없음</td></tr>';
 }
 let CONSULT_ROWS=[];
 function renderConsultChips(total){
@@ -1462,10 +1495,10 @@ const PAGE_INFO={
        '건별 수정은 행 끝의 편집 버튼, 엑셀은 오른쪽 위 내보내기(기간 필수, 최대 1년).','수동 등록은 매장 화면을 못 쓰는 예외 상황에만 씁니다.']},
   daily:{d:'매장의 하루 합계(DPS 전기)를 날짜별로 확인하는 페이지입니다. 건별 원장과 별도로 관리되는 매장 매출의 1차 출처입니다.',
     s:['빈 칸(노란색)이 미마감입니다. 매장 화면에서 일마감을 입력하면 채워집니다.','주 1회 일마감 합계와 원장 합계를 비교해 10% 이상 차이나면 누락을 확인하세요.']},
-  inbox:{d:'삼성스토어 시흥 고객 페이지로 들어온 요청을 처리하는 페이지입니다. 리뷰·혜택, 상담·견적, 설치·A/S, 구독·렌탈 네 종류가 한 접수함에 모입니다.',
-    s:['리뷰·혜택은 "원장 등록"으로 금액·모델을 확인해 매출 한 줄을 만듭니다.','상담·견적 / 설치·A/S / 구독·렌탈은 "상담으로"를 누르면 상담·가망고객에 진행중으로 들어가고 담당 프로가 이어받습니다.','중복이거나 허위면 반려합니다. 반려는 기록만 남습니다.']},
+  inbox:{d:'삼성스토어 시흥 고객 페이지로 들어온 요청을 처리하는 페이지입니다. 리뷰·혜택, 상담·견적, 설치·A/S, 구독·렌탈 네 종류와 매장 키오스크의 방문 접수가 한 접수함에 모입니다.',
+    s:['리뷰·혜택은 "원장 등록"으로 금액·모델을 확인해 매출 한 줄을 만듭니다.','상담·견적 / 설치·A/S / 구독·렌탈은 "상담으로"를 누르면 상담·가망고객에 진행중으로 들어가고 담당 프로가 이어받습니다.','중복이거나 허위면 반려합니다. 반려는 기록만 남습니다.','매장방문은 키오스크(/visit/)에서 들어옵니다. 연락처를 남긴 건은 "상담으로" 넘길 수 있고, 연락처 없는 건은 "기록"으로 통계에만 잡힙니다.']},
   consults:{d:'매장·전화로 들어온 상담과 가망고객을 관리하는 페이지입니다. 구매로 이어지지 않은 상담이 재연락 대상의 출처입니다.',
-    s:['결과·상담사·유입경로·검색어로 좁힙니다. 활성 조건은 칩으로 표시됩니다.','결과 드롭다운을 바꾸면 바로 저장됩니다. 구매완료로 바꾸면 판매 입력 시 상담번호로 연결됩니다.','CSV 내보내기는 현재 페이지 기준입니다.']},
+    s:['결과·상담사·유입경로·검색어로 좁힙니다. 활성 조건은 칩으로 표시됩니다.','결과 드롭다운을 바꾸면 바로 저장됩니다. 구매완료로 바꾸면 판매 입력 시 상담번호로 연결됩니다.','CSV 내보내기는 현재 페이지 기준입니다.','콜백 열은 담당 프로가 매장 화면에서 잡은 재연락 약속입니다. 지남/예정/완료로 표시되며, 담당 프로의 "내 고객" 탭에 같은 약속이 뜹니다.']},
   customers:{d:'여러 채널에 흩어진 구매 이력을 한 사람 단위로 묶어 보는 고객 통합 페이지입니다. 이름+휴대폰 뒤 8자리로 같은 사람을 식별합니다.',
     s:['위 통계는 전체 기준, 아래 목록은 검색·필터 기준입니다.','구매 횟수·수신동의·유입으로 좁혀 재구매·휴면 고객을 찾습니다.','실명·실번호는 관리자만 볼 수 있고 열람이 기록됩니다.']},
   crm:{d:'광고성 메시지를 보낼 수 있는 고객만 골라내는 페이지입니다. 수신동의와 연락처가 있는 고객만 나옵니다.',
@@ -1690,7 +1723,7 @@ function renderCustStats(){
       <div class="s">구매자의 ${c.with_order?(c.repeat/c.with_order*100).toFixed(1):0}%</div></div>
     <div class="mk t3"><div class="t">여러 채널 고객</div><div class="v">${n(c.multi_channel)}<small>명</small></div>
       <div class="s">두 곳 이상에서 산 사람</div></div>
-    <div class="mk t4"><div class="t">1인 평균 구매액</div><div class="v">${fmt(c.avg_net)}<small>원</small></div>
+    <div class="mk t4"><div class="t">1인 평균 구매액</div><div class="v">${fmtW(c.avg_net)}</div>
       <div class="s">누적 ${fmtT(c.net_total)}원</div></div>
     <div class="mk t5"><div class="t">수신 동의</div><div class="v">${n(c.consent)}<small>명</small></div>
       <div class="s">전체의 ${c.total?(c.consent/c.total*100).toFixed(1):0}%</div></div>
