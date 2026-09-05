@@ -1,15 +1,36 @@
 name: 샵링커 정기 수집
+
 on:
   schedule:
-    - cron: "10 4 * * *"
-    - cron: "10 14 * * *"
+    # GitHub 예약 실행은 러너가 붐비면 수십 분~수 시간 밀리거나 건너뛴다.
+    # 수집은 (주문번호+상품코드) 기준 upsert 라 여러 번 돌아도 중복이 안 생기므로
+    # 슬롯을 촘촘히 둬서 한 번 밀려도 다음 슬롯이 메우게 한다. (최근 3일치만 재조회)
+    - cron: "5 0 * * *"     # 09:05 KST
+    - cron: "5 4 * * *"     # 13:05 KST
+    - cron: "5 8 * * *"     # 17:05 KST
+    - cron: "5 11 * * *"    # 20:05 KST
+    - cron: "5 14 * * *"    # 23:05 KST
   workflow_dispatch:
     inputs:
-      from: { description: "시작일 YYYYMMDD (비우면 최근 3일)", required: false }
-      to: { description: "종료일 YYYYMMDD (비우면 오늘)", required: false }
-      dry: { description: "적재하지 않고 건수만", type: boolean, default: false }
-      selftest: { description: "연결 점검만", type: boolean, default: false }
-concurrency: { group: shoplinker, cancel-in-progress: false }
+      from:
+        description: "시작일 YYYYMMDD (비우면 최근 3일 정기수집)"
+        required: false
+      to:
+        description: "종료일 YYYYMMDD (비우면 오늘)"
+        required: false
+      dry:
+        description: "적재하지 않고 건수만 보기"
+        type: boolean
+        default: false
+      selftest:
+        description: "연결 점검만 (수집하지 않음)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: shoplinker
+  cancel-in-progress: false
+
 jobs:
   collect:
     runs-on: ubuntu-latest
@@ -25,9 +46,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          if [ "${{ inputs.selftest }}" = "true" ]; then node tools/shoplinker/collect.mjs --selftest; exit $?; fi
+          if [ "${{ inputs.selftest }}" = "true" ]; then
+            node tools/shoplinker/collect.mjs --selftest
+            exit $?
+          fi
           ARGS=""
           [ -n "${{ inputs.from }}" ] && ARGS="$ARGS --from ${{ inputs.from }}"
-          [ -n "${{ inputs.to }}" ] && ARGS="$ARGS --to ${{ inputs.to }}"
+          [ -n "${{ inputs.to }}"   ] && ARGS="$ARGS --to ${{ inputs.to }}"
           [ "${{ inputs.dry }}" = "true" ] && ARGS="$ARGS --dry"
           node tools/shoplinker/collect.mjs $ARGS
