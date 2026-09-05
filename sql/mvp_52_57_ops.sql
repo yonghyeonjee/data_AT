@@ -231,3 +231,14 @@
 --          조합별 캐시 ec.cand_cache(별칭·품목이 바뀌면 트리거로 비움, 1일 TTL) ·
 --          매시 예열(f_dash_warm)에 f_sl_pending(30일)을 넣어 늘 따뜻하게
 --   [결과] 39초 → 처음 3.4초 → 캐시 후 0.9초. 7일 대기 590건 기준.
+
+-- mvp_73 : 실수했을 때 되돌리기 ──────────────────────────────────
+--   재고는 "지우는" 게 아니라 **반대 이동을 한 줄 더 쌓아** 되돌린다(inv.movement kind='in',
+--   ref_type='order_void'). 그래서 언제 누가 무엇을 되돌렸는지 이력이 남는다.
+--   ec.order_queue.batch_id  한 번에 만든 묶음 표시 'SL-YYMMDD-HHMISS-담당'
+--   fn_order_void(id)                 한 건 취소 (기존)
+--   fn_order_void_many(ids[])         여러 건
+--   fn_order_void_batch(batch_id)     묶음 통째로 — sent(이카운트 전송됨)는 건너뜀
+--   fn_order_batches(hours)           최근 72시간 묶음 목록 (화면 위쪽 "최근 만든 묶음")
+--   화면 : 만들기 직후 결과 창에 [방금 만든 N건 되돌리기] · 주문서 페이지 위쪽 묶음 띠에
+--          [되돌리기 N] · 둘 다 "되돌리기" 를 타이핑해야 눌린다. Esc/바깥 클릭으로는 안 됨.
