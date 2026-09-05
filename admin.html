@@ -222,8 +222,31 @@ table.iqt tr:hover .acts,table.iqt tr:focus-within .acts{opacity:1}
 .vs-t{font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 @media(max-width:1000px){.g2,.g32,.g23,.g3{grid-template-columns:1fr}.g3>div{grid-column:auto!important}}
 .card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--line);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:14px;min-width:0}
-.card h3{font-size:14px;font-weight:800;margin:-2px 0 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;letter-spacing:-.01em}
-.card h3 span{font-size:12px;color:var(--faint);font-weight:500}
+.card h3{font-size:14px;font-weight:800;margin:-2px 0 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;letter-spacing:-.01em;flex-wrap:wrap}
+.card h3 span{font-size:12px;color:var(--faint);font-weight:500;min-width:0}
+@media(max-width:860px){ .card h3{align-items:flex-start} .card h3>span{flex:1 1 100%;margin-left:0!important} }
+/* 주문서 미리보기 */
+.pvslip{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:#fff}
+.pvslip.bad{border-color:#F0C9A8;background:#FFFCF8}
+.pvhd{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px}
+.pvmeta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 16px;font-size:12px;padding:8px 10px;background:#F7F8FB;border-radius:8px;margin-bottom:10px}
+.pvmeta label{display:block;color:var(--faint);font-size:10.5px;font-weight:700;letter-spacing:.04em}
+.pvpick{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto}
+.pvopt{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;cursor:pointer;font-size:13px;transition:.12s}
+.pvopt:hover{border-color:var(--line-2);background:#F9FAFC}
+.pvopt.on{border-color:var(--navy);background:var(--navy-soft)}
+.pvopt input{width:15px;height:15px;accent-color:var(--navy);flex:none}
+.pvopt b{flex:none;font-size:12px}
+.pvopt span{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 눌렀다는 표시 · 진행 중 표시 */
+#loadbar{position:fixed;left:0;top:0;height:3px;width:0;background:linear-gradient(90deg,var(--navy),#6C7FE8);z-index:1200;opacity:0;transition:width .25s ease,opacity .3s;box-shadow:0 0 8px rgba(20,40,160,.5)}
+#loadbar.on{opacity:1}
+button.tapped,.btn.tapped{transform:scale(.965);filter:brightness(.94)}
+button,.btn{transition:transform .08s ease,filter .08s ease,background .12s,border-color .12s,color .12s}
+.btn.spin{position:relative;color:transparent!important}
+.btn.spin::after{content:"";position:absolute;left:50%;top:50%;width:13px;height:13px;margin:-7px 0 0 -7px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;color:var(--navy);animation:spin .6s linear infinite}
+.btn.spin.ghost::after{color:var(--ink-2)}
+@keyframes spin{to{transform:rotate(360deg)}}
 .card h3 .actions{display:flex;gap:6px;align-items:center}
 
 /* ── 표 ── */
@@ -1151,6 +1174,7 @@ textarea.in{height:auto}
 
 <datalist id="handlerList"></datalist>
 <div class="tip" id="tip"></div>
+<div id="loadbar"></div>
 <div class="toast" id="toast"></div>
 <div id="modalHost"></div>
 
@@ -1206,7 +1230,20 @@ let toastT; function toast(m,c=''){ const t=$('toast'); t.textContent=m; t.class
 const RPC_CACHE=new Map(), RPC_TTL=45000;
 const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle)/i;
 function rpcClear(){ RPC_CACHE.clear(); }
-async function rpcRaw(fn,args={}){ const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
+let RPC_BUSY=0, RPC_T=null;
+function rpcBar(d){
+  RPC_BUSY=Math.max(0,RPC_BUSY+d); const b=$('loadbar'); if(!b) return;
+  clearTimeout(RPC_T);
+  if(RPC_BUSY>0){ b.classList.add('on'); b.style.width=(30+Math.min(60,RPC_BUSY*12))+'%'; }
+  else { b.style.width='100%'; RPC_T=setTimeout(()=>{ b.classList.remove('on'); setTimeout(()=>{ if(RPC_BUSY===0) b.style.width='0'; },300); },180); }
+}
+/* 진행 중인 조회가 끝날 때까지 (최소 0.35초, 최대 12초) */
+function rpcIdle(){ const t0=Date.now();
+  return new Promise(res=>{ const tick=()=>{ const el=Date.now()-t0;
+    if((RPC_BUSY===0 && el>350) || el>12000) return res(); setTimeout(tick,80); }; tick(); }); }
+async function rpcRaw(fn,args={}){ rpcBar(1);
+  try{ const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
+  finally{ rpcBar(-1); } }
 async function rpc(fn,args={},opt={}){
   if(RPC_NOCACHE.test(fn)){ const d=await rpcRaw(fn,args); rpcClear(); return d; }
   if(opt.fresh) RPC_CACHE.delete(fn+'|'+JSON.stringify(args));
@@ -1599,7 +1636,14 @@ async function voidOq(id){
 /* ── 샵링커 자동 수집 주문 → 주문서 ─────────────────────────
    수집된 주문을 골라 이카운트 품목코드까지 붙여 주문서로 만든다.
    상품명 → 품목코드 매칭은 ec.product_alias(1,005쌍) 를 쓰고, 못 찾으면 그 자리에서 연결할 수 있다. */
-let SL_ROWS=[], SL_PICK=new Set();
+let SL_ROWS=[], SL_PICK=new Set(), SL_PICKS={}, SL_PV=null;
+/* 옵션에서 뽑은 모델이 상품명·모델코드와 다르면 "이게 진짜다"라고 알려준다.
+   오픈마켓은 상품 하나에 서로 다른 모델을 옵션으로 붙여 파는 일이 흔하다. */
+const mkey=x=>String(x||'').toUpperCase().replace(/[^A-Z0-9가-힣]/g,'');
+function optDiff(l){ if(!l||!l.model_eff) return false; const e=mkey(l.model_eff);
+  if(!e) return false;
+  if(l.model && mkey(l.model)!==e) return true;
+  return !mkey(l.product).includes(e); }
 async function openSlPick(){
   await ensureWh();
   const whOpt=WH.map(w=>`<option value="${esc(w.code)}"${w.code==='00001'?' selected':''}>${esc(w.name)}</option>`).join('');
@@ -1612,6 +1656,7 @@ async function openSlPick(){
         <button class="btn sm" onclick="loadSl2()">조회</button>
         <span style="flex:1"></span>
         <select class="in" id="sl_wh" title="출하 창고">${whOpt}</select>
+        <button class="btn sm ghost" onclick="slPreview()">주문서 미리보기</button>
         <button class="btn sm" onclick="slMake()">선택한 건 주문서로</button>
       </div>
       <div class="qsum" id="sl_sum" style="margin-bottom:10px"></div>
@@ -1620,7 +1665,7 @@ async function openSlPick(){
         <th style="width:140px">주문번호</th><th style="width:70px">채널</th><th style="width:66px">구매자</th>
         <th style="min-width:340px">품목 (이카운트 코드)</th><th style="width:46px" class="num">수량</th><th style="width:84px" class="num">금액</th><th style="width:76px">접수</th>
       </tr></thead><tbody id="sl_rows"></tbody></table></div>`,
-    init:()=>{ SL_PICK.clear(); loadSl2(); }});
+    init:()=>{ SL_PICK.clear(); SL_PICKS={}; loadSl2(); }});
 }
 async function loadSl2(){
   const box=$('sl_rows'); if(!box) return;
@@ -1631,13 +1676,23 @@ async function loadSl2(){
   SL_ROWS=d.rows||[];
   if($('sl_ch').options.length<=1) $('sl_ch').innerHTML='<option value="">전체 채널</option>'+(d.channels||[]).map(c=>`<option>${esc(c)}</option>`).join('');
   $('sl_sum').innerHTML=[qcard('가져올 주문',n(d.total||0),'건','','아직 주문서 아님'),
-    qcard('바로 가능',n(d.ready||0),'건','ok','품목코드 매칭됨'),
+    qcard('바로 가능',n(d.ready||0),'건','ok','품목이 정해짐'),
+    qcard('확인 필요',n(d.ambig||0),'건',(d.ambig>0?'warn':''),'같은 모델에 품목이 여러 개'),
     qcard('코드 없음',n(d.unmapped||0),'건',(d.unmapped>0?'warn':''),'연결하면 가져올 수 있음')].join('');
   const bg=$('badgeSl'); if(bg){ bg.textContent=n(d.ready||0); bg.classList.toggle('hidden', !(d.ready||0)); }
   box.innerHTML=SL_ROWS.map((r,i)=>{
-    const lines=(r.lines||[]).map(l=>l.item_code
-      ? `<div class="ell" title="${esc(l.product)}"><span class="mono" style="color:var(--ok);font-size:11px">${esc(l.item_code)}</span> ${esc(l.item_name||l.product)} <span class="note">×${n(l.qty)}</span></div>`
-      : `<div class="ell" title="${esc(l.product)}"><span class="tag bad">코드 없음</span> ${esc(l.product)} <button class="btn sm ghost" onclick="event.stopPropagation();slLink(${i},${l.line})">연결</button></div>`).join('');
+    const lines=(r.lines||[]).map(l=>{
+      const key=r.order_no+'#'+l.line, sel=SL_PICKS[key];
+      const cur=(l.cands||[]).find(c=>c.code===sel) || (l.cands||[])[0];
+      /* 옵션에 모델명이 박혀 있으면 그게 실제로 판 물건이다 (오픈마켓은 한 상품에 여러 모델을 옵션으로 붙인다) */
+      const om = optDiff(l) ? ` <span class="tag warn" title="상품명과 다른 모델이 옵션에 적혀 있습니다. 자동으로 바꾸지 않으니 맞는지 확인하세요">옵션엔 ${esc(l.model_eff)}</span>` : '';
+      if(!cur) return `<div class="ell" title="${esc(l.product)}"><span class="tag bad">코드 없음</span> ${esc(l.product)}${om} <button class="btn sm ghost" onclick="event.stopPropagation();slLink(${i},${l.line})">연결</button></div>`;
+      const many = (l.n_cand||1) > 1;
+      return `<div class="ell" title="${esc(l.product)}">
+        <span class="mono" style="color:${many&&!sel?'var(--warn)':'var(--ok)'};font-size:11px">${esc(cur.code)}</span>
+        ${esc(cur.name||l.product)} <span class="note">×${n(l.qty)}</span>${om}
+        ${many?`<button class="btn sm ghost" onclick="event.stopPropagation();slChoose('${esc(r.order_no)}',${l.line},${i})" title="같은 모델에 품목이 ${l.n_cand}개 있습니다">${sel?'바꾸기':'품목 고르기 '+l.n_cand}</button>`:''}
+      </div>`; }).join('');
     return `<tr onclick="slPick(${i},!SL_PICK.has('${esc(r.order_no)}'))" style="${r.ready?'':'background:#FFF9F2'}">
       <td><input type="checkbox" ${SL_PICK.has(r.order_no)?'checked':''} ${r.ready?'':'disabled'} onclick="event.stopPropagation();slPick(${i},this.checked)"></td>
       <td class="mono" style="font-size:11.5px">${esc(r.order_no)}</td>
@@ -1671,18 +1726,112 @@ async function slLink(i,line){
   try{ await rpc('fn_alias_add',{p_alias:data.alias,p_code:data.code}); toast('연결했습니다','ok'); loadSl2(); }
   catch(e){ toast(e.message,'bad'); }
 }
-async function slMake(){
+/* 같은 모델에 품목이 여러 개일 때 사람이 고른다 (예: MLT-D111S → /TND · 1+1 · (재생)) */
+async function slChoose(orderNo, line, i){
+  const r=SL_ROWS[i]||{}; const l=(r.lines||[]).find(x=>x.line===line); if(!l) return;
+  const key=orderNo+'#'+line, cur=SL_PICKS[key]||(l.cands||[])[0]?.code;
+  const data=await modal({title:'어느 품목입니까?', ok:'이걸로', wide:true,
+    html:`<p class="note" style="margin:0 0 4px">${esc(l.product||'')}</p>
+      <p class="note" style="margin:0 0 10px">옵션 <b>${esc(l.option||'—')}</b>${l.model_eff?` · 옵션 속 모델 <b class="mono">${esc(l.model_eff)}</b>`:''}</p>
+      <p class="note" style="margin:0 0 10px">맨 위가 <b>지금 자동으로 잡힌 품목</b>(상품명·모델코드 기준)입니다. <span class="tag warn">옵션 모델</span> 표시는 옵션에 적힌 모델로 찾은 후보이며, 자동으로 바꾸지 않습니다.</p>
+      <div class="pvpick">${(l.cands||[]).map(c=>`
+        <label class="pvopt${c.code===cur?' on':''}"><input type="radio" name="slc" value="${esc(c.code)}" ${c.code===cur?'checked':''}
+          onchange="document.querySelectorAll('.pvopt').forEach(x=>x.classList.remove('on'));this.closest('.pvopt').classList.add('on')">
+          <b class="mono">${esc(c.code)}</b><span>${esc(c.name||'')}</span>${c.opt?'<span class="tag warn" style="margin-left:auto;flex:none">옵션 모델</span>':''}</label>`).join('')}</div>
+      <p class="note" style="margin-top:10px">고른 품목의 재고가 빠집니다. 매번 같은 걸 고르게 된다면 <b>연결</b>로 상품명↔코드를 붙여 두세요.</p>`,
+    collect:()=>{ const v=document.querySelector('input[name=slc]:checked'); if(!v) throw new Error('품목을 고르세요'); return v.value; }});
+  if(!data) return;
+  SL_PICKS[key]=data; loadSl2();
+}
+
+/* 주문서 미리보기 — 실제로 만들어질 전표 그대로. 주문 1건 = 전표 1장 */
+async function slPreview(){
+  if(!SL_PICK.size) return toast('미리 볼 주문을 고르세요','bad');
+  const go = await modal({title:'주문서 미리보기', ok:'이대로 만들기', cancel:'닫기', xwide:true,
+    html:`<div id="slPv"><div class="note" style="padding:24px;text-align:center">불러오는 중…</div></div>`,
+    init:()=>slPvLoad(),
+    collect:()=>{ if(!SL_PV) throw new Error('아직 불러오는 중입니다');
+      if(SL_PV.n_miss>0) throw new Error(`품목을 못 정한 줄이 ${SL_PV.n_miss}개 있습니다`);
+      if(SL_PV.n_ambig>0) throw new Error(`품목을 골라야 할 줄이 ${SL_PV.n_ambig}개 있습니다`);
+      return true; }});
+  if(go) slMake(true);
+}
+async function slPvLoad(){
+  const box=$('slPv'); if(!box) return;
+  try{ SL_PV=await rpc('fn_sl_preview',{p_order_nos:[...SL_PICK],p_wh:$('sl_wh').value,p_picks:SL_PICKS},{fresh:true}); }
+  catch(e){ box.innerHTML=`<div class="note" style="padding:20px;color:var(--bad)">${esc(e.message)}</div>`; return; }
+  slPvRender();
+}
+function slPvRender(){
+  const d=SL_PV, box=$('slPv'); if(!d||!box) return;
+  const warn=[]; if(d.n_miss) warn.push(`품목 없음 ${d.n_miss}줄`);
+  if(d.n_ambig) warn.push(`품목 선택 필요 ${d.n_ambig}줄`);
+  if(d.n_short) warn.push(`재고 부족 ${d.n_short}줄`);
+  box.innerHTML=`
+    <div class="qsum" style="margin-bottom:12px">
+      ${qcard('만들 전표',n(d.n_slips),'장','','주문 1건 = 전표 1장')}
+      ${qcard('품목 줄',n(d.n_lines),'줄','','')}
+      ${qcard('출하 창고',esc(d.wh_name||d.wh),'','','재고가 여기서 빠집니다')}
+      ${qcard('확인할 것', warn.length?esc(warn.join(' · ')):'없음','', warn.length?'warn':'ok','')}
+    </div>
+    ${(d.slips||[]).map(sp=>`
+      <div class="pvslip${sp.n_miss||sp.n_ambig?' bad':''}">
+        <div class="pvhd">
+          <b>${esc(sp.channel||'')} · <span class="mono">${esc(sp.order_no)}</span></b>
+          ${sp.already?'<span class="tag bad">이미 만든 주문</span>':''}
+          <span style="margin-left:auto" class="mono">${esc(String(sp.io_date))}</span>
+        </div>
+        <div class="pvmeta">
+          <div><label>거래처</label><b>${esc(sp.cust_name||'—')}</b> <span class="mono note">${esc(sp.cust_code||'코드없음')}</span></div>
+          <div><label>출하창고</label><b>${esc(d.wh_name||d.wh)}</b></div>
+          <div><label>특이사항</label><b>${esc(sp.remark||'')}</b></div>
+          <div><label>합계</label><b>${n(sp.amount)}원</b></div>
+        </div>
+        <div class="tw"><table class="iqt"><thead><tr>
+          <th style="width:28px">#</th><th style="width:96px">품목코드</th><th style="min-width:180px">품목명</th>
+          <th style="min-width:180px">샵링커 상품 · 옵션</th><th style="width:46px" class="num">수량</th>
+          <th style="width:78px" class="num">단가</th><th style="width:84px" class="num">금액</th><th style="width:74px" class="num">재고</th>
+        </tr></thead><tbody>${(sp.lines||[]).map(l=>`
+          <tr${l.short?' style="background:#FFF6F5"':''}>
+            <td class="num note">${l.line}</td>
+            <td class="mono" style="font-size:11.5px;color:${l.item_code?(l.n_cand>1&&!l.picked?'var(--warn)':'var(--ok)'):'var(--bad)'}">${esc(l.item_code||'—')}</td>
+            <td>${esc(l.item_name||'')}${l.n_cand>1?`<button class="btn sm ghost" style="margin-left:6px" onclick="slPvChoose('${esc(sp.order_no)}',${l.line})">${l.picked?'바꾸기':'고르기 '+l.n_cand}</button>`:''}</td>
+            <td class="wrap" style="font-size:11.5px;color:var(--muted)">${esc(l.product||'')}${l.option?`<div>옵션 ${esc(l.option)}</div>`:''}${optDiff(l)?`<div><span class="tag warn" title="자동으로 바꾸지 않습니다 — 맞는지 확인하세요">옵션엔 ${esc(l.model_eff)}</span></div>`:''}</td>
+            <td class="num">${n(l.qty)}</td><td class="num">${n(l.unit_price)}</td><td class="num">${n(l.amount)}</td>
+            <td class="num${l.short?' bad':''}" style="${l.short?'color:var(--bad);font-weight:700':''}">${n(l.have)}${l.short?' ⚠':''}</td>
+          </tr>`).join('')}</tbody></table></div>
+      </div>`).join('')}
+    <p class="note" style="margin-top:10px">만들면 <b>재고가 바로 빠집니다.</b> 이카운트 전송은 목록에서 따로 누릅니다. 재고가 모자란 전표는 건너뛰고 사유를 알려줍니다.</p>`;
+}
+async function slPvChoose(orderNo, line){
+  const sp=(SL_PV.slips||[]).find(x=>x.order_no===orderNo); if(!sp) return;
+  const l=(sp.lines||[]).find(x=>x.line===line); if(!l) return;
+  const key=orderNo+'#'+line, cur=SL_PICKS[key]||l.item_code;
+  const data=await modal({title:'어느 품목입니까?', ok:'이걸로', wide:true,
+    html:`<p class="note" style="margin:0 0 4px">${esc(l.product||'')}</p>
+      <p class="note" style="margin:0 0 10px">옵션 <b>${esc(l.option||'—')}</b>${l.model_eff?` · 옵션 속 모델 <b class="mono">${esc(l.model_eff)}</b>`:''}</p>
+      <p class="note" style="margin:0 0 10px">맨 위가 <b>지금 자동으로 잡힌 품목</b>(상품명·모델코드 기준)입니다. <span class="tag warn">옵션 모델</span> 표시는 옵션에 적힌 모델로 찾은 후보이며, 자동으로 바꾸지 않습니다.</p>
+      <div class="pvpick">${(l.cands||[]).map(c=>`
+        <label class="pvopt${c.code===cur?' on':''}"><input type="radio" name="slc2" value="${esc(c.code)}" ${c.code===cur?'checked':''}
+          onchange="document.querySelectorAll('.pvopt').forEach(x=>x.classList.remove('on'));this.closest('.pvopt').classList.add('on')">
+          <b class="mono">${esc(c.code)}</b><span>${esc(c.name||'')}</span>${c.opt?'<span class="tag warn" style="margin-left:auto;flex:none">옵션 모델</span>':''}</label>`).join('')}</div>`,
+    collect:()=>{ const v=document.querySelector('input[name=slc2]:checked'); if(!v) throw new Error('품목을 고르세요'); return v.value; }});
+  if(!data) return;
+  SL_PICKS[key]=data; slPvLoad();
+}
+
+async function slMake(skipConfirm){
   if(!SL_PICK.size) return toast('가져올 주문을 고르세요','bad');
   const nos=[...SL_PICK];
-  if(!await modal({title:'주문서로 만들기', ok:`${n(nos.length)}건 만들기`,
+  if(!skipConfirm && !await modal({title:'주문서로 만들기', ok:`${n(nos.length)}건 만들기`,
     html:`<p style="font-size:13.5px;line-height:1.8">고른 <b>${n(nos.length)}건</b>을 주문서로 만듭니다.<br>
       만드는 즉시 <b>재고가 빠지고</b>, 이카운트 전송은 목록에서 따로 누릅니다.<br>
       <span class="note">재고가 모자란 건은 건너뛰고 사유를 알려줍니다.</span></p>`})) return;
   toast('만드는 중…');
-  try{ const r=await rpc('fn_sl_to_order',{p_order_nos:nos,p_wh:$('sl_wh').value});
+  try{ const r=await rpc('fn_sl_to_order',{p_order_nos:nos,p_wh:$('sl_wh').value,p_picks:SL_PICKS});
     const sk=r.skipped||[];
     toast(`주문서 ${n(r.made)}건 생성${sk.length?` · 건너뜀 ${sk.length}`:''}`, r.made?'ok':'bad');
-    SL_PICK.clear(); rpcClear(); loadSl2(); if(VIEW==='oq') loadOq(0);
+    SL_PICK.clear(); SL_PICKS={}; SL_PV=null; rpcClear(); loadSl2(); if(VIEW==='oq') loadOq(0);
     if(sk.length) await modal({title:'건너뛴 주문', cancel:null, ok:'닫기', wide:true,
       html:`<div class="tw"><table><thead><tr><th>주문번호</th><th>사유</th></tr></thead><tbody>${
         sk.map(x=>`<tr><td class="mono">${esc(x.order_no)}</td><td>${esc(x.reason)}${x.shortage?` <span class="note">(${esc(JSON.stringify(x.shortage))})</span>`:''}</td></tr>`).join('')}</tbody></table></div>`});
@@ -2041,6 +2190,19 @@ function placePeriodBar(v){
   pb.classList.remove('hidden');
 }
 $('navBox').addEventListener('click',e=>{ const n=e.target.closest('.nav[data-v]'); if(n) show(n.dataset.v); });
+
+/* 눌렀는데 화면이 그대로면 "먹통인가?" 싶으므로, 누른 티와 끝난 티를 반드시 낸다 */
+const REFRESH_RE=/새로고침|다시\s?불러|갱신|조회|불러오기/;
+document.addEventListener('click', e=>{
+  const b=e.target.closest('button, .btn'); if(!b || b.disabled) return;
+  b.classList.add('tapped'); setTimeout(()=>b.classList.remove('tapped'), 160);
+  if(!REFRESH_RE.test((b.textContent||'').trim())) return;
+  const lbl=(b.textContent||'').trim();
+  setTimeout(async()=>{ if(RPC_BUSY===0) return;          // 조회가 안 나갔으면 조용히
+    b.classList.add('spin'); await rpcIdle(); b.classList.remove('spin');
+    toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
+}, true);
+function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
 function refreshView(){ ({home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>loadItems(0),oq:()=>loadOq(0),dash:loadDash,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:loadCrmFunnel,upload:loadUploads,log:()=>loadLog(0),settings:loadSettings,option:loadOption,notify:loadNotify})[VIEW](); }
 
 /* ═══════════════ 온라인 채널 ═══════════════ */
