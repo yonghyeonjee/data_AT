@@ -183,6 +183,14 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .empty{color:var(--faint);text-align:center;padding:20px;font-size:13px}
 .lbl{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
 .sk-row{display:grid;grid-template-columns:minmax(0,1fr) 74px 84px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:10px}
+.slt{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+.slt th{position:sticky;top:0;background:#F7F8FB;text-align:left;font-size:11px;font-weight:700;color:var(--muted);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.slt td{padding:9px 10px;border-bottom:1px solid #F3F4F7;vertical-align:top} .slt tr:last-child td{border-bottom:0}
+.slt tr.off td{opacity:.5} .slt tr.sel td{background:#F6F8FF} .slt tr{cursor:pointer}
+.slt td.num,.slt th.num{text-align:right;white-space:nowrap} .slt td small{color:var(--faint);font-size:11px;display:block}
+.slt td:nth-child(4),.slt td:nth-child(7),.slt td:nth-child(2){white-space:nowrap} .slt td:nth-child(3){min-width:220px}
+.slt input[type=checkbox]{width:17px;height:17px;margin:0}
 .sl-row{display:grid;grid-template-columns:26px minmax(0,1fr) 84px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .sl-row:last-child{border-bottom:0}
 .sl-row.off{opacity:.55}
@@ -599,6 +607,11 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
         <select class="in" id="sl_ch" onchange="loadSlList()"><option value="">전체 채널</option></select>
         <input class="in" id="sl_q" placeholder="주문번호 · 구매자 · 상품" onkeydown="if(event.key==='Enter')loadSlList()">
       </div>
+      <div class="daterow">
+        <select class="in" id="sl_kind" onchange="renderSlList()"><option value="">대물·소모품 전체</option><option value="소모품">소모품</option><option value="대물">대물</option><option value="혼합">섞임</option><option value="기타">기타</option></select>
+        <select class="in" id="sl_cat" onchange="renderSlList()"><option value="">전체 카테고리</option></select>
+        <select class="in" id="sl_st" onchange="renderSlList()"><option value="">전체 상태</option><option value="ready">바로 가능</option><option value="ambig">확인 필요</option><option value="miss">코드 없음</option></select>
+      </div>
       <div class="oc-sum"><div><div class="k">가져올 주문</div><div class="v" id="sl_cnt">-</div></div><div><div class="k">바로 가능</div><div class="v" id="sl_ready">-</div></div></div>
       <div id="sl_rows"><div class="empty">불러오는 중…</div></div>
       <button class="btn" id="sl_btn" onclick="slMakeStore()" style="margin-top:10px">선택한 건 주문서로</button>
@@ -695,7 +708,9 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 /* ═══ 설정 ═══ */
 const SUPABASE_URL = "https://wdahskrcpjooqhwwxjiu.supabase.co";
 const SUPABASE_KEY = "sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* 기기 식별자 : 사무실처럼 여러 기기가 한 IP를 쓰는 곳에서 잠금이 기기별로 걸리도록 서버에 함께 보낸다 (개인정보 아님, 무작위 문자열) */
+const DEVICE_ID = (()=>{ try{ let d=localStorage.getItem('dc_device'); if(!d){ d=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem('dc_device',d); } return d; }catch(e){ return 'nostore'; } })();
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global:{ headers:{ 'x-dc-device': DEVICE_ID } } });
 
 /* ═══ 유틸 ═══ */
 const $ = id => document.getElementById(id);
@@ -710,8 +725,8 @@ async function rpc(fn, args){ const {data,error} = await sb.rpc(fn, args); if(er
 /* ═══ PIN ═══ */
 let CODE = localStorage.getItem('staff_code') || '';
 let ME = '', STATUS = null;
-async function enterPin(){ const v=$('pinInput').value.trim(); if(v.length!==4) return $('pinErr').textContent='4자리를 입력하세요';
-  $('pinErr').textContent=''; try{ await loadStatus(v); CODE=v; localStorage.setItem('staff_code',v); start(); }catch(e){ $('pinErr').textContent=e.message; } }
+let enterPin=async function(){ const v=$('pinInput').value.trim(); if(v.length!==4) return $('pinErr').textContent='4자리를 입력하세요';
+  $('pinErr').textContent=''; try{ await loadStatus(v); CODE=v; localStorage.setItem('staff_code',v); start(); }catch(e){ $('pinErr').textContent=e.message; } };
 $('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') enterPin(); });
 $('pinInput').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value.length===4) enterPin(); });
 async function loadStatus(code){
@@ -724,6 +739,7 @@ async function start(){
   const t=new Date(); $('todayLabel').textContent = `${t.getMonth()+1}월 ${t.getDate()}일 (${'일월화수목금토'[t.getDay()]})`;
   $('meName').textContent = ME + '님';
   applyPerms();
+  try{ const t=location.hash.replace('#',''); history.replaceState({tab:t||'home'},'','#'+(t||'home')); if(t && t!=='home') goTab(t, true); }catch(e){}
   $('s_date').value = todayStr(); $('c_date').value = todayStr(); $('d_date').value = todayStr(-1);
   render();
 }
@@ -953,7 +969,8 @@ function wizMount(host, cfg){
 
   /* ── ② 선택 ─────────────────────────────────────────────── */
   function rows2(){ const r=(S.data&&S.data.rows)||[];
-    return r.filter(x=> S.flt2==='all' ? true : S.flt2==='ready' ? (x.ready&&!x.done&&!x.ambig) : S.flt2==='ambig' ? (x.ambig>0&&!x.done) : S.flt2==='miss' ? (!x.ready&&!x.done) : x.done); }
+    return r.filter(x=> (S.flt2==='all' ? true : S.flt2==='ready' ? (x.ready&&!x.done&&!x.ambig) : S.flt2==='ambig' ? (x.ambig>0&&!x.done) : S.flt2==='miss' ? (!x.ready&&!x.done) : x.done)
+                     && (!S.fltKind || x.kind===S.fltKind) && (!S.fltCat || x.category===S.fltCat)); }
   function selRows(){ return ((S.data&&S.data.rows)||[]).filter(r=>S.sel.has(r.order_no)); }
   function r2(){
     const rows=rows2(), all=rows.filter(r=>!r.done);
@@ -961,17 +978,21 @@ function wizMount(host, cfg){
     const st=r=> r.done?'<span class="tg n">이미 만듦</span>' : !r.ready?'<span class="tg bad">코드 없음</span>' : r.ambig?'<span class="tg warn">확인 필요</span>':'<span class="tg ok">바로 가능</span>';
     $('wzBody').innerHTML=`
       <div class="wiz-flt">${[['all','전체'],['ready','바로 가능'],['ambig','확인 필요'],['miss','코드 없음'],['done','이미 만듦']].map(([k,l])=>`<button class="${S.flt2===k?'on':''}" data-f="${k}">${l}</button>`).join('')}
-        <span class="sp"></span><button class="btn ghost sm" id="wzSelReady">바로 가능한 것 모두 선택</button></div>
+        <select class="in" id="wzKind" style="height:32px;font-size:12px"><option value="">대물·소모품 전체</option>${(S.data.kinds||[]).map(k=>`<option value="${esc(k.k)}" ${S.fltKind===k.k?'selected':''}>${esc(k.k)} (${n(k.n)})</option>`).join('')}</select>
+        <select class="in" id="wzCat" style="height:32px;font-size:12px"><option value="">전체 카테고리</option>${(S.data.categories||[]).map(c=>`<option value="${esc(c.c)}" ${S.fltCat===c.c?'selected':''}>${esc(c.c)} (${n(c.n)})</option>`).join('')}</select>
+        <span class="sp"></span><button class="btn ghost sm" id="wzSelReady">보이는 것 중 바로 가능한 것 모두 선택</button></div>
       <div class="wiz-tw"><table><thead><tr>
-        <th style="width:30px"><input type="checkbox" id="wzAll" ${allOn?'checked':''}></th><th>주문</th><th>품목</th><th class="num">수량</th><th class="num">금액</th><th>상태</th></tr></thead>
+        <th style="width:30px"><input type="checkbox" id="wzAll" ${allOn?'checked':''} title="보이는 것 전체 선택"></th><th>주문</th><th>품목</th><th style="width:110px">구분</th><th class="num">수량</th><th class="num">금액</th><th>상태</th></tr></thead>
       <tbody>${rows.map(r=>`<tr class="${r.done?'off':''}${S.sel.has(r.order_no)?' sel':''}" data-o="${esc(r.order_no)}">
         <td><input type="checkbox" ${S.sel.has(r.order_no)?'checked':''} ${r.done?'disabled':''} data-c="${esc(r.order_no)}"></td>
         <td><div><b>${esc(r.channel||'')}</b> · ${esc(r.buyer||'')}</div><div class="sub mono">${esc(r.order_no)} · ${esc(r.at)}</div></td>
         <td style="max-width:460px">${(r.lines||[]).map(l=>`<div class="ell" title="${esc(l.product)}">${l.item_code?`<span class="mono" style="color:${l.n_cand>1?'#C88A0E':'#0F7B6C'};font-size:11px">${esc(l.item_code)}</span>`:'<span class="tg bad">없음</span>'} ${esc(l.item_name||l.product)} <span class="sub" style="display:inline">×${n(l.qty)}</span></div>`).join('')}</td>
-        <td class="num" data-l="수량">${n(r.qty)}</td><td class="num" data-l="금액">${n(r.amount)}</td><td data-l="상태">${st(r)}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;padding:30px;color:#98A1B0">해당하는 주문이 없습니다</td></tr>'}</tbody></table></div>`;
+        <td data-l="구분"><span class="tg n">${esc(r.kind||'')}</span><div class="sub">${esc(r.category||'')}</div></td>
+        <td class="num" data-l="수량">${n(r.qty)}</td><td class="num" data-l="금액">${n(r.amount)}</td><td data-l="상태">${st(r)}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;padding:30px;color:#98A1B0">해당하는 주문이 없습니다</td></tr>'}</tbody></table></div>`;
     host.querySelectorAll('.wiz-flt button[data-f]').forEach(b=>b.onclick=()=>{ S.flt2=b.dataset.f; r2(); });
     $('wzAll').onchange=e=>{ all.forEach(r=>e.target.checked?S.sel.add(r.order_no):S.sel.delete(r.order_no)); r2(); render2ft(); };
-    $('wzSelReady').onclick=()=>{ (S.data.rows||[]).filter(r=>r.ready&&!r.done&&!r.ambig).forEach(r=>S.sel.add(r.order_no)); r2(); };
+    $('wzSelReady').onclick=()=>{ rows2().filter(r=>r.ready&&!r.done&&!r.ambig).forEach(r=>S.sel.add(r.order_no)); r2(); };
+    $('wzKind').onchange=e=>{ S.fltKind=e.target.value; r2(); }; $('wzCat').onchange=e=>{ S.fltCat=e.target.value; r2(); };
     host.querySelectorAll('input[data-c]').forEach(c=>c.onchange=()=>{ c.checked?S.sel.add(c.dataset.c):S.sel.delete(c.dataset.c); c.closest('tr').classList.toggle('sel',c.checked); render2ft(); });
     host.querySelectorAll('tbody tr[data-o]').forEach(tr=>tr.onclick=e=>{ if(e.target.tagName==='INPUT') return; const c=tr.querySelector('input[data-c]'); if(c&&!c.disabled){ c.checked=!c.checked; c.onchange(); } });
     render2ft();
@@ -983,7 +1004,7 @@ function wizMount(host, cfg){
   function groups(){
     const m=new Map();
     selRows().forEach(r=>(r.lines||[]).forEach(l=>{ const k=gkey(l); let g=m.get(k);
-      if(!g){ g={key:k,product:l.product,option:l.option,model:l.model,model_eff:l.model_eff,cands:l.cands||[],n_cand:l.n_cand||0,auto:l.item_code,auto_name:l.item_name,lines:[],qty:0}; m.set(k,g); }
+      if(!g){ g={key:k,product:l.product,option:l.option,model:l.model,model_eff:l.model_eff,category:l.category,kind:l.kind,cands:l.cands||[],n_cand:l.n_cand||0,auto:l.item_code,auto_name:l.item_name,lines:[],qty:0}; m.set(k,g); }
       g.lines.push({order_no:r.order_no,line:l.line}); g.qty+=Number(l.qty||0); }));
     return [...m.values()].sort((a,b)=>(a.auto?1:0)-(b.auto?1:0) || (b.n_cand-a.n_cand) || b.qty-a.qty);
   }
@@ -1002,7 +1023,7 @@ function wizMount(host, cfg){
         const cur=g.cands.find(c=>c.code===code); const name=cur?cur.name:(S['nm_'+g.key]||'');
         const st= !code?'<span class="tg bad">코드 없음</span>' : (g.n_cand>1&&!picked)?'<span class="tg warn">확인 필요</span>' : picked?'<span class="tg ok">직접 지정</span>':'<span class="tg ok">자동</span>';
         return `<tr data-g="${i}">
-          <td><div style="white-space:normal;line-height:1.45">${esc(g.product||'')}</div>${g.option?`<div class="sub">옵션 ${esc(g.option)}${optDiff(g)?` <span class="tg opt">옵션엔 ${esc(g.model_eff)}</span>`:''}</div>`:''}</td>
+          <td><div style="white-space:normal;line-height:1.45">${esc(g.product||'')}</div><div class="sub">${g.category?`<span class="tg n">${esc(g.category)}</span> `:''}${g.option?`옵션 ${esc(g.option)}`:''}${optDiff(g)?` <span class="tg opt">옵션엔 ${esc(g.model_eff)}</span>`:''}</div></td>
           <td class="num" data-l="줄 · 수량">${g.lines.length}줄 <span class="sub" style="display:inline">· ×${n(g.qty)}</span></td>
           <td>${g.cands.length?`<select class="in cand" data-i="${i}">${!code?'<option value="">— 고르세요 —</option>':''}${g.cands.map(c=>`<option value="${esc(c.code)}" ${c.code===code?'selected':''}>${esc(c.code)} · ${esc(c.name||'')}${c.opt?' (옵션 모델)':''}</option>`).join('')}${code&&!cur?`<option value="${esc(code)}" selected>${esc(code)} · ${esc(name)}</option>`:''}<option value="__search">🔍 다른 품목 검색…</option></select>`
             :`<div class="pick"><input class="in" data-s="${i}" placeholder="품목코드 · 이름 · 모델 검색" value="${esc(code||'')}" list="wzdl${i}" autocomplete="off"><datalist id="wzdl${i}"></datalist><span class="hit" data-h="${i}">${code?esc(name):''}</span></div>`}</td>
@@ -1149,6 +1170,52 @@ function ecSend(o){
 }
 /* WIZ:SEND:END */
 
+/* WIZ:SEND:BEGIN — 이카운트 전송 확인창 (공용)
+   ecSend({count, ids, run(ids)->Promise<{sent,failed,detail[]}>, onDone}) */
+function ecSend(o){
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const n=v=>Number(v||0).toLocaleString('ko-KR');
+  const mask=document.createElement('div'); mask.className='ecdlg-mask';
+  const close=()=>{ mask.remove(); document.removeEventListener('keydown',onKey,true); };
+  const onKey=e=>{ if(e.key==='Escape' && !mask.dataset.busy){ e.stopPropagation(); close(); } };
+  document.addEventListener('keydown',onKey,true);
+  mask.innerHTML=`<div class="ecdlg" role="dialog" aria-modal="true">
+    <div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+      <div><h4>이카운트로 전송합니다</h4><p>주문서 <b>${n(o.count)}장</b>이 이카운트 판매주문서로 올라갑니다</p></div></div>
+    <div class="bd">
+      <ul>
+        <li>이카운트에 <b>실제 전표</b>가 생깁니다. 회계·출고 담당이 바로 보게 됩니다.</li>
+        <li>전송된 뒤에는 <b>이 화면에서 되돌릴 수 없습니다.</b> 잘못 보냈으면 이카운트에서 전표를 먼저 지우고, 여기서 개별 취소해야 재고가 돌아옵니다.</li>
+        <li class="ok">실패한 전표는 "전송 실패"로 남고 재고는 그대로입니다. 사유를 고친 뒤 다시 누르면 재시도됩니다.</li>
+      </ul>
+      <label class="ack"><input type="checkbox" id="ecAck"> 전표 내용을 확인했고, 이카운트에 올리는 것이 맞습니다</label>
+    </div>
+    <div class="ft"><button class="btn ghost" id="ecNo">취소</button><button class="btn" id="ecGo" disabled>${n(o.count)}장 전송</button></div></div>`;
+  document.body.appendChild(mask);
+  const ack=mask.querySelector('#ecAck'), go=mask.querySelector('#ecGo');
+  ack.onchange=()=>{ go.disabled=!ack.checked; };
+  mask.querySelector('#ecNo').onclick=close;
+  mask.addEventListener('click',e=>{ if(e.target===mask && !mask.dataset.busy) close(); });
+  go.onclick=async()=>{
+    mask.dataset.busy='1';
+    const dlg=mask.querySelector('.ecdlg');
+    dlg.innerHTML=`<div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg></div>
+      <div><h4>전송 중…</h4><p>이카운트가 답할 때까지 이 창을 닫지 마세요. 전표 한 장에 1~2초쯤 걸립니다.</p></div></div>
+      <div class="bd"><div class="prog"><i></i></div><div style="font-size:12px;color:#646D7C" id="ecProgTx">${n(o.count)}장 보내는 중</div></div><div class="ft"></div>`;
+    let r; try{ r=await o.run(o.ids); }catch(e){ r={sent:0,failed:o.count,error:e.message,detail:[]}; }
+    delete mask.dataset.busy;
+    const ok=(r.failed||0)===0 && !r.error;
+    const det=r.detail||[];
+    dlg.innerHTML=`<div class="hd ${ok?'ok':(r.sent?'':'bad')}"><div class="ic"><svg viewBox="0 0 24 24"><path d="${ok?'M20 6 9 17l-5-5':'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'}"/></svg></div>
+      <div><h4>${ok?`${n(r.sent)}장 모두 전송됐습니다`:`성공 ${n(r.sent||0)}장 · 실패 ${n(r.failed||0)}장`}</h4>
+        <p>${ok?'이카운트 판매주문서에서 확인할 수 있습니다. 전표번호는 목록에 표시됩니다.':(r.error?esc(r.error):'실패한 전표는 "전송 실패"로 남았습니다. 사유를 확인하고 다시 전송하세요.')}</p></div></div>
+    <div class="bd">${det.length?`<div class="res"><table><thead><tr><th>주문번호</th><th>결과</th><th>전표번호 · 사유</th></tr></thead><tbody>${det.map(d=>`<tr><td class="mono">${esc(d.order_no||d.id)}</td><td>${d.ok?'<b style="color:#0F7B6C">전송</b>':'<b style="color:#B3261E">실패</b>'}</td><td style="font-size:11.5px;color:#646D7C">${esc(d.ok?(d.slip||''):(d.message||''))}</td></tr>`).join('')}</tbody></table></div>`:''}</div>
+    <div class="ft"><button class="btn" id="ecClose">확인</button></div>`;
+    dlg.querySelector('#ecClose').onclick=()=>{ close(); if(o.onDone) o.onDone(r); };
+  };
+}
+/* WIZ:SEND:END */
+
 /* ═══ 단계별 모드 (코드아이식 4단계) ═══ */
 let WIZS=null;
 function orMode(m){
@@ -1171,24 +1238,40 @@ async function loadSlList(){
   const box=$('sl_rows'); if(!box) return;
   box.innerHTML='<div class="empty">불러오는 중…</div>';
   let d; try{ d=await rpc('fn_store_sl_pending',{p_code:CODE,p_days:Number($('sl_days').value),
-    p_q:$('sl_q').value.trim()||null,p_channel:$('sl_ch').value||null,p_limit:60}); }
+    p_q:$('sl_q').value.trim()||null,p_channel:$('sl_ch').value||null,p_limit:300}); }
   catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
-  SL_ROWS=d.rows||[];
+  SL_ROWS=d.rows||[]; SL_META=d;
   if($('sl_ch').options.length<=1) $('sl_ch').innerHTML='<option value="">전체 채널</option>'+(d.channels||[]).map(c=>`<option>${esc(c)}</option>`).join('');
+  const keep=$('sl_cat').value; $('sl_cat').innerHTML='<option value="">전체 카테고리</option>'+(d.categories||[]).map(x=>`<option value="${esc(x.c)}" ${x.c===keep?'selected':''}>${esc(x.c)} (${x.n})</option>`).join('');
   $('sl_cnt').textContent=(d.total||0)+'건';
   $('sl_ready').textContent=(d.ready||0)+'건'+((d.unmapped||0)?` (코드없음 ${d.unmapped})`:'');
-  box.innerHTML = SL_ROWS.length ? SL_ROWS.map((r,i)=>{
-    const ln=(r.lines||[]).map(l=> l.item_code
-      ? `<span class="code">${esc(l.item_code)}</span> ${esc(l.item_name||l.product)} ×${Number(l.qty)}`
-      : `<span class="miss">코드없음</span> ${esc(l.product)}`).join(' / ');
-    return `<div class="sl-row ${r.ready?'':'off'}">
-      <input type="checkbox" ${SL_PICK.has(r.order_no)?'checked':''} ${r.ready?'':'disabled'} onchange="slPickStore(${i},this.checked)">
-      <div class="nm">${esc(r.channel||'')} · ${esc(r.buyer||'')}<small>${esc(r.order_no)} · ${ln}</small></div>
-      <div class="am">${won(r.amount)}<small style="display:block;color:var(--faint);font-weight:400;font-size:11px">${esc(r.at)}</small></div>
-    </div>`; }).join('')
-    : '<div class="empty">가져올 주문이 없습니다</div>';
+  renderSlList();
 }
-function slPickStore(i,on){ const r=SL_ROWS[i]; if(!r||!r.ready) return; on?SL_PICK.add(r.order_no):SL_PICK.delete(r.order_no); }
+let SL_META=null;
+function slVisible(){ const k=$('sl_kind').value, c=$('sl_cat').value, st=$('sl_st').value;
+  return SL_ROWS.map((r,i)=>({r,i})).filter(({r})=> (!k||r.kind===k) && (!c||r.category===c) &&
+    (!st || (st==='ready'? (r.ready&&!r.ambig) : st==='ambig'? r.ambig>0 : !r.ready))); }
+function renderSlList(){
+  const box=$('sl_rows'); if(!box||!SL_ROWS) return; const vis=slVisible();
+  const sel=vis.filter(({r})=>r.ready), allOn=sel.length>0 && sel.every(({r})=>SL_PICK.has(r.order_no));
+  const st=r=> !r.ready?'<span class="st bad">코드 없음</span>' : r.ambig?'<span class="st warn">확인 필요</span>':'<span class="st ok">바로 가능</span>';
+  box.innerHTML = vis.length ? `<div class="tw"><table class="slt"><thead><tr>
+      <th style="width:30px"><input type="checkbox" id="sl_all" ${allOn?'checked':''} onchange="slAllStore(this.checked)" title="보이는 것 중 바로 가능한 것 전체 선택"></th>
+      <th>주문</th><th>품목</th><th>구분</th><th class="num">수량</th><th class="num">금액</th><th>상태</th></tr></thead><tbody>${
+    vis.map(({r,i})=>`<tr class="${r.ready?'':'off'}${SL_PICK.has(r.order_no)?' sel':''}" onclick="slRowStore(${i},event)">
+      <td><input type="checkbox" ${SL_PICK.has(r.order_no)?'checked':''} ${r.ready?'':'disabled'} onchange="slPickStore(${i},this.checked)" onclick="event.stopPropagation()"></td>
+      <td><b>${esc(r.channel||'')}</b> · ${esc(r.buyer||'')}<small>${esc(r.order_no)} · ${esc(r.at)}</small></td>
+      <td>${(r.lines||[]).map(l=> l.item_code
+          ? `<div><span class="code" style="color:${l.n_cand>1?'#C88A0E':'#0F7B6C'}">${esc(l.item_code)}</span> ${esc(l.item_name||l.product)} <small style="display:inline">×${Number(l.qty)}</small></div>`
+          : `<div><span class="miss">코드없음</span> ${esc(l.product)}</div>`).join('')}</td>
+      <td><small style="display:block">${esc(r.kind||'')}</small>${esc(r.category||'')}</td>
+      <td class="num">${Number(r.qty||0)}</td><td class="num">${won(r.amount)}</td><td>${st(r)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="note-in" style="margin-top:8px">${vis.length}건 표시 · 선택 <b id="sl_selN">${SL_PICK.size}</b>건</div>`
+    : '<div class="empty">해당하는 주문이 없습니다</div>';
+}
+function slAllStore(on){ slVisible().forEach(({r})=>{ if(r.ready){ on?SL_PICK.add(r.order_no):SL_PICK.delete(r.order_no); } }); renderSlList(); }
+function slRowStore(i,e){ if(e.target.tagName==='INPUT') return; const r=SL_ROWS[i]; if(!r||!r.ready) return; SL_PICK.has(r.order_no)?SL_PICK.delete(r.order_no):SL_PICK.add(r.order_no); renderSlList(); }
+function slPickStore(i,on){ const r=SL_ROWS[i]; if(!r||!r.ready) return; on?SL_PICK.add(r.order_no):SL_PICK.delete(r.order_no); const n=$('sl_selN'); if(n) n.textContent=SL_PICK.size; const tr=document.querySelectorAll('.slt tbody tr')[[...slVisible()].findIndex(x=>x.i===i)]; if(tr) tr.classList.toggle('sel',on); }
 async function slMakeStore(){
   if(!SL_PICK.size) return toast('가져올 주문을 고르세요','bad');
   const nos=[...SL_PICK];
@@ -1278,15 +1361,20 @@ function orSend(ids){
 }
 
 /* ═══ 탭 ═══ */
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+/* 탭 이동을 히스토리에 쌓아 뒤로가기가 이전 탭으로 가게 한다 (PIN 화면·사이트 밖으로 안 튐) */
+function goTab(name, fromHistory){
+  const b=document.querySelector(`.tab[data-tab="${name}"]`); if(!b || b.classList.contains('hidden')) return;
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  ['home','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==b.dataset.tab));
-  if(b.dataset.tab==='report' && !REPORT_LOADED) loadReport();
-  if(b.dataset.tab==='online' && !OC_LOADED) loadOnlineDay();
-  if(b.dataset.tab==='stock' && !STK_LOADED) loadStk();
-  if(b.dataset.tab==='order') initOrderTab();
+  ['home','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  if(name==='report' && !REPORT_LOADED) loadReport();
+  if(name==='online' && !OC_LOADED) loadOnlineDay();
+  if(name==='stock' && !STK_LOADED) loadStk();
+  if(name==='order') initOrderTab();
+  if(!fromHistory){ try{ (history.state&&history.state.tab===name) ? history.replaceState({tab:name},'','#'+name) : history.pushState({tab:name},'','#'+name); }catch(e){} }
   window.scrollTo({top:0});
-}));
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>goTab(b.dataset.tab)));
+window.addEventListener('popstate', e=>{ if($('app').classList.contains('hidden')) return; const t=(e.state&&e.state.tab)||location.hash.replace('#','')||'home'; goTab(t, true); });
 $('s_kind').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
   $('s_kind').querySelectorAll('button').forEach(x=>x.className=''); b.className='on '+(b.dataset.v==='구독'?'sub':b.dataset.v==='직판'?'direct':''); });
 $('s_stage').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
@@ -1543,7 +1631,38 @@ async function submitDaily(){
 }
 
 /* ═══ 부팅 ═══ */
-(async()=>{ if(CODE){ try{ await loadStatus(); start(); return; }catch(e){ localStorage.removeItem('staff_code'); CODE=''; } } $('pinInput').focus(); })();
+/* ── 잠금 : 코드는 기억하되, 자리 비움(30분)·탭을 닫았다 열면 코드를 다시 친다 ── */
+const LOCK_IDLE_MIN=30; let LOCK_T=null, LOCKED=false;
+function lockTouch(){ if(LOCKED || !CODE || $('app').classList.contains('hidden')) return; clearTimeout(LOCK_T); LOCK_T=setTimeout(()=>lockStore('자리를 비운 지 '+LOCK_IDLE_MIN+'분이 지나 잠겼습니다. 담당자 코드를 다시 입력하세요.'), LOCK_IDLE_MIN*60e3); }
+['mousemove','keydown','click','touchstart','scroll'].forEach(ev=>document.addEventListener(ev, lockTouch, {passive:true}));
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') lockTouch(); });
+function lockStore(why){ if(LOCKED) return; LOCKED=true;
+  document.querySelector('#pinScreen .sub').textContent = why || '담당자 코드 4자리를 입력하세요';
+  $('pinInput').value=''; $('pinErr').textContent=''; $('pinScreen').classList.remove('hidden'); $('app').classList.add('hidden'); setTimeout(()=>$('pinInput').focus(),50); }
+const _enterPin=enterPin;
+enterPin=async function(){ const v=$('pinInput').value.trim(); if(v.length!==4) return $('pinErr').textContent='4자리를 입력하세요';
+  $('pinErr').textContent='';
+  if(LOCKED && v===CODE){ LOCKED=false; $('pinScreen').classList.add('hidden'); $('app').classList.remove('hidden'); try{ sessionStorage.setItem('st_open','1'); }catch(e){} lockTouch(); toast('잠금 해제','ok'); return; }
+  if(LOCKED && v!==CODE){ /* 다른 사람이면 그 사람으로 새로 시작 */ LOCKED=false; }
+  if(PIN_UNTIL && Date.now()<PIN_UNTIL){ pinLockTick(); return; }
+  try{ await loadStatus(v); CODE=v; localStorage.setItem('staff_code',v); try{ sessionStorage.setItem('st_open','1'); }catch(e){} start(); lockTouch(); }catch(e){ pinFail(e.message); } };
+/* ── 코드 5회 오입력 → 15분 잠금 (서버 core.f_staff 가 기기별로 센다). 남은 시간을 화면에 세어 보여준다 ── */
+let PIN_UNTIL=0, PIN_T=null;
+function pinFail(msg){
+  const m=/잠겼습니다/.test(msg||'') && ((msg.match(/(\d+)분/)||[])[1]);
+  if(m){ PIN_UNTIL=Date.now()+Number(m)*60e3; try{ localStorage.setItem('dc_pin_until',String(PIN_UNTIL)); }catch(e){} pinLockTick(); return; }
+  $('pinErr').textContent=msg; $('pinInput').value=''; $('pinInput').focus(); }
+function pinLockTick(){ clearTimeout(PIN_T); const left=PIN_UNTIL-Date.now();
+  if(left<=0){ PIN_UNTIL=0; try{ localStorage.removeItem('dc_pin_until'); }catch(e){} $('pinInput').disabled=false; $('pinErr').textContent=''; $('pinInput').focus(); return; }
+  const mm=Math.floor(left/60e3), ss=Math.floor(left%60e3/1e3);
+  $('pinInput').value=''; $('pinInput').disabled=true;
+  $('pinErr').textContent='코드를 5번 틀려 잠겼습니다 · '+mm+'분 '+String(ss).padStart(2,'0')+'초 뒤에 다시 입력할 수 있습니다 (급하면 관리자가 풀어줄 수 있어요)';
+  PIN_T=setTimeout(pinLockTick,1000); }
+try{ const u=Number(localStorage.getItem('dc_pin_until')||0); if(u>Date.now()){ PIN_UNTIL=u; pinLockTick(); } }catch(e){}
+(async()=>{ if(CODE){ try{ await loadStatus(); start();
+      let fresh=false; try{ fresh=!sessionStorage.getItem('st_open'); }catch(e){}
+      if(fresh) lockStore('창을 다시 열어 잠겨 있습니다. 담당자 코드를 입력하면 이어서 쓸 수 있습니다.'); else lockTouch();
+      return; }catch(e){ localStorage.removeItem('staff_code'); CODE=''; } } $('pinInput').focus(); })();
 </script>
 </body>
 </html>
