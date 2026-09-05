@@ -319,3 +319,41 @@
 --        잠김 메시지 받으면 입력칸 비활성 + 남은 시간 카운트다운(localStorage dc_pin_until 로 새로고침해도 유지)
 --        admin.html 옵션·권한 → '매장 코드 오입력 · 잠금' 카드 (fn_pin_attempts / fn_pin_unlock)
 -- 주의 : 카운트다운은 화면 추정치(서버가 기준). 관리자가 풀어주면 화면은 새로고침해야 풀린다.
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- mvp_79_pin_record_autonomous_ec_throttle  (v23)
+-- ═══════════════════════════════════════════════════════════════════════
+-- [버그] 코드 틀려도 "4번 더 틀리면" 이 안 줄던 이유
+--   f_staff 가 pin_attempt 에 insert 한 뒤 raise exception → PostgREST 트랜잭션이 통째로 롤백되어 insert 도 사라짐.
+-- [해결] 실패 기록을 '자기호출' 로 따로 커밋
+--   core.f_pin_fail_post(p)  : extensions.http() 로 우리 PostgREST(/rest/v1/rpc/fn_pin_fail_record) 를 호출 → 별도 트랜잭션에서 커밋
+--   public.fn_pin_fail_record(p) : 헤더 x-dc-internal 이 vault 'dc_internal_token' 과 같을 때만 core.f_pin_fail_record 실행 (아니면 42501)
+--   core.f_pin_fail_record(p) : pin_attempt insert + crm.access_log + 5회째 f_notify('store.pin_lock')
+--   core.app_setting 'anon_key' : 자기호출 apikey (공개값)
+--   notify_rule 'store_pin_lock' 추가(기본 꺼짐 · jandi_ops)
+--   테스트 : 같은 키로 5회 → 5건 기록, 6회째는 잠금 예외
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- mvp_80_menu_env_test_prod  (v23)  테스트/배포 환경
+-- ═══════════════════════════════════════════════════════════════════════
+--   core.menu_item.envs / menu_group.envs text[] default '{test,prod}'
+--   fn_menu(p_env)  : 'test' 는 /admin/test/, 그 외 /admin.html — 화면이 location.pathname 에 /test/ 가 있으면 test 로 부른다
+--   fn_menu_admin / fn_menu_save : envs 왕복
+--   파일 : admin/test/index.html = admin.html, store/test/index.html = store.html (build.sh 가 복사). 상대 링크는 모두 절대경로(/store.html …) 로 바꿈
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- mvp_81_ec_stock_sync_queue  (v23)  이카운트 재고 동기화 — 창고 하나씩 3분 간격
+-- ═══════════════════════════════════════════════════════════════════════
+-- [관측] 재고 API(GetListInventoryBalanceStatus) 를 짧은 시간에 3~5번 부르면 이카운트(IIS) 가 HTTP 412(HTML) 로 끊고,
+--        그 뒤 몇 분 동안 계속 412. 재로그인해도 소용없고 '가만히 두면' 풀린다. 1.2초 간격도 소용없음.
+--        1일 허용량(5000) 과는 별개. 0행 창고 조회는 이카운트가 '연속 오류' 로 센다(30/시간 넘기면 계정 잠김).
+-- [설계] ec.stock_sync_run / ec.stock_sync_task
+--   core.f_ec_stock_enqueue(by, whs)  : 실행 중이면 그 run 반환, 아니면 활성 창고 전부 todo 로
+--   core.f_ec_stock_step()            : todo 하나 처리 (core.f_ec_stock_sync_wh). 실패는 attempts+1 후 뒤로, 4회 넘기면 fail. 남은 게 없으면 run 마감 + ec.sync_log 1줄
+--   core.f_ec_stock_sync(whs, by)     : 호환용 — enqueue 로 위임
+--   public.fn_ec_sync('stock')        : 줄만 세우고 즉시 반환 {queued:true,total}
+--   public.fn_ec_stock_progress()     : 마지막 run 진행 상황 (관리자 이카운트 카드에 진행바)
+--   cron 'ecount-stock-sync' 0 18 UTC → enqueue('pg_cron') ; 'ecount-stock-step' */4 * * * * → step()
+-- mvp_82 : 실측 — 8분 쉰 뒤 65초 간격으로 3번은 성공, 4번째 412. 막힌 상태에서 또 부르면 막힘이 연장됨(3분 간격으로 불러도 계속 412).
+--          → 4분 간격 + 412 맞으면 run.paused_until = +10분 쉬고 이어감. 12창고 ≈ 48분 (03:00 → 03:50 무렵 끝)
+--   f_ec_call : 412 즉시 재시도 제거(의미 없음). f_ec_guard : 412 는 연속 실패로 안 셈(30분 멈춤 방지)

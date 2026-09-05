@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Datacenter · 메뉴 관리</title>
-<link rel="icon" href="../../favicon.ico?v=3">
+<link rel="icon" href="/favicon.ico?v=3">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
@@ -57,10 +57,21 @@ header .who button:hover{border-color:rgba(255,255,255,.4);color:#fff}
 .legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin:14px 0 16px;padding:11px 14px;background:#F7F8FB;border-radius:10px}
 
 /* 목록 */
-.row{display:grid;grid-template-columns:26px minmax(150px,1fr) 70px 218px minmax(170px,1.25fr);gap:10px;align-items:center;padding:7px 10px;border-radius:8px}
+.row{display:grid;grid-template-columns:26px minmax(150px,1fr) 62px 208px 132px minmax(150px,1.1fr);gap:10px;align-items:center;padding:7px 10px;border-radius:8px}
 .row+.row{margin-top:2px}
 .row.hd{font-size:11px;font-weight:700;color:var(--muted);padding-bottom:2px}
 .row.hd span:nth-child(3){text-align:center}
+.env{display:flex;gap:10px;align-items:center}
+.env label{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+.env input{width:14px;height:14px;margin:0;accent-color:var(--navy);cursor:pointer}
+.env label.on{color:var(--navy)} .env label.t.on{color:#7A4FB0} .env label.t input{accent-color:#7A4FB0}
+.pvtab{display:flex;gap:4px;margin-bottom:8px}
+.pvtab button{flex:1;border:1.5px solid var(--line-2);background:#fff;border-radius:8px;padding:5px 0;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.pvtab button.on{border-color:var(--navy);color:var(--navy);background:var(--navy-soft)}
+.pvtab button.t.on{border-color:#7A4FB0;color:#7A4FB0;background:#F1EBFA}
+.envlinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.envlinks a{font-size:12px;font-weight:600;color:var(--navy);text-decoration:none;border:1.5px solid var(--line-2);border-radius:8px;padding:5px 10px}
+.envlinks a.t{color:#7A4FB0}
 .row.grp{background:#F3F5F9;font-weight:700;margin-top:16px}
 .row.grp:first-of-type{margin-top:0}
 .row.off{opacity:.42}
@@ -89,7 +100,7 @@ header .who button:hover{border-color:rgba(255,255,255,.4);color:#fff}
 .pv.dev{color:#6E7893} .pv.dev .ic{opacity:.4}
 .pv .tag{margin-left:auto;font-size:9.5px;font-weight:700;color:#F0B23A;background:rgba(240,178,58,.14);border:1px solid rgba(240,178,58,.3);padding:1px 6px;border-radius:6px}
 .grid2{display:grid;grid-template-columns:1fr 268px;gap:16px;align-items:start}
-@media(max-width:900px){.grid2{grid-template-columns:1fr}.row{grid-template-columns:26px 1fr;row-gap:8px}.row>span:nth-child(3),.row>span:nth-child(4),.row>span:nth-child(5){grid-column:2}.row.hd{display:none}}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}.row{grid-template-columns:26px 1fr;row-gap:8px}.row>span:nth-child(3),.row>span:nth-child(4),.row>span:nth-child(5),.row>span:nth-child(6){grid-column:2}.row.hd{display:none}}
 
 /* 토스트 */
 #toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:50}
@@ -119,7 +130,7 @@ header .who button:hover{border-color:rgba(255,255,255,.4);color:#fff}
 <!-- ═══ 본문 ═══ -->
 <div id="app" class="hidden">
   <header>
-    <a class="bk" href="../../admin.html"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>관리자 화면</a>
+    <a class="bk" href="/admin.html"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>관리자 화면</a>
     <span class="sp"></span>
     <h1>관리자 메뉴 관리</h1><span class="dev">개발자 전용</span>
     <div class="who"><b id="uEmail" style="color:#fff;font-weight:600">-</b><button onclick="logout()">로그아웃</button></div>
@@ -133,15 +144,18 @@ header .who button:hover{border-color:rgba(255,255,255,.4);color:#fff}
         <span><b>토글</b> 메뉴에 보일지 말지</span>
         <span><b style="color:var(--navy)">공개</b> 평소대로 보이고 눌립니다</span>
         <span><b style="color:var(--amber)">개발 중</b> 보이지만 눌러도 공사 중 화면만 나옵니다</span>
+        <span><b style="color:#7A4FB0">테스트</b> /admin/test 에만 · <b style="color:var(--navy)">배포</b> /admin 에 적용</span>
       </div>
       <div class="grid2">
         <div id="list"></div>
         <div>
           <div class="note" style="margin-bottom:8px;font-weight:600;color:var(--ink-2)">이렇게 보입니다</div>
+          <div class="pvtab"><button class="t" id="pvT" onclick="setPv('test')">테스트 (/admin/test)</button><button id="pvP" onclick="setPv('prod')">배포 (/admin)</button></div>
           <div class="prev" id="prev"></div>
+          <div class="envlinks"><a class="t" href="/admin/test/" target="_blank">관리자 테스트 ↗</a><a class="t" href="/store/test/" target="_blank">담당자 테스트 ↗</a><a href="/admin.html" target="_blank">관리자 배포 ↗</a><a href="/store.html" target="_blank">담당자 배포 ↗</a></div>
         </div>
       </div>
-      <p class="note" style="margin-top:14px">토글을 끄면 메뉴에서 사라집니다(주소로 <span class="mono">#코드</span>를 직접 치면 열림 — 완전 차단이 아니라 정리용). 다시 켜면 끄기 직전 상태로 돌아옵니다. 그룹을 끄면 그 아래 메뉴가 통째로 사라집니다. 순서 숫자가 작을수록 위로 갑니다. <b>안내 문구</b>를 적으면 공사 중 화면에 그 문장이 나옵니다. 저장하면 모든 관리자 화면에 바로 반영됩니다.</p>
+      <p class="note" style="margin-top:14px">토글을 끄면 메뉴에서 사라집니다(주소로 <span class="mono">#코드</span>를 직접 치면 열림 — 완전 차단이 아니라 정리용). 다시 켜면 끄기 직전 상태로 돌아옵니다. 그룹을 끄면 그 아래 메뉴가 통째로 사라집니다. 순서 숫자가 작을수록 위로 갑니다. <b>안내 문구</b>를 적으면 공사 중 화면에 그 문장이 나옵니다. 저장하면 모든 관리자 화면에 바로 반영됩니다.<br><b>테스트 / 배포</b> 체크는 브랜치처럼 씁니다 — 새 기능은 <b>테스트</b>만 켜서 <span class="mono">/admin/test</span> 에서 먼저 써 보고, 괜찮으면 <b>배포</b>도 켭니다. 화면 파일 자체도 <span class="mono">admin/test/index.html</span>·<span class="mono">store/test/index.html</span> 에 먼저 올리고, 확인이 끝나면 같은 파일을 <span class="mono">admin.html</span>·<span class="mono">store.html</span> 로 복사해 배포합니다.</p>
     </div>
   </div>
 </div>
@@ -174,7 +188,7 @@ async function boot(){
   try{ ME=await rpc('fn_me'); }catch(e){ ME=null; }
   if(!ME){ $('lErr').textContent='프로필이 없습니다.'; await sb.auth.signOut(); reveal('login'); return; }
   if(!ME.is_dev){ reveal('login');
-    $('lErr').innerHTML='이 화면은 <b>개발자 계정</b>만 쓸 수 있습니다.<br>운영 작업은 <a href="../../admin.html" style="color:var(--navy)">관리자 화면</a>에서 하세요.';
+    $('lErr').innerHTML='이 화면은 <b>개발자 계정</b>만 쓸 수 있습니다.<br>운영 작업은 <a href="/admin.html" style="color:var(--navy)">관리자 화면</a>에서 하세요.';
     await sb.auth.signOut(); localStorage.removeItem('dc_login_at'); return; }
   reveal('app');
   $('uEmail').textContent=ME.email.replace(ID_DOMAIN,'');
@@ -202,22 +216,29 @@ function ctl(kind,code,cur,hasDev){
   const r=(v,lb)=>`<label class="rd${cur===v?' on':''}${v==='dev'?' dev':''}${on?'':' mute'}"><input type="radio" name="s_${code}" ${cur===v?'checked':''} ${on?'':'disabled'} onchange="setState('${kind}','${code}','${v}')"><span>${lb}</span></label>`;
   return `<div class="ctl">${t}${r('on','공개')}${r('dev','개발 중')}</div>`;
 }
+function envCtl(kind,code,envs){ envs=envs||[];
+  const c=(v,lb,cls)=>`<label class="${cls}${envs.includes(v)?' on':''}"><input type="checkbox" ${envs.includes(v)?'checked':''} onchange="setEnv('${kind}','${code}','${v}',this.checked)"><span>${lb}</span></label>`;
+  return `<div class="env">${c('test','테스트','t')}${c('prod','배포','p')}</div>`; }
+function setEnv(kind,code,v,on){ const o=find(kind,code); if(!o) return; const set=new Set(o.envs||[]); if(on) set.add(v); else set.delete(v); o.envs=[...set]; render(); }
+let PV='test';
+function setPv(v){ PV=v; preview(); }
 function render(){
   if(!D) return;
-  const h=['<div class="row hd"><span></span><span>메뉴 이름</span><span>순서</span><span>메뉴에 보이기</span><span>개발 중 안내 문구</span></div>'];
+  const h=['<div class="row hd"><span></span><span>메뉴 이름</span><span>순서</span><span>메뉴에 보이기</span><span>적용</span><span>개발 중 안내 문구</span></div>'];
   D.forEach(g=>{
     const top=g.code==='_top';
     h.push(`<div class="row grp${g.state==='off'?' off':''}">
       <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
       <span>${top?'<span style="color:var(--muted);font-weight:500">(그룹 없이 맨 위)</span>':`<input class="in" value="${esc(g.label||'')}" oninput="field('g','${g.code}','label',this.value)">`}</span>
       <span>${top?'':`<input class="in" type="number" step="10" value="${g.sort}" oninput="field('g','${g.code}','sort',this.value)" title="순서">`}</span>
-      <span>${top?'':ctl('g',g.code,g.state,false)}</span><span></span></div>`);
+      <span>${top?'':ctl('g',g.code,g.state,false)}</span><span>${top?'':envCtl('g',g.code,g.envs)}</span><span></span></div>`);
     (g.items||[]).forEach(i=>{
       h.push(`<div class="row item${i.state==='off'?' off':''}">
         <span class="ic">${svg(i.code)}</span>
         <span><input class="in" value="${esc(i.label||'')}" oninput="field('i','${i.code}','label',this.value)"></span>
         <span><input class="in" type="number" step="10" value="${i.sort}" oninput="field('i','${i.code}','sort',this.value)" title="순서"></span>
         <span>${ctl('i',i.code,i.state,true)}</span>
+        <span>${envCtl('i',i.code,i.envs)}</span>
         <span><input class="in" value="${esc(i.note||'')}" placeholder="안내 문구" oninput="field('i','${i.code}','note',this.value)" title="개발 중일 때 공사 중 화면에 나오는 문장"></span></div>`);
     });
   });
@@ -225,10 +246,11 @@ function render(){
   preview();
 }
 function preview(){
-  const p=[];
+  const p=[]; const inEnv=o=>(o.envs||[]).includes(PV);
+  $('pvT').classList.toggle('on',PV==='test'); $('pvP').classList.toggle('on',PV==='prod');
   [...D].sort((a,b)=>a.sort-b.sort).forEach(g=>{
-    if(g.state==='off') return;
-    const items=(g.items||[]).filter(i=>i.state!=='off').sort((a,b)=>a.sort-b.sort);
+    if(g.state==='off' || (g.code!=='_top' && !inEnv(g))) return;
+    const items=(g.items||[]).filter(i=>i.state!=='off' && inEnv(i)).sort((a,b)=>a.sort-b.sort);
     if(!items.length) return;
     if(g.code!=='_top' && g.label) p.push(`<div class="pv sep">${esc(g.label)}</div>`);
     items.forEach(i=>p.push(`<div class="pv${i.state==='dev'?' dev':''}"><span class="ic">${svg(i.code)}</span>${esc(i.label)}${i.state==='dev'?'<span class="tag">개발중</span>':''}</div>`));
@@ -249,8 +271,8 @@ function setState(kind,code,v){ const o=find(kind,code); if(!o) return;
 async function save(){
   if(!D) return;
   const b=$('btnSave'); b.disabled=true; b.textContent='저장 중…';
-  const groups=D.map(g=>({code:g.code,label:g.label,state:g.state,sort:g.sort}));
-  const items=[]; D.forEach(g=>(g.items||[]).forEach(i=>items.push({code:i.code,label:i.label,state:i.state,sort:i.sort,note:i.note||null})));
+  const groups=D.map(g=>({code:g.code,label:g.label,state:g.state,sort:g.sort,envs:g.envs||[]}));
+  const items=[]; D.forEach(g=>(g.items||[]).forEach(i=>items.push({code:i.code,label:i.label,state:i.state,sort:i.sort,note:i.note||null,envs:i.envs||[]})));
   try{ const r=await rpc('fn_menu_save',{p_data:{groups,items}}); toast(`저장됨 · ${r.updated}개 반영`,'ok'); await load(); }
   catch(e){ toast(e.message,'bad'); }
   finally{ b.disabled=false; b.textContent='저장'; }
