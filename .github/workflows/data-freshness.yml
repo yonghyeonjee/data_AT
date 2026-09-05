@@ -1,0 +1,24 @@
+name: 데이터 적재 점검
+
+# 원천 7개 중 지연·미적재가 있으면 워크플로를 실패시킨다.
+# GitHub 이 실패 알림 메일을 보내주므로 별도 알림 설정이 필요 없다.
+# 잔디/슬랙으로도 받으려면 NOTIFY_WEBHOOK 시크릿만 추가하면 된다.
+on:
+  schedule:
+    - cron: "0 1 * * 1-5"    # 평일 10:00 KST
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: 원천별 적재 현황
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NOTIFY_WEBHOOK: ${{ secrets.NOTIFY_WEBHOOK }}
+        run: node tools/shoplinker/check-freshness.mjs
