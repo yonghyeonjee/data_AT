@@ -715,9 +715,9 @@ textarea.in{height:auto}
     <div class="login-card">
       <div class="eyebrow">SIGN IN</div>
       <h1>Datacenter<span class="envtag hidden envtag-lg" title="테스트 환경">TEST</span></h1>
-      <p class="lead">사내 계정으로 로그인하세요. 아이디만 입력해도 됩니다.</p>
+      <p class="lead">사내 계정으로 로그인하세요.</p>
       <form id="loginForm" onsubmit="login();return false" autocomplete="on">
-      <label>아이디 또는 이메일</label><input type="text" id="lEmail" name="username" autocomplete="username" placeholder="samsungat">
+      <label>아이디</label><input type="text" id="lEmail" name="username" autocomplete="username" placeholder="sa****gat">
       <label>비밀번호</label><input type="password" id="lPw" name="password" autocomplete="current-password" placeholder="••••••••">
       <button type="submit">로그인</button>
       <div class="err" id="lErr"></div>
@@ -1255,6 +1255,11 @@ textarea.in{height:auto}
       <!-- ═══ 설정 ═══ -->
       <!-- ═══ 주문서 · 전송 ═══ -->
       <div class="view hidden" id="v-oq">
+        <div class="card" id="oqReqCard">
+          <h3>매장 판매 요청 <span id="oqReqSub"><b id="oqReqN" style="color:var(--warn)"></b>매장에서 판매 입력 때 켠 <b>이카운트 주문서 요청</b>. 처리 담당자(<b id="oqReqHandlers">-</b>)의 담당자 화면 주문서 탭에 알림이 가고 거기서 주문서로 만듭니다</span>
+            <span style="margin-left:auto"><button class="btn sm ghost" onclick="loadOqReq()">새로고침</button></span></h3>
+          <div class="tw"><table><thead><tr><th>요청</th><th>요청자</th><th>상품</th><th class="num">수량</th><th class="num">금액</th><th>고객</th><th>상태</th></tr></thead><tbody id="tbOqReq"><tr><td colspan="7" class="empty">불러오는 중…</td></tr></tbody></table></div>
+        </div>
         <div class="card">
           <h3>주문서 · 이카운트 전송 <span>샵링커 주문 → 현행 시스템(재고 차감) → 이카운트. 등록하면 재고가 먼저 빠지고, 전송은 따로 누릅니다</span>
             <span style="margin-left:auto;display:flex;gap:6px">
@@ -1840,8 +1845,21 @@ async function editInquiry(i){
 let oqPage=0;
 const OQ_ORIGIN={online:'온라인 쇼핑몰',rental:'렌탈 방문',store:'매장',vms:'통신판매',manual:'직접 입력'};
 const OQ_ST={ready:['전송 대기','n'],sent:['전송 완료','ok'],failed:['전송 실패','bad'],void:['취소',''],draft:['임시',''] };
+async function loadOqReq(){
+  const tb=$('tbOqReq'); if(!tb) return;
+  let d; try{ d=await rpc('fn_order_requests',{p_limit:30},{fresh:true}); }catch(e){ tb.innerHTML=`<tr><td colspan="7" class="empty">${esc(e.message)}</td></tr>`; return; }
+  $('oqReqHandlers').textContent=d.handlers||'아직 없음 — 옵션·권한에서 [주문서 처리 담당] 체크';
+  const ST={open:['대기','보류'],taken:['처리 중','진행중'],done:['처리됨','y'],skip:['불필요','n']};
+  tb.innerHTML=(d.rows||[]).map(r=>{ const st=ST[r.status]||[r.status,'n']; return `<tr${r.status==='open'?' style="background:#FFF4EC"':''}>
+      <td class="mono" style="font-size:11.5px">#${r.id}<div style="color:var(--muted)">${esc(r.at)}</div></td><td>${esc(r.by)}</td>
+      <td><b>${esc(r.product||'')}</b>${r.model?`<div class="mono" style="font-size:11px;color:var(--muted)">${esc(r.model)}</div>`:''}</td>
+      <td class="num">${n(r.qty)}</td><td class="num">${n(r.amount||0)}</td><td>${esc(r.cust||'-')}</td>
+      <td><span class="tag ${st[1]}">${st[0]}</span>${r.taken_by&&r.status==='taken'?` <span class="note">${esc(r.taken_by)}</span>`:''}${r.done_by?` <span class="note">${esc(r.done_by)} ${esc(r.done_at||'')}${r.queue_id?` · 주문서 #${r.queue_id}`:''}</span>`:''}</td></tr>`; }).join('')
+    ||'<tr><td colspan="7" class="empty">요청이 없습니다</td></tr>';
+  $('oqReqN').textContent = d.n_open ? `대기 ${d.n_open}건 · ` : '';
+}
 async function loadOq(page){
-  oqPage=Math.max(0,page||0);
+  oqPage=Math.max(0,page||0); if(!oqPage) loadOqReq();
   let d; try{ d=await rpc('fn_order_queue',{p_status:$('oqStatus').value||null,p_origin:$('oqOrigin').value||null,
     p_q:$('oqQ').value.trim()||null,p_limit:50,p_offset:oqPage*50}); }catch(e){ return toast(e.message,'bad'); }
   const sm=d.summary||{};

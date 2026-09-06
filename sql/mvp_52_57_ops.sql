@@ -357,3 +357,24 @@
 -- mvp_82 : 실측 — 8분 쉰 뒤 65초 간격으로 3번은 성공, 4번째 412. 막힌 상태에서 또 부르면 막힘이 연장됨(3분 간격으로 불러도 계속 412).
 --          → 4분 간격 + 412 맞으면 run.paused_until = +10분 쉬고 이어감. 12창고 ≈ 48분 (03:00 → 03:50 무렵 끝)
 --   f_ec_call : 412 즉시 재시도 제거(의미 없음). f_ec_guard : 412 는 연속 실패로 안 셈(30분 멈춤 방지)
+-- mvp_83_pin_fail_dedupe (v24) : 코드 한 번 틀린 게 2~4건으로 잡혀 2회 만에 잠기던 문제
+--   원인 ① 화면이 status·quotes 두 RPC 를 병렬로 → 실패 2건  ② input 이벤트와 Enter 가 겹쳐 두 번 전송
+--   서버 : 같은 기기·같은 코드가 5초 안에 또 오면 한 번으로 셈. 화면 : status 먼저, quotes 는 성공 뒤 · 전송 중 재전송 막음
+--   화면 잠금 표시는 남은 시간만 보여주고 입력은 막지 않음 — 관리자가 fn_pin_unlock 으로 풀면 바로 다시 들어감 (판단은 서버)
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- mvp_84_store_order_request  (v25)  매장 판매 → 이카운트 주문서 요청 → 처리 담당자 알림
+-- ═══════════════════════════════════════════════════════════════════════
+-- 흐름 : 매장 담당자가 /store 판매 입력에서 '이카운트 주문서 요청'(기본 켜짐) 을 두고 저장
+--        → ec.order_request(open) + f_notify('store.order_request') (잔디 규칙 store_order_request, 기본 꺼짐)
+--        → 처리 담당자(권한 entry: 고창재·박은지·지용현 부여, 옵션·권한에서 조정) 의 /store 는 60초마다 fn_store_requests 로 확인
+--          주문서 탭 배지·탭 제목 (N)·토스트·진동. 주문서 탭 맨 위 '매장 판매 요청' 카드에서
+--          [주문서로](직접 입력 칸에 코드 후보·수량·단가 채움, 등록하면 request_id 로 자동 처리됨) / [내가 맡기] / [직접 처리함] / [불필요]
+--        → 요청자는 홈 '내 주문서 요청' 카드에서 대기·처리 중·처리됨 확인
+--   perm_def 'entry' 주문서 처리 담당 (default off)
+--   ec.order_request(id, requested_by, sale_order_id, product_name, model_code, qty, amount, cust_*, status open|taken|done|skip, taken_by, done_by, queue_id …)
+--   fn_store_sale_submit(p_data.request_order) · fn_store_requests(code) · fn_store_request_take · fn_store_request_close(code,id,'done'|'skip',note,queue_id)
+--   fn_store_order_submit(p_data.request_id) → 등록 성공 시 요청 done + queue_id
+--   fn_order_requests(limit) 관리자 주문서·전송 화면 상단 카드
+-- [버그 수정] store.html 에 옛 한 줄짜리 goTab(t){click()} 이 새 goTab(name,fromHistory) 를 덮어써 v21~v24 에서 탭이 안 바뀌던 것 제거
+-- 로그인 화면 : 아이디 placeholder 가운데 4자리 * 처리, '아이디만 입력해도' 문구 삭제
