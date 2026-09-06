@@ -378,3 +378,6 @@
 --   fn_order_requests(limit) 관리자 주문서·전송 화면 상단 카드
 -- [버그 수정] store.html 에 옛 한 줄짜리 goTab(t){click()} 이 새 goTab(name,fromHistory) 를 덮어써 v21~v24 에서 탭이 안 바뀌던 것 제거
 -- 로그인 화면 : 아이디 placeholder 가운데 4자리 * 처리, '아이디만 입력해도' 문구 삭제
+-- mvp_85_pin_flow_natural (v26) : 코드 맞게 들어오면 그 기기의 실패 기록 삭제(초기화) · 경고 문구는 2번 남았을 때부터만
+--   fn_store_* 중 STABLE 이던 4개(daily_list·report·customer_search·warehouses) → VOLATILE (f_staff 가 delete 하므로)
+--   화면 : 다시 입력 시작하면 오류 문구 지움 · 잠금 풀리면 "이제 다시 입력할 수 있습니다"

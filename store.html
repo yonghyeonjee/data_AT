@@ -756,7 +756,7 @@ let ME = '', STATUS = null;
 let enterPin=async function(){ const v=$('pinInput').value.trim(); if(v.length!==4) return $('pinErr').textContent='4자리를 입력하세요';
   $('pinErr').textContent=''; try{ await loadStatus(v); CODE=v; localStorage.setItem('staff_code',v); start(); }catch(e){ $('pinErr').textContent=e.message; } };
 $('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') enterPin(); });
-$('pinInput').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value.length===4) enterPin(); });
+$('pinInput').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/\D/g,''); if(!PIN_UNTIL && e.target.value.length<4) $('pinErr').textContent=''; if(e.target.value.length===4) enterPin(); });
 async function loadStatus(code){
   /* 코드 확인은 status 하나로만 — 병렬로 두 개를 보내면 틀린 코드 한 번이 실패 두 번으로 잡힌다 */
   const st = await rpc('fn_store_status', {p_code: code||CODE});
@@ -1738,9 +1738,9 @@ function pinFail(msg){
   pinUnlocked(); $('pinErr').textContent=msg; $('pinInput').value=''; $('pinInput').focus(); }
 function pinUnlocked(){ clearTimeout(PIN_T); PIN_UNTIL=0; try{ localStorage.removeItem('dc_pin_until'); }catch(e){} }
 function pinLockTick(){ clearTimeout(PIN_T); const left=PIN_UNTIL-Date.now();
-  if(left<=0){ pinUnlocked(); $('pinErr').textContent=''; $('pinInput').focus(); return; }
+  if(left<=0){ pinUnlocked(); $('pinErr').textContent='이제 다시 입력할 수 있습니다'; $('pinInput').focus(); return; }
   const mm=Math.floor(left/60e3), ss=Math.floor(left%60e3/1e3);
-  $('pinErr').textContent='코드를 5번 틀려 잠겼습니다 · 약 '+mm+'분 '+String(ss).padStart(2,'0')+'초 뒤에 풀립니다. 관리자가 풀어줬다면 지금 바로 다시 입력하면 됩니다';
+  $('pinErr').textContent='코드를 5번 틀려 잠겼습니다 · '+mm+'분 '+String(ss).padStart(2,'0')+'초 뒤에 풀립니다 (관리자가 풀어주면 바로 다시 입력 가능)';
   PIN_T=setTimeout(pinLockTick,1000); }
 try{ const u=Number(localStorage.getItem('dc_pin_until')||0); if(u>Date.now()){ PIN_UNTIL=u; pinLockTick(); } }catch(e){}
 (async()=>{ if(CODE){ try{ await loadStatus(); start();
