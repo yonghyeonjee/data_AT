@@ -24,6 +24,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .hidden{display:none!important}
 
 /* ── PIN ── */
+html.resuming #pinScreen{visibility:hidden}
+html.resuming body::after{content:'이어서 여는 중…';position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#AEB6CC;font-size:13px;background:linear-gradient(135deg,#0B0F2E 0%,#141E64 60%,#1428A0 100%)}
 #pinScreen{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#0B0F2E 0%,#141E64 60%,#1428A0 100%)}
 .pin-card{width:100%;max-width:380px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:36px 28px;text-align:center}
 .pin-card .logo{font-size:11px;letter-spacing:.2em;color:var(--navy);font-weight:700}
@@ -32,7 +34,15 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pin-card input{width:100%;text-align:center;font-size:28px;letter-spacing:.4em;padding:14px;border:1.5px solid var(--line-2);border-radius:10px;outline:none;font-variant-numeric:tabular-nums}
 .pin-card input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 .pin-card button{width:100%;margin-top:14px;padding:14px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;cursor:pointer}
-.pin-card .err{color:var(--bad);font-size:13px;margin-top:10px;min-height:18px}
+.pin-card .err{color:var(--bad);font-size:13px;margin-top:10px;min-height:18px;line-height:1.5}
+.pin-card button.busy{opacity:.75;cursor:progress}
+.pin-card button.busy::before{content:'';display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:pinspin .7s linear infinite}
+@keyframes pinspin{to{transform:rotate(360deg)}}
+.pin-meter{display:flex;gap:4px;align-items:center;margin-top:12px}
+.pin-meter i{flex:1;height:6px;border-radius:3px;background:#EEF0F4;transition:background .2s}
+.pin-meter i.on{background:#E24B4B} .pin-meter.lock i{background:#B3261E}
+.pin-meter span{font-size:11.5px;color:var(--muted);margin-left:6px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pin-meter.lock span{color:#B3261E;font-weight:700}
 
 /* ── App ── */
 #app{max-width:720px;margin:0 auto;padding:0 0 120px}
@@ -343,18 +353,20 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .sendbar>div{flex:1 1 200px;min-width:0} .sendbar .btn{width:auto;flex:none;margin:0;padding:10px 16px} .sendbar small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
 .item .st{font-weight:700} .item .st.ok{color:#0F7B6C} .item .st.warn{color:#C88A0E} .item .st.bad{color:#B3261E}
 .envtag{display:inline-block;margin-left:8px;vertical-align:middle;font-size:9.5px;font-weight:800;letter-spacing:.1em;color:#7A4FB0;background:#F1EBFA;border:1px solid #D9C7F0;padding:1px 6px;border-radius:6px}
-.req{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)} .req:first-child{border-top:0}
-.req .t{flex:1;min-width:0;font-size:13px;line-height:1.5} .req .t b{font-size:14px} .req .t small{display:block;color:var(--muted)}
-.req .cands{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px} .req .cands span{font-size:11px;padding:1px 7px;border-radius:6px;background:#EEF0F4;color:#2E3542;font-family:ui-monospace,monospace}
-.req .cands span.first{background:#E3F3F0;color:#0F7B6C}
-.req .acts{display:flex;flex-direction:column;gap:5px;flex-shrink:0} .req .acts button{border:1.5px solid var(--line-2,#CDD3DE);background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-.req .acts button.pri{background:var(--navy);border-color:var(--navy);color:#fff}
-.req.taken{background:#FBF6EA;margin:0 -8px;padding:10px 8px;border-radius:8px}
-.req .st{font-size:11px;font-weight:700;padding:1px 7px;border-radius:6px;background:#FFF4D6;color:#8A6300} .req .st.done{background:#E3F3F0;color:#0F7B6C} .req .st.skip{background:#EEF0F4;color:#646D7C}
+.rq{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)} .rq:first-child{border-top:0}
+.rq .t{flex:1;min-width:0;font-size:13px;line-height:1.5} .rq .t b{font-size:14px} .rq .t small{display:block;color:var(--muted)}
+.rq .cands{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px} .rq .cands span{font-size:11px;padding:1px 7px;border-radius:6px;background:#EEF0F4;color:#2E3542;font-family:ui-monospace,monospace}
+.rq .cands span.first{background:#E3F3F0;color:#0F7B6C}
+.rq .acts{display:flex;flex-direction:column;gap:5px;flex-shrink:0} .rq .acts button{border:1.5px solid var(--line-2,#CDD3DE);background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.rq .acts button.pri{background:var(--navy);border-color:var(--navy);color:#fff}
+.rq.taken{background:#FBF6EA;margin:0 -8px;padding:10px 8px;border-radius:8px}
+.rq .st{font-size:11px;font-weight:700;padding:1px 7px;border-radius:6px;background:#FFF4D6;color:#8A6300} .rq .st.done{background:#E3F3F0;color:#0F7B6C} .rq .st.skip{background:#EEF0F4;color:#646D7C}
 .tab .n.alarm{background:#E24B4B;color:#fff}
 </style>
 </head>
 <body>
+<script>/* 같은 탭 새로고침이면 코드 화면을 그리지 않고 바로 이어간다 (깜빡임 방지) — 본 스크립트가 판단을 끝내면 class 를 뗀다 */
+try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open')) document.documentElement.classList.add('resuming'); }catch(e){}</script>
 
 <!-- ═══ PIN ═══ -->
 <div id="pinScreen">
@@ -363,7 +375,8 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
     <h1>판매·상담 입력</h1>
     <p class="sub">담당자 코드 4자리를 입력하세요</p>
     <input id="pinInput" type="tel" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
-    <button onclick="enterPin()">시작하기</button>
+    <button id="pinBtn" onclick="enterPin()">시작하기</button>
+    <div class="pin-meter hidden" id="pinMeter" aria-label="틀린 횟수"><i></i><i></i><i></i><i></i><i></i><span id="pinMeterTxt"></span></div>
     <div class="err" id="pinErr"></div>
   </div>
 </div>
@@ -1682,18 +1695,18 @@ function renderRequests(){
   const card=$('reqCard'); if(card){ card.classList.toggle('hidden', !r.can_process);
     if(r.can_process){ const open=r.open||[];
       $('req_sub').textContent=open.length?`${open.length}건 대기`:'';
-      $('req_rows').innerHTML=open.length?open.map(x=>`<div class="req${x.status==='taken'?' taken':''}">
+      $('req_rows').innerHTML=open.length?open.map(x=>`<div class="rq${x.status==='taken'?' taken':''}">
           <div class="t"><b>${esc(x.product)}</b> × ${x.qty}${x.model?` <span style="font-family:ui-monospace,monospace;font-size:12px;color:var(--muted)">${esc(x.model)}</span>`:''}
             <small>${esc(x.at)} · ${esc(x.by)} 요청 · ${x.cust?esc(x.cust):'고객 미상'}${x.phone?' '+x.phone:''} · ${won(x.amount||0)}${x.kind?' · '+esc(x.kind):''}${x.note?' · '+esc(x.note):''}</small>
             ${x.status==='taken'?`<small><span class="st">${x.mine?'내가':esc(x.taken_by)} 처리 중</span></small>`:''}
             <div class="cands">${(x.cand||[]).length?(x.cand||[]).map((c,i)=>`<span class="${i===0?'first':''}" title="${esc(c.name||'')}">${esc(c.code)}</span>`).join(''):'<span style="background:#FBE9E7;color:#B3261E">품목코드 후보 없음 — 품목 검색으로 찾으세요</span>'}</div></div>
           <div class="acts"><button class="pri" onclick="reqToOrder(${x.id})">주문서로</button>${x.status==='open'?`<button onclick="reqTake(${x.id})">내가 맡기</button>`:''}<button onclick="reqClose(${x.id},'done')">직접 처리함</button><button onclick="reqClose(${x.id},'skip')">불필요</button></div>
         </div>`).join(''):'<div class="empty">대기 중인 요청이 없습니다</div>';
-      $('req_done').innerHTML=(r.recent_done||[]).map(x=>`<div class="req"><div class="t">${esc(x.product)} × ${x.qty}<small>${esc(x.at)} ${esc(x.by)} 요청 → ${esc(x.done_at||'')} ${esc(x.done_by||'')} <span class="st ${x.status}">${x.status==='done'?'처리됨':'불필요'}</span>${x.queue_id?` · 주문서 #${x.queue_id}`:''}</small></div></div>`).join('')||'<div class="empty">없음</div>';
+      $('req_done').innerHTML=(r.recent_done||[]).map(x=>`<div class="rq"><div class="t">${esc(x.product)} × ${x.qty}<small>${esc(x.at)} ${esc(x.by)} 요청 → ${esc(x.done_at||'')} ${esc(x.done_by||'')} <span class="st ${x.status}">${x.status==='done'?'처리됨':'불필요'}</span>${x.queue_id?` · 주문서 #${x.queue_id}`:''}</small></div></div>`).join('')||'<div class="empty">없음</div>';
     } }
   /* 요청자 카드 (홈) */
   const mine=r.mine||[], mc=$('myReqCard'); if(mc){ mc.classList.toggle('hidden', !mine.length);
-    $('myReqList').innerHTML=mine.map(x=>`<div class="req"><div class="t"><b>${esc(x.product)}</b> × ${x.qty}<small>${esc(x.at)} 요청 · ${x.status==='open'?'<span class="st">대기 중</span>':x.status==='taken'?`<span class="st">${esc(x.taken_by)} 처리 중</span>`:x.status==='done'?`<span class="st done">처리됨</span> ${esc(x.done_by||'')} ${esc(x.done_at||'')}${x.queue_id?` · 주문서 #${x.queue_id}`:''}`:`<span class="st skip">불필요</span> ${esc(x.done_note||'')}`}</small></div></div>`).join(''); }
+    $('myReqList').innerHTML=mine.map(x=>`<div class="rq"><div class="t"><b>${esc(x.product)}</b> × ${x.qty}<small>${esc(x.at)} 요청 · ${x.status==='open'?'<span class="st">대기 중</span>':x.status==='taken'?`<span class="st">${esc(x.taken_by)} 처리 중</span>`:x.status==='done'?`<span class="st done">처리됨</span> ${esc(x.done_by||'')} ${esc(x.done_at||'')}${x.queue_id?` · 주문서 #${x.queue_id}`:''}`:`<span class="st skip">불필요</span> ${esc(x.done_note||'')}`}</small></div></div>`).join(''); }
 }
 async function reqTake(id){ try{ await rpc('fn_store_request_take',{p_code:CODE,p_id:id}); toast('내가 맡았습니다','ok'); loadRequests(); }catch(e){ toast(e.message,'bad'); } }
 async function reqClose(id,how){
@@ -1728,25 +1741,39 @@ enterPin=async function(){ const v=$('pinInput').value.trim(); if(v.length!==4) 
   if(!PIN_UNTIL) $('pinErr').textContent='';
   if(LOCKED && v===CODE){ LOCKED=false; PIN_BUSY=false; $('pinScreen').classList.add('hidden'); $('app').classList.remove('hidden'); try{ sessionStorage.setItem('st_open','1'); }catch(e){} lockTouch(); toast('잠금 해제','ok'); return; }
   if(LOCKED && v!==CODE){ /* 다른 사람이면 그 사람으로 새로 시작 */ LOCKED=false; }
-  try{ await loadStatus(v); pinUnlocked(); CODE=v; localStorage.setItem('staff_code',v); try{ sessionStorage.setItem('st_open','1'); }catch(e){} start(); lockTouch(); }catch(e){ pinFail(e.message); } finally{ PIN_BUSY=false; } };
+  pinBusy(true);
+  try{ await loadStatus(v); pinUnlocked(); CODE=v; localStorage.setItem('staff_code',v); try{ sessionStorage.setItem('st_open','1'); }catch(e){} start(); lockTouch(); toast(`${ME}님, 확인됐습니다`,'ok'); }
+  catch(e){ pinFail(e.message); } finally{ PIN_BUSY=false; pinBusy(false); } };
+function pinBusy(on){ const b=$('pinBtn'), i=$('pinInput'); if(!b) return; b.classList.toggle('busy',on); b.textContent=on?'확인 중…':'시작하기'; i.disabled=on; if(!on) setTimeout(()=>i.focus(),0); }
 /* ── 코드 5회 오입력 → 15분 잠금 (서버 core.f_staff 가 기기별로 센다).
    화면은 남은 시간을 보여줄 뿐 입력을 막지는 않는다 — 관리자가 풀어주면 바로 다시 들어갈 수 있어야 하므로 판단은 늘 서버가 한다 ── */
 let PIN_UNTIL=0, PIN_T=null;
+function pinMeter(n, lock){ const m=$('pinMeter'); if(!m) return; n=Math.max(0,Math.min(5,n||0));
+  m.classList.toggle('hidden', n===0); m.classList.toggle('lock', !!lock);
+  m.querySelectorAll('i').forEach((el,i)=>el.classList.toggle('on', i<n));
+  $('pinMeterTxt').textContent = lock ? '5/5 잠김' : `틀린 횟수 ${n}/5`; }
 function pinFail(msg){
   const m=/잠겼습니다/.test(msg||'') && ((msg.match(/(\d+)분/)||[])[1]);
   if(m){ PIN_UNTIL=Date.now()+Number(m)*60e3; try{ localStorage.setItem('dc_pin_until',String(PIN_UNTIL)); }catch(e){} pinLockTick(); $('pinInput').value=''; return; }
-  pinUnlocked(); $('pinErr').textContent=msg; $('pinInput').value=''; $('pinInput').focus(); }
-function pinUnlocked(){ clearTimeout(PIN_T); PIN_UNTIL=0; try{ localStorage.removeItem('dc_pin_until'); }catch(e){} }
+  pinUnlocked();
+  const c=(msg.match(/(\d)\s*\/\s*5/)||[])[1];
+  if(c){ pinMeter(Number(c)); $('pinErr').textContent = '등록되지 않은 담당자 코드입니다' + (Number(c)>=3 ? ` · ${5-Number(c)}번 더 틀리면 15분 잠깁니다` : ''); }
+  else $('pinErr').textContent=msg;
+  $('pinInput').value=''; $('pinInput').focus(); }
+function pinUnlocked(){ clearTimeout(PIN_T); PIN_UNTIL=0; try{ localStorage.removeItem('dc_pin_until'); }catch(e){} pinMeter(0); }
 function pinLockTick(){ clearTimeout(PIN_T); const left=PIN_UNTIL-Date.now();
   if(left<=0){ pinUnlocked(); $('pinErr').textContent='이제 다시 입력할 수 있습니다'; $('pinInput').focus(); return; }
-  const mm=Math.floor(left/60e3), ss=Math.floor(left%60e3/1e3);
+  const mm=Math.floor(left/60e3), ss=Math.floor(left%60e3/1e3); pinMeter(5,true);
   $('pinErr').textContent='코드를 5번 틀려 잠겼습니다 · '+mm+'분 '+String(ss).padStart(2,'0')+'초 뒤에 풀립니다 (관리자가 풀어주면 바로 다시 입력 가능)';
   PIN_T=setTimeout(pinLockTick,1000); }
 try{ const u=Number(localStorage.getItem('dc_pin_until')||0); if(u>Date.now()){ PIN_UNTIL=u; pinLockTick(); } }catch(e){}
-(async()=>{ if(CODE){ try{ await loadStatus(); start();
-      let fresh=false; try{ fresh=!sessionStorage.getItem('st_open'); }catch(e){}
-      if(fresh) lockStore('창을 다시 열어 잠겨 있습니다. 담당자 코드를 입력하면 이어서 쓸 수 있습니다.'); else lockTouch();
-      return; }catch(e){ localStorage.removeItem('staff_code'); CODE=''; } } $('pinInput').focus(); })();
+(async()=>{
+  let fresh=true; try{ fresh=!sessionStorage.getItem('st_open'); }catch(e){}
+  if(CODE && !fresh){ /* 같은 탭 새로고침 : 잠금 화면을 거치지 않고 바로 이어간다 (화면 깜빡임 없음) */
+    try{ await loadStatus(); start(); lockTouch(); document.documentElement.classList.remove('resuming'); return; }catch(e){ localStorage.removeItem('staff_code'); CODE=''; } }
+  document.documentElement.classList.remove('resuming');
+  if(CODE && fresh) document.querySelector('#pinScreen .sub').textContent='창을 다시 열었습니다. 담당자 코드를 입력하면 이어서 쓸 수 있습니다';
+  $('pinInput').focus(); })();
 </script>
 </body>
 </html>
