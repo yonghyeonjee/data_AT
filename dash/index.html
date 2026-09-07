@@ -645,7 +645,24 @@ const DC_URL = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_dash_pay
 const DC_ANON = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 const DC_MONTHS = 12;   // 자체 모드로 불러올 기간(개월)
 function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='ledger'?'ledger':'manual'; }
-function dashSrc(){ let v=''; try{ v=new URLSearchParams(location.search).get('src')||sessionStorage.getItem('dash_src')||''; }catch(e){} return v==='gas'?'gas':'dc'; }
+const GAS_READY = SHARE_URL.indexOf('http')===0;   // 기존 app(GAS) 공유 주소가 실제로 설정돼 있는가
+function dashSrc(){ if(!GAS_READY){ try{ if(sessionStorage.getItem('dash_src')==='gas') sessionStorage.removeItem('dash_src'); }catch(e){} return 'dc'; }
+  let v=''; try{ v=new URLSearchParams(location.search).get('src')||sessionStorage.getItem('dash_src')||''; }catch(e){} return v==='gas'?'gas':'dc'; }
+/* 로그인(관리자 콘솔) 세션이 같은 도메인에 있으면 비밀번호 없이 연다 */
+const DC_URL_AUTH = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_dash_payload';
+function dcToken(){
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i); if(!/^sb-.*-auth-token$/.test(k)) continue;
+      let raw=localStorage.getItem(k)||''; if(raw.indexOf('base64-')===0){ try{ raw=atob(raw.slice(7)); }catch(e){ continue; } }
+      let j; try{ j=JSON.parse(raw); }catch(e){ continue; }
+      const t=j&&(j.access_token||(j.currentSession&&j.currentSession.access_token));
+      const exp=j&&(j.expires_at||(j.currentSession&&j.currentSession.expires_at));
+      if(t && (!exp || exp*1000 > Date.now()+30000)) return t;
+    }
+  }catch(e){}
+  return '';
+}
 let DATA = null;
 </script>
 <script>
@@ -1777,6 +1794,8 @@ buildControls();drawFinds();a=firstA;b=lastA;render();
   const $=s=>document.querySelector(s);
   const pw=$('#gpw'), btn=$('#gbtn'), err=$('#gerr');
   let busy=false;
+  /* 기존 app(GAS) 주소가 없으면 출처 토글 자체를 감춘다 (내부 데이터는 현행 시스템만) */
+  if(!GAS_READY){ const s0=document.getElementById('srcseg'); if(s0) s0.style.display='none'; }
   /* ── 임베드 모드: admin 콘솔 안에서 iframe 으로 열릴 때. 비밀번호 없이 부모가 postMessage 로 payload 를 넘긴다 ── */
   const EMBED = /[?&]embed=1/.test(location.search);
   if(EMBED){
@@ -1795,12 +1814,55 @@ buildControls();drawFinds();a=firstA;b=lastA;render();
     try{ parent.postMessage({type:'dash-ready'}, '*'); }catch(e){}
     return;
   }
+  /* 데이터를 받은 뒤의 툴바 배선 — 비밀번호 경로/로그인 경로 공용 */
+  function afterLoad(src){
+    $('#gate').style.display='none';
+    startDash();
+    const sb=document.getElementById('srcseg');
+    if(sb){
+      if(!GAS_READY){ sb.style.display='none'; }
+      else{
+        sb.querySelector('#s-dc').setAttribute('aria-pressed', src==='dc'); sb.querySelector('#s-gas').setAttribute('aria-pressed', src==='gas');
+        sb.querySelectorAll('button').forEach(b=>b.onclick=()=>{ const want=b.id==='s-gas'?'gas':'dc'; if(want===src) return;
+          try{ sessionStorage.setItem('dash_src', want); }catch(e){} const u=new URL(location.href); u.searchParams.set('src', want); location.href=u.toString(); });
+      }
+    }
+    const bs=document.getElementById('basisseg'), mode=dashBasis();
+    if(bs){
+      bs.style.opacity = src==='dc'?'1':'.35'; bs.style.pointerEvents = src==='dc'?'auto':'none';
+      bs.querySelector('#m-manual').setAttribute('aria-pressed', mode==='manual');
+      bs.querySelector('#m-ledger').setAttribute('aria-pressed', mode==='ledger');
+      bs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ const want=b.id==='m-ledger'?'ledger':'manual'; if(want===mode) return;
+        try{ sessionStorage.setItem('dash_basis', want); }catch(e){} const u=new URL(location.href); u.searchParams.set('mode', want); location.href=u.toString(); });
+    }
+    const sn=document.getElementById('srcnote');
+    if(sn) sn.textContent='출처 · '+(src==='gas'
+      ? '대시보드 v4 (기존 app · 구글시트 원본)'
+      : '현행 시스템 (Datacenter · 최근 '+DC_MONTHS+'개월 · '+(mode==='ledger'?'원장 기준':'수기입력 기준')+')');
+  }
+  function dcRange(){
+    const to=new Date(); const from=new Date(to.getFullYear(), to.getMonth()-DC_MONTHS+1, 1);
+    const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return {from:iso(from), to:iso(to)};
+  }
+  /* 사내 로그인(관리자 콘솔) 세션이 있으면 비밀번호 화면을 건너뛴다 */
+  async function openWithSession(){
+    const tk=dcToken(); if(!tk) return false;
+    try{
+      const rg=dcRange();
+      const r=await fetch(DC_URL_AUTH,{method:'POST',headers:{'Content-Type':'application/json','apikey':DC_ANON,'Authorization':'Bearer '+tk},
+        body:JSON.stringify({p_from:rg.from,p_to:rg.to,p_mode:dashBasis()})});
+      if(!r.ok) return false;
+      let j=await r.json(); if(typeof j==='string') j=JSON.parse(j);
+      if(!j||!j.days) return false;
+      DATA=j; afterLoad('dc'); return true;
+    }catch(e){ console.warn('dash session load failed', e); return false; }
+  }
   async function open(){
     if(busy) return;
     const v=pw.value.trim();
     if(!v){ err.className='err'; err.textContent='비밀번호를 입력하세요.'; pw.focus(); return; }
     const src=dashSrc();
-    if(src==='gas' && SHARE_URL.indexOf('http')!==0){ err.className='err'; err.textContent='기존 app(GAS) 공유 주소가 아직 설정되지 않았습니다. "현행 시스템"으로 여세요.'; return; }
     busy=true; btn.disabled=true; err.className='err wait'; err.textContent='데이터를 불러오는 중… (첫 열람은 수 초 걸립니다)';
     try{
       let j;
@@ -1822,24 +1884,7 @@ buildControls();drawFinds();a=firstA;b=lastA;render();
       }
       DATA=j;
       try{ sessionStorage.setItem('dash_pw', v); }catch(e){}
-      $('#gate').style.display='none';
-      startDash();
-      const sb=document.getElementById('srcseg');
-      if(sb){ sb.querySelector('#s-dc').setAttribute('aria-pressed', src==='dc'); sb.querySelector('#s-gas').setAttribute('aria-pressed', src==='gas');
-        sb.querySelectorAll('button').forEach(b=>b.onclick=()=>{ const want=b.id==='s-gas'?'gas':'dc'; if(want===src) return;
-          try{ sessionStorage.setItem('dash_src', want); }catch(e){} const u=new URL(location.href); u.searchParams.set('src', want); location.href=u.toString(); }); }
-      const bs=document.getElementById('basisseg'), mode=dashBasis();
-      if(bs){
-        bs.style.opacity = src==='dc'?'1':'.35'; bs.style.pointerEvents = src==='dc'?'auto':'none';
-        bs.querySelector('#m-manual').setAttribute('aria-pressed', mode==='manual');
-        bs.querySelector('#m-ledger').setAttribute('aria-pressed', mode==='ledger');
-        bs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ const want=b.id==='m-ledger'?'ledger':'manual'; if(want===mode) return;
-          try{ sessionStorage.setItem('dash_basis', want); }catch(e){} const u=new URL(location.href); u.searchParams.set('mode', want); location.href=u.toString(); });
-      }
-      const sn=document.getElementById('srcnote');
-      if(sn) sn.textContent='출처 · '+(src==='gas'
-        ? '대시보드 v4 (기존 app · 구글시트 원본)'
-        : '현행 시스템 (Datacenter · 최근 '+DC_MONTHS+'개월 · '+(mode==='ledger'?'원장 기준':'수기입력 기준')+')');
+      afterLoad(src);
     }catch(e){
       err.className='err'; err.textContent=(e&&e.message)||'불러오지 못했습니다.';
       busy=false; btn.disabled=false;
@@ -1847,8 +1892,15 @@ buildControls();drawFinds();a=firstA;b=lastA;render();
   }
   btn.onclick=open;
   pw.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); open(); } });
-  let saved=''; try{ saved=sessionStorage.getItem('dash_pw')||''; }catch(e){}
-  if(saved){ pw.value=saved; open(); } else pw.focus();
+  (async function(){
+    if(dcToken()){
+      err.className='err wait'; err.textContent='사내 계정으로 여는 중…';
+      if(await openWithSession()) return;
+      err.className='err'; err.textContent='';
+    }
+    let saved=''; try{ saved=sessionStorage.getItem('dash_pw')||''; }catch(e){}
+    if(saved){ pw.value=saved; open(); } else pw.focus();
+  })();
 })();
 </script>
 </body>
