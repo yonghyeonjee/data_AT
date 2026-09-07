@@ -430,8 +430,10 @@ begin
     'channels', (select coalesce(jsonb_agg(distinct ch),'[]'::jsonb) from _slp where ch is not null),
     'categories', (select coalesce(jsonb_agg(jsonb_build_object('c', category, 'n', n) order by n desc),'[]'::jsonb) from (select category, count(*) n from _slp where not done group by category) x),
     'kinds', (select coalesce(jsonb_agg(jsonb_build_object('k', kind, 'n', n) order by n desc),'[]'::jsonb) from (select kind, count(*) n from _slp where not done group by kind) x),
-    'ready', (select count(*) from _slp where mapped = total_lines and not done),
-    'ambig', (select count(*) from _slp where ambig > 0 and not done),
+    -- 요약 숫자는 서로 겹치지 않게 : 바로 가능(모호한 줄 없음) + 확인 필요 + 코드 없음 = 아직 안 만든 주문
+    'ready', (select count(*) from _slp where mapped = total_lines and ambig = 0 and not done),
+    'ready_all', (select count(*) from _slp where mapped = total_lines and not done),
+    'ambig', (select count(*) from _slp where ambig > 0 and mapped = total_lines and not done),
     'unmapped', (select count(*) from _slp where mapped < total_lines and not done),
     'done', (select count(*) from _slp where done),
     'shipped', (select count(*) from _slp where shipped and not done),

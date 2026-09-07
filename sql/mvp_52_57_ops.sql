@@ -514,3 +514,37 @@
 --            (기존에는 iframe src 가 상대경로 'dash/index.html' 이라 /admin/test/ 에서 404 였다 → 같이 고침)
 -- v56 화면 : 주문 변환 하단 안내 문구(.wiz-ft .note)가 좁은 폭에서 세로로 잘리던 문제 —
 --            note 를 남는 폭 전체로 늘려 가운데 정렬, 최대 두 줄까지만 보이고 전체 문장은 title 로. 버튼은 줄바꿈 없이 고정.
+-- mvp_106 (2026-09-07) core.f_sl_range 요약 숫자를 서로 겹치지 않게 :
+--   'ready'     = mapped=total_lines AND ambig=0  (기존에는 모호한 건도 포함돼 확인 필요와 겹쳤음. 겹치던 값은 'ready_all' 로 남김)
+--   'ambig'     = ambig>0 AND mapped=total_lines  (코드 없음이 섞인 주문은 '코드 없음' 쪽으로만)
+--   → 바로 가능 + 확인 필요 + 코드 없음 = 아직 안 만든 주문 수. (8/31~9/7 : 429 + 101 + 64 = 594)
+-- 확인 필요의 실제 원인 = 이카운트 품목 마스터가 같은 모델을 둘 이상 갖고 있음
+--   ① 중복 등록 : HA-MTSHELFWHT(AT-00993/AT-00611) · WD-FLTR(AT-00651/AT-00607) · ACM-B1M1SC(AT-00722/AT-00564)
+--   ② 단품 vs 세트/1+1/4색 패키지 : CLT-K515S(4색 패키지 / 1+1) · CLT-K510S((SET) / 1+1) · CLT-K2430S(4색 패키지 / 단품)
+--   ③ 정품 vs 재생 : MLT-D111S((재생) / 1+1)
+--   ④ 상품명과 모델코드가 가리키는 물건이 다름 : 제트봇 물걸레포 VCA-RPW97 / VCA-RPWF90
+--   → ①은 이카운트에서 품목을 정리하면 사라지고, ②③④는 ec.product_alias 에 별칭을 넣으면 자동 확정된다.
+-- mvp_107 (2026-09-07) fn_home 'uploads' : 큰 파일은 500행씩 나눠 올라와 raw.upload 행이 조각마다 생겼다
+--   → source + file_name + 시(hour) 로 묶어 한 줄로. rows/skipped 는 합계, 조각 수는 'chunks' 로 내려준다.
+--     (예: member_list…6846.xls 17조각 → 8,073행 · 제외 275) 화면은 파일명 옆에 "N조각" 태그.
+-- v58 화면 : 담당자 🎁 사은품 버튼은 판매 입력·상담 입력 탭에서만 표시 (PIN 화면·다른 탭에서는 숨김)
+-- mvp_108 (2026-09-07) 홈페이지 문의 = 고도몰 홈페이지 '개인·사업자 가전 견적' 게시판 (구독 문의와 분리)
+--   crm.web_inquiry (ref_no, name, phone/phone_key, email, inquired_on, kind 개인/사업자, status 진행/완료/대기,
+--                    quote_result 미입력/success/failure, handler, channel='홈페이지', note, buyer_key)
+--   유니크 = (phone_key, inquired_on, name) → 여러 번 붙여 넣어도 갱신만. crm.f_date_loose('2026. 7. 10' / '2026-08-19' 둘 다)
+--   core.f_web_inq_upsert(p_rows) · public.fn_web_inquiry_upsert(p_rows) (admin/dev/staff)
+--   public.fn_web_inquiries(p_from,p_to,p_q,p_kind,p_status,p_handler,p_limit,p_offset) → rows(연락처 마스킹)+summary+handlers+months
+-- v59 화면 : 문의 관리에 '홈페이지 문의' 카드 (요약·필터·표·[붙여넣기로 등록] — 고도몰 목록을 그대로 붙여 넣음, 앞뒤 빈 칸·[관리] 열 허용)
+--            카드 안 .filters 를 공통 바(.cbar)와 같은 모양·왼쪽 정렬로 통일. 담당자 상담 입력 관심 품목 여러 개 선택(쉼표로 저장).
+-- v60 화면 : 상담 입력 관심 모델도 여러 개(Enter·쉼표로 칩 추가, 쉼표로 저장) · 가져오기 이카운트 가망고객에 '관심 품목코드'→interest_model_code 매핑 추가
+-- mvp_109·110 (2026-09-07) 일 마감 = 판매 입력의 확인 단계
+--   core.store_daily 는 (구분·프로) 줄이 진실. sales=판매완료(확정) · pending_sales=매출(미확정, 집계엔 안 씀) · src_count=그날 판매 입력 건수
+--   fn_store_daily_prefill(p_code,p_date,p_store,p_all) : 그날 판매 입력을 구분·프로별로 집계(판매완료/매출 따로) + 저장된 마감 + DPS 합계. p_all=false 면 내 줄만
+--   fn_store_daily_submit : 프로 없는 줄은 받지 않음. 프로별 줄을 넣으면 같은 날·구분의 handler='' (시트 매장합계) 줄은 지움(이중 집계 방지). 안 보낸 줄 삭제는 내가 넣은 줄만
+--   core.store_daily_dps + fn_store_dps_submit : DPS 일시불·구독 합계는 대사용으로 따로 (매출 집계엔 프로별 마감이 쓰임)
+--   fn_store_daily_delete(p_code,p_date,p_store,p_all) : 기본은 내 줄(+시트 줄)만, p_all 이면 그 날 전부
+--   fn_store_status : unclosed_mine(내 판매 입력이 있는데 내 마감 없는 날) · closed_mine 추가. unclosed_days/closed_recent 는 매장 전체(+by)
+--   fn_store_requests : by_dept(요청자 부서) 추가
+-- v61 화면 : 담당자 일 마감 탭 재구성 — [본인|전체] 토글(기본 본인). 날짜 고르면 판매 입력이 구분·프로·판매완료/매출/환불 표로 자동 채워짐,
+--            저장된 마감이 있으면 그 값·판매 입력과의 차이 표시. 전체 모드에서만 DPS 합계 대사 카드. 최근 마감·미마감도 본인/전체 따라감.
+--            '매장 판매 요청' → '판매 요청' (요청자 이름 옆 부서), 카드 설명에 버튼 뜻.

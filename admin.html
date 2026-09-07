@@ -768,6 +768,13 @@ table th.sort-asc::after,table th.sort-desc::after{content:' ▲';font-size:9px;
 table th.sort-desc::after{content:' ▼'}
 /* 공통 검색·필터 바 : 목록 화면마다 맨 위에 같은 모양으로 */
 .cbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;margin-bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+/* 카드 안에 남는 조회 영역도 공통 바와 같은 모양으로 — 화면마다 다르게 보이지 않게 */
+.card .filters{padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;justify-content:flex-start}
+.card .filters .in{height:34px;font-size:12.5px} .card .filters input.in{min-width:200px}
+.card .filters .lb{font-size:11px;font-weight:700;color:var(--muted)}
+.card .filters > .note{margin-left:auto;font-size:11.5px}
+.cbar .extra .filters, .filters .filters{padding:0;background:none;border:0}
+
 .cbar .lb{font-size:11px;font-weight:700;color:var(--muted);margin-right:-2px}
 .cbar .in{height:34px;font-size:12.5px}
 .cbar select.in{min-width:120px} .cbar input.in{min-width:200px;flex:1}
@@ -1083,7 +1090,7 @@ tr.cb-hide{display:none}
       <!-- ═══ 접수함 ═══ -->
       <div class="view hidden" id="v-inbox">
         <div class="card">
-          <h3>문의 관리 <span>홈페이지 4개 폼(견적·구독·소모품/렌탈·VMS·B2B)과 매장 접수를 한 곳에서 봅니다</span>
+          <h3>문의 관리 <span>우리 폼(견적·구독·소모품/렌탈·VMS·B2B)과 매장 접수 — 고도몰 게시판으로 들어오는 <b>홈페이지 문의</b>는 아래 카드에서 따로 봅니다</span>
             <span style="margin-left:auto"><button class="btn sm ghost" onclick="loadInquiry(0)">새로고침</button></span></h3>
           <div class="qsum" id="iqSum"></div>
           <div class="filters">
@@ -1113,6 +1120,30 @@ tr.cb-hide{display:none}
             <th>메모</th><th style="width:74px">담당</th><th style="width:78px">상태</th><th style="width:150px"></th>
           </tr></thead><tbody id="tbInquiry"></tbody></table></div>
           <div class="pager"><button class="btn sm ghost" onclick="loadInquiry(iqPage-1)">‹ 이전</button><span id="iqCount"></span><button class="btn sm ghost" onclick="loadInquiry(iqPage+1)">다음 ›</button></div>
+        </div>
+        <div class="card" id="wiCard">
+          <h3>홈페이지 문의 <span>고도몰 홈페이지 <b>개인·사업자 가전 견적</b> 게시판 — 구독 문의와 따로 셉니다</span>
+            <span style="margin-left:auto;display:flex;gap:6px">
+              <button class="btn sm ghost" onclick="wiPasteOpen()">붙여넣기로 등록</button>
+              <button class="btn sm ghost" onclick="loadWebInq(0)">새로고침</button></span></h3>
+          <div class="qsum" id="wiSum"></div>
+          <div class="filters">
+            <span class="lb">유형</span>
+            <select class="in" id="wiKind" onchange="loadWebInq(0)"><option value="">개인·사업자 전체</option><option>개인</option><option>사업자</option></select>
+            <span class="lb">상담상태</span>
+            <select class="in" id="wiStatus" onchange="loadWebInq(0)"><option value="">전체 상태</option><option>진행</option><option>완료</option><option>대기</option></select>
+            <span class="lb">담당자</span>
+            <select class="in" id="wiHandler" onchange="loadWebInq(0)"><option value="">전체 담당</option></select>
+            <input class="in" id="wiQ" placeholder="이름 · 연락처 · 담당 · 번호" onkeydown="if(event.key==='Enter')loadWebInq(0)">
+            <button class="btn" onclick="loadWebInq(0)">조회</button>
+            <span class="note" id="wiMonths"></span>
+          </div>
+          <div class="tw"><table class="iqt"><thead><tr>
+            <th style="width:70px">번호</th><th style="width:96px">등록일</th><th style="width:70px">유형</th>
+            <th style="width:130px">이름</th><th style="width:140px">연락처</th><th>이메일</th>
+            <th style="width:110px">담당자</th><th style="width:80px">상담상태</th><th style="width:90px">견적결과</th>
+          </tr></thead><tbody id="tbWebInq"></tbody></table></div>
+          <div class="pager"><button class="btn sm ghost" onclick="loadWebInq(wiPage-1)">‹ 이전</button><span id="wiCount"></span><button class="btn sm ghost" onclick="loadWebInq(wiPage+1)">다음 ›</button></div>
         </div>
         <details class="foldcard"><summary>매장 방문 통계 <span class="note">키오스크·태블릿 방문 접수 기준</span></summary>
         <div class="card" id="visitCard">
@@ -1350,7 +1381,7 @@ tr.cb-hide{display:none}
       <!-- ═══ 주문서 · 전송 ═══ -->
       <div class="view hidden" id="v-oq">
         <div class="card" id="oqReqCard">
-          <h3>매장 판매 요청 <span id="oqReqSub"><b id="oqReqN" style="color:var(--warn)"></b>매장에서 판매 입력 때 켠 <b>이카운트 주문서 요청</b>. 처리 담당자(<b id="oqReqHandlers">-</b>)의 담당자 화면 주문서 탭에 알림이 가고 거기서 주문서로 만듭니다</span>
+          <h3>판매 요청 <span id="oqReqSub"><b id="oqReqN" style="color:var(--warn)"></b>담당자 화면(매장·온라인 어느 부서든)에서 판매 입력 때 켠 <b>이카운트 주문서 요청</b>. 처리 담당자(<b id="oqReqHandlers">-</b>)의 담당자 화면 주문서 탭에 알림이 가고 거기서 주문서로 만듭니다</span>
             <span style="margin-left:auto"><button class="btn sm ghost" onclick="loadOqReq()">새로고침</button></span></h3>
           <div class="tw"><table><thead><tr><th>요청</th><th>요청자</th><th>상품</th><th class="num">수량</th><th class="num">금액</th><th>고객</th><th>상태</th></tr></thead><tbody id="tbOqReq"><tr><td colspan="7" class="empty">불러오는 중…</td></tr></tbody></table></div>
         </div>
@@ -1507,6 +1538,22 @@ tr.cb-hide{display:none}
   <div class="fgrid"><div><label>매출 금액 (VAT포함)</label><input class="in num" type="number" id="apGross" placeholder="0"></div><div><label>모델코드 (선택)</label><input class="in" id="apModel"></div></div>
   <p class="note" id="apInfo"></p>
   <div class="foot"><button class="btn ghost" onclick="closeModal('approveModal')">취소</button><button class="btn ok" onclick="approve()">승인</button></div>
+</div></div>
+
+<div class="overlay hidden" id="wiPasteModal"><div class="modal" style="max-width:760px">
+  <h3>홈페이지 문의 붙여넣기 등록</h3>
+  <p class="note">고도몰 관리자 <b>개인/사업자 가전 견적 문의</b> 목록을 그대로 긁어서 붙여 넣으세요. 머리글 줄이 있어도 되고, 앞뒤 빈 칸·[관리] 열이 섞여 있어도 됩니다.<br>
+    열 순서: <b>번호 · 제목(이름) · 견적결과 · 상담상태 · 담당자 · 연락처 · 이메일 · 등록일</b> (마지막에 유형이 있으면 개인/사업자로 씁니다).<br>
+    같은 <b>연락처 + 등록일 + 이름</b> 이면 새로 만들지 않고 갱신합니다 — 여러 번 붙여 넣어도 중복되지 않습니다.</p>
+  <div class="filters" style="margin-bottom:8px">
+    <span class="lb">이 묶음의 유형</span>
+    <select class="in" id="wiPasteKind"><option value="">표에 있는 대로 (없으면 개인)</option><option>개인</option><option>사업자</option></select>
+  </div>
+  <textarea class="in" id="wiPasteTx" style="width:100%;box-sizing:border-box;height:220px;font-family:ui-monospace,Menlo,monospace;font-size:12px" placeholder="여기에 붙여넣기 (Ctrl+V)"></textarea>
+  <p class="note" id="wiPasteMsg" style="min-height:18px"></p>
+  <div class="foot"><button class="btn ghost" onclick="closeModal('wiPasteModal')">닫기</button>
+    <button class="btn ghost" onclick="wiPastePreview()">미리보기</button>
+    <button class="btn ok" onclick="wiPasteSave()">등록</button></div>
 </div></div>
 
 <datalist id="handlerList"></datalist>
@@ -1710,7 +1757,7 @@ async function loadHome(){
   const tc=h.top_channels_month||[]; const mx=Math.max(1,...tc.map(x=>Number(x.net)||0));
   $('chanList').innerHTML=tc.map(x=>`<div><span>${esc(x.k||'-')}</span><span class="bar"><i style="width:${Math.round((Number(x.net)||0)/mx*100)}%"></i></span><b>${wonK(x.net)}</b></div>`).join('')||'<div class="note">이번 달 데이터 없음</div>';
   $('tbHomeConsults').innerHTML=(h.recent_consults||[]).map(c=>`<tr><td class="mono">${esc(c.at)}</td><td><b>${esc(c.name||'-')}</b></td><td>${esc(c.cat||'')}</td><td style="font-size:12px">${esc(c.route||'')}</td><td>${esc(c.handler||'')}</td><td><span class="tag ${c.result}">${esc(c.result||'')}</span></td></tr>`).join('')||'<tr><td colspan="6" class="note">없음</td></tr>';
-  $('tbHomeUploads').innerHTML=(h.uploads||[]).map(u=>`<tr><td class="mono">${esc(u.at)}</td><td>${esc(u.source||'')}</td><td class="wrap" style="font-size:12px">${esc(u.file||'')}${u.rolled_back?' <span class="tag n">되돌림</span>':''}</td><td class="num">${n(u.rows||0)}${u.skipped?`<span style="color:var(--muted);font-size:11px"> / 제외 ${n(u.skipped)}</span>`:''}</td><td style="font-size:12px">${esc((u.by||'').replace(ID_DOMAIN,''))}</td></tr>`).join('')||'<tr><td colspan="5" class="note">없음</td></tr>';
+  $('tbHomeUploads').innerHTML=(h.uploads||[]).map(u=>`<tr><td class="mono">${esc(u.at)}</td><td>${esc(u.source||'')}</td><td class="wrap" style="font-size:12px">${esc(u.file||'')}${u.chunks>1?` <span class="tag" title="큰 파일이라 ${n(u.chunks)}번에 나눠 올라왔습니다">${n(u.chunks)}조각</span>`:''}${u.rolled_back?' <span class="tag n">되돌림</span>':''}</td><td class="num">${n(u.rows||0)}${u.skipped?`<span style="color:var(--muted);font-size:11px"> / 제외 ${n(u.skipped)}</span>`:''}</td><td style="font-size:12px">${esc((u.by||'').replace(ID_DOMAIN,''))}</td></tr>`).join('')||'<tr><td colspan="5" class="note">없음</td></tr>';
   $('homeLinks').innerHTML=[[ST,'매장 화면 ↗'],['/stock.html','재고 화면 ↗'],['/visit/?fs=1','방문 접수(태블릿) ↗'],[DASH_DIR,'외부 공유 대시보드 ↗'],['/','고객센터 ↗']].map(([u,t])=>`<a href="${u}" target="_blank">${t}</a>`).join('');
 }
 
@@ -1884,6 +1931,81 @@ async function openMoveModal(code){
   if(!data) return;
   try{ const r=await rpc('fn_inv_move',{p_rows:[data]}); toast(`등록됨 (${KIND_NM[data.kind]} ${n(Math.abs(data.qty))})`,'ok'); if(VIEW==='stock') loadStock(); else if(VIEW==='moves') loadMoves(0); else if(VIEW==='home') loadHome(); }
   catch(e){ toast(e.message,'bad'); }
+}
+
+/* ═══════════════ 홈페이지 문의 (고도몰 견적 게시판) ═══════════════ */
+let wiPage=0, WI_PAGE=100, WI_ROWS=[];
+async function loadWebInq(page){
+  wiPage=Math.max(0,page||0);
+  let d; try{ d=await rpc('fn_web_inquiries',{p_from:P.from,p_to:P.to,p_q:$('wiQ').value.trim()||null,
+      p_kind:$('wiKind').value||null,p_status:$('wiStatus').value||null,p_handler:$('wiHandler').value||null,
+      p_limit:WI_PAGE,p_offset:wiPage*WI_PAGE}); }
+  catch(e){ $('tbWebInq').innerHTML=`<tr><td colspan="9" class="note">${esc(e.message)}</td></tr>`; return; }
+  WI_ROWS=d.rows||[]; const S=d.summary||{};
+  $('wiSum').innerHTML=[['문의',d.total,'기간 안 전체'],['개인',S.personal,''],['사업자',S.biz,''],
+      ['진행·대기',S.open,''],['완료',S.done,''],['계약(success)',S.success,'']]
+    .map(([k,v,sub])=>`<div class="q"><small>${k}</small><b>${n(v||0)}<i>건</i></b>${sub?`<div class="sub">${sub}</div>`:''}</div>`).join('')
+    + `<div class="q"><small>마지막 문의</small><b style="font-size:14px">${esc(S.last_on||'—')}</b></div>`;
+  const hs=(d.handlers||[]); const sel=$('wiHandler'), cur=sel.value;
+  sel.innerHTML='<option value="">전체 담당</option>'+hs.map(h=>`<option${h===cur?' selected':''}>${esc(h)}</option>`).join('');
+  $('wiMonths').textContent=(d.months||[]).slice(0,6).map(m=>`${m.m.slice(2).replace('-','.')} ${m.n}`).join(' · ');
+  const RS={success:['계약','ok'],failure:['실패','bad']};
+  $('tbWebInq').innerHTML=WI_ROWS.length?WI_ROWS.map(r=>{
+    const rs=RS[r.quote_result]||[r.quote_result||'—',''];
+    return `<tr><td class="mono">${esc(r.ref_no||'')}</td><td class="mono">${esc(r['on'])}</td>
+      <td><span class="tag${r.kind==='사업자'?' n':''}">${esc(r.kind)}</span></td>
+      <td><b>${esc(r.name)}</b></td><td class="mono">${esc(r.phone||'')}</td><td style="font-size:12px">${esc(r.email||'')}</td>
+      <td>${esc(r.handler||'미배정')}</td><td>${esc(r.status||'—')}</td>
+      <td>${rs[1]?`<span class="tag ${rs[1]}">${rs[0]}</span>`:`<span class="note">${esc(rs[0])}</span>`}</td></tr>`;}).join('')
+    : '<tr><td colspan="9" class="note">이 기간에 홈페이지 문의가 없습니다. [붙여넣기로 등록]으로 넣어 주세요.</td></tr>';
+  const from=d.total?wiPage*WI_PAGE+1:0, to=Math.min((wiPage+1)*WI_PAGE, d.total);
+  $('wiCount').textContent=`${n(from)}–${n(to)} / ${n(d.total)}건`;
+}
+/* 붙여넣기 : 고도몰 목록을 그대로 — 앞뒤 빈 칸·[관리] 열이 있어도 되고, 유형 열은 있으면 쓴다 */
+function wiParse(text){
+  const kindSel=$('wiPasteKind').value;
+  const out=[], bad=[];
+  String(text||'').split(/\r?\n/).forEach(line=>{
+    if(!line.trim()) return;
+    let c=line.split('\t').map(x=>x.trim());
+    if(c.length<4) c=line.split(/\s{2,}/).map(x=>x.trim());
+    while(c.length && c[0]==='') c.shift();
+    while(c.length && c[c.length-1]==='') c.pop();
+    if(!c.length) return;
+    if(/^번호$/.test(c[0])||/제목/.test(c[1]||'')) return;                    /* 머리글 */
+    if(!/^\d+$/.test(c[0])) { bad.push(line); return; }                        /* 번호로 시작하지 않으면 건너뜀 */
+    const [ref,name,quote,status,handler,phone,email,on]=c;
+    const kindCol=c[8]||'';
+    if(!name||!on){ bad.push(line); return; }
+    out.push({ref_no:ref,name:name,quote_result:quote||null,status:status||null,handler:handler||null,
+              phone:phone||null,email:email||null,inquired_on:on,
+              kind:kindSel||(/사업/.test(kindCol)?'사업자':(kindCol||'개인'))});
+  });
+  return {rows:out, bad};
+}
+function wiPasteOpen(){ $('wiPasteTx').value=''; $('wiPasteMsg').textContent=''; $('wiPasteModal').classList.remove('hidden'); setTimeout(()=>$('wiPasteTx').focus(),50); }
+function wiPastePreview(){
+  const {rows,bad}=wiParse($('wiPasteTx').value);
+  const p=rows.filter(r=>r.kind==='개인').length, b=rows.length-p;
+  const days=[...new Set(rows.map(r=>r.inquired_on))].sort();
+  $('wiPasteMsg').innerHTML=rows.length
+    ? `읽은 줄 <b>${n(rows.length)}건</b> (개인 ${n(p)} · 사업자 ${n(b)}) · 기간 ${esc(days[0]||'')} ~ ${esc(days[days.length-1]||'')}`
+      + (bad.length?` · <span style="color:var(--bad)">건너뛴 줄 ${n(bad.length)}</span>`:'')
+    : '<span style="color:var(--bad)">읽을 수 있는 줄이 없습니다. 번호로 시작하는 줄이 있어야 합니다.</span>';
+}
+async function wiPasteSave(){
+  const {rows}=wiParse($('wiPasteTx').value);
+  if(!rows.length){ wiPastePreview(); return; }
+  try{
+    let ins=0,upd=0,skip=0;
+    for(let i=0;i<rows.length;i+=200){
+      const r=await rpc('fn_web_inquiry_upsert',{p_rows:rows.slice(i,i+200)});
+      ins+=r.inserted||0; upd+=r.updated||0; skip+=r.skipped||0;
+      $('wiPasteMsg').textContent=`저장 중… ${Math.min(i+200,rows.length)}/${rows.length}`;
+    }
+    toast(`홈페이지 문의 ${n(ins)}건 추가 · ${n(upd)}건 갱신${skip?` · ${n(skip)}건 건너뜀`:''}`,'ok');
+    closeModal('wiPasteModal'); loadWebInq(0);
+  }catch(e){ $('wiPasteMsg').innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; }
 }
 
 /* ═══════════════ 문의 관리 (홈페이지 폼 통합) ═══════════════ */
@@ -2439,9 +2561,9 @@ function wizMount(host, cfg){
       <p class="sub" style="margin:10px 0 0;font-size:12px">취소·교환·반품 건은 자동으로 빠지고, <b>송장이 없는(미발송) 주문은 이카운트에 올리지 않습니다</b> — ②에서 기본으로 발송된 주문만 보입니다. 샵링커 주문은 하루 다섯 번 수집되며 송장 등록분도 함께 들어옵니다.</p>
       ${d?`<div class="wiz-chips">
         <div class="wiz-chip"><small>불러온 주문</small><b>${n(d.total)}</b>건 · ${n(d.lines)}줄</div>
-        <div class="wiz-chip ok"><small>바로 가능</small><b>${n(d.ready)}</b>건</div>
-        <div class="wiz-chip warn"><small>확인 필요</small><b>${n(d.ambig)}</b>건 <span class="sub">같은 모델에 품목 여럿</span></div>
-        <div class="wiz-chip bad"><small>코드 없음</small><b>${n(d.unmapped)}</b>건</div>
+        <div class="wiz-chip ok" title="모든 줄에 이카운트 품목이 하나로 정해진 주문입니다"><small>바로 가능</small><b>${n(d.ready)}</b>건</div>
+        <div class="wiz-chip warn" title="같은 모델·상품명으로 등록된 이카운트 품목이 둘 이상이라 ③에서 어느 것인지 골라야 합니다 (예: 단품 / 1+1 / 4색 패키지, 정품 / 재생)"><small>확인 필요</small><b>${n(d.ambig)}</b>건 <span class="sub">품목 후보 여럿 — ③에서 고름</span></div>
+        <div class="wiz-chip bad" title="이카운트 품목을 하나도 찾지 못한 줄이 있는 주문입니다"><small>코드 없음</small><b>${n(d.unmapped)}</b>건</div>
         ${d.done?`<div class="wiz-chip"><small>이미 만든 주문</small><b>${n(d.done)}</b>건</div>`:''}
       </div>`:''}`
       :`<div class="wiz-drop"><svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg><div><b>샵링커 주문 파일(.xls/.xlsx)</b>은 관리자 화면 <b>데이터 가져오기</b>에서 올립니다.</div>
@@ -3467,7 +3589,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>loadItems(0),oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:loadCrmFunnel,upload:loadUploads,log:()=>loadLog(0),settings:loadSettings,option:loadOption,notify:loadNotify};
+const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>loadItems(0),oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadWebInq(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:loadCrmFunnel,upload:loadUploads,log:()=>loadLog(0),settings:loadSettings,option:loadOption,notify:loadNotify};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
@@ -4443,7 +4565,7 @@ function mapRows(u){
     return {order_no:no,line_no:seq[no],order_at:excelDate(H(r,'주문일자')),channel_type:ct,channel_name:cn,channel_account:str(H(r,'쇼핑몰아이디')),status:st,product_code:str(H(r,'상품코드')),model_code:str(H(r,'모델명')).toUpperCase()||null,product_name:str(H(r,'주문 상품명','자사 상품명')),option_text:str(H(r,'옵션')),qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'쇼핑몰 판매가'))||null,gross_amount:gross,refund_amount:refund,payment_method:str(H(r,'결제')),customer_name:str(H(r,'주문자명')),customer_phone:str(H(r,'주문자연락처2'))||str(H(r,'주문자연락처1')),email:str(H(r,'주문자이메일주소')),address:str(H(r,'수취인 주소')),notes:str(H(r,'클레임여부')).replace(/\n/g,' ').slice(0,80)||null,alt_order_no:str(H(r,'자사주문번호'))||null,tracking_no:str(H(r,'송장번호','운송장번호','택배송장번호','배송번호'))||null,shipped_at:excelDate(H(r,'발송완료일','_송장등록일','송장등록일','발송일'))||null}; }); }
   if(u.kind==='ecount_sales'){ const seq={}; return d.filter(r=>/^\d{8}-\d+/.test(str(H(r,'일자-No.')))).map(r=>{ const no=str(H(r,'일자-No.')); seq[no]=(seq[no]||0)+1; const biz=str(H(r,'거래처명')); const rep=str(H(r,'대표자명')).replace(/ /g,'');
     return {order_no:no,line_no:seq[no],order_at:excelDate(no.slice(0,8)),channel_type:'VMS',channel_name:'VMS',status:'결제완료',product_name:str(H(r,'품목명(규격)')),qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'단가'))||null,supply_amount:Number(H(r,'공급가액'))||null,vat_amount:Number(H(r,'부가세'))||null,gross_amount:Number(H(r,'합계'))||((Number(H(r,'공급가액'))||0)+(Number(H(r,'부가세'))||0)),customer_name:biz,customer_phone:str(H(r,'모바일')).replace(/ /g,'')||str(H(r,'일반전화')).replace(/ /g,''),address:str(H(r,'주소2')).replace(/ /g,''),account_type:rep&&rep!==biz?'business':'personal',handler:str(H(r,'판매담당자','판매담당')).replace(/ /g,'')||null,device_model:str(H(r,'사용기종')).replace(/^\.$/,'')||null,notes:str(H(r,'영업담당명'))?'영업:'+str(H(r,'영업담당명')):null}; }); }
-  if(u.kind==='ecount_prospect'){ return d.filter(r=>str(H(r,'일자-No.'))).map(r=>{ const ref=str(H(r,'일자-No.')); return {source_ref:ref,consult_at:excelDate(ref.split(' ')[0]),customer_name:str(H(r,'고객명')),phone:str(H(r,'연락처')),handler:str(H(r,'상담사명')),inflow_route:str(H(r,'유입경로명')),interest_category:str(H(r,'관심 품목명')),purchase_item:str(H(r,'구매 품목명')),result:str(H(r,'결과명')),membership_status:str(H(r,'멤버쉽명')),expected_amount:Number(H(r,'예상금액'))||null,expected_purchase_date:excelDate(H(r,'구매예정일')),content:str(H(r,'상담내용')),notes:[str(H(r,'구분명')),str(H(r,'비고'))].filter(Boolean).join(' / ')||null}; }); }
+  if(u.kind==='ecount_prospect'){ return d.filter(r=>str(H(r,'일자-No.'))).map(r=>{ const ref=str(H(r,'일자-No.')); return {source_ref:ref,consult_at:excelDate(ref.split(' ')[0]),customer_name:str(H(r,'고객명')),phone:str(H(r,'연락처')),handler:str(H(r,'상담사명')),inflow_route:str(H(r,'유입경로명')),interest_category:str(H(r,'관심 품목명')),interest_model_code:str(H(r,'관심 품목코드'))||null,purchase_item:str(H(r,'구매 품목명')),result:str(H(r,'결과명')),membership_status:str(H(r,'멤버쉽명')),expected_amount:Number(H(r,'예상금액'))||null,expected_purchase_date:excelDate(H(r,'구매예정일')),content:str(H(r,'상담내용')),notes:[str(H(r,'구분명')),str(H(r,'비고'))].filter(Boolean).join(' / ')||null}; }); }
   if(u.kind==='rental'){ return d.filter(r=>str(H(r,'계약번호'))).map(r=>({order_no:str(H(r,'계약번호')),line_no:1,order_at:excelDate(H(r,'청구시작일')),channel_type:'렌탈',channel_name:'렌탈',status:'결제완료',product_name:str(H(r,'항목','계약명')),qty:1,gross_amount:Number(H(r,'금액'))||0,payment_method:str(H(r,'유형')),customer_name:str(H(r,'거래처')),customer_phone:str(H(r,'모바일','휴대폰','연락처')).replace(/\D/g,'')||null,account_type:'business',notes:str(H(r,'청구종료일'))?'청구 ~'+excelDate(H(r,'청구종료일')):null})); }
   if(u.kind==='ecount_slip'){ return d.filter(r=>str(H(r,'일자-No.'))).map(r=>({slip_no:str(H(r,'일자-No.')),order_no:str(H(r,'주문No.','주문No','주문번호'))||null,cust_name:str(H(r,'거래처명')),emp_name:str(H(r,'영업담당')),handler:str(H(r,'판매담당','판매담당자')),deal_type:str(H(r,'거래유형')),kind:str(H(r,'구분')),amount:str(H(r,'주문금액','합계')),status:str(H(r,'진행상태')),items:str(H(r,'품목명(요약)','품목명'))})); }
   if(u.kind==='ecount_customer'){ return d.filter(r=>str(H(r,'거래처코드'))&&str(H(r,'거래처코드'))!=='.').map(r=>({code:str(H(r,'거래처코드')),name:str(H(r,'거래처명','상호')),ceo:str(H(r,'대표자명','대표자'))||null,phone:str(H(r,'전화','전화번호','일반전화'))||null,mobile:str(H(r,'휴대폰','휴대전화','모바일','핸드폰','핸드폰번호','휴대폰번호'))||null,addr:(str(H(r,'주소','주소1'))||str(H(r,'주소2')))||null,handler:str(H(r,'담당자명','담당자','영업담당','영업담당자','우리담당자'))||null,sales_handler:str(H(r,'판매담당자','판매담당'))||null,device:str(H(r,'사용기종'))||null,deal_type:str(H(r,'거래유형(영업)','거래유형'))||null,kind:str(H(r,'구분','거래처구분'))||null,active:str(H(r,'사용구분','사용'))||null})); }

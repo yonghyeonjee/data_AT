@@ -99,6 +99,9 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .seg button.on.direct{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{padding:8px 12px;border:1.5px solid var(--line-2);border-radius:999px;background:#fff;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.tagchips{margin-top:6px} .tagchips:empty{display:none}
+.tagchips .chip{background:var(--navy);color:#fff;border-color:var(--navy);padding:6px 10px;font-size:12.5px;font-family:ui-monospace,Menlo,monospace}
+.tagchips .chip::after{content:'×';margin-left:6px;opacity:.7}
 .chip.on{border-color:var(--navy);background:var(--navy);color:#fff}
 
 .toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:10px;background:var(--surface-2);cursor:pointer}
@@ -269,6 +272,18 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .trow .lab small{display:block;color:var(--faint);font-weight:400;font-size:11px}
 .trow.head{color:var(--faint);font-size:12px;margin-bottom:4px}
 .handler-row{display:grid;grid-template-columns:1fr 1.2fr 1fr 32px;gap:8px;align-items:center;margin-bottom:8px}
+.drow{display:grid;grid-template-columns:.9fr 1fr 1.1fr 1.1fr .9fr 28px;gap:6px;align-items:center;margin-bottom:6px}
+.drow.head{color:var(--faint);font-size:11.5px;margin-bottom:4px} .drow.head .r{text-align:right} .drow.head small{display:block;font-size:10px}
+.drow .in{height:38px;font-size:13.5px;padding:0 8px} .drow select.in{padding-right:4px}
+.drow .x{border:0;background:transparent;color:var(--faint);font-size:18px;cursor:pointer;padding:0}
+.drow.auto .in.num{background:#F7F9FF}
+.drow .cnt{font-size:10.5px;color:var(--faint);white-space:nowrap}
+.d-sum{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin:0 0 10px;padding:10px 12px;background:var(--surface-2,#F5F7FA);border-radius:10px}
+.d-sum b{color:var(--ink);font-variant-numeric:tabular-nums} .d-sum .warn{color:var(--warn);font-weight:600}
+.seg.sm button{padding:6px 12px;font-size:12.5px}
+@media(max-width:480px){.drow{grid-template-columns:1fr 1fr 1fr 24px} .drow .dk{grid-column:1} .drow .dh{grid-column:2/5}
+  .drow.head>div:nth-child(-n+2){display:none} .drow.head{margin-top:4px}
+  .drow:not(.head){padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:8px}}
 .x{border:0;background:transparent;color:var(--faint);font-size:18px;cursor:pointer}
 
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;transition:.25s;z-index:99;box-shadow:var(--shadow);max-width:90%;text-align:center}
@@ -658,7 +673,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         </div>
       </div>
       <div class="grid2">
-        <div class="f"><label>관심 모델</label><input class="in" id="c_model" placeholder="KQ85QNH80" style="text-transform:uppercase" autocomplete="off"></div>
+        <div class="f"><label>관심 모델 <span class="sub" style="font-weight:400;color:var(--muted)">여러 개면 Enter 나 쉼표로 추가</span></label><input class="in" id="c_model" placeholder="KQ85QNH80" style="text-transform:uppercase" autocomplete="off"><div class="chips tagchips" id="c_models"></div></div>
         <div class="f"><label>유입경로 <span class="req">*</span></label>
           <select class="in" id="c_route">
             <option>매장고객-기존고객</option><option>매장고객-매장고객 소개</option><option>검색광고-방문</option><option>검색광고-전화</option>
@@ -696,31 +711,43 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
 
   <!-- ── 일 마감 ── -->
   <section class="panel hidden" id="tab-daily">
-    <div class="intro">영업 종료 후 <b>DPS 일 합계</b>(일시불·구독·프로별 직판)를 전기하는 화면입니다. 대시보드 매장 매출의 1차 출처입니다.
-      <details><summary>사용 방법</summary><ol><li><i>1</i><span>늦어도 익일 오전 10시까지 입력합니다. 미마감 날짜는 위 노란 배지와 관리자 화면에 표시됩니다.</span></li><li><i>2</i><span>건별 입력과 별개입니다. 건별을 빠뜨렸어도 일마감만 맞으면 대시보드 매출은 맞습니다.</span></li><li><i>3</i><span>환불이 있으면 환불 칸에 따로 적습니다. 매출에서 빼서 넣지 마세요.</span></li></ol></details>
+    <div class="intro"><b>그날 내가 넣은 판매 입력을 확인하고 마감</b>하는 화면입니다. 판매 입력이 곧 마감 숫자이고, 여기서는 빠진 것·틀린 것만 고칩니다.
+      <details><summary>사용 방법</summary><ol>
+        <li><i>1</i><span>날짜를 고르면 그날 <b>판매 입력</b>이 구분·프로별로 자동으로 채워집니다. <b>판매완료</b>는 확정 매출, <b>매출</b>은 아직 미확정(설치·배송 전)으로 따로 잡힙니다.</span></li>
+        <li><i>2</i><span>숫자가 맞으면 그대로 <b>[마감 저장]</b>. 판매 입력을 빠뜨렸으면 판매 입력 탭에서 넣고 다시 오세요 (여기서 숫자만 고쳐도 되지만 건별 기록은 안 남습니다).</span></li>
+        <li><i>3</i><span>매출 단계였던 건이 나중에 <b>판매완료</b>로 바뀌면, 그 날짜를 다시 열어 [마감 저장]하면 판매완료 쪽으로 옮겨집니다.</span></li>
+        <li><i>4</i><span><b>전체</b>로 바꾸면 매장 전체 프로의 마감을 보고, 아래 <b>DPS 합계 대사</b>에 DPS 일시불·구독 합계를 넣어 차이를 확인합니다 (점장·마감 담당).</span></li>
+      </ol></details>
     </div>
     <div class="card">
-      <h2>일 마감 · DPS 합계 전기 <span>매일 영업 종료 후</span></h2>
+      <h2>일 마감 <span id="d_me"></span></h2>
       <div class="daterow">
-        <input class="in" type="date" id="d_date">
+        <input class="in" type="date" id="d_date" onchange="loadDailyDay()">
         <button class="btn ghost sm" onclick="setDaily(-1)">어제</button>
         <button class="btn ghost sm" onclick="setDaily(0)">오늘</button>
+        <div class="seg sm" id="d_scope" style="margin-left:auto"><button type="button" class="on" data-v="mine">본인</button><button type="button" data-v="all">전체</button></div>
       </div>
       <div id="d_unclosedWrap" class="hidden" style="margin-bottom:12px">
-        <div style="font-size:12px;color:var(--warn);font-weight:600">미마감 날짜 — 눌러서 입력</div>
+        <div style="font-size:12px;color:var(--warn);font-weight:600">미마감 날짜 — 눌러서 열기</div>
         <div class="unclosed" id="d_unclosed"></div>
       </div>
-      <div class="trow head"><div>구분</div><div style="text-align:right">매출</div><div style="text-align:right">환불</div></div>
-      <div class="trow"><div class="lab">매장 일시불<small>DPS 일시불 합계</small></div><input class="in num" inputmode="numeric" id="d_cash_s" placeholder="0" oninput="comma(this)"><input class="in num" inputmode="numeric" id="d_cash_r" placeholder="0" oninput="comma(this)"></div>
-      <div class="trow"><div class="lab">매장 구독<small>DPS 구독 합계</small></div><input class="in num" inputmode="numeric" id="d_sub_s" placeholder="0" oninput="comma(this)"><input class="in num" inputmode="numeric" id="d_sub_r" placeholder="0" oninput="comma(this)"></div>
-      <div style="font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:600">프로별 직판</div>
-      <div id="d_direct"></div>
-      <button class="btn ghost sm" onclick="addDirectRow()">+ 프로 추가</button>
+      <div class="d-sum" id="d_sum"></div>
+      <div class="drow head"><div>구분</div><div>프로</div><div class="r">판매완료</div><div class="r">매출<small>미확정</small></div><div class="r">환불</div><div></div></div>
+      <div id="d_rows"></div>
+      <button class="btn ghost sm" onclick="addDailyRow()">+ 줄 추가</button>
       <p class="note-in" id="d_byNote"></p>
       <button class="btn" id="d_btn" onclick="submitDaily()">마감 저장</button>
     </div>
+    <div class="card hidden" id="d_dpsCard">
+      <h2>DPS 합계 대사 <span>매장 기준 · 전체 모드</span></h2>
+      <p class="note-in" style="margin:0 0 10px">DPS 화면의 일시불·구독 합계를 넣으면 프로별 마감 합계와의 <b>차이</b>가 보입니다. 저장은 대사용이고 매출 집계에는 프로별 마감이 쓰입니다.</p>
+      <div class="trow head"><div>구분</div><div style="text-align:right">DPS 매출</div><div style="text-align:right">DPS 환불</div></div>
+      <div class="trow"><div class="lab">매장 일시불<small id="d_cash_diff">마감 합계와 비교</small></div><input class="in num" inputmode="numeric" id="d_cash_s" placeholder="0" oninput="comma(this);dpsDiff()"><input class="in num" inputmode="numeric" id="d_cash_r" placeholder="0" oninput="comma(this);dpsDiff()"></div>
+      <div class="trow"><div class="lab">매장 구독<small id="d_sub_diff">마감 합계와 비교</small></div><input class="in num" inputmode="numeric" id="d_sub_s" placeholder="0" oninput="comma(this);dpsDiff()"><input class="in num" inputmode="numeric" id="d_sub_r" placeholder="0" oninput="comma(this);dpsDiff()"></div>
+      <button class="btn ghost" id="d_dpsBtn" onclick="submitDps()">DPS 합계 저장</button>
+    </div>
     <div class="card">
-      <h2>최근 마감 <span>7일</span></h2>
+      <h2>최근 마감 <span id="d_recentSub">7일 · 본인</span></h2>
       <div class="list" id="d_recent"><div class="empty">없음</div></div>
     </div>
   </section>
@@ -789,8 +816,8 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </ol></details>
     </div>
     <div class="card hidden" id="reqCard">
-      <h2>매장 판매 요청 <span id="req_sub"></span></h2>
-      <p class="note-in" style="margin-top:0">매장에서 판매 입력하며 <b>이카운트 주문서 요청</b>을 켠 건입니다. [주문서로] 를 누르면 아래 직접 입력 칸에 채워지고, 등록하면 요청이 자동으로 처리됨이 됩니다.</p>
+      <h2>판매 요청 <span id="req_sub"></span></h2>
+      <p class="note-in" style="margin-top:0">매장·온라인사업부 등 어느 부서든 판매 입력하며 <b>이카운트 주문서 요청</b>을 켠 건입니다. 요청자 이름 옆에 부서가 붙습니다. <b>[주문서로]</b> 누르면 아래 직접 입력 칸에 채워지고 등록하면 요청이 자동으로 처리됨 · <b>[내가 맡기]</b> 다른 담당자에게 "내가 처리 중"으로 보임 · <b>[직접 처리함]</b> 이카운트에 손으로 넣었을 때(전표번호 메모) · <b>[불필요]</b> 주문서가 필요 없는 건(사유 메모).</p>
       <div id="req_rows"><div class="empty">요청이 없습니다</div></div>
       <details style="margin-top:10px"><summary style="font-size:12.5px;color:var(--muted);cursor:pointer">최근 처리한 요청</summary><div id="req_done" style="margin-top:8px"></div></details>
     </div>
@@ -889,7 +916,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
 
   <div class="foot">삼성앤텍 시흥점 · 입력 문의 온라인사업부 · <a href="#" onclick="localStorage.removeItem('staff_code');location.reload();return false">담당자 변경</a></div>
 </div>
-<div class="gfab" id="gfab"><div class="gpanel" id="gpanel"></div><button class="gbtn" onclick="document.getElementById('gfab').classList.toggle('open')" title="사은품 · 오피스콘">🎁</button></div>
+<div class="gfab hidden" id="gfab" data-has="0"><div class="gpanel" id="gpanel"></div><button class="gbtn" onclick="document.getElementById('gfab').classList.toggle('open')" title="사은품 · 오피스콘">🎁</button></div>
 <div class="toast" id="toast"></div>
 <datalist id="giftList"></datalist>
 
@@ -981,17 +1008,8 @@ function render(){
       <div class="act"><div class="a">${won(x.amount)}</div><button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료</button></div></div>`).join('') : '<div class="empty">확정 대기 건이 없습니다</div>';
   if($('r_handler').options.length<=1){ $('r_handler').innerHTML = '<option value="">전체 프로</option>' + handlers.map(h=>`<option ${h===ME?'selected':''}>${h}</option>`).join(''); }
   if(!$('r_from').value) setReportRange('day');
-  const un = s.unclosed_days || [];
-  if(un.length){ $('pillUnclosed').textContent = `미마감 ${un.length}일`; $('pillUnclosed').classList.remove('hidden');
-    $('d_unclosedWrap').classList.remove('hidden');
-    $('d_unclosed').innerHTML = un.map(d=>`<span class="chip" onclick="$('d_date').value='${d}'">${d.slice(5).replace('-','/')}</span>`).join('');
-  } else { $('pillUnclosed').classList.add('hidden'); $('d_unclosedWrap').classList.add('hidden'); }
-  $('d_recent').innerHTML = (s.closed_recent||[]).length ? s.closed_recent.map(x=>`
-    <div class="item"><div class="t">${x.d.slice(5).replace('-','/')}</div><div class="p">마감 완료</div><div class="a">${won(x.net)}</div>
-      <div class="ed"><button onclick="dailyEdit('${x.d}')">수정</button><button class="del" onclick="dailyDelete('${x.d}','${won(x.net)}')">삭제</button></div></div>`).join('') : '<div class="empty">최근 7일 마감 없음</div>';
-  if(!$('d_direct').children.length) addDirectRow(ME);
+  renderDailyLists(s);
   renderHome(s);
-  document.querySelectorAll('.tab').forEach(b=>{ if(b.dataset.tab==='daily'){ b.innerHTML = '일 마감' + (un.length?`<span class="n">${un.length}</span>`:''); } });
 }
 
 /* ═══ 권한 : 담당자마다 보이는 탭이 다르다 ═══ */
@@ -1489,9 +1507,9 @@ function wizMount(host, cfg){
       <p class="sub" style="margin:10px 0 0;font-size:12px">취소·교환·반품 건은 자동으로 빠지고, <b>송장이 없는(미발송) 주문은 이카운트에 올리지 않습니다</b> — ②에서 기본으로 발송된 주문만 보입니다. 샵링커 주문은 하루 다섯 번 수집되며 송장 등록분도 함께 들어옵니다.</p>
       ${d?`<div class="wiz-chips">
         <div class="wiz-chip"><small>불러온 주문</small><b>${n(d.total)}</b>건 · ${n(d.lines)}줄</div>
-        <div class="wiz-chip ok"><small>바로 가능</small><b>${n(d.ready)}</b>건</div>
-        <div class="wiz-chip warn"><small>확인 필요</small><b>${n(d.ambig)}</b>건 <span class="sub">같은 모델에 품목 여럿</span></div>
-        <div class="wiz-chip bad"><small>코드 없음</small><b>${n(d.unmapped)}</b>건</div>
+        <div class="wiz-chip ok" title="모든 줄에 이카운트 품목이 하나로 정해진 주문입니다"><small>바로 가능</small><b>${n(d.ready)}</b>건</div>
+        <div class="wiz-chip warn" title="같은 모델·상품명으로 등록된 이카운트 품목이 둘 이상이라 ③에서 어느 것인지 골라야 합니다 (예: 단품 / 1+1 / 4색 패키지, 정품 / 재생)"><small>확인 필요</small><b>${n(d.ambig)}</b>건 <span class="sub">품목 후보 여럿 — ③에서 고름</span></div>
+        <div class="wiz-chip bad" title="이카운트 품목을 하나도 찾지 못한 줄이 있는 주문입니다"><small>코드 없음</small><b>${n(d.unmapped)}</b>건</div>
         ${d.done?`<div class="wiz-chip"><small>이미 만든 주문</small><b>${n(d.done)}</b>건</div>`:''}
       </div>`:''}`
       :(cfg.upload?`<div class="wiz-drop" id="wzDrop" style="cursor:pointer"><svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg><div><b>샵링커 주문 파일(.xls/.xlsx)</b>을 여기에 놓거나 눌러서 고르세요.</div>
@@ -1985,6 +2003,7 @@ function goTab(name, fromHistory){
   if(name==='stock' && !STK_LOADED) loadStk();
   if(name==='order') initOrderTab();
   if(!fromHistory){ try{ (history.state&&history.state.tab===name) ? history.replaceState({tab:name},'','#'+name) : history.pushState({tab:name},'','#'+name); }catch(e){} }
+  gfabShow(name);
   window.scrollTo({top:0});
   setTimeout(()=>buildSubTabs(name),60); setTimeout(()=>buildSubTabs(name),900);   /* 데이터가 늦게 그려지는 탭은 한 번 더 */
 }
@@ -2013,7 +2032,16 @@ $('s_stage').addEventListener('click', e=>{ const b=e.target.closest('button'); 
   $('s_stage').querySelectorAll('button').forEach(x=>x.className=''); b.className='on '+(b.dataset.v==='판매완료'?'done':'open'); });
 $('r_mode').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
   $('r_mode').querySelectorAll('button').forEach(x=>x.className=''); b.className='on'; setReportRange(b.dataset.v); loadReport(); });
-$('c_cat').addEventListener('click', e=>{ const c=e.target.closest('.chip'); if(!c) return; $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); c.classList.add('on'); });
+/* 관심 모델도 여러 개 — Enter·쉼표·탭으로 칩에 넣고, 저장은 쉼표로 이어서 */
+function cModels(){ return [...$('c_models').querySelectorAll('.chip')].map(c=>c.dataset.v); }
+function cModelAdd(v){ v=(v||'').trim().toUpperCase().replace(/,+$/,''); if(!v) return; if(cModels().includes(v)) return;
+  const c=document.createElement('span'); c.className='chip'; c.dataset.v=v; c.textContent=v; c.title='빼기'; c.onclick=()=>c.remove(); $('c_models').appendChild(c); }
+function cModelsSet(list){ $('c_models').innerHTML=''; (list||[]).forEach(cModelAdd); }
+function cModelFlush(){ const i=$('c_model'); i.value.split(',').forEach(cModelAdd); i.value=''; }
+$('c_model').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===','||e.key==='Tab'){ if($('c_model').value.trim()){ e.preventDefault(); cModelFlush(); } } });
+$('c_model').addEventListener('blur', ()=>{ if($('c_model').value.trim()) cModelFlush(); });
+/* 관심 품목은 여러 개 고를 수 있다 (저장은 쉼표로 이어서) */
+$('c_cat').addEventListener('click', e=>{ const c=e.target.closest('.chip'); if(!c) return; c.classList.toggle('on'); });
 
 
 /* ═══ 판매 저장 ═══ */
@@ -2097,7 +2125,7 @@ function toSale(ref,name){ goTab('sale'); $('s_consult').value=ref; if(name) $('
 /* 진행중 상담의 고객 이름 → 같은 고객으로 상담 입력 (후속 상담) */
 function ocToConsult(ref,name,tel,interest){ goTab('consult'); custClear('c');
   $('c_name').value=name||''; if(tel){ $('c_phone').value=tel; hyphen($('c_phone')); }
-  if(interest){ const chip=[...$('c_cat').querySelectorAll('.chip')].find(x=>x.dataset.v===interest.split(',')[0].trim()); if(chip) chip.click(); }
+  if(interest){ const want=interest.split(',').map(x=>x.trim()); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on', want.includes(x.dataset.v))); }
   $('c_content').value = `이전 상담 ${ref} 이어서 · `; toast(`${name} 님 후속 상담 — 내용을 적고 저장하세요`,'ok'); setTimeout(()=>$('c_content').focus(),100); }
 function pickMine(key,name){ goTab('consult'); LINK.c=key; $('c_name').value=name; $('c_linkedTxt').textContent=`기존 고객 연결됨 · ${name}`; $('c_linked').classList.remove('hidden'); $('c_hist').classList.add('hidden'); }
 function histHTML(x){ if(!x.history||!x.history.length) return ''; return `<div class="h">이전 이력 ${x.consults?`· 상담 ${x.consults}건`:''} ${x.orders?`· 구매 ${x.orders}건`:''} ${x.handler?`· 담당 ${esc(x.handler)}${x.handler===ME?'<span class="mine">내 고객</span>':''}`:''}</div>`+
@@ -2204,9 +2232,9 @@ async function shareReport(){ const t=$('r_text').value; if(!t) return toast('�
 
 /* ═══ 상담 저장 ═══ */
 async function submitConsult(){
-  const cat = $('c_cat').querySelector('.on');
+  const cats = [...$('c_cat').querySelectorAll('.chip.on')].map(x=>x.dataset.v);
   const p = { consult_at:$('c_date').value, handler:$('c_handler').value, customer_name:$('c_name').value.trim(), customer_phone:$('c_phone').value.trim(), buyer_key: LINK.c||null,
-    interest_category: cat?cat.dataset.v:'', interest_model_code:$('c_model').value.trim(), inflow_route:$('c_route').value, result:$('c_result').value,
+    interest_category: cats.join(', '), interest_model_code:[...cModels(), ...$('c_model').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean)].filter((v,i,a)=>a.indexOf(v)===i).join(', '), inflow_route:$('c_route').value, result:$('c_result').value,
     expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(), callback_at: cbISO(),
     consent_marketing:$('c_consent').classList.contains('on'), gift_name:$('c_gift').value.trim()||null, gift_amount:num($('c_gift_amt'))||null };
   if(!p.customer_name && !p.buyer_key) return toast('고객명을 입력하세요','bad');
@@ -2215,14 +2243,109 @@ async function submitConsult(){
   try{ const r = await rpc('fn_store_consult_submit',{p_code:CODE,p_data:p});
     toast(r.callback_at?`상담 저장됨 · 콜백 ${fmtWhen(r.callback_at).join(' ')} 예약`:'상담 저장됨','ok');
     $('c_ref').classList.remove('hidden'); $('c_ref').innerHTML = `상담번호 <b style="color:var(--ink);font-size:15px">${r.ref}</b><br>구매로 이어지면 판매 입력의 "상담번호"에 적어주세요${r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '내 고객' 탭에서 알려드립니다`:''}`;
-    ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt'].forEach(id=>$(id).value=''); loadGifts(); custClear('c'); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
+    ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt'].forEach(id=>$(id).value=''); loadGifts(); custClear('c'); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); cModelsSet([]); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
     await loadStatus(); render();
   }catch(e){ toast(e.message,'bad'); }
   b.disabled=false; b.textContent='저장';
 }
 
 /* ═══ 일 마감 ═══ */
-function setDaily(d){ $('d_date').value = todayStr(d); }
+function setDaily(d){ $('d_date').value = todayStr(d); loadDailyDay(); }
+/* ═══ 일 마감 = 판매 입력 확인. 본인/전체 스코프 ═══ */
+let D_SCOPE='mine', D_PRE=null;
+function dScopeAll(){ return D_SCOPE==='all'; }
+$('d_scope').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+  D_SCOPE=b.dataset.v; $('d_scope').querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+  $('d_dpsCard').classList.toggle('hidden', !dScopeAll());
+  if(STATUS) renderDailyLists(STATUS); loadDailyDay(); });
+function renderDailyLists(s){
+  const all=dScopeAll();
+  const un = all ? (s.unclosed_days||[]) : (s.unclosed_mine||[]);
+  if(un.length){ $('pillUnclosed').textContent = `미마감 ${un.length}일`; $('pillUnclosed').classList.remove('hidden');
+    $('d_unclosedWrap').classList.remove('hidden');
+    $('d_unclosed').innerHTML = un.map(d=>`<span class="chip" onclick="$('d_date').value='${d}';loadDailyDay()">${d.slice(5).replace('-','/')}</span>`).join('');
+  } else { $('pillUnclosed').classList.add('hidden'); $('d_unclosedWrap').classList.add('hidden'); }
+  const cr = all ? (s.closed_recent||[]) : (s.closed_mine||[]);
+  $('d_recentSub').textContent = '7일 · ' + (all?'매장 전체':'본인');
+  $('d_recent').innerHTML = cr.length ? cr.map(x=>`
+    <div class="item"><div class="t">${x.d.slice(5).replace('-','/')}</div><div class="p">마감 완료${all&&x.by?` <small style="color:var(--faint)">· ${esc(x.by)}</small>`:''}${Number(x.pending)?` <small style="color:var(--warn)">· 미확정 ${wonS(x.pending)}</small>`:''}</div><div class="a">${won(x.net)}</div>
+      <div class="ed"><button onclick="dailyEdit('${x.d}')">수정</button><button class="del" onclick="dailyDelete('${x.d}','${won(x.net)}')">삭제</button></div></div>`).join('') : `<div class="empty">최근 7일 ${all?'매장':'내'} 마감 없음</div>`;
+  document.querySelectorAll('.tab').forEach(b=>{ if(b.dataset.tab==='daily'){ b.innerHTML = '일 마감' + (un.length?`<span class="n">${un.length}</span>`:''); } });
+}
+/* 날짜를 고르면 : 판매 입력 집계(자동) + 이미 저장한 마감(있으면 그 값) 을 표로 */
+async function loadDailyDay(){
+  const d=$('d_date').value; if(!d||!CODE) return;
+  $('d_sum').innerHTML='불러오는 중…';
+  let p; try{ p=await rpc('fn_store_daily_prefill',{p_code:CODE,p_date:d,p_all:dScopeAll()}); }catch(e){ $('d_sum').innerHTML=`<span class="warn">${esc(e.message)}</span>`; return; }
+  D_PRE=p; $('d_me').textContent = dScopeAll()?'매장 전체':`${p.me}`;
+  const T=p.total||{};
+  const closed=p.closed||[]; const byKey=r=>r.sale_kind+'|'+(r.handler||'');
+  const cmap={}; closed.forEach(r=>cmap[byKey(r)]=r);
+  /* 표 줄 = 판매 입력 집계 줄 ∪ 저장된 마감 줄 */
+  const keys=new Set([...(p.rows||[]).map(byKey), ...closed.map(byKey)]);
+  $('d_rows').innerHTML='';
+  [...keys].sort().forEach(k=>{ const src=(p.rows||[]).find(r=>byKey(r)===k), c=cmap[k];
+    const r=c||src; addDailyRow({sale_kind:r.sale_kind,handler:r.handler,sales:c?c.sales:src.sales,pending:c?c.pending:src.pending,refund:c?c.refund:0,n:src?src.n:(c?c.n:0),auto:!!src,saved:!!c}); });
+  if(!keys.size) addDailyRow({sale_kind:'직판',handler:dScopeAll()?'':ME,sales:0,pending:0,refund:0,n:0});
+  const closedN=closed.length, savedTot=closed.reduce((a,x)=>a+Number(x.sales||0)-Number(x.refund||0),0);
+  $('d_sum').innerHTML=`<span>판매 입력 <b>${Number(T.n||0).toLocaleString('ko-KR')}건</b></span><span>판매완료 <b>${wonS(T.done||0)}</b></span><span>매출(미확정) <b>${wonS(T.open||0)}</b></span>`
+    + (closedN?`<span>· 저장된 마감 <b>${wonS(savedTot)}</b>${Math.abs(savedTot-Number(T.done||0))>0?` <span class="warn">판매 입력과 ${wonS(Math.abs(savedTot-Number(T.done||0)))} 차이</span>`:''}</span>`:'<span>· 아직 마감 안 함</span>');
+  $('d_byNote').textContent = closedN ? `${d} 마감 저장됨 · 입력 ${[...new Set(closed.map(x=>x.by).filter(Boolean))].join(', ')} — 고쳐서 [마감 저장]하면 내 줄이 새 내용으로 바뀝니다` : '';
+  $('d_btn').textContent = closedN ? '마감 수정 저장' : '마감 저장';
+  /* DPS 대사 (전체 모드) */
+  if(dScopeAll()){
+    const dps=p.dps||[], fmt=v=>Number(v)?Number(v).toLocaleString('ko-KR'):'';
+    const c=dps.find(x=>x.sale_kind==='일시불')||{}, sb=dps.find(x=>x.sale_kind==='구독')||{};
+    $('d_cash_s').value=fmt(c.sales); $('d_cash_r').value=fmt(c.refund); $('d_sub_s').value=fmt(sb.sales); $('d_sub_r').value=fmt(sb.refund);
+    dpsDiff();
+  }
+}
+function addDailyRow(r){ r=r||{}; const handlers=(STATUS&&STATUS.staff)||[];
+  const row=document.createElement('div'); row.className='drow'+(r.auto?' auto':''); const fmt=v=>Number(v)?Number(v).toLocaleString('ko-KR'):'';
+  row.innerHTML=`<select class="in dk">${['직판','일시불','구독'].map(k=>`<option ${k===(r.sale_kind||'직판')?'selected':''}>${k}</option>`).join('')}</select>
+    <select class="in dh">${handlers.length?'':'<option value="">프로</option>'}${handlers.map(h=>`<option ${h===(r.handler||'')?'selected':''}>${h}</option>`).join('')}</select>
+    <input class="in num ds" inputmode="numeric" placeholder="0" value="${fmt(r.sales)}" oninput="comma(this)" title="판매완료(확정)">
+    <input class="in num dp" inputmode="numeric" placeholder="0" value="${fmt(r.pending)}" oninput="comma(this)" title="매출(미확정)">
+    <input class="in num dr" inputmode="numeric" placeholder="0" value="${fmt(r.refund)}" oninput="comma(this)" title="환불">
+    <button class="x" title="줄 빼기" onclick="this.parentNode.remove()">×</button>`;
+  if(r.n) row.dataset.n=r.n;
+  if(r.handler && !handlers.includes(r.handler)){ const o=document.createElement('option'); o.textContent=r.handler; o.selected=true; row.querySelector('.dh').appendChild(o); }
+  $('d_rows').appendChild(row);
+}
+function dailyRows(){ const out=[]; $('d_rows').querySelectorAll('.drow').forEach(r=>{ const h=r.querySelector('.dh').value; if(!h) return;
+  const s=num(r.querySelector('.ds')), pnd=num(r.querySelector('.dp')), f=num(r.querySelector('.dr'));
+  if(s||pnd||f) out.push({sale_kind:r.querySelector('.dk').value,handler:h,sales:s,pending:pnd,refund:f,n:Number(r.dataset.n||0)}); }); return out; }
+async function dailyEdit(d){ goTab('daily'); $('d_date').value=d; await loadDailyDay(); $('d_date').scrollIntoView({behavior:'smooth',block:'center'}); }
+async function dailyDelete(d, netTxt){
+  const all=dScopeAll();
+  if(!confirm(`${d} ${all?'매장 전체':'내'} 마감(${netTxt})을 삭제할까요?\n매장 매출 집계에서 빠지고 미마감으로 다시 표시됩니다.`)) return;
+  try{ const r=await rpc('fn_store_daily_delete',{p_code:CODE,p_date:d,p_all:all}); toast(`${d} 마감 ${r.deleted}줄 삭제`,'ok'); await loadStatus(); render(); if($('d_date').value===d) loadDailyDay(); }
+  catch(e){ toast(e.message,'bad'); }
+}
+async function submitDaily(){
+  const d=$('d_date').value; if(!d) return toast('마감일을 선택하세요','bad');
+  const rows=dailyRows(); if(!rows.length) return toast('마감할 줄이 없습니다 — 프로와 금액을 확인하세요','bad');
+  const total=rows.reduce((a,x)=>a+x.sales-x.refund,0), pend=rows.reduce((a,x)=>a+x.pending,0);
+  if(!confirm(`${d} 마감 · 판매완료 ${won(total)}${pend?` · 미확정 ${won(pend)}`:''}\n${rows.length}줄 저장할까요?`)) return;
+  const b=$('d_btn'); b.disabled=true; const t=b.textContent; b.textContent='저장 중…';
+  try{ await rpc('fn_store_daily_submit',{p_code:CODE,p_date:d,p_rows:rows});
+    toast(`${d} 마감 저장 · ${won(total)}`,'ok');
+    await loadStatus(); render(); await loadDailyDay();
+  }catch(e){ toast(e.message,'bad'); }
+  finally{ b.disabled=false; b.textContent=t; }
+}
+/* DPS 합계 대사 */
+function dpsDiff(){ const sc=(D_PRE&&D_PRE.store_closed)||[]; const f=k=>Number((sc.find(x=>x.sale_kind===k)||{}).sales||0)-Number((sc.find(x=>x.sale_kind===k)||{}).refund||0);
+  [['일시불','d_cash'],['구독','d_sub']].forEach(([k,id])=>{ const dps=num($(id+'_s'))-num($(id+'_r')), mine=f(k); const el=$(id+'_diff');
+    if(!num($(id+'_s'))&&!num($(id+'_r'))){ el.textContent=`마감 합계 ${wonS(mine)}`; el.style.color=''; return; }
+    const diff=dps-mine; el.textContent = diff===0?`마감 합계 ${wonS(mine)} · 일치`:`마감 합계 ${wonS(mine)} · 차이 ${diff>0?'+':''}${wonS(diff)}`; el.style.color = diff===0?'var(--ok)':'var(--warn)'; }); }
+async function submitDps(){
+  const d=$('d_date').value; if(!d) return toast('날짜를 선택하세요','bad');
+  const rows=[{sale_kind:'일시불',sales:num($('d_cash_s')),refund:num($('d_cash_r'))},{sale_kind:'구독',sales:num($('d_sub_s')),refund:num($('d_sub_r'))}];
+  const b=$('d_dpsBtn'); b.disabled=true;
+  try{ await rpc('fn_store_dps_submit',{p_code:CODE,p_date:d,p_rows:rows}); toast(`${d} DPS 합계 저장`,'ok'); await loadDailyDay(); }
+  catch(e){ toast(e.message,'bad'); } finally{ b.disabled=false; }
+}
 /* ── 온라인 채널 일별 ── */
 let OC_LOADED=false, OC_DAY=null;
 function setOcDate(d){ $('oc_date').value=todayStr(d); loadOnlineDay(); }
@@ -2253,51 +2376,6 @@ async function saveOnlineDay(){
   catch(e){ toast(e.message,'bad'); }
   b.disabled=false;
 }
-function addDirectRow(name=''){
-  const handlers = STATUS.staff || [];
-  const row=document.createElement('div'); row.className='handler-row';
-  row.innerHTML = `<select class="in dh"><option value="">프로</option>${handlers.map(h=>`<option ${h===name?'selected':''}>${h}</option>`).join('')}</select>
-    <input class="in num ds" inputmode="numeric" placeholder="매출" oninput="comma(this)"><input class="in num dr" inputmode="numeric" placeholder="환불" oninput="comma(this)">
-    <button class="x" onclick="this.parentNode.remove()">×</button>`;
-  $('d_direct').appendChild(row);
-}
-/* 이미 저장한 마감을 폼으로 불러와 고친다 (저장하면 그 날짜는 통째로 새 내용으로 바뀐다) */
-async function dailyEdit(d){
-  let g; try{ g=await rpc('fn_store_daily_get',{p_code:CODE,p_date:d}); }catch(e){ return toast(e.message,'bad'); }
-  const rows=(g&&g.rows)||[]; const fmt=v=>v?Number(v).toLocaleString('ko-KR'):'';
-  $('d_date').value=d;
-  const cash=rows.find(r=>r.sale_kind==='일시불')||{}, sub=rows.find(r=>r.sale_kind==='구독')||{};
-  $('d_cash_s').value=fmt(cash.sales); $('d_cash_r').value=fmt(cash.refund); $('d_sub_s').value=fmt(sub.sales); $('d_sub_r').value=fmt(sub.refund);
-  $('d_direct').innerHTML='';
-  const direct=rows.filter(r=>r.sale_kind==='직판'); if(!direct.length) addDirectRow(ME);
-  direct.forEach(r=>{ addDirectRow(r.handler||''); const el=$('d_direct').lastElementChild; el.querySelector('.ds').value=fmt(r.sales); el.querySelector('.dr').value=fmt(r.refund); });
-  const by=rows.map(r=>r.by).filter(Boolean); $('d_byNote').textContent = by.length?`${d} 마감 · 입력 ${[...new Set(by)].join(', ')} · 고쳐서 [마감 저장]을 누르면 이 날짜 내용이 새로 바뀝니다`:'';
-  $('d_btn').textContent='마감 수정 저장';
-  goTab('daily'); $('d_date').scrollIntoView({behavior:'smooth',block:'center'});
-}
-async function dailyDelete(d, netTxt){
-  if(!confirm(`${d} 마감(${netTxt})을 삭제할까요?\n대시보드 매장 매출에서 빠지고, 미마감 날짜로 다시 표시됩니다.`)) return;
-  try{ await rpc('fn_store_daily_delete',{p_code:CODE,p_date:d}); toast(`${d} 마감 삭제`,'ok'); await loadStatus(); render(); }
-  catch(e){ toast(e.message,'bad'); }
-}
-async function submitDaily(){
-  const d=$('d_date').value; if(!d) return toast('마감일을 선택하세요','bad');
-  const rows=[ {sale_kind:'일시불', sales:num($('d_cash_s')), refund:num($('d_cash_r'))}, {sale_kind:'구독', sales:num($('d_sub_s')), refund:num($('d_sub_r'))} ];
-  $('d_direct').querySelectorAll('.handler-row').forEach(r=>{ const h=r.querySelector('.dh').value; const s=num(r.querySelector('.ds')), f=num(r.querySelector('.dr')); if(h && (s||f)) rows.push({sale_kind:'직판',handler:h,sales:s,refund:f}); });
-  const total = rows.reduce((a,x)=>a+x.sales-x.refund,0);
-  if(!confirm(`${d} 마감 순매출 ${won(total)}\n저장할까요? (같은 날짜는 덮어씁니다)`)) return;
-  const b=$('d_btn'); b.disabled=true; b.textContent='저장 중…';
-  try{ await rpc('fn_store_daily_submit',{p_code:CODE,p_date:d,p_rows:rows});
-    toast(`${d} 마감 저장 · ${won(total)}`,'ok');
-    ['d_cash_s','d_cash_r','d_sub_s','d_sub_r'].forEach(id=>$(id).value=''); $('d_direct').innerHTML=''; addDirectRow(ME); $('d_byNote').textContent='';
-    await loadStatus(); render();
-  }catch(e){ toast(e.message,'bad'); }
-  b.disabled=false; b.textContent='마감 저장';
-}
-
-
-
-
 /* ═══ 사은품 : 한 번 쓴 사은품은 칩으로, 링크(문의 시트·오피스콘)는 버튼으로 ═══ */
 let GIFTS=null;
 async function loadGifts(){
@@ -2315,8 +2393,15 @@ async function loadGifts(){
       L.starbucks?`<a href="${esc(L.starbucks)}" target="_blank" rel="noopener">스타벅스 ↗</a>`:'',
       L.shinsegae?`<a href="${esc(L.shinsegae)}" target="_blank" rel="noopener">신세계 상품권 ↗</a>`:'',
       L.login_id?`<a class="acct" onclick="giftAcct()">오피스콘 계정 보기</a>`:''].filter(Boolean);
-    gp.innerHTML='<b>사은품 · 기프티콘</b>'+items.join(''); $('gfab').classList.toggle('hidden', !items.length); }
+    gp.innerHTML='<b>사은품 · 기프티콘</b>'+items.join('');
+    $('gfab').dataset.has = items.length?'1':'0';
+    gfabShow(document.querySelector('.tab.active')?.dataset.tab); }
 }
+/* 🎁 사은품 버튼은 판매 입력·상담 입력에서만 (로그인 화면 포함 그 외에는 숨김) */
+const GFAB_TABS=['sale','consult'];
+function gfabShow(tab){ const f=$('gfab'); if(!f) return;
+  const on = GFAB_TABS.includes(tab) && !$('app').classList.contains('hidden') && f.dataset.has==='1';
+  f.classList.toggle('hidden', !on); if(!on) f.classList.remove('open'); }
 document.addEventListener('click', e=>{ const f=$('gfab'); if(f && !e.target.closest('#gfab')) f.classList.remove('open'); });
 function pickGift(pre,name,price){ $(pre+'_gift').value=name; const a=$(pre+'_gift_amt'); a.value=price?Number(price).toLocaleString('ko-KR'):''; }
 function giftAcct(){ const L=(GIFTS&&GIFTS.links)||{};
@@ -2356,7 +2441,7 @@ function renderRequests(){
       $('req_sub').textContent=open.length?`${open.length}건 대기`:'';
       $('req_rows').innerHTML=open.length?open.map(x=>`<div class="rq${x.status==='taken'?' taken':''}">
           <div class="t"><b>${esc(x.product)}</b> × ${x.qty}${x.model?` <span style="font-family:ui-monospace,monospace;font-size:12px;color:var(--muted)">${esc(x.model)}</span>`:''}
-            <small>${esc(x.at)} · ${esc(x.by)} 요청 · ${x.cust?esc(x.cust):'고객 미상'}${x.phone?' '+x.phone:''} · ${won(x.amount||0)}${x.kind?' · '+esc(x.kind):''}${x.note?' · '+esc(x.note):''}</small>
+            <small>${esc(x.at)} · ${esc(x.by)}${x.by_dept?`(${esc(x.by_dept)})`:''} 요청 · ${x.cust?esc(x.cust):'고객 미상'}${x.phone?' '+x.phone:''} · ${won(x.amount||0)}${x.kind?' · '+esc(x.kind):''}${x.note?' · '+esc(x.note):''}</small>
             ${x.status==='taken'?`<small><span class="st">${x.mine?'내가':esc(x.taken_by)} 처리 중</span></small>`:''}
             ${(x.items&&x.items.length>1)?`<div class="rq-items">${x.items.map(it=>`<div><span>${esc(it.product_name)} × ${esc(String(it.qty||1))}${it.model_code?` <i>${esc(it.model_code)}</i>`:''}</span><b>${(it.cand||[])[0]?esc(it.cand[0].code):'<em>코드 없음</em>'}</b></div>`).join('')}</div>`
             :`<div class="cands">${(x.cand||[]).length?(x.cand||[]).map((c,i)=>`<span class="${i===0?'first':''}" title="${esc(c.name||'')}">${esc(c.code)}</span>`).join(''):'<span style="background:#FBE9E7;color:#B3261E">품목코드 후보 없음 — 품목 검색으로 찾으세요</span>'}</div>`}</div>
@@ -2381,7 +2466,7 @@ function reqToOrder(id){
     :[{item_code:c?c.code:'', item_name:c?(c.name||''):(x.model||x.product||''), qty:x.qty, unit_price:unit}];
   (async()=>{ if(!OF_STORE) await initOrderTab(); await OF_STORE.ready;
     OF_STORE.prefill({origin:'store', channel:'매장', order_no:'REQ-'+id, cust_name:x.cust||'', handler:x.by||null,
-      remark:`매장 판매 요청 #${id} · ${x.by}${x.model?' · '+x.model:''}`, lines});
+      remark:`판매 요청 #${id} · ${x.by}${x.by_dept?'('+x.by_dept+')':''}${x.model?' · '+x.model:''}`, lines});
     $('ofHostStore').scrollIntoView({behavior:'smooth',block:'start'}); })();
   if(x.status==='open') rpc('fn_store_request_take',{p_code:CODE,p_id:id}).catch(()=>{});
   const nOk=lines.filter(l=>l.item_code).length; toast(nOk===lines.length?`품목코드 ${lines.length}줄 모두 채웠습니다. 확인하고 등록하세요`:`${lines.length}줄 중 ${nOk}줄만 코드를 찾았습니다. 나머지는 골라 주세요`, nOk===lines.length?'ok':'bad');
