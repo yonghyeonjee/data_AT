@@ -281,7 +281,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .wiz-chip small{display:block;font-size:11px;color:#646D7C;margin-bottom:2px} .wiz-chip b{font-size:16px}
 .wiz-chip.ok b{color:#0F7B6C} .wiz-chip.warn b{color:#C88A0E} .wiz-chip.bad b{color:#B3261E}
 /* OF:CSS:BEGIN — 주문서 직접 입력 폼 (공용: admin.html / store.html) */
-.of{--of-line:#E4E7EE;--of-line2:#CDD3DE;--of-muted:#646D7C;--of-faint:#98A1B0;--of-ink:#141820;--of-ok:#0F7B6C;--of-warn:#C88A0E;--of-bad:#C0392B;--of-brand:#2F5BEA;font-size:13px}
+.of{position:relative;--of-line:#E4E7EE;--of-line2:#CDD3DE;--of-muted:#646D7C;--of-faint:#98A1B0;--of-ink:#141820;--of-ok:#0F7B6C;--of-warn:#C88A0E;--of-bad:#C0392B;--of-brand:#2F5BEA;font-size:13px}
 .of .of-head{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 10px;margin-bottom:10px}
 .of .of-head>div{min-width:0;position:relative}
 .of label.of-l{display:block;font-size:11.5px;color:var(--of-muted);margin:0 0 4px;font-weight:600;letter-spacing:-.1px}
@@ -303,9 +303,10 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .of .of-bar button{border:1px solid var(--of-line2);background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;color:var(--of-ink);cursor:pointer;font-family:inherit;font-weight:500}
 .of .of-bar button:hover{background:#F7F8FA}
 .of .of-tw{overflow-x:auto;border:1px solid var(--of-line);border-radius:12px;background:#fff}
-.of table.of-t{width:100%;min-width:760px;border-collapse:collapse;font-size:12.5px}
+.of table.of-t{width:100%;min-width:860px;border-collapse:collapse;font-size:12.5px}
 .of table.of-t th{font-size:11px;color:var(--of-muted);font-weight:600;text-align:left;padding:8px 6px;background:#F7F8FA;border-bottom:1px solid var(--of-line);white-space:nowrap}
 .of table.of-t th.n,.of table.of-t td.n{text-align:right}
+.of table.of-t th:nth-child(4){min-width:220px}
 .of table.of-t td{padding:3px 4px;border-bottom:1px solid var(--of-line);vertical-align:middle;position:relative}
 .of table.of-t tr:last-child td{border-bottom:0}
 .of table.of-t td.idx{color:var(--of-faint);font-size:11px;text-align:center;width:28px}
@@ -321,7 +322,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .of tr.pick td.code-c input{background:#FFF8E8;border-color:#F0D9A6} .of tr.miss td.code-c input{background:#FDECEC;border-color:#F1C9C9}
 .of table.of-t td .x{border:0;background:transparent;color:var(--of-faint);font-size:16px;line-height:1;cursor:pointer;padding:4px 6px;border-radius:6px}
 .of table.of-t td .x:hover{color:var(--of-bad);background:#FDECEC}
-.of .of-cands{position:absolute;left:0;min-width:260px;top:calc(100% - 2px);background:#fff;border:1px solid var(--of-line2);border-radius:10px;box-shadow:0 10px 30px rgba(20,24,32,.14);z-index:70;padding:4px;max-height:240px;overflow:auto}
+.of .of-cands{position:absolute;left:0;min-width:260px;width:max-content;top:0;background:#fff;border:1px solid var(--of-line2);border-radius:10px;box-shadow:0 10px 30px rgba(20,24,32,.14);z-index:70;padding:4px;max-height:240px;overflow:auto}
 .of .of-cands div{padding:7px 10px;border-radius:7px;cursor:pointer;display:flex;gap:10px;align-items:center;font-size:12.5px}
 .of .of-cands div:hover,.of .of-cands div.on{background:#EEF2FF}
 .of .of-cands small{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--of-ok);font-size:11px;flex:0 0 auto}
@@ -1117,6 +1118,7 @@ function ofMount(host, cfg){
     const pa=q('[data-f=paste]'); q('[data-a=paste]').onclick=()=>{ pa.hidden=!pa.hidden; if(!pa.hidden) pa.focus(); };
     pa.addEventListener('paste',e=>{ const txt=(e.clipboardData||window.clipboardData).getData('text'); if(txt&&/[\t\n]/.test(txt)){ e.preventDefault(); ingest(txt); pa.value=''; pa.hidden=true; } });
     pa.addEventListener('change',()=>{ if(pa.value.trim()){ ingest(pa.value); pa.value=''; pa.hidden=true; } });
+    host.querySelector('.of-tw').addEventListener('scroll',closeCands,{passive:true});
     host.querySelector('.of-tw').addEventListener('paste',e=>{ const txt=(e.clipboardData||window.clipboardData).getData('text'); if(txt&&/[\t\n]/.test(txt.trim())){ e.preventDefault(); ingest(txt, e.target.closest('tr')); } });
     ensureBlank(); renderRows();
   }
@@ -1214,9 +1216,12 @@ function ofMount(host, cfg){
     td.appendChild(box); inp.style.paddingRight=(box.offsetWidth+12)+'px'; }
   function closeCands(){ host.querySelectorAll('.of-cands').forEach(e=>e.remove()); }
   function showCands(tr,i){ closeCands(); const r=S.rows[i]; if(!r||!r.cands) return; const td=tr.querySelector('td.code-c'); const box=document.createElement('div'); box.className='of-cands';
+    // 표는 가로 스크롤 상자라 안에 두면 잘린다 → 폼 바깥(host)에 붙이고 위치만 맞춘다
+    const hr=host.getBoundingClientRect(), cr=td.getBoundingClientRect();
+    box.style.top=(cr.bottom-hr.top-2)+'px'; box.style.left=Math.max(4, Math.min(cr.left-hr.left, hr.width-Math.min(320,hr.width-8)))+'px'; box.style.maxWidth=(hr.width-8)+'px';
     box.innerHTML=(r.cands.length?r.cands.map((c,k)=>`<div data-k="${k}"><small>${esc(c.code)}</small><span>${esc(c.name)}</span></div>`).join(''):'<div class="of-empty">후보가 없습니다 — 품목명을 고쳐 보세요</div>');
     box.querySelectorAll('[data-k]').forEach(el=>el.onmousedown=e=>{ e.preventDefault(); const c=r.cands[Number(el.dataset.k)]; r.code=c.code; r.name=c.name; r.st='ok'; r.cands=null; tr.className='ok'; tr.querySelector('[data-c=code]').value=c.code; tr.querySelector('[data-c=name]').value=c.name; closeCands(); foot(); resolveRows([i]); const nx=tr.nextElementSibling; if(nx){ const p=S.rows[Number(nx.dataset.i)]; if(p&&p.st==='pick') setTimeout(()=>showCands(nx,Number(nx.dataset.i)),50); } });
-    td.appendChild(box); }
+    host.appendChild(box); }
 
   /* ── 밖에서 쓰는 것 ─────────────────────────────────── */
   function val(k){ const e=q(`[data-f=${k}]`); return e?e.value:''; }
