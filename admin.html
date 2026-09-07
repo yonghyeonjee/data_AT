@@ -924,6 +924,12 @@ tr.cb-hide{display:none}
             <span style="margin-left:auto;display:flex;gap:6px"><input class="in" id="setQ" placeholder="세트 검색" style="min-width:160px" onkeydown="if(event.key==='Enter')loadSets()"><button class="btn sm ghost" onclick="loadSets()">조회</button><button class="btn sm" onclick="openSetModal()">+ 세트 지정</button></span></h3>
           <div class="tw"><table><thead><tr><th>세트 품목</th><th>구성품 (수량)</th><th>재고</th><th></th></tr></thead><tbody id="tbSets"><tr><td colspan="4" class="note">-</td></tr></tbody></table></div>
         </div>
+        <div class="card" id="subCard">
+          <h3>구독 상품 · 요금 <span>삼성 AI 구독 — 제품 한 줄 + 딸린 케어 서비스(무상수리·방문케어·재설치)가 <b>모델코드 · 계약기간 · 서비스주기 · 케어구분</b> 하나로 묶입니다. 담당자 상담 입력에서 모델을 넣으면 월 구독료가 참고로 뜹니다</span>
+            <span style="margin-left:auto;display:flex;gap:6px"><input class="in" id="subQ" placeholder="모델 · 품목 검색" style="min-width:160px" onkeydown="if(event.key==='Enter')loadSubPlans()"><button class="btn sm ghost" onclick="loadSubPlans()">조회</button><button class="btn sm" onclick="subPasteOpen()">붙여넣기로 등록</button></span></h3>
+          <div class="qmeta" id="subMeta"></div>
+          <div class="tw"><table><thead><tr><th>모델</th><th>품목</th><th class="num">계약</th><th class="num">서비스 주기</th><th>케어</th><th class="num">월 구독료</th><th class="num">총 구독료</th><th>구성</th></tr></thead><tbody id="tbSub"><tr><td colspan="8" class="note">-</td></tr></tbody></table></div>
+        </div>
         <div class="callout">이카운트 <b>품목 내보내기</b>(품목코드·상품명·규격·단위·재고관리여부·안전재고·매입가) 파일을 <b>데이터 가져오기</b>에 올리면 자동 인식되어 이 목록이 갱신됩니다. 개별 수정은 행 끝 편집.</div>
         <div class="card">
           <div class="filters">
@@ -1556,6 +1562,15 @@ tr.cb-hide{display:none}
     <button class="btn ok" onclick="wiPasteSave()">등록</button></div>
 </div></div>
 
+<div class="overlay hidden" id="subPasteModal"><div class="modal" style="max-width:820px">
+  <h3>구독 상품 붙여넣기 등록</h3>
+  <p class="note">엑셀에서 머리글 포함해 그대로 붙여 넣으세요. 열 순서: <b>구분 · 품목1 · 품목2 · 계약 기간 · 상품명 · 서비스 주기 · 모델코드 · 총 구독료(V+) · 월구독료(V+) · 케어구분</b>.<br>
+    상품명이 <b>제품</b>인 줄이 플랜(제품 모델·요금)이고, 그 아래 같은 계약기간·주기·케어구분 줄들이 케어 구성으로 붙습니다. 같은 플랜을 다시 넣으면 요금·구성이 새 내용으로 바뀝니다.</p>
+  <textarea class="in" id="subPasteTx" style="width:100%;box-sizing:border-box;height:240px;font-family:ui-monospace,Menlo,monospace;font-size:12px" placeholder="여기에 붙여넣기 (Ctrl+V)"></textarea>
+  <p class="note" id="subPasteMsg" style="min-height:18px"></p>
+  <div class="foot"><button class="btn ghost" onclick="closeModal('subPasteModal')">닫기</button><button class="btn ghost" onclick="subPastePreview()">미리보기</button><button class="btn ok" onclick="subPasteSave()">등록</button></div>
+</div></div>
+
 <datalist id="handlerList"></datalist>
 <div class="tip" id="tip"></div>
 <div id="loadbar"></div>
@@ -1806,6 +1821,39 @@ async function loadItems(page){
 }
 let SETS_LOADED=false;
 async function setNoStock(code,on){ try{ await rpc('fn_inv_item_no_stock',{p_codes:[code],p_no_stock:on}); toast(on?`${code} 재고 미차감(직배송)으로 표시`:`${code} 재고 차감으로 되돌림`,'ok'); rpcClear(); loadItems(itPage); }catch(e){ toast(e.message,'bad'); } }
+/* ═══ 구독 상품 · 요금 (sub.plan) ═══ */
+async function loadSubPlans(){
+  let d; try{ d=await rpc('fn_sub_plans',{p_q:$('subQ').value.trim()||null,p_limit:300}); }catch(e){ return toast(e.message,'bad'); }
+  $('subMeta').innerHTML=`<span>플랜 ${n(d.total||0)}</span><span>모델 ${n(d.models||0)}</span>`;
+  const rows=d.rows||[];
+  $('tbSub').innerHTML=rows.length?rows.map(r=>`<tr><td class="mono"><b>${esc(r.model)}</b></td><td>${esc(r.cat2||r.cat1||'')}<span class="note" style="margin-left:6px">${esc(r.biz||'')}</span></td>
+    <td class="num">${r.term}년</td><td class="num">${r.cycle}개월</td><td>${esc(r.care_case||'')}</td>
+    <td class="num"><b>${r.monthly_fee!=null?n(Math.round(r.monthly_fee))+'원':'—'}</b></td><td class="num">${r.total_fee!=null?n(Math.round(r.total_fee))+'원':'—'}</td>
+    <td style="font-size:11.5px;color:var(--muted)">${(r.items||[]).map(i=>esc(i.name.replace(/^.*?(무상수리서비스|방문케어 \d+회차|재설치)$/,'$1'))).join(' · ')||'—'}</td></tr>`).join('')
+    :'<tr><td colspan="8" class="note">등록된 구독 상품이 없습니다. [붙여넣기로 등록]으로 넣어 주세요.</td></tr>';
+}
+function subParse(text){
+  const out=[], bad=[];
+  String(text||'').split(/\r?\n/).forEach(line=>{
+    if(!line.trim()) return;
+    const c=line.split('\t').map(x=>x.trim());
+    if(c.length<7){ bad.push(line); return; }
+    if(/^구분$/.test(c[0])||/상품명/.test(c[4]||'')) return;
+    const [biz,cat1,cat2,term,name,cycle,code,total,monthly,cc]=c;
+    if(!name||!term||!cycle){ bad.push(line); return; }
+    out.push({biz,cat1,cat2,term,name,cycle,item_code:code,total_fee:total||null,monthly_fee:monthly||null,care_case:cc||''});
+  });
+  return {rows:out,bad};
+}
+function subPasteOpen(){ $('subPasteTx').value=''; $('subPasteMsg').textContent=''; $('subPasteModal').classList.remove('hidden'); setTimeout(()=>$('subPasteTx').focus(),50); }
+function subPastePreview(){ const {rows,bad}=subParse($('subPasteTx').value); const plans=rows.filter(r=>r.name==='제품');
+  $('subPasteMsg').innerHTML=rows.length?`읽은 줄 <b>${n(rows.length)}</b> · 플랜(제품 줄) <b>${n(plans.length)}</b> · 케어 구성 ${n(rows.length-plans.length)}줄 · 모델 ${[...new Set(plans.map(p=>p.item_code.toUpperCase()))].join(', ')}${bad.length?` · <span style="color:var(--bad)">건너뛴 줄 ${bad.length}</span>`:''}`
+    :'<span style="color:var(--bad)">읽을 수 있는 줄이 없습니다 — 탭으로 구분된 10개 열이어야 합니다.</span>'; }
+async function subPasteSave(){
+  const {rows}=subParse($('subPasteTx').value); if(!rows.length){ subPastePreview(); return; }
+  try{ const r=await rpc('fn_sub_plan_upsert',{p_rows:rows}); toast(`구독 상품 플랜 ${n(r.plans)}개 · 케어 구성 ${n(r.items)}줄 등록${r.skipped?` · ${n(r.skipped)}줄 건너뜀`:''}`,'ok'); closeModal('subPasteModal'); loadSubPlans(); }
+  catch(e){ $('subPasteMsg').innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; }
+}
 async function loadSets(){
   SETS_LOADED=true; let d; try{ d=await rpc('fn_inv_sets',{p_q:$('setQ').value.trim()||null},{fresh:true}); }catch(e){ $('tbSets').innerHTML=`<tr><td colspan="4" class="note">${esc(e.message)}</td></tr>`; return; }
   $('tbSets').innerHTML=(d||[]).map(x=>`<tr><td><b>${esc(x.set_name)}</b><div class="mono" style="font-size:11px;color:var(--faint)">${esc(x.set_code)}</div></td>
@@ -3589,7 +3637,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>loadItems(0),oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadWebInq(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:loadCrmFunnel,upload:loadUploads,log:()=>loadLog(0),settings:loadSettings,option:loadOption,notify:loadNotify};
+const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadWebInq(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:loadCrmFunnel,upload:loadUploads,log:()=>loadLog(0),settings:loadSettings,option:loadOption,notify:loadNotify};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
@@ -4226,7 +4274,7 @@ async function loadConsults(page){
   renderConsultChips(total);
   CONSULT_ROWS=rows; loadQuotes();
   if(cPage===0){ rpc('fn_consult_summary',{p_from:P.from,p_to:P.to,p_result:$('cRes').value||null,p_q:$('cQ').value||null,p_handler:$('cHd').value||null,p_route:$('cRoute').value||null}).then(renderConsultSummary).catch(()=>renderConsultSummary(null)); }
-  $('tbConsults').innerHTML=rows.map(c=>`<tr><td class="mono">${dtfmt(c.consult_at).slice(0,10)}</td><td class="mono" style="font-size:11px;color:var(--muted)">${esc(c.source_ref)}</td><td><b>${esc(c.customer_name||'-')}</b></td><td class="mono">${esc(c.phone||'-')}</td><td>${esc(c.interest_category||'')}${c.interest_model_code?' <span class="mono" style="color:var(--muted)">'+esc(c.interest_model_code)+'</span>':''}</td><td style="font-size:12px">${esc(c.inflow_route||'')}</td><td>${esc(c.handler||'')}</td><td class="num">${c.expected_amount?n(c.expected_amount):''}</td><td class="mono">${dfmt(c.expected_purchase_date)}</td><td style="font-size:11.5px;white-space:nowrap">${c.callback_at?(c.callback_done_at?`<span class="tag y">완료</span>`:(new Date(c.callback_at)<new Date()?`<span class="tag n">지남</span>`:`<span class="tag 보류">예정</span>`))+' '+String(c.callback_at).slice(5,16).replace('T',' '):''}</td>
+  $('tbConsults').innerHTML=rows.map(c=>`<tr><td class="mono">${dtfmt(c.consult_at).slice(0,10)}</td><td class="mono" style="font-size:11px;color:var(--muted)">${esc(c.source_ref)}</td><td><b>${esc(c.customer_name||'-')}</b></td><td class="mono">${esc(c.phone||'-')}</td><td>${esc(c.interest_category||'')}${c.interest_model_code?' <span class="mono" style="color:var(--muted)">'+esc(c.interest_model_code)+'</span>':''}${c.purchase_item?`<div style="font-size:11px;color:var(--ok)">구매 ${esc(c.purchase_item)}</div>`:''}${(c.next_model_code||c.next_category)?`<div style="font-size:11px;color:var(--navy)" title="${esc(c.next_note||'')}">다음 ${esc(c.next_model_code||c.next_category)}${c.next_expected_date?' · '+String(c.next_expected_date).slice(5).replace('-','/'):''}</div>`:''}</td><td style="font-size:12px">${esc(c.inflow_route||'')}</td><td>${esc(c.handler||'')}</td><td class="num">${c.expected_amount?n(c.expected_amount):''}</td><td class="mono">${dfmt(c.expected_purchase_date)}</td><td style="font-size:11.5px;white-space:nowrap">${c.callback_at?(c.callback_done_at?`<span class="tag y">완료</span>`:(new Date(c.callback_at)<new Date()?`<span class="tag n">지남</span>`:`<span class="tag 보류">예정</span>`))+' '+String(c.callback_at).slice(5,16).replace('T',' '):''}</td>
     <td><select class="in" style="padding:3px 6px;font-size:12px" onchange="setResult(${c.id},this.value)">${['진행중','보류','구매완료','종료'].map(r=>`<option ${r===c.result?'selected':''}>${r}</option>`).join('')}</select></td><td class="wrap" style="font-size:12px;color:var(--ink-2)">${c.gift_name?`<span class="tag 보류" title="사은품">🎁 ${esc(c.gift_name)}${c.gift_amount?' '+n(c.gift_amount):''}</span> `:''}${esc(c.content||'')}</td>
     <td style="white-space:nowrap">${c.hidden_at?`<span class="tag n" title="${esc(c.hidden_by||'')} · ${esc(c.hidden_reason||'')}">숨김</span> <button class="btn sm ghost" onclick="hideConsult(${c.id},false)">되살리기</button>`:`<button class="btn sm ghost" onclick="hideConsult(${c.id},true)">숨기기</button>`}</td></tr>`).join('')||'<tr><td colspan="13" class="note" style="text-align:center;padding:24px">없음</td></tr>';
 }

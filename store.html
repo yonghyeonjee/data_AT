@@ -102,6 +102,12 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .tagchips{margin-top:6px} .tagchips:empty{display:none}
 .tagchips .chip{background:var(--navy);color:#fff;border-color:var(--navy);padding:6px 10px;font-size:12.5px;font-family:ui-monospace,Menlo,monospace}
 .tagchips .chip::after{content:'×';margin-left:6px;opacity:.7}
+.item .m.nx{color:var(--navy)} .item .m.nx b{font-weight:600}
+.nextbox{border:1.5px dashed var(--line-2);border-radius:12px;padding:10px 12px 2px;margin:2px 0 12px;background:#FBFCFE}
+.nextbox .nb-t{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:8px} .nextbox .nb-t .hint{font-weight:400;color:var(--faint);margin-left:6px}
+.subq{margin-top:6px;display:flex;flex-direction:column;gap:4px} .subq:empty{display:none}
+.subq div{font-size:12px;color:var(--ink-2);background:#F3F6FC;border-radius:8px;padding:6px 10px;line-height:1.45}
+.subq b{color:var(--navy);font-variant-numeric:tabular-nums} .subq small{color:var(--faint)}
 .chip.on{border-color:var(--navy);background:var(--navy);color:#fff}
 
 .toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:10px;background:var(--surface-2);cursor:pointer}
@@ -615,6 +621,14 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           <select class="in" id="s_pay"><option value="">선택 안 함</option><option>삼성카드</option><option>타사카드</option><option>현금</option><option>구독(월납)</option><option>기타</option></select></div>
         <div class="f"><label>상담번호 <span class="hint">있으면 자동 연결</span></label><input class="in" id="s_consult" placeholder="SC260902-000001" autocomplete="off"></div>
       </div>
+      <div class="nextbox">
+        <div class="nb-t">다음 구매 관심 <span class="hint">적으면 이 고객이 가망고객으로 이어집니다 (선택)</span></div>
+        <div class="grid2">
+          <div class="f"><label>다음 구매 관심 제품</label><input class="in" id="s_next" placeholder="모델 · 제품명" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div>
+          <div class="f"><label>다음 구매 예정일</label><input class="in" type="date" id="s_next_date"></div>
+        </div>
+        <div class="f"><label>다음 구매 메모</label><input class="in" id="s_next_note" placeholder="예: 김치냉장고 교체 예정, 12월 이사"></div>
+      </div>
       <div class="f"><label>사은품 <span class="hint">준 게 있으면 이름과 금액</span></label>
         <div class="gift-row"><input class="in" id="s_gift" placeholder="예: 스타벅스 1만원권" autocomplete="off" list="giftList"><input class="in" id="s_gift_amt" inputmode="numeric" placeholder="금액" oninput="comma(this)"></div>
         <div class="chips gift-chips" id="s_gift_chips"></div>
@@ -673,7 +687,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         </div>
       </div>
       <div class="grid2">
-        <div class="f"><label>관심 모델 <span class="sub" style="font-weight:400;color:var(--muted)">여러 개면 Enter 나 쉼표로 추가</span></label><input class="in" id="c_model" placeholder="KQ85QNH80" style="text-transform:uppercase" autocomplete="off"><div class="chips tagchips" id="c_models"></div></div>
+        <div class="f"><label>관심 모델 <span class="sub" style="font-weight:400;color:var(--muted)">여러 개면 Enter 나 쉼표로 추가</span></label><input class="in" id="c_model" placeholder="KQ85QNH80" style="text-transform:uppercase" autocomplete="off"><div class="chips tagchips" id="c_models"></div><div id="c_subq" class="subq"></div></div>
         <div class="f"><label>유입경로 <span class="req">*</span></label>
           <select class="in" id="c_route">
             <option>매장고객-기존고객</option><option>매장고객-매장고객 소개</option><option>검색광고-방문</option><option>검색광고-전화</option>
@@ -685,6 +699,17 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           <select class="in" id="c_result"><option>진행중</option><option>보류</option><option>구매완료</option><option>종료</option></select></div>
         <div class="f"><label>예상 금액</label><input class="in num" inputmode="numeric" id="c_amount" placeholder="0" oninput="comma(this)"></div>
         <div class="f"><label>구매 예정일</label><input class="in" type="date" id="c_expect"></div>
+      </div>
+      <div class="nextbox">
+        <div class="nb-t">구매 제품 · 다음 구매 관심 <span class="hint">팔고 끝이 아니라 다음에 살 제품을 계속 봅니다</span></div>
+        <div class="grid2">
+          <div class="f"><label>구매한 제품 <span class="hint">구매완료면</span></label><input class="in" id="c_purchase" placeholder="예: 비스포크 AI 콤보" autocomplete="off"></div>
+          <div class="f"><label>다음 구매 관심 제품</label><input class="in" id="c_next" placeholder="모델 · 제품명" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div>
+        </div>
+        <div class="grid2">
+          <div class="f"><label>다음 구매 예정일</label><input class="in" type="date" id="c_next_date"></div>
+          <div class="f"><label>다음 구매 메모</label><input class="in" id="c_next_note" placeholder="예: 이사 후 냉장고, 아이 방 에어컨"></div>
+        </div>
       </div>
       <div class="f"><label>상담 내용</label><textarea class="in" id="c_content" placeholder="문의 모델, 가격 비교 대상, 다음 연락 시점 등"></textarea></div>
       <div class="f"><label>콜백 예정 <span class="hint">"내일 2시에 전화 주세요" — 시스템이 기억합니다</span></label>
@@ -2035,8 +2060,15 @@ $('r_mode').addEventListener('click', e=>{ const b=e.target.closest('button'); i
 /* 관심 모델도 여러 개 — Enter·쉼표·탭으로 칩에 넣고, 저장은 쉼표로 이어서 */
 function cModels(){ return [...$('c_models').querySelectorAll('.chip')].map(c=>c.dataset.v); }
 function cModelAdd(v){ v=(v||'').trim().toUpperCase().replace(/,+$/,''); if(!v) return; if(cModels().includes(v)) return;
-  const c=document.createElement('span'); c.className='chip'; c.dataset.v=v; c.textContent=v; c.title='빼기'; c.onclick=()=>c.remove(); $('c_models').appendChild(c); }
-function cModelsSet(list){ $('c_models').innerHTML=''; (list||[]).forEach(cModelAdd); }
+  const c=document.createElement('span'); c.className='chip'; c.dataset.v=v; c.textContent=v; c.title='빼기'; c.onclick=()=>{ c.remove(); subQuoteRender(); }; $('c_models').appendChild(c); subQuoteFetch(v); }
+/* 구독 상품이 등록된 모델이면 요금·케어 구성을 참고로 보여준다 */
+const SUBQ={};
+async function subQuoteFetch(m){ if(SUBQ[m]!==undefined) return subQuoteRender(); SUBQ[m]=null;
+  try{ SUBQ[m]=await rpc('fn_store_sub_quote',{p_code:CODE,p_model:m})||[]; }catch(e){ SUBQ[m]=[]; } subQuoteRender(); }
+function subQuoteRender(){ const box=$('c_subq'); if(!box) return; const w=v=>Math.round(Number(v||0)).toLocaleString('ko-KR');
+  box.innerHTML=cModels().filter(m=>(SUBQ[m]||[]).length).map(m=>{ const ps=SUBQ[m];
+    return `<div><b>${esc(m)}</b> <small>${esc(ps[0].cat||'')} 구독</small> · `+ps.map(p=>`${p.term}년 · ${p.cycle}개월 주기${p.care_case?` · ${esc(p.care_case)}`:''} <b>${w(p.monthly_fee)}원/월</b><small> (총 ${w(p.total_fee)}${p.n_visit?` · 방문케어 ${p.n_visit}회`:''})</small>`).join('<br>')+`</div>`; }).join(''); }
+function cModelsSet(list){ $('c_models').innerHTML=''; (list||[]).forEach(cModelAdd); subQuoteRender(); }
 function cModelFlush(){ const i=$('c_model'); i.value.split(',').forEach(cModelAdd); i.value=''; }
 $('c_model').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===','||e.key==='Tab'){ if($('c_model').value.trim()){ e.preventDefault(); cModelFlush(); } } });
 $('c_model').addEventListener('blur', ()=>{ if($('c_model').value.trim()) cModelFlush(); });
@@ -2053,6 +2085,7 @@ async function submitSale(){
     product_name:$('s_product').value.trim(), model_code:$('s_model').value.trim(),
     qty:Number($('s_qty').value)||1, gross_amount:saleItems().reduce((a,x)=>a+(x.amount||0),0), items:saleItems(), payment_method:$('s_pay').value,
     consult_ref:$('s_consult').value.trim(), consent_marketing:$('s_consent').classList.contains('on'), notes:$('s_notes').value.trim(),
+    next_model_code:$('s_next').value.trim()||null, next_expected_date:$('s_next_date').value||null, next_note:$('s_next_note').value.trim()||null,
     request_order:$('s_req').classList.contains('on'), gift_name:$('s_gift').value.trim()||null, gift_amount:num($('s_gift_amt'))||null };
   if(!p.product_name) return toast('상품명을 입력하세요','bad');
   const badLine=p.items.findIndex(x=>!x.product_name); if(badLine>0) return toast(`${badLine+1}번째 상품의 상품명을 입력하세요`,'bad');
@@ -2062,7 +2095,7 @@ async function submitSale(){
   try{ const r = await rpc('fn_store_sale_submit',{p_code:CODE,p_data:p});
     toast(r.request_id?`저장됨 · 주문서 요청 #${r.request_id} 보냄 — 처리 담당자에게 알림`:`저장됨 · ${r.handler} · ${p.product_name}${p.items.length>1?` 외 ${p.items.length-1}건`:''} ${won(p.gross_amount)} · ${r.stage}`,'ok');
     if(r.request_id) setTimeout(loadRequests, 500);
-    ['s_name','s_phone','s_product','s_model','s_amount','s_consult','s_notes','s_gift','s_gift_amt'].forEach(id=>$(id).value=''); loadGifts(); $('s_qty').value=1; $('s_pay').value=''; $('s_items').innerHTML=''; saleTotal(); custClear('s'); REPORT_LOADED=false;
+    ['s_name','s_phone','s_product','s_model','s_amount','s_consult','s_notes','s_gift','s_gift_amt','s_next','s_next_date','s_next_note'].forEach(id=>$(id).value=''); loadGifts(); $('s_qty').value=1; $('s_pay').value=''; $('s_items').innerHTML=''; saleTotal(); custClear('s'); REPORT_LOADED=false;
     await loadStatus(); render(); $('s_product').focus();
   }catch(e){ toast(e.message,'bad'); if(/코드/.test(e.message)){ localStorage.removeItem('staff_code'); setTimeout(()=>location.reload(),1500);} }
   b.disabled=false; b.textContent='저장';
@@ -2091,7 +2124,7 @@ function renderHome(s){
     </div>`; }).join(''):'<div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div>';
   $('ocList').innerHTML=oc.length?oc.map(x=>`
     <div class="item oc"><div><div class="p"><a href="javascript:void 0" onclick="ocToConsult('${esc(x.ref)}','${esc(x.name)}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 고객으로 상담 입력 열기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a> <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}${String(x.route||'').startsWith('홈페이지')?'<span class="mine">홈페이지 문의</span>':''}${x.result==='보류'?'<span class="tag" style="background:#FFF4D6;color:#8A6300">보류</span>':''}</div>
-      <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.route||'')}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.expect_date?` · 예정 ${String(x.expect_date).slice(5).replace('-','/')}`:''}${x.callback_at?` · 콜백 ${fmtWhen(x.callback_at).join(' ')}`:''}</div></div>
+      <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.route||'')}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.expect_date?` · 예정 ${String(x.expect_date).slice(5).replace('-','/')}`:''}${x.callback_at?` · 콜백 ${fmtWhen(x.callback_at).join(' ')}`:''}</div>${(x.bought||x.next_model||x.next_cat)?`<div class="m nx">${x.bought?`구매 <b>${esc(x.bought)}</b>`:''}${(x.next_model||x.next_cat)?`${x.bought?' · ':''}다음 <b>${esc(x.next_model||x.next_cat)}</b>${x.next_date?` (${String(x.next_date).slice(5).replace('-','/')})`:''}`:''}</div>`:''}</div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button>
         <button class="mini" onclick="ocPick(${x.id})">재연락</button>
         ${x.result==='보류'?`<button class="mini" onclick="ocAct(${x.id},'resume')">다시 진행</button>`:`<button class="mini warn" onclick="ocAct(${x.id},'hold')">보류</button>`}
@@ -2235,6 +2268,7 @@ async function submitConsult(){
   const cats = [...$('c_cat').querySelectorAll('.chip.on')].map(x=>x.dataset.v);
   const p = { consult_at:$('c_date').value, handler:$('c_handler').value, customer_name:$('c_name').value.trim(), customer_phone:$('c_phone').value.trim(), buyer_key: LINK.c||null,
     interest_category: cats.join(', '), interest_model_code:[...cModels(), ...$('c_model').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean)].filter((v,i,a)=>a.indexOf(v)===i).join(', '), inflow_route:$('c_route').value, result:$('c_result').value,
+    purchase_item:$('c_purchase').value.trim()||null, next_model_code:$('c_next').value.trim()||null, next_expected_date:$('c_next_date').value||null, next_note:$('c_next_note').value.trim()||null,
     expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(), callback_at: cbISO(),
     consent_marketing:$('c_consent').classList.contains('on'), gift_name:$('c_gift').value.trim()||null, gift_amount:num($('c_gift_amt'))||null };
   if(!p.customer_name && !p.buyer_key) return toast('고객명을 입력하세요','bad');
@@ -2243,7 +2277,7 @@ async function submitConsult(){
   try{ const r = await rpc('fn_store_consult_submit',{p_code:CODE,p_data:p});
     toast(r.callback_at?`상담 저장됨 · 콜백 ${fmtWhen(r.callback_at).join(' ')} 예약`:'상담 저장됨','ok');
     $('c_ref').classList.remove('hidden'); $('c_ref').innerHTML = `상담번호 <b style="color:var(--ink);font-size:15px">${r.ref}</b><br>구매로 이어지면 판매 입력의 "상담번호"에 적어주세요${r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '내 고객' 탭에서 알려드립니다`:''}`;
-    ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt'].forEach(id=>$(id).value=''); loadGifts(); custClear('c'); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); cModelsSet([]); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
+    ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt','c_purchase','c_next','c_next_date','c_next_note'].forEach(id=>$(id).value=''); loadGifts(); custClear('c'); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); cModelsSet([]); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
     await loadStatus(); render();
   }catch(e){ toast(e.message,'bad'); }
   b.disabled=false; b.textContent='저장';

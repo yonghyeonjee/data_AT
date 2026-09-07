@@ -548,3 +548,13 @@
 -- v61 화면 : 담당자 일 마감 탭 재구성 — [본인|전체] 토글(기본 본인). 날짜 고르면 판매 입력이 구분·프로·판매완료/매출/환불 표로 자동 채워짐,
 --            저장된 마감이 있으면 그 값·판매 입력과의 차이 표시. 전체 모드에서만 DPS 합계 대사 카드. 최근 마감·미마감도 본인/전체 따라감.
 --            '매장 판매 요청' → '판매 요청' (요청자 이름 옆 부서), 카드 설명에 버튼 뜻.
+-- mvp_111 (2026-09-07) 구독 상품 마스터 sub.plan (biz·cat1·cat2·term_years·model_code·cycle_months·care_case·total_fee·monthly_fee, 유니크 = 모델·기간·주기·케어)
+--   + sub.plan_item (name·item_code·round_no). core.f_sub_plan_upsert(p_rows): '제품' 줄이 플랜, 뒤따르는 같은 키 줄이 구성. fn_sub_plan_upsert(admin/dev) · fn_sub_plans(p_q)
+--   fn_store_sub_quote(p_code,p_model) : 담당자 상담 입력에서 모델 칩 넣으면 요금·주기·방문케어 횟수 참고 표시
+-- v62 화면 : 관리자 품목 화면 '구독 상품 · 요금' 카드(붙여넣기 등록 — 엑셀 10열 그대로) · 담당자 상담 입력 관심 모델 아래 구독 요금 참고
+-- mvp_112 (2026-09-07) 가망고객에 구매 제품 + 다음 구매 관심 : crm.consult.next_category/next_model_code/next_expected_date/next_note (purchase_item 은 기존 컬럼)
+--   fn_store_consult_submit : purchase_item·next_* 저장
+--   fn_store_sale_submit : 상담번호 연결 시 그 상담에 purchase_item(판매 상품명)·next_* 채움. next_model_code/next_category 가 있으면
+--                          새 가망고객(source_ref SC…, 유입 '매장 구매 후', 관심=다음 제품, 진행중, linked_order_id=이번 판매) 을 이어 만든다
+--   fn_consult_list : next_* 컬럼 추가(반환 타입 변경 → drop 후 재생성) · fn_store_status.my_open_consults : bought/next_model/next_cat/next_date
+-- v63 화면 : 담당자 상담 입력 '구매 제품 · 다음 구매 관심' 상자, 판매 입력 '다음 구매 관심' 상자, 홈 진행중 상담에 "구매 X · 다음 Y (예정)" 줄, 관리자 상담 목록 관심 열에 구매/다음 표시
