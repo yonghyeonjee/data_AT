@@ -495,3 +495,22 @@
 -- mvp_101 (2026-09-07) 규칙: 송장(발송) 없는 주문은 이카운트에 올리지 않는다 (app_setting sl_require_ship=on)
 --   f_sl_pending(빠른 목록) = 발송일 기준 최근 N일 · f_sl_auto 도 발송일 기준 · f_sl_to_order 는 미발송이면 "미발송 (송장 없음)" 으로 건너뜀
 --   단계별 변환 ② 발송 필터 기본값 = 발송됨. 수집기(collect.mjs)는 이미 송장등록/송장전송완료 이벤트일 기준으로 최근 3일 치를 매번 가져오므로 뒤늦게 송장 찍힌 옛 주문도 갱신된다
+
+-- v48 화면 (2026-09-07) 조회 조건 한 곳: 공통 바(기간 · 검색/채널/상품유형 · 화면별 필터)로 통합 — placeCbar 가 각 화면 첫 카드의 .filters 안 필터 요소를 #cbExtra 로 옮기고(cbarPull), 화면 전환 때 되돌림(cbarRestore). 화면 자체 조회·초기화 버튼은 숨김. 문의 관리 "상단 기간 적용" 스위치 제거(항상 적용)
+-- mvp_102 (2026-09-07) 샵링커→주문서 io_date = 발송(송장전송)일, 없으면 주문일 · core.orders.shipping_fee 컬럼 준비(배송비 — 파서/수집기 매핑과 이카운트 배송비 품목코드 확정 대기)
+-- v49 화면 (2026-09-07) 관리자 화면 안 섹션 탭: 카드(h3)가 둘 이상인 화면은 헤더 아래 #subTabs 에 카드 제목 탭을 만들고 누르면 그 카드로 스크롤·현재 위치 표시 (buildSubTabs, refreshView 뒤 갱신)
+-- v50 화면 (2026-09-07) 담당자 화면에도 탭 안 섹션 탭(#subTabs, 카드 h2 둘 이상일 때 탭 바 아래)
+-- mvp_103 (2026-09-07) core.f_role(): 서비스 롤 JWT 면 'admin' — GitHub Actions data-freshness(check-freshness.mjs → fn_data_status) 403 수정. 파일 변경 없음
+-- mvp_104 (2026-09-07) 매장 판매 입력 상품 여러 줄: fn_store_sale_submit p_data.items[{product_name,model_code,qty,amount}] → 같은 주문번호 line 1..n, 요청(ec.order_request.items) 한 건, fn_store_requests 가 줄마다 후보 코드 → 주문서로 넘기면 줄 전부 채움
+-- v51 화면 : 판매 입력 [+ 상품 추가] · 요청 카드 줄별 표시 · 담당자 섹션 탭 디자인(밑줄형·가운데·14px)
+-- mvp_105 (2026-09-07) fn_store_items: sale 권한도 허용 · 코드/모델/이름 검색, 앞부분 일치 우선 (판매 입력 상품명·모델코드 자동완성)
+-- v52 화면 : 담당자 재고 탭 순서 = 입고·출고 → 최근 입출고 → 현재고(검색 맨 뒤). 빠른 입·출고(품목 찾기 → 수량 → [입고]/[출고], 세트는 구성품 자동 분해),
+--            붙여넣기 일괄은 접이식으로 그 안에. 판매 입력 상품명·모델코드에 등록 품목 자동완성(itemSuggest)
+-- v53 화면 : /dash/ 사내 로그인 자동 열람 — 같은 도메인 localStorage 의 sb-*-auth-token 이 살아 있으면
+--            비밀번호 화면 없이 Bearer 토큰으로 fn_dash_payload(p_from,p_to,p_mode) 호출. 실패하면 기존 비밀번호 화면으로 되돌아감.
+--            SHARE_URL(기존 app GAS) 미설정 상태에서는 출처 토글을 숨기고 dash_src='gas' 세션값도 지움 → "GAS 공유 주소" 안내가 뜨지 않음.
+-- v53 배포 경로 : dash 도 test/prod 두 벌 — /dash/test/index.html(테스트) · /dash/index.html(배포).
+--            admin 화면의 DASH_DIR 가 DC_ENV 를 보고 iframe(embed=1)·외부 공유 링크를 각각 /dash/test/ · /dash/ 로 건다.
+--            (기존에는 iframe src 가 상대경로 'dash/index.html' 이라 /admin/test/ 에서 404 였다 → 같이 고침)
+-- v56 화면 : 주문 변환 하단 안내 문구(.wiz-ft .note)가 좁은 폭에서 세로로 잘리던 문제 —
+--            note 를 남는 폭 전체로 늘려 가운데 정렬, 최대 두 줄까지만 보이고 전체 문장은 title 로. 버튼은 줄바꿈 없이 고정.

@@ -309,8 +309,10 @@ table.iqt tr:hover .acts,table.iqt tr:focus-within .acts{opacity:1}
 .wiz-bar i{height:5px;border-radius:3px;background:#E4E7EE;transition:background .25s}
 .wiz-bar i.on{background:var(--wz)}
 .wiz-body{padding:16px 22px 18px;flex:1;min-height:0}
-.wiz-ft{display:flex;align-items:center;gap:8px;padding:12px 22px 16px;border-top:1px solid #EEF0F4}
-.wiz-ft .sp{flex:1} .wiz-ft .note{font-size:12px;color:var(--muted,#646D7C)}
+.wiz-ft{display:flex;align-items:center;gap:10px;padding:12px 22px 16px;border-top:1px solid #EEF0F4}
+.wiz-ft .btn{flex:0 0 auto;white-space:nowrap}
+.wiz-ft .sp{flex:0 0 0}
+.wiz-ft .note{flex:1 1 auto;min-width:0;text-align:center;font-size:12px;line-height:1.45;color:var(--muted,#646D7C);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .wiz .btn{border:1.5px solid var(--wz);background:var(--wz);color:#fff;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap}
 .wiz .btn:hover{filter:brightness(.92)} .wiz .btn:disabled{opacity:.4;cursor:default;filter:none}
 .wiz .btn.ghost{background:#fff;color:#2E3542;border-color:#CDD3DE} .wiz .btn.ghost:hover{border-color:var(--wz);color:var(--wz);filter:none}
@@ -940,7 +942,7 @@ tr.cb-hide{display:none}
           <span class="note" id="dashNote">Datacenter 데이터 · 최근 12개월 · 기간·채널·지표는 아래 대시보드 안에서 고릅니다</span>
           <button class="btn sm ghost" id="btnDashRefresh" onclick="refreshDash()" title="원천 데이터를 다시 집계합니다 (수집 직후 자동으로도 비워집니다)">데이터 갱신</button>
           <button class="btn sm ghost hidden" id="btnGasUrl" onclick="setGasUrl()">기존 앱 주소</button>
-          <a class="btn sm ghost" href="/dash/" target="_blank">외부 공유 화면 ↗</a>
+          <a class="btn sm ghost" id="dashShareLink" href="/dash/" target="_blank">외부 공유 화면 ↗</a>
         </div>
         <div id="dashFull" style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#eef1f5"><iframe id="dashFrame" src="about:blank" style="width:100%;height:calc(100vh - 150px);border:0;display:block"></iframe></div>
         <div id="dashLite" class="hidden">
@@ -1518,6 +1520,8 @@ tr.cb-hide{display:none}
 /* ═══════════════ 설정 ═══════════════ */
 /* 환경 : /admin/test/ 아래에 올린 파일은 test, 그 외(admin.html)는 prod. 메뉴는 /admin/option 의 테스트·배포 체크를 따른다 */
 const DC_ENV = /\/test\//.test(location.pathname) ? 'test' : 'prod';
+/* 대시보드도 같은 규칙 : 테스트 콘솔은 /dash/test/ 를 품고, 배포 콘솔은 /dash/ 를 품는다 */
+const DASH_DIR = DC_ENV==='test' ? '/dash/test/' : '/dash/';
 const SUPABASE_URL = "https://wdahskrcpjooqhwwxjiu.supabase.co";
 const SUPABASE_KEY = "sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1707,7 +1711,7 @@ async function loadHome(){
   $('chanList').innerHTML=tc.map(x=>`<div><span>${esc(x.k||'-')}</span><span class="bar"><i style="width:${Math.round((Number(x.net)||0)/mx*100)}%"></i></span><b>${wonK(x.net)}</b></div>`).join('')||'<div class="note">이번 달 데이터 없음</div>';
   $('tbHomeConsults').innerHTML=(h.recent_consults||[]).map(c=>`<tr><td class="mono">${esc(c.at)}</td><td><b>${esc(c.name||'-')}</b></td><td>${esc(c.cat||'')}</td><td style="font-size:12px">${esc(c.route||'')}</td><td>${esc(c.handler||'')}</td><td><span class="tag ${c.result}">${esc(c.result||'')}</span></td></tr>`).join('')||'<tr><td colspan="6" class="note">없음</td></tr>';
   $('tbHomeUploads').innerHTML=(h.uploads||[]).map(u=>`<tr><td class="mono">${esc(u.at)}</td><td>${esc(u.source||'')}</td><td class="wrap" style="font-size:12px">${esc(u.file||'')}${u.rolled_back?' <span class="tag n">되돌림</span>':''}</td><td class="num">${n(u.rows||0)}${u.skipped?`<span style="color:var(--muted);font-size:11px"> / 제외 ${n(u.skipped)}</span>`:''}</td><td style="font-size:12px">${esc((u.by||'').replace(ID_DOMAIN,''))}</td></tr>`).join('')||'<tr><td colspan="5" class="note">없음</td></tr>';
-  $('homeLinks').innerHTML=[[ST,'매장 화면 ↗'],['/stock.html','재고 화면 ↗'],['/visit/?fs=1','방문 접수(태블릿) ↗'],['/dash/','외부 공유 대시보드 ↗'],['/','고객센터 ↗']].map(([u,t])=>`<a href="${u}" target="_blank">${t}</a>`).join('');
+  $('homeLinks').innerHTML=[[ST,'매장 화면 ↗'],['/stock.html','재고 화면 ↗'],['/visit/?fs=1','방문 접수(태블릿) ↗'],[DASH_DIR,'외부 공유 대시보드 ↗'],['/','고객센터 ↗']].map(([u,t])=>`<a href="${u}" target="_blank">${t}</a>`).join('');
 }
 
 /* ═══════════════ 재고 ═══════════════ */
@@ -2357,6 +2361,8 @@ function wizMount(host, cfg){
   const n=cfg.n||(v=>Number(v||0).toLocaleString('ko-KR'));
   const toast=cfg.toast||(m=>alert(m));
   const $=id=>host.querySelector('#'+id);
+  /* 하단 안내 문구 : 폭이 좁으면 두 줄로 잘리므로 전체 문장을 title 로 같이 넣는다 */
+  const ftNote=t=>{ const e=$('wzFtNote'); if(!e) return; e.textContent=t||''; if(t) e.title=t; else e.removeAttribute('title'); };
   const S={step:1, src:'auto', data:null, sel:new Set(), picks:{}, remember:new Set(), wh:[], whSel:'00001', pv:null, result:null, flt2:'all', flt3:'all', fltShip:'shipped', done:false};
   const mkey=x=>String(x||'').toUpperCase().replace(/[^A-Z0-9가-힣]/g,'');
   const optDiff=l=>{ if(!l||!l.model_eff) return false; const e=mkey(l.model_eff); if(!e) return false;
@@ -2451,7 +2457,7 @@ function wizMount(host, cfg){
     host.querySelectorAll('.wiz-seg button').forEach(b=>b.onclick=()=>{ S.src=b.dataset.s; r1(); });
     const ld=$('wzLoad'); if(ld) ld.onclick=()=>load(false);
     const q=$('wzQ'); if(q) q.onkeydown=e=>{ if(e.key==='Enter') load(false); };
-    $('wzFtNote').textContent = d ? `${n(d.total)}건 불러옴 · [다음]에서 고릅니다` : '';
+    ftNote(d ? `${n(d.total)}건 불러옴 · [다음]에서 고릅니다` : '');
   }
   async function load(quiet){
     const b=$('wzLoad'); if(b){ b.disabled=true; b.textContent='불러오는 중…'; }
@@ -2501,7 +2507,7 @@ function wizMount(host, cfg){
     render2ft();
   }
   function render2ft(){ persist(); const rs=selRows(); const lines=rs.reduce((a,r)=>a+(r.total_lines||0),0), amt=rs.reduce((a,r)=>a+Number(r.amount||0),0);
-    $('wzFtNote').textContent = rs.length?`선택 ${n(rs.length)}건 · ${n(lines)}줄 · ${n(amt)}원`:'고른 주문이 없습니다'; $('wzNext').disabled=!rs.length; }
+    ftNote(rs.length?`선택 ${n(rs.length)}건 · ${n(lines)}줄 · ${n(amt)}원`:'고른 주문이 없습니다'); $('wzNext').disabled=!rs.length; }
 
   /* ── ③ 코드 매핑 (같은 상품·옵션은 한 줄로 묶어서) ───────────── */
   function groups(){
@@ -2547,7 +2553,7 @@ function wizMount(host, cfg){
     host.querySelectorAll('input[data-r]').forEach(c=>c.onchange=()=>{ const g=gs[+c.dataset.r]; c.checked?S.remember.add(g.key):S.remember.delete(g.key); });
     render3note();
   }
-  function render3note(){ persist(); const miss=groups().filter(g=>!curCode(g)).length; $('wzFtNote').textContent = miss?`품목 미정 ${n(miss)}종 — 그 줄이 든 주문은 저장 때 건너뜁니다`:'모든 상품에 품목이 정해졌습니다'; }
+  function render3note(){ persist(); const miss=groups().filter(g=>!curCode(g)).length; ftNote(miss?`품목 미정 ${n(miss)}종 — 그 줄이 든 주문은 저장 때 건너뜁니다`:'모든 상품에 품목이 정해졌습니다'); }
   async function items(q){ try{ const d=await cfg.rpc(cfg.fn.items,cfg.itemsArgs?cfg.itemsArgs(q):{p_q:q,p_limit:30}); return Array.isArray(d)?d:(d.rows||[]); }catch(e){ return []; } }
   async function searchPick(g){
     const q=prompt(`"${(g.product||'').slice(0,40)}"\n이카운트 품목코드나 이름을 입력하세요 (예: AT-00079)`, ''); if(!q) return null;
@@ -2581,7 +2587,7 @@ function wizMount(host, cfg){
       <p class="sub">저장하면 <b>재고가 바로 빠지고</b> 전표는 "전송 대기"로 생깁니다. 재고가 모자란 전표는 건너뛰고 사유를 알려줍니다. 저장 뒤에도 전송 전까지는 한 번에 되돌릴 수 있습니다.</p>`;
     $('wzWh').onchange=e=>{ S.whSel=e.target.value; r4(); };
     const sd=$('wzSend'); if(sd) sd.onchange=()=>{ S.sendAfter=sd.checked; };
-    $('wzFtNote').textContent=`전표 ${n(d.n_slips)}장 · ${n(d.n_lines)}줄`;
+    ftNote(`전표 ${n(d.n_slips)}장 · ${n(d.n_lines)}줄`);
   }
   async function save(){
     if(!S.pv) return; const nx=$('wzNext'); nx.disabled=true; nx.textContent='저장 중…';
@@ -2620,7 +2626,7 @@ function wizMount(host, cfg){
     const sn=$('wzSendNow'); if(sn) sn.onclick=sendNow;
     const u=$('wzUndo'); if(u) u.onclick=()=>cfg.undoBatch(r.batch_id, r.made);
     const g=$('wzGoto'); if(g) g.onclick=cfg.gotoQueue;
-    $('wzFtNote').textContent='';
+    ftNote('');
   }
   go(1);
   return {reset, state:S};
@@ -3287,7 +3293,8 @@ const NAV_FALLBACK=[
   {group:'data',group_label:'데이터',items:[{code:'upload',label:'데이터 가져오기',state:'on'},{code:'log',label:'서비스 로그',state:'on'},{code:'settings',label:'설정 · 담당자',state:'on'}]},
   {group:'ops',group_label:'운영',items:[{code:'option',label:'옵션 · 권한',state:'on'},{code:'notify',label:'알림 관리',state:'on'}]}];
 const NAV_BADGE={inbox:'badgeInbox', oq:'badgeOq'};   // 뱃지를 다는 메뉴 (없어도 화면이 죽지 않게 쓰는 쪽에서 null 확인)
-if(DC_ENV==='test'){ document.title='[TEST] '+document.title; document.querySelectorAll('.envtag').forEach(x=>x.classList.remove('hidden')); }
+if(DC_ENV==='test'){ document.title='[TEST] '+document.title; document.querySelectorAll('.envtag').forEach(x=>x.classList.remove('hidden'));
+  const dl=document.getElementById('dashShareLink'); if(dl){ dl.href=DASH_DIR; dl.textContent='외부 공유 화면(테스트) ↗'; } }
 async function loadMenu(){
   try{ MENU=await rpc('fn_menu',{p_env:DC_ENV}); }catch(e){ MENU=null; }
   if(!Array.isArray(MENU) || !MENU.length) MENU=NAV_FALLBACK;
@@ -3341,7 +3348,7 @@ const STAFF_LINK={
   oq:[ST+'#order','담당자 주문서'], wiz:[ST+'#order','담당자 주문 변환'],
   daily:[ST+'#daily','매장 일마감 입력'], online:[ST+'#online','채널 일매출 입력'],
   consults:[ST+'#consult','상담 입력 화면'], inbox:[ST+'#home','담당자 접수 화면'], customers:[ST+'#home','담당자 고객 화면'],
-  dash:['/dash/','외부 공유 대시보드'], home:[ST,'담당자 화면']};
+  dash:[DASH_DIR,'외부 공유 대시보드'], home:[ST,'담당자 화면']};
 function renderTitleLink(v){ const a=$('titleLink'); if(!a) return; const L=STAFF_LINK[v];
   if(!L){ a.classList.add('hidden'); return; }
   a.href=L[0]; a.title=L[1]+' 열기 (새 창)'; a.innerHTML=`<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span>${esc(L[1])}</span>`; a.classList.remove('hidden'); }
@@ -3653,7 +3660,7 @@ async function refreshDash(){
 }
 async function loadDashDc(){
   const fr=$('dashFrame');
-  if(!fr.src.includes('embed=1')){ DASH_READY=false; fr.src='dash/index.html?embed=1&v='+Date.now(); }
+  if(!fr.src.includes('embed=1')){ DASH_READY=false; fr.src=DASH_DIR+'index.html?embed=1&v='+Date.now(); }
   if(DASH_PAY) return;
   const to=new Date(), from=new Date(to.getFullYear(), to.getMonth()-11, 1);
   $('dashNote').textContent='데이터 불러오는 중…';

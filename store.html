@@ -290,8 +290,10 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .wiz-bar i{height:5px;border-radius:3px;background:#E4E7EE;transition:background .25s}
 .wiz-bar i.on{background:var(--wz)}
 .wiz-body{padding:16px 22px 18px;flex:1;min-height:0}
-.wiz-ft{display:flex;align-items:center;gap:8px;padding:12px 22px 16px;border-top:1px solid #EEF0F4}
-.wiz-ft .sp{flex:1} .wiz-ft .note{font-size:12px;color:var(--muted,#646D7C)}
+.wiz-ft{display:flex;align-items:center;gap:10px;padding:12px 22px 16px;border-top:1px solid #EEF0F4}
+.wiz-ft .btn{flex:0 0 auto;white-space:nowrap}
+.wiz-ft .sp{flex:0 0 0}
+.wiz-ft .note{flex:1 1 auto;min-width:0;text-align:center;font-size:12px;line-height:1.45;color:var(--muted,#646D7C);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .wiz .btn{border:1.5px solid var(--wz);background:var(--wz);color:#fff;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap}
 .wiz .btn:hover{filter:brightness(.92)} .wiz .btn:disabled{opacity:.4;cursor:default;filter:none}
 .wiz .btn.ghost{background:#fff;color:#2E3542;border-color:#CDD3DE} .wiz .btn.ghost:hover{border-color:var(--wz);color:var(--wz);filter:none}
@@ -1409,6 +1411,8 @@ function wizMount(host, cfg){
   const n=cfg.n||(v=>Number(v||0).toLocaleString('ko-KR'));
   const toast=cfg.toast||(m=>alert(m));
   const $=id=>host.querySelector('#'+id);
+  /* 하단 안내 문구 : 폭이 좁으면 두 줄로 잘리므로 전체 문장을 title 로 같이 넣는다 */
+  const ftNote=t=>{ const e=$('wzFtNote'); if(!e) return; e.textContent=t||''; if(t) e.title=t; else e.removeAttribute('title'); };
   const S={step:1, src:'auto', data:null, sel:new Set(), picks:{}, remember:new Set(), wh:[], whSel:'00001', pv:null, result:null, flt2:'all', flt3:'all', fltShip:'shipped', done:false};
   const mkey=x=>String(x||'').toUpperCase().replace(/[^A-Z0-9가-힣]/g,'');
   const optDiff=l=>{ if(!l||!l.model_eff) return false; const e=mkey(l.model_eff); if(!e) return false;
@@ -1519,7 +1523,7 @@ function wizMount(host, cfg){
     host.querySelectorAll('.wiz-seg button').forEach(b=>b.onclick=()=>{ S.src=b.dataset.s; r1(); });
     const ld=$('wzLoad'); if(ld) ld.onclick=()=>load(false);
     const q=$('wzQ'); if(q) q.onkeydown=e=>{ if(e.key==='Enter') load(false); };
-    $('wzFtNote').textContent = d ? `${n(d.total)}건 불러옴 · [다음]에서 고릅니다` : '';
+    ftNote(d ? `${n(d.total)}건 불러옴 · [다음]에서 고릅니다` : '');
   }
   async function load(quiet){
     const b=$('wzLoad'); if(b){ b.disabled=true; b.textContent='불러오는 중…'; }
@@ -1569,7 +1573,7 @@ function wizMount(host, cfg){
     render2ft();
   }
   function render2ft(){ persist(); const rs=selRows(); const lines=rs.reduce((a,r)=>a+(r.total_lines||0),0), amt=rs.reduce((a,r)=>a+Number(r.amount||0),0);
-    $('wzFtNote').textContent = rs.length?`선택 ${n(rs.length)}건 · ${n(lines)}줄 · ${n(amt)}원`:'고른 주문이 없습니다'; $('wzNext').disabled=!rs.length; }
+    ftNote(rs.length?`선택 ${n(rs.length)}건 · ${n(lines)}줄 · ${n(amt)}원`:'고른 주문이 없습니다'); $('wzNext').disabled=!rs.length; }
 
   /* ── ③ 코드 매핑 (같은 상품·옵션은 한 줄로 묶어서) ───────────── */
   function groups(){
@@ -1615,7 +1619,7 @@ function wizMount(host, cfg){
     host.querySelectorAll('input[data-r]').forEach(c=>c.onchange=()=>{ const g=gs[+c.dataset.r]; c.checked?S.remember.add(g.key):S.remember.delete(g.key); });
     render3note();
   }
-  function render3note(){ persist(); const miss=groups().filter(g=>!curCode(g)).length; $('wzFtNote').textContent = miss?`품목 미정 ${n(miss)}종 — 그 줄이 든 주문은 저장 때 건너뜁니다`:'모든 상품에 품목이 정해졌습니다'; }
+  function render3note(){ persist(); const miss=groups().filter(g=>!curCode(g)).length; ftNote(miss?`품목 미정 ${n(miss)}종 — 그 줄이 든 주문은 저장 때 건너뜁니다`:'모든 상품에 품목이 정해졌습니다'); }
   async function items(q){ try{ const d=await cfg.rpc(cfg.fn.items,cfg.itemsArgs?cfg.itemsArgs(q):{p_q:q,p_limit:30}); return Array.isArray(d)?d:(d.rows||[]); }catch(e){ return []; } }
   async function searchPick(g){
     const q=prompt(`"${(g.product||'').slice(0,40)}"\n이카운트 품목코드나 이름을 입력하세요 (예: AT-00079)`, ''); if(!q) return null;
@@ -1649,7 +1653,7 @@ function wizMount(host, cfg){
       <p class="sub">저장하면 <b>재고가 바로 빠지고</b> 전표는 "전송 대기"로 생깁니다. 재고가 모자란 전표는 건너뛰고 사유를 알려줍니다. 저장 뒤에도 전송 전까지는 한 번에 되돌릴 수 있습니다.</p>`;
     $('wzWh').onchange=e=>{ S.whSel=e.target.value; r4(); };
     const sd=$('wzSend'); if(sd) sd.onchange=()=>{ S.sendAfter=sd.checked; };
-    $('wzFtNote').textContent=`전표 ${n(d.n_slips)}장 · ${n(d.n_lines)}줄`;
+    ftNote(`전표 ${n(d.n_slips)}장 · ${n(d.n_lines)}줄`);
   }
   async function save(){
     if(!S.pv) return; const nx=$('wzNext'); nx.disabled=true; nx.textContent='저장 중…';
@@ -1688,7 +1692,7 @@ function wizMount(host, cfg){
     const sn=$('wzSendNow'); if(sn) sn.onclick=sendNow;
     const u=$('wzUndo'); if(u) u.onclick=()=>cfg.undoBatch(r.batch_id, r.made);
     const g=$('wzGoto'); if(g) g.onclick=cfg.gotoQueue;
-    $('wzFtNote').textContent='';
+    ftNote('');
   }
   go(1);
   return {reset, state:S};
