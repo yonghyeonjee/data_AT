@@ -2344,7 +2344,7 @@ function wizMount(host, cfg){
   const n=cfg.n||(v=>Number(v||0).toLocaleString('ko-KR'));
   const toast=cfg.toast||(m=>alert(m));
   const $=id=>host.querySelector('#'+id);
-  const S={step:1, src:'auto', data:null, sel:new Set(), picks:{}, remember:new Set(), wh:[], whSel:'00001', pv:null, result:null, flt2:'all', flt3:'all', done:false};
+  const S={step:1, src:'auto', data:null, sel:new Set(), picks:{}, remember:new Set(), wh:[], whSel:'00001', pv:null, result:null, flt2:'all', flt3:'all', fltShip:'shipped', done:false};
   const mkey=x=>String(x||'').toUpperCase().replace(/[^A-Z0-9가-힣]/g,'');
   const optDiff=l=>{ if(!l||!l.model_eff) return false; const e=mkey(l.model_eff); if(!e) return false;
     if(l.model && mkey(l.model)!==e) return true; return !mkey(l.product).includes(e); };
@@ -2417,7 +2417,7 @@ function wizMount(host, cfg){
         <div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;margin:0 0 9px;font-weight:500;color:#2E3542;font-size:12.5px"><input type="checkbox" id="wzDone" ${S.incDone?'checked':''}> 이미 만든 주문도 보기</label></div>
         <div style="display:flex;align-items:flex-end"><button class="btn" id="wzLoad" style="width:100%">불러오기</button></div>
       </div>
-      <p class="sub" style="margin:10px 0 0;font-size:12px">취소·교환·반품 건은 자동으로 빠집니다. 샵링커 주문은 하루 다섯 번 미리 수집돼 있어 기다릴 필요가 없습니다.</p>
+      <p class="sub" style="margin:10px 0 0;font-size:12px">취소·교환·반품 건은 자동으로 빠지고, <b>송장이 없는(미발송) 주문은 이카운트에 올리지 않습니다</b> — ②에서 기본으로 발송된 주문만 보입니다. 샵링커 주문은 하루 다섯 번 수집되며 송장 등록분도 함께 들어옵니다.</p>
       ${d?`<div class="wiz-chips">
         <div class="wiz-chip"><small>불러온 주문</small><b>${n(d.total)}</b>건 · ${n(d.lines)}줄</div>
         <div class="wiz-chip ok"><small>바로 가능</small><b>${n(d.ready)}</b>건</div>
@@ -2739,7 +2739,7 @@ async function openSlPick(){
   await modal({title:'샵링커 주문 가져오기', ok:'닫기', cancel:null, xwide:true,
     html:`<p class="note" style="margin:0 0 10px">자동 수집된 주문 중 <b>아직 주문서로 만들지 않은 것</b>만 나옵니다. 고른 건이 주문서가 되고 재고가 빠집니다.</p>
       <div class="filters" style="margin-bottom:10px">
-        <select class="in" id="sl_days" onchange="loadSl2()"><option value="3">최근 3일</option><option value="7" selected>최근 7일</option><option value="14">최근 14일</option><option value="30">최근 30일</option></select>
+        <select class="in" id="sl_days" onchange="loadSl2()"><option value="3">발송 최근 3일</option><option value="7" selected>발송 최근 7일</option><option value="14">발송 최근 14일</option><option value="30">발송 최근 30일</option></select>
         <select class="in" id="sl_ch" onchange="loadSl2()"><option value="">전체 채널</option></select>
         <select class="in" id="sl_kind" onchange="loadSl2(true)"><option value="">대물·소모품 전체</option><option value="소모품">소모품</option><option value="대물">대물</option><option value="혼합">섞임</option><option value="기타">기타</option></select>
         <select class="in" id="sl_cat" onchange="loadSl2(true)"><option value="">전체 카테고리</option></select>
