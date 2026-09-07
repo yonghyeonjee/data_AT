@@ -461,3 +461,16 @@
 --   order_queue.handler(판매담당자)·kind_code(구분) · order_queue_line.supply_amt·vat_amt (합계/1.1 반올림, 나머지 부가세)
 --   f_order_body : app_setting 'ec_field_map' {phone,addr,remark,handler,kind,order_no,channel → 이카운트 필드} + SUPPLY_AMT/VAT_AMT 전송. 관리자 이카운트 카드에서 매핑 수정
 --   화면 : _of/of.js·css 를 admin.html/store.html 에 마커(OF:JS:BEGIN)로 인라인. admin 의 "+ 직접 입력" 은 openOqModal() (기존 openOrderModal 은 원장 수동등록과 이름이 겹쳐 엉뚱한 창이 열리던 버그 수정)
+
+-- ─────────────────────────────────────────────────────────────
+-- mvp_97 (2026-09-07) 전체 SQL: sql/mvp_97_sets_slips.sql (+ 97d resolve 권한, 97e order_ref)
+--   영업담당 코드 30개 seed(ec.code emp) · 거래유형 표준 seed 비활성(이 회사 거래유형=채널명 관리항목, 코드는 담당자가 [+ 추가])
+--   fn_ec_codes_add / fn_store_codes_add : 담당자도 코드 추가. 이카운트에 없는 코드면 전송 실패 → 별도 등록 필요 안내
+--   core.orders.alt_order_no(자사주문번호=이카운트 주문No.) · tracking_no(송장) — 자동수집(fn_sl_upsert)·엑셀 파서 모두 채움
+--   ec.slip_ref ← 이카운트 주문서 현황 업로드(fn_ec_slips_upsert, 자동 인식 '일자-No.'+'주문No.') → f_ec_slip_of 로 "이카운트 등록" 판정, 샵링커 목록에서 done 처리
+--   f_sl_range : shipped(송장전송완료/송장번호/shipped_at) · ec_slip · unshipped/shipped 건수 → 담당자·관리자 목록 발송/미발송 필터
+--   inv.item.no_stock(직배송 미차감) fn_inv_item_no_stock · inv.item_set 세트 구성(fn_inv_sets / fn_inv_set_save, 이름 규칙 자동 20개)
+--   f_order_submit : 세트 → 구성품 줄로 확장(금액 비율 분할, 나머지 첫 줄), no_stock/대물 줄은 재고 안 뺌, line_total 우선
+--   f_sl_to_order : 단가 = 샵링커 주문금액/수량, line_total = 주문금액 (이카운트 금액 = 실결제), 대물 no_stock, 이미 이카운트 등록이면 건너뜀, order_ref
+--   f_order_body : deal_type/order_ref 도 매핑 키 · 매핑 화면에 거래유형·자사주문번호 추가
+--   화면 : 주문서 폼 [+ 추가]·세트/재고미차감 태그, 담당자 재고 탭 붙여넣기 일괄 입출고, 품목 화면 세트 구성 카드·재고 미차감 버튼, 데이터 가져오기 주문서 현황

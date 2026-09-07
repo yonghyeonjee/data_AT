@@ -332,6 +332,10 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .of textarea.of-paste{width:100%;box-sizing:border-box;height:64px;resize:vertical;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border:1.5px dashed var(--of-line2);border-radius:10px;padding:8px 10px;background:#FAFBFD;color:var(--of-ink)}
 .of textarea.of-paste:focus{outline:none;border-color:var(--of-brand);background:#fff}
 @media(max-width:640px){ .of .of-head{grid-template-columns:1fr 1fr} .of .of-wide{grid-column:1/-1} }
+.of .of-add{float:right;font-size:11px;color:var(--of-brand);text-decoration:none;font-weight:600}
+.of .of-rts{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:4px;pointer-events:none}
+.of .of-rt{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:6px;white-space:nowrap;pointer-events:auto}
+.of .of-rt.set{background:#EEF2FF;color:#2F5BEA} .of .of-rt.ns{background:#FBF1DC;color:#8A5A00}
 /* OF:CSS:END */
 
 .wiz-drop{border:1.5px dashed #CDD3DE;border-radius:12px;padding:48px 20px;text-align:center;color:#646D7C;font-size:13px;background:#FAFBFD}
@@ -709,6 +713,17 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div id="sk_rows"><div class="empty">불러오는 중…</div></div>
       <div class="pager" id="sk_pager"></div>
     </div>
+    <div class="card" id="bulkMoveCard">
+      <h2>여러 품목 한 번에 입·출고 <span>엑셀 붙여넣기</span></h2>
+      <p class="note-in" style="margin-top:0">엑셀에서 <b>품목코드(또는 품목명) · 수량</b> 두 열을 복사해 붙여넣고 [확인]을 누르면 품목을 찾아 보여줍니다. 맞으면 [반영]. 세트 품목은 구성품으로 나뉘어 들어갑니다.</p>
+      <div class="daterow">
+        <select class="in" id="bm_kind"><option value="out">출고 (−)</option><option value="in">입고 (+)</option></select>
+        <button class="btn ghost sm" onclick="bmCheck()">확인</button>
+      </div>
+      <textarea class="in" id="bm_text" style="width:100%;height:96px;font-family:ui-monospace,monospace;font-size:12px;resize:vertical" placeholder="MLT-D111S/TND&#9;2&#10;CLT-00316&#9;1"></textarea>
+      <div id="bm_prev" style="margin-top:10px"></div>
+      <button class="btn hidden" id="bm_btn" onclick="bmApply()" style="margin-top:10px">반영</button>
+    </div>
     <div class="card">
       <h2>최근 입출고</h2>
       <div id="sk_moves"><div class="empty">-</div></div>
@@ -745,6 +760,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <select class="in" id="sl_kind" onchange="slPage(0)"><option value="">대물·소모품 전체</option><option value="소모품">소모품</option><option value="대물">대물</option><option value="혼합">섞임</option><option value="기타">기타</option></select>
         <select class="in" id="sl_cat" onchange="slPage(0)"><option value="">전체 카테고리</option></select>
         <select class="in" id="sl_st" onchange="slPage(0)"><option value="">전체 상태</option><option value="ready">바로 가능</option><option value="ambig">확인 필요</option><option value="miss">코드 없음</option></select>
+        <select class="in" id="sl_ship" onchange="slPage(0)"><option value="">발송 전체</option><option value="unshipped">미발송</option><option value="shipped">발송됨</option></select>
       </div>
       <div class="oc-sum"><div><div class="k">가져올 주문</div><div class="v" id="sl_cnt">-</div></div><div><div class="k">바로 가능</div><div class="v" id="sl_ready">-</div></div></div>
       <div id="sl_rows"><div class="empty">불러오는 중…</div></div>
@@ -977,6 +993,34 @@ async function loadStkMoves(){
       : '<div class="empty">최근 14일 입출고 없음</div>');
   }catch(e){ $('sk_moves').innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
 }
+/* 붙여넣기로 여러 품목 입·출고 */
+let BM_ROWS=[];
+async function bmCheck(){
+  const lines=($('bm_text').value||'').replace(/\r/g,'').split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length) return toast('붙여넣을 내용이 없습니다','bad');
+  const rows=lines.map(l=>{ const c=l.split(/\t|\s*[|,;]\s*/).map(x=>x.trim()); if(/^(품목코드|품목명|코드|수량)$/.test(c[0])) return null;
+    const qty=Number(String(c[c.length-1]||'').replace(/[^0-9.]/g,'')); const key=c.length>1?c.slice(0,-1).join(' '):c[0];
+    return {key, qty:(isFinite(qty)&&qty>0)?qty:1}; }).filter(Boolean);
+  let res; try{ res=await rpc('fn_store_item_resolve',{p_code:CODE,p_rows:rows.map(r=>({code:/^[A-Z]{2,6}-\d{3,}$/i.test(r.key)?r.key:null,name:r.key}))})||[]; }catch(e){ return toast(e.message,'bad'); }
+  BM_ROWS=rows.map((r,i)=>Object.assign({},r,res[i]||{}));
+  const ok=BM_ROWS.filter(r=>r.code).length;
+  $('bm_prev').innerHTML=BM_ROWS.map((r,i)=>`<div class="item ${r.code?'':'bad'}"><div class="p">${r.code?`<span style="font-family:ui-monospace,monospace;color:var(--ok);font-size:11px">${esc(r.code)}</span> ${esc(r.name||'')}`:`<span style="color:var(--bad)">찾지 못함</span> ${esc(r.key)}`}
+      ${r.set&&r.set.length?`<small style="display:block;color:var(--faint)">세트 → ${r.set.map(c=>esc(c.name)+' ×'+c.qty).join(', ')}</small>`:''}${r.no_stock?'<small style="display:block;color:var(--warn)">재고 미차감 품목</small>':''}
+      ${!r.code&&r.cands&&r.cands.length?`<select class="in" style="margin-top:4px" onchange="BM_ROWS[${i}].code=this.value;BM_ROWS[${i}].name=this.options[this.selectedIndex].text;bmRender()"><option value="">후보 고르기</option>${r.cands.map(c=>`<option value="${esc(c.code)}">${esc(c.name)}</option>`).join('')}</select>`:''}</div>
+      <div class="a">${$('bm_kind').value==='out'?'−':'+'}${r.qty}</div></div>`).join('');
+  $('bm_btn').classList.toggle('hidden', !ok); $('bm_btn').textContent=`반영 (${ok}/${BM_ROWS.length}품목)`;
+}
+function bmRender(){ const ok=BM_ROWS.filter(r=>r.code).length; $('bm_btn').classList.toggle('hidden',!ok); $('bm_btn').textContent=`반영 (${ok}/${BM_ROWS.length}품목)`; }
+async function bmApply(){
+  const kind=$('bm_kind').value, wh=$('sk_wh').value||'00001';
+  const rows=[]; BM_ROWS.filter(r=>r.code).forEach(r=>{ if(r.set&&r.set.length) r.set.forEach(c=>rows.push({kind,item_code:c.code,warehouse:wh,qty:c.qty*r.qty,ref_type:'manual',note:'세트 '+r.code})); else if(!r.no_stock) rows.push({kind,item_code:r.code,warehouse:wh,qty:r.qty,ref_type:'manual'}); });
+  if(!rows.length) return toast('반영할 품목이 없습니다','bad');
+  if(!confirm(`${rows.length}줄을 ${kind==='out'?'출고':'입고'}로 반영할까요?`)) return;
+  const b=$('bm_btn'); b.disabled=true;
+  try{ await rpc('fn_stock_move',{p_code:CODE,p_rows:rows}); toast(`${rows.length}줄 ${kind==='out'?'출고':'입고'} 반영`,'ok'); $('bm_text').value=''; $('bm_prev').innerHTML=''; BM_ROWS=[]; b.classList.add('hidden'); loadStk(); }
+  catch(e){ toast(e.message,'bad'); }
+  b.disabled=false;
+}
 async function stkMove(code, kind, name){
   const label = kind==='in' ? '입고' : '출고';
   const qty = prompt(`${name}\n${label} 수량을 넣으세요`, '1');
@@ -1022,11 +1066,11 @@ function ofMount(host, cfg){
         <div><label class="of-l">일자 <i>*</i></label><input class="in" type="date" data-f="io_date" value="${today()}"></div>
         <div class="of-cust" style="grid-column:span 2"><label class="of-l">거래처 <small>${m.customers_n?`이카운트 거래처 ${n(m.customers_n)}곳`:'검색 · 없으면 이름만 적어도 됩니다'}</small></label>
           <input class="in" data-f="cust_name" placeholder="거래처명 · 코드 · 전화 검색" autocomplete="off"><span class="of-tag" data-f="cust_tag" hidden></span><div class="of-dd" data-f="cust_dd" hidden></div></div>
-        <div><label class="of-l">영업담당 <small>${(m.emp||[]).length?'':'코드표 없음'}</small></label>${sel('emp_code', m.emp||[], null, (m.emp||[]).length?'(이카운트 기본)':'(관리자 옵션에서 코드표 등록)')}</div>
+        <div><label class="of-l">영업담당 <small>${(m.emp||[]).length?'':'코드표 없음'}</small>${cfg.fn.codesAdd?`<a href="#" class="of-add" data-add="emp_code" data-kind="emp">+ 추가</a>`:''}</label>${sel('emp_code', m.emp||[], null, (m.emp||[]).length?'(이카운트 기본)':'(아직 없음)')}</div>
         <div><label class="of-l">출하창고 <i>*</i></label><select class="in" data-f="wh_code">${(m.warehouses||[]).map(w=>`<option value="${esc(w.code)}" ${w.code==='00001'?'selected':''}>${esc(w.name)}</option>`).join('')||'<option value="00001">본사창고</option>'}</select></div>
         <div><label class="of-l">판매담당자</label><select class="in" data-f="handler"><option value="">(없음)</option>${staff.map(s=>`<option ${s===cfg.me?'selected':''}>${esc(s)}</option>`).join('')}<option value="__custom">직접 입력…</option></select></div>
-        <div><label class="of-l">거래유형</label>${sel('deal_type', m.io_type||[], null, '(이카운트 기본)')}</div>
-        <div><label class="of-l">구분 <small>${(m.kind||[]).length?'':'코드표 없음'}</small></label>${sel('kind_code', m.kind||[], null, (m.kind||[]).length?'(없음)':'(관리자 옵션에서 코드표 등록)')}</div>
+        <div><label class="of-l">거래유형 <small>${(m.io_type||[]).length?'':'코드표 없음'}</small>${cfg.fn.codesAdd?`<a href="#" class="of-add" data-add="deal_type" data-kind="io_type">+ 추가</a>`:''}</label>${sel('deal_type', m.io_type||[], null, (m.io_type||[]).length?'(이카운트 기본)':'(아직 없음)')}</div>
+        <div><label class="of-l">구분 <small>${(m.kind||[]).length?'':'코드표 없음'}</small>${cfg.fn.codesAdd?`<a href="#" class="of-add" data-add="kind_code" data-kind="kind">+ 추가</a>`:''}</label>${sel('kind_code', m.kind||[], null, (m.kind||[]).length?'(없음)':'(아직 없음)')}</div>
         <div><label class="of-l">채널</label><input class="in" data-f="channel" list="of_ch_${S.uid}" placeholder="예: 쿠팡 · 매장 · VMS"><datalist id="of_ch_${S.uid}">${(m.channels||[]).map(c=>`<option value="${esc(c)}">`).join('')}<option value="매장"><option value="VMS"><option value="렌탈"></datalist></div>
         <div><label class="of-l">주문번호</label><input class="in" data-f="order_no" placeholder="몰 주문번호 · 요청번호"></div>
         <div><label class="of-l">납기일자</label><input class="in" type="date" data-f="due_date"></div>
@@ -1056,6 +1100,14 @@ function ofMount(host, cfg){
     ci.addEventListener('blur',()=>setTimeout(closeDd,120));
     ci.addEventListener('keydown',e=>{ if(dd.hidden) return; if(e.key==='ArrowDown'){ active=Math.min(list.length-1,active+1); openDd(); e.preventDefault(); }
       else if(e.key==='ArrowUp'){ active=Math.max(0,active-1); openDd(); e.preventDefault(); } else if(e.key==='Enter'&&active>=0){ pickCust(list[active]); e.preventDefault(); } else if(e.key==='Escape') closeDd(); });
+    // 코드 추가 (담당자도 가능). 이카운트에 없는 코드면 전송 때 실패하고 "이카운트에 별도 코드 등록 필요" 로 안내된다
+    qa('.of-add').forEach(a=>a.onclick=async e=>{ e.preventDefault(); const f=a.dataset.add, kind=a.dataset.kind;
+      const code=prompt(`${a.closest('label').textContent.replace(/\+ 추가|코드표 없음/g,'').trim()} 코드 (이카운트 기초등록의 코드 그대로)`,''); if(!code||!code.trim()) return;
+      const label=prompt('이름 (화면에 보일 이름)', code.trim()); if(label===null) return;
+      try{ await cfg.rpc(cfg.fn.codesAdd,{p_kind:kind,p_rows:[{code:code.trim(),label:(label||code).trim()}]});
+        const e2=q(`[data-f=${f}]`); const o=document.createElement('option'); o.value=code.trim(); o.textContent=(label||code).trim(); e2.appendChild(o); e2.value=code.trim();
+        toast(`${(label||code).trim()} 추가됨 · 이카운트 기초등록에 같은 코드가 없으면 전송 때 "별도 코드 등록 필요"로 표시됩니다`,'ok'); }
+      catch(err){ toast(err.message,'bad'); } });
     // 판매담당자 직접 입력
     q('[data-f=handler]').addEventListener('change',e=>{ if(e.target.value==='__custom'){ const v=prompt('판매담당자 이름',''); if(v&&v.trim()){ const o=document.createElement('option'); o.textContent=v.trim(); e.target.insertBefore(o,e.target.lastElementChild); e.target.value=v.trim(); } else e.target.value=''; } });
     // 표 도구
@@ -1078,7 +1130,7 @@ function ofMount(host, cfg){
     body.innerHTML=S.rows.map((r,i)=>`<tr data-i="${i}" class="${r.st}">
       <td class="idx">${i+1}</td><td class="st"><span class="of-dot" title="${r.st==='ok'?'품목 확인됨':r.st==='pick'?'후보가 여럿 — 골라 주세요':r.st==='miss'?'품목을 찾지 못함':''}"></span></td>
       <td class="code-c"><input class="code" data-c="code" value="${esc(r.code)}" placeholder="자동" autocomplete="off"></td>
-      <td><input data-c="name" value="${esc(r.name)}" placeholder="품목명 (붙여넣기 가능)" autocomplete="off"></td>
+      <td class="name-c"><input data-c="name" value="${esc(r.name)}" placeholder="품목명 (붙여넣기 가능)" autocomplete="off"></td>
       <td><input class="n" data-c="qty" inputmode="numeric" value="${esc(r.qty)}"></td>
       <td><input class="n" data-c="price" inputmode="numeric" value="${r.price===''?'':n(r.price)}"></td>
       <td><input class="n ${r.supplyManual?'':'auto'}" data-c="supply" inputmode="numeric" value="${r.supply===''?'':n(r.supply)}"></td>
@@ -1101,6 +1153,7 @@ function ofMount(host, cfg){
       if(c==='name'||c==='code'){ inp.addEventListener('focus',()=>{ const r=S.rows[i]; if(r&&r.st==='pick'&&r.cands) showCands(tr,i); }); inp.addEventListener('blur',()=>setTimeout(closeCands,150)); }
     });
     body.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{ S.rows.splice(Number(b.dataset.x),1); ensureBlank(); renderRows(); });
+    S.rows.forEach((r,i)=>{ if(r.set||r.noStock){ const tr=q(`tr[data-i="${i}"]`); if(tr) rowTags(tr,r); } });
     foot();
   }
   function appendBlankRow(){ renderRowsKeepFocus(); }
@@ -1144,19 +1197,24 @@ function ofMount(host, cfg){
     const rows=idx.map(i=>S.rows[i]).filter(Boolean).filter(r=>r.name||r.code); if(!rows.length) return;
     let res; try{ res=await cfg.rpc(cfg.fn.resolve,{p_rows:rows.map(r=>({code:r.code||null,name:r.name||null}))})||[]; }catch(e){ toast(e.message,'bad'); return; }
     rows.forEach((r,k)=>{ const x=res[k]||{}; const i=S.rows.indexOf(r); if(i<0) return; const tr=q(`tr[data-i="${i}"]`);
-      if(x.code){ r.code=x.code; if(!r.name||x.how==='code'||x.how==='exact'||x.how==='alias') r.name=x.name||r.name; r.st='ok'; r.cands=null; }
-      else if(x.how==='cands'){ r.cands=x.cands||[]; r.st=r.cands.length?'pick':'miss'; }
+      if(x.code){ r.code=x.code; if(!r.name||x.how==='code'||x.how==='exact'||x.how==='alias') r.name=x.name||r.name; r.st='ok'; r.cands=null; r.set=x.set||null; r.noStock=!!x.no_stock; }
+      else if(x.how==='cands'){ if(r.st==='ok'&&r.code) return; r.cands=x.cands||[]; r.st=r.cands.length?'pick':'miss'; }
       else { r.st=''; }
-      if(tr){ tr.className=r.st; const ci=tr.querySelector('[data-c=code]'), ni=tr.querySelector('[data-c=name]'); if(document.activeElement!==ci) ci.value=r.code; if(document.activeElement!==ni) ni.value=r.name; tr.querySelector('.of-dot').title=r.st==='ok'?'품목 확인됨':r.st==='pick'?'후보가 여럿 — 골라 주세요':r.st==='miss'?'품목을 찾지 못함':''; }
+      if(tr){ tr.className=r.st; const ci=tr.querySelector('[data-c=code]'), ni=tr.querySelector('[data-c=name]'); if(document.activeElement!==ci) ci.value=r.code; if(document.activeElement!==ni) ni.value=r.name; tr.querySelector('.of-dot').title=r.st==='ok'?'품목 확인됨':r.st==='pick'?'후보가 여럿 — 골라 주세요':r.st==='miss'?'품목을 찾지 못함':''; rowTags(tr,r); }
     });
     foot();
     // 후보 선택이 필요한 첫 줄을 열어 보여준다
     const first=S.rows.findIndex(r=>r.st==='pick'); if(first>=0 && !host.querySelector('.of-cands')){ const tr=q(`tr[data-i="${first}"]`); if(tr) showCands(tr, first); }
   }
+  function rowTags(tr,r){ const td=tr.querySelector('td.name-c'); if(!td) return; let box=td.querySelector('.of-rts'); if(box) box.remove(); const inp=td.querySelector('input'); inp.style.paddingRight='';
+    if(!(r.set&&r.set.length) && !r.noStock) return; box=document.createElement('span'); box.className='of-rts';
+    if(r.set&&r.set.length){ const t=document.createElement('span'); t.className='of-rt set'; t.title=r.set.map(c=>`${c.name} ×${c.qty}`).join(', '); t.textContent=`세트 → ${r.set.length}품목`; box.appendChild(t); }
+    if(r.noStock){ const t=document.createElement('span'); t.className='of-rt ns'; t.title='재고를 세지 않는 품목(직배송 등). 주문서에는 들어가지만 재고는 빠지지 않습니다'; t.textContent='재고 미차감'; box.appendChild(t); }
+    td.appendChild(box); inp.style.paddingRight=(box.offsetWidth+12)+'px'; }
   function closeCands(){ host.querySelectorAll('.of-cands').forEach(e=>e.remove()); }
   function showCands(tr,i){ closeCands(); const r=S.rows[i]; if(!r||!r.cands) return; const td=tr.querySelector('td.code-c'); const box=document.createElement('div'); box.className='of-cands';
     box.innerHTML=(r.cands.length?r.cands.map((c,k)=>`<div data-k="${k}"><small>${esc(c.code)}</small><span>${esc(c.name)}</span></div>`).join(''):'<div class="of-empty">후보가 없습니다 — 품목명을 고쳐 보세요</div>');
-    box.querySelectorAll('[data-k]').forEach(el=>el.onmousedown=e=>{ e.preventDefault(); const c=r.cands[Number(el.dataset.k)]; r.code=c.code; r.name=c.name; r.st='ok'; r.cands=null; tr.className='ok'; tr.querySelector('[data-c=code]').value=c.code; tr.querySelector('[data-c=name]').value=c.name; closeCands(); foot(); const nx=tr.nextElementSibling; if(nx){ const p=S.rows[Number(nx.dataset.i)]; if(p&&p.st==='pick') setTimeout(()=>showCands(nx,Number(nx.dataset.i)),50); } });
+    box.querySelectorAll('[data-k]').forEach(el=>el.onmousedown=e=>{ e.preventDefault(); const c=r.cands[Number(el.dataset.k)]; r.code=c.code; r.name=c.name; r.st='ok'; r.cands=null; tr.className='ok'; tr.querySelector('[data-c=code]').value=c.code; tr.querySelector('[data-c=name]').value=c.name; closeCands(); foot(); resolveRows([i]); const nx=tr.nextElementSibling; if(nx){ const p=S.rows[Number(nx.dataset.i)]; if(p&&p.st==='pick') setTimeout(()=>showCands(nx,Number(nx.dataset.i)),50); } });
     td.appendChild(box); }
 
   /* ── 밖에서 쓰는 것 ─────────────────────────────────── */
@@ -1322,18 +1380,21 @@ function wizMount(host, cfg){
   /* ── ② 선택 ─────────────────────────────────────────────── */
   function rows2(){ const r=(S.data&&S.data.rows)||[];
     return r.filter(x=> (S.flt2==='all' ? true : S.flt2==='ready' ? (x.ready&&!x.done&&!x.ambig) : S.flt2==='ambig' ? (x.ambig>0&&!x.done) : S.flt2==='miss' ? (!x.ready&&!x.done) : x.done)
-                     && (!S.fltKind || x.kind===S.fltKind) && (!S.fltCat || x.category===S.fltCat)); }
+                     && (!S.fltKind || x.kind===S.fltKind) && (!S.fltCat || x.category===S.fltCat)
+                     && (!S.fltShip || (S.fltShip==='shipped' ? x.shipped : !x.shipped))); }
   function selRows(){ return ((S.data&&S.data.rows)||[]).filter(r=>S.sel.has(r.order_no)); }
   const PG2=100;
   function r2(){
     const allRows=rows2(); const pages=Math.max(1,Math.ceil(allRows.length/PG2)); S.pg2=Math.min(Math.max(0,S.pg2||0),pages-1);
     const rows=allRows.slice(S.pg2*PG2,(S.pg2+1)*PG2), all=rows.filter(r=>!r.done);
     const allOn=all.length>0 && all.every(r=>S.sel.has(r.order_no));
-    const st=r=> r.done?'<span class="tg n">이미 만듦</span>' : !r.ready?'<span class="tg bad">코드 없음</span>' : r.ambig?'<span class="tg warn">확인 필요</span>':'<span class="tg ok">바로 가능</span>';
+    const st=r=> (r.done?(r.ec_slip?`<span class="tg n" title="이카운트 전표 ${esc(r.ec_slip)}">이카운트 등록</span>`:'<span class="tg n">이미 만듦</span>') : !r.ready?'<span class="tg bad">코드 없음</span>' : r.ambig?'<span class="tg warn">확인 필요</span>':'<span class="tg ok">바로 가능</span>')
+      + (r.shipped?`<span class="tg ok" style="margin-left:4px" title="${esc(r.tracking_no||'')}">발송</span>`:'<span class="tg warn" style="margin-left:4px">미발송</span>');
     $('wzBody').innerHTML=`
       <div class="wiz-flt">${[['all','전체'],['ready','바로 가능'],['ambig','확인 필요'],['miss','코드 없음'],['done','이미 만듦']].map(([k,l])=>`<button class="${S.flt2===k?'on':''}" data-f="${k}">${l}</button>`).join('')}
         <select class="in" id="wzKind" style="height:32px;font-size:12px"><option value="">대물·소모품 전체</option>${(S.data.kinds||[]).map(k=>`<option value="${esc(k.k)}" ${S.fltKind===k.k?'selected':''}>${esc(k.k)} (${n(k.n)})</option>`).join('')}</select>
         <select class="in" id="wzCat" style="height:32px;font-size:12px"><option value="">전체 카테고리</option>${(S.data.categories||[]).map(c=>`<option value="${esc(c.c)}" ${S.fltCat===c.c?'selected':''}>${esc(c.c)} (${n(c.n)})</option>`).join('')}</select>
+        <select class="in" id="wzShip" style="height:32px;font-size:12px"><option value="">발송 전체</option><option value="unshipped" ${S.fltShip==='unshipped'?'selected':''}>미발송 (${n(S.data.unshipped||0)})</option><option value="shipped" ${S.fltShip==='shipped'?'selected':''}>발송됨 (${n(S.data.shipped||0)})</option></select>
         <span class="sp"></span><button class="btn ghost sm" id="wzSelReady">보이는 것 중 바로 가능한 것 모두 선택</button></div>
       <div class="wiz-tw"><table><thead><tr>
         <th style="width:30px"><input type="checkbox" id="wzAll" ${allOn?'checked':''} title="보이는 것 전체 선택"></th><th>주문</th><th>품목</th><th style="width:110px">구분</th><th class="num">수량</th><th class="num">금액</th><th>상태</th></tr></thead>
@@ -1348,7 +1409,7 @@ function wizMount(host, cfg){
     host.querySelectorAll('.wiz-flt button[data-f]').forEach(b=>b.onclick=()=>{ S.flt2=b.dataset.f; S.pg2=0; r2(); });
     $('wzAll').onchange=e=>{ all.forEach(r=>e.target.checked?S.sel.add(r.order_no):S.sel.delete(r.order_no)); r2(); render2ft(); };
     $('wzSelReady').onclick=()=>{ rows2().filter(r=>r.ready&&!r.done&&!r.ambig).forEach(r=>S.sel.add(r.order_no)); r2(); };
-    $('wzKind').onchange=e=>{ S.fltKind=e.target.value; S.pg2=0; r2(); }; $('wzCat').onchange=e=>{ S.fltCat=e.target.value; S.pg2=0; r2(); };
+    $('wzKind').onchange=e=>{ S.fltKind=e.target.value; S.pg2=0; r2(); }; $('wzCat').onchange=e=>{ S.fltCat=e.target.value; S.pg2=0; r2(); }; $('wzShip').onchange=e=>{ S.fltShip=e.target.value; S.pg2=0; r2(); };
     host.querySelectorAll('input[data-c]').forEach(c=>c.onchange=()=>{ c.checked?S.sel.add(c.dataset.c):S.sel.delete(c.dataset.c); c.closest('tr').classList.toggle('sel',c.checked); render2ft(); });
     host.querySelectorAll('tbody tr[data-o]').forEach(tr=>tr.onclick=e=>{ if(e.target.tagName==='INPUT') return; const c=tr.querySelector('input[data-c]'); if(c&&!c.disabled){ c.checked=!c.checked; c.onchange(); } });
     render2ft();
@@ -1618,7 +1679,7 @@ function slParseRows(rows){
       product_code:str(H(r,'상품코드')),model_code:str(H(r,'모델명')).toUpperCase()||null,product_name:str(H(r,'주문 상품명','자사 상품명')),option_text:str(H(r,'옵션')),
       qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'쇼핑몰 판매가'))||null,gross_amount:gross,refund_amount:refund,payment_method:str(H(r,'결제')),
       customer_name:str(H(r,'주문자명')),customer_phone:str(H(r,'주문자연락처2'))||str(H(r,'주문자연락처1')),email:str(H(r,'주문자이메일주소')),address:str(H(r,'수취인 주소')),
-      notes:str(H(r,'클레임여부')).replace(/\n/g,' ').slice(0,80)||null}; }).filter(Boolean);
+      notes:str(H(r,'클레임여부')).replace(/\n/g,' ').slice(0,80)||null,alt_order_no:str(H(r,'자사주문번호'))||null,tracking_no:str(H(r,'송장번호','운송장번호','택배송장번호','배송번호'))||null}; }).filter(Boolean);
 }
 async function slUploadFile(file, prog){
   prog=prog||(()=>{}); prog('엑셀 모듈 준비 중…'); await loadXLSX();
@@ -1654,20 +1715,20 @@ async function loadSlList(){
   if($('sl_ch').options.length<=1) $('sl_ch').innerHTML='<option value="">전체 채널</option>'+(d.channels||[]).map(c=>`<option>${esc(c)}</option>`).join('');
   const keep=$('sl_cat').value; $('sl_cat').innerHTML='<option value="">전체 카테고리</option>'+(d.categories||[]).map(x=>`<option value="${esc(x.c)}" ${x.c===keep?'selected':''}>${esc(x.c)} (${x.n})</option>`).join('');
   $('sl_cnt').textContent=(d.total||0)+'건';
-  $('sl_ready').textContent=(d.ready||0)+'건'+((d.unmapped||0)?` (코드없음 ${d.unmapped})`:'');
+  $('sl_ready').textContent=(d.ready||0)+'건'+((d.unmapped||0)?` (코드없음 ${d.unmapped})`:'')+((d.unshipped!=null)?` · 미발송 ${d.unshipped}`:'');
   renderSlList();
 }
 let SL_META=null;
-function slVisible(){ const k=$('sl_kind').value, c=$('sl_cat').value, st=$('sl_st').value;
+function slVisible(){ const k=$('sl_kind').value, c=$('sl_cat').value, st=$('sl_st').value, sh=$('sl_ship').value;
   return SL_ROWS.map((r,i)=>({r,i})).filter(({r})=> (!k||r.kind===k) && (!c||r.category===c) &&
-    (!st || (st==='ready'? (r.ready&&!r.ambig) : st==='ambig'? r.ambig>0 : !r.ready))); }
+    (!st || (st==='ready'? (r.ready&&!r.ambig) : st==='ambig'? r.ambig>0 : !r.ready)) && (!sh || (sh==='shipped'? r.shipped : !r.shipped))); }
 const SL_PAGE=50; let SL_PG=0;
 function slPage(k){ SL_PG=Math.max(0,k); renderSlList(); const b=$('sl_rows'); if(b) b.scrollIntoView({behavior:'smooth',block:'start'}); }
 function renderSlList(){
   const box=$('sl_rows'); if(!box||!SL_ROWS) return; const all=slVisible();
   const pages=Math.max(1,Math.ceil(all.length/SL_PAGE)); if(SL_PG>=pages) SL_PG=pages-1; const vis=all.slice(SL_PG*SL_PAGE,(SL_PG+1)*SL_PAGE);
   const sel=vis.filter(({r})=>r.ready), allOn=sel.length>0 && sel.every(({r})=>SL_PICK.has(r.order_no));
-  const st=r=> !r.ready?'<span class="st bad">코드 없음</span>' : r.ambig?'<span class="st warn">확인 필요</span>':'<span class="st ok">바로 가능</span>';
+  const st=r=> (!r.ready?'<span class="st bad">코드 없음</span>' : r.ambig?'<span class="st warn">확인 필요</span>':'<span class="st ok">바로 가능</span>') + (r.shipped?`<span class="st ok" style="margin-top:3px;display:inline-block" title="${esc(r.tracking_no||'')}">발송</span>`:'<span class="st warn" style="margin-top:3px;display:inline-block">미발송</span>');
   box.innerHTML = vis.length ? `<div class="tw"><table class="slt"><thead><tr>
       <th style="width:30px"><input type="checkbox" id="sl_all" ${allOn?'checked':''} onchange="slAllStore(this.checked)" title="보이는 것 중 바로 가능한 것 전체 선택"></th>
       <th>주문</th><th>품목</th><th>구분</th><th class="num">수량</th><th class="num">금액</th><th>상태</th></tr></thead><tbody>${
@@ -1709,7 +1770,7 @@ async function initOrderTab(){
     // 출처 기본값 : 온라인 담당이면 온라인, 아니면 매장
     OF_STORE=ofMount($('ofHostStore'),{ rpc:(fn,args)=>rpc(fn,Object.assign({p_code:CODE},args||{})), esc, toast, me:ME,
       origin:(STATUS && STATUS.dept === '온라인사업부') ? 'online' : 'store',
-      fn:{meta:'fn_store_order_meta', customers:'fn_store_ec_customers', resolve:'fn_store_item_resolve'} });
+      fn:{meta:'fn_store_order_meta', customers:'fn_store_ec_customers', resolve:'fn_store_item_resolve', codesAdd:'fn_store_codes_add'} });
   }
   if(!SL_INIT){ SL_INIT=true; loadSlList(); let m='wiz'; try{ m=localStorage.getItem('or_mode')||'wiz'; }catch(e){} orMode(m); }
   loadOrRecent();
