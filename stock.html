@@ -119,6 +119,9 @@ section.panel{padding:16px 18px}
 #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:99;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%)}
 #toast.bad{background:var(--bad)} #toast.ok{background:var(--ok)}
+table th{cursor:pointer;user-select:none;position:relative}
+table th.sort-asc::after,table th.sort-desc::after{content:' ▲';font-size:9px;opacity:.75}
+table th.sort-desc::after{content:' ▼'}
 </style>
 </head>
 <body>
@@ -306,6 +309,30 @@ function renderMy(d){
 }
 
 (async()=>{ if(CODE){ try{ await loadMy(); start(); return; }catch(e){ localStorage.removeItem('staff_code'); CODE=''; } } $('pinInput').focus(); })();
+
+/* ═══ 표 정렬 : 어떤 표든 머리글을 누르면 그 열로 오름/내림차순 (지금 화면에 보이는 행 기준) ═══ */
+(function(){
+  const num=t=>{ const s=String(t).replace(/[,\s원%개건명]/g,''); if(s==='' || s==='-' || s==='—') return null; const v=Number(s); return isNaN(v)?null:v; };
+  function cellVal(td){ if(td.dataset.sort!==undefined) return td.dataset.sort; const inp=td.querySelector('input,select'); if(inp && !td.textContent.trim()) return inp.value; return td.textContent.trim(); }
+  document.addEventListener('click', e=>{
+    const th=e.target.closest('th'); if(!th || e.target.closest('input,button,a,select,label')) return;
+    const table=th.closest('table'); if(!table || th.querySelector('input[type=checkbox]')) return;
+    const label=th.textContent.trim(); if(!label) return;
+    const tbody=table.tBodies[0]; if(!tbody) return;
+    const rows=[...tbody.rows]; if(rows.length<2) return;
+    if(rows.some(r=>[...r.cells].some(c=>c.colSpan>1))) return;   /* 소계·그룹 줄이 있는 표는 그대로 둔다 */
+    const idx=[...th.parentNode.children].indexOf(th);
+    const dir = th.classList.contains('sort-asc') ? 'desc' : 'asc';
+    table.querySelectorAll('th').forEach(x=>x.classList.remove('sort-asc','sort-desc')); th.classList.add('sort-'+dir);
+    const vals=rows.map(r=>{ const c=r.cells[idx]; return c?cellVal(c):''; });
+    const allNum=vals.every(v=>v===''||num(v)!==null) && vals.some(v=>v!=='');
+    const keyed=rows.map((r,i)=>({r,v:vals[i],i}));
+    keyed.sort((a,b)=>{ let x=a.v, y=b.v; const ex=x==='', ey=y===''; if(ex&&ey) return a.i-b.i; if(ex) return 1; if(ey) return -1;
+      let c; if(allNum) c=num(x)-num(y); else c=String(x).localeCompare(String(y),'ko',{numeric:true}); if(c===0) c=a.i-b.i; return dir==='asc'?c:-c; });
+    keyed.forEach(k=>tbody.appendChild(k.r));
+  }, true);
+})();
+
 </script>
 </body>
 </html>

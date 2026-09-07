@@ -384,3 +384,34 @@
 -- (v27) 코드 화면 : 서버 오류문에 (N/5) 를 항상 넣고 화면이 빨간 5칸 눈금으로 표시 · 확인 중 스피너/입력 잠금 · 성공 토스트 "OO님, 확인됐습니다"
 --        같은 탭 새로고침은 <html class="resuming"> 로 코드 화면을 아예 그리지 않고 이어감(깜빡임 제거) · 새 탭이면 코드 화면부터
 --        [버그] v25 에서 요청 목록 CSS .req 가 판매 입력의 필수표시 .req 와 겹쳐 라벨이 깨짐 → .rq 로 변경
+-- (v28) 발송 대상 추출 : 유입을 고도몰(P·S·AT·시흥) / 외부 ERP·수집(이카운트·샵링커) / 내부 운영(매장·상담·렌탈) / 홈페이지 폼(구독·견적서·VMS·B2B·소모품) 으로 묶어 표시 (화면 CRM_SRC)
+--        S몰·AT몰은 회원 파일 미적재라 0 으로 나옴. 헤더 적재시각 팝업 : 모바일에서 hover 가 붙어 안 닫히던 것 → 탭 토글 + 바깥 탭 닫힘 + 닫기 버튼
+-- cron 추가 : ecount-master-sync 0 0,12 UTC (09:00·21:00 KST 품목+거래처) · ecount-stock-sync-pm 10 12 UTC (21:10 KST 재고 줄세움)
+--   ※ 이카운트 '판매현황'(VMS·렌탈 매출) 조회 API 는 확인되지 않음 → 여전히 파일 업로드. 이카운트 API 목록에 판매조회가 있으면 붙일 것
+-- 첫 큐 실행 결과 : 12창고 06:56→07:44 (48분) 전부 성공, 779행, 조정 2건
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- mvp_86_consult_hide_and_store_actions  (v29)
+-- ═══════════════════════════════════════════════════════════════════════
+-- [상담 숨김] crm.consult.hidden_at/by/reason + 뷰 crm.consult_live (hidden_at is null)
+--   읽기 함수 8개(fn_store_status·fn_store_customer_search·fn_consult_summary·fn_consult_routes·fn_home·fn_dashboard_kpi·fn_dashboard_v2·fn_activity_log)
+--   본문의 crm.consult → crm.consult_live 로 치환 → 담당자 화면·통계에서 자동 제외. 관리자 fn_consult_list 는 기본 제외, p_result='숨김' 이면 숨긴 것만 (hidden_* 컬럼 추가, 반환형 바뀌어 drop 후 재생성)
+--   fn_consult_hide(ids, hide, reason) · 문의 관리 fn_inquiry_flag(테스트/숨김) 도 구독·소모품·B2B 폼이면 상담에 같이 반영
+-- [담당자 상담 처리] fn_store_consult_update(code, id, 'hold'|'callback'|'resume'|'close', at, memo)
+--   보류 → result 보류 / 재연락 → callback_at (콜백 약속 카드에 뜸) / 다시 진행 / 종료. 내 상담 또는 callback 권한
+--   fn_store_status.my_open_consults 에 result 추가. 화면 : 진행중 상담 카드에 [재연락][보류][종료] + 빠른 일정(오늘 2시·내일 10시…)
+
+-- mvp_87_gifts (v30) 사은품
+--   crm.consult / core.orders : gift_name, gift_amount · crm.gift_preset(name, price, uses, last_used_at) — 한 번 쓰면 자동 등록, 많이 쓴 순으로 칩
+--   fn_store_gifts(code) → {presets, links} · fn_gift_presets() 관리자 · app_setting 'gift_links' (문의 시트·오피스콘·스타벅스·신세계·오피스콘 계정) 관리자 옵션에서 편집
+--   fn_store_consult_submit / fn_store_sale_submit 에 gift_name·gift_amount → 저장 + core.f_gift_touch. fn_consult_list 에 gift 컬럼(반환형 재생성)
+--   오피스콘 계정은 HTML 에 넣지 않고 DB 에서 코드 통과 후 RPC 로만 내려줌 ('오피스콘 계정 보기' 버튼)
+-- (v31) 홈 고객 카드 : 발송 가능(전체) · 개인/기업 (fn_home.counts cust_* — crm.customer.account_type personal/business, 발송가능=수신동의+휴대폰)
+--        데이터 기준 '~09-20' 오류 : 렌탈 업로드 1행(id 170151, 전표 2026/08/10)이 order_at 2026-09-20 으로 들어와 있었음 → 08-10 로 보정
+--        fn_data_stamp / fn_data_status 의 max(order_at) 에 filter (where order_at <= now()) — 미래 날짜가 또 들어와도 기준일에 안 잡힘
+
+-- mvp_88_inv_excluded (v32) 재고 집계 제외
+--   inv.item.excluded / excluded_note. 자동 규칙: 이름에 수수료·운송료·배송비·수리비·기술료·출장비·포인트·할인·설치비·추가요금·카드매출… 또는 '기타', item_type='7' → 26품목 제외
+--   fn_inv_summary : 제외 품목 빼고 집계 (+excluded 수) · fn_inv_stock(…, p_show_excluded) 기본 제외, 켜면 제외 품목만 (반환형 같아 drop 후 재생성)
+--   fn_inv_item_exclude(codes, excluded, note) 관리자 행 버튼 [집계 제외]/[집계 포함] · fn_stock_search 담당자 화면에서는 아예 안 보임
+-- 화면 공통 : 모든 표 머리글 클릭 정렬(오름/내림, 숫자·한글 자동 판별, 현재 페이지 행 기준). 소계 줄(colspan) 있는 표는 제외. admin·store·stock 세 파일

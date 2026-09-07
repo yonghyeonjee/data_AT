@@ -188,7 +188,10 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .cta2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .cta2 button{padding:14px;border-radius:12px;border:0;font-weight:800;font-size:15px;cursor:pointer;background:var(--navy);color:#fff}
 .cta2 button.alt{background:var(--surface);color:var(--navy);border:1.5px solid var(--navy)}
-.item.oc{grid-template-columns:1fr auto}
+.item.oc{grid-template-columns:1fr auto} .item.oc .act{display:grid;grid-template-columns:auto auto;gap:4px;justify-items:end;align-self:start}
+.item.oc .ocpick{grid-column:1/-1;border-top:1px dashed var(--line);padding-top:8px;margin-top:2px}
+.ocpick .q{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px} .ocpick .q button{border:1.5px solid var(--line-2);background:#fff;border-radius:7px;padding:5px 9px;font-size:11.5px;font-weight:600;cursor:pointer}
+.ocpick .r{display:flex;gap:6px;align-items:center} .ocpick .r .in{height:34px;padding:0 8px;font-size:13px;flex:1;min-width:0}
 
 .empty{color:var(--faint);text-align:center;padding:20px;font-size:13px}
 .lbl{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
@@ -362,6 +365,13 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .rq.taken{background:#FBF6EA;margin:0 -8px;padding:10px 8px;border-radius:8px}
 .rq .st{font-size:11px;font-weight:700;padding:1px 7px;border-radius:6px;background:#FFF4D6;color:#8A6300} .rq .st.done{background:#E3F3F0;color:#0F7B6C} .rq .st.skip{background:#EEF0F4;color:#646D7C}
 .tab .n.alarm{background:#E24B4B;color:#fff}
+.gift-row{display:grid;grid-template-columns:1fr 120px;gap:8px} .gift-row .in:last-child{text-align:right}
+.gift-chips{margin-top:6px} .gift-chips .chip small{color:var(--muted);font-weight:400;margin-left:3px}
+.gift-links{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px} .gift-links a{font-size:11.5px;font-weight:600;color:var(--navy);text-decoration:none;border:1.5px solid var(--line-2);border-radius:7px;padding:4px 9px;background:#fff}
+.gift-links a.acct{color:var(--muted);cursor:pointer}
+table th{cursor:pointer;user-select:none;position:relative}
+table th.sort-asc::after,table th.sort-desc::after{content:' ▲';font-size:9px;opacity:.75}
+table th.sort-desc::after{content:' ▼'}
 </style>
 </head>
 <body>
@@ -480,6 +490,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           <select class="in" id="s_pay"><option value="">선택 안 함</option><option>삼성카드</option><option>타사카드</option><option>현금</option><option>구독(월납)</option><option>기타</option></select></div>
         <div class="f"><label>상담번호 <span class="hint">있으면 자동 연결</span></label><input class="in" id="s_consult" placeholder="SC260902-000001" autocomplete="off"></div>
       </div>
+      <div class="f"><label>사은품 <span class="hint">준 게 있으면 이름과 금액</span></label>
+        <div class="gift-row"><input class="in" id="s_gift" placeholder="예: 스타벅스 1만원권" autocomplete="off" list="giftList"><input class="in" id="s_gift_amt" inputmode="numeric" placeholder="금액" oninput="comma(this)"></div>
+        <div class="chips gift-chips" id="s_gift_chips"></div>
+        <div class="gift-links" id="s_gift_links"></div>
+      </div>
       <div class="f">
         <div class="toggle on" id="s_consent" onclick="this.classList.toggle('on')">
           <div><b>마케팅 수신 동의</b><small>고객이 동의한 경우에만 켜두세요</small></div><div class="sw"></div>
@@ -554,6 +569,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           <span class="chip" onclick="quickCb(2,'14:00')">모레 2시</span><span class="chip" onclick="quickCb(7,'14:00')">일주일 뒤</span>
           <span class="chip" onclick="$('c_cbDate').value='';$('c_cbTime').value=''">없음</span>
         </div></div>
+      <div class="f"><label>사은품 <span class="hint">준 게 있으면 이름과 금액</span></label>
+        <div class="gift-row"><input class="in" id="c_gift" placeholder="예: 스타벅스 1만원권" autocomplete="off" list="giftList"><input class="in" id="c_gift_amt" inputmode="numeric" placeholder="금액" oninput="comma(this)"></div>
+        <div class="chips gift-chips" id="c_gift_chips"></div>
+        <div class="gift-links" id="c_gift_links"></div>
+      </div>
       <div class="f">
         <div class="toggle" id="c_consent" onclick="this.classList.toggle('on')">
           <div><b>마케팅 수신 동의</b><small>동의 받은 경우에만</small></div><div class="sw"></div>
@@ -741,6 +761,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <div class="foot">삼성앤텍 시흥점 · 입력 문의 온라인사업부 · <a href="#" onclick="localStorage.removeItem('staff_code');location.reload();return false">담당자 변경</a></div>
 </div>
 <div class="toast" id="toast"></div>
+<datalist id="giftList"></datalist>
 
 <script>
 /* ═══ 설정 ═══ */
@@ -785,7 +806,7 @@ async function start(){
   try{ const t=location.hash.replace('#',''); history.replaceState({tab:t||'home'},'','#'+(t||'home')); if(t && t!=='home') goTab(t, true); }catch(e){}
   $('s_date').value = todayStr(); $('c_date').value = todayStr(); $('d_date').value = todayStr(-1);
   render();
-  REQ_SEEN=null; loadRequests(); reqPoll();
+  REQ_SEEN=null; loadRequests(); reqPoll(); loadGifts();
 }
 function render(){
   const s = STATUS;
@@ -1437,7 +1458,7 @@ async function submitSale(){
     product_name:$('s_product').value.trim(), model_code:$('s_model').value.trim(),
     qty:Number($('s_qty').value)||1, gross_amount:num($('s_amount')), payment_method:$('s_pay').value,
     consult_ref:$('s_consult').value.trim(), consent_marketing:$('s_consent').classList.contains('on'), notes:$('s_notes').value.trim(),
-    request_order:$('s_req').classList.contains('on') };
+    request_order:$('s_req').classList.contains('on'), gift_name:$('s_gift').value.trim()||null, gift_amount:num($('s_gift_amt'))||null };
   if(!p.product_name) return toast('상품명을 입력하세요','bad');
   if(p.gross_amount<=0) return toast('판매가를 입력하세요','bad');
   if(p.customer_phone && !/^01\d-\d{3,4}-\d{4}$/.test(p.customer_phone)) return toast('휴대폰 번호를 확인하세요','bad');
@@ -1445,7 +1466,7 @@ async function submitSale(){
   try{ const r = await rpc('fn_store_sale_submit',{p_code:CODE,p_data:p});
     toast(r.request_id?`저장됨 · 주문서 요청 #${r.request_id} 보냄 — 처리 담당자에게 알림`:`저장됨 · ${r.handler} · ${p.product_name} ${won(p.gross_amount)} · ${r.stage}`,'ok');
     if(r.request_id) setTimeout(loadRequests, 500);
-    ['s_name','s_phone','s_product','s_model','s_amount','s_consult','s_notes'].forEach(id=>$(id).value=''); $('s_qty').value=1; $('s_pay').value=''; $('s_total').textContent='0원'; custClear('s'); REPORT_LOADED=false;
+    ['s_name','s_phone','s_product','s_model','s_amount','s_consult','s_notes','s_gift','s_gift_amt'].forEach(id=>$(id).value=''); loadGifts(); $('s_qty').value=1; $('s_pay').value=''; $('s_total').textContent='0원'; custClear('s'); REPORT_LOADED=false;
     await loadStatus(); render(); $('s_product').focus();
   }catch(e){ toast(e.message,'bad'); if(/코드/.test(e.message)){ localStorage.removeItem('staff_code'); setTimeout(()=>location.reload(),1500);} }
   b.disabled=false; b.textContent='저장';
@@ -1473,9 +1494,16 @@ function renderHome(s){
         <div class="row">${x.tel?`<a class="call" href="tel:${x.tel}">📞 전화</a>`:''}<button class="done" onclick="cbAction(${x.id},'done')">완료</button><button onclick="cbAction(${x.id},'tomorrow')">내일로</button><button onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button></div></div>
     </div>`; }).join(''):'<div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div>';
   $('ocList').innerHTML=oc.length?oc.map(x=>`
-    <div class="item oc"><div><div class="p">${esc(x.name)} <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}${String(x.route||'').startsWith('홈페이지')?'<span class="mine">홈페이지 문의</span>':''}</div>
+    <div class="item oc"><div><div class="p">${esc(x.name)} <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}${String(x.route||'').startsWith('홈페이지')?'<span class="mine">홈페이지 문의</span>':''}${x.result==='보류'?'<span class="tag" style="background:#FFF4D6;color:#8A6300">보류</span>':''}</div>
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.route||'')}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.expect_date?` · 예정 ${String(x.expect_date).slice(5).replace('-','/')}`:''}${x.callback_at?` · 콜백 ${fmtWhen(x.callback_at).join(' ')}`:''}</div></div>
-      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button></div></div>`).join(''):'<div class="empty">진행중인 상담이 없습니다</div>';
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button>
+        <button class="mini" onclick="ocPick(${x.id})">재연락</button>
+        ${x.result==='보류'?`<button class="mini" onclick="ocAct(${x.id},'resume')">다시 진행</button>`:`<button class="mini warn" onclick="ocAct(${x.id},'hold')">보류</button>`}
+        <button class="mini" style="color:var(--faint)" onclick="ocAct(${x.id},'close')">종료</button></div>
+      <div class="ocpick hidden" id="ocpick_${x.id}">
+        <div class="q"><button onclick="ocQuick(${x.id},0,'14:00')">오늘 2시</button><button onclick="ocQuick(${x.id},1,'10:00')">내일 10시</button><button onclick="ocQuick(${x.id},1,'14:00')">내일 2시</button><button onclick="ocQuick(${x.id},7,'10:00')">일주일 뒤</button></div>
+        <div class="r"><input class="in" type="date" id="ocd_${x.id}"><select class="in" id="oct_${x.id}">${['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'].map(t=>`<option${t==='14:00'?' selected':''}>${t}</option>`).join('')}</select><button class="mini ok" onclick="ocSave(${x.id})">저장</button><button class="mini" onclick="$('ocpick_${x.id}').classList.add('hidden')">취소</button></div>
+      </div></div>`).join(''):'<div class="empty">진행중인 상담이 없습니다</div>';
   const qt=s.quotes||[];
   $('qtSub').textContent=qt.length?`${qt.length}건 · 최근 90일`:'최근 90일';
   $('qtList').innerHTML=qt.length?qt.map(x=>`
@@ -1607,14 +1635,14 @@ async function submitConsult(){
   const p = { consult_at:$('c_date').value, handler:$('c_handler').value, customer_name:$('c_name').value.trim(), customer_phone:$('c_phone').value.trim(), buyer_key: LINK.c||null,
     interest_category: cat?cat.dataset.v:'', interest_model_code:$('c_model').value.trim(), inflow_route:$('c_route').value, result:$('c_result').value,
     expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(), callback_at: cbISO(),
-    consent_marketing:$('c_consent').classList.contains('on') };
+    consent_marketing:$('c_consent').classList.contains('on'), gift_name:$('c_gift').value.trim()||null, gift_amount:num($('c_gift_amt'))||null };
   if(!p.customer_name && !p.buyer_key) return toast('고객명을 입력하세요','bad');
   if(!p.interest_category) return toast('관심 품목을 선택하세요','bad');
   const b=$('c_btn'); b.disabled=true; b.textContent='저장 중…';
   try{ const r = await rpc('fn_store_consult_submit',{p_code:CODE,p_data:p});
     toast(r.callback_at?`상담 저장됨 · 콜백 ${fmtWhen(r.callback_at).join(' ')} 예약`:'상담 저장됨','ok');
     $('c_ref').classList.remove('hidden'); $('c_ref').innerHTML = `상담번호 <b style="color:var(--ink);font-size:15px">${r.ref}</b><br>구매로 이어지면 판매 입력의 "상담번호"에 적어주세요${r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '내 고객' 탭에서 알려드립니다`:''}`;
-    ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime'].forEach(id=>$(id).value=''); custClear('c'); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
+    ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt'].forEach(id=>$(id).value=''); loadGifts(); custClear('c'); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
     await loadStatus(); render();
   }catch(e){ toast(e.message,'bad'); }
   b.disabled=false; b.textContent='저장';
@@ -1675,6 +1703,42 @@ async function submitDaily(){
   b.disabled=false; b.textContent='마감 저장';
 }
 
+
+
+
+/* ═══ 사은품 : 한 번 쓴 사은품은 칩으로, 링크(문의 시트·오피스콘)는 버튼으로 ═══ */
+let GIFTS=null;
+async function loadGifts(){
+  if(!CODE) return;
+  try{ GIFTS=await rpc('fn_store_gifts',{p_code:CODE}); }catch(e){ return; }
+  const ps=GIFTS.presets||[], L=GIFTS.links||{};
+  $('giftList').innerHTML=ps.map(g=>`<option value="${esc(g.name)}">`).join('');
+  ['c','s'].forEach(pre=>{
+    const ch=$(pre+'_gift_chips'); if(ch) ch.innerHTML=ps.slice(0,8).map(g=>`<span class="chip" onclick="pickGift('${pre}','${esc(g.name)}',${g.price||0})">${esc(g.name)}${g.price?`<small>${Number(g.price).toLocaleString('ko-KR')}</small>`:''}</span>`).join('');
+    const lk=$(pre+'_gift_links'); if(lk) lk.innerHTML=[
+      L.sheet?`<a href="${esc(L.sheet)}" target="_blank" rel="noopener">문의 시트 ↗</a>`:'',
+      L.officecon?`<a href="${esc(L.officecon)}" target="_blank" rel="noopener">오피스콘 ↗</a>`:'',
+      L.starbucks?`<a href="${esc(L.starbucks)}" target="_blank" rel="noopener">스타벅스 ↗</a>`:'',
+      L.shinsegae?`<a href="${esc(L.shinsegae)}" target="_blank" rel="noopener">신세계 상품권 ↗</a>`:'',
+      L.login_id?`<a class="acct" onclick="giftAcct()">오피스콘 계정 보기</a>`:''].join('');
+  });
+}
+function pickGift(pre,name,price){ $(pre+'_gift').value=name; const a=$(pre+'_gift_amt'); a.value=price?Number(price).toLocaleString('ko-KR'):''; }
+function giftAcct(){ const L=(GIFTS&&GIFTS.links)||{};
+  const txt=`오피스콘 아이디: ${L.login_id||'-'}\n비밀번호: ${L.login_pw||'-'}\n기프티콘 전송 비밀번호: ${L.send_pw||'-'}`;
+  try{ navigator.clipboard&&navigator.clipboard.writeText(`${L.login_id||''}\t${L.login_pw||''}`); }catch(e){}
+  alert(txt+'\n\n(아이디·비밀번호는 클립보드에 복사됨)'); }
+
+/* ═══ 진행중 상담 : 보류 · 재연락 일정 · 종료 ═══ */
+async function ocAct(id, action, at, memo){
+  if(action==='close' && !confirm('이 상담을 종료할까요? (목록에서 빠집니다)')) return;
+  try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:action,p_at:at||null,p_memo:memo||null});
+    toast({hold:'보류로 바꿨습니다',resume:'다시 진행합니다',close:'종료했습니다',callback:'재연락 일정을 잡았습니다 — 콜백 약속에 뜹니다'}[action]||'저장됨','ok');
+    await loadStatus(); render(); }catch(e){ toast(e.message,'bad'); } }
+function ocPick(id){ const el=$('ocpick_'+id); if(!el) return; document.querySelectorAll('.ocpick').forEach(x=>{ if(x!==el) x.classList.add('hidden'); });
+  el.classList.toggle('hidden'); if(!el.classList.contains('hidden')){ const d=$('ocd_'+id); if(!d.value) d.value=todayStr(1); } }
+function ocQuick(id, days, time){ ocAct(id,'callback', todayStr(days)+'T'+time+':00+09:00'); }
+function ocSave(id){ const d=$('ocd_'+id).value, t=$('oct_'+id).value; if(!d) return toast('날짜를 고르세요','bad'); ocAct(id,'callback', d+'T'+t+':00+09:00'); }
 
 /* ═══ 매장 판매 → 주문서 요청 (입력 담당자 알림) ═══ */
 let REQ=null, REQ_SEEN=null, REQ_T=null, REQ_ID=null;
@@ -1774,6 +1838,30 @@ try{ const u=Number(localStorage.getItem('dc_pin_until')||0); if(u>Date.now()){ 
   document.documentElement.classList.remove('resuming');
   if(CODE && fresh) document.querySelector('#pinScreen .sub').textContent='창을 다시 열었습니다. 담당자 코드를 입력하면 이어서 쓸 수 있습니다';
   $('pinInput').focus(); })();
+
+/* ═══ 표 정렬 : 어떤 표든 머리글을 누르면 그 열로 오름/내림차순 (지금 화면에 보이는 행 기준) ═══ */
+(function(){
+  const num=t=>{ const s=String(t).replace(/[,\s원%개건명]/g,''); if(s==='' || s==='-' || s==='—') return null; const v=Number(s); return isNaN(v)?null:v; };
+  function cellVal(td){ if(td.dataset.sort!==undefined) return td.dataset.sort; const inp=td.querySelector('input,select'); if(inp && !td.textContent.trim()) return inp.value; return td.textContent.trim(); }
+  document.addEventListener('click', e=>{
+    const th=e.target.closest('th'); if(!th || e.target.closest('input,button,a,select,label')) return;
+    const table=th.closest('table'); if(!table || th.querySelector('input[type=checkbox]')) return;
+    const label=th.textContent.trim(); if(!label) return;
+    const tbody=table.tBodies[0]; if(!tbody) return;
+    const rows=[...tbody.rows]; if(rows.length<2) return;
+    if(rows.some(r=>[...r.cells].some(c=>c.colSpan>1))) return;   /* 소계·그룹 줄이 있는 표는 그대로 둔다 */
+    const idx=[...th.parentNode.children].indexOf(th);
+    const dir = th.classList.contains('sort-asc') ? 'desc' : 'asc';
+    table.querySelectorAll('th').forEach(x=>x.classList.remove('sort-asc','sort-desc')); th.classList.add('sort-'+dir);
+    const vals=rows.map(r=>{ const c=r.cells[idx]; return c?cellVal(c):''; });
+    const allNum=vals.every(v=>v===''||num(v)!==null) && vals.some(v=>v!=='');
+    const keyed=rows.map((r,i)=>({r,v:vals[i],i}));
+    keyed.sort((a,b)=>{ let x=a.v, y=b.v; const ex=x==='', ey=y===''; if(ex&&ey) return a.i-b.i; if(ex) return 1; if(ey) return -1;
+      let c; if(allNum) c=num(x)-num(y); else c=String(x).localeCompare(String(y),'ko',{numeric:true}); if(c===0) c=a.i-b.i; return dir==='asc'?c:-c; });
+    keyed.forEach(k=>tbody.appendChild(k.r));
+  }, true);
+})();
+
 </script>
 </body>
 </html>
