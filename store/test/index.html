@@ -367,7 +367,14 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .tab .n.alarm{background:#E24B4B;color:#fff}
 .gift-row{display:grid;grid-template-columns:1fr 120px;gap:8px} .gift-row .in:last-child{text-align:right}
 .gift-chips{margin-top:6px} .gift-chips .chip small{color:var(--muted);font-weight:400;margin-left:3px}
-.gift-links{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px} .gift-links a{font-size:11.5px;font-weight:600;color:var(--navy);text-decoration:none;border:1.5px solid var(--line-2);border-radius:7px;padding:4px 9px;background:#fff}
+.gift-links{display:none}
+.gfab{position:fixed;right:14px;bottom:78px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.gfab .gbtn{width:48px;height:48px;border-radius:50%;border:0;background:var(--navy);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(20,40,160,.35);cursor:pointer}
+.gfab .gpanel{display:none;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(10,20,60,.18);padding:12px 12px 10px;min-width:200px}
+.gfab.open .gpanel{display:block}
+.gfab .gpanel b{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+.gfab .gpanel a{display:block;font-size:13px;font-weight:600;color:var(--navy);text-decoration:none;padding:8px 10px;border:1.5px solid var(--line-2);border-radius:9px;margin-bottom:6px;background:#fff}
+.gfab .gpanel a.acct{color:var(--muted);cursor:pointer} .gift-links a{font-size:11.5px;font-weight:600;color:var(--navy);text-decoration:none;border:1.5px solid var(--line-2);border-radius:7px;padding:4px 9px;background:#fff}
 .gift-links a.acct{color:var(--muted);cursor:pointer}
 table th{cursor:pointer;user-select:none;position:relative}
 table th.sort-asc::after,table th.sort-desc::after{content:' ▲';font-size:9px;opacity:.75}
@@ -760,6 +767,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
 
   <div class="foot">삼성앤텍 시흥점 · 입력 문의 온라인사업부 · <a href="#" onclick="localStorage.removeItem('staff_code');location.reload();return false">담당자 변경</a></div>
 </div>
+<div class="gfab" id="gfab"><div class="gpanel" id="gpanel"></div><button class="gbtn" onclick="document.getElementById('gfab').classList.toggle('open')" title="사은품 · 오피스콘">🎁</button></div>
 <div class="toast" id="toast"></div>
 <datalist id="giftList"></datalist>
 
@@ -1494,7 +1502,7 @@ function renderHome(s){
         <div class="row">${x.tel?`<a class="call" href="tel:${x.tel}">📞 전화</a>`:''}<button class="done" onclick="cbAction(${x.id},'done')">완료</button><button onclick="cbAction(${x.id},'tomorrow')">내일로</button><button onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button></div></div>
     </div>`; }).join(''):'<div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div>';
   $('ocList').innerHTML=oc.length?oc.map(x=>`
-    <div class="item oc"><div><div class="p">${esc(x.name)} <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}${String(x.route||'').startsWith('홈페이지')?'<span class="mine">홈페이지 문의</span>':''}${x.result==='보류'?'<span class="tag" style="background:#FFF4D6;color:#8A6300">보류</span>':''}</div>
+    <div class="item oc"><div><div class="p"><a href="javascript:void 0" onclick="ocToConsult('${esc(x.ref)}','${esc(x.name)}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 고객으로 상담 입력 열기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a> <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}${String(x.route||'').startsWith('홈페이지')?'<span class="mine">홈페이지 문의</span>':''}${x.result==='보류'?'<span class="tag" style="background:#FFF4D6;color:#8A6300">보류</span>':''}</div>
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.route||'')}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.expect_date?` · 예정 ${String(x.expect_date).slice(5).replace('-','/')}`:''}${x.callback_at?` · 콜백 ${fmtWhen(x.callback_at).join(' ')}`:''}</div></div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button>
         <button class="mini" onclick="ocPick(${x.id})">재연락</button>
@@ -1526,6 +1534,11 @@ async function cbAction(id,act){
   }catch(e){ toast(e.message,'bad'); }
 }
 function toSale(ref,name){ goTab('sale'); $('s_consult').value=ref; if(name) $('s_name').value=name; toast('상담번호 연결됨 · 상품과 금액을 입력하세요','ok'); $('s_product').focus(); }
+/* 진행중 상담의 고객 이름 → 같은 고객으로 상담 입력 (후속 상담) */
+function ocToConsult(ref,name,tel,interest){ goTab('consult'); custClear('c');
+  $('c_name').value=name||''; if(tel){ $('c_phone').value=tel; hyphen($('c_phone')); }
+  if(interest){ const chip=[...$('c_cat').querySelectorAll('.chip')].find(x=>x.dataset.v===interest.split(',')[0].trim()); if(chip) chip.click(); }
+  $('c_content').value = `이전 상담 ${ref} 이어서 · `; toast(`${name} 님 후속 상담 — 내용을 적고 저장하세요`,'ok'); setTimeout(()=>$('c_content').focus(),100); }
 function pickMine(key,name){ goTab('consult'); LINK.c=key; $('c_name').value=name; $('c_linkedTxt').textContent=`기존 고객 연결됨 · ${name}`; $('c_linked').classList.remove('hidden'); $('c_hist').classList.add('hidden'); }
 function histHTML(x){ if(!x.history||!x.history.length) return ''; return `<div class="h">이전 이력 ${x.consults?`· 상담 ${x.consults}건`:''} ${x.orders?`· 구매 ${x.orders}건`:''} ${x.handler?`· 담당 ${esc(x.handler)}${x.handler===ME?'<span class="mine">내 고객</span>':''}`:''}</div>`+
   x.history.map(h=>`<div class="e"><div class="d">${String(h.at).slice(2,10).replace(/-/g,'.')}</div><div class="t ${h.type==='구매'?'buy':'talk'}">${h.type}</div><div class="b">${esc(h.title)}<small>${esc(h.detail||'')}${h.handler?' · '+esc(h.handler):''}</small></div></div>`).join(''); }
@@ -1715,14 +1728,17 @@ async function loadGifts(){
   $('giftList').innerHTML=ps.map(g=>`<option value="${esc(g.name)}">`).join('');
   ['c','s'].forEach(pre=>{
     const ch=$(pre+'_gift_chips'); if(ch) ch.innerHTML=ps.slice(0,8).map(g=>`<span class="chip" onclick="pickGift('${pre}','${esc(g.name)}',${g.price||0})">${esc(g.name)}${g.price?`<small>${Number(g.price).toLocaleString('ko-KR')}</small>`:''}</span>`).join('');
-    const lk=$(pre+'_gift_links'); if(lk) lk.innerHTML=[
+  });
+  /* 오른쪽 떠 있는 🎁 버튼 → 오피스콘·상품권 링크 */
+  const gp=$('gpanel'); if(gp){ const items=[
       L.sheet?`<a href="${esc(L.sheet)}" target="_blank" rel="noopener">문의 시트 ↗</a>`:'',
       L.officecon?`<a href="${esc(L.officecon)}" target="_blank" rel="noopener">오피스콘 ↗</a>`:'',
       L.starbucks?`<a href="${esc(L.starbucks)}" target="_blank" rel="noopener">스타벅스 ↗</a>`:'',
       L.shinsegae?`<a href="${esc(L.shinsegae)}" target="_blank" rel="noopener">신세계 상품권 ↗</a>`:'',
-      L.login_id?`<a class="acct" onclick="giftAcct()">오피스콘 계정 보기</a>`:''].join('');
-  });
+      L.login_id?`<a class="acct" onclick="giftAcct()">오피스콘 계정 보기</a>`:''].filter(Boolean);
+    gp.innerHTML='<b>사은품 · 기프티콘</b>'+items.join(''); $('gfab').classList.toggle('hidden', !items.length); }
 }
+document.addEventListener('click', e=>{ const f=$('gfab'); if(f && !e.target.closest('#gfab')) f.classList.remove('open'); });
 function pickGift(pre,name,price){ $(pre+'_gift').value=name; const a=$(pre+'_gift_amt'); a.value=price?Number(price).toLocaleString('ko-KR'):''; }
 function giftAcct(){ const L=(GIFTS&&GIFTS.links)||{};
   const txt=`오피스콘 아이디: ${L.login_id||'-'}\n비밀번호: ${L.login_pw||'-'}\n기프티콘 전송 비밀번호: ${L.send_pw||'-'}`;

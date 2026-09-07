@@ -1098,8 +1098,8 @@ tr.cb-hide{display:none}
       <div class="view hidden" id="v-customers">
         <div class="mkpis" id="custKpis"></div>
         <div class="dgrid d11">
-          <div class="card"><h3>유입 채널별 <span>한 사람이 여러 채널에 있으면 각각 집계</span></h3><div class="rk" id="custBySrc"></div></div>
-          <div class="card"><h3>구매 횟수 분포 <span>원장 기준</span></h3><div class="rk" id="custByFreq"></div></div>
+          <div class="card"><h3>유입 채널별 <span><b style="color:var(--navy)">발송 가능</b> / <span style="color:#98A1B0">전체</span> · 한 사람이 여러 채널에 있으면 각각 집계</span></h3><div class="rk" id="custBySrc"></div></div>
+          <div class="card"><h3>구매 횟수 분포 <span><b style="color:var(--teal)">발송 가능</b> / <span style="color:#98A1B0">전체</span> · 원장 기준</span></h3><div class="rk" id="custByFreq"></div></div>
         </div>
         <div class="card">
           <h3>고객 목록 <span id="custHint"></span></h3>
@@ -1394,7 +1394,7 @@ tr.cb-hide{display:none}
   <div class="fgrid">
     <div><label>구분</label><select class="in" id="omCh"><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select></div>
     <div><label>주문일</label><input class="in" type="date" id="omDate"></div>
-    <div><label>담당</label><input class="in" id="omHandler" list="handlerList"></div>
+    <div><label>담당</label><span id="omHandlerBox"><select class="in" id="omHandler"><option value="">(없음)</option></select></span></div>
     <div><label>상태</label><select class="in" id="omStatus"><option>결제완료</option><option>신규</option><option>발송</option><option>취소</option><option>반품</option></select></div>
   </div>
   <div class="fgrid">
@@ -1523,6 +1523,12 @@ const tip=$('tip'); function showTip(e,html){ tip.innerHTML=html; tip.style.opac
 
 /* ═══════════════ 인증 ═══════════════ */
 let ME=null, STAFF=[];
+/* 담당자 고르기 : datalist 는 현재 값과 안 맞으면 목록이 안 떠서(크롬) select 로 통일 */
+function handlerSelect(id, value, extra){
+  const names=[...new Set([value].concat((STAFF||[]).filter(x=>x.active).map(x=>x.name)).filter(Boolean))];
+  return `<select class="in" id="${id}" ${extra||''} onchange="if(this.value==='__custom'){ const v=prompt('담당명 직접 입력',''); if(v){ const o=document.createElement('option'); o.value=v; o.textContent=v; this.insertBefore(o,this.lastElementChild); this.value=v; } else this.value=''; }">
+    <option value="">(없음)</option>${names.map(nm=>`<option ${nm===value?'selected':''}>${esc(nm)}</option>`).join('')}<option value="__custom">직접 입력…</option></select>`;
+}
 function fillHandlerOptions(){
   $('oHd').innerHTML='<option value="">전체 담당</option>'+STAFF.map(h=>`<option>${esc(h.name)}</option>`).join('');
   $('handlerList').innerHTML=STAFF.filter(x=>x.active).map(h=>`<option value="${esc(h.name)}">`).join('');
@@ -1609,7 +1615,7 @@ async function loadHome(){
   $('todoList').innerHTML=todo.map(([k,v,t,d,view,bad])=>`<a href="#${view}" onclick="show('${view}');return false" class="${v?'':'zero'} ${v&&bad?'bad':''}"><span class="n">${n(v||0)}</span><span class="t"><b>${t}</b><span>${d}</span></span><span class="go">열기 ›</span></a>`).join('');
   // 데이터 상태
   const sy=h.sync||{}; const syncBad=(h.sync_fail_24h||0)>0 || (sy.status&&sy.status!=='DONE');
-  const rows=(st.src||[]).map(x=>{ const at=x.at||''; const late=!at; return `<div><span class="dot ${late?'none':''}"></span><span class="lb">${esc(x.label)}</span><b>${esc(at||'없음')}</b></div>`; });
+  const rows=(st.src||[]).map(x=>{ const at=x.at||''; const bad=/실패/.test(x.note||''); const late=!at; return `<div><span class="dot ${late?'none':bad?'bad':''}"></span><span class="lb">${esc(x.label)}${x.note?`<small style="display:block;color:var(--faint);font-size:11px">${esc(x.note)}</small>`:''}</span><b>${esc(at||'없음')}</b></div>`; });
   rows.unshift(`<div><span class="dot ${syncBad?'bad':''}"></span><span class="lb">샵링커 자동 수집 <span class="m">${esc(sy.job||'')} ${esc(sy.period||'')}</span></span><b>${esc(sy.at||'없음')} · ${esc(sy.status||'-')} · 신규 ${n(sy.inserted||0)}/갱신 ${n(sy.updated||0)}${h.sync_fail_24h?` · <span style="color:var(--bad)">24h 오류 ${h.sync_fail_24h}</span>`:''}</b></div>`);
   rows.push(`<div><span class="dot none"></span><span class="lb">총량</span><b>원장 ${n(C.orders||0)} · 고객 ${n(C.customers||0)} · 상담 ${n(C.consults||0)} · 견적 ${n(C.quotes||0)} · 품목 ${n(C.items||0)}</b></div>`);
   $('dataList').innerHTML=rows.join(''); $('dsSub').textContent=`${esc(h.now||'')} 기준`;
@@ -1862,7 +1868,7 @@ async function editInquiry(i){
       <div class="fgrid" style="grid-template-columns:1fr 1fr">
         <div><label>고객명</label><input class="in" id="iq_name" value="${esc(r.name||'')}"></div>
         <div><label>연락처</label><input class="in mono" id="iq_phone" value="${esc(r.tel||'')}" placeholder="숫자만"></div>
-        <div><label>담당</label><input class="in" id="iq_hand" list="handlerList" value="${esc(r.handler||'')}"></div>
+        <div><label>담당</label>${handlerSelect('iq_hand', r.handler||'')}</div>
         <div><label>상태</label><input class="in" id="iq_status" value="${esc(r.status||'')}" placeholder="진행중 · 보류 · 구매완료 · 종료"></div>
         <div style="grid-column:span 2"><label>종류 · 관심</label><input class="in" id="iq_kind" value="${esc(r.kind||'')}"></div>
       </div>
@@ -3612,7 +3618,7 @@ async function loadOrders(page){
 }
 function openOrderModal(id){
   const o=id?oRows.find(x=>x.id===id):null; $('omTitle').textContent=o?'주문 수정':'수동 등록'; $('omId').value=o?o.id:'';
-  $('omCh').value=o?.channel_type||'매장'; $('omDate').value=o?dfmt(o.order_at):iso(new Date()); $('omHandler').value=o?.handler||''; $('omStatus').value=o?.status||'결제완료';
+  $('omCh').value=o?.channel_type||'매장'; $('omDate').value=o?dfmt(o.order_at):iso(new Date()); $('omHandlerBox').innerHTML=handlerSelect('omHandler', o?.handler||''); $('omStatus').value=o?.status||'결제완료';
   $('omName').value=o&&o.customer_name!=='(비회원)'?o.customer_name:''; $('omPhone').value=o?.customer_phone&&!/\*/.test(o.customer_phone)?o.customer_phone:''; $('omKind').value='';
   $('omProduct').value=o?.product_name||''; $('omModel').value=''; $('omQty').value=o?.qty||1; $('omGross').value=o?Number(o.gross_amount):''; $('omRefund').value=o?Number(o.refund_amount):0; $('omNotes').value=o?.notes||'';
   $('orderModal').classList.remove('hidden');
@@ -4397,15 +4403,17 @@ function renderCustStats(){
       <div class="s">누적 ${fmtT(c.net_total)}원</div></div>
     <div class="mk t5"><div class="t">수신 동의</div><div class="v">${n(c.consent)}<small>명</small></div>
       <div class="s">전체의 ${c.total?(c.consent/c.total*100).toFixed(1):0}%</div></div>
+    <div class="mk t3"><div class="t">발송 가능 고객</div><div class="v">${n(c.sendable||0)}<small>명</small></div>
+      <div class="s">동의 + 휴대폰 · 개인 ${n(c.sendable_personal||0)} · 기업 ${n(c.sendable_business||0)}</div></div>
     <div class="mk t6"><div class="t">휴면 (180일+)</div><div class="v">${n(c.dormant_180)}<small>명</small></div>
       <div class="s">구매 이력은 있으나 최근 없음</div></div>`;
   /* 유입 이름은 발송 대상 추출과 같은 CRM_SRC 표기 (S몰·AT몰처럼 아직 없는 원천도 0 으로 보이게) */
   const byk={}; (c.by_source||[]).forEach(x=>byk[x.k]=x);
-  const srcRows=CRM_SRC.map(([g,k,label,note])=>({k:label+(note?` · ${note}`:''), v:(byk[k]||{}).n||0, unit:'명', sub:`${g} · 수신동의 ${n((byk[k]||{}).consent||0)}`, color:'var(--navy)'}))
-    .concat((c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>({k:x.k, v:x.n, unit:'명', sub:`기타 · 수신동의 ${n(x.consent)}`, color:'var(--navy)'})));
-  $('custBySrc').innerHTML=simpleBars(srcRows);
-  $('custByFreq').innerHTML=simpleBars((c.by_freq||[]).map(x=>
-    ({k:x.k, v:x.n, unit:'명', sub:fmtT(x.net)+'원', color:'var(--teal)'})));
+  const srcRows=CRM_SRC.map(([g,k,label,note])=>{ const b=byk[k]||{}; return {k:label+(!b.n&&note?` · ${note}`:''), v:b.n||0, v2:b.sendable||0, unit:'명', sub:`${g} · 수신동의 ${n(b.consent||0)}`, color:'var(--navy)'}; })
+    .concat((c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>({k:x.k, v:x.n, v2:x.sendable||0, unit:'명', sub:`기타 · 수신동의 ${n(x.consent)}`, color:'var(--navy)'})));
+  $('custBySrc').innerHTML=dualBars(srcRows);
+  $('custByFreq').innerHTML=dualBars((c.by_freq||[]).map(x=>
+    ({k:x.k, v:x.n, v2:x.sendable||0, unit:'명', sub:fmtT(x.net)+'원', color:'var(--teal)'})));
   const sel=$('cuSrc');
   if(sel.options.length<=1) sel.innerHTML='<option value="">전체 유입</option>'+
     CRM_SRC.map(([g,k,label])=>`<option value="${esc(k)}">${esc(g)} · ${esc(label)}</option>`).join('')+
@@ -4414,6 +4422,16 @@ function renderCustStats(){
 function resetCustomers(){ ['cuQ','cuSrc','cuFreq','cuConsent'].forEach(id=>$(id).value=''); $('cuSort').value='net_desc'; loadCustomers(0); }
 
 /** 비교 대상이 없는 단순 분포용 막대 */
+/** 전체(회색) 위에 발송 가능(색) 을 겹쳐 그리는 막대 */
+function dualBars(rows){
+  if(!rows||!rows.length) return empty();
+  const mx=Math.max(1,...rows.map(x=>Number(x.v)||0));
+  return '<div class="rk">'+rows.map((x,i)=>`<div class="rk-tr" style="grid-template-columns:18px minmax(64px,120px) minmax(40px,1fr) 120px minmax(0,auto)">
+    <div class="i">${i+1}</div><div class="nm" title="${esc(x.k)}">${esc(x.k)}</div>
+    <div class="rk-bar"><i style="width:${((Number(x.v)||0)/mx*100).toFixed(1)}%;background:#C9CFDC"></i><i style="width:${((Number(x.v2)||0)/mx*100).toFixed(1)}%;background:${x.color||'var(--navy)'}"></i></div>
+    <div class="v" style="text-align:right"><b style="color:${x.color||'var(--navy)'}">${n(x.v2||0)}</b><span style="color:var(--faint);font-weight:500"> / ${n(x.v)}${x.unit||''}</span></div>
+    <div class="d fl" style="color:var(--faint);font-weight:500">${esc(x.sub||'')}</div></div>`).join('')+'</div>';
+}
 function simpleBars(rows){
   if(!rows||!rows.length) return empty();
   const mx=Math.max(1,...rows.map(x=>Math.abs(Number(x.v)||0)));
@@ -4490,7 +4508,8 @@ async function loadSettings(){
     $('tbProfiles').innerHTML=ps.map(p=>`<tr>
       <td><b>${esc(p.email.replace(ID_DOMAIN,''))}</b>${p.email.includes(ID_DOMAIN)?' <span class="tag n">아이디</span>':''}</td>
       <td><select class="in" style="padding:3px 6px" id="pr_${p.id}">${['admin','user','analyst','send'].map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}</select></td>
-      <td><input class="in" style="padding:3px 6px;width:90px" id="ph_${p.id}" value="${esc(p.handler_name||'')}" list="handlerList"></td>
+      <td><select class="in" style="padding:3px 6px;min-width:110px" id="ph_${p.id}" onchange="if(this.value==='__custom'){ const v=prompt('담당명 직접 입력', ''); if(v){ const o=document.createElement('option'); o.value=v; o.textContent=v; this.insertBefore(o, this.lastElementChild); this.value=v; } else this.value=''; }">
+        <option value="">(없음)</option>${[...new Set([p.handler_name].concat(STAFF.filter(x=>x.active).map(x=>x.name)).filter(Boolean))].map(nm=>`<option ${nm===p.handler_name?'selected':''}>${esc(nm)}</option>`).join('')}<option value="__custom">직접 입력…</option></select></td>
       <td><input type="checkbox" id="pa_${p.id}" ${p.active?'checked':''}></td>
       <td><button class="btn sm" onclick="saveProfile('${p.id}')">저장</button></td></tr>`).join('');
   }catch(e){ $('tbProfiles').innerHTML=`<tr><td colspan="5" class="note">${ME.role==='admin'?esc(e.message):'관리자만 볼 수 있습니다'}</td></tr>`; }
