@@ -752,7 +752,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <p class="note-in" style="margin-top:0">자동 수집된 주문 중 <b>아직 주문서로 만들지 않은 것</b>만 나옵니다. 고르면 재고가 빠지고 이카운트 전송 대기가 됩니다.
         <a href="#" onclick="event.preventDefault();$('slQuickFile').click()" style="color:var(--brand,#2F5BEA);font-weight:600;white-space:nowrap">샵링커 엑셀 올리기 ↑</a><input type="file" id="slQuickFile" accept=".xlsx,.xls,.csv" class="hidden" onchange="slQuickUpload(this)"></p>
       <div class="daterow">
-        <select class="in" id="sl_days" onchange="loadSlList()"><option value="3">최근 3일</option><option value="7" selected>최근 7일</option><option value="14">최근 14일</option></select>
+        <select class="in" id="sl_days" onchange="loadSlList()"><option value="3">최근 3일</option><option value="7" selected>최근 7일</option><option value="14">최근 14일</option><option value="30">최근 30일</option><option value="60">최근 60일</option></select>
         <select class="in" id="sl_ch" onchange="loadSlList()"><option value="">전체 채널</option></select>
         <input class="in" id="sl_q" placeholder="주문번호 · 구매자 · 상품" onkeydown="if(event.key==='Enter')loadSlList()">
       </div>
@@ -760,7 +760,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <select class="in" id="sl_kind" onchange="slPage(0)"><option value="">대물·소모품 전체</option><option value="소모품">소모품</option><option value="대물">대물</option><option value="혼합">섞임</option><option value="기타">기타</option></select>
         <select class="in" id="sl_cat" onchange="slPage(0)"><option value="">전체 카테고리</option></select>
         <select class="in" id="sl_st" onchange="slPage(0)"><option value="">전체 상태</option><option value="ready">바로 가능</option><option value="ambig">확인 필요</option><option value="miss">코드 없음</option></select>
-        <select class="in" id="sl_ship" onchange="slPage(0)"><option value="">발송 전체</option><option value="unshipped">미발송</option><option value="shipped">발송됨</option></select>
+        <select class="in" id="sl_ship" onchange="slPage(0)"><option value="">발송 전체</option><option value="unshipped">미발송</option><option value="shipped">발송됨</option><option value="late">주문 다음 달에 발송</option></select>
       </div>
       <div class="oc-sum"><div><div class="k">가져올 주문</div><div class="v" id="sl_cnt">-</div></div><div><div class="k">바로 가능</div><div class="v" id="sl_ready">-</div></div></div>
       <div id="sl_rows"><div class="empty">불러오는 중…</div></div>
@@ -1064,7 +1064,7 @@ function ofMount(host, cfg){
       <div class="of-head">
         <div><label class="of-l">출처</label><select class="in" data-f="origin">${ORIGIN.map(([k,l])=>`<option value="${k}" ${k===(cfg.origin||'online')?'selected':''}>${l}</option>`).join('')}</select></div>
         <div><label class="of-l">일자 <i>*</i></label><input class="in" type="date" data-f="io_date" value="${today()}"></div>
-        <div class="of-cust" style="grid-column:span 2"><label class="of-l">거래처 <small>${m.customers_n?`이카운트 거래처 ${n(m.customers_n)}곳`:'검색 · 없으면 이름만 적어도 됩니다'}</small></label>
+        <div class="of-cust" style="grid-column:span 2"><label class="of-l">거래처 <small>${m.customers_n?`${n(m.customers_n)}곳 · 없으면 이름만 적어도 됩니다`:'검색 · 없으면 이름만 적어도 됩니다'}</small></label>
           <input class="in" data-f="cust_name" placeholder="거래처명 · 코드 · 전화 검색" autocomplete="off"><span class="of-tag" data-f="cust_tag" hidden></span><div class="of-dd" data-f="cust_dd" hidden></div></div>
         <div><label class="of-l">영업담당 <small>${(m.emp||[]).length?'':'코드표 없음'}</small>${cfg.fn.codesAdd?`<a href="#" class="of-add" data-add="emp_code" data-kind="emp">+ 추가</a>`:''}</label>${sel('emp_code', m.emp||[], null, (m.emp||[]).length?'(이카운트 기본)':'(아직 없음)')}</div>
         <div><label class="of-l">출하창고 <i>*</i></label><select class="in" data-f="wh_code">${(m.warehouses||[]).map(w=>`<option value="${esc(w.code)}" ${w.code==='00001'?'selected':''}>${esc(w.name)}</option>`).join('')||'<option value="00001">본사창고</option>'}</select></div>
@@ -1084,16 +1084,17 @@ function ofMount(host, cfg){
     // 거래처 검색
     const ci=q('[data-f=cust_name]'), dd=q('[data-f=cust_dd]'); let t=null, active=-1, list=[];
     const closeDd=()=>{ dd.hidden=true; active=-1; };
-    const openDd=()=>{ dd.innerHTML=list.length?list.map((c,i)=>`<div data-i="${i}" class="${i===active?'on':''}"><b>${esc(c.name)}${c.ceo?` <span style="font-weight:400;color:#98A1B0">· ${esc(c.ceo)}</span>`:''}</b><small>${esc(c.code)}</small></div>`).join('')
+    const openDd=()=>{ dd.innerHTML=list.length?list.map((c,i)=>`<div data-i="${i}" class="${i===active?'on':''}"><b>${esc(c.name)}${c.ceo?` <span style="font-weight:400;color:#98A1B0">· ${esc(c.ceo)}</span>`:''}</b><small>${c.code?esc(c.code):'코드 없음'}</small></div>`).join('')
         :`<div class="of-empty">거래처가 없습니다 — 입력한 이름 그대로 저장됩니다</div>`; dd.hidden=false;
       dd.querySelectorAll('[data-i]').forEach(el=>el.onmousedown=e=>{ e.preventDefault(); pickCust(list[Number(el.dataset.i)]); }); };
-    const pickCust=c=>{ S.cust={code:c.code,name:c.name}; ci.value=c.name; showTag(); closeDd();
+    const pickCust=c=>{ S.cust={code:c.code,name:c.name,phone:c.phone||null,addr:c.addr||null}; ci.value=c.name; showTag(); closeDd();
+      if(c.sales_handler){ const e=q('[data-f=handler]'); if(![...e.options].some(o=>o.value===c.sales_handler)){ const o=document.createElement('option'); o.textContent=c.sales_handler; e.insertBefore(o,e.lastElementChild); } e.value=c.sales_handler; }
       // 거래처에 딸린 기본값(영업담당·거래유형·구분)이 있으면 채운다
       if(c.handler){ const e=q('[data-f=emp_code]'); if([...e.options].some(o=>o.value===c.handler)) e.value=c.handler; }
       if(c.deal_type){ const e=q('[data-f=deal_type]'); if([...e.options].some(o=>o.value===c.deal_type)) e.value=c.deal_type; }
       if(c.kind){ const e=q('[data-f=kind_code]'); if([...e.options].some(o=>o.value===c.kind)) e.value=c.kind; } };
     const showTag=()=>{ const tg=q('[data-f=cust_tag]'); if(S.cust.code){ tg.textContent=S.cust.code; tg.hidden=false; } else tg.hidden=true; };
-    ci.addEventListener('input',()=>{ if(S.cust.code && ci.value!==S.cust.name){ S.cust={code:null,name:ci.value}; showTag(); }
+    ci.addEventListener('input',()=>{ if(S.cust.code && ci.value!==S.cust.name){ S.cust={code:null,name:ci.value,phone:null,addr:null}; showTag(); }
       clearTimeout(t); const v=ci.value.trim(); if(!v){ closeDd(); return; }
       t=setTimeout(async()=>{ try{ list=await cfg.rpc(cfg.fn.customers,{p_q:v,p_limit:12})||[]; }catch(e){ list=[]; } active=-1; openDd(); },220); });
     ci.addEventListener('focus',()=>{ if(ci.value.trim() && list.length) openDd(); });
@@ -1226,11 +1227,11 @@ function ofMount(host, cfg){
     const miss=rs.find(r=>!r.code); if(miss) throw new Error(`"${miss.name}" 의 품목코드를 찾지 못했습니다. 품목명을 고치거나 코드를 직접 넣어 주세요`);
     const bad=rs.find(r=>!(num(r.qty)>0)); if(bad) throw new Error(`${bad.code} : 수량을 넣어 주세요`);
     return {origin:val('origin'), io_date:val('io_date'), wh_code:val('wh_code'), channel:val('channel').trim()||null, order_no:val('order_no').trim()||null,
-      cust_code:S.cust.code||null, cust_name:val('cust_name').trim()||null, emp_code:val('emp_code')||null, deal_type:val('deal_type')||null, kind_code:val('kind_code')||null,
+      cust_code:S.cust.code||null, cust_name:val('cust_name').trim()||null, phone:S.cust.phone||null, addr:S.cust.addr||null, emp_code:val('emp_code')||null, deal_type:val('deal_type')||null, kind_code:val('kind_code')||null,
       handler:val('handler')&&val('handler')!=='__custom'?val('handler'):null, due_date:val('due_date')||null, remark:val('remark').trim()||null,
       lines:rs.map(r=>({item_code:r.code, item_name:r.name||null, qty:num(r.qty), unit_price:r.price===''?null:num(r.price), supply_amt:r.supply===''?null:num(r.supply), vat_amt:r.vat===''?null:num(r.vat), remark:r.remark||null}))};
   }
-  function reset(keepHead){ S.rows=[]; ensureBlank(); renderRows(); if(!keepHead){ ['channel','order_no','due_date','remark','cust_name'].forEach(k=>{ const e=q(`[data-f=${k}]`); if(e) e.value=''; }); S.cust={code:null,name:''}; q('[data-f=cust_tag]').hidden=true; } }
+  function reset(keepHead){ S.rows=[]; ensureBlank(); renderRows(); if(!keepHead){ ['channel','order_no','due_date','remark','cust_name'].forEach(k=>{ const e=q(`[data-f=${k}]`); if(e) e.value=''; }); S.cust={code:null,name:'',phone:null,addr:null}; q('[data-f=cust_tag]').hidden=true; } }
   function prefill(d){ d=d||{}; ['origin','io_date','channel','order_no','due_date','remark','emp_code','deal_type','kind_code','wh_code'].forEach(k=>{ if(d[k]!=null){ const e=q(`[data-f=${k}]`); if(e) e.value=d[k]; } });
     if(d.handler){ const e=q('[data-f=handler]'); if(![...e.options].some(o=>o.value===d.handler)){ const o=document.createElement('option'); o.textContent=d.handler; e.insertBefore(o,e.lastElementChild); } e.value=d.handler; }
     if(d.cust_name!=null){ q('[data-f=cust_name]').value=d.cust_name; S.cust={code:d.cust_code||null,name:d.cust_name}; q('[data-f=cust_tag]').textContent=d.cust_code||''; q('[data-f=cust_tag]').hidden=!d.cust_code; }
@@ -1322,7 +1323,7 @@ function wizMount(host, cfg){
       <div class="wiz-form">
         <div><label>시작일 <i>*</i></label><input class="in" type="date" id="wzFrom" value="${esc(S.from||ago(7))}"></div>
         <div><label>종료일 <i>*</i></label><input class="in" type="date" id="wzTo" value="${esc(S.to||today())}"></div>
-        <div><label>날짜 기준</label><select class="in" id="wzBasis"><option value="order" ${S.basis!=='collect'?'selected':''}>주문일</option><option value="collect" ${S.basis==='collect'?'selected':''}>주문 수집일</option></select></div>
+        <div><label>날짜 기준</label><select class="in" id="wzBasis"><option value="order" ${S.basis!=='collect'?'selected':''}>주문일</option><option value="collect" ${S.basis==='collect'?'selected':''}>주문 수집일</option><option value="ship" ${S.basis==='ship'?'selected':''}>발송일 (송장)</option></select></div>
         <div><label>채널</label><select class="in" id="wzCh"><option value="">전체 채널</option>${(S.channels||[]).map(c=>`<option ${S.ch===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
         <div><label>검색</label><input class="in" id="wzQ" value="${esc(S.q||'')}" placeholder="주문번호 · 구매자 · 상품 · 옵션"></div>
         <div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;margin:0 0 9px;font-weight:500;color:#2E3542;font-size:12.5px"><input type="checkbox" id="wzDone" ${S.incDone?'checked':''}> 이미 만든 주문도 보기</label></div>
@@ -1370,7 +1371,7 @@ function wizMount(host, cfg){
   async function load(quiet){
     const b=$('wzLoad'); if(b){ b.disabled=true; b.textContent='불러오는 중…'; }
     if(!quiet){ S.from=$('wzFrom').value; S.to=$('wzTo').value; S.basis=$('wzBasis').value; S.ch=$('wzCh').value; S.q=$('wzQ').value.trim(); S.incDone=$('wzDone').checked; }
-    try{ S.data=await cfg.rpc(cfg.fn.orders,{p_from:S.from||null,p_to:S.to||null,p_basis:S.basis,p_q:S.q||null,p_channel:S.ch||null,p_limit:1000,p_include_done:S.incDone});
+    try{ S.data=await cfg.rpc(cfg.fn.orders,{p_from:S.from||null,p_to:S.to||null,p_basis:S.basis,p_q:S.q||null,p_channel:S.ch||null,p_limit:3000,p_include_done:S.incDone});
       S.channels=S.data.channels&&S.data.channels.length?S.data.channels:S.channels; S.sel=new Set(); S.picks={}; S.remember=new Set(); S.pv=null;
       if(!quiet) toast(`${n(S.data.total)}건 불러왔습니다`,'ok');
     }catch(e){ toast(e.message,'bad'); S.data=null; }
@@ -1381,7 +1382,7 @@ function wizMount(host, cfg){
   function rows2(){ const r=(S.data&&S.data.rows)||[];
     return r.filter(x=> (S.flt2==='all' ? true : S.flt2==='ready' ? (x.ready&&!x.done&&!x.ambig) : S.flt2==='ambig' ? (x.ambig>0&&!x.done) : S.flt2==='miss' ? (!x.ready&&!x.done) : x.done)
                      && (!S.fltKind || x.kind===S.fltKind) && (!S.fltCat || x.category===S.fltCat)
-                     && (!S.fltShip || (S.fltShip==='shipped' ? x.shipped : !x.shipped))); }
+                     && (!S.fltShip || (S.fltShip==='shipped' ? x.shipped : S.fltShip==='late' ? x.late : !x.shipped))); }
   function selRows(){ return ((S.data&&S.data.rows)||[]).filter(r=>S.sel.has(r.order_no)); }
   const PG2=100;
   function r2(){
@@ -1389,12 +1390,12 @@ function wizMount(host, cfg){
     const rows=allRows.slice(S.pg2*PG2,(S.pg2+1)*PG2), all=rows.filter(r=>!r.done);
     const allOn=all.length>0 && all.every(r=>S.sel.has(r.order_no));
     const st=r=> (r.done?(r.ec_slip?`<span class="tg n" title="이카운트 전표 ${esc(r.ec_slip)}">이카운트 등록</span>`:'<span class="tg n">이미 만듦</span>') : !r.ready?'<span class="tg bad">코드 없음</span>' : r.ambig?'<span class="tg warn">확인 필요</span>':'<span class="tg ok">바로 가능</span>')
-      + (r.shipped?`<span class="tg ok" style="margin-left:4px" title="${esc(r.tracking_no||'')}">발송</span>`:'<span class="tg warn" style="margin-left:4px">미발송</span>');
+      + (r.shipped?`<span class="tg ${r.late?'warn':'ok'}" style="margin-left:4px" title="${esc(r.tracking_no||'')}">발송 ${esc((r.shipped_on||'').slice(5).replace('-','/'))}${r.late?' (다음 달)':''}</span>`:'<span class="tg warn" style="margin-left:4px">미발송</span>');
     $('wzBody').innerHTML=`
       <div class="wiz-flt">${[['all','전체'],['ready','바로 가능'],['ambig','확인 필요'],['miss','코드 없음'],['done','이미 만듦']].map(([k,l])=>`<button class="${S.flt2===k?'on':''}" data-f="${k}">${l}</button>`).join('')}
         <select class="in" id="wzKind" style="height:32px;font-size:12px"><option value="">대물·소모품 전체</option>${(S.data.kinds||[]).map(k=>`<option value="${esc(k.k)}" ${S.fltKind===k.k?'selected':''}>${esc(k.k)} (${n(k.n)})</option>`).join('')}</select>
         <select class="in" id="wzCat" style="height:32px;font-size:12px"><option value="">전체 카테고리</option>${(S.data.categories||[]).map(c=>`<option value="${esc(c.c)}" ${S.fltCat===c.c?'selected':''}>${esc(c.c)} (${n(c.n)})</option>`).join('')}</select>
-        <select class="in" id="wzShip" style="height:32px;font-size:12px"><option value="">발송 전체</option><option value="unshipped" ${S.fltShip==='unshipped'?'selected':''}>미발송 (${n(S.data.unshipped||0)})</option><option value="shipped" ${S.fltShip==='shipped'?'selected':''}>발송됨 (${n(S.data.shipped||0)})</option></select>
+        <select class="in" id="wzShip" style="height:32px;font-size:12px"><option value="">발송 전체</option><option value="unshipped" ${S.fltShip==='unshipped'?'selected':''}>미발송 (${n(S.data.unshipped||0)})</option><option value="shipped" ${S.fltShip==='shipped'?'selected':''}>발송됨 (${n(S.data.shipped||0)})</option><option value="late" ${S.fltShip==='late'?'selected':''}>주문 다음 달에 발송 (${n(S.data.late||0)})</option></select>
         <span class="sp"></span><button class="btn ghost sm" id="wzSelReady">보이는 것 중 바로 가능한 것 모두 선택</button></div>
       <div class="wiz-tw"><table><thead><tr>
         <th style="width:30px"><input type="checkbox" id="wzAll" ${allOn?'checked':''} title="보이는 것 전체 선택"></th><th>주문</th><th>품목</th><th style="width:110px">구분</th><th class="num">수량</th><th class="num">금액</th><th>상태</th></tr></thead>
@@ -1679,7 +1680,7 @@ function slParseRows(rows){
       product_code:str(H(r,'상품코드')),model_code:str(H(r,'모델명')).toUpperCase()||null,product_name:str(H(r,'주문 상품명','자사 상품명')),option_text:str(H(r,'옵션')),
       qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'쇼핑몰 판매가'))||null,gross_amount:gross,refund_amount:refund,payment_method:str(H(r,'결제')),
       customer_name:str(H(r,'주문자명')),customer_phone:str(H(r,'주문자연락처2'))||str(H(r,'주문자연락처1')),email:str(H(r,'주문자이메일주소')),address:str(H(r,'수취인 주소')),
-      notes:str(H(r,'클레임여부')).replace(/\n/g,' ').slice(0,80)||null,alt_order_no:str(H(r,'자사주문번호'))||null,tracking_no:str(H(r,'송장번호','운송장번호','택배송장번호','배송번호'))||null}; }).filter(Boolean);
+      notes:str(H(r,'클레임여부')).replace(/\n/g,' ').slice(0,80)||null,alt_order_no:str(H(r,'자사주문번호'))||null,tracking_no:str(H(r,'송장번호','운송장번호','택배송장번호','배송번호'))||null,shipped_at:xd(H(r,'발송완료일','_송장등록일','송장등록일','발송일'))||null}; }).filter(Boolean);
 }
 async function slUploadFile(file, prog){
   prog=prog||(()=>{}); prog('엑셀 모듈 준비 중…'); await loadXLSX();
@@ -1709,7 +1710,7 @@ async function loadSlList(){
   const box=$('sl_rows'); if(!box) return;
   box.innerHTML='<div class="empty">불러오는 중…</div>';
   let d; try{ d=await rpc('fn_store_sl_pending',{p_code:CODE,p_days:Number($('sl_days').value),
-    p_q:$('sl_q').value.trim()||null,p_channel:$('sl_ch').value||null,p_limit:300}); }
+    p_q:$('sl_q').value.trim()||null,p_channel:$('sl_ch').value||null,p_limit:1000}); }
   catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   SL_ROWS=d.rows||[]; SL_META=d; SL_PG=0;
   if($('sl_ch').options.length<=1) $('sl_ch').innerHTML='<option value="">전체 채널</option>'+(d.channels||[]).map(c=>`<option>${esc(c)}</option>`).join('');
@@ -1721,14 +1722,14 @@ async function loadSlList(){
 let SL_META=null;
 function slVisible(){ const k=$('sl_kind').value, c=$('sl_cat').value, st=$('sl_st').value, sh=$('sl_ship').value;
   return SL_ROWS.map((r,i)=>({r,i})).filter(({r})=> (!k||r.kind===k) && (!c||r.category===c) &&
-    (!st || (st==='ready'? (r.ready&&!r.ambig) : st==='ambig'? r.ambig>0 : !r.ready)) && (!sh || (sh==='shipped'? r.shipped : !r.shipped))); }
+    (!st || (st==='ready'? (r.ready&&!r.ambig) : st==='ambig'? r.ambig>0 : !r.ready)) && (!sh || (sh==='shipped'? r.shipped : sh==='late'? r.late : !r.shipped))); }
 const SL_PAGE=50; let SL_PG=0;
 function slPage(k){ SL_PG=Math.max(0,k); renderSlList(); const b=$('sl_rows'); if(b) b.scrollIntoView({behavior:'smooth',block:'start'}); }
 function renderSlList(){
   const box=$('sl_rows'); if(!box||!SL_ROWS) return; const all=slVisible();
   const pages=Math.max(1,Math.ceil(all.length/SL_PAGE)); if(SL_PG>=pages) SL_PG=pages-1; const vis=all.slice(SL_PG*SL_PAGE,(SL_PG+1)*SL_PAGE);
   const sel=vis.filter(({r})=>r.ready), allOn=sel.length>0 && sel.every(({r})=>SL_PICK.has(r.order_no));
-  const st=r=> (!r.ready?'<span class="st bad">코드 없음</span>' : r.ambig?'<span class="st warn">확인 필요</span>':'<span class="st ok">바로 가능</span>') + (r.shipped?`<span class="st ok" style="margin-top:3px;display:inline-block" title="${esc(r.tracking_no||'')}">발송</span>`:'<span class="st warn" style="margin-top:3px;display:inline-block">미발송</span>');
+  const st=r=> (!r.ready?'<span class="st bad">코드 없음</span>' : r.ambig?'<span class="st warn">확인 필요</span>':'<span class="st ok">바로 가능</span>') + (r.shipped?`<span class="st ${r.late?'warn':'ok'}" style="margin-top:3px;display:inline-block" title="${esc(r.tracking_no||'')}">발송 ${esc((r.shipped_on||'').slice(5).replace('-','/'))}${r.late?' 다음달':''}</span>`:'<span class="st warn" style="margin-top:3px;display:inline-block">미발송</span>');
   box.innerHTML = vis.length ? `<div class="tw"><table class="slt"><thead><tr>
       <th style="width:30px"><input type="checkbox" id="sl_all" ${allOn?'checked':''} onchange="slAllStore(this.checked)" title="보이는 것 중 바로 가능한 것 전체 선택"></th>
       <th>주문</th><th>품목</th><th>구분</th><th class="num">수량</th><th class="num">금액</th><th>상태</th></tr></thead><tbody>${
