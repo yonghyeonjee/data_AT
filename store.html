@@ -229,6 +229,23 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .sk-row .bt button{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--line-2);background:#fff;font-size:18px;font-weight:700;cursor:pointer;line-height:1}
 .sk-row .bt button.p{color:var(--ok);border-color:#BFE3C9}.sk-row .bt button.m{color:var(--bad);border-color:#F0C2C2}
 
+.isg{position:fixed;z-index:120;background:#fff;border:1px solid var(--line-2);border-radius:12px;box-shadow:0 12px 32px rgba(20,24,32,.16);padding:4px;max-height:280px;overflow:auto}
+.isg>div{padding:9px 11px;border-radius:8px;cursor:pointer}
+.isg>div:hover,.isg>div.on{background:#EEF2FF}
+.isg b{display:block;font-size:13.5px;font-weight:600;color:var(--ink)}
+.isg small{display:block;font-size:11.5px;color:var(--muted);font-family:ui-monospace,monospace;margin-top:1px}
+.isg .none{color:var(--faint);font-size:12.5px;cursor:default}
+.mv-act{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
+.mv-act .f{flex:0 0 96px} .mv-act .lbl{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.mv-act .btn{flex:1;padding:12px 0}
+.mv-act .in-btn{background:var(--ok,#0F7B6C)} .mv-act .out-btn{background:var(--bad,#C0392B)}
+.mv-picked{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-top:8px;padding:10px 12px;border:1.5px solid var(--ok,#0F7B6C);background:#E9F6F3;border-radius:10px}
+.mv-picked b{font-size:14px} .mv-picked small{display:block;color:var(--muted);font-size:11.5px;font-family:ui-monospace,monospace}
+.mv-picked .x{border:0;background:transparent;font-size:20px;color:var(--faint);cursor:pointer;line-height:1}
+.mv-cands{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.mv-cands button{text-align:left;border:1px solid var(--line-2);background:#fff;border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;cursor:pointer}
+.mv-cands button:hover{background:#EEF2FF;border-color:var(--brand,#2F5BEA)}
+.mv-cands small{display:block;color:var(--ok,#0F7B6C);font-family:ui-monospace,monospace;font-size:11.5px}
 .si{border-top:1px dashed var(--line);padding-top:10px;margin-top:4px}
 .rq-items{margin-top:6px;display:flex;flex-direction:column;gap:3px;font-size:12px}
 .rq-items>div{display:flex;justify-content:space-between;gap:8px} .rq-items i{font-style:normal;font-family:ui-monospace,monospace;color:var(--muted);font-size:11px}
@@ -710,40 +727,53 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel hidden" id="tab-stock">
     <div class="intro"><b>지금 창고에 몇 개 있는지</b> 보고, 들어오고 나간 것을 그 자리에서 적는 화면입니다. 여기 적힌 것이 관리자 화면의 재고와 같은 원장입니다.
       <details><summary>사용 방법</summary><ol>
-        <li><i>1</i><span>모델·품목코드로 찾습니다. 창고를 고르면 그 창고 수량만 봅니다.</span></li>
-        <li><i>2</i><span>줄 오른쪽 <b>+</b>는 입고, <b>−</b>는 출고입니다. 렌탈 방문 교체로 토너를 쓰면 여기서 <b>−</b> 하세요.</span></li>
-        <li><i>3</i><span>주말 매장 판매도 마찬가지로 <b>−</b> 하면 재고가 맞습니다. 이카운트에도 올려야 하면 [주문서] 탭을 쓰세요.</span></li>
+        <li><i>1</i><span>맨 위 <b>입고 · 출고</b> 칸에서 품목을 찾아 수량을 넣고 <b>입고</b> 또는 <b>출고</b>를 누릅니다. 렌탈 방문 교체로 토너를 쓰면 여기서 <b>출고</b>.</span></li>
+        <li><i>2</i><span>여러 품목이면 엑셀에서 <b>품목 · 수량</b> 두 열을 복사해 붙여넣습니다. 세트 품목은 구성품으로 나뉘어 들어갑니다.</span></li>
+        <li><i>3</i><span>맨 아래 <b>현재고</b>에서 지금 수량을 확인합니다. 이카운트에도 올려야 하면 [주문서] 탭을 쓰세요.</span></li>
       </ol></details>
     </div>
+    <div class="card" id="moveCard">
+      <h2>입고 · 출고 <span id="sk_me"></span></h2>
+      <div class="daterow">
+        <select class="in" id="sk_wh" onchange="whChanged()"></select>
+        <input class="in" id="mv_q" placeholder="품목코드 · 모델 · 상품명" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();mvFind();}" oninput="mvReset()">
+        <button class="btn ghost sm" onclick="mvFind()">찾기</button>
+      </div>
+      <div id="mv_pick"></div>
+      <div class="mv-act">
+        <div class="f"><label class="lbl">수량</label><input class="in num" type="number" id="mv_qty" value="1" min="1"></div>
+        <button class="btn in-btn" onclick="mvApply('in')">＋ 입고</button>
+        <button class="btn out-btn" onclick="mvApply('out')">− 출고</button>
+      </div>
+      <details id="bmWrap" style="margin-top:14px">
+        <summary style="font-size:13px;font-weight:600;color:var(--muted);cursor:pointer">여러 품목 한 번에 · 엑셀 붙여넣기</summary>
+        <p class="note-in">엑셀에서 <b>품목코드(또는 품목명) · 수량</b> 두 열을 복사해 붙여넣고 [확인]을 누르면 품목을 찾아 보여줍니다. 맞으면 [반영]. 세트 품목은 구성품으로 나뉘어 들어갑니다.</p>
+        <div class="daterow">
+          <select class="in" id="bm_kind"><option value="out">출고 (−)</option><option value="in">입고 (+)</option></select>
+          <button class="btn ghost sm" onclick="bmCheck()">확인</button>
+        </div>
+        <textarea class="in" id="bm_text" style="width:100%;height:96px;font-family:ui-monospace,monospace;font-size:12px;resize:vertical" placeholder="MLT-D111S/TND&#9;2&#10;CLT-00316&#9;1"></textarea>
+        <div id="bm_prev" style="margin-top:10px"></div>
+        <button class="btn hidden" id="bm_btn" onclick="bmApply()" style="margin-top:10px">반영</button>
+      </details>
+    </div>
     <div class="card">
-      <h2>현재고 <span id="sk_me"></span></h2>
+      <h2>최근 입출고</h2>
+      <div id="sk_moves"><div class="empty">-</div></div>
+    </div>
+    <div class="card">
+      <h2>현재고 <span id="sk_whLbl"></span></h2>
       <div class="daterow">
         <input class="in" id="sk_q" placeholder="모델 · 품목코드 · 상품명" onkeydown="if(event.key==='Enter')loadStk(0)">
         <button class="btn ghost sm" onclick="loadStk(0)">조회</button>
       </div>
       <div class="daterow" style="margin-top:6px">
-        <select class="in" id="sk_wh" onchange="loadStk(0)"></select>
         <select class="in" id="sk_cat" onchange="loadStk(0)"><option value="">전체 분류</option></select>
         <label class="sk-tog"><input type="checkbox" id="sk_has" checked onchange="loadStk(0)"> 재고 있는 것만</label>
       </div>
       <div class="oc-sum"><div><div class="k">품목</div><div class="v" id="sk_cnt">-</div></div><div><div class="k">합계 수량</div><div class="v" id="sk_qty">-</div></div></div>
       <div id="sk_rows"><div class="empty">불러오는 중…</div></div>
       <div class="pager" id="sk_pager"></div>
-    </div>
-    <div class="card" id="bulkMoveCard">
-      <h2>여러 품목 한 번에 입·출고 <span>엑셀 붙여넣기</span></h2>
-      <p class="note-in" style="margin-top:0">엑셀에서 <b>품목코드(또는 품목명) · 수량</b> 두 열을 복사해 붙여넣고 [확인]을 누르면 품목을 찾아 보여줍니다. 맞으면 [반영]. 세트 품목은 구성품으로 나뉘어 들어갑니다.</p>
-      <div class="daterow">
-        <select class="in" id="bm_kind"><option value="out">출고 (−)</option><option value="in">입고 (+)</option></select>
-        <button class="btn ghost sm" onclick="bmCheck()">확인</button>
-      </div>
-      <textarea class="in" id="bm_text" style="width:100%;height:96px;font-family:ui-monospace,monospace;font-size:12px;resize:vertical" placeholder="MLT-D111S/TND&#9;2&#10;CLT-00316&#9;1"></textarea>
-      <div id="bm_prev" style="margin-top:10px"></div>
-      <button class="btn hidden" id="bm_btn" onclick="bmApply()" style="margin-top:10px">반영</button>
-    </div>
-    <div class="card">
-      <h2>최근 입출고</h2>
-      <div id="sk_moves"><div class="empty">-</div></div>
     </div>
   </section>
 
@@ -890,7 +920,11 @@ function addSaleItem(v){ v=v||{}; const r=document.createElement('div'); r.class
     <div class="grid3"><div class="f"><label>모델코드</label><input class="in si-model" placeholder="모델" style="text-transform:uppercase" autocomplete="off" value="${esc(v.model_code||'')}"></div>
     <div class="f"><label>수량</label><input class="in num si-qty" type="number" min="1" value="${v.qty||1}"></div>
     <div class="f"><label>판매가 <span class="req">*</span></label><input class="in num si-amt" inputmode="numeric" placeholder="0" oninput="comma(this)" value="${v.amount?Number(v.amount).toLocaleString('ko-KR'):''}"></div></div>`;
-  $('s_items').appendChild(r); if(!v.product_name) r.querySelector('.si-name').focus(); saleTotal(); }
+  $('s_items').appendChild(r);
+  const nm=r.querySelector('.si-name'), md=r.querySelector('.si-model');
+  itemSuggest(nm, x=>{ nm.value=x.name; if(!md.value.trim()) md.value=x.model||x.code; r.querySelector('.si-amt').focus(); });
+  itemSuggest(md, x=>{ md.value=x.model||x.code; if(!nm.value.trim()) nm.value=x.name; });
+  if(!v.product_name) nm.focus(); saleTotal(); }
 function hyphen(el){ el.value = el.value.replace(/[^0-9]/g,'').replace(/^(\d{0,3})(\d{0,4})(\d{0,4})$/,'$1-$2-$3').replace(/-{1,2}$/,''); }
 let toastT; function toast(msg, cls=''){ const t=$('toast'); t.textContent=msg; t.className='toast show '+cls; clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast',2600); }
 async function rpc(fn, args){ const {data,error} = await sb.rpc(fn, args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
@@ -921,6 +955,7 @@ async function start(){
   REQ_SEEN=null; loadRequests(); reqPoll(); loadGifts();
 }
 function render(){
+  initSuggest();
   const s = STATUS;
   const handlers = s.staff || [];
   ['s_handler','c_handler'].forEach(id=>{ const el=$(id); const keep=el.value;
@@ -979,7 +1014,11 @@ async function ensureStkWh(){
   try{ STK_WH = await rpc('fn_inv_warehouses') || []; }catch(e){ STK_WH=[]; }
   const opt = STK_WH.map(w=>`<option value="${esc(w.code)}"${w.code==='00001'?' selected':''}>${esc(w.name)}</option>`).join('');
   ['sk_wh'].forEach(id=>{ if($(id)) $(id).innerHTML=opt; });
+  whLabel();
 }
+function whName(c){ const w=STK_WH.find(x=>x.code===c); return w?w.name:(c||''); }
+function whLabel(){ const l=$('sk_whLbl'); if(l) l.textContent=whName(($('sk_wh')||{}).value||'00001')+' 기준'; }
+function whChanged(){ whLabel(); mvReset(); loadStk(0); }
 const STK_PAGE=50; let STK_OFF=0, STK_SEQ=0;
 async function loadStk(off){
   await ensureStkWh(); STK_LOADED=true;
@@ -1051,6 +1090,85 @@ async function bmApply(){
   try{ await rpc('fn_stock_move',{p_code:CODE,p_rows:rows}); toast(`${rows.length}줄 ${kind==='out'?'출고':'입고'} 반영`,'ok'); $('bm_text').value=''; $('bm_prev').innerHTML=''; BM_ROWS=[]; b.classList.add('hidden'); loadStk(); }
   catch(e){ toast(e.message,'bad'); }
   b.disabled=false;
+}
+/* ═══ 등록된 품목 자동완성 (상품명·모델코드 칸) ═══ */
+let ISG_BOX=null, ISG_T=null, ISG_INP=null, ISG_ROWS=[], ISG_I=-1;
+function isgClose(){ if(ISG_BOX){ ISG_BOX.remove(); ISG_BOX=null; } ISG_INP=null; ISG_ROWS=[]; ISG_I=-1; }
+function isgOpen(inp, rows){
+  isgClose(); ISG_INP=inp; ISG_ROWS=rows;
+  const r=inp.getBoundingClientRect(); const b=document.createElement('div'); b.className='isg';
+  b.style.left=Math.max(8,Math.min(r.left, innerWidth-Math.max(r.width,260)-8))+'px'; b.style.top=(r.bottom+4)+'px'; b.style.width=Math.max(r.width,260)+'px';
+  b.innerHTML=rows.length?rows.map((x,i)=>`<div data-i="${i}"><b>${esc(x.name)}</b><small>${esc(x.code)}${x.model?' · '+esc(x.model):''}${x.category?' · '+esc(x.category):''}</small></div>`).join('')
+    :'<div class="none">등록된 품목에 없습니다 — 그대로 적어도 됩니다</div>';
+  document.body.appendChild(b); ISG_BOX=b;
+  b.querySelectorAll('[data-i]').forEach(el=>el.onmousedown=e=>{ e.preventDefault(); isgPick(Number(el.dataset.i)); });
+}
+function isgPick(i){ const x=ISG_ROWS[i], inp=ISG_INP; if(!x||!inp) return; const fn=inp._isgApply; isgClose(); if(fn) fn(x); }
+function itemSuggest(inp, apply){
+  if(!inp||inp._isg) return; inp._isg=1; inp._isgApply=apply; inp.setAttribute('autocomplete','off'); inp.removeAttribute('list');
+  inp.addEventListener('input',()=>{ clearTimeout(ISG_T); const v=inp.value.trim();
+    if(v.length<2){ if(ISG_INP===inp) isgClose(); return; }
+    ISG_T=setTimeout(async()=>{ let rows=[]; try{ rows=await rpc('fn_store_items',{p_code:CODE,p_q:v,p_limit:8})||[]; }catch(e){ rows=[]; }
+      if(document.activeElement===inp) isgOpen(inp,rows); },250); });
+  inp.addEventListener('keydown',e=>{ if(!ISG_BOX||ISG_INP!==inp) return;
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); ISG_I=Math.max(0,Math.min(ISG_ROWS.length-1,ISG_I+(e.key==='ArrowDown'?1:-1)));
+      [...ISG_BOX.querySelectorAll('[data-i]')].forEach((c,i)=>c.classList.toggle('on',i===ISG_I)); }
+    else if(e.key==='Enter'&&ISG_I>=0){ e.preventDefault(); isgPick(ISG_I); }
+    else if(e.key==='Escape') isgClose(); });
+  inp.addEventListener('blur',()=>setTimeout(()=>{ if(ISG_INP===inp) isgClose(); },150));
+}
+window.addEventListener('scroll',()=>{ if(ISG_BOX) isgClose(); }, true);
+let SUGGEST_ON=false;
+function initSuggest(){
+  if(SUGGEST_ON) return; SUGGEST_ON=true;
+  const P=$('s_product'), M=$('s_model');
+  if(P) itemSuggest(P, x=>{ P.value=x.name; if(M && !M.value.trim()) M.value=x.model||x.code; $('s_amount').focus(); });
+  if(M) itemSuggest(M, x=>{ M.value=x.model||x.code; if(P && !P.value.trim()) P.value=x.name; });
+  const Q=$('mv_q'); if(Q) itemSuggest(Q, x=>{ Q.value=x.name; mvPickCode(x.code, x.name); });
+}
+/* 빠른 입·출고 : 품목 하나 찾아 수량 넣고 입고/출고 */
+let MV_PICK=null;
+function mvReset(){ MV_PICK=null; const b=$('mv_pick'); if(b) b.innerHTML=''; }
+function mvShow(){
+  const b=$('mv_pick'); if(!b) return;
+  if(!MV_PICK){ b.innerHTML=''; return; }
+  const r=MV_PICK;
+  b.innerHTML=`<div class="mv-picked"><div><b>${esc(r.name||r.code)}</b><small>${esc(r.code)}${r.set&&r.set.length?` · 세트 → ${r.set.map(c=>esc(c.name)+' ×'+c.qty).join(', ')}`:''}${r.no_stock?' · 재고 미차감 품목':''}</small></div>
+    <button class="x" title="지우기" onclick="mvReset();$('mv_q').focus()">×</button></div>`;
+}
+async function mvFind(){
+  const q=($('mv_q').value||'').trim(); if(!q) return toast('품목코드나 상품명을 넣으세요','bad');
+  const b=$('mv_pick'); b.innerHTML='<div class="empty">찾는 중…</div>';
+  let res; try{ res=await rpc('fn_store_item_resolve',{p_code:CODE,p_rows:[{code:/^[A-Za-z]{2,6}-\d{3,}$/.test(q)?q:null, name:q}]}); }
+  catch(e){ b.innerHTML=''; return toast(e.message,'bad'); }
+  const x=(res||[])[0]||{};
+  if(x.code){ MV_PICK={code:x.code,name:x.name,set:x.set||null,no_stock:!!x.no_stock}; mvShow(); $('mv_qty').focus(); $('mv_qty').select(); return; }
+  const cands=x.cands||[];
+  b.innerHTML=cands.length?`<div class="mv-cands">${cands.map((c,i)=>`<button type="button" onclick="mvPick(${i})">${esc(c.name)}<small>${esc(c.code)}</small></button>`).join('')}</div>`
+    :`<div class="empty">품목을 찾지 못했습니다 — 다른 이름이나 코드로 찾아보세요</div>`;
+  MV_CANDS=cands;
+}
+let MV_CANDS=[];
+async function mvPick(i){ const c=MV_CANDS[i]; if(c) mvPickCode(c.code, c.name); }
+async function mvPickCode(code, name){
+  MV_PICK={code,name}; mvShow();
+  try{ const r=await rpc('fn_store_item_resolve',{p_code:CODE,p_rows:[{code}]}); const x=(r||[])[0]||{}; MV_PICK={code, name:x.name||name, set:x.set||null, no_stock:!!x.no_stock}; mvShow(); }catch(e){}
+  $('mv_qty').focus(); $('mv_qty').select();
+}
+async function mvApply(kind){
+  if(!MV_PICK){ await mvFind(); if(!MV_PICK) return; }
+  const q=Number($('mv_qty').value)||0; if(q<=0) return toast('수량을 넣으세요','bad');
+  const wh=$('sk_wh').value||'00001', label=kind==='in'?'입고':'출고';
+  const r=MV_PICK; const rows=[];
+  if(r.set&&r.set.length) r.set.forEach(c=>rows.push({kind,item_code:c.code,warehouse:wh,qty:c.qty*q,ref_type:'manual',note:'세트 '+r.code}));
+  else if(r.no_stock) return toast(`${r.name} 은 재고를 세지 않는 품목입니다`,'bad');
+  else rows.push({kind,item_code:r.code,warehouse:wh,qty:q,ref_type:'manual'});
+  const btns=document.querySelectorAll('.mv-act .btn'); btns.forEach(b=>b.disabled=true);
+  try{ await rpc('fn_stock_move',{p_code:CODE,p_rows:rows});
+    toast(`${r.name} ${label} ${q}${rows.length>1?` (구성품 ${rows.length}줄)`:''}`,'ok');
+    $('mv_q').value=''; $('mv_qty').value=1; mvReset(); $('mv_q').focus(); loadStk();
+  }catch(e){ toast(e.message,'bad'); }
+  btns.forEach(b=>b.disabled=false);
 }
 async function stkMove(code, kind, name){
   const label = kind==='in' ? '입고' : '출고';
