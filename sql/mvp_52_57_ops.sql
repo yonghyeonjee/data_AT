@@ -429,3 +429,35 @@
 -- 이카운트 조회 API 탐색 결과 : 판매/주문서 조회 후보 경로 6개 전부 404 (Sale/GetListSale 등). 확인된 조회 API 는 품목·창고별재고 둘뿐
 -- 판매현황(8/1~9/7, 3,880행) vs 주문서 현황(9월 317건, 전부 '생성한전표') 대조 : 판매현황 ≈ 주문서→판매 전환분(온라인 2,666 + VMS/택배 ~960) + 소수 직접입력.
 --   온라인분은 샵링커 원장과 중복이므로 업로드 파서는 VMS 행만 적재(8월 822행). VMS 도 이카운트 주문서로 입력되고 있음 → 우리 화면에서 입력해 전송하면 업로드 자체가 불필요
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- mvp_91_order_send_ecount_format  이카운트 주문서(SaveSaleOrder) 첫 실전송 성공 — 2026-09-07 11:00, 전표 20260907-15 (테스트, 이카운트에서 삭제)
+-- ═══════════════════════════════════════════════════════════════════════
+-- 형식 : SaleOrderList[{BulkDatas:{...}}] 라인마다 1개, 같은 UPLOAD_SER_NO(=queue id) 면 한 전표. core.f_order_body(id) 로 생성
+-- 이카운트가 돌려준 검증 오류로 확정한 규칙 :
+--   U_MEMO1(모바일) 필수 → 없으면 010-0000-0000 · ADD_TXT_01_T(특이사항)·U_TXT1(주소)·REMARKS 는 특수문자 불가(한글·영숫자·공백 ,.()/- 만)
+--   USER_PRICE_VAT = '단가(vat포함)' 숫자 컬럼 (Y/N 아님!) → 여기에 VAT 포함 단가를 넣고 PRICE 는 보내지 않는다
+-- 응답 : Data.SuccessCnt/FailCnt/SlipNos[]/ResultDetails[].Errors[{ColCd,Message}] → FailCnt=0 일 때만 sent, 오류는 ColCd+Message 로 저장
+-- 아직 안 보내는 것 : EMP_CD(영업담당 코드, 예 00072 박은지) · IO_TYPE(거래유형 코드 — 직판/자체VMS/VMS/임대/스마트스토어 B2B… 코드표 필요) · 판매담당자 · 구분(카드) · 주문No.
+-- mvp_92 (v38) 전송된 주문서 취소 : f_order_void_many(..., p_sent_ok) / fn_order_void_many(ids, reason, sent_ok). 관리자 주문서 행 [취소 (이카운트 삭제 후)] — '삭제했음' 입력 필수
+--   이카운트 화면 대조 : U_MEMO1 = '특이사항' 칸이었음(모바일 아님). 공급가액·부가세는 자동 계산 안 됨 → SUPPLY_AMT·VAT_AMT 를 보내야 함(다음 수정)
+--   필드 확인용 전표 1건 추가 전송(시흥몰(필드 확인 테스트), U_MEMO1~5/U_TXT1/ADD_TXT_01~05/DOC_NO/TTL_CTT/REF_DES/REMARKS_WIN/P_REMARKS1~3 에 표식) — 화면에서 자리 확인 후 매핑 확정
+
+-- ─────────────────────────────────────────────────────────────
+-- mvp_95 (2026-09-07) 담당자 화면 샵링커 엑셀 업로드 허용
+--   core.f_orders_bulk_upsert(p_source,p_file_name,p_rows,p_by uuid,p_note) : 관리자/담당자 공용 본체 (anon·authenticated 실행 불가)
+--   public.fn_orders_bulk_upsert : 관리자 전용 래퍼 (기존 시그니처 유지)
+--   public.fn_store_orders_upload(p_code,p_file_name,p_rows) : PIN 담당자 · source='shoplinker' 고정 · 500행/회 · raw.upload.note='담당자 업로드: 이름'
+--   fn_upload_history.by = profiles.email 없으면 upload.note (담당자 업로드 표시)
+--   store.html : 주문서 탭 단계별 모드 "파일 업로드" 드롭존 + 빠른 모드 "샵링커 엑셀 올리기" 링크. xlsx 모듈은 필요할 때만 CDN 로드.
+--   v39 프런트 : 재고 탭 fn_stock_search 페이징(50)·분류·재고있는것만 / 최근 마감 [수정][삭제] (fn_store_daily_get/delete) /
+--               샵링커 가져오기 목록 50건 페이징 / 단계별 변환 ② 선택 100건 페이징 (admin·store 공용 wizMount)
+
+-- ─────────────────────────────────────────────────────────────
+-- mvp_96 (2026-09-07) 주문서 직접 입력 폼 = 이카운트 주문서 입력 항목 (전체 SQL: sql/mvp_96_order_form.sql)
+--   ec.code(kind emp|io_type|kind, code, label) 코드표 · fn_ec_codes_set(p_kind,p_rows) · 관리자 옵션·권한 → 주문서 코드표 카드
+--   ec.customer ← 이카운트 거래처 엑셀(데이터 가져오기, 자동 인식 '거래처코드'+'거래처명') fn_ec_customers_upsert · 쇼핑몰 거래처 15곳 channel_cust 에서 seed
+--   fn_order_meta() / fn_store_order_meta(p_code) · fn_ec_customer_search / fn_store_ec_customers · fn_item_resolve / fn_store_item_resolve(품목명→코드, 후보)
+--   order_queue.handler(판매담당자)·kind_code(구분) · order_queue_line.supply_amt·vat_amt (합계/1.1 반올림, 나머지 부가세)
+--   f_order_body : app_setting 'ec_field_map' {phone,addr,remark,handler,kind,order_no,channel → 이카운트 필드} + SUPPLY_AMT/VAT_AMT 전송. 관리자 이카운트 카드에서 매핑 수정
+--   화면 : _of/of.js·css 를 admin.html/store.html 에 마커(OF:JS:BEGIN)로 인라인. admin 의 "+ 직접 입력" 은 openOqModal() (기존 openOrderModal 은 원장 수동등록과 이름이 겹쳐 엉뚱한 창이 열리던 버그 수정)
