@@ -415,3 +415,10 @@
 --   fn_inv_summary : 제외 품목 빼고 집계 (+excluded 수) · fn_inv_stock(…, p_show_excluded) 기본 제외, 켜면 제외 품목만 (반환형 같아 drop 후 재생성)
 --   fn_inv_item_exclude(codes, excluded, note) 관리자 행 버튼 [집계 제외]/[집계 포함] · fn_stock_search 담당자 화면에서는 아예 안 보임
 -- 화면 공통 : 모든 표 머리글 클릭 정렬(오름/내림, 숫자·한글 자동 판별, 현재 페이지 행 기준). 소계 줄(colspan) 있는 표는 제외. admin·store·stock 세 파일
+
+-- (v34) 공통 검색·필터 바 + 고객 통합 수정
+--   [버그] fn_customer_stats : by_freq/new_by_month 의 group by 1 이 집계식이라 42803 → CTE 로 분리 (고객 통합 '유입 채널별·구매 횟수 분포' 빈 화면 원인)
+--   fn_order_list / fn_order_summary : p_category(core.orders.category), p_q_field(product|customer|model|order_no|phone|handler|channel) 추가 (drop 후 재생성)
+--   화면 : 목록 화면 12개 맨 위 공통 바 [기간][검색유형][검색어][채널][상품유형][조회][초기화] (CB_VIEWS)
+--          서버가 받는 조건은 서버로, 모르는 조건은 화면 표에서 행 숨김(MutationObserver 로 재적용) · 화면 바뀌면 조건 초기화 · 화면 자체 검색칸은 숨김
+--   고객 통합 '유입 채널별' 도 CRM_SRC 표기(S몰·AT몰 0 포함)

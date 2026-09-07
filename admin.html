@@ -697,6 +697,16 @@ textarea.in{height:auto}
 table th{cursor:pointer;user-select:none;position:relative}
 table th.sort-asc::after,table th.sort-desc::after{content:' ▲';font-size:9px;opacity:.75}
 table th.sort-desc::after{content:' ▼'}
+/* 공통 검색·필터 바 : 목록 화면마다 맨 위에 같은 모양으로 */
+.cbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;margin-bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.cbar .lb{font-size:11px;font-weight:700;color:var(--muted);margin-right:-2px}
+.cbar .in{height:34px;font-size:12.5px}
+.cbar select.in{min-width:120px} .cbar input.in{min-width:200px;flex:1}
+.cbar .grp{display:flex;gap:6px;align-items:center}
+.cbar .cnt{margin-left:auto;font-size:11.5px;color:var(--muted);white-space:nowrap}
+tr.cb-hide{display:none}
+.cbar .periodbar{flex-basis:100%;margin:0 0 4px}
+@media(max-width:760px){.cbar input.in{min-width:0;width:100%}}
 </style>
 </head>
 <body>
@@ -2999,11 +3009,78 @@ function show(v, opt){ if(!TITLES[v]) v='home'; toggleNav(false); opt=opt||{};
   $('title').textContent=TITLES[v]; renderTitleLink(v);
   if(!opt.fromHistory) pushView(v, !!opt.replace);
   if(dev){ $('periodBar').classList.add('hidden'); $('pageIntro').classList.add('hidden'); renderUnderConstruction(v); return; }
-  placePeriodBar(v); renderIntro(v); refreshView(); }
+  placePeriodBar(v); placeCbar(v); renderIntro(v); refreshView(); }
 /* 기간 바는 그 페이지의 첫 카드 맨 위(필터 바로 위)로 옮겨 붙인다 */
 const PERIOD_VIEWS=['orders','daily','consults','log','moves','inbox'];
+
+/* ═══════════════ 공통 검색·필터 바 ═══════════════
+   모든 목록 화면 맨 위에 같은 바 : [기간] [검색유형] [검색어] [채널] [상품유형] [조회] [초기화]
+   - 서버가 받는 조건(원장의 상품유형·검색 컬럼, 각 화면의 검색어·채널)은 서버로 보내고,
+   - 서버가 모르는 조건은 지금 화면에 보이는 표에서 걸러서 보여준다(행 숨김). 표가 다시 그려져도 조건이 유지된다. */
+const CB={q:'',field:'',channel:'',category:''};
+const CB_CATS=['PC·모니터','TV·영상·음향','냉장고·김치냉장고','세탁·건조','에어컨·공청','주방가전','청소기','정수기','모바일·웨어러블','프린터·복합기','토너·잉크','필터·소모품','리모컨·액세서리','기타'];
+const CB_VIEWS={
+  orders:   {q:'oQ', channel:'oChName', fields:[['','모든 컬럼'],['product','상품'],['customer','고객'],['model','모델'],['order_no','주문번호'],['phone','전화'],['handler','담당'],['channel','채널']], serverCat:true},
+  online:   {}, daily:{},
+  inbox:    {q:'iqQ'}, consults:{q:'cQ'}, customers:{q:'cuQ'}, crm:{q:'crmQ'},
+  stock:    {q:'ivQ'}, moves:{q:'mvQ'}, items:{q:'itQ'}, oq:{q:'oqQ'}, log:{q:'lgQ'}};
+function cbarEl(){ let el=$('cbar'); if(el) return el;
+  el=document.createElement('div'); el.id='cbar'; el.className='cbar';
+  el.innerHTML=`<div class="grp"><span class="lb">검색</span><select class="in" id="cbField"></select><input class="in" id="cbQ" placeholder="검색어 — Enter" onkeydown="if(event.key==='Enter')cbarGo()"></div>
+    <div class="grp"><span class="lb">채널</span><select class="in" id="cbCh"><option value="">전체 채널</option>${O_CH_NAMES.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+    <div class="grp"><span class="lb">상품유형</span><select class="in" id="cbCat"><option value="">전체 유형</option>${CB_CATS.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+    <button class="btn sm" onclick="cbarGo()">조회</button><button class="btn sm ghost" onclick="cbarReset()">초기화</button><span class="cnt" id="cbCnt"></span>`;
+  return el; }
+let CB_VIEW=null;
+function placeCbar(v){
+  const el=cbarEl(); const cfg=CB_VIEWS[v];
+  if(!cfg){ el.remove(); return; }
+  if(CB_VIEW!==v){ CB_VIEW=v; CB.q=''; CB.field=''; CB.channel=''; CB.category=''; }   /* 화면이 바뀌면 조건은 새로 */
+  [cfg.q, cfg.channel].forEach(id=>{ if(id && $(id)) $(id).classList.add('hidden'); });   /* 화면 자체 검색칸·채널은 공통 바로 대신 (중복 제거) */
+  const view=$('v-'+v); const first=view.querySelector('.card'); if(!first) return;
+  if(el.parentNode!==view || el.nextSibling!==first) view.insertBefore(el, first);
+  /* 기간 : 날짜를 쓰는 화면이면 기간 바를 이 안에 넣는다 */
+  const pb=$('periodBar'); if(PERIOD_VIEWS.includes(v)){ if(pb.parentNode!==el) el.insertBefore(pb, el.firstChild); pb.classList.remove('hidden'); }
+  /* 검색유형 : 서버가 컬럼 검색을 지원하면 그 목록, 아니면 이 화면 표의 머리글 */
+  const sel=$('cbField'); const fields=cfg.fields || [['','모든 컬럼']].concat(cbarHeads(view).map((h,i)=>['col:'+i,h]));
+  sel.innerHTML=fields.map(([k,l])=>`<option value="${esc(k)}">${esc(l)}</option>`).join('');
+  sel.value=CB.field&&fields.some(f=>f[0]===CB.field)?CB.field:''; $('cbQ').value=CB.q; $('cbCh').value=CB.channel; $('cbCat').value=CB.category;
+  cbarWatch(view);
+}
+function cbarHeads(view){ const t=view.querySelector('table'); if(!t||!t.tHead) return []; return [...t.tHead.rows[0].cells].map(th=>th.textContent.trim()).filter(Boolean); }
+function cbarGo(){
+  CB.q=$('cbQ').value.trim(); CB.field=$('cbField').value; CB.channel=$('cbCh').value; CB.category=$('cbCat').value;
+  const cfg=CB_VIEWS[VIEW]||{};
+  if(cfg.q && $(cfg.q)) $(cfg.q).value = (CB.field && !cfg.fields) ? '' : CB.q;   /* 컬럼 지정 검색은 화면에서 거르므로 서버 검색어는 비움 */
+  if(cfg.channel && $(cfg.channel)){ const o=[...$(cfg.channel).options].find(x=>x.value===CB.channel||x.text===CB.channel); $(cfg.channel).value=o?o.value:''; }
+  refreshView();
+}
+function cbarReset(){ CB.q=''; CB.field=''; CB.channel=''; CB.category=''; ['cbQ','cbField','cbCh','cbCat'].forEach(id=>{ if($(id)) $(id).value=''; });
+  const cfg=CB_VIEWS[VIEW]||{}; if(cfg.q&&$(cfg.q)) $(cfg.q).value=''; if(cfg.channel&&$(cfg.channel)) $(cfg.channel).value=''; refreshView(); }
+/* 화면 쪽 거르기 */
+function cbarApply(view){
+  view=view||$('v-'+VIEW); if(!view||!CB_VIEWS[VIEW]) return;
+  const cfg=CB_VIEWS[VIEW]; const kw=CB.q.toLowerCase();
+  const useKw = kw && (!cfg.q || (CB.field && !cfg.fields));        /* 서버가 검색어를 처리했으면 화면에선 다시 안 거른다 */
+  const useCh = CB.channel && !cfg.channel;
+  const useCat= CB.category && !cfg.serverCat;
+  let shown=0, total=0;
+  view.querySelectorAll('table').forEach(t=>{ const tb=t.tBodies[0]; if(!tb) return;
+    [...tb.rows].forEach(r=>{ if([...r.cells].some(c=>c.colSpan>1)) return; total++;
+      const txt=r.textContent.toLowerCase(); let ok=true;
+      if(useKw){ if(CB.field.startsWith('col:')){ const i=Number(CB.field.slice(4)); const c=r.cells[i]; ok = !!c && c.textContent.toLowerCase().includes(kw); } else ok = txt.includes(kw); }
+      if(ok && useCh) ok = txt.includes(CB.channel.toLowerCase());
+      if(ok && useCat) ok = txt.includes(CB.category.toLowerCase());
+      r.classList.toggle('cb-hide', !ok); if(ok) shown++; }); });
+  const c=$('cbCnt'); if(c) c.textContent = (useKw||useCh||useCat) ? `화면에서 걸러 ${shown}/${total}행` : '';
+}
+let CB_OBS=null;
+function cbarWatch(view){ if(CB_OBS) CB_OBS.disconnect(); CB_OBS=new MutationObserver(()=>{ clearTimeout(cbarWatch.t); cbarWatch.t=setTimeout(()=>cbarApply(view),30); });
+  view.querySelectorAll('table').forEach(t=>CB_OBS.observe(t,{childList:true,subtree:true})); }
+
 function placePeriodBar(v){
   const pb=$('periodBar'); if(!PERIOD_VIEWS.includes(v)){ pb.classList.add('hidden'); return; }
+  if(CB_VIEWS[v]) return;   /* 공통 바가 있는 화면은 placeCbar 가 기간 바를 안에 넣는다 */
   const card=document.querySelector('#v-'+v+' .card'); if(card && pb.parentNode!==card){ card.insertBefore(pb, card.firstChild); }
   pb.classList.remove('hidden');
 }
@@ -3027,7 +3104,7 @@ async function refreshView(){
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
   if(v) v.classList.add('vload');
   try{ await fn(); }catch(e){ toast(e.message||String(e),'bad'); }
-  finally{ if(RPC_BUSY>0) await rpcIdle(); if(v) v.classList.remove('vload'); loadPillText(''); }
+  finally{ if(RPC_BUSY>0) await rpcIdle(); if(v) v.classList.remove('vload'); loadPillText(''); try{ cbarApply(); }catch(e){} }
 }
 
 /* ═══════════════ 온라인 채널 ═══════════════ */
@@ -3498,7 +3575,8 @@ let oPage=0, oRows=[];
 const O_CH_NAMES=['P몰','S몰','AT몰','시흥','B2B','E스토어','가전시장','쿠팡','11번가','지마켓','옥션','SSG','현대홈쇼핑','쿠팡이츠','SK스토아','토스쇼핑','롯데온','카카오-관악','카카오-시흥','한퓨어','통신판매(VMS)','매장(시흥)','매장구독(시흥)','직판','렌탈'];
 let O_CH_FILLED=false;
 function orderArgs(){ return {p_from:P.from,p_to:P.to,p_channel:$('oCh').value||null,p_handler:$('oHd').value||null,p_q:$('oQ').value||null,
-  p_source:$('oSrc').value||null,p_channel_name:$('oChName').value||null,p_status:$('oSt').value||null}; }
+  p_source:$('oSrc').value||null,p_channel_name:$('oChName').value||null,p_status:$('oSt').value||null,
+  p_category:CB.category||null,p_q_field:CB.field||null}; }
 function resetOrders(){ ['oSrc','oCh','oChName','oSt','oHd','oQ'].forEach(id=>$(id).value=''); $('oSort').value='date_desc'; loadOrders(0); }
 function qcard(label,val,unit,cls,sub){ return `<div class="q ${cls||''}"><small>${label}</small><b>${val}${unit?`<i>${unit}</i>`:''}</b>${sub?`<div class="sub">${sub}</div>`:''}</div>`; }
 function renderOrderSummary(m){
@@ -4118,7 +4196,7 @@ async function loadStamp(){
     $('hdrStamp').onclick=(e)=>{ if(e.target.closest('.tipbox') && !e.target.closest('.tip-x')) return; $('hdrStamp').classList.toggle('open'); };
     if(!window.__stampOutside){ window.__stampOutside=true; document.addEventListener('click', e=>{ if(!e.target.closest('#hdrStamp')) $('hdrStamp').classList.remove('open'); }); }
     $('hdrStamp').innerHTML=`<span class="dot"></span><span class="st-txt">데이터 기준 원장 ~${esc(d.orders_to||'-')} · 최근 적재 ${esc(latest)}</span>
-      <div class="tipbox">${src.map(x=>`<div><span>${esc(x.label)}</span><b>${esc(x.at||'없음')}</b></div>`).join('')}<div><span>조회 시각</span><b>${esc(d.now)}</b></div><div class="tip-x">닫기 ✕</div></div>`;
+      <div class="tipbox">${src.map(x=>`<div><span>${esc(x.label)}${x.note?`<small style="display:block;color:var(--faint);font-size:10.5px">${esc(x.note)}</small>`:''}</span><b>${esc(x.at||'없음')}</b></div>`).join('')}<div><span>조회 시각</span><b>${esc(d.now)}</b></div><div class="tip-x">닫기 ✕</div></div>`;
     if(!$('pageIntro').classList.contains('hidden')) renderIntro(VIEW);
   }catch(e){}
 }
@@ -4321,13 +4399,17 @@ function renderCustStats(){
       <div class="s">전체의 ${c.total?(c.consent/c.total*100).toFixed(1):0}%</div></div>
     <div class="mk t6"><div class="t">휴면 (180일+)</div><div class="v">${n(c.dormant_180)}<small>명</small></div>
       <div class="s">구매 이력은 있으나 최근 없음</div></div>`;
-  $('custBySrc').innerHTML=simpleBars((c.by_source||[]).map(x=>
-    ({k:x.k, v:x.n, unit:'명', sub:`수신동의 ${n(x.consent)}`, color:'var(--navy)'})));
+  /* 유입 이름은 발송 대상 추출과 같은 CRM_SRC 표기 (S몰·AT몰처럼 아직 없는 원천도 0 으로 보이게) */
+  const byk={}; (c.by_source||[]).forEach(x=>byk[x.k]=x);
+  const srcRows=CRM_SRC.map(([g,k,label,note])=>({k:label+(note?` · ${note}`:''), v:(byk[k]||{}).n||0, unit:'명', sub:`${g} · 수신동의 ${n((byk[k]||{}).consent||0)}`, color:'var(--navy)'}))
+    .concat((c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>({k:x.k, v:x.n, unit:'명', sub:`기타 · 수신동의 ${n(x.consent)}`, color:'var(--navy)'})));
+  $('custBySrc').innerHTML=simpleBars(srcRows);
   $('custByFreq').innerHTML=simpleBars((c.by_freq||[]).map(x=>
     ({k:x.k, v:x.n, unit:'명', sub:fmtT(x.net)+'원', color:'var(--teal)'})));
   const sel=$('cuSrc');
   if(sel.options.length<=1) sel.innerHTML='<option value="">전체 유입</option>'+
-    (c.by_source||[]).map(x=>`<option>${esc(x.k)}</option>`).join('');
+    CRM_SRC.map(([g,k,label])=>`<option value="${esc(k)}">${esc(g)} · ${esc(label)}</option>`).join('')+
+    (c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>`<option>${esc(x.k)}</option>`).join('');
 }
 function resetCustomers(){ ['cuQ','cuSrc','cuFreq','cuConsent'].forEach(id=>$(id).value=''); $('cuSort').value='net_desc'; loadCustomers(0); }
 
