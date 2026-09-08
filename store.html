@@ -2728,7 +2728,88 @@ async function loadRequests(){
   /* 새 요청이 늘어나면 알림 (처리 담당자만) */
   if(r.can_process){ if(REQ_SEEN!==null && r.n_open>REQ_SEEN){ toast(`새 주문서 요청 ${r.n_open-REQ_SEEN}건 — 주문서 탭에서 처리하세요`,'ok'); try{ navigator.vibrate&&navigator.vibrate(120); }catch(e){} } REQ_SEEN=r.n_open; }
 }
-function reqPoll(){ clearInterval(REQ_T); REQ_T=setInterval(loadRequests, 20000); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadRequests(); }); }
+function reqPoll(){
+  clearInterval(REQ_T);
+  REQ_T=setInterval(loadRequests, 20000);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadRequests(); });
+  setupRealtimeSubscription();
+}
+
+/* ═══ 실시간 상담 알림 (Supabase 리얼타임 구독) ═══
+   Supabase Realtime 을 통해 crm.consult 테이블의 INSERT 를 즉시 감지
+   폴링(20초) 을 대신하여 지연 시간 거의 0으로 알림 제공
+   네트워크 끊김 시에도 자동 재연결, 폴링 병행으로 보증
+*/
+let REALTIME_SUB=null;
+let REALTIME_READY=false;
+function setupRealtimeSubscription(){
+  if(REALTIME_SUB) return; /* 이미 구독 중이면 중복 방지 */
+
+  try {
+    /* crm.consult 테이블의 INSERT 이벤트 구독 */
+    REALTIME_SUB = sb
+      .channel('crm:consult:inserts')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'crm', table: 'consult' },
+        (payload) => {
+          /* 새로운 상담 레코드가 들어오면 즉시 처리 */
+          handleNewConsultNotification(payload.new);
+        }
+      )
+      .subscribe((status) => {
+        if(status === 'SUBSCRIBED') {
+          console.log('✓ 실시간 상담 알림 활성화');
+          REALTIME_READY=true;
+        } else if(status === 'CHANNEL_ERROR') {
+          console.log('⚠ 실시간 채널 오류 - 폴링 계속 사용');
+          REALTIME_READY=false;
+        } else if(status === 'CLOSED') {
+          console.log('✗ 실시간 알림 연결 종료');
+          REALTIME_READY=false;
+        }
+      });
+  } catch(e) {
+    console.log('⚠ 실시간 구독 실패:', e.message);
+    REALTIME_READY=false;
+  }
+}
+
+async function handleNewConsultNotification(newConsult){
+  /* 새로운 상담이 들어왔을 때 처리 */
+  if(!newConsult || !CODE || LOCKED) return;
+
+  /* INBOX_LAST 업데이트 (폴링 중복 방지) */
+  if(newConsult.id) INBOX_LAST=Math.max(INBOX_LAST||0, newConsult.id);
+
+  const source=newConsult.source||'store_visit';
+  const who=newConsult.customer_name?`${newConsult.customer_name} 님`:'이름 없는 고객';
+
+  /* 본인이 입력한 것이 아닐 때만 알림 (다른 직원의 상담) */
+  if(newConsult.handler && newConsult.handler !== ME) {
+    const msg=`새 문의 — ${who}`;
+    toast(msg,'ok');
+    notify('새 상담이 등록되었습니다', msg);
+    try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
+    /* 메인 데이터 새로고침 (20초 대기하지 않고 즉시) */
+    loadRequests().then(()=>{ render(); if($('allCard')&&!$('allCard').classList.contains('hidden')) loadAllConsults(); }).catch(()=>{});
+  } else if(!newConsult.handler) {
+    /* 미배정 상담이 들어왔을 때 (관리자용) */
+    if(STATUS&&STATUS.is_mgr) {
+      const msg=`새 문의 (미배정) — ${who}`;
+      toast(msg,'ok');
+      notify('미배정 상담이 들어왔습니다', msg);
+      try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
+      loadRequests().then(()=>{ render(); if($('allCard')&&!$('allCard').classList.contains('hidden')) loadAllConsults(); }).catch(()=>{});
+    }
+  }
+}
+
+function stopRealtimeSubscription(){
+  if(REALTIME_SUB) {
+    REALTIME_SUB.unsubscribe();
+    REALTIME_SUB=null;
+  }
+}
 /* ═══ 새 문의 알림 ═══
    내게 배정된 건(점장·대표는 미배정 건 포함)의 마지막 id 를 20초마다 본다. 커지면 새 문의.
    화면이 뒤에 있어도 알 수 있게 브라우저 알림(권한 있을 때)과 진동을 함께 쓴다. */
@@ -2831,7 +2912,11 @@ function pinFail(msg){
   if(c){ pinMeter(Number(c)); $('pinErr').textContent = '등록되지 않은 담당자 코드입니다' + (Number(c)>=3 ? ` · ${5-Number(c)}번 더 틀리면 15분 잠깁니다` : ''); }
   else $('pinErr').textContent=msg;
   $('pinInput').value=''; $('pinInput').focus(); }
-function pinUnlocked(){ clearTimeout(PIN_T); PIN_UNTIL=0; try{ localStorage.removeItem('dc_pin_until'); }catch(e){} pinMeter(0); }
+function pinUnlocked(){
+  clearTimeout(PIN_T); PIN_UNTIL=0; try{ localStorage.removeItem('dc_pin_until'); }catch(e){}
+  pinMeter(0);
+  stopRealtimeSubscription();
+}
 function pinLockTick(){ clearTimeout(PIN_T); const left=PIN_UNTIL-Date.now();
   if(left<=0){ pinUnlocked(); $('pinErr').textContent='이제 다시 입력할 수 있습니다'; $('pinInput').focus(); return; }
   const mm=Math.floor(left/60e3), ss=Math.floor(left%60e3/1e3); pinMeter(5,true);
