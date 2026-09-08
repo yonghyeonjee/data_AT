@@ -2737,8 +2737,12 @@ async function asgOpen(ids, what){
 function asgTeamSet(t){ ASG_TEAM=t; asgRender(); }
 function asgRender(){
   const d=ASG_DIRS||{staff:[]}, all=d.staff||[];
-  const teams=[...new Set(all.map(x=>x.team))].filter(Boolean);
-  $('asg_scope').innerHTML=[['','전체 담당자']].concat(teams.map(t=>[t,t]))
+  const have=new Set(all.map(x=>x.team).filter(Boolean));
+  /* 칩 순서 : 자주 넘기는 매장·온라인을 앞에, 그 뒤 전체 → 대표·경영 → 개발 */
+  const ORDER=['매장','온라인','','대표·경영','개발'];
+  const opts=ORDER.filter(t=>t===''||have.has(t)).map(t=>[t, t||'전체 담당자'])
+    .concat([...have].filter(t=>ORDER.indexOf(t)<0).map(t=>[t,t]));
+  $('asg_scope').innerHTML=opts
     .map(([v,l])=>`<button type="button" class="${ASG_TEAM===v?'on':''}" onclick="asgTeamSet('${v}')">${esc(l)}</button>`).join('');
   /* 내 부서만 볼 때도 점장·대표에게는 항상 넘길 수 있게 남긴다 */
   const list=ASG_TEAM? all.filter(x=>x.team===ASG_TEAM||x.lead) : all;
