@@ -1,0 +1,8 @@
+-- mvp_43~48 (2026-09-04 저녁) — Supabase 에 적용 완료. 저장소 보관용 요약.
+-- 실제 본문은 Supabase → Database → Migrations 에서 이름으로 확인:
+--   mvp_43_store_stock_out          매장용 품목별 출고 수량 (fn_store_stock_out) — 재고가 아닌 '판매' 데이터. 재고 페이지 미사용
+--   mvp_44_dash_match_gas_groups    대시보드 채널 그룹·환불정책·별칭을 GAS v4 와 동일하게 (고도몰/직접·B2B/오픈마켓/홈쇼핑/통신판매/오프라인/기타)
+--   mvp_45_dash_cache               payload 캐시 (core.dash_cache · f_dash_payload_cached · fn_dash_refresh) 2.9초 → 7ms
+--   mvp_46_audit_fixes              fn_store_channel_day 에서 삼성AT스토어 제거 · 원천 테이블 변경 시 캐시 자동 무효화 트리거
+--   mvp_47_query_ui                 fn_order_list 필터 확장(출처·채널·상태·모델·담당 검색) · fn_order_summary · fn_consult_summary · fn_data_stamp · fn_tmp_test 삭제
+--   mvp_48_kst_window (+48b)        목록·요약·내보내기·접수함의 기간 창을 KST 기준으로 (기존엔 UTC 자정 = KST 09시부터 잡혀 9시간 어긋남)
