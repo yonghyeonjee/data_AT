@@ -39,10 +39,11 @@ function needXLSX(){ if(window.XLSX) return Promise.resolve();
   --shadow:0 1px 2px rgba(20,24,32,.04), 0 4px 16px rgba(20,24,32,.04);
   --shadow-lg:0 12px 40px rgba(11,15,46,.18);
   --font:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;
+  --font-scale:1;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:var(--font);background:var(--ground);color:var(--ink);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;letter-spacing:-.005em}
+body{font-family:var(--font);background:var(--ground);color:var(--ink);font-size:calc(13.5px * var(--font-scale));line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;letter-spacing:-.005em}
 button,input,select,textarea{font:inherit;color:inherit}
 .hidden{display:none!important}
 .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
@@ -134,6 +135,12 @@ nav::-webkit-scrollbar{width:6px} nav::-webkit-scrollbar-thumb{background:rgba(2
 .userbar .role{color:#7A8CE8;font-size:10.5px;font-weight:700;letter-spacing:.1em}
 .userbar button{margin-top:10px;width:100%;padding:7px;background:transparent;border:1px solid rgba(255,255,255,.14);color:#AEB6CC;border-radius:7px;cursor:pointer;font-size:12px;transition:.12s}
 .userbar button:hover{border-color:rgba(255,255,255,.35);color:#fff}
+.font-ctrl{padding:14px;border-top:1px solid rgba(255,255,255,.08)}
+.font-ctrl .lbl{font-size:10.5px;letter-spacing:.08em;color:#7A8CE8;font-weight:600;text-transform:uppercase;margin-bottom:8px}
+.font-ctrl .sizer{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.font-ctrl .font-btn{flex:1;padding:8px 6px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;color:#AEB6CC;font-size:11.5px;font-weight:600;cursor:pointer;transition:.15s}
+.font-ctrl .font-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#fff}
+.font-ctrl .font-btn.active{background:#7A8CE8;border-color:#7A8CE8;color:#0B0F2E}
 main{flex:1;display:flex;flex-direction:column;min-width:0}
 .subtabs{display:flex;gap:2px;align-items:center;padding:6px max(28px,calc((100% - var(--maxw))/2));background:var(--surface);border-bottom:1px solid var(--line);overflow-x:auto;flex-shrink:0;scrollbar-width:none}
 .subtabs::-webkit-scrollbar{display:none}
@@ -869,6 +876,14 @@ select.segd{display:none!important}
   <aside id="aside">
     <div class="brand"><small>SAMSUNG&amp;TECH</small>Datacenter<span class="envtag hidden" id="envTag" title="테스트 환경입니다 · /admin/test">TEST</span></div>
     <nav id="navBox"></nav>
+    <div class="font-ctrl">
+      <div class="lbl">글자 크기</div>
+      <div class="sizer">
+        <button class="font-btn" data-scale="1" onclick="setFontScale(1)">작게</button>
+        <button class="font-btn" data-scale="1.5" onclick="setFontScale(1.5)">중간</button>
+        <button class="font-btn" data-scale="2" onclick="setFontScale(2)">크게</button>
+      </div>
+    </div>
     <div class="userbar"><b id="uEmail">-</b><span class="role" id="uRole"></span><button onclick="logout()">로그아웃</button></div>
   </aside>
   <main>
@@ -1809,6 +1824,17 @@ async function unlock(){ const pw=$('lkPw').value; if(!pw) return $('lkPw').focu
   if(error){ $('lkErr').textContent='비밀번호가 맞지 않습니다'; $('lkPw').select(); return; }
   LOCKED=false; $('lock').classList.add('hidden'); try{ sessionStorage.setItem('dc_open','1'); }catch(e){} lockTouch(); toast('잠금 해제','ok'); }
 
+/* ═══ 글자 크기 설정 ═══ */
+function setFontScale(scale){
+  document.documentElement.style.setProperty('--font-scale',scale);
+  if(ME && ME.email){
+    try{ localStorage.setItem('font_size_'+ME.email, scale); }catch(e){}
+  }
+  document.querySelectorAll('.font-ctrl .font-btn').forEach(btn=>{
+    btn.classList.toggle('active', parseFloat(btn.dataset.scale)===scale);
+  });
+}
+
 async function boot(){
   let session=null;
   try{ ({data:{session}} = await sb.auth.getSession()); }catch(e){ session=null; }
@@ -1828,6 +1854,13 @@ async function boot(){
   try{ sessionStorage.setItem('dc_open','1'); }catch(e){} JUST_LOGGED_IN=false; lockTouch();
   staffP.then(x=>{ STAFF=x||[]; fillHandlerOptions(); });
   await loadMenu(await menuP);
+
+  /* ═══ 글자 크기 설정 로드 ═══ */
+  try{
+    const savedScale=parseFloat(localStorage.getItem('font_size_'+ME.email)||'1');
+    setFontScale(savedScale);
+  }catch(e){}
+
   loadStamp(); setPreset('30', true); show(location.hash.replace('#','')||'home', {replace:true});
   /* 첫 화면이 뜬 뒤 한가할 때 엑셀 모듈을 미리 받아 둔다 */
   (window.requestIdleCallback||(f=>setTimeout(f,3000)))(()=>{ needXLSX().catch(()=>{}); });

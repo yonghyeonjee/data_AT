@@ -16,10 +16,11 @@
   --ok:#0F7B6C; --ok-soft:#E3F3F0; --warn:#8A5D00; --warn-soft:#FBF1DC; --bad:#B3261E; --bad-soft:#FBE9E7;
   --sub:#7A3EB8; --sub-soft:#F0E8F8;
   --r:12px; --shadow:0 1px 2px rgba(20,24,32,.05), 0 8px 24px rgba(20,24,32,.06);
+  --font-scale:1;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;background:var(--ground);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;background:var(--ground);color:var(--ink);font-size:calc(15px * var(--font-scale));line-height:1.5;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 .hidden{display:none!important}
 
@@ -67,6 +68,12 @@ html.resuming body::after{content:'이어서 여는 중…';position:fixed;inset
 .side .it.active{background:#1428A0;color:#fff}
 .side .it .n{margin-left:auto;background:#B3261E;color:#fff;font-size:11px;font-weight:800;min-width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
 .side .it .n.soft{background:rgba(255,255,255,.14)}
+.side .font-ctrl{padding:14px;border-top:1px solid rgba(255,255,255,.08)}
+.side .font-ctrl .lbl{font-size:11.5px;letter-spacing:.08em;color:#7A8CE8;font-weight:600;text-transform:uppercase;margin-bottom:8px}
+.side .font-ctrl .sizer{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.side .font-ctrl .font-btn{flex:1;padding:8px 6px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;color:#C9D0E8;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+.side .font-ctrl .font-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#fff}
+.side .font-ctrl .font-btn.active{background:#7A8CE8;border-color:#7A8CE8;color:#0B0F2E}
 .side .foot{padding:12px 14px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:8px}
 .side .foot button{flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#C9D0E8;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .side .foot button:hover{background:rgba(255,255,255,.06);color:#fff}
@@ -601,6 +608,14 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="pills"><span class="pill" id="sidePillToday">오늘 0건</span><span class="pill warn hidden" id="sidePillUnclosed"></span></div>
     </div>
     <nav id="sideNav"></nav>
+    <div class="font-ctrl">
+      <div class="lbl">글자 크기</div>
+      <div class="sizer">
+        <button class="font-btn" data-scale="1" onclick="setFontScale(1)">작게</button>
+        <button class="font-btn" data-scale="1.5" onclick="setFontScale(1.5)">중간</button>
+        <button class="font-btn" data-scale="2" onclick="setFontScale(2)">크게</button>
+      </div>
+    </div>
     <div class="foot"><button onclick="lockStore('잠갔습니다. 담당자 코드를 입력하면 이어서 씁니다.')">잠그기</button><button onclick="location.reload()">새로고침</button></div>
   </aside>
   <nav class="bnav" id="bnav"></nav>
@@ -1127,9 +1142,25 @@ async function loadStatus(code){
   const qt = await rpc('fn_store_quotes', {p_code: code||CODE}).catch(()=>[]);
   STATUS = st; STATUS.quotes = qt||[]; ME = STATUS.me; return STATUS; }
 
+/* ═══ 글자 크기 설정 ═══ */
+function setFontScale(scale){
+  document.documentElement.style.setProperty('--font-scale',scale);
+  try{ localStorage.setItem('font_size_'+CODE, scale); }catch(e){}
+  document.querySelectorAll('.side .font-btn').forEach(btn=>{
+    btn.classList.toggle('active', parseFloat(btn.dataset.scale)===scale);
+  });
+}
+
 /* ═══ 시작 ═══ */
 async function start(){
   $('pinScreen').classList.add('hidden'); $('app').classList.remove('hidden');
+
+  /* ═══ 글자 크기 설정 로드 ═══ */
+  try{
+    const savedScale=parseFloat(localStorage.getItem('font_size_'+CODE)||'1');
+    setFontScale(savedScale);
+  }catch(e){}
+
   const t=new Date(); $('todayLabel').textContent = `${t.getMonth()+1}월 ${t.getDate()}일 (${'일월화수목금토'[t.getDay()]})`;
   $('meName').textContent = ME + '님';
   applyPerms();
