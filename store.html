@@ -218,6 +218,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .item .act{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .mini{padding:5px 9px;border-radius:7px;border:1.5px solid var(--line-2);background:#fff;font-size:calc(11.5px * var(--font-scale));font-weight:700;cursor:pointer;color:var(--ink-2);white-space:nowrap}
 .mini.ok{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)} .mini.warn{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.mini.bad{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
 /* 고객 찾기 */
 .csearch{position:relative}
 .csearch .in{padding-right:44px}
@@ -676,11 +677,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </div>
       <div class="chips" id="all_hd" style="margin-top:8px"></div>
       <div class="chips" id="all_hd2" style="margin-top:10px"></div>
-      <div class="list" id="allList"><div class="empty">불러오는 중…</div></div>
-    </div>
-    <div class="card hidden" id="myReqCard">
-      <h2>내 주문서 요청 <span id="myReqSub">최근 14일</span></h2>
-      <div class="list" id="myReqList"><div class="empty">없음</div></div>
+      <div class="list" id="allList" style="margin-top:14px"><div class="empty">불러오는 중…</div></div>
     </div>
     <div class="card">
       <h2>콜백 약속 <span id="cbSub"></span></h2>
@@ -698,7 +695,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <h2>내 고객 <span id="mcSub"></span></h2>
       <div class="list" id="mcList"><div class="empty">아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.</div></div>
     </div>
-  </section>
+      <div class="card hidden" id="myReqCard">
+      <h2>내 주문서 요청 <span id="myReqSub">최근 14일</span></h2>
+      <div class="list" id="myReqList"><div class="empty">없음</div></div>
+    </div>
+</section>
 
   <!-- ── 판매 입력 ── -->
   <section class="panel hidden" id="tab-sale">
@@ -782,7 +783,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
     <div class="card">
       <h2>확정 대기 · 매출 단계 <span id="openSum">최근 60일 · 내 건 우선</span></h2>
-      <p class="note-in" style="margin:0 0 10px">배송·설치가 끝나 확정되면 <b>판매완료</b>를 누르세요. 취소·환불은 관리자 원장에서 처리합니다.</p>
+      <p class="note-in" style="margin:0 0 10px">배송·설치가 끝나 확정되면 <b>판매완료</b>를 누르세요. <b>취소·환불</b>도 담당자가 바로 처리할 수 있고, 되돌릴 수 있습니다.</p>
       <div class="list" id="openList"><div class="empty">확정 대기 건이 없습니다</div></div>
     </div>
   </section>
@@ -1085,6 +1086,28 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <button class="btn ghost" onclick="asgClose()">취소</button>
   </div>
 </div>
+<div class="sheet-bg hidden" id="cxBg" onclick="if(event.target===this)cxClose()">
+  <div class="sheet">
+    <div class="sh-t">취소 · 환불 <small id="cx_what"></small></div>
+    <div class="f" style="margin-top:12px">
+      <label>어떤 처리인가요<span class="req"></span></label>
+      <div class="seg" id="cx_kind">
+        <button type="button" data-v="취소" class="on" onclick="cxKind('취소')">취소</button>
+        <button type="button" data-v="환불" onclick="cxKind('환불')">환불</button>
+      </div>
+    </div>
+    <div class="f hidden" id="cx_amtRow">
+      <label>환불 금액 <span class="hint">일부만 돌려줬으면 그 금액으로</span></label>
+      <input class="in num" id="cx_amt" inputmode="numeric">
+    </div>
+    <div class="f">
+      <label>사유<span class="req"></span></label>
+      <textarea class="in" id="cx_reason" placeholder="예) 고객 변심 · 설치 불가"></textarea>
+    </div>
+    <button class="btn" id="cx_go" onclick="cancelDo()">처리하기</button>
+    <button class="btn ghost" onclick="cxClose()">닫기</button>
+  </div>
+</div>
 <datalist id="giftList"></datalist>
 
 <script>
@@ -1203,8 +1226,13 @@ function render(){
   $('pillToday').textContent = `오늘 ${s.today_sales.length}건`;
   const sum = s.today_sales.reduce((a,x)=>a+Number(x.amount),0);
   $('todaySum').textContent = s.today_sales.length ? won(sum) : '';
-  const stageBtn = x => x.stage==='매출' ? `<button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료로</button>`
-                      : x.stage==='판매완료' ? `<button class="mini" onclick="setStage(${x.id},'매출')">매출로 되돌리기</button>` : '';
+  /* 취소·환불은 내 건이거나 점장·대표만 */
+  const canCx = x => x.mine || (STATUS && STATUS.is_mgr);
+  const cxBtn = x => canCx(x) ? `<button class="mini bad" onclick="cancelOpen(${x.id})">취소·환불</button>` : '';
+  const stageBtn = x => (x.stage==='취소'||x.stage==='환불')
+                        ? (canCx(x) ? `<button class="mini" onclick="cancelUndo(${x.id})">되돌리기</button>` : '')
+                      : x.stage==='매출' ? `<button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료로</button>`+cxBtn(x)
+                      : x.stage==='판매완료' ? `<button class="mini" onclick="setStage(${x.id},'매출')">매출로 되돌리기</button>`+cxBtn(x) : '';
   $('todayList').innerHTML = s.today_sales.length ? s.today_sales.map(x=>`
     <div class="item"><div class="t">${x.time}</div>
       <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span><span class="tag ${x.stage||''}">${x.stage||''}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}</div></div>
@@ -1214,7 +1242,7 @@ function render(){
   $('openList').innerHTML = op.length ? op.map(x=>`
     <div class="item"><div class="t">${String(x.date).slice(5).replace('-','/')}</div>
       <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}</div></div>
-      <div class="act"><div class="a">${won(x.amount)}</div><button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료</button></div></div>`).join('') : '<div class="empty">확정 대기 건이 없습니다</div>';
+      <div class="act"><div class="a">${won(x.amount)}</div><button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료</button>${cxBtn(x)}</div></div>`).join('') : '<div class="empty">확정 대기 건이 없습니다</div>';
   if($('r_handler').options.length<=1){ $('r_handler').innerHTML = '<option value="">전체 프로</option>' + handlers.map(h=>`<option ${h===ME?'selected':''}>${h}</option>`).join(''); }
   if(!$('r_from').value) setReportRange('day');
   renderDailyLists(s);
@@ -2692,8 +2720,8 @@ let ASG_DIRS=null, ASG_TEAM='';
 async function asgDirs(){
   if(ASG_DIRS) return ASG_DIRS;
   try{ ASG_DIRS=await rpc('fn_store_staff_dirs',{p_code:CODE}); }
-  catch(e){ ASG_DIRS={my_team:'전체',is_mgr:false,
-    staff:((STATUS&&STATUS.staff)||[]).map(n=>({name:n,team:'전체'}))}; }
+  catch(e){ ASG_DIRS={my_team:'',is_mgr:true,
+    staff:((STATUS&&STATUS.staff)||[]).map(n=>({name:n,team:'',lead:true}))}; }
   return ASG_DIRS;
 }
 async function asgOpen(ids, what){
@@ -2703,18 +2731,17 @@ async function asgOpen(ids, what){
   $('asgBg').classList.remove('hidden');
   const d=await asgDirs();
   /* 내 부서 사람만 먼저 보여주고, 필요하면 전체로 넓힌다 */
-  ASG_TEAM=(d.is_mgr||d.my_team==='전체')?'':(d.my_team||'');
+  ASG_TEAM=d.is_mgr?'':(d.my_team||'');
   asgRender();
 }
 function asgTeamSet(t){ ASG_TEAM=t; asgRender(); }
 function asgRender(){
   const d=ASG_DIRS||{staff:[]}, all=d.staff||[];
   const teams=[...new Set(all.map(x=>x.team))].filter(Boolean);
-  const lbl=t=>t==='전체'?'대표·점장':t;
-  $('asg_scope').innerHTML=[['','전체 담당자']].concat(teams.map(t=>[t,lbl(t)]))
+  $('asg_scope').innerHTML=[['','전체 담당자']].concat(teams.map(t=>[t,t]))
     .map(([v,l])=>`<button type="button" class="${ASG_TEAM===v?'on':''}" onclick="asgTeamSet('${v}')">${esc(l)}</button>`).join('');
-  /* 내 부서 보기일 때도 대표·점장(전체)은 항상 넘길 수 있게 남긴다 */
-  const list=ASG_TEAM? all.filter(x=>x.team===ASG_TEAM||x.team==='전체') : all;
+  /* 내 부서만 볼 때도 점장·대표에게는 항상 넘길 수 있게 남긴다 */
+  const list=ASG_TEAM? all.filter(x=>x.team===ASG_TEAM||x.lead) : all;
   $('asg_list').innerHTML=list.map(h=>`<button class="${h.name===ME?'me':''}" onclick="asgTo('${esc(h.name)}')">${esc(h.name)}<small>${h.name===ME?'나 · ':''}${esc(h.dept||h.team||'')}</small></button>`).join('')
     ||'<div class="empty">해당 부서에 담당자가 없습니다</div>';
 }
@@ -3110,6 +3137,43 @@ document.addEventListener('click',function(e){
   if(e.target.closest('a,button,input,select')) return;
   t.classList.toggle('open');
 });
+
+/* ═══ 취소 · 환불 ═══ */
+let CX_ID=null, CX_KIND='취소';
+function cxFind(id){ const s=STATUS||{};
+  return (s.today_sales||[]).concat(s.open_sales||[]).find(x=>Number(x.id)===Number(id))||{}; }
+function cancelOpen(id){
+  CX_ID=id; const x=cxFind(id);
+  $('cx_what').textContent=[x.product||'판매 건', x.amount!=null?won(x.amount):''].filter(Boolean).join(' · ');
+  $('cx_amt').value=Number(x.amount||0); $('cx_reason').value='';
+  cxKind('취소'); $('cxBg').classList.remove('hidden');
+  setTimeout(()=>$('cx_reason').focus(),50);
+}
+function cxClose(){ $('cxBg').classList.add('hidden'); CX_ID=null; }
+function cxKind(k){ CX_KIND=k;
+  $('cx_kind').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===k));
+  $('cx_amtRow').classList.toggle('hidden', k!=='환불');
+}
+async function cancelDo(){
+  if(!CX_ID) return;
+  const reason=$('cx_reason').value.trim();
+  if(!reason){ toast('사유를 적어 주세요','bad'); return; }
+  const amt = CX_KIND==='환불' ? (Number(String($('cx_amt').value).replace(/[^0-9.]/g,''))||0) : null;
+  if(CX_KIND==='환불' && amt<=0){ toast('환불 금액을 확인해 주세요','bad'); return; }
+  const btn=$('cx_go'); btn.disabled=true;
+  try{
+    const r=await rpc('fn_store_sale_cancel',{p_code:CODE,p_id:CX_ID,p_kind:CX_KIND,p_reason:reason,p_amount:amt});
+    toast(CX_KIND+' 처리했습니다'+((r&&r.refund)?' · '+won(r.refund):''),'ok');
+    cxClose(); REPORT_LOADED=false; await loadStatus(); render();
+  }catch(e){ toast(e.message,'bad'); }
+  finally{ btn.disabled=false; }
+}
+async function cancelUndo(id){
+  if(!confirm('취소·환불을 되돌릴까요?')) return;
+  try{ await rpc('fn_store_sale_cancel',{p_code:CODE,p_id:id,p_kind:'되돌리기'});
+    toast('되돌렸습니다','ok'); REPORT_LOADED=false; await loadStatus(); render();
+  }catch(e){ toast(e.message,'bad'); }
+}
 </script>
 </body>
 </html>
