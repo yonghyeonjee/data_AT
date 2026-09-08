@@ -656,3 +656,53 @@
 -- v76 화면 : 관리자 문의 자동 배정 카드를 순번 편집기로 교체 — 규칙 대상(접수 종류 / 관심 품목, 규칙 있으면 ● 표시),
 --            번호 붙은 칩 + ‹ › 순서 이동 + ✕ 빼기, 담당자 선택/직접 입력으로 넣기, 빈 목록으로 저장하면 규칙 삭제.
 --            담당자 화면 : 구매한 제품 · 다음 구매 관심 제품 · 관심 모델 칸에서 구독 제품번호 자동완성
+-- v77 : 화면 표기에서 GAS 빼기 — core.inq_channel 'gas_subscribe' 라벨 '구독문의(GAS)' → '구독 문의',
+--       관리자 대시보드 주소 입력 모달 제목도 '기존 앱 대시보드 주소' 로. (코드 안 변수명은 그대로)
+
+-- ============================================================
+-- mvp_122 : 고객 통합 화면 속도 + 폼 접수를 담당자 화면에 노출
+-- ============================================================
+--   [속도] 고객 통합·발송 대상은 매 호출마다 core.orders 16.7만행을 buyer_key 로 집계(약 0.6초)하고 있었음.
+--     crm.customer_roll (buyer_key pk · cnt · net · last_at · chans · cats · last_product · last_category · handler)
+--     core.f_customer_roll() 이 이 표를 채우고 통계 캐시까지 갱신 · pg_cron 'customer-roll' 매시 40분
+--     crm.customer_stats_cache + core.f_customer_stats_build() : fn_customer_stats 는 캐시만 읽음(as_of 로 기준 시각 표시)
+--     fn_customer_list · fn_customer_stats · fn_crm_targets_v2 → 서브쿼리 대신 crm.customer_roll 조인
+--   [노출] 고객센터 폼·방문 접수(crm.submission)가 crm.consult 에 전혀 안 들어가서 관리자 문의 관리에서만 보였음.
+--     core.f_submission_to_consult(id) : source='portal_form', source_ref=submission.id 로 상담 한 줄 생성
+--       channel_code = 매장방문이면 store_visit, 아니면 homepage / type_code = 구독·렌탈→subscribe, 그 외 product·etc
+--     fn_submit_customer · fn_submit_visit 끝에서 호출 · 기존 6건 백필 → 담당자 화면 상담 목록에 바로 뜸
+
+-- ============================================================
+-- mvp_122 : 폼으로 들어오는 상담은 무조건 담당자가 붙게 (트리거)
+-- ============================================================
+--   문제 : fn_submit_inquiry / fn_submit_form / fn_submit_quote 는 폼이 담당자를 안 보내면 그냥 null 로 넣고 있었음
+--          → 소모품·렌탈 4건 중 3건, B2B 1건, 구독 1건이 미배정 상태로 아무의 '내 건'에도 안 뜸
+--   core.f_consult_assign_default() + trigger trg_consult_assign (before insert on crm.consult)
+--     handler 가 비어 있고 source 가 폼 유입(web_subscription·web_supply·web_b2b·quote·portal_form·web)이면
+--     core.f_assign_next(<source→접수 종류>, interest_category) 로 채움. 업로드분(ecount_prospect)·매장 입력은 손대지 않음
+--   기존 미배정 6건도 같은 규칙으로 backfill → 폼 유입 미배정 0건
+--   보완 : 매장 키오스크(fn_submit_visit) 는 연락처를 남긴 건만 배정한다.
+--          연락처 없이 접수한 '기록' 건은 배정하지 않음 — 연락할 방법이 없는데 순번을 소모하면 안 되므로.
+--   비용 : trg_consult_assign 실측 4~7ms (폼 제출 1건당). 배정 후보 scope 3개를 훑고 assign_state 를 갱신하는 값.
+
+-- ============================================================
+-- mvp_123 : 매장 방문 접수 번호 + 관리자 화면 속도
+-- ============================================================
+-- [방문 접수]
+--   연락처가 없어도 배정한다 (지금 매장에 와 계신 손님이므로) — 앞서 넣었던 '번호 있을 때만' 조건은 되돌림
+--   crm.submission.ticket_no : 같은 날 · 매장방문 기준 1번부터. pg_advisory_xact_lock 으로 같은 번호가 안 나오게 함
+--   fn_submit_visit 이 {ticket, handler} 를 돌려주고, 키오스크 완료 화면이 접수번호와 담당 프로 이름을 크게 보여준다
+--
+-- [관리자 화면이 느렸던 이유 — 셋]
+--   1) fn_data_stamp 가 매번 core.orders 전건 count + source 별 max(created_at) 를 훑어 2초. 화면 전환마다 호출됨
+--      → (source, created_at) · (source, updated_at) · consult/customer/channel_daily/store_daily 의 updated_at 인덱스 추가
+--      → core.rpc_cache 에 60초 캐시. 2,000ms → 5ms (재생성 739ms)
+--   2) fn_home 1.2초 → core.f_home_build() 로 본체를 떼고 120초 캐시
+--   3) 진짜 주범 : core.orders / channel_daily / store_daily 에 걸린 dash_cache_bust 트리거가
+--      주문 1행만 들어와도 core.dash_cache 를 통째로 지우고 있었음.
+--      샵링커 수집(하루 5회 수천 행) · sl-auto(매시) · 매장 판매 1건이면 매시 27초 들여 만든 12개 캐시가 전멸 →
+--      사용자는 기간을 바꿀 때마다 1~5초를 다시 기다림.
+--      → orders·channel_daily·store_daily 트리거 제거 (app_setting 은 유지 : 설정은 즉시 반영돼야 하므로)
+--      → 예열을 매시 25분 → 15분마다 로. 대시보드 조회 4,600ms → 19ms, 데이터는 최대 15분 지연
+--   core.rpc_cache(cache_key, payload, built_at, build_ms) + core.f_rpc_warm() + cron 'rpc-warm' (5분마다)
+-- v79 화면 : 키오스크 완료 화면에 [접수번호 · 담당 프로] 카드
