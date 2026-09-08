@@ -592,3 +592,47 @@
 -- v69 화면 : 담당자 내 고객 탭 — 진행중 상담 줄에 출처 태그와 [넘기기](담당자 시트), 이관 이력 한 줄.
 --            점장·대표·전체 권한이면 '전체 상담 · 배정' 카드(미배정/진행중/전체 · 담당 칩 · 검색 · [배정]/[내가 맡기]), 내 고객 탭에 미배정 건수 뱃지.
 --            /visit/ 키오스크 : 휴대폰(≤700px 또는 낮은 화면)에서는 고정 높이 대신 페이지 스크롤 + [다음] 버튼 하단 고정 — 카드가 잘려 보이던 문제 해결.
+-- mvp_117 (2026-09-08) 출처 라벨 정정 — 앞선 f_consult_src 가 유입경로(검색광고 등)를 출처처럼 보여주고,
+--   구독 문의(web_subscription)를 '홈페이지 문의'로 불러 고도몰 견적 게시판(crm.web_inquiry)과 이름이 겹쳤다.
+--   core.f_consult_src(source, route) : 창구만으로 판정 — 구독 문의 / 소모품·렌탈 문의 / B2B 문의 / 견적 문의 /
+--     홈페이지 폼 / 매장 상담 / 이카운트 가망 / VMS(통신판매).  '홈페이지 문의' 는 crm.web_inquiry 전용 이름으로 비워 둠.
+--   core.f_consult_src2(source, route) : 한 단계 아래 — 구독 문의는 SH몰/P몰/직접, 이카운트 가망은 검색광고·매장고객·쇼핑몰·지인소개 등
+--   fn_store_status.my_open_consults · fn_store_consults_all 에 src2 추가, fn_store_consults_all 에 p_src 필터와 by_src 건수
+--   (현재 분포 : 구독 문의 49 · 이카운트 가망 42 · 소모품·렌탈 4 · B2B 2 / 고도몰 견적 게시판 web_inquiry 는 아직 0)
+-- v70 화면 : 상담 줄 출처 태그가 '구독 문의 · P몰', '이카운트 가망 · 검색광고' 처럼 두 단계로(툴팁에 원본 유입경로),
+--            전체 상담·배정 카드에 출처 칩 필터 추가
+-- mvp_118 (2026-09-08) 상담 출처를 세 층으로 분리 (사용자 확인 : 구독 문의 폼과 홈페이지 견적 게시판은 서로 다른 창구)
+--   core.f_consult_src   출처(창구) : 구독 문의(SH몰 구독 페이지 폼 → GAS → Datacenter) / 소모품·렌탈 문의 / B2B 문의 / 이카운트 가망 / 매장 상담
+--                        ※ '홈페이지 문의' = 고도몰 개인·사업자 가전 견적 게시판(crm.web_inquiry) 전용 이름 — 상담(crm.consult)에는 쓰지 않는다
+--   core.f_consult_type  유형 : 폼의 raw_payload.inquiryType (구독 · 혼수·입주·이사 · 사전예약(갤럭시) · 자급제문의(모바일)),
+--                        이카운트 가망은 유입경로 대분류(검색광고 · 매장고객 · 쇼핑몰 · 지인소개)
+--   core.f_consult_via   유입 : raw_payload.referralSource → SH몰 · P몰 · S몰 · 네이버 · 직접 (어느 사이트를 타고 왔는지)
+--   fn_store_status.my_open_consults · fn_store_consults_all 이 src/src2(유형)/via 를 내려줌
+-- v71 화면 : 상담 태그가 '구독 문의 · 혼수·입주·이사' + 회색 '유입 SH몰' 로 분리 표시 (툴팁은 원본 유입경로 문자열)
+-- mvp_119 (2026-09-08) 문의 채널 · 문의 유형 고정 코드 (사용자 확정)
+--   core.inq_channel : gas_subscribe 구독문의(GAS) · homepage 홈페이지 문의 · vms VMS 문의 · rental 렌탈 문의 ·
+--                      kakao 카카오채널 · naver 네이버 · store_visit 매장 직접 방문 · etc 기타(텍스트 입력)
+--   core.inq_type    : product 상품 문의 · subscribe 구독문의 · onetime 일시불 문의 · supply 소모품 · rental 렌탈 · etc 기타
+--   crm.consult.channel_code / channel_etc / type_code, crm.web_inquiry 는 기본값 homepage · product
+--   기존 97건 분류 : 구독문의(GAS) 49(구독 46·상품 3) · 매장 직접 방문 19 · 네이버 17(검색광고-방문/전화) ·
+--                    기타 7(B2B 폼·쇼핑몰·지인소개 → channel_etc 에 원문) · 렌탈 문의 4 · 카카오채널 1
+--   앞으로 : fn_submit_inquiry(GAS 구독 폼) 는 채널 gas_subscribe 고정 + 문의유형이 '구독'이면 subscribe 아니면 product,
+--            fn_store_consult_submit 은 화면에서 고른 channel_code/channel_etc/type_code 저장 (기본 store_visit · product)
+--   fn_inq_codes() : 화면용 목록. fn_store_status·fn_store_consults_all 이 채널 라벨(src)·유형 라벨(src2)·channel_etc 를 내려줌
+-- v72 화면 : 담당자 상담 입력에 [문의 채널]·[문의 유형] 칩 (기타 고르면 텍스트 입력 필수), 상담 태그가 채널+유형으로 표시,
+--            관리자 전체 상담 출처 칩이 채널 기준으로 바뀜
+
+-- ============================================================
+-- mvp_120 : 고객센터 폼 · 방문 접수 담당자 자동 배정(순번)
+-- ============================================================
+--   왜 : crm.submission 6건 모두 handler 가 null 이었음. fn_submit_customer 는 담당자를 정한 적이 없고,
+--        배정은 구독 폼 GAS 스크립트 안에서만(3.배정 단계) 돌고 있었음 → 규칙을 DB 로 옮김
+--   core.assign_pool (scope, staff_name, sort_no, active)  -- scope = 접수 종류('default' / '매장방문' / '리뷰·혜택' / '상담·견적' / '설치·A/S' / '구독·렌탈')
+--   core.assign_state (scope pk, last_staff, last_at)      -- 마지막으로 배정한 사람
+--   core.f_assign_next(p_scope) : 전용 풀이 없으면 default 풀, core.staff.active 인 사람만, 마지막 배정자 다음 순번(round-robin)
+--   fn_submit_customer : handler 가 비어 오면 core.f_assign_next(request_type) 으로 채움 (화면에서 지정해 보내면 그대로 둠)
+--   fn_assign_pool() / fn_assign_pool_save(p_scope, p_names text[]) : 관리자 화면용
+--   기본 풀 : 권혁찬10 · 김규완20 · 송희봉30 · 이수혁40 · 차효범50 · 최태웅60 · 지용현70
+--   기존 6건은 같은 순번으로 backfill
+-- v73 화면 : 관리자 → 설정·담당자 에 [문의 자동 배정] 카드 (접수 종류 선택 → 담당자 칩 클릭으로 순번 지정/해제 → 저장),
+--            접수 종류별 풀이 비어 있으면 "설정 없음 → 기본 순번을 씁니다" 표시

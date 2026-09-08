@@ -700,6 +700,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="f"><label>고객명 <span class="req">*</span></label><input class="in" id="c_name" placeholder="홍길동" autocomplete="off"></div>
         <div class="f"><label>휴대폰</label><input class="in" type="tel" id="c_phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)"></div>
       </div>
+      <div class="f"><label>문의 채널 <span class="req">*</span> <span class="hint">어디로 들어온 문의인지</span></label>
+        <div class="chips" id="c_ch"></div>
+        <input class="in hidden" id="c_ch_etc" placeholder="기타 — 어디로 들어왔는지 적어 주세요" style="margin-top:6px"></div>
+      <div class="f"><label>문의 유형 <span class="req">*</span> <span class="hint">무엇을 물어봤는지</span></label>
+        <div class="chips" id="c_ty"></div></div>
       <div class="f"><label>관심 품목 <span class="req">*</span></label>
         <div class="chips" id="c_cat">
           <span class="chip" data-v="TV">TV</span><span class="chip" data-v="냉장고">냉장고</span><span class="chip" data-v="세탁·건조">세탁·건조</span>
@@ -2060,6 +2065,7 @@ function goTab(name, fromHistory){
   if(name==='online' && !OC_LOADED) loadOnlineDay();
   if(name==='stock' && !STK_LOADED) loadStk();
   if(name==='order') initOrderTab();
+  if(name==='consult') loadInqCodes();
   if(!fromHistory){ try{ (history.state&&history.state.tab===name) ? history.replaceState({tab:name},'','#'+name) : history.pushState({tab:name},'','#'+name); }catch(e){} }
   gfabShow(name);
   window.scrollTo({top:0});
@@ -2156,7 +2162,7 @@ function renderHome(s){
         <div class="row">${x.tel?`<a class="call" href="tel:${x.tel}">📞 전화</a>`:''}<button class="done" onclick="cbAction(${x.id},'done')">완료</button><button onclick="cbAction(${x.id},'tomorrow')">내일로</button><button onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button></div></div>
     </div>`; }).join(''):'<div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div>';
   $('ocList').innerHTML=oc.length?oc.map(x=>`
-    <div class="item oc"><div><div class="p"><a href="javascript:void 0" onclick="ocToConsult('${esc(x.ref)}','${esc(x.name)}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 고객으로 상담 입력 열기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a> <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}${x.src?`<span class="tag src">${esc(x.src)}</span>`:''}${x.result==='보류'?'<span class="tag" style="background:#FFF4D6;color:#8A6300">보류</span>':''}</div>
+    <div class="item oc"><div><div class="p"><a href="javascript:void 0" onclick="ocToConsult('${esc(x.ref)}','${esc(x.name)}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 고객으로 상담 입력 열기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a> <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag" style="background:#EEF2FF;color:#2F5BEA">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag" style="background:#F3F4F7;color:#646D7C">유입 ${esc(x.via)}</span>`:''}${x.result==='보류'?'<span class="tag" style="background:#FFF4D6;color:#8A6300">보류</span>':''}</div>
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.route||'')}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.expect_date?` · 예정 ${String(x.expect_date).slice(5).replace('-','/')}`:''}${x.callback_at?` · 콜백 ${fmtWhen(x.callback_at).join(' ')}`:''}</div>${x.moved?`<div class="mv">${esc(x.moved.from||'미배정')} → 나 · ${esc(x.moved.by)} 배정 · ${esc(x.moved.at)}</div>`:''}${(x.bought||x.next_model||x.next_cat)?`<div class="m nx">${x.bought?`구매 <b>${esc(x.bought)}</b>`:''}${(x.next_model||x.next_cat)?`${x.bought?' · ':''}다음 <b>${esc(x.next_model||x.next_cat)}</b>${x.next_date?` (${String(x.next_date).slice(5).replace('-','/')})`:''}`:''}</div>`:''}</div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button>
         <button class="mini" onclick="ocPick(${x.id})">재연락</button>
@@ -2302,16 +2308,20 @@ async function submitConsult(){
   const cats = [...$('c_cat').querySelectorAll('.chip.on')].map(x=>x.dataset.v);
   const p = { consult_at:$('c_date').value, handler:$('c_handler').value, customer_name:$('c_name').value.trim(), customer_phone:$('c_phone').value.trim(), buyer_key: LINK.c||null,
     interest_category: cats.join(', '), interest_model_code:[...cModels(), ...$('c_model').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean)].filter((v,i,a)=>a.indexOf(v)===i).join(', '), inflow_route:$('c_route').value, result:$('c_result').value,
+    channel_code:C_CH, channel_etc:($('c_ch_etc').value.trim()||null), type_code:C_TY,
     purchase_item:$('c_purchase').value.trim()||null, next_model_code:$('c_next').value.trim()||null, next_expected_date:$('c_next_date').value||null, next_note:$('c_next_note').value.trim()||null,
     expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(), callback_at: cbISO(),
     consent_marketing:$('c_consent').classList.contains('on'), gift_name:$('c_gift').value.trim()||null, gift_amount:num($('c_gift_amt'))||null };
   if(!p.customer_name && !p.buyer_key) return toast('고객명을 입력하세요','bad');
   if(!p.interest_category) return toast('관심 품목을 선택하세요','bad');
+  if(!C_CH) return toast('문의 채널을 고르세요','bad');
+  if((INQ&&(INQ.channels||[]).find(c=>c.code===C_CH&&c.etc)) && !p.channel_etc) return toast('기타 채널은 어디로 들어왔는지 적어 주세요','bad');
+  if(!C_TY) return toast('문의 유형을 고르세요','bad');
   const b=$('c_btn'); b.disabled=true; b.textContent='저장 중…';
   try{ const r = await rpc('fn_store_consult_submit',{p_code:CODE,p_data:p});
     toast(r.callback_at?`상담 저장됨 · 콜백 ${fmtWhen(r.callback_at).join(' ')} 예약`:'상담 저장됨','ok');
     $('c_ref').classList.remove('hidden'); $('c_ref').innerHTML = `상담번호 <b style="color:var(--ink);font-size:15px">${r.ref}</b><br>구매로 이어지면 판매 입력의 "상담번호"에 적어주세요${r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '내 고객' 탭에서 알려드립니다`:''}`;
-    ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt','c_purchase','c_next','c_next_date','c_next_note'].forEach(id=>$(id).value=''); loadGifts(); custClear('c'); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); cModelsSet([]); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
+    ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt','c_purchase','c_next','c_next_date','c_next_note','c_ch_etc'].forEach(id=>$(id).value=''); loadGifts(); custClear('c'); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); cModelsSet([]); $('c_result').value='진행중'; $('c_consent').classList.remove('on');
     await loadStatus(); render();
   }catch(e){ toast(e.message,'bad'); }
   b.disabled=false; b.textContent='저장';
@@ -2447,6 +2457,24 @@ async function saveOnlineDay(){
   catch(e){ toast(e.message,'bad'); }
   b.disabled=false;
 }
+/* ═══ 문의 채널 · 유형 (고정 목록) ═══ */
+let INQ=null, C_CH='store_visit', C_TY='product';
+async function loadInqCodes(){
+  if(INQ) return INQ;
+  try{ INQ=await rpc('fn_inq_codes',{}); }catch(e){ INQ={channels:[],types:[]}; }
+  renderInqChips(); return INQ;
+}
+function renderInqChips(){
+  if(!INQ) return;
+  const ch=$('c_ch'), ty=$('c_ty'); if(!ch||!ty) return;
+  ch.innerHTML=(INQ.channels||[]).map(c=>`<span class="chip${C_CH===c.code?' on':''}" data-c="${esc(c.code)}">${esc(c.label)}</span>`).join('');
+  ty.innerHTML=(INQ.types||[]).map(t=>`<span class="chip${C_TY===t.code?' on':''}" data-t="${esc(t.code)}">${esc(t.label)}</span>`).join('');
+  ch.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ C_CH=el.dataset.c; renderInqChips();
+    const etc=(INQ.channels||[]).find(c=>c.code===C_CH&&c.etc); $('c_ch_etc').classList.toggle('hidden',!etc); if(etc) $('c_ch_etc').focus(); });
+  ty.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ C_TY=el.dataset.t; renderInqChips(); });
+  const etc=(INQ.channels||[]).find(c=>c.code===C_CH&&c.etc);
+  $('c_ch_etc').classList.toggle('hidden',!etc);
+}
 /* ═══ 상담 배정 : 내 건 넘기기 · 점장/대표는 전체를 보고 배정 ═══ */
 let ASG_IDS=[];
 function asgOpen(ids, what){
@@ -2468,20 +2496,22 @@ async function asgTo(name){
 }
 const n2=v=>Number(v||0).toLocaleString('ko-KR');
 /* 전체 상담 (점장·대표·전체 권한) */
-let ALL_SCOPE='unassigned', ALL_HD='', ALL_LOADED=false;
+let ALL_SCOPE='unassigned', ALL_HD='', ALL_SRC='', ALL_LOADED=false;
 async function loadAllConsults(){
   if(!STATUS||!STATUS.is_mgr) return;
   const el=$('allList'); el.innerHTML='<div class="empty">불러오는 중…</div>';
-  let d; try{ d=await rpc('fn_store_consults_all',{p_code:CODE,p_scope:ALL_SCOPE,p_handler:ALL_HD||null,p_q:$('all_q').value.trim()||null,p_limit:100}); }
+  let d; try{ d=await rpc('fn_store_consults_all',{p_code:CODE,p_scope:ALL_SCOPE,p_handler:ALL_HD||null,p_q:$('all_q').value.trim()||null,p_limit:100,p_src:ALL_SRC||null}); }
   catch(e){ el.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const c=d.counts||{};
   $('allSub').textContent=`진행중 ${n2(c.open)} · 미배정 ${n2(c.unassigned)}`;
-  $('all_hd').innerHTML=`<span class="chip${ALL_HD?'':' on'}" onclick="ALL_HD='';loadAllConsults()">전체 담당</span>`
+  $('all_hd').innerHTML=`<span class="chip${ALL_SRC?'':' on'}" onclick="ALL_SRC='';loadAllConsults()">전체 출처</span>`
+    +(d.by_src||[]).map(x=>`<span class="chip${ALL_SRC===x.s?' on':''}" onclick="ALL_SRC='${esc(x.s)}';loadAllConsults()">${esc(x.s)} ${n2(x.n)}</span>`).join('')
+    +`<span class="chip${ALL_HD?'':' on'}" style="margin-left:10px" onclick="ALL_HD='';loadAllConsults()">전체 담당</span>`
     +(d.by_handler||[]).map(h=>`<span class="chip${ALL_HD===h.h?' on':''}" onclick="ALL_HD='${esc(h.h)}';loadAllConsults()">${esc(h.h)} ${n2(h.n)}</span>`).join('');
   const rows=d.rows||[];
   el.innerHTML=rows.length?rows.map(x=>`
     <div class="item oc"><div>
-      <div class="p">${esc(x.name||'-')} ${x.interest?`<span class="tag 일시불">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src">${esc(x.src)}</span>`:''}
+      <div class="p">${esc(x.name||'-')} ${x.interest?`<span class="tag 일시불">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag" style="background:#EEF2FF;color:#2F5BEA">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag" style="background:#F3F4F7;color:#646D7C">유입 ${esc(x.via)}</span>`:''}
         <span class="tag hd">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='보류'?'<span class="tag" style="background:#FBF1DC;color:#8A5A00">보류</span>':''}</div>
       <div class="m">${esc(x.at)} · ${esc(x.route||'')}${x.phone?' · '+esc(x.phone):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.content?' · '+esc(x.content):''}</div>
       ${x.last_move?`<div class="mv">${esc(x.last_move.from||'미배정')} → ${esc(x.last_move.to)} · ${esc(x.last_move.by)} 배정 · ${esc(x.last_move.at)}</div>`:''}</div>

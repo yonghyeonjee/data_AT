@@ -1525,6 +1525,20 @@ select.segd{display:none!important}
       </div>
 
       <div class="view hidden" id="v-settings">
+        <div class="card" id="poolCard">
+          <h3>문의 자동 배정 <span>고객센터 폼과 방문 접수가 들어오면 <b>여기 담당자에게 순번대로</b> 배정됩니다. 접수 종류별로 따로 정할 수 있고, 비워 두면 기본 순번을 씁니다</span>
+            <span style="margin-left:auto"><button class="btn sm ghost" onclick="loadPool()">새로고침</button></span></h3>
+          <div class="filters">
+            <span class="lb">접수 종류</span>
+            <select class="in" id="poolScope" onchange="renderPool()"></select>
+            <span class="note" id="poolState"></span>
+          </div>
+          <div class="chips" id="poolChips" style="margin-bottom:10px"></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn sm" onclick="savePool()">이 종류 배정 저장</button>
+            <span class="note">이름을 눌러 켜고 끕니다 · 왼쪽부터 순서대로 배정</span>
+          </div>
+        </div>
         <div class="grid g32">
           <div class="card"><h3>담당자 · 매장 입력 코드 <span>매장 화면은 이 4자리로 로그인합니다</span>
             <div class="actions"><button class="btn sm ghost" onclick="addStaffRow()">+ 담당자 추가</button><button class="btn sm" onclick="saveStaffAll()">일괄 저장</button></div></h3>
@@ -2014,6 +2028,40 @@ async function openMoveModal(code){
               moved_at:$('mv_at').value?$('mv_at').value.replace('T',' '):null,ref_type:'manual',ref_no:$('mv_ref').value.trim()||null,note:$('mv_note').value.trim()||null}; }});
   if(!data) return;
   try{ const r=await rpc('fn_inv_move',{p_rows:[data]}); toast(`등록됨 (${KIND_NM[data.kind]} ${n(Math.abs(data.qty))})`,'ok'); if(VIEW==='stock') loadStock(); else if(VIEW==='moves') loadMoves(0); else if(VIEW==='home') loadHome(); }
+  catch(e){ toast(e.message,'bad'); }
+}
+
+/* ═══════════════ 문의 자동 배정 풀 ═══════════════ */
+let POOL=null;
+async function loadPool(){
+  try{ POOL=await rpc('fn_assign_pool',{}); }catch(e){ return toast(e.message,'bad'); }
+  const sel=$('poolScope'), cur=sel.value;
+  sel.innerHTML=(POOL.scopes||[]).map(sc=>`<option value="${esc(sc)}"${sc===cur?' selected':''}>${sc==='default'?'기본 (종류별 설정 없을 때)':esc(sc)}</option>`).join('');
+  renderPool();
+}
+function poolNames(scope){ return (POOL.rows||[]).filter(r=>r.scope===scope&&r.active).sort((a,b)=>a.sort-b.sort).map(r=>r.name); }
+function renderPool(){
+  if(!POOL) return;
+  const sc=$('poolScope').value||'default';
+  const on=poolNames(sc), all=POOL.staff||[];
+  const st=(POOL.state||[]).find(x=>x.scope===sc);
+  $('poolState').textContent = on.length
+    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'}`
+    : (sc==='default'?'기본 풀이 비어 있습니다 — 아무도 배정되지 않습니다':'설정 없음 → 기본 순번을 씁니다');
+  $('poolChips').innerHTML=all.map(nm=>{ const i=on.indexOf(nm);
+    return `<span class="chip${i>=0?' on':''}" onclick="poolToggle('${esc(nm)}')">${i>=0?`<b>${i+1}</b> `:''}${esc(nm)}</span>`; }).join('');
+}
+function poolToggle(name){
+  const sc=$('poolScope').value||'default';
+  const on=poolNames(sc); const i=on.indexOf(name);
+  if(i>=0) on.splice(i,1); else on.push(name);
+  POOL.rows=(POOL.rows||[]).filter(r=>r.scope!==sc).concat(on.map((nm,ix)=>({scope:sc,name:nm,sort:(ix+1)*10,active:true})));
+  renderPool();
+}
+async function savePool(){
+  const sc=$('poolScope').value||'default';
+  try{ const r=await rpc('fn_assign_pool_save',{p_scope:sc,p_names:poolNames(sc)});
+    toast(`${sc==='default'?'기본':sc} 배정 ${r.n}명 저장`,'ok'); loadPool(); }
   catch(e){ toast(e.message,'bad'); }
 }
 
@@ -3729,7 +3777,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadWebInq(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:loadCrmFunnel,upload:loadUploads,log:()=>loadLog(0),settings:loadSettings,option:loadOption,notify:loadNotify};
+const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadWebInq(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:loadCrmFunnel,upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
