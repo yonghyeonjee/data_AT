@@ -2787,7 +2787,7 @@ async function handleNewConsultNotification(newConsult){
   /* 본인이 입력한 것이 아닐 때만 알림 (다른 직원의 상담) */
   if(newConsult.handler && newConsult.handler !== ME) {
     const msg=`새 문의 — ${who}`;
-    toast(msg,'ok');
+    alertBanner(msg);
     notify('새 상담이 등록되었습니다', msg);
     try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
     /* 메인 데이터 새로고침 (20초 대기하지 않고 즉시) */
@@ -2796,13 +2796,45 @@ async function handleNewConsultNotification(newConsult){
     /* 미배정 상담이 들어왔을 때 (관리자용) */
     if(STATUS&&STATUS.is_mgr) {
       const msg=`새 문의 (미배정) — ${who}`;
-      toast(msg,'ok');
+      alertBanner(msg);
       notify('미배정 상담이 들어왔습니다', msg);
       try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
       loadRequests().then(()=>{ render(); if($('allCard')&&!$('allCard').classList.contains('hidden')) loadAllConsults(); }).catch(()=>{});
     }
   }
 }
+
+/* ═══ 상단 알림 배너 (빨간 테두리) ═══ */
+let ALERT_BANNER_TIMER=null;
+function alertBanner(msg){
+  let banner=document.querySelector('#alertBanner');
+  if(!banner){
+    banner=document.createElement('div');
+    banner.id='alertBanner';
+    banner.style.cssText=`
+      position:fixed;top:0;left:0;right:0;z-index:100;
+      background:#FBE9E7;border-bottom:3px solid #B3261E;
+      padding:16px 20px;text-align:center;
+      font-size:16px;font-weight:600;color:#B3261E;
+      animation:slideDown .3s ease-out;
+    `;
+    document.body.appendChild(banner);
+  }
+  banner.textContent=msg;
+  banner.style.display='block';
+  clearTimeout(ALERT_BANNER_TIMER);
+  ALERT_BANNER_TIMER=setTimeout(()=>{ banner.style.display='none'; }, 4000);
+}
+
+/* 슬라이드다운 애니메이션 */
+const style=document.createElement('style');
+style.textContent=`
+  @keyframes slideDown {
+    from { transform:translateY(-100%);opacity:0; }
+    to { transform:translateY(0);opacity:1; }
+  }
+`;
+document.head.appendChild(style);
 
 function stopRealtimeSubscription(){
   if(REALTIME_SUB) {
