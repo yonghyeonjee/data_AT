@@ -582,3 +582,13 @@
 --   detect() 인식 규칙 : 홈페이지 문의 = 상담상태+견적결과+등록일 / 구독 상품 = 계약 기간+서비스 주기+모델코드
 --   mapRows() 로 엑셀 열을 RPC 형식으로 바꾸고 runUpload() 가 fn_web_inquiry_upsert · fn_sub_plan_upsert 로 보냄(구독은 순서 보존 위해 1000줄 단위)
 --   양식(TEMPLATES) '홈페이지_문의' · '구독_상품' 추가 — 붙여넣기 종류 선택·양식 내려받기에서 같이 쓰임
+-- mvp_116 (2026-09-08) 상담 배정(이관)
+--   core.f_staff_is_mgr(name) : role_note in ('점장','대표','전체') 또는 dept in ('대표','전체') → 전체 조회·배정 권한
+--   crm.consult_assign 로그 (consult_id, from_handler, to_handler, by_staff, note) — 누가 언제 누구에게 넘겼는지 남는다
+--   core.f_consult_src(source, route) : 출처 한 줄로 통일 (홈페이지 문의 / 검색광고 / 매장 접수 / 이카운트 가망 …) — 화면 태그가 서버 판정을 그대로 씀
+--   fn_store_consult_assign(p_code,p_ids,p_to,p_note) : 내 건·미배정은 본인이, 그 외는 관리자만 넘길 수 있음
+--   fn_store_consults_all(p_code,p_scope,p_handler,p_q,p_limit) : 관리자 전용 전체 상담 (미배정/진행중/전체 · 담당별 건수 · 마지막 이관 이력)
+--   fn_store_status : is_mgr · unassigned_n 추가, my_open_consults 에 src·moved(마지막 이관) 추가
+-- v69 화면 : 담당자 내 고객 탭 — 진행중 상담 줄에 출처 태그와 [넘기기](담당자 시트), 이관 이력 한 줄.
+--            점장·대표·전체 권한이면 '전체 상담 · 배정' 카드(미배정/진행중/전체 · 담당 칩 · 검색 · [배정]/[내가 맡기]), 내 고객 탭에 미배정 건수 뱃지.
+--            /visit/ 키오스크 : 휴대폰(≤700px 또는 낮은 화면)에서는 고정 높이 대신 페이지 스크롤 + [다음] 버튼 하단 고정 — 카드가 잘려 보이던 문제 해결.
