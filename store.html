@@ -562,6 +562,17 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
     <div class="home-kpi" id="homeKpi"></div>
     <div class="cta2"><button onclick="goTab('sale')">＋ 판매 입력</button><button class="alt" onclick="goTab('consult')">＋ 상담 입력</button></div>
+    <div class="card hidden" id="allCard">
+      <h2>전체 상담 · 배정 <span id="allSub">점장 · 대표만 보입니다</span></h2>
+      <p class="note-in" style="margin-top:0">미배정 건을 담당자에게 배정하거나, 담당을 바꿉니다. 넘긴 기록은 그 상담에 남습니다.</p>
+      <div class="daterow">
+        <div class="seg sm" id="all_scope"><button type="button" class="on" data-v="unassigned">미배정</button><button type="button" data-v="open">진행중 전체</button><button type="button" data-v="all">전체</button></div>
+        <input class="in" id="all_q" placeholder="이름 · 번호 · 모델" onkeydown="if(event.key==='Enter')loadAllConsults()">
+        <button class="btn ghost sm" onclick="loadAllConsults()">조회</button>
+      </div>
+      <div class="chips" id="all_hd" style="margin-top:8px"></div>
+      <div class="list" id="allList"><div class="empty">불러오는 중…</div></div>
+    </div>
     <div class="card hidden" id="myReqCard">
       <h2>내 주문서 요청 <span id="myReqSub">최근 14일</span></h2>
       <div class="list" id="myReqList"><div class="empty">없음</div></div>
@@ -573,17 +584,6 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="card">
       <h2>진행중 상담 · 내 건 <span id="ocSub">최근 90일</span></h2>
       <div class="list" id="ocList"><div class="empty">없음</div></div>
-    </div>
-    <div class="card hidden" id="allCard">
-      <h2>전체 상담 · 배정 <span id="allSub">점장 · 대표만 보입니다</span></h2>
-      <p class="note-in" style="margin-top:0">미배정 건을 담당자에게 배정하거나, 담당을 바꿉니다. 넘긴 기록은 그 상담에 남습니다.</p>
-      <div class="daterow">
-        <div class="seg sm" id="all_scope"><button type="button" class="on" data-v="unassigned">미배정</button><button type="button" data-v="open">진행중 전체</button><button type="button" data-v="all">전체</button></div>
-        <input class="in" id="all_q" placeholder="이름 · 번호 · 모델" onkeydown="if(event.key==='Enter')loadAllConsults()">
-        <button class="btn ghost sm" onclick="loadAllConsults()">조회</button>
-      </div>
-      <div class="chips" id="all_hd" style="margin-top:8px"></div>
-      <div class="list" id="allList"><div class="empty">불러오는 중…</div></div>
     </div>
     <div class="card">
       <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
@@ -2196,7 +2196,7 @@ function renderHome(s){
   $('ocList').innerHTML=oc.length?oc.map(x=>`
     <div class="item oc"><div><div class="p"><a href="javascript:void 0" onclick="ocToConsult('${esc(x.ref)}','${esc(x.name)}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 고객으로 상담 입력 열기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a> <span class="tag 일시불">${esc(x.interest||'-')}</span>${x.model?`<span class="tag">${esc(x.model)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag" style="background:#EEF2FF;color:#2F5BEA">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag" style="background:#F3F4F7;color:#646D7C">유입 ${esc(x.via)}</span>`:''}${x.result==='보류'?'<span class="tag" style="background:#FFF4D6;color:#8A6300">보류</span>':''}</div>
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.route||'')}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.expect_date?` · 예정 ${String(x.expect_date).slice(5).replace('-','/')}`:''}${x.callback_at?` · 콜백 ${fmtWhen(x.callback_at).join(' ')}`:''}</div>${x.moved?`<div class="mv">${esc(x.moved.from||'미배정')} → 나 · ${esc(x.moved.by)} 배정 · ${esc(x.moved.at)}</div>`:''}${(x.bought||x.next_model||x.next_cat)?`<div class="m nx">${x.bought?`구매 <b>${esc(x.bought)}</b>`:''}${(x.next_model||x.next_cat)?`${x.bought?' · ':''}다음 <b>${esc(x.next_model||x.next_cat)}</b>${x.next_date?` (${String(x.next_date).slice(5).replace('-','/')})`:''}`:''}</div>`:''}</div>
-      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button>
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini" onclick="ocToConsult('${esc(x.ref)}','${esc(x.name||'')}','${esc(x.tel||'')}','${esc(x.interest||'')}')">상담 이동</button><button class="mini ok" onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매로</button>
         <button class="mini" onclick="ocPick(${x.id})">재연락</button>
         ${x.result==='보류'?`<button class="mini" onclick="ocAct(${x.id},'resume')">다시 진행</button>`:`<button class="mini warn" onclick="ocAct(${x.id},'hold')">보류</button>`}
         <button class="mini" style="color:var(--faint)" onclick="ocAct(${x.id},'close')">종료</button>
@@ -2230,8 +2230,11 @@ function toSale(ref,name){ goTab('sale'); $('s_consult').value=ref; if(name) $('
 /* 진행중 상담의 고객 이름 → 같은 고객으로 상담 입력 (후속 상담) */
 function ocToConsult(ref,name,tel,interest){ goTab('consult'); custClear('c');
   $('c_name').value=name||''; if(tel){ $('c_phone').value=tel; hyphen($('c_phone')); }
+  if(!name && !tel) toast('이름·연락처가 없는 건입니다 — 확인한 내용을 채워 주세요','bad');
   if(interest){ const want=interest.split(',').map(x=>x.trim()); $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on', want.includes(x.dataset.v))); }
-  $('c_content').value = `이전 상담 ${ref} 이어서 · `; toast(`${name} 님 후속 상담 — 내용을 적고 저장하세요`,'ok'); setTimeout(()=>$('c_content').focus(),100); }
+  $('c_content').value = ref ? `이전 상담 ${ref} 이어서 · ` : '';
+  if(name) toast(`${name} 님 후속 상담 — 내용을 적고 저장하세요`,'ok');
+  setTimeout(()=>$(name?'c_content':'c_name').focus(),100); }
 function pickMine(key,name){ goTab('consult'); LINK.c=key; $('c_name').value=name; $('c_linkedTxt').textContent=`기존 고객 연결됨 · ${name}`; $('c_linked').classList.remove('hidden'); $('c_hist').classList.add('hidden'); }
 function histHTML(x){ if(!x.history||!x.history.length) return ''; return `<div class="h">이전 이력 ${x.consults?`· 상담 ${x.consults}건`:''} ${x.orders?`· 구매 ${x.orders}건`:''} ${x.handler?`· 담당 ${esc(x.handler)}${x.handler===ME?'<span class="mine">내 고객</span>':''}`:''}</div>`+
   x.history.map(h=>`<div class="e"><div class="d">${String(h.at).slice(2,10).replace(/-/g,'.')}</div><div class="t ${h.type==='구매'?'buy':'talk'}">${h.type}</div><div class="b">${esc(h.title)}<small>${esc(h.detail||'')}${h.handler?' · '+esc(h.handler):''}</small></div></div>`).join(''); }
@@ -2549,11 +2552,12 @@ function renderAllConsults(){
   const rows=ALL_ROWS.slice(ALL_PG*per,(ALL_PG+1)*per);
   el.innerHTML=(ALL_ROWS.length?rows.map(x=>`
     <div class="item oc"><div>
-      <div class="p">${esc(x.name||'-')} ${x.interest?`<span class="tag 일시불">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag" style="background:#EEF2FF;color:#2F5BEA">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag" style="background:#F3F4F7;color:#646D7C">유입 ${esc(x.via)}</span>`:''}
+      <div class="p">${x.name?`<a href="javascript:void 0" onclick="ocToConsult('${esc(x.ref||'')}','${esc(x.name)}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 고객으로 상담 입력 열기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a>`:'<span style="color:var(--muted)">이름 없음</span>'} ${x.interest?`<span class="tag 일시불">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag" style="background:#EEF2FF;color:#2F5BEA">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag" style="background:#F3F4F7;color:#646D7C">유입 ${esc(x.via)}</span>`:''}
         <span class="tag hd">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='보류'?'<span class="tag" style="background:#FBF1DC;color:#8A5A00">보류</span>':''}</div>
       <div class="m">${esc(x.at)} · ${esc(x.route||'')}${x.phone?' · '+esc(x.phone):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.content?' · '+esc(x.content):''}</div>
       ${x.last_move?`<div class="mv">${esc(x.last_move.from||'미배정')} → ${esc(x.last_move.to)} · ${esc(x.last_move.by)} 배정 · ${esc(x.last_move.at)}</div>`:''}</div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}
+        <button class="mini" onclick="ocToConsult('${esc(x.ref||'')}','${esc(x.name||'')}','${esc(x.tel||'')}','${esc(x.interest||'')}')">상담 이동</button>
         <button class="mini ok" onclick="asgOpen([${x.id}],'${esc(x.name||'')}')">배정</button>
         ${x.handler!==ME?`<button class="mini" onclick="asgTo2(${x.id})">내가 맡기</button>`:''}</div></div>`).join('')
     :'<div class="empty">해당하는 상담이 없습니다</div>')
