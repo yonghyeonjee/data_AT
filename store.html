@@ -160,7 +160,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .seg button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .seg button.on.sub{border-color:var(--sub);background:var(--sub-soft);color:var(--sub)}
 .seg button.on.direct{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px 6px}
 .chip{padding:8px 12px;border:1.5px solid transparent;border-radius:999px;background:var(--accent-soft);font-size:calc(13px * var(--font-scale));font-weight:600;color:var(--navy);cursor:pointer}
 .chip:hover{border-color:var(--navy)}
 /* 필수 선택인데 아직 아무것도 안 골랐으면 점선 살구색 */
@@ -675,6 +675,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button class="btn ghost sm" onclick="loadAllConsults()">조회</button>
       </div>
       <div class="chips" id="all_hd" style="margin-top:8px"></div>
+      <div class="chips" id="all_hd2" style="margin-top:10px"></div>
       <div class="list" id="allList"><div class="empty">불러오는 중…</div></div>
     </div>
     <div class="card hidden" id="myReqCard">
@@ -1182,7 +1183,11 @@ async function start(){
   const t=new Date(); $('todayLabel').textContent = `${t.getMonth()+1}월 ${t.getDate()}일 (${'일월화수목금토'[t.getDay()]})`;
   $('meName').textContent = ME + '님';
   applyPerms();
-  try{ const t=location.hash.replace('#',''); history.replaceState({tab:t||'home'},'','#'+(t||'home')); if(t && t!=='home') goTab(t, true); }catch(e){}
+  try{ const t=location.hash.replace('#',''); history.replaceState({tab:t||'home'},'','#'+(t||'home'));
+    if(t && t!=='home') goTab(t, true);
+    /* 홈으로 바로 들어오면 goTab을 안 거치므로 섹션 앵커를 직접 만들어 준다 */
+    else { buildSubTabs('home'); watchSubTabs('home'); }
+  }catch(e){}
   $('s_date').value = todayStr(); $('c_date').value = todayStr(); $('d_date').value = todayStr(-1);
   render();
   REQ_SEEN=null; loadRequests(); reqPoll(); loadGifts(); askNotify();
@@ -2258,14 +2263,27 @@ function goTab(name, fromHistory){
   if(!fromHistory){ try{ (history.state&&history.state.tab===name) ? history.replaceState({tab:name},'','#'+name) : history.pushState({tab:name},'','#'+name); }catch(e){} }
   gfabShow(name);
   window.scrollTo({top:0});
-  setTimeout(()=>buildSubTabs(name),60); setTimeout(()=>buildSubTabs(name),900);   /* 데이터가 늦게 그려지는 탭은 한 번 더 */
+  SUBTAB_SIG=''; buildSubTabs(name); watchSubTabs(name);   /* 나머지는 감시가 알아서 채운다 */
   syncNav();
 }
 /* ── 탭 안 이동 : 카드(h2)가 둘 이상이면 탭 아래에 섹션 탭 ── */
 function subTabTitle(c){ const h=c.querySelector(':scope > h2'); if(!h) return ''; const t=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').replace(/\s+/g,' ').trim(); return (t||h.textContent.replace(/\s+/g,' ').trim()).slice(0,18); }
+let SUBTAB_SIG='', SUBTAB_OBS=null;
+/* 탭이 바뀌면 그 탭만 감시한다. 데이터가 늦게 그려져도 가라앉은 뒤 한 번만 다시 만든다. */
+function watchSubTabs(name){
+  const panel=$('tab-'+name); if(!panel) return;
+  if(SUBTAB_OBS) SUBTAB_OBS.disconnect();
+  let t=null;
+  SUBTAB_OBS=new MutationObserver(()=>{ clearTimeout(t); t=setTimeout(()=>buildSubTabs(name),200); });
+  SUBTAB_OBS.observe(panel,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
+}
 function buildSubTabs(name){
   const bar=$('subTabs'), panel=$('tab-'+name); if(!bar||!panel) return;
   const cards=[...panel.querySelectorAll('.card')].filter(c=>!c.closest('.card .card') && !c.classList.contains('hidden') && c.offsetParent!==null && subTabTitle(c));
+  /* 목록이 그대로면 손대지 않는다 : 다시 그리면 깜빡이고 눌러둔 위치도 풀린다 */
+  const sig=name+'|'+cards.map(c=>subTabTitle(c)).join('|');
+  if(sig===SUBTAB_SIG) return;
+  SUBTAB_SIG=sig;
   if(cards.length<2){ bar.classList.add('hidden'); bar.innerHTML=''; return; }
   const cur=(bar.querySelector('a.on')||{}).dataset?.sec;
   bar.innerHTML='<div class="st-wrap">'+cards.map((c,i)=>{ if(!c.id) c.id=`sec-${name}-${i}`; return `<a href="#${c.id}" data-sec="${c.id}" class="${c.id===cur?'on':''}">${esc(subTabTitle(c))}</a>`; }).join('')+'</div>';
@@ -2720,9 +2738,10 @@ async function loadAllConsults(){
   catch(e){ el.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const c=d.counts||{};
   $('allSub').textContent=`진행중 ${n2(c.open)} · 미배정 ${n2(c.unassigned)}`;
+  /* 출처 줄과 담당 줄을 따로 그린다 (한 줄에 섞으면 글자가 커질 때 두 줄이 붙어 보인다) */
   $('all_hd').innerHTML=`<span class="chip${ALL_SRC?'':' on'}" onclick="ALL_SRC='';loadAllConsults()">전체 출처</span>`
-    +(d.by_src||[]).map(x=>`<span class="chip${ALL_SRC===x.s?' on':''}" onclick="ALL_SRC='${esc(x.s)}';loadAllConsults()">${esc(x.s)} ${n2(x.n)}</span>`).join('')
-    +`<span class="chip${ALL_HD?'':' on'}" style="margin-left:10px" onclick="ALL_HD='';loadAllConsults()">전체 담당</span>`
+    +(d.by_src||[]).map(x=>`<span class="chip${ALL_SRC===x.s?' on':''}" onclick="ALL_SRC='${esc(x.s)}';loadAllConsults()">${esc(x.s)} ${n2(x.n)}</span>`).join('');
+  $('all_hd2').innerHTML=`<span class="chip${ALL_HD?'':' on'}" onclick="ALL_HD='';loadAllConsults()">전체 담당</span>`
     +(d.by_handler||[]).map(h=>`<span class="chip${ALL_HD===h.h?' on':''}" onclick="ALL_HD='${esc(h.h)}';loadAllConsults()">${esc(h.h)} ${n2(h.n)}</span>`).join('');
   ALL_ROWS=d.rows||[]; ALL_PG=0; renderAllConsults();
 }
