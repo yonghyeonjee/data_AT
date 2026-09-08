@@ -558,3 +558,14 @@
 --                          새 가망고객(source_ref SC…, 유입 '매장 구매 후', 관심=다음 제품, 진행중, linked_order_id=이번 판매) 을 이어 만든다
 --   fn_consult_list : next_* 컬럼 추가(반환 타입 변경 → drop 후 재생성) · fn_store_status.my_open_consults : bought/next_model/next_cat/next_date
 -- v63 화면 : 담당자 상담 입력 '구매 제품 · 다음 구매 관심' 상자, 판매 입력 '다음 구매 관심' 상자, 홈 진행중 상담에 "구매 X · 다음 Y (예정)" 줄, 관리자 상담 목록 관심 열에 구매/다음 표시
+-- mvp_113 (2026-09-07) 주문 · 판매 · 매출 화면 (관리자 메뉴 sales 그룹 'flow', 대시보드 다음)
+--   core.orders.is_test + core.f_order_is_test_rule(o) (담당 test / 고객·상품명 '테스트' / 금액 10원 이하) · fn_order_test_mark(p_ids,p_test) · fn_order_test_auto(p_from)
+--   core.f_order_stage(source,status,refund) : 취소(환불>0 또는 취소·반품·환불 상태) / 매장 = 판매완료→판매, 그 외→매출 / 샵링커 = 송장전송완료·배송중·배송완료·구매확정·구매결정·교환완료→판매, 그 외→매출 / 이카운트·렌탈 = 판매
+--   fn_order_flow(p_from,p_to,p_source,p_channel,p_include_test) : summary(order/sale/rev/cancel/net/test) · by_channel · by_status · by_day · tests(규칙 해당+표시된 것 200) · channels · sources
+--   core.orders_live 뷰 (not is_test) — f_dash_payload · fn_home 의 core.orders 참조를 전부 orders_live 로 바꿈 → 테스트 표시하면 대시보드·홈에서도 빠짐
+-- v64 화면 : 관리자 '주문 · 판매 · 매출' 뷰 (KPI 5 · 출처/채널별 · 상태→단계 · 일별 · 테스트 주문 표시/해제/규칙 일괄). 공통 조회바가 라벨(span.lb)·안내(span.note)도 끌어옴
+-- mvp_114 (2026-09-08) 구독 상품 가격 이력 sub.plan_price_hist (요금 바뀔 때만 트리거로 이전 값 보관 — 플랜 수백×연 몇 회, 크기 무시)
+--   fn_sub_plans 에 prev_monthly/prev_total/prev_until/chg_pct/n_hist · fn_sub_plan_hist(p_plan_id)
+--   core.data_source 에 sub_plan(구독 상품 · 요금) · web_inquiry(홈페이지 문의) 카드 추가, fn_data_status 집계 union 확장
+-- v65 화면 : 데이터 소스에 두 카드(붙여넣기로 등록 → 각 모달) · 구독 요금표에 ▲▼ 변동률과 [이력] · 화면 파일이 옛 버전이면 빈 화면 대신 안내(show 가드)
+--            검색 UI : 선택지 2~6개 고정 드롭다운은 라디오형 버튼(segify — select 는 숨긴 채 값 보유, change 이벤트 그대로) · 동적/7개 이상은 드롭다운 유지
