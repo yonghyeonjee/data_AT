@@ -6,8 +6,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Datacenter · Console</title>
 <link rel="icon" href="/favicon.ico?v=3">
+<link rel="preconnect" href="https://wdahskrcpjooqhwwxjiu.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+/* 엑셀 모듈(900KB)은 첫 화면을 막지 않게 — 내보내기·파일 올리기·양식 내려받기에서 처음 쓸 때 불러온다 */
+let XLSX_P=null;
+function needXLSX(){ if(window.XLSX) return Promise.resolve();
+  if(!XLSX_P){ XLSX_P=new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload=res; s.onerror=()=>{ XLSX_P=null; rej(new Error('엑셀 모듈을 불러오지 못했습니다 — 네트워크를 확인하고 다시 눌러 주세요')); }; document.head.appendChild(s); }); }
+  return XLSX_P; }
+</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 /* ═══════════════════════════════════════════════════════════
@@ -1808,6 +1817,8 @@ async function boot(){
       $('lErr').textContent = at ? '로그인한 지 '+SESSION_MAX_H+'시간이 지나 다시 로그인해 주세요.' : '';
       reveal('login'); return; } }
   if(!session){ reveal('login'); return; }
+  /* 프로필·메뉴·담당자를 한꺼번에 요청 — 왕복 3번을 1번으로 */
+  let menuP=rpc('fn_menu',{p_env:DC_ENV}).catch(()=>null), staffP=rpc('fn_staff_list').catch(()=>[]);
   try{ ME = await rpc('fn_me'); }catch(e){ ME=null; }
   if(!ME){ $('lErr').textContent='프로필이 없습니다. 관리자에게 문의하세요.'; await sb.auth.signOut(); reveal('login'); return; }
   reveal('app');
@@ -1815,9 +1826,11 @@ async function boot(){
   let fresh=false; try{ fresh=!sessionStorage.getItem('dc_open'); }catch(e){}
   if(fresh && !JUST_LOGGED_IN) lockScreen('창을 다시 열어 잠겨 있습니다. 비밀번호를 입력하면 이어서 쓸 수 있습니다.');
   try{ sessionStorage.setItem('dc_open','1'); }catch(e){} JUST_LOGGED_IN=false; lockTouch();
-  rpc('fn_staff_list').then(x=>{ STAFF=x||[]; fillHandlerOptions(); }).catch(()=>{ STAFF=[]; });
-  await loadMenu();
+  staffP.then(x=>{ STAFF=x||[]; fillHandlerOptions(); });
+  await loadMenu(await menuP);
   loadStamp(); setPreset('30', true); show(location.hash.replace('#','')||'home', {replace:true});
+  /* 첫 화면이 뜬 뒤 한가할 때 엑셀 모듈을 미리 받아 둔다 */
+  (window.requestIdleCallback||(f=>setTimeout(f,3000)))(()=>{ needXLSX().catch(()=>{}); });
 }
 const ID_DOMAIN='@samsungat.local';   // 아이디만 입력하면 붙는 사내 전용 도메인
 let JUST_LOGGED_IN=false;
@@ -3653,8 +3666,8 @@ const NAV_FALLBACK=[
 const NAV_BADGE={inbox:'badgeInbox', oq:'badgeOq'};   // 뱃지를 다는 메뉴 (없어도 화면이 죽지 않게 쓰는 쪽에서 null 확인)
 if(DC_ENV==='test'){ document.title='[TEST] '+document.title; document.querySelectorAll('.envtag').forEach(x=>x.classList.remove('hidden'));
   const dl=document.getElementById('dashShareLink'); if(dl){ dl.href=DASH_DIR; dl.textContent='외부 공유 화면(테스트) ↗'; } }
-async function loadMenu(){
-  try{ MENU=await rpc('fn_menu',{p_env:DC_ENV}); }catch(e){ MENU=null; }
+async function loadMenu(pre){
+  if(pre!==undefined) MENU=pre; else { try{ MENU=await rpc('fn_menu',{p_env:DC_ENV}); }catch(e){ MENU=null; } }
   if(!Array.isArray(MENU) || !MENU.length) MENU=NAV_FALLBACK;
   MENU_STATE={};
   MENU.forEach(g=>(g.items||[]).forEach(i=>{ MENU_STATE[i.code]={state:i.state||'on',label:i.label,note:i.note,group:g.group_label||''};
@@ -4400,6 +4413,7 @@ async function saveOrder(){
 }
 async function delOrder(id){ if(!confirm('이 주문을 삭제할까요? 되돌릴 수 없습니다.')) return; try{ await rpc('fn_order_delete',{p_id:id}); toast('삭제됨'); loadOrders(oPage); }catch(e){ toast(e.message,'bad'); } }
 async function exportOrders(){
+  try{ await needXLSX(); }catch(e){ return toast(e.message,'bad'); }
   const unmask=$('oUnmask').classList.contains('on');
   if(!confirm(`${P.from} ~ ${P.to} 원장을 엑셀로 내보냅니다.${unmask?'\n실번호 포함 — 감사로그에 기록됩니다.':''}`)) return;
   try{ const rows=await rpc('fn_order_export',{p_from:P.from,p_to:P.to,p_unmask:unmask});
@@ -4652,6 +4666,7 @@ async function saveSegment(){
 function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value='');
   $('crmNext').classList.remove('on'); $('crmSort').value='recent'; if($('crmReason').value.trim().length>=3) loadTargets(0); }
 async function exportTargets(kind){
+  if(kind!=='csv'){ try{ await needXLSX(); }catch(e){ return toast(e.message,'bad'); } }
   const p=tgParams();
   if(p.p_reason.length<3) return toast('캠페인명을 먼저 적어주세요','bad');
   let d; try{ d=await rpc('fn_crm_targets_v2',{...p,p_limit:5000,p_offset:0,p_export:true}); }catch(e){ return toast(e.message,'bad'); }
@@ -4759,7 +4774,9 @@ function parseSheet(wb, name){
   return {sheet:name, kind, cols, data};
 }
 function handleFile(file){
-  if(!file) return; const rd=new FileReader();
+  if(!file) return;
+  if(!window.XLSX){ needXLSX().then(()=>handleFile(file)).catch(e=>toast(e.message,'bad')); return; }
+  const rd=new FileReader();
   rd.onload=e=>{ try{
     const isCsv=/\.(csv|txt)$/i.test(file.name);
     const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true,raw:isCsv});   // csv 는 문자 그대로 (거래처코드 0005 의 앞 0 보존)
@@ -5068,6 +5085,7 @@ function enforceSource(kind){
   $('upBtn').disabled=true; return false;
 }
 function downloadTemplate(name){
+  if(!window.XLSX){ needXLSX().then(()=>downloadTemplate(name)).catch(e=>toast(e.message,'bad')); return; }
   const t=TEMPLATES[name]; if(!t) return downloadTemplates();
   const wb=XLSX.utils.book_new(); const ws=XLSX.utils.aoa_to_sheet([t.cols,...(t.rows||[])]);
   ws['!cols']=t.cols.map(c=>({wch:Math.max(10,Math.min(28,c.length+4))}));
@@ -5100,6 +5118,7 @@ async function loadLog(page){
     ||'<tr><td colspan="8" class="note" style="text-align:center;padding:24px">기간 내 기록 없음</td></tr>';
 }
 async function exportLog(){
+  try{ await needXLSX(); }catch(e){ return toast(e.message,'bad'); }
   let d; try{ d=await rpc('fn_activity_log',{p_type:$('lgType').value||null,p_from:P.from,p_to:P.to,p_q:$('lgQ').value.trim()||null,p_limit:200,p_offset:0}); }catch(e){ return toast(e.message,'bad'); }
   const cols=['시각','유형','상태','내용','건수','부가','수행자','비고'];
   const line=a=>a.map(v=>{const s=String(v??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',');
@@ -5389,6 +5408,7 @@ const TEMPLATES={
   rows:[['2026-08-19',8724580,0,4197600,0,44222162,0,6650000,0],['2026-08-20',4015100,0,6478560,0,4830000,0,0,0]]}
 };
 function downloadTemplates(){
+  if(!window.XLSX){ needXLSX().then(downloadTemplates).catch(e=>toast(e.message,'bad')); return; }
   const wb=XLSX.utils.book_new();
   const dest=['core.orders (통합 원장)','core.orders (원장 · 채널 VMS)','crm.consult (상담·가망고객)','core.orders (원장 · 채널 렌탈)','crm.customer (고객 마스터)','core.store_daily (매장 일마감)'];
   const guide=[['삼성앤텍 통합 매출 & CRM · 업로드 양식'],[],

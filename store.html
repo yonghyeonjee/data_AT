@@ -45,7 +45,57 @@ html.resuming body::after{content:'이어서 여는 중…';position:fixed;inset
 .pin-meter.lock span{color:#B3261E;font-weight:700}
 
 /* ── App ── */
-#app{max-width:720px;margin:0 auto;padding:0 0 120px}
+/* ═══ 레이아웃 : 넓은 화면은 왼쪽 메뉴, 좁은 화면은 아래 탭바 + 서랍 ═══ */
+#app{max-width:none;margin:0;padding:0 0 120px}
+.tabs{display:none!important}
+.side{position:fixed;left:0;top:0;bottom:0;width:236px;background:#0B0F2E;color:#C9D0E8;display:flex;flex-direction:column;z-index:40;
+  transform:translateX(-100%);transition:transform .22s ease}
+.side.open{transform:none}
+.side .brand{padding:22px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.side .brand .co{font-size:10.5px;letter-spacing:.16em;color:#7A8CE8;font-weight:700}
+.side .brand .nm{font-size:17px;font-weight:800;color:#fff;margin-top:4px;letter-spacing:-.01em}
+.side .brand .dt{font-size:12px;color:#8E97B8;margin-top:2px}
+.side .brand .pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.side .brand .pill{background:rgba(255,255,255,.08);border-color:transparent;color:#DCE1F5;font-size:11.5px;padding:3px 9px}
+.side .brand .pill.warn{background:#3A2A08;color:#F2C46A}
+.side nav{flex:1;overflow-y:auto;padding:10px 10px 12px}
+.side .grp{font-size:10.5px;letter-spacing:.14em;color:#6B7499;font-weight:700;padding:14px 12px 6px;text-transform:uppercase}
+.side .it{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;background:transparent;color:#C9D0E8;
+  font:inherit;font-size:14px;font-weight:600;border-radius:9px;cursor:pointer;text-align:left;letter-spacing:-.01em}
+.side .it svg{width:18px;height:18px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.side .it:hover{background:rgba(255,255,255,.06);color:#fff}
+.side .it.active{background:#1428A0;color:#fff}
+.side .it .n{margin-left:auto;background:#B3261E;color:#fff;font-size:11px;font-weight:800;min-width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.side .it .n.soft{background:rgba(255,255,255,.14)}
+.side .foot{padding:12px 14px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:8px}
+.side .foot button{flex:1;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#C9D0E8;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.side .foot button:hover{background:rgba(255,255,255,.06);color:#fff}
+.side-bg{position:fixed;inset:0;background:rgba(11,15,46,.45);z-index:39;opacity:0;pointer-events:none;transition:opacity .2s}
+.side-bg.on{opacity:1;pointer-events:auto}
+/* 하단 탭바 (모바일) */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:38;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.96);
+  backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.bnav button{position:relative;border:0;background:transparent;font:inherit;font-size:10.5px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:10px;letter-spacing:-.02em}
+.bnav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.bnav button.active{color:var(--navy)}
+.bnav button .n{position:absolute;top:2px;right:calc(50% - 20px);background:#B3261E;color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
+.bnav button .n.soft{background:var(--muted)}
+.menu-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
+.menu-btn svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round}
+@media(min-width:1000px){
+  .side{transform:none}
+  .side-bg{display:none}
+  .bnav{display:none}
+  .menu-btn{display:none}
+  #app{padding-left:236px}
+  .topbar,.panel{max-width:860px;margin-left:auto;margin-right:auto}
+  .topbar{padding:16px 26px 12px;background:rgba(243,244,247,.94)}
+  .panel{padding-left:26px;padding-right:26px}
+}
+@media(max-width:999px){
+  #app{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .gfab{bottom:calc(92px + env(safe-area-inset-bottom))!important}
+}
 .topbar{position:sticky;top:0;z-index:20;background:rgba(243,244,247,.94);backdrop-filter:blur(8px);padding:14px 18px 10px;border-bottom:1px solid var(--line)}
 .topbar .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .topbar h1{font-size:18px;font-weight:800;letter-spacing:-.02em}
@@ -81,7 +131,12 @@ section.panel{padding:16px 18px}
 
 .f{margin-bottom:14px}
 .f label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
-.f label .req{color:var(--bad);margin-left:2px}
+.f label .req{font-size:0;display:inline-block;vertical-align:middle;margin-left:6px}
+.f label .req::after{content:'필수';font-size:10.5px;font-weight:800;color:#fff;background:var(--bad);padding:2px 7px;border-radius:5px;letter-spacing:.03em;line-height:1.3}
+/* 필수 칸 : 채우기 전엔 살구색 테두리, 채우면 보통으로 */
+.f:has(> label .req) .in{border-color:#E4B08A;background:#FFFCF9}
+.f:has(> label .req) .in:not(:placeholder-shown):not([type=date]){border-color:var(--line-2);background:#fff}
+.f:has(> label .req) .in:focus{border-color:var(--navy);background:#fff}
 .f label .hint{color:var(--faint);font-weight:400;margin-left:6px;font-size:12px}
 .in{width:100%;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:10px;background:#fff;outline:none;font-size:16px;transition:.15s}
 .in:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
@@ -98,7 +153,10 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .seg button.on.sub{border-color:var(--sub);background:var(--sub-soft);color:var(--sub)}
 .seg button.on.direct{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{padding:8px 12px;border:1.5px solid var(--line-2);border-radius:999px;background:#fff;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.chip{padding:8px 12px;border:1.5px solid transparent;border-radius:999px;background:var(--accent-soft);font-size:13px;font-weight:600;color:var(--navy);cursor:pointer}
+.chip:hover{border-color:var(--navy)}
+/* 필수 선택인데 아직 아무것도 안 골랐으면 점선 살구색 */
+.f:has(> label .req) .chips:not(:has(.chip.on)) .chip{background:#FFF6EC;color:#8A4B00;border:1.5px dashed #E8A24A}
 .tagchips{margin-top:6px} .tagchips:empty{display:none}
 .tagchips .chip{background:var(--navy);color:#fff;border-color:var(--navy);padding:6px 10px;font-size:12.5px;font-family:ui-monospace,Menlo,monospace}
 .tagchips .chip::after{content:'×';margin-left:6px;opacity:.7}
@@ -534,9 +592,24 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
 
 <!-- ═══ APP ═══ -->
 <div id="app" class="hidden">
+  <div class="side-bg" id="sideBg" onclick="sideClose()"></div>
+  <aside class="side" id="side" aria-label="메뉴">
+    <div class="brand">
+      <div class="co">SAMSUNG&amp;TECH · 시흥점</div>
+      <div class="nm" id="sideName">담당자</div>
+      <div class="dt" id="sideDate"></div>
+      <div class="pills"><span class="pill" id="sidePillToday">오늘 0건</span><span class="pill warn hidden" id="sidePillUnclosed"></span></div>
+    </div>
+    <nav id="sideNav"></nav>
+    <div class="foot"><button onclick="lockStore('잠갔습니다. 담당자 코드를 입력하면 이어서 씁니다.')">잠그기</button><button onclick="location.reload()">새로고침</button></div>
+  </aside>
+  <nav class="bnav" id="bnav"></nav>
   <div class="topbar">
     <div class="row">
-      <h1><span id="meName">시흥점</span> <small id="todayLabel"></small></h1>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <button class="menu-btn" onclick="sideOpen()" aria-label="메뉴"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+        <h1 style="min-width:0"><span id="meName">시흥점</span> <small id="todayLabel"></small></h1>
+      </div>
       <div style="display:flex;gap:6px">
         <span class="pill" id="pillToday">오늘 0건</span>
         <span class="pill warn hidden" id="pillUnclosed"></span>
@@ -566,7 +639,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <h2>전체 상담 · 배정 <span id="allSub">점장 · 대표만 보입니다</span></h2>
       <p class="note-in" style="margin-top:0">미배정 건을 담당자에게 배정하거나, 담당을 바꿉니다. 넘긴 기록은 그 상담에 남습니다.</p>
       <div class="daterow">
-        <div class="seg sm" id="all_scope"><button type="button" class="on" data-v="unassigned">미배정</button><button type="button" data-v="open">진행중 전체</button><button type="button" data-v="all">전체</button></div>
+        <div class="seg sm" id="all_scope"><button type="button" data-v="unassigned">미배정</button><button type="button" class="on" data-v="open">진행중 전체</button><button type="button" data-v="all">전체</button></div>
         <input class="in" id="all_q" placeholder="이름 · 번호 · 모델" onkeydown="if(event.key==='Enter')loadAllConsults()">
         <button class="btn ghost sm" onclick="loadAllConsults()">조회</button>
       </div>
@@ -1063,10 +1136,10 @@ async function start(){
   try{ const t=location.hash.replace('#',''); history.replaceState({tab:t||'home'},'','#'+(t||'home')); if(t && t!=='home') goTab(t, true); }catch(e){}
   $('s_date').value = todayStr(); $('c_date').value = todayStr(); $('d_date').value = todayStr(-1);
   render();
-  REQ_SEEN=null; loadRequests(); reqPoll(); loadGifts();
+  REQ_SEEN=null; loadRequests(); reqPoll(); loadGifts(); askNotify();
 }
 function render(){
-  initSuggest();
+  initSuggest(); setTimeout(syncNav,0);
   const s = STATUS;
   const handlers = s.staff || [];
   ['s_handler','c_handler'].forEach(id=>{ const el=$(id); const keep=el.value;
@@ -2089,6 +2162,41 @@ function orSend(ids){
 
 /* ═══ 탭 ═══ */
 /* 탭 이동을 히스토리에 쌓아 뒤로가기가 이전 탭으로 가게 한다 (PIN 화면·사이트 밖으로 안 튐) */
+/* ═══ 메뉴 : 숨겨진 .tabs 버튼(권한·배지)을 그대로 읽어 사이드바와 하단 탭바에 그린다 ═══ */
+const NAV_ICON={
+  home:'<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg>',
+  sale:'<svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 8h-12z"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M6 6L5 3H2"/></svg>',
+  consult:'<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg>',
+  stock:'<svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>',
+  order:'<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg>',
+  daily:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>',
+  report:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  online:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+  more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>'
+};
+const NAV_GROUPS=[['내 업무',['home','sale','consult']],['매장',['stock','order','daily']],['현황',['report','online']]];
+const NAV_LABEL={home:'홈'};
+function tabInfo(t){ const b=document.querySelector(`.tab[data-tab="${t}"]`); if(!b) return null;
+  const n=b.querySelector('.n'); return {t, label:NAV_LABEL[t]||b.firstChild.textContent.trim(), hidden:b.classList.contains('hidden'), active:b.classList.contains('active'),
+    badge:n?n.textContent:'', alarm:!!(n&&n.classList.contains('alarm'))}; }
+function syncNav(){
+  const side=$('sideNav'), bn=$('bnav'); if(!side||!bn) return;
+  side.innerHTML=NAV_GROUPS.map(([g,ts])=>{ const items=ts.map(tabInfo).filter(x=>x&&!x.hidden); if(!items.length) return '';
+    return `<div class="grp">${g}</div>`+items.map(x=>`<button class="it${x.active?' active':''}" onclick="goTab('${x.t}');sideClose()">${NAV_ICON[x.t]||''}<span>${esc(x.label)}</span>${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join(''); }).join('');
+  /* 하단 탭바 : 앞 4개 + 더보기(서랍) */
+  const vis=['home','sale','consult','stock','order','daily','report','online'].map(tabInfo).filter(x=>x&&!x.hidden);
+  const first=vis.slice(0,4), rest=vis.slice(4);
+  const restBadge=rest.reduce((a,x)=>a+(Number(x.badge)||0),0), restActive=rest.some(x=>x.active);
+  bn.innerHTML=first.map(x=>`<button class="${x.active?'active':''}" onclick="goTab('${x.t}')">${NAV_ICON[x.t]||''}${esc(x.label)}${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join('')
+    +`<button class="${restActive?'active':''}" onclick="sideOpen()">${NAV_ICON.more}더보기${restBadge?`<span class="n">${restBadge}</span>`:''}</button>`;
+  const nm=$('sideName'); if(nm) nm.textContent=$('meName').textContent||'담당자';
+  const dt=$('sideDate'); if(dt) dt.textContent=$('todayLabel').textContent||'';
+  const p1=$('sidePillToday'), p2=$('sidePillUnclosed');
+  if(p1) p1.textContent=$('pillToday').textContent; if(p2){ p2.textContent=$('pillUnclosed').textContent; p2.classList.toggle('hidden', $('pillUnclosed').classList.contains('hidden')); }
+}
+function sideOpen(){ $('side').classList.add('open'); $('sideBg').classList.add('on'); }
+function sideClose(){ $('side').classList.remove('open'); $('sideBg').classList.remove('on'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') sideClose(); });
 function goTab(name, fromHistory){
   const b=document.querySelector(`.tab[data-tab="${name}"]`); if(!b || b.classList.contains('hidden')) return;
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
@@ -2102,6 +2210,7 @@ function goTab(name, fromHistory){
   gfabShow(name);
   window.scrollTo({top:0});
   setTimeout(()=>buildSubTabs(name),60); setTimeout(()=>buildSubTabs(name),900);   /* 데이터가 늦게 그려지는 탭은 한 번 더 */
+  syncNav();
 }
 /* ── 탭 안 이동 : 카드(h2)가 둘 이상이면 탭 아래에 섹션 탭 ── */
 function subTabTitle(c){ const h=c.querySelector(':scope > h2'); if(!h) return ''; const t=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').replace(/\s+/g,' ').trim(); return (t||h.textContent.replace(/\s+/g,' ').trim()).slice(0,18); }
@@ -2531,7 +2640,7 @@ async function asgTo(name){
 }
 const n2=v=>Number(v||0).toLocaleString('ko-KR');
 /* 전체 상담 (점장·대표·전체 권한) */
-let ALL_SCOPE='unassigned', ALL_HD='', ALL_SRC='', ALL_LOADED=false, ALL_ROWS=[], ALL_PG=0;
+let ALL_SCOPE='open', ALL_HD='', ALL_SRC='', ALL_LOADED=false, ALL_ROWS=[], ALL_PG=0;
 function allGo(p){ ALL_PG=Math.max(0,p); renderAllConsults(); const el=$('allCard')||$('allList'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
 async function loadAllConsults(){
   if(!STATUS||!STATUS.is_mgr) return;
@@ -2615,15 +2724,40 @@ let REQ=null, REQ_SEEN=null, REQ_T=null, REQ_ID=null;
 async function loadRequests(){
   if(!CODE || LOCKED) return;
   let r; try{ r=await rpc('fn_store_requests',{p_code:CODE}); }catch(e){ return; }
-  REQ=r; renderRequests();
+  REQ=r; renderRequests(); inboxCheck(r.inbox);
   /* 새 요청이 늘어나면 알림 (처리 담당자만) */
   if(r.can_process){ if(REQ_SEEN!==null && r.n_open>REQ_SEEN){ toast(`새 주문서 요청 ${r.n_open-REQ_SEEN}건 — 주문서 탭에서 처리하세요`,'ok'); try{ navigator.vibrate&&navigator.vibrate(120); }catch(e){} } REQ_SEEN=r.n_open; }
 }
-function reqPoll(){ clearInterval(REQ_T); REQ_T=setInterval(loadRequests, 60000); }
+function reqPoll(){ clearInterval(REQ_T); REQ_T=setInterval(loadRequests, 20000); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadRequests(); }); }
+/* ═══ 새 문의 알림 ═══
+   내게 배정된 건(점장·대표는 미배정 건 포함)의 마지막 id 를 20초마다 본다. 커지면 새 문의.
+   화면이 뒤에 있어도 알 수 있게 브라우저 알림(권한 있을 때)과 진동을 함께 쓴다. */
+let INBOX_LAST=null;
+function inboxCheck(ib){
+  if(!ib) return;
+  const home=document.querySelector('.tab[data-tab="home"]');
+  if(home){ let n=home.querySelector('.n'); const cnt=(ib.mine_open||0)+(STATUS&&STATUS.is_mgr?(ib.unassigned||0):0);
+    if(cnt>0){ if(!n){ n=document.createElement('span'); n.className='n'; home.appendChild(n); } n.textContent=cnt; n.className='n'+(ib.unassigned>0&&STATUS&&STATUS.is_mgr?' alarm':''); } else if(n) n.remove(); syncNav(); }
+  if(INBOX_LAST===null){ INBOX_LAST=ib.last_id||0; return; }
+  if((ib.last_id||0) > INBOX_LAST){
+    INBOX_LAST=ib.last_id; const L=ib.last||{};
+    const who=L.name?`${L.name} 님`:'이름 없는 고객'; const msg=`새 문의 — ${who}${L.src?' · '+L.src:''}${L.mine?'':' (미배정)'}`;
+    toast(msg,'ok'); try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
+    notify('새 문의가 들어왔습니다', msg);
+    loadStatus().then(()=>{ render(); if($('allCard')&&!$('allCard').classList.contains('hidden')) loadAllConsults(); }).catch(()=>{});
+  }
+}
+function notify(title, body){
+  try{ if(!('Notification' in window)) return;
+    if(Notification.permission==='granted'){ const n=new Notification(title,{body, tag:'dc-inbox', renotify:true}); n.onclick=()=>{ window.focus(); goTab('home'); n.close(); }; }
+  }catch(e){}
+}
+function askNotify(){ try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){} }
 function renderRequests(){
   const r=REQ; if(!r) return;
   const tab=document.querySelector('.tab[data-tab="order"]');
   if(tab){ let n=tab.querySelector('.n'); if(r.can_process && r.n_open>0){ if(!n){ n=document.createElement('span'); n.className='n alarm'; tab.appendChild(n); } n.textContent=r.n_open; n.className='n alarm'; } else if(n) n.remove(); }
+  syncNav();
   document.title=(r.can_process && r.n_open>0?`(${r.n_open}) `:'')+document.title.replace(/^\(\d+\) /,'');
   /* 처리 담당자 카드 */
   const card=$('reqCard'); if(card){ card.classList.toggle('hidden', !r.can_process);
