@@ -2788,6 +2788,7 @@ async function handleNewConsultNotification(newConsult){
   if(newConsult.handler && newConsult.handler !== ME) {
     const msg=`새 문의 — ${who}`;
     alertBanner(msg);
+    playAlertSound();
     notify('새 상담이 등록되었습니다', msg);
     try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
     /* 메인 데이터 새로고침 (20초 대기하지 않고 즉시) */
@@ -2797,6 +2798,7 @@ async function handleNewConsultNotification(newConsult){
     if(STATUS&&STATUS.is_mgr) {
       const msg=`새 문의 (미배정) — ${who}`;
       alertBanner(msg);
+      playAlertSound();
       notify('미배정 상담이 들어왔습니다', msg);
       try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
       loadRequests().then(()=>{ render(); if($('allCard')&&!$('allCard').classList.contains('hidden')) loadAllConsults(); }).catch(()=>{});
@@ -2835,6 +2837,31 @@ style.textContent=`
   }
 `;
 document.head.appendChild(style);
+
+/* ═══ 알림음 (띠리리링) ═══ */
+function playAlertSound(){
+  try{
+    const audioContext=new (window.AudioContext||window.webkitAudioContext)();
+    const now=audioContext.currentTime;
+
+    /* 4번 반복: 띠-띠-띠-띠 */
+    for(let i=0;i<4;i++){
+      const osc=audioContext.createOscillator();
+      const gain=audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+
+      const startTime=now+(i*0.15);
+      osc.frequency.value=1200; /* 1200Hz 톤 */
+      osc.type='sine';
+      gain.gain.setValueAtTime(0.25, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime+0.12);
+
+      osc.start(startTime);
+      osc.stop(startTime+0.12);
+    }
+  }catch(e){}
+}
 
 function stopRealtimeSubscription(){
   if(REALTIME_SUB) {
