@@ -509,7 +509,24 @@ td.wrap{white-space:normal;max-width:320px}
 .tag.진행중{background:var(--navy-soft);color:var(--navy)} .tag.보류{background:#FFF4D6;color:#8A6300} .tag.구매완료{background:var(--teal-soft);color:var(--teal)} .tag.종료{background:var(--surface-3);color:var(--muted)}
 .tag.y{background:var(--teal-soft);color:var(--teal)} .tag.n{background:var(--surface-3);color:var(--faint)} .tag.ok{background:var(--teal-soft);color:var(--teal)} .tag.bad{background:#FBE9E7;color:#B3261E}
 .pager{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--muted)}
-.pager .btns{display:flex;gap:4px}
+.pager .btns{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.pager .pgn{min-width:30px;padding:5px 8px}
+.poolrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:46px;padding:10px 12px;
+  border:1px dashed var(--line-2);border-radius:var(--r);background:var(--surface-2)}
+.pchip{display:inline-flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--line-2);
+  border-radius:999px;padding:3px 4px 3px 4px;font-size:13px;box-shadow:var(--shadow)}
+.pchip .no{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:11px;font-weight:700;margin-right:4px}
+.pchip .nm{font-weight:600;color:var(--ink);padding:0 6px 0 0}
+.pchip .off{color:var(--muted);font-weight:400}
+.pchip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;line-height:1;
+  padding:4px 5px;border-radius:6px;font-family:inherit}
+.pchip button:hover{background:var(--surface-3);color:var(--ink)}
+.pchip button.x:hover{background:var(--bad-soft);color:var(--bad)}
+.pchip button[disabled]{opacity:.25;pointer-events:none}
+.pager .pgdots{color:var(--faint);padding:0 2px}
+.pager select.pgper{padding:5px 22px 5px 8px;font-size:12px;height:auto;margin-right:4px}
+.pager .btn[disabled]{opacity:.35;pointer-events:none}
 
 /* ── 컨트롤 ── */
 .in{padding:8px 11px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;outline:none;font-size:13px;transition:.12s;height:36px}
@@ -916,7 +933,7 @@ select.segd{display:none!important}
           </div>
           <div class="qsum" id="mvSum"></div>
           <div class="tw"><table><thead><tr><th>일시</th><th>구분</th><th>품목</th><th>창고</th><th class="num">수량</th><th class="num">단가</th><th>참조</th><th>메모</th><th>담당</th><th></th></tr></thead><tbody id="tbMoves"></tbody></table></div>
-          <div class="pager"><span id="mvCount"></span><div class="btns"><button class="btn sm ghost" onclick="loadMoves(mvPage-1)">‹ 이전</button><button class="btn sm ghost" onclick="loadMoves(mvPage+1)">다음 ›</button></div></div>
+          <div class="pager"><span id="mvCount"></span><div class="btns" id="mvPg"></div></div>
         </div>
       </div>
 
@@ -943,7 +960,7 @@ select.segd{display:none!important}
             <button class="btn" onclick="openItemModal()">+ 품목 추가</button>
           </div>
           <div class="tw"><table><thead><tr><th>품목코드</th><th>상품명</th><th>모델</th><th>규격</th><th>단위</th><th>분류</th><th>유형</th><th>재고관리</th><th class="num">안전재고</th><th class="num">매입가</th><th>바코드</th><th></th></tr></thead><tbody id="tbItems"></tbody></table></div>
-          <div class="pager"><span id="itCount"></span><div class="btns"><button class="btn sm ghost" onclick="loadItems(itPage-1)">‹ 이전</button><button class="btn sm ghost" onclick="loadItems(itPage+1)">다음 ›</button></div></div>
+          <div class="pager"><span id="itCount"></span><div class="btns" id="itPg"></div></div>
         </div>
       </div>
 
@@ -1051,7 +1068,7 @@ select.segd{display:none!important}
           <div class="qsum" id="oSum"></div>
           <div class="qmeta" id="oMeta"></div>
           <div class="tw"><table><thead><tr><th>주문일</th><th>구분</th><th>채널</th><th>고객</th><th>연락처</th><th>상품</th><th class="num">수량</th><th class="num">매출</th><th class="num">환불</th><th class="num">순매출</th><th>담당</th><th>상태</th><th></th></tr></thead><tbody id="tbOrders"></tbody></table></div>
-          <div class="pager"><span id="oCount"></span><div class="btns"><button class="btn sm ghost" onclick="loadOrders(0)">« 처음</button><button class="btn sm ghost" onclick="loadOrders(oPage-1)">‹ 이전</button><input class="in" id="oPageIn" type="number" min="1" value="1" style="width:70px;text-align:center;padding:6px 8px" title="쪽 번호를 입력하고 Enter" onkeydown="if(event.key==='Enter')loadOrders(Math.max(0,Number(this.value||1)-1))"><span class="note" id="oPageOf" style="margin:0 4px 0 2px"></span><button class="btn sm ghost" onclick="loadOrders(oPage+1)">다음 ›</button><button class="btn sm ghost" onclick="loadOrders(oLast)">끝 »</button></div></div>
+          <div class="pager"><span id="oCount"></span><div class="btns" id="oPg"></div></div>
         </div>
       </div>
 
@@ -1128,7 +1145,7 @@ select.segd{display:none!important}
             <th>관심 · 상품</th><th style="width:120px">목적</th><th style="width:130px">지역</th>
             <th>메모</th><th style="width:74px">담당</th><th style="width:78px">상태</th><th style="width:150px"></th>
           </tr></thead><tbody id="tbInquiry"></tbody></table></div>
-          <div class="pager"><button class="btn sm ghost" onclick="loadInquiry(iqPage-1)">‹ 이전</button><span id="iqCount"></span><button class="btn sm ghost" onclick="loadInquiry(iqPage+1)">다음 ›</button></div>
+          <div class="pager"><span id="iqCount"></span><div class="btns" id="iqPg"></div></div>
         </div>
         <div class="card" id="wiCard">
           <h3>홈페이지 문의 <span>고도몰 홈페이지 <b>개인·사업자 가전 견적</b> 게시판 — 구독 문의와 따로 셉니다</span>
@@ -1152,7 +1169,7 @@ select.segd{display:none!important}
             <th style="width:130px">이름</th><th style="width:140px">연락처</th><th>이메일</th>
             <th style="width:110px">담당자</th><th style="width:80px">상담상태</th><th style="width:90px">견적결과</th>
           </tr></thead><tbody id="tbWebInq"></tbody></table></div>
-          <div class="pager"><button class="btn sm ghost" onclick="loadWebInq(wiPage-1)">‹ 이전</button><span id="wiCount"></span><button class="btn sm ghost" onclick="loadWebInq(wiPage+1)">다음 ›</button></div>
+          <div class="pager"><span id="wiCount"></span><div class="btns" id="wiPg"></div></div>
         </div>
         <details class="foldcard"><summary>매장 방문 통계 <span class="note">키오스크·태블릿 방문 접수 기준</span></summary>
         <div class="card" id="visitCard">
@@ -1202,7 +1219,7 @@ select.segd{display:none!important}
           <div id="cChips" class="legend" style="margin:-4px 0 10px"></div>
           <div class="tw"><table><thead><tr><th>상담일</th><th>번호</th><th>고객</th><th>연락처</th><th>관심</th><th>유입경로</th><th>상담사</th><th class="num">예상금액</th><th>예정일</th><th>콜백</th><th>결과</th><th>내용</th><th></th></tr></thead><tbody id="tbConsults"></tbody></table></div>
           <p class="note" style="margin-top:8px"><b>숨기기</b>는 테스트로 넣은 건을 치울 때 씁니다 — 담당자 화면(콜백·진행중 상담·내 고객)과 모든 통계에서 빠지고, 여기 "숨긴 건" 필터로만 보입니다. 되살리기도 됩니다.</p>
-          <div class="pager"><span id="cCount"></span><div class="btns"><button class="btn sm ghost" onclick="loadConsults(cPage-1)">‹ 이전</button><button class="btn sm ghost" onclick="loadConsults(cPage+1)">다음 ›</button></div></div>
+          <div class="pager"><span id="cCount"></span><div class="btns" id="cPg"></div></div>
         </div>
         <div class="card">
           <h3>구독 견적서 발행 <span class="sub" id="qtCount"></span><div class="actions"><span class="note">홈페이지 견적서 페이지에서 발행된 견적 · 검색어는 위 검색창과 공유</span></div></h3>
@@ -1233,9 +1250,7 @@ select.segd{display:none!important}
             <label class="switch" id="cuUnmask" onclick="this.classList.toggle('on');loadCustomers(0)"><span class="sw"></span>실명·실번호</label>
           </div>
           <div class="tw"><table><thead><tr><th>고객</th><th>연락처</th><th>유입·구매 채널</th><th class="num">구매</th><th class="num">누적 순매출</th><th>최근 구매</th><th>최근 상품</th><th>수신</th></tr></thead><tbody id="tbCust"></tbody></table></div>
-          <div class="pager"><span id="cuCount"></span><div class="btns">
-            <button class="btn sm ghost" onclick="loadCustomers(cuPage-1)">‹ 이전</button>
-            <button class="btn sm ghost" onclick="loadCustomers(cuPage+1)">다음 ›</button></div></div>
+          <div class="pager"><span id="cuCount"></span><div class="btns" id="cuPg"></div></div>
         </div>
       </div>
 
@@ -1285,9 +1300,7 @@ select.segd{display:none!important}
           </div>
           <div id="crmChips" class="legend" style="margin:-4px 0 10px"></div>
           <div class="tw"><table><thead><tr><th>고객</th><th>연락처</th><th>지역</th><th>채널</th><th class="num">구매</th><th class="num">누적</th><th>최근 구매</th><th>최근 상품</th><th>관심 상품</th><th>담당</th><th>최근 발송</th></tr></thead><tbody id="tbTargets"></tbody></table></div>
-          <div class="pager"><span id="tgCount">아직 추출하지 않았습니다</span><div class="btns">
-            <button class="btn sm ghost" onclick="loadTargets(tgPage-1)">‹ 이전</button>
-            <button class="btn sm ghost" onclick="loadTargets(tgPage+1)">다음 ›</button></div></div>
+          <div class="pager"><span id="tgCount">아직 추출하지 않았습니다</span><div class="btns" id="tgPg"></div></div>
           <textarea class="copybox hidden" id="targetsCsv"></textarea>
         </div>
       </div>
@@ -1382,9 +1395,7 @@ select.segd{display:none!important}
             <button class="btn ghost" onclick="exportLog()">CSV 내려받기</button>
           </div>
           <div class="tw"><table><thead><tr><th>시각</th><th>유형</th><th>상태·구분</th><th>내용</th><th class="num">건수·금액</th><th class="num">부가</th><th>수행자</th><th>비고</th></tr></thead><tbody id="tbLog"></tbody></table></div>
-          <div class="pager"><span id="lgCount"></span><div class="btns">
-            <button class="btn sm ghost" onclick="loadLog(lgPage-1)">‹ 이전</button>
-            <button class="btn sm ghost" onclick="loadLog(lgPage+1)">다음 ›</button></div></div>
+          <div class="pager"><span id="lgCount"></span><div class="btns" id="lgPg"></div></div>
         </div>
       </div>
 
@@ -1443,7 +1454,7 @@ select.segd{display:none!important}
             <button class="btn" onclick="sendOq()">대기 건 이카운트로 전송</button>
           </div>
           <div class="tw"><table><thead><tr><th>등록</th><th>출처</th><th>일자</th><th>채널 · 주문번호</th><th>거래처</th><th>창고</th><th class="num">수량</th><th class="num">금액</th><th>상태</th><th>담당</th><th></th></tr></thead><tbody id="tbOq"></tbody></table></div>
-          <div class="pager"><button class="btn sm ghost" onclick="loadOq(oqPage-1)">이전</button><span id="oqCount"></span><button class="btn sm ghost" onclick="loadOq(oqPage+1)">다음</button></div>
+          <div class="pager"><span id="oqCount"></span><div class="btns" id="oqPg"></div></div>
         </div>
       </div>
 
@@ -1526,17 +1537,24 @@ select.segd{display:none!important}
 
       <div class="view hidden" id="v-settings">
         <div class="card" id="poolCard">
-          <h3>문의 자동 배정 <span>고객센터 폼과 방문 접수가 들어오면 <b>여기 담당자에게 순번대로</b> 배정됩니다. 접수 종류별로 따로 정할 수 있고, 비워 두면 기본 순번을 씁니다</span>
+          <h3>문의 자동 배정 <span>고객센터 폼·방문 접수가 들어오면 <b>여기 담당자에게 순번대로</b> 배정됩니다. 찾는 순서는 <b>관심 품목 → 접수 종류 → 기본</b>이라, 품목 규칙이 있으면 그 사람이 먼저 받습니다</span>
             <span style="margin-left:auto"><button class="btn sm ghost" onclick="loadPool()">새로고침</button></span></h3>
           <div class="filters">
-            <span class="lb">접수 종류</span>
-            <select class="in" id="poolScope" onchange="renderPool()"></select>
+            <span class="lb">규칙 대상</span>
+            <select class="in" id="poolScope" data-noseg="1" onchange="renderPool()" style="min-width:250px"></select>
             <span class="note" id="poolState"></span>
+            <span style="flex:1"></span>
+            <button class="btn sm" onclick="savePool()">이 규칙 저장</button>
           </div>
-          <div class="chips" id="poolChips" style="margin-bottom:10px"></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <button class="btn sm" onclick="savePool()">이 종류 배정 저장</button>
-            <span class="note">이름을 눌러 켜고 끕니다 · 왼쪽부터 순서대로 배정</span>
+          <div class="poolrow" id="poolOrder" style="margin:10px 0"></div>
+          <div class="filters">
+            <span class="lb">담당자 넣기</span>
+            <select class="in" id="poolAdd" data-noseg="1" style="min-width:150px"></select>
+            <button class="btn sm ghost" onclick="poolAddSel()">+ 넣기</button>
+            <input class="in" id="poolNew" placeholder="목록에 없는 이름" style="width:170px"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();poolAddNew()}">
+            <button class="btn sm ghost" onclick="poolAddNew()">+ 직접 입력</button>
+            <span class="note">‹ › 로 순서를 바꾸고 ✕ 로 뺍니다 · 왼쪽부터 차례로 배정됩니다</span>
           </div>
         </div>
         <div class="grid g32">
@@ -1650,6 +1668,29 @@ const C = {매장:'var(--c1)',직판:'var(--c4)',자사몰:'var(--c3)',오픈마
 
 /* ═══════════════ 유틸 ═══════════════ */
 const $ = id => document.getElementById(id);
+
+/* ═══ 공통 숫자 페이징 ═══
+   한 쪽 행 수는 기본 10행, 최대 100행. 목록마다 따로 기억한다(브라우저에 저장).
+   loader 안에서 : $('xxPg').innerHTML = pgBar('키', 현재쪽, 전체건수, 'loadXxx') */
+const PG_DEF=10, PG_OPTS=[10,20,50,100];
+let PG={}; try{ PG=JSON.parse(localStorage.getItem('dc_pg')||'{}')||{}; }catch(e){ PG={}; }
+function pgSize(key){ const v=Number(PG[key]); return PG_OPTS.indexOf(v)>=0 ? v : PG_DEF; }
+function pgSet(key,v,go){ PG[key]=Number(v)||PG_DEF; try{ localStorage.setItem('dc_pg',JSON.stringify(PG)); }catch(e){} if(typeof go==='function') go(0); }
+function pgBar(key,page,total,go){
+  const per=pgSize(key), last=Math.max(0,Math.ceil((Number(total)||0)/per)-1); page=Math.max(0,Math.min(page,last));
+  const nums=[], add=p=>{ if(p>=0&&p<=last&&nums.indexOf(p)<0) nums.push(p); };
+  add(0); for(let p=page-2;p<=page+2;p++) add(p); add(last); nums.sort((a,b)=>a-b);
+  let h=`<select class="in pgper" data-noseg="1" title="한 쪽에 보일 행 수" onchange="pgSet('${key}',this.value,${go})">`
+      + PG_OPTS.map(v=>`<option value="${v}"${v===per?' selected':''}>${v}행</option>`).join('') + '</select>'
+      + `<button class="btn sm ghost" ${page<=0?'disabled':''} onclick="${go}(0)" title="처음">«</button>`
+      + `<button class="btn sm ghost" ${page<=0?'disabled':''} onclick="${go}(${page-1})" title="이전">‹</button>`;
+  let prev=-1;
+  nums.forEach(p=>{ if(prev>=0&&p-prev>1) h+='<span class="pgdots">…</span>';
+    h+=`<button class="btn sm pgn ${p===page?'':'ghost'}" onclick="${go}(${p})">${p+1}</button>`; prev=p; });
+  h+=`<button class="btn sm ghost" ${page>=last?'disabled':''} onclick="${go}(${page+1})" title="다음">›</button>`
+   + `<button class="btn sm ghost" ${page>=last?'disabled':''} onclick="${go}(${last})" title="끝">»</button>`;
+  return h;
+}
 const won = v => Math.round(Number(v)||0).toLocaleString('ko-KR') + '원';
 const wonK = v => { v=Number(v)||0; const a=Math.abs(v); return a>=1e8 ? (v/1e8).toFixed(2).replace(/\.?0+$/,'')+'억원' : a>=1e4 ? Math.round(v/1e4).toLocaleString('ko-KR')+'만원' : won(v); };
 const n = v => Math.round(Number(v)||0).toLocaleString('ko-KR');
@@ -1851,9 +1892,11 @@ async function excludeItem(code, exc){
 let mvPage=0;
 async function loadMoves(page){
   await ensureWh(); mvPage=Math.max(0,page);
-  let d; try{ d=await rpc('fn_inv_movements',{p_from:P.from,p_to:P.to,p_kind:$('mvKind').value||null,p_warehouse:$('mvWh').value||null,p_q:$('mvQ').value||null,p_limit:100,p_offset:mvPage*100}); }catch(e){ return toast(e.message,'bad'); }
+  let d; try{ d=await rpc('fn_inv_movements',{p_from:P.from,p_to:P.to,p_kind:$('mvKind').value||null,p_warehouse:$('mvWh').value||null,p_q:$('mvQ').value||null,p_limit:pgSize('moves'),p_offset:mvPage*pgSize('moves')}); }catch(e){ return toast(e.message,'bad'); }
   $('mvSum').innerHTML=[qcard('건수', n(d.total||0), '건'), qcard('입고', n(d.sum_in||0), '', 'ok'), qcard('출고', n(d.sum_out||0), '', 'bad'), qcard('창고이동', n(d.sum_move||0)), qcard('재고조정', n(d.sum_adjust||0))].join('');
-  const rows=d.rows||[]; $('mvCount').textContent=`총 ${n(d.total||0)}건 · ${d.total?mvPage*100+1:0}~${Math.min(d.total||0,(mvPage+1)*100)}`;
+  const rows=d.rows||[]; const mvPer=pgSize('moves');
+  $('mvCount').textContent=`총 ${n(d.total||0)}건 · ${d.total?mvPage*mvPer+1:0}~${Math.min(d.total||0,(mvPage+1)*mvPer)}`;
+  $('mvPg').innerHTML=pgBar('moves',mvPage,d.total||0,'loadMoves');
   $('tbMoves').innerHTML=rows.map(r=>`<tr><td class="mono">${esc(r.at)}</td><td><span class="kind ${r.kind}">${KIND_NM[r.kind]||r.kind}</span></td><td><b>${esc(r.item_name)}</b><div class="mono" style="font-size:10.5px;color:var(--faint)">${esc(r.item_code)}${r.model?' · '+esc(r.model):''}</div></td><td style="font-size:12.5px">${esc(r.wh_name||r.wh)}${r.kind==='move'?` → ${esc(r.to_wh_name||r.to_wh||'')}`:''}</td><td class="num"><b>${n(r.qty)}</b></td><td class="num">${r.unit_cost?n(r.unit_cost):''}</td><td style="font-size:12px">${esc(r.ref_type||'')}${r.ref_no?' '+esc(r.ref_no):''}</td><td class="wrap" style="font-size:12px;color:var(--ink-2)">${esc(r.note||'')}</td><td>${esc(r.by||'')}</td><td>${ME&&ME.role==='admin'?`<button class="btn sm danger" onclick="delMove(${r.id})">삭제</button>`:''}</td></tr>`).join('')||'<tr><td colspan="10" class="note" style="text-align:center;padding:24px">이 기간에 입출고가 없습니다</td></tr>';
 }
 async function delMove(id){ const ok=await modal({title:'입출고 삭제', danger:true, ok:'삭제', html:'이 건을 삭제하면 현재고가 다시 계산됩니다. 계속할까요?'}); if(!ok) return;
@@ -1861,8 +1904,9 @@ async function delMove(id){ const ok=await modal({title:'입출고 삭제', dang
 let itPage=0;
 async function loadItems(page){
   itPage=Math.max(0,page); const a=$('itActive').value;
-  let d; try{ d=await rpc('fn_inv_items',{p_q:$('itQ').value||null,p_active:a===''?null:a==='true',p_limit:300,p_offset:itPage*300}); }catch(e){ return toast(e.message,'bad'); }
+  let d; try{ d=await rpc('fn_inv_items',{p_q:$('itQ').value||null,p_active:a===''?null:a==='true',p_limit:pgSize('items'),p_offset:itPage*pgSize('items')}); }catch(e){ return toast(e.message,'bad'); }
   ITEMS_CACHE=d.rows||[]; $('itCount').textContent=`총 ${n(d.total||0)}품목`;
+  $('itPg').innerHTML=pgBar('items',itPage,d.total||0,'loadItems');
   const TYPE={'1':'상품','2':'제품','3':'원재료','7':'기타'};
   $('tbItems').innerHTML=ITEMS_CACHE.map(r=>`<tr class="${r.active?'':'off'}"><td class="mono">${esc(r.code)}</td><td><b>${esc(r.name)}</b></td><td class="mono" style="font-size:12px">${esc(r.model||'')}</td><td style="font-size:12px">${esc(r.spec||'')}</td><td>${esc(r.unit||'')}</td><td style="font-size:12px">${esc(r.category||'')}</td><td style="font-size:12px">${TYPE[r.item_type]||esc(r.item_type||'')}</td><td>${r.track?'<span class="tag y">관리</span>':'<span class="tag n">제외</span>'}</td><td class="num">${r.safety_qty?n(r.safety_qty):''}</td><td class="num">${r.cost?n(r.cost):''}</td><td class="mono" style="font-size:11.5px">${esc(r.barcode||'')}</td><td style="white-space:nowrap"><button class="btn sm ghost" onclick='openItemModal(${JSON.stringify(r).replace(/'/g,"&#39;")})'>편집</button> <button class="btn sm ghost" style="color:${r.no_stock?'var(--warn)':'var(--muted)'}" title="직배송처럼 우리 창고를 거치지 않는 품목. 주문서에는 들어가지만 재고는 빠지지 않습니다" onclick="setNoStock('${esc(r.code)}',${r.no_stock?'false':'true'})">${r.no_stock?'재고 미차감 ✓':'재고 미차감'}</button></td></tr>`).join('')||'<tr><td colspan="12" class="note" style="text-align:center;padding:24px">품목이 없습니다</td></tr>';
   if($('tbSets') && !SETS_LOADED) loadSets();
@@ -2036,32 +2080,58 @@ let POOL=null;
 async function loadPool(){
   try{ POOL=await rpc('fn_assign_pool',{}); }catch(e){ return toast(e.message,'bad'); }
   const sel=$('poolScope'), cur=sel.value;
-  sel.innerHTML=(POOL.scopes||[]).map(sc=>`<option value="${esc(sc)}"${sc===cur?' selected':''}>${sc==='default'?'기본 (종류별 설정 없을 때)':esc(sc)}</option>`).join('');
+  const has=new Set((POOL.rows||[]).filter(r=>r.active).map(r=>r.scope));
+  const opt=(v,label)=>`<option value="${esc(v)}"${v===cur?' selected':''}>${has.has(v)?'● ':''}${esc(label)}</option>`;
+  sel.innerHTML='<optgroup label="접수 종류">'
+    + (POOL.scopes||[]).map(sc=>opt(sc, sc==='default'?'기본 — 아래 규칙이 없을 때':sc)).join('')
+    + '</optgroup><optgroup label="관심 품목 — 폼에서 고른 값">'
+    + (POOL.items||[]).map(it=>opt('item:'+it, it)).join('') + '</optgroup>';
+  if(!sel.value) sel.value='default';
   renderPool();
 }
 function poolNames(scope){ return (POOL.rows||[]).filter(r=>r.scope===scope&&r.active).sort((a,b)=>a.sort-b.sort).map(r=>r.name); }
-function renderPool(){
-  if(!POOL) return;
-  const sc=$('poolScope').value||'default';
-  const on=poolNames(sc), all=POOL.staff||[];
-  const st=(POOL.state||[]).find(x=>x.scope===sc);
-  $('poolState').textContent = on.length
-    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'}`
-    : (sc==='default'?'기본 풀이 비어 있습니다 — 아무도 배정되지 않습니다':'설정 없음 → 기본 순번을 씁니다');
-  $('poolChips').innerHTML=all.map(nm=>{ const i=on.indexOf(nm);
-    return `<span class="chip${i>=0?' on':''}" onclick="poolToggle('${esc(nm)}')">${i>=0?`<b>${i+1}</b> `:''}${esc(nm)}</span>`; }).join('');
-}
-function poolToggle(name){
-  const sc=$('poolScope').value||'default';
-  const on=poolNames(sc); const i=on.indexOf(name);
-  if(i>=0) on.splice(i,1); else on.push(name);
-  POOL.rows=(POOL.rows||[]).filter(r=>r.scope!==sc).concat(on.map((nm,ix)=>({scope:sc,name:nm,sort:(ix+1)*10,active:true})));
+function poolScope(){ return $('poolScope').value||'default'; }
+function poolSet(names){
+  const sc=poolScope();
+  POOL.rows=(POOL.rows||[]).filter(r=>r.scope!==sc)
+    .concat(names.map((nm,ix)=>({scope:sc,name:nm,sort:(ix+1)*10,active:true,
+      staff_active:(POOL.staff||[]).indexOf(nm)>=0})));
   renderPool();
 }
+function renderPool(){
+  if(!POOL) return;
+  const sc=poolScope(), on=poolNames(sc), all=POOL.staff||[];
+  const st=(POOL.state||[]).find(x=>x.scope===sc);
+  const isItem=sc.indexOf('item:')===0;
+  $('poolState').textContent = on.length
+    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'}`
+    : (sc==='default' ? '기본 순번이 비어 있습니다 — 아무도 배정되지 않습니다'
+       : isItem ? '이 품목 규칙 없음 → 접수 종류나 기본 순번을 씁니다'
+                : '이 종류 규칙 없음 → 기본 순번을 씁니다');
+  $('poolOrder').innerHTML = on.length ? on.map((nm,i)=>{
+    const gone=all.indexOf(nm)<0;
+    return `<span class="pchip"><span class="no">${i+1}</span><span class="nm${gone?' off':''}" ${gone?'title="담당자 목록에 없거나 비활성입니다 — 순번에서 건너뜁니다"':''}>${esc(nm)}${gone?' ⚠':''}</span>`
+      + `<button onclick="poolMove(${i},-1)" ${i===0?'disabled':''} title="앞으로">‹</button>`
+      + `<button onclick="poolMove(${i},1)" ${i===on.length-1?'disabled':''} title="뒤로">›</button>`
+      + `<button class="x" onclick="poolDrop(${i})" title="빼기">✕</button></span>`;
+  }).join('') : '<span class="note">아직 아무도 없습니다 — 아래에서 담당자를 넣어 주세요</span>';
+  const rest=all.filter(nm=>on.indexOf(nm)<0);
+  $('poolAdd').innerHTML = rest.length ? rest.map(nm=>`<option>${esc(nm)}</option>`).join('')
+                                       : '<option value="">모두 넣었습니다</option>';
+}
+function poolMove(i,d){ const on=poolNames(poolScope()); const j=i+d; if(j<0||j>=on.length) return;
+  const t=on[i]; on[i]=on[j]; on[j]=t; poolSet(on); }
+function poolDrop(i){ const on=poolNames(poolScope()); on.splice(i,1); poolSet(on); }
+function poolPush(nm){ nm=(nm||'').trim(); if(!nm) return;
+  const on=poolNames(poolScope()); if(on.indexOf(nm)>=0) return toast('이미 들어 있습니다','bad');
+  on.push(nm); poolSet(on); }
+function poolAddSel(){ poolPush($('poolAdd').value); }
+function poolAddNew(){ const el=$('poolNew'); poolPush(el.value); el.value=''; el.focus(); }
 async function savePool(){
-  const sc=$('poolScope').value||'default';
-  try{ const r=await rpc('fn_assign_pool_save',{p_scope:sc,p_names:poolNames(sc)});
-    toast(`${sc==='default'?'기본':sc} 배정 ${r.n}명 저장`,'ok'); loadPool(); }
+  const sc=poolScope(), names=poolNames(sc);
+  const label = sc==='default' ? '기본' : sc.indexOf('item:')===0 ? sc.slice(5) : sc;
+  try{ const r=await rpc('fn_assign_pool_save',{p_scope:sc,p_names:names});
+    toast(names.length?`${label} 배정 ${r.n}명 저장`:`${label} 규칙을 지웠습니다`,'ok'); loadPool(); }
   catch(e){ toast(e.message,'bad'); }
 }
 
@@ -2095,12 +2165,13 @@ async function flowTestAuto(){ if(!confirm('규칙(담당 test · 고객명/상�
   try{ const r=await rpc('fn_order_test_auto',{p_from:null}); toast(`${r.marked}줄 테스트로 표시`,'ok'); loadFlow(); }catch(e){ toast(e.message,'bad'); } }
 
 /* ═══════════════ 홈페이지 문의 (고도몰 견적 게시판) ═══════════════ */
-let wiPage=0, WI_PAGE=100, WI_ROWS=[];
+let wiPage=0, WI_ROWS=[];
+const WI_PAGE=()=>pgSize('webinq');
 async function loadWebInq(page){
   wiPage=Math.max(0,page||0);
   let d; try{ d=await rpc('fn_web_inquiries',{p_from:P.from,p_to:P.to,p_q:$('wiQ').value.trim()||null,
       p_kind:$('wiKind').value||null,p_status:$('wiStatus').value||null,p_handler:$('wiHandler').value||null,
-      p_limit:WI_PAGE,p_offset:wiPage*WI_PAGE}); }
+      p_limit:WI_PAGE(),p_offset:wiPage*WI_PAGE()}); }
   catch(e){ $('tbWebInq').innerHTML=`<tr><td colspan="9" class="note">${esc(e.message)}</td></tr>`; return; }
   WI_ROWS=d.rows||[]; const S=d.summary||{};
   $('wiSum').innerHTML=[['문의',d.total,'기간 안 전체'],['개인',S.personal,''],['사업자',S.biz,''],
@@ -2119,8 +2190,9 @@ async function loadWebInq(page){
       <td>${esc(r.handler||'미배정')}</td><td>${esc(r.status||'—')}</td>
       <td>${rs[1]?`<span class="tag ${rs[1]}">${rs[0]}</span>`:`<span class="note">${esc(rs[0])}</span>`}</td></tr>`;}).join('')
     : '<tr><td colspan="9" class="note">이 기간에 홈페이지 문의가 없습니다. [붙여넣기로 등록]으로 넣어 주세요.</td></tr>';
-  const from=d.total?wiPage*WI_PAGE+1:0, to=Math.min((wiPage+1)*WI_PAGE, d.total);
+  const from=d.total?wiPage*WI_PAGE()+1:0, to=Math.min((wiPage+1)*WI_PAGE(), d.total);
   $('wiCount').textContent=`${n(from)}–${n(to)} / ${n(d.total)}건`;
+  $('wiPg').innerHTML=pgBar('webinq',wiPage,d.total||0,'loadWebInq');
 }
 /* 붙여넣기 : 고도몰 목록을 그대로 — 앞뒤 빈 칸·[관리] 열이 있어도 되고, 유형 열은 있으면 쓴다 */
 function wiParse(text){
@@ -2179,7 +2251,7 @@ const IQ_TONE={quote:'a',subscribe:'b',supply:'c',b2b:'d',store:'n'};
 async function loadInquiry(page){
   iqPage=Math.max(0,page||0);
   const usePeriod=true;
-  const args={p_form:IQ_FORM||null,p_q:$('iqQ').value.trim()||null,p_limit:50,p_offset:iqPage*50,
+  const args={p_form:IQ_FORM||null,p_q:$('iqQ').value.trim()||null,p_limit:pgSize('inquiry'),p_offset:iqPage*pgSize('inquiry'),
               p_unmask:$('iqUnmask').classList.contains('on'), p_show:IQ_SHOW,
               p_from:usePeriod?P.from:null,p_to:usePeriod?P.to:null};
   let d; try{ d=await rpc('fn_inquiry_list',args); }catch(e){ return toast(e.message,'bad'); }
@@ -2192,8 +2264,9 @@ async function loadInquiry(page){
     const k=b.dataset.s, v=k==='all'?((cc.real||0)+(cc.test||0)+(cc.hidden||0)):cc[k];
     b.textContent={real:'실제',test:'테스트',hidden:'삭제됨',all:'전체'}[k] + (v!=null?' '+n(v):''); });
   $('iqMeta').innerHTML=(d.forms||[]).map(f=>`<span class="tag ${IQ_TONE[f.code]||''}">${esc(f.label)} ${n(bf[f.code]||0)}</span>`).join(' ');
-  const LIM=d.limit||25;
+  const LIM=pgSize('inquiry');
   $('iqCount').textContent=`총 ${n(d.total||0)}건 · ${d.total?iqPage*LIM+1:0}~${Math.min(d.total||0,(iqPage+1)*LIM)}`;
+  $('iqPg').innerHTML=pgBar('inquiry',iqPage,d.total||0,'loadInquiry');
   const cell=(v,cls)=>`<td><span class="ell ${cls||''}" title="${esc(v||'')}">${esc(v||'')||'<span class="note">—</span>'}</span></td>`;
   $('tbInquiry').innerHTML=IQ_ROWS.map((r,i)=>`<tr${r.hidden?' style="opacity:.45"':''} onclick="if(!event.target.closest('button,a'))openInquiry(${i})">
       <td><span class="mono" style="font-size:11.5px">${esc(r.at)}</span></td>
@@ -2297,7 +2370,7 @@ async function loadOqReq(){
 async function loadOq(page){
   oqPage=Math.max(0,page||0); if(!oqPage) loadOqReq();
   let d; try{ d=await rpc('fn_order_queue',{p_status:$('oqStatus').value||null,p_origin:$('oqOrigin').value||null,
-    p_q:$('oqQ').value.trim()||null,p_limit:50,p_offset:oqPage*50}); }catch(e){ return toast(e.message,'bad'); }
+    p_q:$('oqQ').value.trim()||null,p_limit:pgSize('oq'),p_offset:oqPage*pgSize('oq')}); }catch(e){ return toast(e.message,'bad'); }
   const sm=d.summary||{};
   $('oqSum').innerHTML=[qcard('전송 대기',n(sm.ready||0),'건',(sm.ready>0?'warn':''),'재고는 이미 차감됨'),
     qcard('전송 완료',n(sm.sent||0),'건','ok'), qcard('전송 실패',n(sm.failed||0),'건',(sm.failed>0?'bad':'')),
@@ -2308,7 +2381,9 @@ async function loadOq(page){
   const badge=$('badgeOq'); const wait=(sm.ready||0)+(sm.failed||0);
   if(badge){ badge.textContent=n(wait); badge.classList.toggle('hidden', !wait); }
   const rows=d.rows||[];
-  $('oqCount').textContent=`총 ${n(d.total||0)}건 · ${d.total?oqPage*50+1:0}~${Math.min(d.total||0,(oqPage+1)*50)}`;
+  const oqPer=pgSize('oq');
+  $('oqCount').textContent=`총 ${n(d.total||0)}건 · ${d.total?oqPage*oqPer+1:0}~${Math.min(d.total||0,(oqPage+1)*oqPer)}`;
+  $('oqPg').innerHTML=pgBar('oq',oqPage,d.total||0,'loadOq');
   $('tbOq').innerHTML=rows.map(r=>{ const st=OQ_ST[r.status]||[r.status,''];
     const lines=(r.lines||[]).map(l=>`${esc(l.code)} ×${n(l.qty)}`).join(', ');
     return `<tr>
@@ -4296,11 +4371,11 @@ async function loadOrders(page){
   if(!O_CH_FILLED){ O_CH_FILLED=true; $('oChName').innerHTML='<option value="">전체 채널</option>'+O_CH_NAMES.map(c=>`<option>${esc(c)}</option>`).join(''); }
   oPage=Math.max(0,page); const unmask=$('oUnmask').classList.contains('on');
   const a=orderArgs();
-  try{ oRows=await rpc('fn_order_list',Object.assign({},a,{p_limit:50,p_offset:oPage*50,p_unmask:unmask,p_sort:$('oSort').value})); }catch(e){ return toast(e.message,'bad'); }
-  const total=oRows[0]?.total_count||0;
-  oLast=Math.max(0,Math.ceil(total/50)-1);
-  $('oCount').textContent=`총 ${n(total)}행 · ${total?oPage*50+1:0}~${Math.min(total,(oPage+1)*50)}`;
-  if($('oPageIn')){ $('oPageIn').value=oPage+1; $('oPageIn').max=oLast+1; $('oPageOf').textContent=`/ ${n(oLast+1)}쪽`; }
+  try{ oRows=await rpc('fn_order_list',Object.assign({},a,{p_limit:pgSize('orders'),p_offset:oPage*pgSize('orders'),p_unmask:unmask,p_sort:$('oSort').value})); }catch(e){ return toast(e.message,'bad'); }
+  const total=oRows[0]?.total_count||0, oPer=pgSize('orders');
+  oLast=Math.max(0,Math.ceil(total/oPer)-1);
+  $('oCount').textContent=`총 ${n(total)}행 · ${total?oPage*oPer+1:0}~${Math.min(total,(oPage+1)*oPer)}`;
+  $('oPg').innerHTML=pgBar('orders',oPage,total,'loadOrders');
   $('tbOrders').innerHTML=oRows.map(o=>`<tr>
     <td class="mono">${dfmt(o.order_at)}</td><td><span class="tag ${o.channel_type}">${o.channel_type}</span></td><td>${esc(o.channel_name)}<div style="font-size:10.5px;color:var(--faint)" class="mono">${esc(o.order_no||'')}</div></td>
     <td><b>${esc(o.customer_name)}</b></td><td class="mono" style="color:${unmask?'var(--bad)':'var(--muted)'}">${esc(o.customer_phone||'-')}</td>
@@ -4409,10 +4484,12 @@ async function loadConsults(page){
     try{ const rt=await rpc('fn_consult_routes')||[]; $('cRoute').innerHTML='<option value="">전체 유입경로</option>'+rt.map(x=>`<option>${esc(x)}</option>`).join(''); }catch(e){}
   }
   cPage=Math.max(0,page); const unmask=$('cUnmask').classList.contains('on'); let rows;
-  try{ rows=await rpc('fn_consult_list',{p_from:P.from,p_to:P.to,p_result:$('cRes').value||null,p_q:$('cQ').value||null,p_limit:50,p_offset:cPage*50,p_unmask:unmask,p_handler:$('cHd').value||null,p_route:$('cRoute').value||null}); }catch(e){ return toast(e.message,'bad'); }
+  try{ rows=await rpc('fn_consult_list',{p_from:P.from,p_to:P.to,p_result:$('cRes').value||null,p_q:$('cQ').value||null,p_limit:pgSize('consults'),p_offset:cPage*pgSize('consults'),p_unmask:unmask,p_handler:$('cHd').value||null,p_route:$('cRoute').value||null}); }catch(e){ return toast(e.message,'bad'); }
   const total=rows[0]?.total_count||0;
   const sum=rows.reduce((a,c)=>a+(Number(c.expected_amount)||0),0);
-  $('cCount').textContent=`총 ${n(total)}건 · 이 페이지 예상금액 ${wonK(sum)} · ${total?cPage*50+1:0}–${cPage*50+rows.length}`;
+  const cPer=pgSize('consults');
+  $('cCount').textContent=`총 ${n(total)}건 · 이 페이지 예상금액 ${wonK(sum)} · ${total?cPage*cPer+1:0}–${cPage*cPer+rows.length}`;
+  $('cPg').innerHTML=pgBar('consults',cPage,total,'loadConsults');
   renderConsultChips(total);
   CONSULT_ROWS=rows; loadQuotes();
   if(cPage===0){ rpc('fn_consult_summary',{p_from:P.from,p_to:P.to,p_result:$('cRes').value||null,p_q:$('cQ').value||null,p_handler:$('cHd').value||null,p_route:$('cRoute').value||null}).then(renderConsultSummary).catch(()=>renderConsultSummary(null)); }
@@ -4481,11 +4558,13 @@ async function loadTargets(page){
   const p=tgParams();
   if(p.p_reason.length<3) return toast('캠페인명을 3자 이상 적어주세요 — 감사로그에 남습니다','bad');
   tgPage=Math.max(0,page||0);
-  let d; try{ d=await rpc('fn_crm_targets_v2',{...p,p_limit:50,p_offset:tgPage*50,p_export:false}); }
+  let d; try{ d=await rpc('fn_crm_targets_v2',{...p,p_limit:pgSize('targets'),p_offset:tgPage*pgSize('targets'),p_export:false}); }
   catch(e){ return toast(e.message,'bad'); }
   TG=d; tgFillOptions(d.options);
   const s=d.summary;
-  $('tgCount').textContent=`대상 ${n(d.total)}명 · 누적 구매 ${wonK(s.net_sum)} · ${d.total?tgPage*50+1:0}–${tgPage*50+d.rows.length}`;
+  const tgPer=pgSize('targets');
+  $('tgCount').textContent=`대상 ${n(d.total)}명 · 누적 구매 ${wonK(s.net_sum)} · ${d.total?tgPage*tgPer+1:0}–${tgPage*tgPer+d.rows.length}`;
+  $('tgPg').innerHTML=pgBar('targets',tgPage,d.total||0,'loadTargets');
   $('tgHint').textContent=`${n(d.total)}명 · 1인 평균 ${wonK(s.avg_net)} · 평균 ${s.avg_cnt}회 · 관심상품 ${n(s.with_next)} · 미발송 ${n(s.never_sent)}`;
   $('tgByCh').innerHTML=simpleBars((s.by_channel||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--navy)'})));
   $('tgByCat').innerHTML=simpleBars((s.by_category||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--teal)'})));
@@ -5000,13 +5079,15 @@ let lgPage=0, LOG=null;
 const EVT_LABEL={upload:'파일 적재',sync:'샵링커 수집',access:'열람·추출',store:'매장',submission:'고객 접수',consult:'상담'};
 async function loadLog(page){
   lgPage=Math.max(0,page||0);
-  let d; try{ d=await rpc('fn_activity_log',{p_type:$('lgType').value||null,p_from:P.from,p_to:P.to,p_q:$('lgQ').value.trim()||null,p_limit:50,p_offset:lgPage*50}); }
+  let d; try{ d=await rpc('fn_activity_log',{p_type:$('lgType').value||null,p_from:P.from,p_to:P.to,p_q:$('lgQ').value.trim()||null,p_limit:pgSize('log'),p_offset:lgPage*pgSize('log')}); }
   catch(e){ return toast(e.message,'bad'); }
   LOG=d; const lb=d.last_by_type||{}, bt=d.by_type||{};
   $('logKpis').innerHTML=[['upload','t1'],['sync','t3'],['store','t5'],['submission','t4'],['consult','t2'],['access','t6']].map(([k,c])=>`
     <div class="mk ${c}"><div class="t">${EVT_LABEL[k]}</div><div class="v">${n(bt[k]||0)}<small>건</small></div><div class="s">마지막 ${esc(lb[k]||'없음')}</div></div>`).join('')
     +`<div class="mk"><div class="t">오늘 전체</div><div class="v">${n(d.today)}<small>건</small></div><div class="s">${P.from} ~ ${P.to} 기간 ${n(d.total)}건</div></div>`;
-  $('lgCount').textContent=`${n(d.total)}건 · ${d.total?lgPage*50+1:0}–${lgPage*50+d.rows.length}`;
+  const lgPer=pgSize('log');
+  $('lgCount').textContent=`${n(d.total)}건 · ${d.total?lgPage*lgPer+1:0}–${lgPage*lgPer+d.rows.length}`;
+  $('lgPg').innerHTML=pgBar('log',lgPage,d.total||0,'loadLog');
   const stTag=s=>/ERROR|CUT|반려/.test(s)?'n':/OK|DONE|승인|구매완료/.test(s)?'y':'';
   $('tbLog').innerHTML=d.rows.map(r=>`<tr>
     <td class="mono" style="font-size:12px">${esc(r.at)}</td>
@@ -5096,11 +5177,13 @@ async function loadCustomers(page){
   cuPage=Math.max(0,page||0);
   if(!CUST){ try{ CUST=await rpc('fn_customer_stats'); renderCustStats(); }catch(e){} }
   const p={ p_q:$('cuQ').value.trim()||null, p_source:$('cuSrc').value||null, p_freq:$('cuFreq').value||null,
-    p_consent:$('cuConsent').value||null, p_sort:$('cuSort').value, p_limit:50, p_offset:cuPage*50,
+    p_consent:$('cuConsent').value||null, p_sort:$('cuSort').value, p_limit:pgSize('customers'), p_offset:cuPage*pgSize('customers'),
     p_unmask:$('cuUnmask').classList.contains('on') };
   let d; try{ d=await rpc('fn_customer_list',p); }
   catch(e){ $('tbCust').innerHTML=`<tr><td colspan="8" class="note">${esc(e.message)}</td></tr>`; return; }
-  $('cuCount').textContent=`${n(d.total)}명 · 누적 순매출 ${wonK(d.sum_net)} · ${cuPage*50+1}–${Math.min(d.total,cuPage*50+d.rows.length)}`;
+  const cuPer=pgSize('customers');
+  $('cuCount').textContent=`${n(d.total)}명 · 누적 순매출 ${wonK(d.sum_net)} · ${cuPage*cuPer+1}–${Math.min(d.total,cuPage*cuPer+d.rows.length)}`;
+  $('cuPg').innerHTML=pgBar('customers',cuPage,d.total||0,'loadCustomers');
   $('custHint').textContent=`${n(d.total)}명`;
   $('tbCust').innerHTML=d.rows.map(r=>`<tr>
     <td><b>${esc(r.name||'-')}</b>${r.biz?' <span class="tag n">사업자</span>':''}</td>

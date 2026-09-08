@@ -276,8 +276,11 @@ textarea.in{min-height:72px;resize:vertical;font-size:15px}
 .daterow .btn{flex:0 0 auto}
 .sk-tog{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);white-space:nowrap;flex:0 0 auto}
 .sk-tog input{width:16px;height:16px;accent-color:var(--brand,#2F5BEA)}
-.pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;font-size:12px;color:var(--muted)}
-.pager .btn[disabled]{opacity:.4}
+.pager{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--muted)}
+.pager .btn[disabled]{opacity:.35;pointer-events:none}
+.pager .pgn{min-width:30px;padding:6px 8px}
+.pager .pgdots{color:var(--muted);padding:0 2px}
+.pager select.pgper{padding:5px 8px;font-size:12px;border:1px solid var(--line-2);border-radius:8px;background:#fff;font-family:inherit;margin-right:4px}
 .item .ed{display:flex;gap:6px;margin-left:8px;flex:0 0 auto}
 .item .ed button{border:1px solid var(--line-2);background:#fff;border-radius:8px;font-size:11.5px;padding:5px 9px;color:var(--ink-2);font-family:inherit}
 .item .ed button.del{color:var(--bad);border-color:#F1C9C9}
@@ -645,7 +648,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="nextbox">
         <div class="nb-t">다음 구매 관심 <span class="hint">적으면 이 고객이 가망고객으로 이어집니다 (선택)</span></div>
         <div class="grid2">
-          <div class="f"><label>다음 구매 관심 제품</label><input class="in" id="s_next" placeholder="모델 · 제품명" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div>
+          <div class="f"><label>다음 구매 관심 제품</label><input class="in" id="s_next" placeholder="제품번호 · 제품명" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div>
           <div class="f"><label>다음 구매 예정일</label><input class="in" type="date" id="s_next_date"></div>
         </div>
         <div class="f"><label>다음 구매 메모</label><input class="in" id="s_next_note" placeholder="예: 김치냉장고 교체 예정, 12월 이사"></div>
@@ -729,8 +732,8 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="nextbox">
         <div class="nb-t">구매 제품 · 다음 구매 관심 <span class="hint">팔고 끝이 아니라 다음에 살 제품을 계속 봅니다</span></div>
         <div class="grid2">
-          <div class="f"><label>구매한 제품 <span class="hint">구매완료면</span></label><input class="in" id="c_purchase" placeholder="예: 비스포크 AI 콤보" autocomplete="off"></div>
-          <div class="f"><label>다음 구매 관심 제품</label><input class="in" id="c_next" placeholder="모델 · 제품명" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div>
+          <div class="f"><label>구매한 제품 <span class="hint">구매완료면</span></label><input class="in" id="c_purchase" placeholder="제품번호 또는 제품명 (구독 요금표에서 찾음)" autocomplete="off"></div>
+          <div class="f"><label>다음 구매 관심 제품</label><input class="in" id="c_next" placeholder="제품번호 · 제품명" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div>
         </div>
         <div class="grid2">
           <div class="f"><label>다음 구매 예정일</label><input class="in" type="date" id="c_next_date"></div>
@@ -990,6 +993,27 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global:{ h
 
 /* ═══ 유틸 ═══ */
 const $ = id => document.getElementById(id);
+
+/* ═══ 공통 숫자 페이징 (기본 10행 · 최대 100행) ═══ */
+const PG_DEF=10, PG_OPTS=[10,20,50,100];
+let PG={}; try{ PG=JSON.parse(localStorage.getItem('dc_pg')||'{}')||{}; }catch(e){ PG={}; }
+function pgSize(key){ const v=Number(PG[key]); return PG_OPTS.indexOf(v)>=0 ? v : PG_DEF; }
+function pgSet(key,v,go){ PG[key]=Number(v)||PG_DEF; try{ localStorage.setItem('dc_pg',JSON.stringify(PG)); }catch(e){} if(typeof go==='function') go(0); }
+function pgBar(key,page,total,go){
+  const per=pgSize(key), last=Math.max(0,Math.ceil((Number(total)||0)/per)-1); page=Math.max(0,Math.min(page,last));
+  const nums=[], add=p=>{ if(p>=0&&p<=last&&nums.indexOf(p)<0) nums.push(p); };
+  add(0); for(let p=page-2;p<=page+2;p++) add(p); add(last); nums.sort((a,b)=>a-b);
+  let h=`<select class="pgper" title="한 쪽에 보일 줄 수" onchange="pgSet('${key}',this.value,${go})">`
+      + PG_OPTS.map(v=>`<option value="${v}"${v===per?' selected':''}>${v}줄</option>`).join('') + '</select>'
+      + `<button class="btn ghost sm" ${page<=0?'disabled':''} onclick="${go}(0)">«</button>`
+      + `<button class="btn ghost sm" ${page<=0?'disabled':''} onclick="${go}(${page-1})">‹</button>`;
+  let prev=-1;
+  nums.forEach(p=>{ if(prev>=0&&p-prev>1) h+='<span class="pgdots">…</span>';
+    h+=`<button class="btn ${p===page?'':'ghost'} sm pgn" onclick="${go}(${p})">${p+1}</button>`; prev=p; });
+  h+=`<button class="btn ghost sm" ${page>=last?'disabled':''} onclick="${go}(${page+1})">›</button>`
+   + `<button class="btn ghost sm" ${page>=last?'disabled':''} onclick="${go}(${last})">»</button>`;
+  return h;
+}
 const todayStr = (d=0) => { const t=new Date(); t.setDate(t.getDate()+d); return new Date(t.getTime()-t.getTimezoneOffset()*60000).toISOString().slice(0,10); };
 const won = v => (Number(v)||0).toLocaleString('ko-KR') + '원';
 const num = el => Number(String(el.value).replace(/[^0-9]/g,'')) || 0;
@@ -1102,14 +1126,15 @@ async function ensureStkWh(){
 function whName(c){ const w=STK_WH.find(x=>x.code===c); return w?w.name:(c||''); }
 function whLabel(){ const l=$('sk_whLbl'); if(l) l.textContent=whName(($('sk_wh')||{}).value||'00001')+' 기준'; }
 function whChanged(){ whLabel(); mvReset(); loadStk(0); }
-const STK_PAGE=50; let STK_OFF=0, STK_SEQ=0;
+const STK_PAGE=()=>pgSize('stk'); let STK_OFF=0, STK_SEQ=0;
+function stkGo(p){ loadStk(Math.max(0,p)*STK_PAGE()); const q=$('sk_q'); if(q) q.scrollIntoView({behavior:'smooth',block:'start'}); }
 async function loadStk(off){
   await ensureStkWh(); STK_LOADED=true;
   if(off!=null) STK_OFF=Math.max(0,off);
   $('sk_me').textContent = STK_WH.length? '' : '창고 정보를 불러오지 못했습니다';
   const seq=++STK_SEQ; $('sk_rows').style.opacity='.5';
   let d; try{ d = await rpc('fn_stock_search',{p_code:CODE, p_q:$('sk_q').value.trim()||null, p_warehouse:$('sk_wh').value||null,
-      p_category:$('sk_cat').value||null, p_has_stock:$('sk_has').checked, p_limit:STK_PAGE, p_offset:STK_OFF}); }
+      p_category:$('sk_cat').value||null, p_has_stock:$('sk_has').checked, p_limit:STK_PAGE(), p_offset:STK_OFF}); }
   catch(e){ $('sk_rows').style.opacity=''; $('sk_rows').innerHTML=`<div class="empty">${esc(e.message)}</div>`; $('sk_pager').innerHTML=''; return; }
   if(seq!==STK_SEQ) return;                       // 더 늦게 보낸 조회가 이미 그려졌으면 버린다
   $('sk_rows').style.opacity='';
@@ -1127,9 +1152,9 @@ async function loadStk(off){
         <button class="m" onclick="stkMove('${esc(r.code)}','out','${esc((r.name||r.code)).replace(/'/g,"&#39;")}')">−</button>`:''}</div>
     </div>`).join('') : '<div class="empty">검색 결과가 없습니다</div>';
   const a=total?STK_OFF+1:0, b=Math.min(total,STK_OFF+rows.length);
-  $('sk_pager').innerHTML = total>STK_PAGE ? `<button class="btn ghost sm" ${STK_OFF<=0?'disabled':''} onclick="loadStk(${Math.max(0,STK_OFF-STK_PAGE)});$('sk_q').scrollIntoView({behavior:'smooth',block:'start'})">‹ 이전</button>
-    <span>${total.toLocaleString()}개 중 ${a.toLocaleString()}–${b.toLocaleString()}</span>
-    <button class="btn ghost sm" ${b>=total?'disabled':''} onclick="loadStk(${STK_OFF+STK_PAGE});$('sk_q').scrollIntoView({behavior:'smooth',block:'start'})">다음 ›</button>` : (total?`<span>${total.toLocaleString()}개 전부 표시</span>`:'');
+  $('sk_pager').innerHTML = total>STK_PAGE()
+    ? `<span style="width:100%;text-align:center">${total.toLocaleString()}개 중 ${a.toLocaleString()}–${b.toLocaleString()}</span>` + pgBar('stk', Math.floor(STK_OFF/STK_PAGE()), total, 'stkGo')
+    : (total?`<span>${total.toLocaleString()}개 전부 표시</span>`:'');
   if(off==null || off===0) loadStkMoves();
 }
 async function loadStkMoves(){
@@ -1187,11 +1212,12 @@ function isgOpen(inp, rows){
   b.querySelectorAll('[data-i]').forEach(el=>el.onmousedown=e=>{ e.preventDefault(); isgPick(Number(el.dataset.i)); });
 }
 function isgPick(i){ const x=ISG_ROWS[i], inp=ISG_INP; if(!x||!inp) return; const fn=inp._isgApply; isgClose(); if(fn) fn(x); }
-function itemSuggest(inp, apply){
+function itemSuggest(inp, apply, find){
   if(!inp||inp._isg) return; inp._isg=1; inp._isgApply=apply; inp.setAttribute('autocomplete','off'); inp.removeAttribute('list');
+  const fetcher = find || (v=>rpc('fn_store_items',{p_code:CODE,p_q:v,p_limit:8}));
   inp.addEventListener('input',()=>{ clearTimeout(ISG_T); const v=inp.value.trim();
     if(v.length<2){ if(ISG_INP===inp) isgClose(); return; }
-    ISG_T=setTimeout(async()=>{ let rows=[]; try{ rows=await rpc('fn_store_items',{p_code:CODE,p_q:v,p_limit:8})||[]; }catch(e){ rows=[]; }
+    ISG_T=setTimeout(async()=>{ let rows=[]; try{ rows=await fetcher(v)||[]; }catch(e){ rows=[]; }
       if(document.activeElement===inp) isgOpen(inp,rows); },250); });
   inp.addEventListener('keydown',e=>{ if(!ISG_BOX||ISG_INP!==inp) return;
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); ISG_I=Math.max(0,Math.min(ISG_ROWS.length-1,ISG_I+(e.key==='ArrowDown'?1:-1)));
@@ -1208,6 +1234,12 @@ function initSuggest(){
   if(P) itemSuggest(P, x=>{ P.value=x.name; if(M && !M.value.trim()) M.value=x.model||x.code; $('s_amount').focus(); });
   if(M) itemSuggest(M, x=>{ M.value=x.model||x.code; if(P && !P.value.trim()) P.value=x.name; });
   const Q=$('mv_q'); if(Q) itemSuggest(Q, x=>{ Q.value=x.name; mvPickCode(x.code, x.name); });
+  /* 구독 상품 제품번호로 찾기 — 구독 요금표(sub.plan)에 등록된 모델 574개 */
+  const subFind = v=>rpc('fn_store_sub_models',{p_code:CODE,p_q:v,p_limit:8});
+  [['c_purchase',null],['c_next',null],['s_next',null]].forEach(([id])=>{
+    const el=$(id); if(el) itemSuggest(el, x=>{ el.value=x.code; el.dispatchEvent(new Event('input',{bubbles:true})); }, subFind);
+  });
+  const CM=$('c_model'); if(CM) itemSuggest(CM, x=>{ CM.value=''; cModelAdd(x.code); }, subFind);
 }
 /* 빠른 입·출고 : 품목 하나 찾아 수량 넣고 입고/출고 */
 let MV_PICK=null;
@@ -1961,11 +1993,11 @@ let SL_META=null;
 function slVisible(){ const k=$('sl_kind').value, c=$('sl_cat').value, st=$('sl_st').value, sh=$('sl_ship').value;
   return SL_ROWS.map((r,i)=>({r,i})).filter(({r})=> (!k||r.kind===k) && (!c||r.category===c) &&
     (!st || (st==='ready'? (r.ready&&!r.ambig) : st==='ambig'? r.ambig>0 : !r.ready)) && (!sh || (sh==='shipped'? r.shipped : sh==='late'? r.late : !r.shipped))); }
-const SL_PAGE=50; let SL_PG=0;
+const SL_PAGE=()=>pgSize('slist'); let SL_PG=0;
 function slPage(k){ SL_PG=Math.max(0,k); renderSlList(); const b=$('sl_rows'); if(b) b.scrollIntoView({behavior:'smooth',block:'start'}); }
 function renderSlList(){
   const box=$('sl_rows'); if(!box||!SL_ROWS) return; const all=slVisible();
-  const pages=Math.max(1,Math.ceil(all.length/SL_PAGE)); if(SL_PG>=pages) SL_PG=pages-1; const vis=all.slice(SL_PG*SL_PAGE,(SL_PG+1)*SL_PAGE);
+  const pages=Math.max(1,Math.ceil(all.length/SL_PAGE())); if(SL_PG>=pages) SL_PG=pages-1; const vis=all.slice(SL_PG*SL_PAGE(),(SL_PG+1)*SL_PAGE());
   const sel=vis.filter(({r})=>r.ready), allOn=sel.length>0 && sel.every(({r})=>SL_PICK.has(r.order_no));
   const st=r=> (!r.ready?'<span class="st bad">코드 없음</span>' : r.ambig?'<span class="st warn">확인 필요</span>':'<span class="st ok">바로 가능</span>') + (r.shipped?`<span class="st ${r.late?'warn':'ok'}" style="margin-top:3px;display:inline-block" title="${esc(r.tracking_no||'')}">발송 ${esc((r.shipped_on||'').slice(5).replace('-','/'))}${r.late?' 다음달':''}</span>`:'<span class="st warn" style="margin-top:3px;display:inline-block">미발송</span>');
   box.innerHTML = vis.length ? `<div class="tw"><table class="slt"><thead><tr>
@@ -1979,13 +2011,13 @@ function renderSlList(){
           : `<div><span class="miss">코드없음</span> ${esc(l.product)}</div>`).join('')}</td>
       <td><small style="display:block">${esc(r.kind||'')}</small>${esc(r.category||'')}</td>
       <td class="num">${Number(r.qty||0)}</td><td class="num">${won(r.amount)}</td><td>${st(r)}</td></tr>`).join('')}</tbody></table></div>
-    <div class="note-in" style="margin-top:8px">${all.length}건 중 ${SL_PG*SL_PAGE+1}–${SL_PG*SL_PAGE+vis.length} 표시 · 선택 <b id="sl_selN">${SL_PICK.size}</b>건</div>
-    ${pages>1?`<div class="pager"><button class="btn ghost sm" ${SL_PG<=0?'disabled':''} onclick="slPage(${SL_PG-1})">‹ 이전</button><span>${SL_PG+1} / ${pages} 쪽</span><button class="btn ghost sm" ${SL_PG>=pages-1?'disabled':''} onclick="slPage(${SL_PG+1})">다음 ›</button></div>`:''}`
+    <div class="note-in" style="margin-top:8px">${all.length}건 중 ${SL_PG*SL_PAGE()+1}–${SL_PG*SL_PAGE()+vis.length} 표시 · 선택 <b id="sl_selN">${SL_PICK.size}</b>건</div>
+    <div class="pager">${pgBar('slist',SL_PG,all.length,'slPage')}</div>`
     : '<div class="empty">해당하는 주문이 없습니다</div>';
 }
-function slAllStore(on){ const all=slVisible(); all.slice(SL_PG*SL_PAGE,(SL_PG+1)*SL_PAGE).forEach(({r})=>{ if(r.ready){ on?SL_PICK.add(r.order_no):SL_PICK.delete(r.order_no); } }); renderSlList(); }
+function slAllStore(on){ const all=slVisible(); all.slice(SL_PG*SL_PAGE(),(SL_PG+1)*SL_PAGE()).forEach(({r})=>{ if(r.ready){ on?SL_PICK.add(r.order_no):SL_PICK.delete(r.order_no); } }); renderSlList(); }
 function slRowStore(i,e){ if(e.target.tagName==='INPUT') return; const r=SL_ROWS[i]; if(!r||!r.ready) return; SL_PICK.has(r.order_no)?SL_PICK.delete(r.order_no):SL_PICK.add(r.order_no); renderSlList(); }
-function slPickStore(i,on){ const r=SL_ROWS[i]; if(!r||!r.ready) return; on?SL_PICK.add(r.order_no):SL_PICK.delete(r.order_no); const n=$('sl_selN'); if(n) n.textContent=SL_PICK.size; const tr=document.querySelectorAll('.slt tbody tr')[slVisible().slice(SL_PG*SL_PAGE,(SL_PG+1)*SL_PAGE).findIndex(x=>x.i===i)]; if(tr) tr.classList.toggle('sel',on); }
+function slPickStore(i,on){ const r=SL_ROWS[i]; if(!r||!r.ready) return; on?SL_PICK.add(r.order_no):SL_PICK.delete(r.order_no); const n=$('sl_selN'); if(n) n.textContent=SL_PICK.size; const tr=document.querySelectorAll('.slt tbody tr')[slVisible().slice(SL_PG*SL_PAGE(),(SL_PG+1)*SL_PAGE()).findIndex(x=>x.i===i)]; if(tr) tr.classList.toggle('sel',on); }
 async function slMakeStore(){
   if(!SL_PICK.size) return toast('가져올 주문을 고르세요','bad');
   const nos=[...SL_PICK];
@@ -2496,11 +2528,12 @@ async function asgTo(name){
 }
 const n2=v=>Number(v||0).toLocaleString('ko-KR');
 /* 전체 상담 (점장·대표·전체 권한) */
-let ALL_SCOPE='unassigned', ALL_HD='', ALL_SRC='', ALL_LOADED=false;
+let ALL_SCOPE='unassigned', ALL_HD='', ALL_SRC='', ALL_LOADED=false, ALL_ROWS=[], ALL_PG=0;
+function allGo(p){ ALL_PG=Math.max(0,p); renderAllConsults(); const el=$('allCard')||$('allList'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
 async function loadAllConsults(){
   if(!STATUS||!STATUS.is_mgr) return;
   const el=$('allList'); el.innerHTML='<div class="empty">불러오는 중…</div>';
-  let d; try{ d=await rpc('fn_store_consults_all',{p_code:CODE,p_scope:ALL_SCOPE,p_handler:ALL_HD||null,p_q:$('all_q').value.trim()||null,p_limit:100,p_src:ALL_SRC||null}); }
+  let d; try{ d=await rpc('fn_store_consults_all',{p_code:CODE,p_scope:ALL_SCOPE,p_handler:ALL_HD||null,p_q:$('all_q').value.trim()||null,p_limit:300,p_src:ALL_SRC||null}); }
   catch(e){ el.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const c=d.counts||{};
   $('allSub').textContent=`진행중 ${n2(c.open)} · 미배정 ${n2(c.unassigned)}`;
@@ -2508,8 +2541,13 @@ async function loadAllConsults(){
     +(d.by_src||[]).map(x=>`<span class="chip${ALL_SRC===x.s?' on':''}" onclick="ALL_SRC='${esc(x.s)}';loadAllConsults()">${esc(x.s)} ${n2(x.n)}</span>`).join('')
     +`<span class="chip${ALL_HD?'':' on'}" style="margin-left:10px" onclick="ALL_HD='';loadAllConsults()">전체 담당</span>`
     +(d.by_handler||[]).map(h=>`<span class="chip${ALL_HD===h.h?' on':''}" onclick="ALL_HD='${esc(h.h)}';loadAllConsults()">${esc(h.h)} ${n2(h.n)}</span>`).join('');
-  const rows=d.rows||[];
-  el.innerHTML=rows.length?rows.map(x=>`
+  ALL_ROWS=d.rows||[]; ALL_PG=0; renderAllConsults();
+}
+function renderAllConsults(){
+  const el=$('allList'); const per=pgSize('allcon');
+  const pages=Math.max(1,Math.ceil(ALL_ROWS.length/per)); if(ALL_PG>=pages) ALL_PG=pages-1;
+  const rows=ALL_ROWS.slice(ALL_PG*per,(ALL_PG+1)*per);
+  el.innerHTML=(ALL_ROWS.length?rows.map(x=>`
     <div class="item oc"><div>
       <div class="p">${esc(x.name||'-')} ${x.interest?`<span class="tag 일시불">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag" style="background:#EEF2FF;color:#2F5BEA">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag" style="background:#F3F4F7;color:#646D7C">유입 ${esc(x.via)}</span>`:''}
         <span class="tag hd">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='보류'?'<span class="tag" style="background:#FBF1DC;color:#8A5A00">보류</span>':''}</div>
@@ -2518,7 +2556,9 @@ async function loadAllConsults(){
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}
         <button class="mini ok" onclick="asgOpen([${x.id}],'${esc(x.name||'')}')">배정</button>
         ${x.handler!==ME?`<button class="mini" onclick="asgTo2(${x.id})">내가 맡기</button>`:''}</div></div>`).join('')
-    :'<div class="empty">해당하는 상담이 없습니다</div>';
+    :'<div class="empty">해당하는 상담이 없습니다</div>')
+    + (ALL_ROWS.length>per ? `<div class="pager">${pgBar('allcon',ALL_PG,ALL_ROWS.length,'allGo')}</div>` : '')
+    + (ALL_ROWS.length ? `<div class="note-in" style="text-align:center;margin-top:6px">${ALL_ROWS.length}건 중 ${ALL_PG*per+1}–${ALL_PG*per+rows.length} 표시</div>` : '');
 }
 async function asgTo2(id){ ASG_IDS=[id]; await asgTo(ME); }
 
