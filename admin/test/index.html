@@ -1051,7 +1051,7 @@ select.segd{display:none!important}
           <div class="qsum" id="oSum"></div>
           <div class="qmeta" id="oMeta"></div>
           <div class="tw"><table><thead><tr><th>주문일</th><th>구분</th><th>채널</th><th>고객</th><th>연락처</th><th>상품</th><th class="num">수량</th><th class="num">매출</th><th class="num">환불</th><th class="num">순매출</th><th>담당</th><th>상태</th><th></th></tr></thead><tbody id="tbOrders"></tbody></table></div>
-          <div class="pager"><span id="oCount"></span><div class="btns"><button class="btn sm ghost" onclick="loadOrders(oPage-1)">‹ 이전</button><button class="btn sm ghost" onclick="loadOrders(oPage+1)">다음 ›</button></div></div>
+          <div class="pager"><span id="oCount"></span><div class="btns"><button class="btn sm ghost" onclick="loadOrders(0)">« 처음</button><button class="btn sm ghost" onclick="loadOrders(oPage-1)">‹ 이전</button><input class="in" id="oPageIn" type="number" min="1" value="1" style="width:70px;text-align:center;padding:6px 8px" title="쪽 번호를 입력하고 Enter" onkeydown="if(event.key==='Enter')loadOrders(Math.max(0,Number(this.value||1)-1))"><span class="note" id="oPageOf" style="margin:0 4px 0 2px"></span><button class="btn sm ghost" onclick="loadOrders(oPage+1)">다음 ›</button><button class="btn sm ghost" onclick="loadOrders(oLast)">끝 »</button></div></div>
         </div>
       </div>
 
@@ -4268,7 +4268,7 @@ function drawProductTab(){
 function empty(){ return '<div class="note" style="padding:36px 0;text-align:center">기간 내 데이터 없음</div>'; }
 
 /* ═══════════════ 원장 ═══════════════ */
-let oPage=0, oRows=[];
+let oPage=0, oLast=0, oRows=[];
 const O_CH_NAMES=['P몰','S몰','AT몰','시흥','B2B','E스토어','가전시장','쿠팡','11번가','지마켓','옥션','SSG','현대홈쇼핑','쿠팡이츠','SK스토아','토스쇼핑','롯데온','카카오-관악','카카오-시흥','한퓨어','통신판매(VMS)','매장(시흥)','매장구독(시흥)','직판','렌탈'];
 let O_CH_FILLED=false;
 function orderArgs(){ return {p_from:P.from,p_to:P.to,p_channel:$('oCh').value||null,p_handler:$('oHd').value||null,p_q:$('oQ').value||null,
@@ -4298,7 +4298,9 @@ async function loadOrders(page){
   const a=orderArgs();
   try{ oRows=await rpc('fn_order_list',Object.assign({},a,{p_limit:50,p_offset:oPage*50,p_unmask:unmask,p_sort:$('oSort').value})); }catch(e){ return toast(e.message,'bad'); }
   const total=oRows[0]?.total_count||0;
+  oLast=Math.max(0,Math.ceil(total/50)-1);
   $('oCount').textContent=`총 ${n(total)}행 · ${total?oPage*50+1:0}~${Math.min(total,(oPage+1)*50)}`;
+  if($('oPageIn')){ $('oPageIn').value=oPage+1; $('oPageIn').max=oLast+1; $('oPageOf').textContent=`/ ${n(oLast+1)}쪽`; }
   $('tbOrders').innerHTML=oRows.map(o=>`<tr>
     <td class="mono">${dfmt(o.order_at)}</td><td><span class="tag ${o.channel_type}">${o.channel_type}</span></td><td>${esc(o.channel_name)}<div style="font-size:10.5px;color:var(--faint)" class="mono">${esc(o.order_no||'')}</div></td>
     <td><b>${esc(o.customer_name)}</b></td><td class="mono" style="color:${unmask?'var(--bad)':'var(--muted)'}">${esc(o.customer_phone||'-')}</td>
@@ -5324,7 +5326,13 @@ function downloadTemplates(){
 
 boot();
 
-/* ═══ 표 정렬 : 어떤 표든 머리글을 누르면 그 열로 오름/내림차순 (지금 화면에 보이는 행 기준) ═══ */
+/* ═══ 표 정렬 ═══
+   · 서버가 쪽 단위로 잘라 주는 표(주문서 등)는 머리글을 누르면 서버 정렬을 바꾸고 1쪽부터 다시 불러온다
+   · 그 밖의 표는 지금 화면에 보이는 행만 오름/내림차순으로 정렬한다                                   */
+const SRV_SORT={
+  tbOrders:{ sel:'oSort', reload:()=>loadOrders(0),
+             cols:{0:['date_asc','date_desc'], 7:['amt_asc','amt_desc'], 9:['amt_asc','amt_desc']} }
+};
 (function(){
   const num=t=>{ const s=String(t).replace(/[,\s원%개건명]/g,''); if(s==='' || s==='-' || s==='—') return null; const v=Number(s); return isNaN(v)?null:v; };
   function cellVal(td){ if(td.dataset.sort!==undefined) return td.dataset.sort; const inp=td.querySelector('input,select'); if(inp && !td.textContent.trim()) return inp.value; return td.textContent.trim(); }
@@ -5333,11 +5341,20 @@ boot();
     const table=th.closest('table'); if(!table || th.querySelector('input[type=checkbox]')) return;
     const label=th.textContent.trim(); if(!label) return;
     const tbody=table.tBodies[0]; if(!tbody) return;
-    const rows=[...tbody.rows]; if(rows.length<2) return;
-    if(rows.some(r=>[...r.cells].some(c=>c.colSpan>1))) return;   /* 소계·그룹 줄이 있는 표는 그대로 둔다 */
     const idx=[...th.parentNode.children].indexOf(th);
     const dir = th.classList.contains('sort-asc') ? 'desc' : 'asc';
-    table.querySelectorAll('th').forEach(x=>x.classList.remove('sort-asc','sort-desc')); th.classList.add('sort-'+dir);
+    const mark=()=>{ table.querySelectorAll('th').forEach(x=>x.classList.remove('sort-asc','sort-desc')); th.classList.add('sort-'+dir); };
+    /* 서버가 쪽을 나눠 주는 표 : 보이는 50행만 뒤집으면 뜻이 없으므로 서버 정렬을 바꾸고 1쪽부터 다시 부른다 */
+    const srv=SRV_SORT[tbody.id];
+    if(srv){
+      const pair=srv.cols[idx]; if(!pair) return;
+      mark();
+      const sel=document.getElementById(srv.sel); if(sel){ sel.value = dir==='asc'?pair[0]:pair[1]; try{ segSync(); }catch(e){} }
+      srv.reload(); return;
+    }
+    const rows=[...tbody.rows]; if(rows.length<2) return;
+    if(rows.some(r=>[...r.cells].some(c=>c.colSpan>1))) return;   /* 소계·그룹 줄이 있는 표는 그대로 둔다 */
+    mark();
     const vals=rows.map(r=>{ const c=r.cells[idx]; return c?cellVal(c):''; });
     const allNum=vals.every(v=>v===''||num(v)!==null) && vals.some(v=>v!=='');
     const keyed=rows.map((r,i)=>({r,v:vals[i],i}));
