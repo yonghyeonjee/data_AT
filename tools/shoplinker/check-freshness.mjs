@@ -25,8 +25,12 @@ for (const s of d.sources) {
             + pad(s.to ?? "-", 13) + (s.owner ?? ""));
 }
 
-const bad = d.sources.filter((s) => s.state !== "정상");
-if (!bad.length) { console.log("\n모든 원천이 기대 주기 안에 있습니다."); process.exit(0); }
+/* '준비 중' = 카드만 만들어 두고 아직 한 건도 안 넣은 원천 — 알림·실패로 세지 않는다.
+   첫 데이터가 들어오면 저절로 정상/지연 판정으로 넘어간다. */
+const soon = d.sources.filter((s) => s.state === "준비 중");
+const bad  = d.sources.filter((s) => s.state !== "정상" && s.state !== "준비 중");
+if (soon.length) console.log(`\n준비 중(아직 비어 있음, 알림 제외) — ${soon.map((s) => s.label).join(" · ")}`);
+if (!bad.length) { console.log("\n감시 중인 원천이 모두 기대 주기 안에 있습니다."); process.exit(0); }
 
 const lines = bad.map((s) => {
   const why = s.rows === 0 ? "아직 한 건도 없습니다"

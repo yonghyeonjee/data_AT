@@ -1325,6 +1325,8 @@ select.segd{display:none!important}
                 <option value="rental">렌탈</option>
                 <option value="godo_member">고도몰 회원</option>
                 <option value="store_manual">매장 일별(Manual)</option>
+                <option value="web_inquiry">홈페이지 문의 (고도몰 견적 게시판)</option>
+                <option value="sub_plan">구독 상품 · 요금</option>
               </select>
               <div id="pasteCols" class="note hidden" style="margin-top:8px"></div></div></div>
             <div class="step"><div class="no dim" id="pasteNo2">2</div><div class="body"><b>엑셀에서 머리글 행까지 선택해 복사한 뒤 붙여넣기</b>
@@ -4556,9 +4558,11 @@ function detect(cols){
   if(has('거래처코드','거래처명')) return 'ecount_customer';
   if(has('일자-No.','주문No.')) return 'ecount_slip';
   if(has('날짜','매장-일시불')) return 'store_manual';
+  if(has('상담상태','견적결과','등록일')) return 'web_inquiry';
+  if(has('계약 기간','서비스 주기','모델코드')) return 'sub_plan';
   return null;
 }
-const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)'};
+const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)',web_inquiry:'홈페이지 문의 → 문의 관리 (연락처+등록일+이름 기준 갱신)',sub_plan:'구독 상품 · 요금 → 요금표 · 상담 참고 (요금이 바뀌면 이전 가격은 이력으로)'};
 // 파일 안의 모든 시트를 훑어 인식 가능한 것을 찾는다. 여러 개면 사용자가 고른다.
 let SHEETS=[];
 const CH_NAMES=['P몰','S몰','AT몰','시흥','E스토어','B2B','가전시장','쿠팡','11번가','지마켓','옥션','SSG','현대홈쇼핑','쿠팡이츠','SK스토아','토스쇼핑','롯데온','카카오-관악','카카오-시흥','한퓨어','삼성AT스토어','프라자몰','에스몰','시흥몰'];
@@ -4708,6 +4712,17 @@ function mapRows(u){
   if(u.kind==='ecount_slip'){ return d.filter(r=>str(H(r,'일자-No.'))).map(r=>({slip_no:str(H(r,'일자-No.')),order_no:str(H(r,'주문No.','주문No','주문번호'))||null,cust_name:str(H(r,'거래처명')),emp_name:str(H(r,'영업담당')),handler:str(H(r,'판매담당','판매담당자')),deal_type:str(H(r,'거래유형')),kind:str(H(r,'구분')),amount:str(H(r,'주문금액','합계')),status:str(H(r,'진행상태')),items:str(H(r,'품목명(요약)','품목명'))})); }
   if(u.kind==='ecount_customer'){ return d.filter(r=>str(H(r,'거래처코드'))&&str(H(r,'거래처코드'))!=='.').map(r=>({code:str(H(r,'거래처코드')),name:str(H(r,'거래처명','상호')),ceo:str(H(r,'대표자명','대표자'))||null,phone:str(H(r,'전화','전화번호','일반전화'))||null,mobile:str(H(r,'휴대폰','휴대전화','모바일','핸드폰','핸드폰번호','휴대폰번호'))||null,addr:(str(H(r,'주소','주소1'))||str(H(r,'주소2')))||null,handler:str(H(r,'담당자명','담당자','영업담당','영업담당자','우리담당자'))||null,sales_handler:str(H(r,'판매담당자','판매담당'))||null,device:str(H(r,'사용기종'))||null,deal_type:str(H(r,'거래유형(영업)','거래유형'))||null,kind:str(H(r,'구분','거래처구분'))||null,active:str(H(r,'사용구분','사용'))||null})); }
   if(u.kind==='godo_member'){ return d.map(r=>({member_no:str(H(r,'회원번호')),name:str(H(r,'이름')),phone:str(H(r,'휴대폰번호'))||str(H(r,'전화번호')),email:str(H(r,'이메일')),address:str(H(r,'주소')),consent_sms:/^(y|Y|동의)/.test(str(H(r,'SMS수신여부'))),joined_at:excelDate(H(r,'등록일')),last_login_at:excelDate(H(r,'최종로그인일')),gender:str(H(r,'성별')).slice(0,1)||null,birth:(b=>b&&!/^0000/.test(b)?b:null)(excelDate(H(r,'생일'))),business_no:str(H(r,'사업자번호'))||null})); }
+  if(u.kind==='web_inquiry'){ return d.filter(r=>str(H(r,'제목','고객명','이름'))).map(r=>({
+      ref_no:str(H(r,'번호')), name:str(H(r,'제목','고객명','이름')),
+      quote_result:str(H(r,'견적결과')), status:str(H(r,'상담상태','상태')),
+      handler:str(H(r,'담당자','담당')), phone:str(H(r,'연락처','휴대폰번호','전화번호')),
+      email:str(H(r,'이메일','email')), inquired_on:excelDate(H(r,'등록일','일자','작성일'))||str(H(r,'등록일','일자','작성일')),
+      kind:/사업/.test(str(H(r,'유형','구분')))?'사업자':(str(H(r,'유형','구분'))||'개인') })); }
+  if(u.kind==='sub_plan'){ return d.filter(r=>str(H(r,'상품명'))&&str(H(r,'계약 기간','계약기간'))).map(r=>({
+      biz:str(H(r,'구분')), cat1:str(H(r,'품목1')), cat2:str(H(r,'품목2')),
+      term:str(H(r,'계약 기간','계약기간')), name:str(H(r,'상품명')), cycle:str(H(r,'서비스 주기','서비스주기')),
+      item_code:str(H(r,'모델코드')), total_fee:str(H(r,'총 구독료(V+)','총 구독료','총구독료(V+)')),
+      monthly_fee:str(H(r,'월구독료(v+)','월 구독료(V+)','월구독료','월 구독료')), care_case:str(H(r,'케어구분')) })); }
   if(u.kind==='store_manual'){ const out=[]; d.forEach(r=>{ const date=excelDate(H(r,'날짜')); if(!date) return; const rows=[]; Object.keys(r).forEach(k=>{ const v=Number(r[k]); if(!v||/_환불$/.test(k)) return; const refund=Number(r[k+'_환불'])||0; if(k==='매장-일시불') rows.push({sale_kind:'일시불',sales:v,refund}); else if(k==='매장-구독') rows.push({sale_kind:'구독',sales:v,refund}); else if(/-직판$/.test(k)) rows.push({sale_kind:'직판',handler:k.replace(/프로?-직판$/,''),sales:v,refund}); }); if(rows.length) out.push({date,rows}); }); return out.map(x=>({date:x.date,rows:JSON.stringify(x.rows)})); }
   return [];
 }
@@ -4718,6 +4733,13 @@ async function runUpload(){
   try{
     if(UP.kind==='store_manual'){ const st=(STAFF.find(x=>x.active)||{}).code; if(!st) throw new Error('활성 담당자가 없습니다. 설정에서 담당자를 먼저 등록하세요.');
       const mapped=mapRows(UP); for(const m of mapped){ await rpc('fn_store_daily_submit',{p_code:st,p_date:m.date,p_rows:JSON.parse(m.rows)}); done++; $('upBar').style.width=(100*done/mapped.length)+'%'; } res={적재일수:done}; }
+    else if(['web_inquiry','sub_plan'].includes(UP.kind)){
+      const fn={web_inquiry:'fn_web_inquiry_upsert',sub_plan:'fn_sub_plan_upsert'}[UP.kind];
+      /* 구독 상품은 '제품' 줄 뒤에 딸린 케어 줄이 붙으므로 순서를 지켜 넉넉히 한 덩어리로 보낸다 */
+      const CH=UP.kind==='sub_plan'?1000:300;
+      for(let i=0;i<rows.length;i+=CH){ const r=await rpc(fn,{p_rows:rows.slice(i,i+CH)});
+        Object.keys(r).forEach(k=>{ if(typeof r[k]==='number'&&k!=='total'&&k!=='total_plans') res[k]=(res[k]||0)+r[k]; });
+        done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; } }
     else if(['channel_daily','settlement','listing_request','inv_items','ecount_customer','ecount_slip'].includes(UP.kind)){
       const fn={channel_daily:'fn_channel_daily_upsert',settlement:'fn_settlement_upsert',listing_request:'fn_listing_request_upsert',inv_items:'fn_inv_items_upsert',ecount_customer:'fn_ec_customers_upsert',ecount_slip:'fn_ec_slips_upsert'}[UP.kind];
       const CH=400; for(let i=0;i<rows.length;i+=CH){ const r=await rpc(fn,{p_rows:rows.slice(i,i+CH),p_source:'sheet',p_file:UP.file}); Object.keys(r).forEach(k=>{ if(typeof r[k]==='number') res[k]=(res[k]||0)+r[k]; }); done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; $('upMsg').textContent=`${n(done)} / ${n(rows.length)}`; } }
@@ -4854,8 +4876,8 @@ async function loadStamp(){
 }
 
 /* ═══════════════ 데이터 소스 카드 · 선택 ═══════════════ */
-const SRC_KIND={shoplinker:'shoplinker',store_manual:'store_manual',ecount_sales:'ecount_sales',rental:'rental',ecount_prospect:'ecount_prospect',godo_member:'godo_member'};
-const SRC_TPL ={shoplinker:'샵링커_주문',store_manual:'매장_일별',ecount_sales:'이카운트_판매현황',rental:'렌탈',ecount_prospect:'이카운트_가망고객',godo_member:'고도몰_회원'};
+const SRC_KIND={web_inquiry:'web_inquiry',sub_plan:'sub_plan',shoplinker:'shoplinker',store_manual:'store_manual',ecount_sales:'ecount_sales',rental:'rental',ecount_prospect:'ecount_prospect',godo_member:'godo_member'};
+const SRC_TPL ={web_inquiry:'홈페이지_문의',sub_plan:'구독_상품',shoplinker:'샵링커_주문',store_manual:'매장_일별',ecount_sales:'이카운트_판매현황',rental:'렌탈',ecount_prospect:'이카운트_가망고객',godo_member:'고도몰_회원'};
 const SRC_FEED={sub_plan:'구독 요금표 · 상담 참고 · 가격 이력',web_inquiry:'홈페이지 문의 (문의 관리)',shoplinker:'매출 원장 · 고객',store:'매출 원장 · 고객',store_manual:'매장 일마감',ecount_sales:'매출 원장(VMS) · 고객',rental:'매출 원장(렌탈) · 거래처',ecount_prospect:'상담 · 가망고객',godo_member:'고객 마스터 · 수신동의'};
 const SRC_ICON={shoplinker:'<svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M6 6 5 3H2"/></svg>',
   store:'<svg viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6"/></svg>',
@@ -4866,13 +4888,13 @@ const SRC_ICON={shoplinker:'<svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12
   godo_member:'<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>',
   sub_plan:'<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>',
   web_inquiry:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'};
-const DS_TAG={정상:'y',지연:'보류',없음:'n'};
+const DS_TAG={정상:'y',지연:'보류',없음:'n','준비 중':''};   /* 준비 중 = 카드만 만들어 둔 원천, 알림에서 제외 */
 let DSD=null, SEL_SRC=null;
 async function loadDataStatus(){
   let d; try{ d=await rpc('fn_data_status'); }
   catch(e){ $('dsBody').innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
-  DSD=d; const src=d.sources||[], late=src.filter(x=>x.state!=='정상');
-  $('dsHead').innerHTML=`${late.length?`<span class="tag 보류">확인 필요 ${late.length}</span> `:'<span class="tag y">모두 정상</span> '}<span style="color:var(--faint)">${esc(d.db.span||'')} · ${esc(d.db.size)}</span>`;
+  DSD=d; const src=d.sources||[], late=src.filter(x=>x.state!=='정상'&&x.state!=='준비 중'), soon=src.filter(x=>x.state==='준비 중');
+  $('dsHead').innerHTML=`${late.length?`<span class="tag 보류">확인 필요 ${late.length}</span> `:'<span class="tag y">모두 정상</span> '}${soon.length?`<span class="tag" title="${esc(soon.map(x=>x.label).join(' · '))}">준비 중 ${soon.length}</span> `:''}<span style="color:var(--faint)">${esc(d.db.span||'')} · ${esc(d.db.size)}</span>`;
   const malls=Object.fromEntries((d.malls||[]).map(m=>[m.mall,m.rows]));
   $('dsBody').innerHTML=src.map(x=>{
     const kind=SRC_KIND[x.key]; const tpl=kind?TEMPLATES[SRC_TPL[x.key]]:null;
@@ -4888,9 +4910,10 @@ async function loadDataStatus(){
       ${cols?`<div class="cols">필요한 열 — ${esc(cols)}</div>`:''}
       <div class="acts">${kind
         ? `<button class="btn sm" onclick="selectSource('${x.key}','file')">파일 올리기</button><button class="btn sm ghost" onclick="selectSource('${x.key}','paste')">붙여넣기</button><button class="btn sm ghost" onclick="downloadTemplate('${SRC_TPL[x.key]}')" title="이 소스의 양식만">양식</button>`
+        + (x.key==='sub_plan' ? `<button class="btn sm ghost" onclick="show('items');setTimeout(()=>document.getElementById('subCard')?.scrollIntoView({behavior:'smooth'}),400)">요금표 보기</button>` : '')
+        + (x.key==='web_inquiry' ? `<button class="btn sm ghost" onclick="show('inbox');setTimeout(()=>document.getElementById('wiCard')?.scrollIntoView({behavior:'smooth'}),400)">문의 관리에서 보기</button>` : '')
         : x.key==='store' ? `<a class="btn sm ghost" href="/store.html" target="_blank" style="text-decoration:none">매장 화면 열기 ↗</a>`
-        : x.key==='sub_plan' ? `<button class="btn sm" onclick="subPasteOpen()">붙여넣기로 등록</button><button class="btn sm ghost" onclick="show('items');setTimeout(()=>document.getElementById('subCard')?.scrollIntoView({behavior:'smooth'}),400)">요금표 · 가격 이력 보기</button>`
-        : x.key==='web_inquiry' ? `<button class="btn sm" onclick="wiPasteOpen()">붙여넣기로 등록</button><button class="btn sm ghost" onclick="show('inbox');setTimeout(()=>document.getElementById('wiCard')?.scrollIntoView({behavior:'smooth'}),400)">문의 관리에서 보기</button>`
+
         : `<button class="btn sm ghost" onclick="impTab('sl')">자동 수집 현황</button>`}</div>
     </div>`;}).join('');
 }
@@ -4963,9 +4986,9 @@ function impTab(t){
   if(t==='sl') loadSl();
 }
 const PASTE_TPL={shoplinker:'샵링커_주문',ecount_sales:'이카운트_판매현황',ecount_prospect:'이카운트_가망고객',
-  rental:'렌탈',godo_member:'고도몰_회원',store_manual:'매장_일별'};
+  rental:'렌탈',godo_member:'고도몰_회원',store_manual:'매장_일별',web_inquiry:'홈페이지_문의',sub_plan:'구독_상품'};
 const PASTE_LABEL={shoplinker:'샵링커 주문',ecount_sales:'이카운트 판매현황(VMS)',ecount_prospect:'이카운트 가망고객',
-  rental:'렌탈',godo_member:'고도몰 회원',store_manual:'매장 일별(Manual)'};
+  rental:'렌탈',godo_member:'고도몰 회원',store_manual:'매장 일별(Manual)',web_inquiry:'홈페이지 문의 (고도몰 견적 게시판)',sub_plan:'구독 상품 · 요금'};
 function pasteKindChanged(){
   const k=$('pasteKind').value;
   if(SEL_SRC && k && SRC_KIND[SEL_SRC]!==k){ toast('선택한 데이터 소스와 다른 종류입니다. 오른쪽 위 "선택 해제" 후 고르세요','bad'); $('pasteKind').value=SRC_KIND[SEL_SRC]; return; }
@@ -5202,6 +5225,15 @@ async function saveProfile(id){ try{ await rpc('fn_profile_set',{p_id:id,p_role:
 
 /* ═══════════════ 업로드 양식 엑셀 ═══════════════ */
 const TEMPLATES={
+ '홈페이지_문의':{note:'고도몰 관리자 → 개인/사업자 가전 견적 문의 목록을 그대로 내려받거나 복사해 붙여 넣으세요. 같은 연락처+등록일+이름이면 갱신됩니다.',
+  cols:['번호','제목','견적결과','상담상태','담당자','연락처','이메일','등록일','유형'],
+  rows:[[188,'손규원','미입력','진행','이수혁프로','010-8972-5794','','2026-09-07','개인'],
+        [22,'정현준','failure','완료','차효범점장','010-2019-5662','','2026-03-31','사업자']]},
+ '구독_상품':{note:"상품명이 '제품'인 줄이 플랜(모델·요금)이고, 바로 아래 같은 계약기간·서비스주기·케어구분 줄들이 그 플랜의 케어 구성이 됩니다. 순서를 바꾸지 마세요.",
+  cols:['구분','품목1','품목2','계약 기간','상품명','서비스 주기','모델코드','총 구독료(V+)','월구독료(v+)','케어구분'],
+  rows:[['DA설치','세탁기','세탁건조기(콤보)',6,'제품','12개월','WD90F25AHS',7357680,102190,'Case 2'],
+        ['DA설치','세탁기','세탁건조기(콤보)',6,'세탁기 세탁건조기(콤보) 6년형 무상수리서비스','12개월','P-WM-5NSXW05','','','Case 2'],
+        ['DA설치','세탁기','세탁건조기(콤보)',6,'세탁기 세탁건조기(콤보) 6년형 방문케어 1회차','12개월','WF-TCSWDCPT1','','','Case 2']]},
  '샵링커_주문':{cols:['주문번호','자사주문번호','주문일자','배송상태','쇼핑몰','쇼핑몰아이디','상품코드','모델명','주문 상품명','옵션','수량','쇼핑몰 판매가','주문금액','결제','주문자명','주문자연락처1','주문자연락처2','주문자이메일주소','수취인 주소','클레임여부'],
   rows:[['2608181744360815','1323871046','20260818174436','송장전송완료','고도몰5','samsungsh','prd177089707','HAF-HIN','정품 삼성 비스포크 정수기필터','제품선택/ 미개봉새상품',2,149000,298000,'네이버페이','염승엽','010-7202-0910','010-4613-1702','lje84@naver.com','경기도 용인시 수지구 …','NO'],
         ['20260818758862','1323871047','20260818174641','배송전취소','스마트스토어','samsung_pmall','prd176878037','HAF-HIM','삼성 비스포크 정수기 일체형 필터','',1,82000,82000,'간편결제','김민준','','010-3841-9281','','서울특별시 강남구 …','자동:취소관련']]},

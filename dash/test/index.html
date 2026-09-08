@@ -60,6 +60,35 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .chips.tight{margin-bottom:0}
 .scope button[aria-pressed="true"]{background:var(--teal);border-color:var(--teal)}
 .scope button[data-s="on"][aria-pressed="true"]{background:var(--navy);border-color:var(--navy)}
+.scope button[data-s="pick"]{background:#fff;border-style:dashed}
+.scope button[data-s="pick"].on{background:var(--navy);color:#fff;border-style:solid;border-color:var(--navy)}
+/* 채널 고르기 팝업 */
+.cpop-bg{position:fixed;inset:0;background:rgba(14,17,22,.42);z-index:120;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px}
+.cpop{background:#fff;border-radius:16px;box-shadow:0 24px 64px rgba(10,20,60,.28);width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.cpop h3{margin:0;padding:18px 20px 12px;font-size:17px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.cpop h3 small{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--muted);margin-left:auto}
+.cpop .qz{display:flex;gap:6px;flex-wrap:wrap;padding:0 20px 12px;border-bottom:1px solid var(--rule-soft)}
+.cpop .qz button{font-size:12.5px;font-weight:600;background:#F2F4F7;color:var(--ink-2);border:1px solid var(--rule-soft);border-radius:6px;padding:6px 11px;cursor:pointer}
+.cpop .qz button:hover{background:var(--navy-soft);border-color:#B9C2E8}
+.cpop .body{overflow:auto;padding:6px 8px 8px}
+.cpop .ft{display:flex;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--rule-soft)}
+.cpop .ft .sum{font-family:var(--mono);font-size:12px;color:var(--muted);margin-right:auto}
+.cpop .ft button{font-size:13.5px;font-weight:700;border-radius:8px;padding:9px 18px;cursor:pointer;border:1px solid var(--rule)}
+.cpop .ft .ok{background:var(--navy);color:#fff;border-color:var(--navy)}
+.crow{display:flex;align-items:center;gap:9px;padding:7px 12px;border-radius:8px;cursor:pointer;user-select:none}
+.crow:hover{background:#F5F7FB}
+.crow input{width:16px;height:16px;accent-color:var(--navy);cursor:pointer;flex:0 0 auto;margin:0}
+.crow .nm{font-size:14px;font-weight:600;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crow .amt{font-family:var(--mono);font-size:12.5px;color:var(--muted);flex:0 0 auto}
+.crow.top{font-weight:800;background:#F7F9FC;margin-top:4px}
+.crow.top .nm{font-size:14.5px;font-weight:800}
+.crow.top .amt{color:var(--navy);font-weight:700}
+.crow.sub{padding-left:30px}
+.crow.sub .nm{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.crow.leaf{padding-left:52px}
+.crow.leaf .nm{font-weight:500}
+.crow.off .nm,.crow.off .amt{opacity:.42}
+@media(max-width:560px){.cpop .body{padding:4px} .crow.leaf{padding-left:38px}}
 .dates{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .dates input{font-family:var(--mono);font-size:13px;border:1px solid var(--rule);border-radius:6px;padding:7px 10px;color:var(--ink);background:#fff}
 .dates span.arw{font-family:var(--mono);font-size:13px;color:var(--muted)}
@@ -465,7 +494,9 @@ body{background:
         <button data-s="all" aria-pressed="true">전체</button>
         <button data-s="on">온라인만</button>
         <button data-s="off">오프라인만</button>
+        <button data-s="pick" id="chpickbtn" title="채널을 하나씩 켜고 끕니다">채널 고르기 ▾</button>
       </div>
+      <span class="note" id="scope-note" style="display:block;margin-top:7px"></span>
       <span class="rsum" id="rsum"></span>
     </div>
   </div>
@@ -700,9 +731,33 @@ const AX='font-family="IBM Plex Mono,monospace" font-size="12" fill="#6B727C"';
 const val=c=>metric==='g'?c[2]:metric==='r'?c[3]:(c[2]-c[3]);
 const pval=c=>metric==='g'?c[4]:metric==='r'?c[5]:(c[4]-c[5]);
 
-/* ===== 범위 ===== */
-function inScope(ci){return scope==='all'?true:(scope==='off'?isOff(ci):!isOff(ci));}
-const scopeName=()=>scope==='on'?'온라인':scope==='off'?'오프라인':'전체';
+/* ===== 범위 = 켜 놓은 채널 집합 =====
+   크게 온라인 / 매장 / 통신판매(VMS) / 렌탈 / 직배, 온라인 아래에 고도몰·오픈마켓·직접B2B·홈쇼핑.
+   전체·온라인만·오프라인만은 이 집합을 채우는 빠른 버튼일 뿐이고, [채널 고르기]로 하나씩 켜고 끈다. */
+let SEL=new Set(CH.map((c,i)=>i));
+function topOf(i){const c=CH[i],g=c.group||'';
+  if(c.name==='렌탈')return '렌탈';
+  if(g==='통신판매')return '통신판매(VMS)';
+  if(g==='오프라인')return '매장';
+  if(g==='기타')return '직배';
+  return '온라인';}
+function subOf(i){return topOf(i)==='온라인'?(CH[i].group||'기타'):'';}
+const TOP_ORDER=['온라인','매장','통신판매(VMS)','렌탈','직배'];
+const SUB_ORDER=['고도몰','오픈마켓','직접/B2B','홈쇼핑/T커머스','기타'];
+function chTree(){const t=new Map();
+  CH.forEach((c,i)=>{const tp=topOf(i),sb=subOf(i)||'·';
+    if(!t.has(tp))t.set(tp,new Map());
+    const m=t.get(tp); if(!m.has(sb))m.set(sb,[]); m.get(sb).push(i);});
+  return new Map([...t.entries()].sort((x,y)=>TOP_ORDER.indexOf(x[0])-TOP_ORDER.indexOf(y[0])));}
+function inScope(ci){return SEL.has(ci);}
+function selAll(){return SEL.size===NC;}
+function selIs(fn){return CH.every((c,i)=>SEL.has(i)===fn(i));}
+function scopeKind(){return selAll()?'all':selIs(i=>!isOff(i))?'on':selIs(i=>isOff(i))?'off':'custom';}
+const scopeName=()=>{const k=scopeKind();
+  return k==='all'?'전체':k==='on'?'온라인':k==='off'?'오프라인':'채널 '+SEL.size+'개';};
+function selSave(){try{sessionStorage.setItem('dash_sel',JSON.stringify([...SEL]));}catch(e){}}
+function selLoad(){try{const v=JSON.parse(sessionStorage.getItem('dash_sel')||'null');
+  if(Array.isArray(v)&&v.length&&v.every(i=>i>=0&&i<NC))SEL=new Set(v);}catch(e){}}
 
 /* ===== 집계 ===== */
 function agg(lo,hi,all){
@@ -800,13 +855,96 @@ $('#d1').onchange=$('#d2').onchange=function(){
 /* ===== 필터 해제 ===== */
 function clearFocus(){focus=null;wfTab='ch';dirtyC=true;render();if(view==='c')renderCV();}
 function setScope(v){
-  scope=v;
-  if(focus!==null&&!inScope(focus))focus=null;   // 범위 밖이 된 채널만 해제
-  $('#scope').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.s===v));
-  render();}
+  if(v==='pick'){openChPick();return;}
+  SEL=new Set(CH.map((c,i)=>i).filter(i=>v==='all'?true:v==='off'?isOff(i):!isOff(i)));
+  scope=v; afterSel();}
+function afterSel(){
+  if(!SEL.size)SEL=new Set(CH.map((c,i)=>i));            // 전부 끄면 전체로 되돌린다
+  if(focus!==null&&!inScope(focus))focus=null;           // 범위 밖이 된 채널만 해제
+  scope=scopeKind(); selSave(); syncScopeBtns(); render();
+  if($('#cpop'))drawChPick();}
+function syncScopeBtns(){
+  const k=scopeKind();
+  $('#scope').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.s!=='pick'&&x.dataset.s===k));
+  const pb=$('#chpickbtn'); if(pb)pb.classList.toggle('on',k==='custom');
+  const nt=$('#scope-note');
+  if(nt)nt.textContent=k==='all'?NC+'개 채널 모두 집계':(k==='custom'?SEL.size+'/'+NC+'개 채널만 집계 중':scopeName()+' 채널만 집계 · '+SEL.size+'개');}
+
+/* ===== 채널 고르기 팝업 (온라인/매장/VMS/렌탈/직배 → 하위 그룹 → 채널) ===== */
+function openChPick(){
+  if($('#cpop-bg'))return;
+  const bg=document.createElement('div'); bg.className='cpop-bg'; bg.id='cpop-bg';
+  bg.innerHTML='<div class="cpop" id="cpop" role="dialog" aria-label="채널 고르기">'
+    +'<h3>채널 고르기 <small id="cpop-period"></small></h3>'
+    +'<div class="qz" id="cpop-qz">'
+      +'<button data-q="all">전체</button><button data-q="on">온라인만</button><button data-q="off">오프라인만</button>'
+      +'<button data-q="none">모두 끄기</button><button data-q="top5">상위 5개</button>'
+    +'</div>'
+    +'<div class="body" id="cpop-body"></div>'
+    +'<div class="ft"><span class="sum" id="cpop-sum"></span><button class="ok" id="cpop-ok">닫기</button></div>'
+  +'</div>';
+  document.body.appendChild(bg);
+  bg.onclick=e=>{if(e.target===bg)closeChPick();};
+  $('#cpop-ok').onclick=closeChPick;
+  $('#cpop-qz').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const q=b.dataset.q, key=mkey();
+    if(q==='all')SEL=new Set(CH.map((c,i)=>i));
+    else if(q==='none')SEL=new Set();
+    else if(q==='top5')SEL=new Set(CH.map((c,i)=>({i:i,v:cur.byCh[i][key]})).sort((x,y)=>y.v-x.v).slice(0,5).map(x=>x.i));
+    else SEL=new Set(CH.map((c,i)=>i).filter(i=>q==='off'?isOff(i):!isOff(i)));
+    if(q==='none'){scope='custom';selSave();syncScopeBtns();drawChPick();return;}   // 모두 끄기는 되돌림 없이 그대로 보여준다
+    afterSel();});
+  document.addEventListener('keydown',chPickEsc);
+  drawChPick();
+}
+function chPickEsc(e){if(e.key==='Escape'&&$('#cpop-bg'))closeChPick();}
+function closeChPick(){const bg=$('#cpop-bg'); if(bg)bg.remove();
+  document.removeEventListener('keydown',chPickEsc);
+  if(!SEL.size){SEL=new Set(CH.map((c,i)=>i));afterSel();}}
+function drawChPick(){
+  const body=$('#cpop-body'); if(!body)return;
+  const key=mkey(), tree=chTree(), h=[];
+  const amt=arr=>arr.reduce((s,i)=>s+cur.byCh[i][key],0);
+  const amtOn=arr=>arr.reduce((s,i)=>SEL.has(i)?s+cur.byCh[i][key]:s,0);
+  const gAmt=arr=>{const on=arr.filter(i=>SEL.has(i)).length;
+    return on===arr.length?wonS(amt(arr)):on===0?wonS(amt(arr)):wonS(amtOn(arr))+' <em style="font-style:normal;opacity:.5">/ '+wonS(amt(arr))+'</em>';};
+  const box=(id,on,ind)=>'<input type="checkbox" data-t="'+id+'"'+(on?' checked':'')+(ind?' data-ind="1"':'')+'>';
+  tree.forEach((subs,tp)=>{
+    const all=[...subs.values()].flat(), onN=all.filter(i=>SEL.has(i)).length;
+    h.push('<label class="crow top'+(onN?'':' off')+'"><input type="checkbox" data-g="'+esc(tp)+'"'+(onN===all.length?' checked':'')+'>'
+      +'<span class="nm">'+esc(tp)+'</span><span class="amt">'+gAmt(all)+' · '+onN+'/'+all.length+'</span></label>');
+    subs.forEach((idx,sb)=>{
+      const sOn=idx.filter(i=>SEL.has(i)).length;
+      if(sb!=='·'&&subs.size>1)
+        h.push('<label class="crow sub'+(sOn?'':' off')+'"><input type="checkbox" data-s2="'+esc(tp)+'|'+esc(sb)+'"'+(sOn===idx.length?' checked':'')+'>'
+          +'<span class="nm">'+esc(sb)+'</span><span class="amt">'+gAmt(idx)+'</span></label>');
+      idx.sort((x,y)=>cur.byCh[y][key]-cur.byCh[x][key]).forEach(i=>{
+        h.push('<label class="crow leaf'+(SEL.has(i)?'':' off')+'"><input type="checkbox" data-c="'+i+'"'+(SEL.has(i)?' checked':'')+'>'
+          +'<span class="nm">'+esc(CH[i].name)+'</span><span class="amt">'+wonS(cur.byCh[i][key])+'</span></label>');});
+    });
+  });
+  body.innerHTML=h.join('');
+  body.querySelectorAll('input[data-c]').forEach(el=>el.onchange=()=>{
+    const i=+el.dataset.c; el.checked?SEL.add(i):SEL.delete(i); afterSel();});
+  body.querySelectorAll('input[data-g]').forEach(el=>el.onchange=()=>{
+    const tp=el.dataset.g; CH.forEach((c,i)=>{if(topOf(i)===tp)el.checked?SEL.add(i):SEL.delete(i);}); afterSel();});
+  body.querySelectorAll('input[data-s2]').forEach(el=>el.onchange=()=>{
+    const [tp,sb]=el.dataset.s2.split('|');
+    CH.forEach((c,i)=>{if(topOf(i)===tp&&(subOf(i)||'·')===sb)el.checked?SEL.add(i):SEL.delete(i);}); afterSel();});
+  /* 일부만 켜진 그룹은 중간 상태로 */
+  tree.forEach((subs,tp)=>{
+    const all=[...subs.values()].flat(), onN=all.filter(i=>SEL.has(i)).length;
+    const g=body.querySelector('input[data-g="'+tp.replace(/"/g,'')+'"]'); if(g)g.indeterminate=onN>0&&onN<all.length;
+    subs.forEach((idx,sb)=>{const sOn=idx.filter(i=>SEL.has(i)).length;
+      const e2=body.querySelector('input[data-s2="'+tp.replace(/"/g,'')+'|'+sb.replace(/"/g,'')+'"]');
+      if(e2)e2.indeterminate=sOn>0&&sOn<idx.length;});});
+  const key2=mkey(), tot=CH.reduce((s,c,i)=>SEL.has(i)?s+cur.byCh[i][key2]:s,0);
+  $('#cpop-sum').textContent=SEL.size+'/'+NC+'개 · '+wonS(tot)+(SEL.size?'':' (하나도 안 켜져 있으면 닫을 때 전체로 돌아갑니다)');
+  const pd=$('#cpop-period'); if(pd)pd.textContent=dot(DAYS[a])+'–'+dot(DAYS[b])+' · '+(metric==='g'?'총매출':metric==='r'?'환불':'순매출');
+}
 function drawAbar(){
   const F=[];
-  if(scope!=='all')F.push(['범위',scope==='on'?'온라인만':'오프라인만','scope']);
+  if(!selAll())F.push(['범위',scopeKind()==='custom'?SEL.size+'/'+NC+'개 채널':scopeName()+'만','scope']);
   if(focus!==null)F.push(['채널',CH[focus].name,'focus']);
   if(pMall>=0)F.push(['상품 몰',CH[pMall].name,'mall']);
   if(pCat)F.push(['카테고리',pCat,'cat']);
@@ -828,9 +966,9 @@ function drawAbar(){
       if(k==='q'){pQ='';$('#psearch').value='';}
       pLimit=30;render();});
     $('#clr-all').onclick=()=>{
-      focus=null;pMall=-1;pCat=null;pQ='';pLimit=30;$('#psearch').value='';scope='all';
-      $('#scope').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.s==='all'));
-      render();};
+      focus=null;pMall=-1;pCat=null;pQ='';pLimit=30;$('#psearch').value='';
+      SEL=new Set(CH.map((c,i)=>i));scope='all';selSave();syncScopeBtns();
+      render(); if($('#cpop'))drawChPick();};
   }
   $('#tr-clear').style.display=focus!==null?'':'none';
 }
@@ -927,7 +1065,7 @@ function drawKpis(){
 /* ===== 온·오프 축약 스트립 (범위=전체일 때만) ===== */
 function drawOO(){
   const el=$('#oostrip');
-  if(scope!=='all'){el.className='oostrip';el.innerHTML='';return;}
+  if(!selAll()){el.className='oostrip';el.innerHTML='';return;}
   const key=mkey();
   let on=0,off=0,onP=0,offP=0;
   CH.forEach((c,i)=>{
@@ -1571,8 +1709,10 @@ function drawMallSel(){
     +list.map(x=>'<option value="'+x.i+'"'+(focus===x.i?' selected':'')+'>'
       +esc(CH[x.i].name)+' — '+wonS(x.v)+'</option>').join('');
   el.className=focus!==null?'msel on':'msel';
-  $('#msel-note').textContent=focus!==null?'선택 유지 · 기간을 바꿔도 이 채널이 유지됩니다'
-    :list.length+'개 채널 · 고르면 채널 화면으로';
+  $('#msel-note').innerHTML=(focus!==null?'선택 유지 · 기간을 바꿔도 이 채널이 유지됩니다'
+    :list.length+'개 채널 · 고르면 채널 화면으로')
+    +' · <a href="javascript:void 0" id="msel-pick" style="color:var(--navy);font-weight:600">켜고 끄기</a>';
+  const mp=$('#msel-pick'); if(mp)mp.onclick=openChPick;
   el.onchange=()=>{
     const v=el.value;
     focus=v===''?null:+v;
@@ -1785,7 +1925,7 @@ document.addEventListener('keydown',e=>{
   if(!pres){if(e.key==='p'||e.key==='P')setPres(true);return;}
   if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(si<steps.length-1){si++;pren();}}
   if(e.key==='ArrowLeft'){e.preventDefault();if(si>0){si--;pren();}}});
-buildControls();drawFinds();a=firstA;b=lastA;render();
+selLoad();buildControls();syncScopeBtns();drawFinds();a=firstA;b=lastA;render();
 }
 </script>
 <script>
