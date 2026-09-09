@@ -2857,9 +2857,9 @@ function reqPoll(){
 }
 
 /* ═══ 실시간 상담 알림 (Supabase 리얼타임 구독) ═══
-   Supabase Realtime 을 통해 crm.consult 테이블의 INSERT 를 즉시 감지
-   폴링(20초) 을 대신하여 지연 시간 거의 0으로 알림 제공
-   네트워크 끊김 시에도 자동 재연결, 폴링 병행으로 보증
+   crm.consult 는 실명·전화가 있어 anon 에 열지 않는다. 상담이 등록되면 트리거가
+   public.consult_ping(개인정보 없음: 담당·출처·가린 이름) 에 한 줄 넣고, 화면은 그것만 구독.
+   폴링(20초) 은 백업으로 그대로 둔다. (mvp_100)
 */
 let REALTIME_SUB=null;
 let REALTIME_READY=false;
@@ -2867,11 +2867,11 @@ function setupRealtimeSubscription(){
   if(REALTIME_SUB) return; /* 이미 구독 중이면 중복 방지 */
 
   try {
-    /* crm.consult 테이블의 INSERT 이벤트 구독 */
+    /* public.consult_ping 의 INSERT 이벤트 구독 */
     REALTIME_SUB = sb
-      .channel('crm:consult:inserts')
+      .channel('consult:ping')
       .on('postgres_changes',
-        { event: 'INSERT', schema: 'crm', table: 'consult' },
+        { event: 'INSERT', schema: 'public', table: 'consult_ping' },
         (payload) => {
           /* 새로운 상담 레코드가 들어오면 즉시 처리 */
           handleNewConsultNotification(payload.new);
@@ -2899,11 +2899,12 @@ async function handleNewConsultNotification(newConsult){
   /* 새로운 상담이 들어왔을 때 처리 */
   if(!newConsult || !CODE || LOCKED) return;
 
-  /* INBOX_LAST 업데이트 (폴링 중복 방지) */
-  if(newConsult.id) INBOX_LAST=Math.max(INBOX_LAST||0, newConsult.id);
+  /* INBOX_LAST 업데이트 (폴링 중복 방지) — 신호 표의 consult_id 가 상담 id */
+  const cid=newConsult.consult_id||newConsult.id;
+  if(cid) INBOX_LAST=Math.max(INBOX_LAST||0, cid);
 
   const source=newConsult.source||'store_visit';
-  const who=newConsult.customer_name?`${newConsult.customer_name} 님`:'이름 없는 고객';
+  const who=newConsult.name_masked?`${newConsult.name_masked} 님`:'이름 없는 고객';
 
   /* 본인이 입력한 것이 아닐 때만 알림 (다른 직원의 상담) */
   if(newConsult.handler && newConsult.handler !== ME) {
