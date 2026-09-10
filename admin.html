@@ -837,6 +837,16 @@ html.fs-big .item,html.fs-big .item.oc{grid-template-columns:1fr}
 html.fs-big .item .act{flex-direction:row;flex-wrap:wrap;align-items:flex-start;justify-content:flex-start;margin-top:8px}
 html.fs-big .item .a{text-align:left}
 html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
+/* ── 표에서 여러 건 고르기 ── */
+.bulkbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface-2,#F7F8FA);margin:0 0 10px}
+.bulkbar .allck{display:flex;align-items:center;gap:7px;font-weight:700;font-size:calc(13px * var(--font-scale));cursor:pointer;white-space:nowrap}
+.bulkbar .allck input{width:16px;height:16px;accent-color:var(--navy)}
+.bulkbar .allck small{color:var(--muted);font-weight:500}
+.bulkbar > b{font-size:calc(12.5px * var(--font-scale));color:var(--muted);font-weight:600}
+.bulkbar .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+.bulkbar .acts :disabled{opacity:.45;cursor:default}
+table tbody tr.sel{background:var(--accent-soft,#EEF2FF)}
+table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:16px;accent-color:var(--navy);cursor:pointer}
 </style>
 </head>
 <body>
@@ -1244,7 +1254,7 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
       <div class="view hidden" id="v-consults">
         <div class="card">
           <div class="filters">
-            <select class="in" id="cRes"><option value="">전체 결과</option><option>진행중</option><option>보류</option><option>구매완료</option><option>종료</option><option value="숨김">숨긴 건 (테스트 등)</option></select>
+            <select class="in" id="cRes"><option value="">전체 결과</option><option>진행전</option><option>진행중</option><option>보류</option><option>상담완료</option><option>구매완료</option><option>거절</option><option>종료</option><option value="숨김">숨긴 건 (테스트 등)</option></select>
             <select class="in" id="cHd"><option value="">전체 상담사</option></select>
             <select class="in" id="cRoute" style="min-width:150px"><option value="">전체 유입경로</option></select>
             <input class="in" id="cQ" placeholder="고객명 · 내용 · 품목 · 모델 · 전화" style="min-width:220px" onkeydown="if(event.key==='Enter')loadConsults(0)">
@@ -1257,7 +1267,20 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
           <div class="qsum" id="cSum"></div>
           <div class="qmeta" id="cMeta"></div>
           <div id="cChips" class="legend" style="margin:-4px 0 10px"></div>
-          <div class="tw"><table><thead><tr><th>상담일</th><th>번호</th><th>고객</th><th>연락처</th><th>관심</th><th>유입경로</th><th>상담사</th><th class="num">예상금액</th><th>예정일</th><th>콜백</th><th>결과</th><th>내용</th><th></th></tr></thead><tbody id="tbConsults"></tbody></table></div>
+          <div class="bulkbar" id="cBulk">
+            <label class="allck"><input type="checkbox" id="cAll" onchange="cToggleAll(this.checked)"> 전체선택 <small>(이 쪽)</small></label>
+            <b id="cSelN">고른 건 없음</b>
+            <div class="acts" id="cActs">
+              <select class="in" id="cBulkRes" style="padding:5px 8px;font-size:calc(12.5px * var(--font-scale))" disabled>
+                <option value="">결과 한 번에 바꾸기…</option>
+                <option>진행전</option><option>진행중</option><option>보류</option><option>상담완료</option><option>구매완료</option><option>거절</option>
+              </select>
+              <button class="btn sm" onclick="cBulkResult()" disabled>적용</button>
+              <button class="btn sm ghost" onclick="cBulkHide(true)" disabled>숨기기</button>
+              <button class="btn sm ghost" onclick="cBulkHide(false)" disabled>되살리기</button>
+            </div>
+          </div>
+          <div class="tw"><table><thead><tr><th style="width:34px"><input type="checkbox" id="cAll2" onchange="cToggleAll(this.checked)" aria-label="전체선택"></th><th>상담일</th><th>번호</th><th>고객</th><th>연락처</th><th>관심</th><th>유입경로</th><th>상담사</th><th class="num">예상금액</th><th>예정일</th><th>콜백</th><th>결과</th><th>내용</th><th></th></tr></thead><tbody id="tbConsults"></tbody></table></div>
           <p class="note" style="margin-top:8px"><b>숨기기</b>는 테스트로 넣은 건을 치울 때 씁니다 — 담당자 화면(콜백·진행중 상담·내 고객)과 모든 통계에서 빠지고, 여기 "숨긴 건" 필터로만 보입니다. 되살리기도 됩니다.</p>
           <div class="pager"><span id="cCount"></span><div class="btns" id="cPg"></div></div>
         </div>
@@ -4560,11 +4583,42 @@ async function loadConsults(page){
   renderConsultChips(total);
   CONSULT_ROWS=rows; loadQuotes();
   if(cPage===0){ rpc('fn_consult_summary',{p_from:P.from,p_to:P.to,p_result:$('cRes').value||null,p_q:$('cQ').value||null,p_handler:$('cHd').value||null,p_route:$('cRoute').value||null}).then(renderConsultSummary).catch(()=>renderConsultSummary(null)); }
-  $('tbConsults').innerHTML=rows.map(c=>`<tr><td class="mono">${dtfmt(c.consult_at).slice(0,10)}</td><td class="mono" style="font-size:calc(11px * var(--font-scale));color:var(--muted)">${esc(c.source_ref)}</td><td><b>${esc(c.customer_name||'-')}</b></td><td class="mono">${esc(c.phone||'-')}</td><td>${esc(c.interest_category||'')}${c.interest_model_code?' <span class="mono" style="color:var(--muted)">'+esc(c.interest_model_code)+'</span>':''}${c.purchase_item?`<div style="font-size:calc(11px * var(--font-scale));color:var(--ok)">구매 ${esc(c.purchase_item)}</div>`:''}${(c.next_model_code||c.next_category)?`<div style="font-size:calc(11px * var(--font-scale));color:var(--navy)" title="${esc(c.next_note||'')}">다음 ${esc(c.next_model_code||c.next_category)}${c.next_expected_date?' · '+String(c.next_expected_date).slice(5).replace('-','/'):''}</div>`:''}</td><td style="font-size:calc(12px * var(--font-scale))">${esc(c.inflow_route||'')}</td><td>${esc(c.handler||'')}</td><td class="num">${c.expected_amount?n(c.expected_amount):''}</td><td class="mono">${dfmt(c.expected_purchase_date)}</td><td style="font-size:calc(11.5px * var(--font-scale));white-space:nowrap">${c.callback_at?(c.callback_done_at?`<span class="tag y">완료</span>`:(new Date(c.callback_at)<new Date()?`<span class="tag n">지남</span>`:`<span class="tag 보류">예정</span>`))+' '+String(c.callback_at).slice(5,16).replace('T',' '):''}</td>
-    <td><select class="in" style="padding:3px 6px;font-size:calc(12px * var(--font-scale))" onchange="setResult(${c.id},this.value)">${['진행중','보류','구매완료','종료'].map(r=>`<option ${r===c.result?'selected':''}>${r}</option>`).join('')}</select></td><td class="wrap" style="font-size:calc(12px * var(--font-scale));color:var(--ink-2)">${c.gift_name?`<span class="tag 보류" title="사은품">🎁 ${esc(c.gift_name)}${c.gift_amount?' '+n(c.gift_amount):''}</span> `:''}${esc(c.content||'')}</td>
-    <td style="white-space:nowrap">${c.hidden_at?`<span class="tag n" title="${esc(c.hidden_by||'')} · ${esc(c.hidden_reason||'')}">숨김</span> <button class="btn sm ghost" onclick="hideConsult(${c.id},false)">되살리기</button>`:`<button class="btn sm ghost" onclick="hideConsult(${c.id},true)">숨기기</button>`}</td></tr>`).join('')||'<tr><td colspan="13" class="note" style="text-align:center;padding:24px">없음</td></tr>';
+  const here=new Set(rows.map(r=>r.id)); [...C_SEL].forEach(id=>{ if(!here.has(id)) C_SEL.delete(id); });
+  $('tbConsults').innerHTML=rows.map(c=>`<tr id="crow_${c.id}" class="${C_SEL.has(c.id)?'sel':''}"><td><input type="checkbox" ${C_SEL.has(c.id)?'checked':''} onchange="cSel(${c.id},this.checked)" aria-label="${esc(c.customer_name||'')} 고르기"></td><td class="mono">${dtfmt(c.consult_at).slice(0,10)}</td><td class="mono" style="font-size:calc(11px * var(--font-scale));color:var(--muted)">${esc(c.source_ref)}</td><td><b>${esc(c.customer_name||'-')}</b></td><td class="mono">${esc(c.phone||'-')}</td><td>${esc(c.interest_category||'')}${c.interest_model_code?' <span class="mono" style="color:var(--muted)">'+esc(c.interest_model_code)+'</span>':''}${c.purchase_item?`<div style="font-size:calc(11px * var(--font-scale));color:var(--ok)">구매 ${esc(c.purchase_item)}</div>`:''}${(c.next_model_code||c.next_category)?`<div style="font-size:calc(11px * var(--font-scale));color:var(--navy)" title="${esc(c.next_note||'')}">다음 ${esc(c.next_model_code||c.next_category)}${c.next_expected_date?' · '+String(c.next_expected_date).slice(5).replace('-','/'):''}</div>`:''}</td><td style="font-size:calc(12px * var(--font-scale))">${esc(c.inflow_route||'')}</td><td>${esc(c.handler||'')}</td><td class="num">${c.expected_amount?n(c.expected_amount):''}</td><td class="mono">${dfmt(c.expected_purchase_date)}</td><td style="font-size:calc(11.5px * var(--font-scale));white-space:nowrap">${c.callback_at?(c.callback_done_at?`<span class="tag y">완료</span>`:(new Date(c.callback_at)<new Date()?`<span class="tag n">지남</span>`:`<span class="tag 보류">예정</span>`))+' '+String(c.callback_at).slice(5,16).replace('T',' '):''}</td>
+    <td><select class="in" style="padding:3px 6px;font-size:calc(12px * var(--font-scale))" onchange="setResult(${c.id},this.value)">${['진행전','진행중','보류','상담완료','구매완료','거절','종료'].map(r=>`<option ${r===c.result?'selected':''}>${r}</option>`).join('')}</select></td><td class="wrap" style="font-size:calc(12px * var(--font-scale));color:var(--ink-2)">${c.gift_name?`<span class="tag 보류" title="사은품">🎁 ${esc(c.gift_name)}${c.gift_amount?' '+n(c.gift_amount):''}</span> `:''}${esc(c.content||'')}</td>
+    <td style="white-space:nowrap">${c.hidden_at?`<span class="tag n" title="${esc(c.hidden_by||'')} · ${esc(c.hidden_reason||'')}">숨김</span> <button class="btn sm ghost" onclick="hideConsult(${c.id},false)">되살리기</button>`:`<button class="btn sm ghost" onclick="hideConsult(${c.id},true)">숨기기</button>`}</td></tr>`).join('')||'<tr><td colspan="14" class="note" style="text-align:center;padding:24px">없음</td></tr>';
+  cSelSync();
 }
 let CONSULT_ROWS=[];
+/* ═══ 표에서 여러 건 고르기 — 한 번에 처리 ═══════════════════════════ */
+let C_SEL=new Set();
+function cSel(id,on){ on?C_SEL.add(id):C_SEL.delete(id); const r=$('crow_'+id); if(r) r.classList.toggle('sel',on); cSelSync(); }
+function cToggleAll(on){ (CONSULT_ROWS||[]).forEach(c=>{ on?C_SEL.add(c.id):C_SEL.delete(c.id);
+  const r=$('crow_'+c.id); if(r){ r.classList.toggle('sel',on); const b=r.querySelector('input[type=checkbox]'); if(b) b.checked=on; } }); cSelSync(); }
+function cSelSync(){
+  const n=C_SEL.size, tot=(CONSULT_ROWS||[]).length;
+  ['cAll','cAll2'].forEach(id=>{ const el=$(id); if(el){ el.checked = n>0 && n===tot; el.indeterminate = n>0 && n<tot; } });
+  $('cSelN').textContent = n ? `${n}건 선택` : '고른 건 없음';
+  $('cActs').querySelectorAll('button,select').forEach(b=>b.disabled = !n);
+}
+async function cBulkResult(){
+  const v=$('cBulkRes').value; const ids=[...C_SEL];
+  if(!v) return toast('바꿀 결과를 고르세요','bad');
+  if(!ids.length) return toast('먼저 상담을 고르세요','bad');
+  if(!confirm(`고른 ${ids.length}건의 결과를 "${v}" 로 바꿉니다. 계속할까요?`)) return;
+  try{ const r=await rpc('fn_consult_bulk_result',{p_ids:ids,p_result:v});
+    toast(`${r.done}건을 "${v}" 로 바꿨습니다`,'ok'); C_SEL.clear(); $('cBulkRes').value=''; loadConsults(cPage);
+  }catch(e){ toast(e.message,'bad'); }
+}
+async function cBulkHide(hide){
+  const ids=[...C_SEL]; if(!ids.length) return toast('먼저 상담을 고르세요','bad');
+  let reason=null;
+  if(hide){ reason=prompt(`${ids.length}건을 숨깁니다. 이유 (예: 테스트, 중복)`, '테스트'); if(reason===null) return; }
+  else if(!confirm(`고른 ${ids.length}건을 되살립니다. 계속할까요?`)) return;
+  try{ await rpc('fn_consult_hide',{p_ids:ids,p_hide:hide,p_reason:reason});
+    toast(hide?`${ids.length}건 숨겼습니다`:`${ids.length}건 되살렸습니다`,'ok'); C_SEL.clear(); loadConsults(cPage);
+  }catch(e){ toast(e.message,'bad'); }
+}
 async function hideConsult(id, hide){
   let reason=null;
   if(hide){ reason=prompt('숨기는 이유 (예: 테스트, 중복)', '테스트'); if(reason===null) return; }
