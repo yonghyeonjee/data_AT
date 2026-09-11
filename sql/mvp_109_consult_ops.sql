@@ -54,3 +54,24 @@ create table if not exists core.web_traffic (
      core.notify_rule.inquiry_homepage (event 'inquiry.homepage')
      fn_inquiry_mail_ingest 이 한 건 넣을 때마다 core.f_notify 호출 (실패해도 적재는 진행)
    ═══════════════════════════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════════════════
+   2026-09-11 추가 ② — 문의 창구(채널) vs 방문경로 정리  (DB 적용 완료)
+
+   홈페이지 폼의 "방문경로"(네이버·구글검색 / 온라인카페·커뮤니티 / 블로그 / 지인소개 / 기타)는
+   창구가 아니라 홈페이지 문의의 세부다. 채널로 쪼개면 홈페이지 문의가 갈라진다.
+
+   · core.inq_channel.naver → active=false (창구 목록에서 뺌. 기존 17건의 값은 그대로 둠)
+   · 라벨·설명 정리 : 홈페이지 문의 = samsungat.co.kr 게시판 / 구독 문의 = 시흥몰·P몰 구독 페이지
+   · core.inq_route 신설 — 유입경로 표준 목록 (채널별). fn_inq_codes 가 같이 내려준다.
+     담당자 화면 상담 입력의 유입경로 드롭다운이 고른 채널 것을 위로 올려 보여준다.
+   · core.f_consult_stats 에 'routes' 추가 — 채널 × 유입경로 × 구매 성공률.
+     처리현황(담당자·관리자)에 "채널 안에서 유입경로별로" 접이식 표로 나온다.
+   · fn_inquiry_mail_ingest : 사업자 게시판(제목에 사업자/법인/기업/B2B) 구분.
+     내용 앞에 [사업자], crm.customer.account_type='business', 이메일 저장.
+   ═══════════════════════════════════════════════════════════════ */
+
+create table if not exists core.inq_route (
+  code text primary key, label text not null, channel_code text, sort_no int default 100, active boolean default true);
+alter table core.inq_channel add column if not exists note text;

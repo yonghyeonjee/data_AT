@@ -934,10 +934,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="grid2">
         <div class="f"><label>관심 모델 <span class="sub" style="font-weight:400;color:var(--muted)">여러 개면 Enter 나 쉼표로 추가</span></label><input class="in" id="c_model" placeholder="AF60F17D11GRT" style="text-transform:uppercase" autocomplete="off"><div class="chips tagchips" id="c_models"></div><div id="c_subq" class="subq"></div></div>
         <div class="f"><label>유입경로 <span class="req">*</span></label>
-          <select class="in" id="c_route">
-            <option>매장고객-기존고객</option><option>매장고객-매장고객 소개</option><option>검색광고-방문</option><option>검색광고-전화</option>
-            <option>지인소개</option><option>쇼핑몰-전화</option><option>카카오채널</option><option>간판·지나가다</option><option>기타</option>
-          </select></div>
+          <select class="in" id="c_route"><option value="">선택</option></select></div>
       </div>
       <div class="grid3">
         <div class="f"><label>상담 상태 <span class="hint">상담완료 ≠ 판매</span></label>
@@ -2685,9 +2682,11 @@ async function loadStats(){
   const ps=P.slice(-6).map(x=>x.p); const CP=d.channel_periods||[];
   const chs=[...new Set(CP.filter(x=>ps.includes(x.p)).map(x=>x.ch))];
   const t3=chs.length?`<details style="margin-top:12px"><summary style="cursor:pointer;font-size:calc(12.5px * var(--font-scale));color:var(--muted)">채널 × ${pl(grain)} 상세 (문의 / 구매)</summary><div class="tw" style="margin-top:8px"><table class="slt"><thead><tr><th>채널</th>${ps.map(x=>`<th class="num">${fmtP(x)}</th>`).join('')}</tr></thead><tbody>${chs.map(c=>`<tr><td>${esc(c)}</td>${ps.map(pp=>{const x=CP.find(y=>y.p===pp&&y.ch===c); return `<td class="num">${x?`${x.total} / <b>${x.bought}</b>`:'·'}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div></details>`:'';
+  const R=(d.routes||[]);
+  const t3b=R.length?`<details style="margin-top:12px"><summary style="cursor:pointer;font-size:calc(12.5px * var(--font-scale));color:var(--muted)">채널 안에서 유입경로별로 (홈페이지 문의 → 네이버·블로그·카페…)</summary><div class="tw" style="margin-top:8px"><table class="slt"><thead><tr><th>채널</th><th>유입경로</th><th class="num">문의</th><th class="num">구매</th><th class="num">성공률</th></tr></thead><tbody>${R.map(x=>`<tr><td>${esc(x.ch)}</td><td>${esc(x.r)}</td><td class="num">${x.total}</td><td class="num"><b>${x.bought}</b></td><td class="num">${x.rate}%</td></tr>`).join('')}</tbody></table></div></details>`:'';
   const M=(d.methods||[]).filter(x=>x.m!=='미기록');
   const t4=M.length?`<div class="meta" style="margin-top:10px;color:var(--muted)">상담 방법 · ${M.map(x=>`${esc(x.m)} ${x.total}건(구매 ${x.bought})`).join(' · ')}</div>`:'';
-  box.innerHTML=kpi+t1+t2+t3+t4;
+  box.innerHTML=kpi+t1+t2+t3+t3b+t4;
 }
 /* ═══ 휴가 (점장·대표) ═══ */
 let LV=null;
@@ -3230,6 +3229,19 @@ async function loadInqCodes(){
   try{ INQ=await rpc('fn_inq_codes',{}); }catch(e){ INQ={channels:[],types:[]}; }
   renderInqChips(); return INQ;
 }
+/* 유입경로 : 고른 문의 채널의 것이 위로 오고, 채널 공통(지인소개·기타)이 아래로 */
+function renderRoutes(){
+  const sel=$('c_route'); if(!sel||!INQ) return;
+  const all=INQ.routes||[]; if(!all.length) return;
+  const keep=sel.value;
+  const mine=all.filter(r=>r.ch===C_CH), common=all.filter(r=>!r.ch), rest=all.filter(r=>r.ch&&r.ch!==C_CH);
+  const grp=(label,list)=> list.length?`<optgroup label="${esc(label)}">${list.map(r=>`<option${r.label===keep?' selected':''}>${esc(r.label)}</option>`).join('')}</optgroup>`:'';
+  const chName=(INQ.channels||[]).find(c=>c.code===C_CH);
+  sel.innerHTML='<option value="">선택</option>'
+    + grp(chName?chName.label:'이 채널', mine) + grp('공통', common) + grp('그 밖', rest);
+  if(keep && !all.some(r=>r.label===keep)){ /* 예전 값은 목록에 없어도 남겨 둔다 */
+    sel.insertAdjacentHTML('beforeend', `<option selected>${esc(keep)}</option>`); }
+}
 function renderInqChips(){
   if(!INQ) return;
   const ch=$('c_ch'), ty=$('c_ty'); if(!ch||!ty) return;
@@ -3237,6 +3249,7 @@ function renderInqChips(){
   ty.innerHTML=(INQ.types||[]).map(t=>`<span class="chip${C_TY===t.code?' on':''}" data-t="${esc(t.code)}">${esc(t.label)}</span>`).join('');
   ch.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ C_CH=el.dataset.c; renderInqChips();
     const etc=(INQ.channels||[]).find(c=>c.code===C_CH&&c.etc); $('c_ch_etc').classList.toggle('hidden',!etc); if(etc) $('c_ch_etc').focus(); });
+  renderRoutes();
   ty.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ C_TY=el.dataset.t; renderInqChips(); });
   const etc=(INQ.channels||[]).find(c=>c.code===C_CH&&c.etc);
   $('c_ch_etc').classList.toggle('hidden',!etc);

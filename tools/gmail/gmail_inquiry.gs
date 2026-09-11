@@ -33,6 +33,7 @@ var MAX_PER_RUN = 30;
 /* 메일 표의 항목 이름 → Datacenter 필드 */
 var FIELD_MAP = {
   '성함': 'name', '이름': 'name', '고객명': 'name',
+  '사업자명': 'name', '상호': 'name', '상호명': 'name', '업체명': 'name', '회사명': 'name',
   '연락처': 'phone', '전화번호': 'phone', '휴대폰': 'phone',
   '방문경로': 'route', '유입경로': 'route',
   '구매옵션': 'option', '구매 옵션': 'option',
@@ -41,8 +42,11 @@ var FIELD_MAP = {
   '제품모델명': 'model', '모델명': 'model',
   '상담방법': 'method', '상담 방법': 'method',
   '첨부파일': 'attach',
+  '이메일': 'email', 'E-mail': 'email',
   '문의내용': 'memo', '내용': 'memo', '메모': 'memo'
 };
+/* 사업자 견적문의는 게시판이 따로다 (/board/contact_business/). 제목으로 가른다. */
+var BIZ_RE = /(사업자|법인|기업|B2B)/i;
 
 /* ── 진입점 ─────────────────────────────────────────────── */
 function collectInquiries(){
@@ -105,6 +109,7 @@ function parseMessage_(msg){
   obj.msg_id = msg.getId();
   obj.received_at = msg.getDate().toISOString();
   obj.subject = String(msg.getSubject() || '').slice(0, 120);
+  if(BIZ_RE.test(obj.subject)) obj.kind = '사업자';
   return obj;
 }
 function mergeObj_(a, b){ Object.keys(b).forEach(function(k){ if(!a[k]) a[k] = b[k]; }); return a; }
