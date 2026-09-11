@@ -631,6 +631,21 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .crow .ttl{font-weight:700;font-size:calc(15px * var(--font-scale));display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .crow .meta{font-size:calc(12px * var(--font-scale));color:var(--muted);margin-top:4px;line-height:1.55}
 .crow .acts{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+/* 한 줄 보기 — 평소엔 요약 한 줄, 누르면 아래가 열린다 */
+.crow{padding:10px 12px}
+.crow .hd{display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;flex-wrap:wrap;font-size:calc(14px * var(--font-scale))}
+.crow .hd .nm{font-weight:700;white-space:nowrap}
+.crow .hd .tel{color:var(--muted);font-weight:500;font-size:calc(12.5px * var(--font-scale));white-space:nowrap}
+.crow .hd .key{color:var(--ink-2);font-size:calc(12.5px * var(--font-scale));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46%}
+.crow .hd .dt{margin-left:auto;color:var(--faint);font-size:calc(12px * var(--font-scale));white-space:nowrap}
+.crow .hd .caret{color:var(--muted);font-size:calc(11px * var(--font-scale));transition:transform .15s;flex:none}
+.crow.open .hd .caret{transform:rotate(180deg)}
+.crow .hd .qk{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:26px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;text-decoration:none;font-size:calc(13px * var(--font-scale));line-height:1}
+.crow .hd .qk:hover{border-color:var(--navy)}
+.crow .more{display:none}
+.crow.open .more{display:block;margin-top:8px;padding-top:9px;border-top:1px dashed var(--line-2)}
+.crow.open{border-color:var(--line-2);box-shadow:0 1px 3px rgba(16,24,40,.06)}
+@media (max-width:520px){ .crow .hd .key{max-width:100%;flex-basis:100%} .crow .hd .dt{margin-left:0} }
 .crow .acts .mini{padding:6px 10px}
 .res{padding:3px 9px;border-radius:999px;font-size:calc(11px * var(--font-scale));font-weight:700}
 .res.open{background:#EEF2FF;color:#2F5BEA}
@@ -739,6 +754,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="csearchbox"><input class="in" id="mc_q" placeholder="이름 · 번호 뒷자리 · 상담번호 · 모델 · 내용으로 찾기" autocomplete="off" onkeydown="if(event.key==='Enter')mcSearch()"><button type="button" class="go" onclick="mcSearch()" aria-label="찾기">⌕</button></div>
         <button class="btn sm ghost" onclick="mcClearQ()">지우기</button>
         <button class="btn sm ghost" onclick="loadMyConsults(MC_OFF)">새로고침</button>
+        <button class="btn sm ghost" id="mc_openall" onclick="mcOpenAll()">모두 펼치기</button>
       </div>
       <div class="seg sm cflt" id="mc_flt">
         <button type="button" data-v="open" class="on">미완료 <i>0</i></button>
@@ -2744,6 +2760,15 @@ function renderHome(s){
    담당자 화면에서 제일 중요한 일이라 홈 맨 위에 둔다.
    상태는 여섯 가지지만 화면에서는 네 묶음으로 본다 (미완료·보류·완료·거절).      */
 let MC_LOADED=false, MC_FLT='open', MC_Q='', MC_OFF=0, MC_ROWS=[], MC_TOTAL=0, MC_SEL=new Set(), MC_BUSY=false;
+/* 펼쳐 둔 행 — 상태를 바꿔 목록을 다시 그려도 열려 있던 건 그대로 열려 있게 */
+let MC_OPEN=new Set(), MC_ALLOPEN=false;
+function mcToggle(id, ev){ if(ev && ev.target.closest('a,button,input')) return;
+  MC_OPEN.has(id)?MC_OPEN.delete(id):MC_OPEN.add(id);
+  const r=$('mcrow_'+id); if(r) r.classList.toggle('open', MC_OPEN.has(id)); }
+function mcOpenAll(){ MC_ALLOPEN=!MC_ALLOPEN;
+  MC_ROWS.forEach(x=> MC_ALLOPEN?MC_OPEN.add(x.id):MC_OPEN.delete(x.id));
+  document.querySelectorAll('#mcList .crow').forEach(r=>r.classList.toggle('open', MC_ALLOPEN));
+  const b=$('mc_openall'); if(b) b.textContent = MC_ALLOPEN ? '모두 접기' : '모두 펼치기'; }
 const MC_PAGE = () => pgSize('mc');
 const RES_UI = {
   '진행전'  : ['pre',   '진행 전'],
@@ -2810,7 +2835,7 @@ function renderMyConsults(){
     if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
     A.push(`<button class="mini" onclick="openQuote(${qArg})">견적서 ${x.quote?'열기':'만들기'} ↗</button>`);
     if(x.bucket==='open'||x.bucket==='hold'){
-      A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}')">구매 확정</button>`);
+      A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}')">구매 확정</button>`);
       A.push(`<button class="mini" onclick="ocPick(${x.id})">재연락</button>`);
       A.push(`<button class="mini" onclick="mcAct(${x.id},'done','상담완료')">상담완료</button>`);
       A.push(x.bucket==='hold'
@@ -2819,6 +2844,8 @@ function renderMyConsults(){
       if(x.result==='진행전') A.push(`<button class="mini" onclick="mcAct(${x.id},'start','상담 시작')">상담 시작</button>`);
       A.push(`<button class="mini bad" onclick="mcAct(${x.id},'reject','거절')">거절</button>`);
     } else {
+      /* 상담완료 뒤에 구매로 이어지는 일이 잦다 — '다시 진행'을 거치지 않고 바로 판매로 */
+      if(x.result!=='구매완료') A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}')">구매 확정</button>`);
       A.push(`<button class="mini" onclick="mcAct(${x.id},'resume','다시 진행')">다시 진행</button>`);
     }
     A.push(`<button class="mini" onclick="ocToConsult('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')">후속 상담</button>`);
@@ -2830,16 +2857,31 @@ function renderMyConsults(){
     const qn = (x.quotes||[]).length;
     const qlist = qn ? `<div class="meta qlist"><b>견적서 ${qn}건</b> ${x.quotes.map(q=>`<button type="button" class="ql" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(x.tel||'')}'})" title="${esc(q.models||'')}${q.counselor?' · '+esc(q.counselor):''}">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>`).join('')}</div>` : '';
     const delInfo = trash ? `<div class="meta" style="color:var(--bad,#B3261E)">삭제 ${String(x.deleted_at||'').slice(5,16).replace('T',' ')}${x.delete_reason?' · '+esc(x.delete_reason):''}</div>` : '';
-    return `<div class="crow${sel?' sel':''}${trash?' trash':''}" id="mcrow_${x.id}">
+    const isOpen = MC_OPEN.has(x.id);
+    /* 접힌 줄에 남길 한 가지 — 관심 품목이 있으면 그것, 없으면 모델, 그것도 없으면 유입 */
+    const key = x.interest || x.model || x.route || '';
+    const cb = x.callback_at ? `<span class="tag re" title="콜백 약속">${fmtWhen(x.callback_at).join(' ')}</span>` : '';
+    return `<div class="crow${sel?' sel':''}${trash?' trash':''}${isOpen?' open':''}" id="mcrow_${x.id}">
       <input type="checkbox" ${sel?'checked':''} onchange="mcSel(${x.id},this.checked)" aria-label="${nm} 고르기">
       <div class="body">
-        <div class="ttl"><span class="res ${cls}">${esc(lbl)}</span>${nm}
-          <small style="color:var(--muted);font-weight:500">${esc(x.phone||'')}</small>
-          ${x.interest?`<span class="tag 일시불">${esc(x.interest)}</span>`:''}
-          ${x.model?`<span class="tag">${esc(x.model)}</span>`:''}
+        <div class="hd" onclick="mcToggle(${x.id},event)" title="눌러서 펼치기">
+          <span class="res ${cls}">${esc(lbl)}</span>
+          <span class="nm">${nm}</span>
+          <small class="tel">${esc(x.phone||'')}</small>
+          ${key?`<span class="key">${esc(key)}</span>`:''}
+          ${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담이 ${x.prior}건 더 있습니다">${Number(x.prior)+1}회째</span>`:''}
+          ${qn?`<span class="tag" title="견적서 ${qn}건">견적 ${qn}</span>`:''}
+          ${cb}
+          ${x.handler&&x.handler!==ME?`<span class="tag hd">${esc(x.handler)}</span>`:''}
+          <span class="dt">${String(x.at).slice(5,10).replace('-','/')}</span>
+          ${x.tel&&!trash?`<a class="qk" href="tel:${esc(x.tel)}" title="${nm} 님에게 전화" onclick="event.stopPropagation()">📞</a>`:''}
+          <span class="caret">▼</span>
+        </div>
+        <div class="more">
+        <div class="ttl" style="margin-bottom:2px">
           ${x.src?`<span class="tag src">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}
           ${x.src2?`<span class="tag hd">${esc(x.src2)}</span>`:''}
-          ${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담이 ${x.prior}건 더 있습니다">${Number(x.prior)+1}회째</span>`:''}
+          ${x.model&&x.model!==key?`<span class="tag">${esc(x.model)}</span>`:''}
           ${x.method?`<span class="tag mth-t">${esc(x.method)}</span>`:''}
           ${mth}</div>
         <div class="meta">${meta}</div>${buy}${nxt}${qlist}${delInfo}
@@ -2848,6 +2890,7 @@ function renderMyConsults(){
         <div class="ocpick hidden" id="ocpick_${x.id}">
           <div class="q"><button onclick="ocQuick(${x.id},0,'14:00')">오늘 2시</button><button onclick="ocQuick(${x.id},1,'10:00')">내일 10시</button><button onclick="ocQuick(${x.id},1,'14:00')">내일 2시</button><button onclick="ocQuick(${x.id},7,'10:00')">일주일 뒤</button></div>
           <div class="r"><input class="in" type="date" id="ocd_${x.id}"><select class="in" id="oct_${x.id}">${['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'].map(t=>`<option${t==='14:00'?' selected':''}>${t}</option>`).join('')}</select><button class="mini ok" onclick="ocSave(${x.id})">저장</button><button class="mini" onclick="$('ocpick_${x.id}').classList.add('hidden')">취소</button></div>
+        </div>
         </div>
       </div></div>`;
   }).join('') : `<div class="empty">${MC_Q?'찾는 상담이 없습니다':'이 상태의 상담이 없습니다'}</div>`;
@@ -2918,7 +2961,14 @@ async function cbAction(id,act){
     await loadStatus(); render();
   }catch(e){ toast(e.message,'bad'); }
 }
-function toSale(ref,name){ goTab('sale'); $('s_consult').value=ref; if(name) $('s_name').value=name; toast('상담번호 연결됨 · 상품과 금액을 입력하세요','ok'); $('s_product').focus(); }
+function toSale(ref,name,tel,product,model){ goTab('sale'); $('s_consult').value=ref;
+  if(name) $('s_name').value=name;
+  if(tel){ $('s_phone').value=tel; hyphen($('s_phone')); }
+  /* 상담에서 본 관심 품목·모델을 미리 채워 둔다 — 맞으면 그대로, 아니면 고쳐 쓴다 */
+  if(product && !$('s_product').value) $('s_product').value=product;
+  if(model && !$('s_model').value) $('s_model').value=String(model).toUpperCase();
+  toast('상담번호 연결됨 · 상품과 금액을 확인하세요','ok');
+  ($('s_product').value ? $('s_amount') : $('s_product')).focus(); }
 /* 진행중 상담의 고객 이름 → 같은 고객으로 상담 입력 (후속 상담) */
 function ocToConsult(ref,name,tel,interest){ goTab('consult'); custClear('c');
   $('c_name').value=name||''; if(tel){ $('c_phone').value=tel; hyphen($('c_phone')); }
