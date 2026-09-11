@@ -57,8 +57,17 @@ node uat.mjs mgr mobile   # 점장 · 모바일
 node qview.mjs            # 고객 견적서 (정상/기한지남/링크만료/잘못된주소)
 ```
 
-**하나라도 실패하면 배포하지 않는다.** 18개 케이스에 터치 타깃 40px·색 대비 4.5:1·가로 넘침 0·
-파괴적 버튼 이격 거리가 들어 있다. "보기에 괜찮다"가 아니라 수치로 판정한다.
+**하나라도 실패하면 배포하지 않는다.** 23개 케이스에 터치 타깃 40px·색 대비 4.5:1·가로 넘침 0·
+파괴적 버튼 이격 거리·홈 흐름 띠·필터 칩 단일 선택·스크립트 오류 0 이 들어 있다. "보기에 괜찮다"가 아니라 수치로 판정한다.
+
+`ptest/` 는 gitignore 라 저장소에 없다. 새 컨테이너에서는 이렇게 되살린다:
+```bash
+mkdir -p ptest && for f in uat.mjs qview.mjs mock.js; do git show 01c627d:$f > ptest/$f; done   # 정리 전 마지막 커밋
+sed -i "s#/home/claude/web#$PWD#; s#/home/claude/ptest#$PWD/ptest#" ptest/uat.mjs ptest/qview.mjs
+cd ptest && npm i playwright@1.55 --no-save && UAT_PAGE=/store/test/ node uat.mjs   # 테스트본 먼저
+```
+(2026-09-12 이후 uat.mjs 는 이 세션에서 고친 판을 쓴다 — T19~T23 이 들어 있고 UAT_PAGE 로 대상을 고른다.
+ 크로미움은 /opt/pw-browsers/chromium, 외부 통신은 mock.js 가 supabase-js 를 통째로 대체하므로 프록시와 무관)
 
 사용자는 **매장에서 대면 상담하는 비개발자**다. 모바일에서 쓰고, 오탭하면 데이터가 날아간다.
 
@@ -137,6 +146,8 @@ end $outer$;
 ## 지금 상태 (2026-09-11 · v98)
 
 ### 되는 것
+- **담당자 화면이 탭으로 나뉜다 (v99, store/test 먼저)** — 홈(흐름 띠·챙길 것·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
+  견적서 · 내 고객 · 처리현황(+휴가). 배지는 `setTabBadge()` 하나로만 붙인다 (innerHTML 다시 쓰지 말 것)
 - 문의 접수(홈페이지·구독·매장·전화) → 상담 화면 + 잔디 알림 + 담당자 자동 배정
 - 상담 목록 한 줄+펼치기, 급한 순 정렬(지난 콜백 → 오래 방치), 14일·30일 방치 뱃지
 - [구매 확정] → 판매 입력 자동 채움 (견적서 금액 포함)

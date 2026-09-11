@@ -3942,7 +3942,11 @@ function placeCbar(v){
   if(CB_VIEW!==v){ CB_VIEW=v; CB.q=''; CB.field=''; CB.channel=''; CB.category=''; }   /* 화면이 바뀌면 조건은 새로 */
   [cfg.q, cfg.channel].forEach(id=>{ if(id && $(id)) $(id).classList.add('hidden'); });   /* 화면 자체 검색칸·채널은 공통 바로 대신 (중복 제거) */
   const view=$('v-'+v); const first=view.querySelector('.card'); if(!first) return;
-  if(el.parentNode!==view || el.nextSibling!==first) view.insertBefore(el, first);
+  /* 첫 카드가 격자(.grid 등) 안에 있으면 view 의 직계 자식이 아니라 insertBefore 가 NotFoundError 를 낸다
+     → 그 카드를 품은 view 직계 자식 앞에 넣는다 */
+  let anchor=first; while(anchor.parentNode && anchor.parentNode!==view) anchor=anchor.parentNode;
+  if(anchor.parentNode!==view) return;
+  if(el.parentNode!==view || el.nextSibling!==anchor) view.insertBefore(el, anchor);
   cbarPull(first);
   /* 기간 : 날짜를 쓰는 화면이면 기간 바를 이 안에 넣는다 */
   const pb=$('periodBar'); if(PERIOD_VIEWS.includes(v)){ if(pb.parentNode!==el) el.insertBefore(pb, el.firstChild); pb.classList.remove('hidden'); }
