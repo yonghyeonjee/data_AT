@@ -26,6 +26,10 @@ on:
         description: "연결 점검만 (수집하지 않음)"
         type: boolean
         default: false
+      fields:
+        description: "응답 필드 이름 훑기 (배송비 필드 확인용 · 적재하지 않음)"
+        type: boolean
+        default: false
 
 concurrency:
   group: shoplinker
@@ -48,6 +52,10 @@ jobs:
         run: |
           if [ "${{ inputs.selftest }}" = "true" ]; then
             node tools/shoplinker/collect.mjs --selftest
+            exit $?
+          fi
+          if [ "${{ inputs.fields }}" = "true" ]; then
+            node tools/shoplinker/collect.mjs --fields
             exit $?
           fi
           ARGS=""
