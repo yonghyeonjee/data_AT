@@ -102,7 +102,6 @@ html.resuming body::after{content:'이어서 여는 중…';position:fixed;inset
 }
 @media(max-width:999px){
   #app{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
-  .gfab{bottom:calc(92px + env(safe-area-inset-bottom))!important}
 }
 .topbar{position:sticky;top:0;z-index:20;background:rgba(243,244,247,.94);backdrop-filter:blur(8px);padding:14px 18px 10px;border-bottom:1px solid var(--line)}
 .topbar .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -590,13 +589,19 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .gift-row{display:grid;grid-template-columns:1fr 120px;gap:8px} .gift-row .in:last-child{text-align:right}
 .gift-chips{margin-top:6px} .gift-chips .chip small{color:var(--muted);font-weight:400;margin-left:3px}
 .gift-links{display:none}
-.gfab{position:fixed;right:14px;bottom:78px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-.gfab .gbtn{width:48px;height:48px;border-radius:50%;border:0;background:var(--navy);color:#fff;font-size:calc(22px * var(--font-scale));box-shadow:0 8px 24px rgba(20,40,160,.35);cursor:pointer}
-.gfab .gpanel{display:none;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(10,20,60,.18);padding:12px 12px 10px;min-width:200px}
-.gfab.open .gpanel{display:block}
-.gfab .gpanel b{display:block;font-size:calc(12px * var(--font-scale));color:var(--muted);margin-bottom:8px}
-.gfab .gpanel a{display:block;font-size:calc(13px * var(--font-scale));font-weight:600;color:var(--navy);text-decoration:none;padding:8px 10px;border:1.5px solid var(--line-2);border-radius:9px;margin-bottom:6px;background:#fff}
-.gfab .gpanel a.acct{color:var(--muted);cursor:pointer} .gift-links a{font-size:calc(11.5px * var(--font-scale));font-weight:600;color:var(--navy);text-decoration:none;border:1.5px solid var(--line-2);border-radius:7px;padding:4px 9px;background:#fff}
+.gtop{position:relative;flex:none}
+.gtop .gtb{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--line-2);background:#fff;
+  font-size:calc(18px * var(--font-scale));line-height:1;cursor:pointer;padding:0}
+.gtop .gtb:hover{border-color:var(--navy)}
+.gtop.open .gtb{border-color:var(--navy);background:var(--accent-soft,#EEF2FF)}
+.gtop .gpanel{position:absolute;left:0;top:calc(100% + 8px);z-index:60}
+.gtop.open .gpanel{display:block}
+@media (max-width:560px){ .gtop .gpanel{left:auto;right:-8px} }
+.gpanel{display:none;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(10,20,60,.18);padding:12px 12px 10px;min-width:200px}
+
+.gpanel b{display:block;font-size:calc(12px * var(--font-scale));color:var(--muted);margin-bottom:8px}
+.gpanel a{display:block;font-size:calc(13px * var(--font-scale));font-weight:600;color:var(--navy);text-decoration:none;padding:8px 10px;border:1.5px solid var(--line-2);border-radius:9px;margin-bottom:6px;background:#fff}
+.gpanel a.acct{color:var(--muted);cursor:pointer} .gift-links a{font-size:calc(11.5px * var(--font-scale));font-weight:600;color:var(--navy);text-decoration:none;border:1.5px solid var(--line-2);border-radius:7px;padding:4px 9px;background:#fff}
 .gift-links a.acct{color:var(--muted);cursor:pointer}
 table th{cursor:pointer;user-select:none;position:relative}
 table th.sort-asc::after,table th.sort-desc::after{content:' ▲';font-size:calc(9px * var(--font-scale));opacity:.75}
@@ -773,6 +778,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div style="display:flex;align-items:center;gap:10px;min-width:0">
         <button class="menu-btn" onclick="sideOpen()" aria-label="메뉴"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
         <h1 style="min-width:0"><span id="meName">시흥점</span> <small id="todayLabel"></small></h1>
+        <div class="gtop hidden" id="gtop">
+          <button type="button" class="gtb" onclick="event.stopPropagation();document.getElementById('gtop').classList.toggle('open')"
+                  title="사은품 · 오피스콘 · 기프티콘">🎁</button>
+          <div class="gpanel" id="gpanel"></div>
+        </div>
       </div>
       <div style="display:flex;gap:6px">
         <span class="pill" id="pillToday">오늘 0건</span>
@@ -1294,7 +1304,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
 
   <div class="foot">삼성앤텍 시흥점 · 입력 문의 온라인사업부 · <a href="#" onclick="localStorage.removeItem('staff_code');location.reload();return false">담당자 변경</a></div>
 </div>
-<div class="gfab hidden" id="gfab" data-has="0"><div class="gpanel" id="gpanel"></div><button class="gbtn" onclick="document.getElementById('gfab').classList.toggle('open')" title="사은품 · 오피스콘">🎁</button></div>
+
 <div class="toast" id="toast"></div>
 <div class="sheet-bg hidden" id="asgBg" onclick="if(event.target===this)asgClose()">
   <div class="sheet" id="asgSheet">
@@ -3634,15 +3644,14 @@ async function loadGifts(){
       L.shinsegae?`<a href="${esc(L.shinsegae)}" target="_blank" rel="noopener">신세계 상품권 ↗</a>`:'',
       L.login_id?`<a class="acct" onclick="giftAcct()">오피스콘 계정 보기</a>`:''].filter(Boolean);
     gp.innerHTML='<b>사은품 · 기프티콘</b>'+items.join('');
-    $('gfab').dataset.has = items.length?'1':'0';
-    gfabShow(document.querySelector('.tab.active')?.dataset.tab); }
+    $('gtop').dataset.has = items.length?'1':'0';
+    gfabShow(); }
 }
-/* 🎁 사은품 버튼은 판매 입력·상담 입력에서만 (로그인 화면 포함 그 외에는 숨김) */
-const GFAB_TABS=['sale','consult'];
-function gfabShow(tab){ const f=$('gfab'); if(!f) return;
-  const on = GFAB_TABS.includes(tab) && !$('app').classList.contains('hidden') && f.dataset.has==='1';
+/* 🎁 사은품은 상단 이름 옆에 — 탭을 옮겨 다녀도 늘 같은 자리에 있다 */
+function gfabShow(){ const f=$('gtop'); if(!f) return;
+  const on = !$('app').classList.contains('hidden') && f.dataset.has==='1';
   f.classList.toggle('hidden', !on); if(!on) f.classList.remove('open'); }
-document.addEventListener('click', e=>{ const f=$('gfab'); if(f && !e.target.closest('#gfab')) f.classList.remove('open'); });
+document.addEventListener('click', e=>{ const f=$('gtop'); if(f && !e.target.closest('#gtop')) f.classList.remove('open'); });
 function pickGift(pre,name,price){ $(pre+'_gift').value=name; const a=$(pre+'_gift_amt'); a.value=price?Number(price).toLocaleString('ko-KR'):''; }
 function giftAcct(){ const L=(GIFTS&&GIFTS.links)||{};
   const txt=`오피스콘 아이디: ${L.login_id||'-'}\n비밀번호: ${L.login_pw||'-'}\n기프티콘 전송 비밀번호: ${L.send_pw||'-'}`;
