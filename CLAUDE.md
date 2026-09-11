@@ -151,11 +151,25 @@ end $outer$;
 
 ### 즉시 할 일
 1. ~~저장소 루트 정리~~ — 완료 (v98)
-2. **노출된 키 교체** — `gas_forward` · `gmail_inquiry` 두 개. 저장소 안의 값은 `PASTE_DC_KEY_HERE`
-   자리표시자로 바꿔 두었으니, 키를 새로 발급한 뒤 **Apps Script 편집기에서만** 채워 넣는다.
-   저장소에는 절대 실제 값을 다시 넣지 않는다. `_secrets.local.md` 참고
+2. ~~노출된 키 교체~~ — 완료 (2026-09-12). `gas_forward` · `gmail_inquiry` 둘 다 새 값으로 바꿨고
+   GAS 4개(견적내역·구독문의·소모품렌탈·VMS) 재배포까지 확인했다.
+   저장소 안 `tools/` 의 값은 `PASTE_DC_KEY_HERE` 자리표시자다. **실제 값을 다시 넣지 않는다.**
+   `gmail_inquiry` 는 아직 미설치라 값만 발급해 둔 상태. `_secrets.local.md` 참고
 3. 담당 프로 휴대폰 — Apps Script 에서 `syncNamecards` 1회 실행하면 네임카드에서 자동으로 채워진다
 4. GitHub Secrets `GA_PROPERTY_ID` · `GA_SA_JSON` · `GA_INGEST_KEY` — 없으면 GA4 수집이 건너뛴다
+
+### 알아둘 것 — GAS 를 왜 쓰고 있나
+
+고도몰 페이지는 소스가 그대로 노출되므로 거기에 `DC_KEY` 를 넣을 수 없다.
+그래서 페이지 → GAS → Supabase 로 돌린다. **GAS 의 유일한 존재 이유가 이것이다.**
+
+시트 기록·담당자 배정·잔디·접수번호는 Datacenter 가 이미 하거나 할 수 있다
+(`fn_submit_inquiry` 에 배정 로직이 있고, `core.notify_rule` 에 폼 알림 4개가 꺼진 채로 있다).
+`core.api_key` 의 `homepage_form` 이 "외주 개발사 직접 적재" 용으로 이미 발급돼 있다.
+
+→ 문의 폼 3개는 고도몰 PHP 한 장이나 Edge Function 으로 옮기면 GAS 를 걷어낼 수 있다.
+   견적(`1_quote_Code.gs`)은 계산기 API 전체이고 시트가 실제 저장소라 그대로 둔다.
+   **중간 단계(키를 스크립트 속성으로 빼기 등)는 하지 않기로 했다. 옮길 거면 한 번에 옮긴다.**
 
 ### 판단 대기 (사람이 정해야 함)
 - 담당자·상담상태를 **개발사 관리자에 계속 적을지, 이 시스템으로 옮길지** — 성공률 통계가 여기 달려 있다
