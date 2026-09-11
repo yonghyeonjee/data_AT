@@ -43,7 +43,9 @@ h1{font-size:21px;margin:0 0 4px;letter-spacing:-.03em}
 .big.pastdue{background:linear-gradient(135deg,#5A6376,#7C8698)}
 .kv span.over{color:var(--bad)} .kv span.soon{color:#8A6300}
 .contact{text-align:center}
-.contact .ct{font-weight:700;font-size:15px}
+.contact .ct{font-weight:800;font-size:17px;letter-spacing:-.02em}
+.contact .cr{color:var(--muted);font-size:13px;margin-top:2px}
+.contact .btn.sub{width:100%;margin-top:8px;min-height:46px;background:#fff;color:var(--ink-2);font-size:15px}
 .contact .btn.tel{width:100%;margin-top:12px;font-size:17px;min-height:54px;letter-spacing:-.01em}
 .expired .btn.tel{width:100%;margin-top:12px;min-height:52px;font-size:16px;background:#6D5100;border-color:#6D5100;color:#fff}
 .err{text-align:center;padding:48px 20px}
@@ -85,18 +87,24 @@ const tok=new URLSearchParams(location.search).get('t')||'';
 /* 기한이 끝나도 막다른 길로 두지 않는다 — 어디로 연락하면 되는지가 반드시 남는다 */
 function contactBox(d){
   d=d||{}; const tel=d.tel||'031-8042-3166';
+  /* 견적서에 찍힌 네임카드 그대로 — 직급·부서·휴대폰 */
+  const role = [d.counselor_role, d.counselor_title].filter(Boolean).join(' · ');
   return `<div class="card contact">
-      <div class="ct">${d.counselor?`담당 <b>${esc(d.counselor)}</b> 프로`:'삼성스토어 시흥점'}</div>
-      <p class="note" style="margin:6px 0 0">${esc(d.note||'기존 견적 금액 조회 및 추가 상담은 '+tel+' 으로 연락해 주세요.')}</p>
+      ${d.counselor?`<div class="ct"><b>${esc(d.counselor)}</b> ${esc(d.counselor_role||'프로')}</div>
+        ${role?`<div class="cr">${esc(d.counselor_title||'')}</div>`:''}`
+      :`<div class="ct">${esc(d.store_name||'삼성스토어 시흥점')}</div>`}
+      <p class="note" style="margin:8px 0 0">${esc(d.note||'기존 견적 금액 조회 및 추가 상담은 '+tel+' 으로 연락해 주세요.')}</p>
       <a class="btn pri tel" href="tel:${esc(tel.replace(/[^0-9+]/g,''))}">📞 ${esc(tel)} 전화하기</a>
+      ${d.store_tel&&d.store_tel!==tel?`<a class="btn sub tel" href="tel:${esc(String(d.store_tel).replace(/[^0-9+]/g,''))}">매장 ${esc(d.store_tel)}</a>`:''}
       ${d.no?`<p class="note" style="margin:10px 0 0">문의하실 때 견적번호 <b>${esc(d.no)}</b> 를 말씀해 주세요.</p>`:''}
+      ${d.store_addr?`<p class="note" style="margin:6px 0 0">${esc(d.store_name||'')} · ${esc(d.store_addr)}</p>`:''}
     </div>`;
 }
 function err(ico,title,body,d){
   $('app').innerHTML=`<div class="card err"><div class="ico">${ico}</div><h2>${esc(title)}</h2>
     <p class="note">${body}</p></div>`
     + contactBox(d)
-    + `<div class="foot">삼성스토어 시흥점 · 경기도 시흥시 서해안로1685번길 12</div>`;
+    + `<div class="foot">${esc((d&&d.store_name)||'삼성스토어 시흥점')} · 삼성전자 공식 판매점</div>`;
 }
 
 (async function(){
@@ -177,7 +185,7 @@ function render(d){
     <button class="btn" onclick="shareThis()">↗ 공유하기</button>
   </div>`);
 
-  H.push(`<div class="foot">삼성스토어 시흥점 · 경기도 시흥시 서해안로1685번길 12</div>`);
+  H.push(`<div class="foot">${esc(d.store_name||'삼성스토어 시흥점')} · 삼성전자 공식 판매점</div>`);
 
   $('app').innerHTML=H.join('');
   document.title=`${d.name||''} 님 견적서 · ${d.no}`;
