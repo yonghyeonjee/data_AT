@@ -102,8 +102,7 @@ html.resuming body::after{content:'이어서 여는 중…';position:fixed;inset
 }
 @media(max-width:999px){
   #app{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
-}
-.topbar{position:sticky;top:0;z-index:20;background:rgba(243,244,247,.94);backdrop-filter:blur(8px);padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+}.topbar{position:sticky;top:0;z-index:20;background:rgba(243,244,247,.94);backdrop-filter:blur(8px);padding:14px 18px 10px;border-bottom:1px solid var(--line)}
 .topbar .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .topbar h1{font-size:calc(18px * var(--font-scale));font-weight:800;letter-spacing:-.02em}
 .topbar h1 small{font-weight:500;color:var(--muted);font-size:calc(13px * var(--font-scale));margin-left:6px}
@@ -756,6 +755,52 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .side .lk:hover{background:rgba(255,255,255,.06);color:#fff}
 .side .lk svg{width:18px;height:18px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
 .side .lk small{margin-left:auto;font-size:calc(10.5px * var(--font-scale));color:#8792B8;font-weight:600}
+
+/* ═══ 모바일 보정 — 스타일시트 맨 끝: 앞의 규칙과 특이도가 같아도 여기가 이긴다 ═══ */
+@media(max-width:999px){
+  /* 서랍 : --side-w 는 넓은 화면의 고정 메뉴용(34vw). 폰에서 그대로 쓰면 122px 이 돼 글자가 전부 두 줄로 꺾인다 */
+  .side{width:min(86vw, 340px)}
+  .side .it,.side .lk{min-height:44px}
+  .side .lk small{white-space:nowrap}
+  /* 손가락 : 자주 누르는 것은 전부 40px 이상 (오탭하면 데이터가 날아간다) */
+  .mini{min-height:40px;min-width:40px;padding:8px 10px}
+  .seg button,.seg.sm button,.cflt button{min-height:40px;min-width:44px}
+  .modeseg button{min-height:40px}
+  .btn.sm{min-height:40px}
+  .chip{min-height:40px;display:inline-flex;align-items:center}
+  .csearchbox .go,.csearch .go{width:40px;top:4px;bottom:4px}
+  .csearch .in{padding-right:48px}
+  .cb .row button,.cb .row a{min-height:40px;padding:8px 12px}
+  .hlbox td.nm button{min-height:40px;padding:4px 6px}
+  .item .p a{display:inline-block;padding:9px 0;margin:-9px 0}
+}
+/* 낱말 중간에서 꺾이지 않게 — '내 고객' 은 '내 / 고객' 으로, '확정 대기' 는 '확정 / 대기' 로만 */
+.home-kpi .k,.bnav button,.flow .step small,.alert .al b{word-break:keep-all}
+.topbar h1 small,.pill{white-space:nowrap}
+/* 큰 글자 : KPI 는 두 칸씩 */
+html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
+@media(max-width:560px){
+  /* 좁은 폰에서 구분 버튼·작은 버튼 글자가 상자 밖으로 잘리지 않게 — 띄어쓰기에서 줄을 바꾸고, 정 안 되면 글자 사이에서 */
+  .seg button,.mini{white-space:normal;word-break:keep-all;overflow-wrap:anywhere;line-height:1.25}
+  .seg button{padding-left:3px;padding-right:3px}
+}
+@media(max-width:560px){
+  /* 큰 글자 + 좁은 폰 : 접힌 줄의 ▼ 가 밖으로 삐져나온다 — 줄 전체가 눌리므로 화살표는 감춘다 */
+  html.fs-big .crow .hd .caret{display:none}
+}
+@media(max-width:480px){
+  /* 우선 순위 표 : 6칸을 화면 안에 — 마지막 칸(날짜 · n일)만 두 줄 허용 */
+  .hlbox table{min-width:0;font-size:calc(12px * var(--font-scale))}
+  .hlbox th,.hlbox td{padding:8px 3px}
+  .hlbox th:last-child,.hlbox td:last-child{white-space:normal}
+  /* 처리현황 표 : 760px 고정 폭을 풀고 글자·여백을 줄여 8칸이 들어가게. 그래도 넘치면 .tw 가 옆으로 스크롤 */
+  #stBody .slt{min-width:0;font-size:calc(11.5px * var(--font-scale))}
+  #stBody .slt th,#stBody .slt td{padding:7px 4px}
+  #stBody .slt td:nth-child(3){min-width:0}
+  /* 판매현황 : 날짜 입력 두 개를 한 줄에 두면 date 입력의 최소 폭 때문에 화면이 옆으로 밀린다 */
+  .rep-ctl .row2{grid-template-columns:1fr}
+}
+.rep-ctl .row2>*{min-width:0}
 </style>
 </head>
 <body>
@@ -1259,7 +1304,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="card" id="slQuickCard">
       <h2>샵링커 주문 가져오기 <span id="sl_me"></span></h2>
       <p class="note-in" style="margin-top:0"><b>송장이 등록된(발송된) 주문</b> 중 아직 이카운트에 올리지 않은 것만 나옵니다. 기간은 아래에서 직접 고르며 기본은 <b>발송일 기준 최근 3일</b>입니다. 고르면 재고가 빠지고 이카운트 전송 대기가 됩니다. <b>택배비는 운송장 1개당 1건</b>으로 붙습니다 — 한 주문에 운송장이 둘이면 두 건, 상품이 여러 개라도 운송장이 하나면 한 건입니다.
-        <a href="#" onclick="event.preventDefault();$('slQuickFile').click()" style="color:var(--brand,#2F5BEA);font-weight:600;white-space:nowrap">샵링커 엑셀 올리기 ↑</a><input type="file" id="slQuickFile" accept=".xlsx,.xls,.csv" class="hidden" onchange="slQuickUpload(this)"></p>
+        <a href="#" onclick="event.preventDefault();$('slQuickFile').click()" style="color:var(--brand,#2F5BEA);font-weight:600;white-space:nowrap;display:inline-block;padding:12px 0">샵링커 엑셀 올리기 ↑</a><input type="file" id="slQuickFile" accept=".xlsx,.xls,.csv" class="hidden" onchange="slQuickUpload(this)"></p>
       <div class="daterow">
         <select class="in" id="sl_basis" onchange="loadSlList()" title="어느 날짜로 기간을 자를지"><option value="ship" selected>발송일 기준</option><option value="order">주문일 기준</option><option value="collect">수집일 기준</option></select>
         <input class="in" type="date" id="sl_from" onchange="loadSlList()" title="시작일">
@@ -1464,7 +1509,7 @@ async function loadStatus(code){
 /* ═══ 글자 크기 설정 ═══ */
 function setFontScale(scale){
   document.documentElement.style.setProperty('--font-scale',scale);
-  document.documentElement.classList.toggle('fs-big', scale>=1.75);
+  document.documentElement.classList.toggle('fs-big', scale>=1.5);   /* '크게'=1.6 에서 켜진다 (전에는 1.75 라 안 켜졌다) */
   try{ localStorage.setItem('font_size_'+CODE, scale); }catch(e){}
   document.querySelectorAll('.side .font-btn').forEach(btn=>{
     btn.classList.toggle('active', parseFloat(btn.dataset.scale)===scale);
