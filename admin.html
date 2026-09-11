@@ -326,11 +326,11 @@ table.iqt tr:hover .acts,table.iqt tr:focus-within .acts{opacity:1}
 .wiz-bar i{height:5px;border-radius:3px;background:#E4E7EE;transition:background .25s}
 .wiz-bar i.on{background:var(--wz)}
 .wiz-body{padding:16px 22px 18px;flex:1;min-height:0}
-.wiz-ft{display:flex;align-items:center;gap:10px;padding:12px 22px 16px;border-top:1px solid #EEF0F4}
+.wiz-ft{display:flex;align-items:center;gap:10px;padding:12px 22px 16px;border-top:1px solid #EEF0F4;flex-wrap:wrap}
 .wiz-ft .btn{flex:0 0 auto;white-space:nowrap}
 .wiz-ft .sp{flex:0 0 0}
 .wiz-ft .note{flex:1 1 auto;min-width:0;text-align:center;font-size:calc(12px * var(--font-scale));line-height:1.45;color:var(--muted,#646D7C);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.wiz .btn{border:1.5px solid var(--wz);background:var(--wz);color:#fff;border-radius:9px;padding:9px 16px;font-size:calc(13px * var(--font-scale));font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap}
+.wiz .btn{border:1.5px solid var(--wz);background:var(--wz);color:#fff;border-radius:9px;width:auto;margin:0;flex:0 0 auto;padding:9px 16px;font-size:calc(13px * var(--font-scale));font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap}
 .wiz .btn:hover{filter:brightness(.92)} .wiz .btn:disabled{opacity:.4;cursor:default;filter:none}
 .wiz .btn.ghost{background:#fff;color:#2E3542;border-color:#CDD3DE} .wiz .btn.ghost:hover{border-color:var(--wz);color:var(--wz);filter:none}
 .wiz .btn.sm{padding:6px 11px;font-size:calc(12px * var(--font-scale));border-radius:8px}
@@ -2874,7 +2874,7 @@ function wizMount(host, cfg){
       <div class="wiz-form">
         <div><label>시작일 <i>*</i></label><input class="in" type="date" id="wzFrom" value="${esc(S.from||ago(7))}"></div>
         <div><label>종료일 <i>*</i></label><input class="in" type="date" id="wzTo" value="${esc(S.to||today())}"></div>
-        <div><label>날짜 기준</label><select class="in" id="wzBasis"><option value="order" ${S.basis!=='collect'?'selected':''}>주문일</option><option value="collect" ${S.basis==='collect'?'selected':''}>주문 수집일</option><option value="ship" ${S.basis==='ship'?'selected':''}>발송일 (송장)</option></select></div>
+        <div><label>날짜 기준</label><select class="in" id="wzBasis"><option value="ship" ${!S.basis||S.basis==='ship'?'selected':''}>발송일 (송장 등록)</option><option value="order" ${S.basis==='order'?'selected':''}>주문일</option><option value="collect" ${S.basis==='collect'?'selected':''}>주문 수집일</option></select></div>
         <div><label>채널</label><select class="in" id="wzCh"><option value="">전체 채널</option>${(S.channels||[]).map(c=>`<option ${S.ch===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
         <div><label>검색</label><input class="in" id="wzQ" value="${esc(S.q||'')}" placeholder="주문번호 · 구매자 · 상품 · 옵션"></div>
         <div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;margin:0 0 9px;font-weight:500;color:#2E3542;font-size:calc(12.5px * var(--font-scale))"><input type="checkbox" id="wzDone" ${S.incDone?'checked':''}> 이미 만든 주문도 보기</label></div>
@@ -2939,7 +2939,7 @@ function wizMount(host, cfg){
         <td><div><b>${esc(r.channel||'')}</b> · ${esc(r.buyer||'')}</div><div class="sub mono">${esc(r.order_no)} · ${esc(r.at)}</div></td>
         <td style="max-width:460px">${(r.lines||[]).map(l=>`<div class="ell" title="${esc(l.product)}">${l.item_code?`<span class="mono" style="color:${l.n_cand>1?'#C88A0E':'#0F7B6C'};font-size:calc(11px * var(--font-scale))">${esc(l.item_code)}</span>`:'<span class="tg bad">없음</span>'} ${esc(l.item_name||l.product)} <span class="sub" style="display:inline">×${n(l.qty)}</span></div>`).join('')}</td>
         <td data-l="구분"><span class="tg n">${esc(r.kind||'')}</span><div class="sub">${esc(r.category||'')}</div></td>
-        <td class="num" data-l="수량">${n(r.qty)}</td><td class="num" data-l="금액">${n(r.amount)}</td><td data-l="상태">${st(r)}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;padding:30px;color:#98A1B0">해당하는 주문이 없습니다</td></tr>'}</tbody></table></div>
+        <td class="num" data-l="수량">${n(r.qty)}</td><td class="num" data-l="금액">${n(r.amount)}<div class="sub" style="white-space:nowrap">${r.fee_known?(Number(r.ship_fee)?`택배비 ${n(r.ship_fee)}${(r.trk_n||1)>1?` · 운송장 ${r.trk_n}`:''}`:'택배비 없음'):'<span style="color:#C88A0E">택배비 미수집</span>'}</div></td><td data-l="상태">${st(r)}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;padding:30px;color:#98A1B0">해당하는 주문이 없습니다</td></tr>'}</tbody></table></div>
       <div class="wiz-pager"><span>${n(allRows.length)}건 중 ${allRows.length?n(S.pg2*PG2+1):0}–${n(S.pg2*PG2+rows.length)} 표시</span>${pages>1?`<button class="btn ghost sm" id="wzPgPrev" ${S.pg2<=0?'disabled':''}>‹ 이전</button><span>${S.pg2+1} / ${pages} 쪽</span><button class="btn ghost sm" id="wzPgNext" ${S.pg2>=pages-1?'disabled':''}>다음 ›</button>`:''}</div>`;
     const pp=$('wzPgPrev'), pn=$('wzPgNext'); if(pp) pp.onclick=()=>{ S.pg2--; r2(); host.scrollIntoView({behavior:'smooth',block:'start'}); }; if(pn) pn.onclick=()=>{ S.pg2++; r2(); host.scrollIntoView({behavior:'smooth',block:'start'}); };
     host.querySelectorAll('.wiz-flt button[data-f]').forEach(b=>b.onclick=()=>{ S.flt2=b.dataset.f; S.pg2=0; r2(); });
@@ -3021,13 +3021,14 @@ function wizMount(host, cfg){
       </div>
       ${(d.slips||[]).map(sp=>`<div class="wiz-slip${sp.n_miss||sp.n_ambig?' bad':''}">
         <div class="h"><b>${esc(sp.channel||'')}</b><span class="mono">${esc(sp.order_no)}</span>${sp.already?'<span class="tg bad">이미 만든 주문</span>':''}<span class="r">${esc(String(sp.io_date))}</span></div>
-        <div class="meta"><div><label>거래처</label><b>${esc(sp.cust_name||'—')}</b> <span class="mono sub" style="display:inline">${esc(sp.cust_code||'코드없음')}</span></div><div><label>출하창고</label><b>${esc(d.wh_name||d.wh)}</b></div><div><label>특이사항</label><b>${esc(sp.remark||'')}</b></div><div><label>합계</label><b>${n(sp.amount)}원</b></div></div>
-        <div style="overflow:auto"><table><thead><tr><th>#</th><th>품목코드</th><th>품목명</th><th>샵링커 상품 · 옵션</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th class="num">재고</th></tr></thead><tbody>
-          ${(sp.lines||[]).map(l=>`<tr${l.short?' style="background:#FFF6F5"':''}><td class="sub">${l.line}</td>
+        <div class="meta"><div><label>거래처</label><b>${esc(sp.cust_name||'—')}</b> <span class="mono sub" style="display:inline">${esc(sp.cust_code||'코드없음')}</span></div><div><label>출하창고</label><b>${esc(d.wh_name||d.wh)}</b></div><div><label>영업담당 · 판매담당자</label><b>${esc(sp.emp_code||'—')} · ${esc(sp.handler||'—')}</b></div><div><label>주문No. (샵링커)</label><b class="mono">${esc(sp.order_ref||'—')}</b></div><div><label>특이사항</label><b>${esc(sp.remark||'')}</b></div><div><label>택배비</label><b>${sp.fee_known?(Number(sp.ship_fee)?`${n(sp.ship_fee)}원${(sp.trk_n||1)>1?` · 운송장 ${sp.trk_n}건`:''}`:'없음'):'<span style="color:#C88A0E">미수집</span>'}</b></div><div><label>합계</label><b>${n(sp.amount)}원</b></div></div>
+        <div style="overflow:auto"><table><thead><tr><th>#</th><th>품목코드</th><th>품목명</th><th>샵링커 상품 · 옵션</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th class="num">재고</th><th>적요</th></tr></thead><tbody>
+          ${(sp.lines||[]).map(l=>`<tr${l.short?' style="background:#FFF6F5"':l.fee?' style="background:#F7F8FB"':''}><td class="sub">${l.fee?'배송':l.line}</td>
             <td class="mono" style="color:${l.item_code?'#0F7B6C':'#B3261E'}">${esc(l.item_code||'—')}</td><td>${esc(l.item_name||'')}</td>
             <td class="sub" style="white-space:normal;max-width:360px">${esc(l.product||'')}${l.option?`<div>옵션 ${esc(l.option)}</div>`:''}</td>
             <td class="num">${n(l.qty)}</td><td class="num">${n(l.unit_price)}</td><td class="num">${n(l.amount)}</td>
-            <td class="num" style="${l.short?'color:#B3261E;font-weight:700':''}">${n(l.have)}${l.short?' ⚠':''}</td></tr>`).join('')}</tbody></table></div></div>`).join('')}
+            <td class="num" style="${l.short?'color:#B3261E;font-weight:700':''}">${l.fee?'—':n(l.have)+(l.short?' ⚠':'')}</td>
+            <td class="sub mono" style="white-space:nowrap">${esc(l.remark||'')}</td></tr>`).join('')}</tbody></table></div></div>`).join('')}
       <p class="sub">저장하면 <b>재고가 바로 빠지고</b> 전표는 "전송 대기"로 생깁니다. 재고가 모자란 전표는 건너뛰고 사유를 알려줍니다. 저장 뒤에도 전송 전까지는 한 번에 되돌릴 수 있습니다.</p>`;
     $('wzWh').onchange=e=>{ S.whSel=e.target.value; r4(); };
     const sd=$('wzSend'); if(sd) sd.onchange=()=>{ S.sendAfter=sd.checked; };

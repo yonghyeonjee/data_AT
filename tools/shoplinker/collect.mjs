@@ -19,6 +19,7 @@
  *   node collect.mjs --from 20260902 --to 20260930
  *   node collect.mjs --back 202512         2025-12 부터 과거로 빈 달이 이어질 때까지
  *   node collect.mjs --dry                 적재하지 않고 건수만
+ *   node collect.mjs --fields              응답 필드 이름 훑기 (배송비 필드 확인용)
  */
 import https from "node:https";
 import http from "node:http";
@@ -68,6 +69,21 @@ const FLAG_LABEL = {
 };
 const REFUND_FLAGS = { "013": 1, "008": 1 };   // 교환완료는 환불이 아니다
 const DELIVERY = { delv0094: "CJ대한통운", delv0049: "삼성물류배송" };
+
+// ── 배송비 ──────────────────────────────────────────────────────
+// 샵링커는 상품 줄마다 같은 배송비를 붙여 준다. "운송장 1개 = 배송비 1건" 으로 합치는 일은
+// DB(core.f_sl_fee) 가 송장번호 기준으로 처리하므로, 여기서는 줄에 실린 값을 그대로 넘긴다.
+// 응답 필드 이름이 확실하지 않아 후보를 순서대로 본다. `node collect.mjs --fields` 로 실제 이름을 확인할 수 있다.
+const FEE_KEYS = [
+  "delivery_price", "delivery_amt", "delivery_cost", "delivery_fee", "delivery_charge",
+  "deliv_price", "dlv_price", "dlv_cost", "ship_price", "shipping_fee", "shipping_price",
+  "order_delivery_price", "mall_delivery_price", "delivery_money",
+];
+const MONEYISH = /(price|fee|cost|amt|amount|money|charge)/i;
+function feeOf(o) {
+  for (const k of FEE_KEYS) if (o[k] !== undefined && S(o[k]) !== "") return num(o[k]);
+  return null;
+}
 
 // ── 유틸 ────────────────────────────────────────────────────────
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -259,6 +275,7 @@ function mapRow(o, job) {
     qty: num(o.quantity) ?? 1,
     unit_price: num(o.sale_price),
     gross_amount: gross,
+    shipping_fee: feeOf(o),
     refund_amount: isRefund ? gross : 0,
     payment_method: S(o.channel_type),
     customer_name: S(o.order_name),
@@ -271,6 +288,10 @@ function mapRow(o, job) {
       delivery: DELIVERY[deliv] ?? deliv, invoice: S(o.invoice),
       item_gubun: S(o.item_gubun), order_input_type: S(o.order_input_type),
       exchange_org_id: S(o.exchange_org_id), receive: S(o.receive),
+      // 배송비 필드를 못 찾았을 때, 어떤 금액 필드가 오는지 한 번은 남겨 둔다
+      ...(feeOf(o) === null ? { fee_dbg: Object.fromEntries(
+            Object.keys(o).filter((k) => MONEYISH.test(k) && !["order_price","sale_price"].includes(k))
+                          .slice(0, 10).map((k) => [k, S(o[k]).slice(0, 20)])) } : {}),
     },
   };
 }
@@ -372,9 +393,36 @@ async function selftest() {
   console.log("\n점검 통과. 이제 정기 수집을 켜도 됩니다.");
 }
 
+/** 응답에 어떤 필드가 오는지 이름만 훑는다 (배송비 필드 이름 확인용).
+ *  값은 금액처럼 보이는 것만 짧게 찍고, 이름·연락처·주소는 찍지 않는다. */
+async function fieldscan() {
+  const SAFE = /(price|fee|cost|amt|amount|money|charge|qty|quantity|flag|type|date|no$|_no$|id$)/i;
+  const seen = new Map();
+  const ed = ymd(kstNow()), st = ymd(kstShift(-3));
+  for (const job of [{ flag: "003", dateType: "004" }, { flag: "015", dateType: "003" }]) {
+    const res = await fetchPage({ st_date: st, ed_date: ed, date_type: job.dateType, order_flag: job.flag,
+                                  page_no: "1", total_standard_count: "20" });
+    if (res.error) { console.log(`  (${job.flag}) ${res.error}`); continue; }
+    for (const o of res.orders) for (const k of Object.keys(o)) {
+      if (!seen.has(k)) seen.set(k, []);
+      const v = S(o[k]);
+      const arr = seen.get(k);
+      if (SAFE.test(k) && v && arr.length < 3 && !arr.includes(v)) arr.push(v.slice(0, 24));
+    }
+  }
+  console.log(`\n샵링커 응답 필드 ${seen.size}개 (최근 3일, 최대 40건 기준)\n`);
+  for (const [k, v] of [...seen.entries()].sort())
+    console.log(`  ${k.padEnd(28)} ${v.length ? v.join(" | ") : ""}`);
+  const hit = FEE_KEYS.filter((k) => seen.has(k));
+  console.log(hit.length
+    ? `\n✓ 배송비로 읽는 필드: ${hit.join(", ")}`
+    : `\n✕ 후보(${FEE_KEYS.join(", ")}) 중 응답에 있는 것이 없습니다.\n  위 목록에서 배송비로 보이는 이름을 알려 주시면 FEE_KEYS 에 넣겠습니다.`);
+}
+
 async function main() {
   const started = Date.now();
   if (process.argv.includes("--selftest")) return selftest();
+  if (process.argv.includes("--fields")) return fieldscan();
   const ctx = await rpc("fn_sl_context", {});
   CH_MAP = ctx.channel_map ?? [];
   console.log(`채널 매핑 ${CH_MAP.length}건 · 원장 마지막 주문일 ${ctx.last_order_at ?? "(없음)"}`);
