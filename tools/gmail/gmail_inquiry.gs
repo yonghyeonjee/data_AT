@@ -11,10 +11,13 @@
  *    2. 프로젝트 설정 → appsscript.json 표시 → 같이 드린 appsscript.json 으로 교체
  *    3. runOnce() 한 번 실행 → 권한 승인 (Gmail 읽기 · 라벨 · 외부 호출)
  *    4. 실행 로그에 "✅ 연결 정상" 이 보이면 setupInquiryTrigger() 한 번 실행
- *       → 10분마다 자동으로 돕니다
+ *       → 1분마다 자동으로 돕니다 (메일 오면 대개 1분 안에 담당자 화면·잔디에 뜸)
  *
  *  ▸ 처리한 메일에는 라벨 "DC적재" 가 붙습니다. 라벨을 떼면 다음 번에 다시 넣습니다
  *    (Datacenter 쪽은 메일 ID 로 중복을 막으므로 두 번 들어가지 않습니다).
+ *
+ *  ▸ 새 문의가 들어가면 잔디 CRM 방으로 알림이 같이 나갑니다 (Datacenter 쪽에서 보냄).
+ *    문구·on/off 는 관리자 화면 → 알림 에서 바꿉니다.
  *
  *  ▸ 이름·연락처는 Datacenter 로만 보내고 이 스크립트에는 남기지 않습니다.
  * ═══════════════════════════════════════════════════════════════════ */
@@ -22,8 +25,9 @@
 var DC_URL   = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
 var DC_ANON  = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 var DC_KEY   = 'gm-inq-2f7c9a41d3e85b60';          // fn_inquiry_mail_ingest 전용 키
-var LABEL    = 'DC적재';
-var QUERY    = 'subject:(견적문의 새글) newer_than:30d -label:' + LABEL;
+var LABEL    = 'DC적재';        // 넘긴 메일
+var LABEL_NG = 'DC확인필요';     // 표를 못 읽은 메일 (사람이 한 번 봐야 함)
+var QUERY    = 'subject:견적문의 newer_than:30d -label:' + LABEL + ' -label:' + LABEL_NG;
 var MAX_PER_RUN = 30;
 
 /* 메일 표의 항목 이름 → Datacenter 필드 */
@@ -45,19 +49,24 @@ function collectInquiries(){
   var label = getOrCreateLabel_(LABEL);
   var threads = GmailApp.search(QUERY, 0, MAX_PER_RUN);
   if(!threads.length){ Logger.log('새 견적문의 메일 없음'); return; }
-  var rows = [], done = [];
+  var rows = [], done = [], bad = [];
   threads.forEach(function(th){
+    var got = false;
     th.getMessages().forEach(function(msg){
       var row = parseMessage_(msg);
-      if(row){ rows.push(row); done.push(th); }
-      else Logger.log('표를 못 읽음 — 메일 ' + msg.getId() + ' (' + msg.getSubject() + ')');
+      if(row){ rows.push(row); got = true; }
     });
+    if(got) done.push(th);
+    else { bad.push(th); Logger.log('표를 못 읽음 — "' + th.getFirstMessageSubject() + '" → 라벨 ' + LABEL_NG); }
   });
+  /* 못 읽은 메일에도 라벨을 붙인다. 안 붙이면 매번 다시 집어서 새 메일 자리를 잡아먹는다 */
+  if(bad.length){ var ng = getOrCreateLabel_(LABEL_NG); bad.forEach(function(th){ th.addLabel(ng); }); }
   if(!rows.length){ Logger.log('읽은 문의 0건'); return; }
   var res = dcCall_('fn_inquiry_mail_ingest', { p_key: DC_KEY, p_rows: rows });
   if(!res || !res.ok){ Logger.log('❌ Datacenter 적재 실패 — 라벨을 붙이지 않습니다. 다음 실행에 다시 시도합니다.'); return; }
   done.forEach(function(th){ th.addLabel(label); });
-  Logger.log('✅ 문의 ' + rows.length + '건 보냄 · 새로 등록 ' + res.inserted + ' · 이미 있음 ' + res.duplicate + ' · 건너뜀 ' + res.skipped);
+  Logger.log('✅ 문의 ' + rows.length + '건 보냄 · 새로 등록 ' + res.inserted + ' · 이미 있음 ' + res.duplicate + ' · 건너뜀 ' + res.skipped
+             + (res.inserted ? ' · 잔디 알림 나감' : ''));
   (res.rows || []).forEach(function(r){ Logger.log('   #' + r.id + ' ' + r.name + ' → ' + (r.handler || '미배정')); });
 }
 
@@ -69,11 +78,23 @@ function runOnce(){
   collectInquiries();
 }
 
-/* 10분마다 */
-function setupInquiryTrigger(){
+/* 자동 실행 — 기본 1분 (Apps Script 가 허용하는 가장 짧은 주기)
+   메일이 오면 대개 1분 안에 담당자 화면과 잔디에 뜹니다.
+   ※ 일반 gmail.com 계정은 스크립트 실행시간이 하루 90분입니다.
+     한 번 도는 데 1~2초라 1분 주기면 하루 25~50분쯤 씁니다. 넉넉하지만,
+     "초과" 경고 메일이 오면 setupInquiryTrigger5() 로 바꾸세요. (Workspace 계정은 6시간이라 여유롭습니다) */
+function setupInquiryTrigger(){ setTrigger_(1); }
+function setupInquiryTrigger5(){ setTrigger_(5); }
+function setTrigger_(min){
   ScriptApp.getProjectTriggers().forEach(function(t){ if(t.getHandlerFunction() === 'collectInquiries') ScriptApp.deleteTrigger(t); });
-  ScriptApp.newTrigger('collectInquiries').timeBased().everyMinutes(10).create();
-  Logger.log('✅ 10분마다 collectInquiries 가 돕니다');
+  ScriptApp.newTrigger('collectInquiries').timeBased().everyMinutes(min).create();
+  Logger.log('✅ ' + min + '분마다 collectInquiries 가 돕니다');
+}
+/* 자동 실행 끄기 */
+function stopInquiryTrigger(){
+  var n = 0;
+  ScriptApp.getProjectTriggers().forEach(function(t){ if(t.getHandlerFunction() === 'collectInquiries'){ ScriptApp.deleteTrigger(t); n++; } });
+  Logger.log(n ? '멈췄습니다 (' + n + '개 삭제)' : '켜져 있던 자동 실행이 없습니다');
 }
 
 /* ── 메일 한 통 → 한 줄 ────────────────────────────────── */

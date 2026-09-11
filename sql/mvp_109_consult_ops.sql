@@ -35,3 +35,22 @@ create table if not exists core.web_traffic (
 
 -- API 키 (해시만 저장) : gmail_inquiry = gm-inq-2f7c9a41d3e85b60 · ga_traffic = ga-trf-9b1e4c72a8d05f36
 -- quick_links 기본값 : DPS · 시흥몰(고객) · 시흥몰(관리자)
+
+
+/* ═══════════════════════════════════════════════════════════════
+   2026-09-11 추가 — "진행전" 이 화면에서 빠지던 것 (DB 적용 완료)
+
+   지메일로 들어온 문의는 result='진행전' 로 들어간다. 그런데
+   fn_store_consults_all 이 열린 상담을 result in ('진행중','보류') 로 하드코딩하고 있어
+   방금 들어온 문의가 [진행중 전체] 목록 · "진행중 N" 건수 · 출처/담당 칩에서 통째로 빠졌다.
+   (crm.consult 에는 정상으로 들어가 있고 잔디 알림도 나갔는데 화면에만 안 보이던 상태)
+
+   → core.f_consult_bucket(result) in ('open','hold') 로 바꿨다. 진행전 → open.
+   → 정렬도 바꿨다 : 미배정 → 진행전(새 문의) → 내 상담 → 최근
+   → counts 에 'new' (진행전 건수) 추가. 화면 요약줄에 "새 문의 N" 으로 나온다.
+
+   잔디 알림도 이때 붙였다 :
+     core.notify_channel.jandi_crm  = 웹훅 주소 + enabled
+     core.notify_rule.inquiry_homepage (event 'inquiry.homepage')
+     fn_inquiry_mail_ingest 이 한 건 넣을 때마다 core.f_notify 호출 (실패해도 적재는 진행)
+   ═══════════════════════════════════════════════════════════════ */
