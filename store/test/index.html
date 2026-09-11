@@ -178,6 +178,15 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .sh-list button small{margin-left:auto;font-size:calc(12px * var(--font-scale));font-weight:500;color:var(--faint)}
 .sh-list button.me{opacity:.45}
 .tag.src{background:#E3F3F0;color:#0F7B6C} .tag.hd{background:#EEF2FF;color:#2F5BEA}
+.tag.re{background:#FFF1E6;color:#B45309} .tag.mth-t{background:#F1EEFB;color:#5C3D9E}
+/* 상담 방법 토글 · 견적서 목록 · 휴지통 */
+.mth{display:inline-flex;gap:2px;margin-left:6px;vertical-align:middle}
+.mth button{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:1px 7px;font-size:calc(11px * var(--font-scale));font-weight:700;cursor:pointer;width:auto;margin:0}
+.mth button.on{background:#5C3D9E;border-color:#5C3D9E;color:#fff}
+.qlist{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.qlist .ql{border:1px solid #CDD3DE;background:#F7F8FB;color:var(--navy,#1428A0);border-radius:6px;padding:2px 8px;font-size:calc(11.5px * var(--font-scale));font-weight:600;cursor:pointer;width:auto;margin:0;font-family:inherit}
+.crow.trash{opacity:.75;border-style:dashed}
+.subtabs a.so{color:var(--faint);font-size:calc(15px * var(--font-scale));padding-left:8px;padding-right:8px} .subtabs a.so:hover{color:var(--brand,#2F5BEA)}
 .item .mv{font-size:calc(11.5px * var(--font-scale));color:var(--faint);margin-top:2px}
 .nextbox{border:1.5px dashed var(--line-2);border-radius:12px;padding:10px 12px 2px;margin:2px 0 12px;background:#FBFCFE}
 .nextbox .nb-t{font-size:calc(14.5px * var(--font-scale));font-weight:800;color:var(--navy);margin-bottom:10px;letter-spacing:-.01em} .nextbox .nb-t .hint{font-weight:400;color:var(--faint);margin-left:6px}
@@ -706,7 +715,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <details><summary>사용 방법</summary><ol><li><i>1</i><span><b>콜백 약속</b>: 상담에서 콜백 예정을 잡으면 여기에 시간순으로 뜹니다. 전화 버튼으로 바로 걸고, 끝나면 완료를 누르세요. 지난 약속은 빨간색입니다.</span></li><li><i>2</i><span><b>내 상담</b>: 상태(미완료·보류·완료·거절)로 골라 보고, 이름·번호·모델로 찾습니다. 처음 열면 <b>미완료</b>만 보입니다.</span></li><li><i>3</i><span><b>여러 건 한 번에</b>: 왼쪽 네모를 켜거나 <b>전체선택</b>을 누른 뒤 위의 버튼을 누르면 고른 건 전부에 같은 처리가 됩니다.</span></li><li><i>4</i><span><b>상담 완료가 곧 판매는 아닙니다</b>. 구매까지 갔으면 <b>구매 확정</b>, 안 샀으면 <b>상담완료</b>를 누르세요.</span></li></ol></details>
     </div>
     <div class="home-kpi" id="homeKpi"></div>
-    <div class="cta2"><button onclick="goTab('consult')">＋ 상담 입력</button><button class="alt" onclick="openQuote()">견적서 열기 ↗</button></div>
+    <div class="cta2"><button onclick="goTab('consult')">＋ 상담 입력</button><button class="alt" onclick="openQuote()">견적서 발행 ↗</button></div>
     <div class="card hidden" id="allCard">
       <h2>전체 상담 · 배정 <span id="allSub">점장 · 대표만 보입니다</span></h2>
       <p class="note-in" style="margin-top:0">미배정 건을 담당자에게 배정하거나, 담당을 바꿉니다. 넘긴 기록은 그 상담에 남습니다.</p>
@@ -736,6 +745,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button type="button" data-v="done">완료 <i>0</i></button>
         <button type="button" data-v="reject">거절 <i>0</i></button>
         <button type="button" data-v="all">전체 <i>0</i></button>
+        <button type="button" data-v="trash" title="삭제한 상담 — 7일 안에는 되살릴 수 있습니다">휴지통 <i>0</i></button>
       </div>
       <div class="bulkbar">
         <label class="allck"><input type="checkbox" id="mc_all" onchange="mcToggleAll(this.checked)"> 전체선택</label>
@@ -746,18 +756,41 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           <button onclick="mcBulk('done','상담완료로')" disabled>상담완료</button>
           <button class="bad" onclick="mcBulk('reject','거절로')" disabled>거절</button>
           <button onclick="mcBulkAssign()" disabled>넘기기</button>
+          <button class="bad" onclick="mcBulkDelete()" disabled title="실수로 넣은 상담 — 통계에서 빠지고 7일 안에 되살릴 수 있습니다">삭제</button>
         </div>
       </div>
       <div class="list" id="mcList"><div class="empty">불러오는 중…</div></div>
       <div id="mc_pg"></div>
     </div>
+    <div class="card" id="stCard">
+      <h2>처리현황 <span id="stSub"></span></h2>
+      <p class="note-in" style="margin-top:0">문의가 얼마나 들어와서 얼마나 구매로 이어졌는지. <b>삭제한 상담은 빠집니다.</b></p>
+      <div class="daterow">
+        <div class="seg sm" id="st_grain"><button type="button" data-v="day">일</button><button type="button" class="on" data-v="month">월</button><button type="button" data-v="year">연</button></div>
+        <div class="seg sm hidden" id="st_who"><button type="button" class="on" data-v="me">내 것</button><button type="button" data-v="">전체</button></div>
+        <button class="btn ghost sm" onclick="loadStats()">새로고침</button>
+      </div>
+      <div id="stBody"><div class="empty">불러오는 중…</div></div>
+    </div>
+    <div class="card hidden" id="lvCard">
+      <h2>휴가 <span id="lvSub">점장 · 대표만 보입니다</span></h2>
+      <p class="note-in" style="margin-top:0">휴가 중인 담당자는 <b>자동 배정에서 빠지고 다음 사람에게</b> 갑니다. 이미 배정된 건은 그대로입니다 — 필요하면 위에서 넘기세요.</p>
+      <div class="daterow">
+        <select class="in" id="lv_staff"></select>
+        <input class="in" type="date" id="lv_from" title="시작일">
+        <input class="in" type="date" id="lv_to" title="종료일">
+        <input class="in" id="lv_note" placeholder="메모 (선택)">
+        <button class="btn sm" onclick="lvSave()" style="margin:0">추가</button>
+      </div>
+      <div class="list" id="lvList" style="margin-top:10px"><div class="empty">불러오는 중…</div></div>
+    </div>
     <div class="card">
-      <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
+      <h2>내 견적서 <span id="qtSub">최근 90일</span><span style="margin-left:auto"><button class="btn sm ghost" onclick="openQuote()" style="margin:0">견적서 발행 ↗</button></span></h2>
       <div class="list" id="qtList"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
     </div>
     <div class="card">
       <h2>내 고객 <span id="mcSub"></span></h2>
-      <div class="list" id="mcList"><div class="empty">아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.</div></div>
+      <div class="list" id="mcuList"><div class="empty">아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.</div></div>
     </div>
       <div class="card hidden" id="myReqCard">
       <h2>내 주문서 요청 <span id="myReqSub">최근 14일</span></h2>
@@ -879,6 +912,8 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="f"><label>고객명 <span class="req">*</span></label><input class="in" id="c_name" placeholder="홍길동" autocomplete="off"></div>
         <div class="f"><label>휴대폰</label><input class="in" type="tel" id="c_phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)"></div>
       </div>
+      <div class="f"><label>상담 방법 <span class="hint">어떻게 상담했는지</span></label>
+        <div class="seg sm" id="c_method"><button type="button" data-v="대면">대면</button><button type="button" data-v="전화">전화</button><button type="button" data-v="메시지">메시지</button></div></div>
       <div class="f"><label>문의 채널 <span class="req">*</span> <span class="hint">어디로 들어온 문의인지</span></label>
         <div class="chips" id="c_ch"></div>
         <input class="in hidden" id="c_ch_etc" placeholder="기타 — 어디로 들어왔는지 적어 주세요" style="margin-top:6px"></div>
@@ -1348,6 +1383,10 @@ function render(){
   /* 점장·대표·전체 권한이면 전체 상담·배정 카드 */
   const ac=$('allCard'); if(ac){ ac.classList.toggle('hidden', !s.is_mgr);
     if(s.is_mgr && !ALL_LOADED){ ALL_LOADED=true; loadAllConsults(); } }
+  const lc=$('lvCard'); if(lc){ lc.classList.toggle('hidden', !s.is_mgr); if(s.is_mgr && !LV_LOADED){ LV_LOADED=true; loadLeave(); } }
+  const sw=$('st_who'); if(sw) sw.classList.toggle('hidden', !s.is_mgr);
+  if(!ST_LOADED){ ST_LOADED=true; loadStats(); }
+  if(!QL_LOADED){ QL_LOADED=true; loadQuickLinks(); loadSecOrder(); }
   const tabHome=document.querySelector('.tab[data-tab="home"]');
   if(tabHome&&s.is_mgr&&Number(s.unassigned_n||0)>0){ tabHome.innerHTML='상담<span class="n">'+s.unassigned_n+'</span>'; }
 }
@@ -2030,7 +2069,7 @@ function wizMount(host, cfg){
       </div>
       ${(d.slips||[]).map(sp=>`<div class="wiz-slip${sp.n_miss||sp.n_ambig?' bad':''}">
         <div class="h"><b>${esc(sp.channel||'')}</b><span class="mono">${esc(sp.order_no)}</span>${sp.already?'<span class="tg bad">이미 만든 주문</span>':''}<span class="r">${esc(String(sp.io_date))}</span></div>
-        <div class="meta"><div><label>거래처</label><b>${esc(sp.cust_name||'—')}</b> <span class="mono sub" style="display:inline">${esc(sp.cust_code||'코드없음')}</span></div><div><label>출하창고</label><b>${esc(d.wh_name||d.wh)}</b></div><div><label>영업담당 · 판매담당자</label><b>${esc(sp.emp_code||'—')} · ${esc(sp.handler||'—')}</b></div><div><label>주문No. (샵링커)</label><b class="mono">${esc(sp.order_ref||'—')}</b></div><div><label>특이사항</label><b>${esc(sp.remark||'')}</b></div><div><label>택배비</label><b>${sp.fee_known?(Number(sp.ship_fee)?`${n(sp.ship_fee)}원${(sp.trk_n||1)>1?` · 운송장 ${sp.trk_n}건`:''}`:'없음'):'<span style="color:#C88A0E">미수집</span>'}</b></div><div><label>합계</label><b>${n(sp.amount)}원</b></div></div>
+        <div class="meta"><div><label>거래처</label><b>${esc(sp.cust_name||'—')}</b> <span class="mono sub" style="display:inline">${esc(sp.cust_code||'코드없음')}</span></div><div><label>출하창고</label><b>${esc(d.wh_name||d.wh)}</b></div><div><label>영업담당 · 판매담당자</label><b>${esc(sp.emp_code||'—')} · ${esc(sp.handler||'—')}</b></div><div><label>주문No. (샵링커)</label><b class="mono">${esc(sp.order_ref||'—')}</b></div><div><label>특이사항</label><b>${esc(sp.remark||'')}</b></div><div><label>택배비</label><b>${sp.fee_known?(Number(sp.ship_fee)?`${n(sp.ship_fee)}원${(sp.trk_n||1)>1?` · 운송장 ${sp.trk_n}건`:''}`:'없음')+(sp.fee_type?` <span class="sub" style="display:inline">${esc(sp.fee_type)}</span>`:''):'<span style="color:#C88A0E">미수집</span>'}</b></div><div><label>합계</label><b>${n(sp.amount)}원</b></div></div>
         <div style="overflow:auto"><table><thead><tr><th>#</th><th>품목코드</th><th>품목명</th><th>샵링커 상품 · 옵션</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th class="num">재고</th><th>적요</th></tr></thead><tbody>
           ${(sp.lines||[]).map(l=>`<tr${l.short?' style="background:#FFF6F5"':l.fee?' style="background:#F7F8FB"':''}><td class="sub">${l.fee?'배송':l.line}</td>
             <td class="mono" style="color:${l.item_code?'#0F7B6C':'#B3261E'}">${esc(l.item_code||'—')}</td><td>${esc(l.item_name||'')}</td>
@@ -2289,8 +2328,8 @@ async function loadSlList(){
 /* 택배비 : 운송장 1개 = 1건. 한 주문에 운송장이 둘이면 두 건이 붙는다 */
 function slFeeTag(r){
   if(!r.fee_known) return '<span class="st warn" title="샵링커 수집에 배송비가 아직 안 들어온 주문입니다">택배비 미수집</span>';
-  if(!Number(r.ship_fee)) return '<span class="st ok" title="배송비 0원">택배비 없음</span>';
-  return `<span class="st n" title="운송장 ${r.trk_n||1}건 × 배송비 — 상품 줄마다 붙어 온 값을 운송장 단위로 합쳤습니다">택배비 ${won(r.ship_fee)}${(r.trk_n||1)>1?` · 운송장 ${r.trk_n}`:''}</span>`;
+  if(!Number(r.ship_fee)) return `<span class="st ok" title="배송비 0원${r.fee_type?` (${r.fee_type})`:''}">택배비 없음${r.fee_type&&r.fee_type!=='무료'?` · ${esc(r.fee_type)}`:''}</span>`;
+  return `<span class="st n" title="운송장 ${r.trk_n||1}건 기준 — 상품 줄마다 붙어 온 값을 운송장 단위로 합쳤습니다${r.fee_type?` (${r.fee_type})`:''}">택배비 ${won(r.ship_fee)}${(r.trk_n||1)>1?` · 운송장 ${r.trk_n}`:''}${r.fee_type?` · ${esc(r.fee_type)}`:''}</span>`;
 }
 let SL_META=null;
 function slVisible(){ const k=$('sl_kind').value, c=$('sl_cat').value, st=$('sl_st').value, sh=$('sl_ship').value;
@@ -2409,9 +2448,12 @@ const NAV_LABEL={home:'상담 · 오늘', consult:'상담 입력'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
 const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
 const CALC_URL ='https://www.samsungsh.co.kr/main/html.php?htmid=service/calc_subscribe.html';
+let QUICK_LINKS=[];
+async function loadQuickLinks(){ try{ QUICK_LINKS=(await rpc('fn_store_links',{p_code:CODE}))||[]; }catch(e){ QUICK_LINKS=[]; } syncNav(); }
 const LINK_ICON={
   quote:'<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 12h6M10 16h4"/></svg>',
-  calc :'<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h1M12 11h1M16 11h1M8 15h1M12 15h1M16 15h1M8 19h5"/></svg>'};
+  calc :'<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h1M12 11h1M16 11h1M8 15h1M12 15h1M16 15h1M8 19h5"/></svg>',
+  link :'<svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>'};
 /* 견적서 페이지를 새 창으로.
    상담 건에서 열면 견적번호·고객·상담사·상세 관심 품목을 주소에 실어 보낸다.
    (견적서 페이지가 이 값을 읽도록 패치돼 있어야 프리필·기존 견적 열기가 된다) */
@@ -2440,9 +2482,11 @@ function syncNav(){
   const restBadge=rest.reduce((a,x)=>a+(Number(x.badge)||0),0), restActive=rest.some(x=>x.active);
   bn.innerHTML=first.map(x=>`<button class="${x.active?'active':''}" onclick="goTab('${x.t}')">${NAV_ICON[x.t]||''}${esc(x.label)}${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join('')
     +`<button class="${restActive?'active':''}" onclick="sideOpen()">${NAV_ICON.more}더보기${restBadge?`<span class="n">${restBadge}</span>`:''}</button>`;
-  side.innerHTML += `<div class="grp">바로가기</div>`
-    + `<a class="lk" href="javascript:void 0" onclick="openQuote();sideClose()">${LINK_ICON.quote}<span>구독 견적서</span><small>새 창</small></a>`
-    + `<a class="lk" href="javascript:void 0" onclick="openCalc();sideClose()">${LINK_ICON.calc}<span>구독료 계산기</span><small>새 창</small></a>`;
+  side.innerHTML += `<div class="grp">견적서</div>`
+    + `<a class="lk" href="javascript:void 0" onclick="goTab('home');sideClose();setTimeout(()=>{const el=document.getElementById('qtList');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},120)">${LINK_ICON.quote}<span>내 견적서</span><small>조회</small></a>`
+    + `<a class="lk" href="javascript:void 0" onclick="openQuote();sideClose()">${LINK_ICON.quote}<span>견적서 발행</span><small>새 창</small></a>`
+    + `<a class="lk" href="javascript:void 0" onclick="openCalc();sideClose()">${LINK_ICON.calc}<span>구독료 계산기</span><small>새 창</small></a>`
+    + (QUICK_LINKS.length ? `<div class="grp">자주 가는 곳</div>` + QUICK_LINKS.map(l=>`<a class="lk" href="${esc(l.url)}" target="_blank" rel="noopener" onclick="sideClose()">${LINK_ICON.link||''}<span>${esc(l.name)}</span><small>${esc(l.note||'새 창')}</small></a>`).join('') : '');
   const nm=$('sideName'); if(nm) nm.textContent=$('meName').textContent||'담당자';
   const dt=$('sideDate'); if(dt) dt.textContent=$('todayLabel').textContent||'';
   const p1=$('sidePillToday'), p2=$('sidePillUnclosed');
@@ -2478,8 +2522,41 @@ function watchSubTabs(name){
   SUBTAB_OBS=new MutationObserver(()=>{ clearTimeout(t); t=setTimeout(()=>buildSubTabs(name),200); });
   SUBTAB_OBS.observe(panel,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
 }
+/* 섹션 순서 : core.staff_pref 'sec_order' = { home:[제목,…], … } */
+let SEC_ORDER={}, SEC_ORDER_LOADED=false;
+async function loadSecOrder(){ try{ SEC_ORDER=(await rpc('fn_store_pref',{p_code:CODE,p_key:'sec_order'}))||{}; }catch(e){ SEC_ORDER={}; } SEC_ORDER_LOADED=true; SUBTAB_SIG=''; buildSubTabs((document.querySelector('.tab.active')||{}).dataset?.tab||'home'); }
+function applySecOrder(name, panel){
+  const want=SEC_ORDER&&SEC_ORDER[name]; if(!Array.isArray(want)||!want.length) return;
+  const cards=[...panel.querySelectorAll(':scope > .card')].filter(c=>subTabTitle(c));
+  if(cards.length<2) return;
+  const rank=c=>{ const i=want.indexOf(subTabTitle(c)); return i<0?999:i; };
+  const sorted=cards.slice().sort((a,b)=>rank(a)-rank(b) || cards.indexOf(a)-cards.indexOf(b));
+  if(sorted.every((c,i)=>c===cards[i])) return;
+  const parent=cards[0].parentNode; let cursor=cards[0].previousSibling;
+  sorted.forEach(c=>{ parent.insertBefore(c, cursor ? cursor.nextSibling : parent.firstChild); cursor=c; });
+}
+function secOrderOpen(name){
+  const panel=$('tab-'+name); if(!panel) return;
+  const cards=[...panel.querySelectorAll(':scope > .card')].filter(c=>subTabTitle(c) && !c.classList.contains('hidden'));
+  let list=cards.map(c=>subTabTitle(c));
+  const mask=document.createElement('div'); mask.className='mask on'; mask.style.cssText='position:fixed;inset:0;background:rgba(16,20,32,.5);z-index:1300;display:flex;align-items:center;justify-content:center;padding:16px';
+  const draw=()=>{ mask.innerHTML=`<div class="card" style="max-width:420px;width:100%;margin:0">
+      <h2>섹션 순서 <span>위·아래로 옮기고 저장</span></h2>
+      <div id="soList">${list.map((t,i)=>`<div class="item oc" style="padding:8px 10px"><div><b>${i+1}.</b> ${esc(t)}</div><div class="act"><button class="mini" data-up="${i}" ${i===0?'disabled':''}>▲</button><button class="mini" data-dn="${i}" ${i===list.length-1?'disabled':''}>▼</button></div></div>`).join('')}</div>
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sm ghost" id="soReset" style="margin:0">기본 순서로</button><span style="flex:1"></span><button class="btn sm ghost" id="soCancel" style="margin:0">닫기</button><button class="btn sm" id="soSave" style="margin:0">저장</button></div>
+      <p class="note-in" style="margin:10px 0 0">숨겨진 섹션(권한 없는 카드 등)은 여기 안 나오고 원래 자리에 남습니다.</p></div>`;
+    mask.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.up; [list[i-1],list[i]]=[list[i],list[i-1]]; draw(); });
+    mask.querySelectorAll('[data-dn]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.dn; [list[i+1],list[i]]=[list[i],list[i+1]]; draw(); });
+    mask.querySelector('#soCancel').onclick=()=>mask.remove();
+    mask.querySelector('#soReset').onclick=async()=>{ delete SEC_ORDER[name]; await secOrderSave(); mask.remove(); location.reload(); };
+    mask.querySelector('#soSave').onclick=async()=>{ SEC_ORDER[name]=list; await secOrderSave(); mask.remove(); applySecOrder(name,panel); SUBTAB_SIG=''; buildSubTabs(name); toast('섹션 순서를 저장했습니다','ok'); };
+  };
+  draw(); mask.addEventListener('click',e=>{ if(e.target===mask) mask.remove(); }); document.body.appendChild(mask);
+}
+async function secOrderSave(){ try{ await rpc('fn_store_pref',{p_code:CODE,p_key:'sec_order',p_value:SEC_ORDER}); }catch(e){ toast('순서 저장 실패: '+e.message,'bad'); } }
 function buildSubTabs(name){
   const bar=$('subTabs'), panel=$('tab-'+name); if(!bar||!panel) return;
+  if(SEC_ORDER_LOADED) applySecOrder(name, panel);
   const cards=[...panel.querySelectorAll('.card')].filter(c=>!c.closest('.card .card') && !c.classList.contains('hidden') && c.offsetParent!==null && subTabTitle(c));
   /* 목록이 그대로면 손대지 않는다 : 다시 그리면 깜빡이고 눌러둔 위치도 풀린다 */
   const sig=name+'|'+cards.map(c=>subTabTitle(c)).join('|');
@@ -2487,15 +2564,16 @@ function buildSubTabs(name){
   SUBTAB_SIG=sig;
   if(cards.length<2){ bar.classList.add('hidden'); bar.innerHTML=''; return; }
   const cur=(bar.querySelector('a.on')||{}).dataset?.sec;
-  bar.innerHTML='<div class="st-wrap">'+cards.map((c,i)=>{ if(!c.id) c.id=`sec-${name}-${i}`; return `<a href="#${c.id}" data-sec="${c.id}" class="${c.id===cur?'on':''}">${esc(subTabTitle(c))}</a>`; }).join('')+'</div>';
+  bar.innerHTML='<div class="st-wrap">'+cards.map((c,i)=>{ if(!c.id) c.id=`sec-${name}-${i}`; return `<a href="#${c.id}" data-sec="${c.id}" class="${c.id===cur?'on':''}">${esc(subTabTitle(c))}</a>`; }).join('')
+    +`<a href="javascript:void 0" class="so" title="섹션 순서 바꾸기" onclick="secOrderOpen('${name}')">⚙</a></div>`;
   bar.classList.remove('hidden');
-  bar.querySelectorAll('a').forEach(a=>a.onclick=e=>{ e.preventDefault(); const el=document.getElementById(a.dataset.sec); if(!el) return;
+  bar.querySelectorAll('a[data-sec]').forEach(a=>a.onclick=e=>{ e.preventDefault(); const el=document.getElementById(a.dataset.sec); if(!el) return;
     const top=el.getBoundingClientRect().top+window.scrollY-(document.querySelector('.topbar').offsetHeight+8); window.scrollTo({top,behavior:'smooth'}); subTabActive(a.dataset.sec); });
   if(!cur) subTabActive(cards[0].id);
 }
 function subTabActive(id){ document.querySelectorAll('#subTabs a').forEach(a=>{ const on=a.dataset.sec===id; a.classList.toggle('on',on); if(on) a.scrollIntoView({block:'nearest',inline:'nearest'}); }); }
 (function(){ let t=null; window.addEventListener('scroll',()=>{ if(t) return; t=setTimeout(()=>{ t=null; const bar=$('subTabs'); if(!bar||bar.classList.contains('hidden')) return;
-  const line=document.querySelector('.topbar').offsetHeight+40; let best=null; bar.querySelectorAll('a').forEach(a=>{ const el=document.getElementById(a.dataset.sec); if(el && el.getBoundingClientRect().top<=line) best=a.dataset.sec; });
+  const line=document.querySelector('.topbar').offsetHeight+40; let best=null; bar.querySelectorAll('a[data-sec]').forEach(a=>{ const el=document.getElementById(a.dataset.sec); if(el && el.getBoundingClientRect().top<=line) best=a.dataset.sec; });
   if(best) subTabActive(best); },80); },{passive:true}); })();
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>goTab(b.dataset.tab)));
 window.addEventListener('popstate', e=>{ if($('app').classList.contains('hidden')) return; const t=(e.state&&e.state.tab)||location.hash.replace('#','')||'home'; goTab(t, true); });
@@ -2523,6 +2601,10 @@ $('c_model').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===','||e
 $('c_model').addEventListener('blur', ()=>{ if($('c_model').value.trim()) cModelFlush(); });
 /* 관심 품목은 여러 개 고를 수 있다 (저장은 쉼표로 이어서) */
 $('mc_flt').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) mcFlt(b.dataset.v); });
+$('c_method').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+  const was=b.classList.contains('on'); $('c_method').querySelectorAll('button').forEach(x=>x.classList.remove('on')); if(!was) b.classList.add('on'); });
+$('st_grain').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; $('st_grain').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); loadStats(); });
+$('st_who').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; $('st_who').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); loadStats(); });
 $('c_cat').addEventListener('click', e=>{ const c=e.target.closest('.chip'); if(!c) return;
   const v=c.dataset.v;
   if(v==='알 수 없음'){ /* 모르겠다는 답은 단독 — 다른 품목과 같이 못 고른다 */
@@ -2580,12 +2662,60 @@ function fmtWhen(iso){ const d=new Date(iso); const t=new Date(); const same=d.t
   const tm=new Date(t); tm.setDate(tm.getDate()+1); const tomorrow=d.toDateString()===tm.toDateString();
   const hm=d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
   return [same?'오늘':tomorrow?'내일':`${d.getMonth()+1}/${d.getDate()} (${'일월화수목금토'[d.getDay()]})`, hm]; }
+/* ═══ 처리현황 : 문의 → 구매 (일/월/연) · 채널별 상태 ═══ */
+let ST_LOADED=false, LV_LOADED=false, QL_LOADED=false;
+async function loadStats(){
+  const box=$('stBody'); if(!box) return;
+  const grain=(($('st_grain').querySelector('button.on')||{}).dataset||{}).v||'month';
+  const who=(STATUS&&STATUS.is_mgr) ? ((($('st_who').querySelector('button.on')||{}).dataset||{}).v) : undefined;
+  box.innerHTML='<div class="empty">불러오는 중…</div>';
+  let d; try{ d=await rpc('fn_store_consult_stats',{p_code:CODE,p_grain:grain,p_handler: who===''?'':null}); }
+  catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  const t=d.total||{}; const P=d.periods||[], C=d.channels||[];
+  $('stSub').textContent = `${d.from} ~ ${d.to} · ${who===''?'전체':'내 것'}`;
+  const pl=v=>v==='day'?'일':v==='year'?'연':'월';
+  const fmtP=x=> grain==='day'? x.slice(5).replace('-','/') : grain==='month'? x.slice(2).replace('-','.') : x;
+  const kpi=`<div class="home-kpi" style="margin:0 0 12px"><button><div class="v">${t.total||0}</div><div class="k">문의</div></button><button class="ok"><div class="v">${t.bought||0}</div><div class="k">구매</div></button><button class="${Number(t.rate)>=30?'ok':''}"><div class="v">${t.rate||0}%</div><div class="k">구매 성공률</div></button><button class="${t.open?'warn':''}"><div class="v">${t.open||0}</div><div class="k">미완료</div></button></div>`;
+  const th='<th>구분</th><th class="num">문의</th><th class="num">미완료</th><th class="num">보류</th><th class="num">완료</th><th class="num">거절</th><th class="num">구매</th><th class="num">성공률</th>';
+  const row=(k,x)=>`<tr><td>${esc(k)}</td><td class="num">${x.total}</td><td class="num">${x.open}</td><td class="num">${x.hold}</td><td class="num">${x.done}</td><td class="num">${x.reject}</td><td class="num"><b>${x.bought}</b></td><td class="num">${x.rate!=null?x.rate+'%':(x.total?Math.round(100*x.bought/x.total)+'%':'-')}</td></tr>`;
+  const t1=`<div class="tw"><table class="slt"><thead><tr>${th.replace('구분',pl(grain)+'별')}</tr></thead><tbody>${P.slice().reverse().map(x=>row(fmtP(x.p),x)).join('')||'<tr><td colspan="8" class="empty">없음</td></tr>'}</tbody></table></div>`;
+  const t2=`<div class="tw" style="margin-top:12px"><table class="slt"><thead><tr>${th.replace('구분','채널별')}</tr></thead><tbody>${C.map(x=>row(x.ch,x)).join('')||'<tr><td colspan="8" class="empty">없음</td></tr>'}</tbody></table></div>`;
+  /* 채널 × 기간 (최근 6개 기간만) */
+  const ps=P.slice(-6).map(x=>x.p); const CP=d.channel_periods||[];
+  const chs=[...new Set(CP.filter(x=>ps.includes(x.p)).map(x=>x.ch))];
+  const t3=chs.length?`<details style="margin-top:12px"><summary style="cursor:pointer;font-size:calc(12.5px * var(--font-scale));color:var(--muted)">채널 × ${pl(grain)} 상세 (문의 / 구매)</summary><div class="tw" style="margin-top:8px"><table class="slt"><thead><tr><th>채널</th>${ps.map(x=>`<th class="num">${fmtP(x)}</th>`).join('')}</tr></thead><tbody>${chs.map(c=>`<tr><td>${esc(c)}</td>${ps.map(pp=>{const x=CP.find(y=>y.p===pp&&y.ch===c); return `<td class="num">${x?`${x.total} / <b>${x.bought}</b>`:'·'}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div></details>`:'';
+  const M=(d.methods||[]).filter(x=>x.m!=='미기록');
+  const t4=M.length?`<div class="meta" style="margin-top:10px;color:var(--muted)">상담 방법 · ${M.map(x=>`${esc(x.m)} ${x.total}건(구매 ${x.bought})`).join(' · ')}</div>`:'';
+  box.innerHTML=kpi+t1+t2+t3+t4;
+}
+/* ═══ 휴가 (점장·대표) ═══ */
+let LV=null;
+async function loadLeave(){
+  const box=$('lvList'); if(!box) return;
+  try{ LV=await rpc('fn_store_leave_list',{p_code:CODE}); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  const sel=$('lv_staff'); if(sel && !sel.options.length) sel.innerHTML='<option value="">누구</option>'+(LV.staff||[]).map(n=>`<option>${esc(n)}</option>`).join('');
+  if($('lv_from') && !$('lv_from').value){ const t=new Date(); t.setMinutes(t.getMinutes()-t.getTimezoneOffset()); $('lv_from').value=t.toISOString().slice(0,10); $('lv_to').value=$('lv_from').value; }
+  const today=LV.today||[]; $('lvSub').textContent = today.length ? `오늘 휴가 ${today.join(', ')}` : '오늘 휴가 없음';
+  const rows=LV.rows||[];
+  box.innerHTML = rows.length ? rows.map(x=>`<div class="item oc"><div><div class="p">${esc(x.name)} ${x.now?'<span class="mine">휴가 중</span>':''}</div>
+      <div class="m">${esc(x.from)} ~ ${esc(x.to)}${x.note?' · '+esc(x.note):''}${x.by?' · '+esc(x.by)+' 입력':''}</div></div>
+      <div class="act"><button class="mini bad" onclick="lvDel(${x.id},'${esc(x.name)}')">지우기</button></div></div>`).join('') : '<div class="empty">등록된 휴가가 없습니다</div>';
+}
+async function lvSave(){
+  const st=$('lv_staff').value, f=$('lv_from').value, t=$('lv_to').value;
+  if(!st) return toast('누구의 휴가인지 고르세요','bad'); if(!f||!t) return toast('기간을 넣으세요','bad');
+  try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null});
+    toast(`${st} 휴가 ${f}~${t} 넣었습니다 — 그동안 자동 배정에서 빠집니다`,'ok'); $('lv_note').value=''; loadLeave();
+  }catch(e){ toast(e.message,'bad'); }
+}
+async function lvDel(id,name){ if(!confirm(`${name} 휴가를 지웁니다. 계속할까요?`)) return;
+  try{ await rpc('fn_store_leave_delete',{p_code:CODE,p_id:id}); toast('지웠습니다','ok'); loadLeave(); }catch(e){ toast(e.message,'bad'); } }
 function renderHome(s){
   const cbs=s.callbacks||[], oc=s.my_open_consults||[], mc=s.my_customers||[];
   const due=cbs.filter(x=>x.overdue||x.today).length;
   $('homeKpi').innerHTML=`<button class="${due?'bad':''}" onclick="document.getElementById('cbList').scrollIntoView({behavior:'smooth'})"><div class="v">${due}</div><div class="k">오늘 콜백</div></button>
     <button onclick="mcJump('open')"><div class="v">${oc.length}</div><div class="k">진행중 상담</div></button>
-    <button class="ok" onclick="document.getElementById('mcList').scrollIntoView({behavior:'smooth'})"><div class="v">${s.my_customer_count||0}</div><div class="k">내 고객</div></button>
+    <button class="ok" onclick="document.getElementById('mcuList').scrollIntoView({behavior:'smooth'})"><div class="v">${s.my_customer_count||0}</div><div class="k">내 고객</div></button>
     <button class="${(s.open_sales||[]).filter(x=>x.mine).length?'warn':''}" onclick="goTab('sale')"><div class="v">${(s.open_sales||[]).filter(x=>x.mine).length}</div><div class="k">확정 대기</div></button>`;
   if(MC_LOADED) loadMyConsults(MC_OFF, true);
   $('cbSub').textContent=cbs.length?`${cbs.length}건 · 지난 약속 ${cbs.filter(x=>x.overdue).length}`:'';
@@ -2603,7 +2733,7 @@ function renderHome(s){
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.models||'')}${x.final?` · 최종 ${won(x.final)}`:''}${x.monthly?` · 월 ${won(x.monthly)}`:''}${x.memo?' · '+esc(x.memo):''}</div></div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">견적서 열기 ↗</button>${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}')">상담 입력</button>`:''}</div></div>`).join(''):'<div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div>';
   $('mcSub').textContent=s.my_customer_count?`${s.my_customer_count}명 · 최근 ${mc.length}명 표시`:'';
-  $('mcList').innerHTML=mc.length?mc.map(x=>`
+  $('mcuList').innerHTML=mc.length?mc.map(x=>`
     <div class="item oc"><div><div class="p">${esc(x.name)} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small>${x.consent?'<span class="mine">수신동의</span>':''}</div>
       <div class="m">${String(x.last_at).slice(5,10).replace('-','/')} ${esc(x.last_what||'')}${x.orders?` · 구매 ${x.orders}건 ${won(x.spent)}`:''}</div></div>
       <div class="act"><button class="mini" onclick="pickMine('${x.key}','${esc(x.name)}')">상담 입력</button></div></div>`).join(''):'<div class="empty">아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.</div>';
@@ -2670,6 +2800,13 @@ function renderMyConsults(){
     const nxt = (x.next_model||x.next_cat)
       ? `<div class="meta" style="color:var(--navy)">다음 <b>${esc(x.next_model||x.next_cat)}</b>${x.next_date?` (${String(x.next_date).slice(5).replace('-','/')})`:''}${x.next_note?` · ${esc(x.next_note)}`:''}</div>` : '';
     const A=[];
+    const trash = MC_FLT==='trash';
+    if(trash){
+      if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
+      A.push(x.restorable
+        ? `<button class="mini ok" onclick="mcRestore(${x.id})">되살리기</button>`
+        : `<span class="mini" style="opacity:.6" title="7일이 지나 점장·대표만 되살릴 수 있습니다">7일 지남</span>`);
+    } else {
     if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
     A.push(`<button class="mini" onclick="openQuote(${qArg})">견적서 ${x.quote?'열기':'만들기'} ↗</button>`);
     if(x.bucket==='open'||x.bucket==='hold'){
@@ -2686,7 +2823,14 @@ function renderMyConsults(){
     }
     A.push(`<button class="mini" onclick="ocToConsult('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')">후속 상담</button>`);
     A.push(`<button class="mini" onclick="asgOpen([${x.id}],'${nm}')" title="다른 담당자에게 넘기기">넘기기</button>`);
-    return `<div class="crow${sel?' sel':''}" id="mcrow_${x.id}">
+    A.push(`<button class="mini" style="color:var(--bad,#B3261E)" onclick="mcDelete(${x.id},'${nm}')" title="실수로 넣은 상담 — 통계에서 빠지고 7일 안에 되살릴 수 있습니다">삭제</button>`);
+    }
+    /* 상담 방법 : 대면 · 전화 · 메시지 — 누르면 바로 바뀐다 */
+    const mth = trash ? '' : `<span class="mth" title="상담 방법">${['대면','전화','메시지'].map(m=>`<button type="button" class="${x.method===m?'on':''}" onclick="mcMethod(${x.id},'${m}')">${m}</button>`).join('')}</span>`;
+    const qn = (x.quotes||[]).length;
+    const qlist = qn ? `<div class="meta qlist"><b>견적서 ${qn}건</b> ${x.quotes.map(q=>`<button type="button" class="ql" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(x.tel||'')}'})" title="${esc(q.models||'')}${q.counselor?' · '+esc(q.counselor):''}">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>`).join('')}</div>` : '';
+    const delInfo = trash ? `<div class="meta" style="color:var(--bad,#B3261E)">삭제 ${String(x.deleted_at||'').slice(5,16).replace('T',' ')}${x.delete_reason?' · '+esc(x.delete_reason):''}</div>` : '';
+    return `<div class="crow${sel?' sel':''}${trash?' trash':''}" id="mcrow_${x.id}">
       <input type="checkbox" ${sel?'checked':''} onchange="mcSel(${x.id},this.checked)" aria-label="${nm} 고르기">
       <div class="body">
         <div class="ttl"><span class="res ${cls}">${esc(lbl)}</span>${nm}
@@ -2695,8 +2839,10 @@ function renderMyConsults(){
           ${x.model?`<span class="tag">${esc(x.model)}</span>`:''}
           ${x.src?`<span class="tag src">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}
           ${x.src2?`<span class="tag hd">${esc(x.src2)}</span>`:''}
-          ${x.quote?`<span class="tag" title="견적서 있음">견적 ${esc(x.quote.no)}</span>`:''}</div>
-        <div class="meta">${meta}</div>${buy}${nxt}
+          ${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담이 ${x.prior}건 더 있습니다">${Number(x.prior)+1}회째</span>`:''}
+          ${x.method?`<span class="tag mth-t">${esc(x.method)}</span>`:''}
+          ${mth}</div>
+        <div class="meta">${meta}</div>${buy}${nxt}${qlist}${delInfo}
         ${x.moved?`<div class="meta" style="color:var(--faint)">${esc(x.moved.from||'미배정')} → 나 · ${esc(x.moved.by)} 배정 · ${esc(x.moved.at)}</div>`:''}
         <div class="acts">${A.join('')}</div>
         <div class="ocpick hidden" id="ocpick_${x.id}">
@@ -2716,12 +2862,40 @@ function mcSelSync(){
   const n=MC_SEL.size, all=$('mc_all');
   if(all){ all.checked = n>0 && n===MC_ROWS.length; all.indeterminate = n>0 && n<MC_ROWS.length; }
   $('mc_selN').textContent = n ? `${n}건 선택 (이 쪽)` : '고른 건 없음';
-  $('mc_acts').querySelectorAll('button').forEach(b=>b.disabled = !n || MC_BUSY);
+  $('mc_acts').querySelectorAll('button').forEach(b=>b.disabled = !n || MC_BUSY || MC_FLT==='trash');
 }
 async function mcAct(id, action, what){
   try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:action});
     toast(`${what} 처리했습니다`,'ok'); await loadStatus(); render(); loadMyConsults(MC_OFF,true);
   }catch(e){ toast(e.message,'bad'); }
+}
+async function mcDelete(id, name){
+  const why = prompt(`${name||'이 상담'} 을(를) 삭제합니다.\n통계에서 빠지고, 7일 안에는 [휴지통]에서 되살릴 수 있습니다.\n\n사유 (선택):`, '실수 입력');
+  if(why===null) return;
+  try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:'delete',p_memo:why||null});
+    toast('삭제했습니다 — 휴지통에서 7일 안에 되살릴 수 있습니다','ok'); await loadStatus(); render(); loadMyConsults(MC_OFF,true);
+  }catch(e){ toast(e.message,'bad'); }
+}
+async function mcRestore(id){
+  try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:'restore'});
+    toast('되살렸습니다','ok'); await loadStatus(); render(); loadMyConsults(MC_OFF,true);
+  }catch(e){ toast(e.message,'bad'); }
+}
+async function mcMethod(id, m){
+  try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:'method',p_memo:m});
+    const x=MC_ROWS.find(r=>r.id===id); if(x) x.method=m; renderMyConsults();
+  }catch(e){ toast(e.message,'bad'); }
+}
+async function mcBulkDelete(){
+  const ids=[...MC_SEL]; if(!ids.length) return toast('먼저 상담을 고르세요','bad');
+  const why = prompt(`고른 ${ids.length}건을 삭제합니다.\n통계에서 빠지고, 7일 안에는 [휴지통]에서 되살릴 수 있습니다.\n\n사유 (선택):`, '실수 입력');
+  if(why===null) return;
+  MC_BUSY=true; mcSelSync();
+  try{ const r=await rpc('fn_store_consults_bulk',{p_code:CODE,p_ids:ids,p_action:'delete',p_memo:why||null});
+    const fail=(r.failed||[]).length; toast(fail?`${r.done}건 삭제 · ${fail}건 실패`:`${r.done}건 삭제했습니다`, fail?'bad':'ok');
+    MC_SEL.clear(); await loadStatus(); render(); await loadMyConsults(MC_OFF);
+  }catch(e){ toast(e.message,'bad'); }
+  MC_BUSY=false; mcSelSync();
 }
 async function mcBulk(action, what){
   const ids=[...MC_SEL]; if(!ids.length) return toast('먼저 상담을 고르세요','bad');
@@ -2871,6 +3045,7 @@ async function submitConsult(){
     interest_model_code:[...cModels(), ...$('c_model').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean)].filter((v,i,a)=>a.indexOf(v)===i).join(', '),
     inflow_route:$('c_route').value, result:res,
     channel_code:C_CH, channel_etc:($('c_ch_etc').value.trim()||null), type_code:C_TY,
+    method: (($('c_method').querySelector('button.on')||{}).dataset||{}).v || null,
     purchase_item: buyName||null, next_model_code:$('c_next').value.trim()||null, next_expected_date:$('c_next_date').value||null, next_note:$('c_next_note').value.trim()||null,
     expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(), callback_at: cbISO(),
     consent_marketing:$('c_consent').classList.contains('on'), gift_name:$('c_gift').value.trim()||null, gift_amount:num($('c_gift_amt'))||null };
@@ -3388,7 +3563,7 @@ function renderRequests(){
       $('req_done').innerHTML=(r.recent_done||[]).map(x=>`<div class="rq"><div class="t">${esc(x.product)} × ${x.qty}<small>${esc(x.at)} ${esc(x.by)} 요청 → ${esc(x.done_at||'')} ${esc(x.done_by||'')} <span class="st ${x.status}">${x.status==='done'?'처리됨':'불필요'}</span>${x.queue_id?` · 주문서 #${x.queue_id}`:''}</small></div></div>`).join('')||'<div class="empty">없음</div>';
     } }
   /* 요청자 카드 (홈) */
-  const mine=r.mine||[], mc=$('myReqCard'); if(mc){ mc.classList.toggle('hidden', !mine.length);
+  const mine=r.mine||[], mc=$('myReqCard'); if(mc){ mc.classList.add('hidden'); /* 2026-09-11 사용자 지시로 가림 */
     $('myReqList').innerHTML=mine.map(x=>`<div class="rq"><div class="t"><b>${esc(x.product)}</b> × ${x.qty}<small>${esc(x.at)} 요청 · ${x.status==='open'?'<span class="st">대기 중</span>':x.status==='taken'?`<span class="st">${esc(x.taken_by)} 처리 중</span>`:x.status==='done'?`<span class="st done">처리됨</span> ${esc(x.done_by||'')} ${esc(x.done_at||'')}${x.queue_id?` · 주문서 #${x.queue_id}`:''}`:`<span class="st skip">불필요</span> ${esc(x.done_note||'')}`}</small></div></div>`).join(''); }
 }
 async function reqTake(id){ try{ await rpc('fn_store_request_take',{p_code:CODE,p_id:id}); toast('내가 맡았습니다','ok'); loadRequests(); }catch(e){ toast(e.message,'bad'); } }

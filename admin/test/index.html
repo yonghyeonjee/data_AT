@@ -693,6 +693,7 @@ textarea.in{height:auto}
 .seg{display:inline-flex;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:9px;padding:2px}
 .seg button{border:0;background:transparent;color:#C9D2F2;font-size:calc(12px * var(--font-scale));font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer;white-space:nowrap}
 .seg button.on{background:#fff;color:#141E64;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.card .seg{background:#F3F5F9;border-color:#E4E7EE} .card .seg button{color:#646D7C} .card .seg button.on{background:#fff;color:#141E64;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .seg2{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:2px} .seg2 button{border:0;background:transparent;color:var(--muted);font-size:calc(12px * var(--font-scale));font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;white-space:nowrap} .seg2 button.on{background:var(--navy);color:#fff}
 .seg.lite{background:var(--surface-2);border-color:var(--line)}
 .seg.lite button{color:var(--muted)}
@@ -1254,10 +1255,10 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       <div class="view hidden" id="v-consults">
         <div class="card">
           <div class="filters">
-            <select class="in" id="cRes"><option value="">전체 결과</option><option>진행전</option><option>진행중</option><option>보류</option><option>상담완료</option><option>구매완료</option><option>거절</option><option>종료</option><option value="숨김">숨긴 건 (테스트 등)</option></select>
+            <select class="in" id="cRes"><option value="">전체 결과</option><option>진행전</option><option>진행중</option><option>보류</option><option>상담완료</option><option>구매완료</option><option>거절</option><option>종료</option><option value="숨김">숨긴 건 (테스트 등)</option><option value="삭제">삭제한 건 (담당자 삭제)</option></select>
             <select class="in" id="cHd"><option value="">전체 상담사</option></select>
             <select class="in" id="cRoute" style="min-width:150px"><option value="">전체 유입경로</option></select>
-            <input class="in" id="cQ" placeholder="고객명 · 내용 · 품목 · 모델 · 전화" style="min-width:220px" onkeydown="if(event.key==='Enter')loadConsults(0)">
+            <input class="in" id="cQ" placeholder="고객명 · 내용 · 품목 · 모델 · 전화 · 채널 · 상담방법" style="min-width:250px" onkeydown="if(event.key==='Enter')loadConsults(0)">
             <button class="btn" onclick="loadConsults(0)">조회</button>
             <button class="btn ghost" onclick="resetConsults()">초기화</button>
             <span style="flex:1"></span>
@@ -1280,9 +1281,26 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
               <button class="btn sm ghost" onclick="cBulkHide(false)" disabled>되살리기</button>
             </div>
           </div>
-          <div class="tw"><table><thead><tr><th style="width:34px"><input type="checkbox" id="cAll2" onchange="cToggleAll(this.checked)" aria-label="전체선택"></th><th>상담일</th><th>번호</th><th>고객</th><th>연락처</th><th>관심</th><th>유입경로</th><th>상담사</th><th class="num">예상금액</th><th>예정일</th><th>콜백</th><th>결과</th><th>내용</th><th></th></tr></thead><tbody id="tbConsults"></tbody></table></div>
-          <p class="note" style="margin-top:8px"><b>숨기기</b>는 테스트로 넣은 건을 치울 때 씁니다 — 담당자 화면(콜백·진행중 상담·내 고객)과 모든 통계에서 빠지고, 여기 "숨긴 건" 필터로만 보입니다. 되살리기도 됩니다.</p>
+          <div class="tw"><table><thead><tr><th style="width:34px"><input type="checkbox" id="cAll2" onchange="cToggleAll(this.checked)" aria-label="전체선택"></th><th>상담일</th><th>번호</th><th>고객</th><th>연락처</th><th>관심</th><th>채널 · 경로 · 방법</th><th>상담사</th><th class="num">예상금액</th><th>예정일</th><th>콜백</th><th>결과</th><th>내용</th><th></th></tr></thead><tbody id="tbConsults"></tbody></table></div>
+          <p class="note" style="margin-top:8px"><b>삭제</b>는 담당자가 실수로 넣은 건을 스스로 치운 것입니다 — 통계에서 빠지고 담당자는 7일 안에, 여기서는 언제든 되살릴 수 있습니다. <b>숨기기</b>는 테스트로 넣은 건을 치울 때 씁니다 — 담당자 화면(콜백·진행중 상담·내 고객)과 모든 통계에서 빠지고, 여기 "숨긴 건" 필터로만 보입니다. 되살리기도 됩니다.</p>
           <div class="pager"><span id="cCount"></span><div class="btns" id="cPg"></div></div>
+        </div>
+        <div class="card">
+          <h3>처리현황 <span class="sub" id="csSub"></span>
+            <div class="actions">
+              <div class="seg sm" id="cs_grain"><button type="button" data-v="day">일</button><button type="button" class="on" data-v="month">월</button><button type="button" data-v="year">연</button></div>
+              <select class="in" id="cs_hd" onchange="loadConsultStats()" style="padding:4px 8px"><option value="">전체 상담사</option></select>
+              <label class="switch" id="cs_del" onclick="this.classList.toggle('on');loadConsultStats()"><span class="sw"></span>삭제 건 포함</label>
+              <button class="btn sm ghost" onclick="loadConsultStats()">새로고침</button>
+            </div></h3>
+          <div id="csBody" class="note">불러오는 중…</div>
+        </div>
+        <div class="card hidden" id="funnelCard">
+          <h3>방문 → 문의 → 성공 <span class="sub" id="fnSub">개발 권한만 보입니다</span>
+            <div class="actions"><div class="seg sm" id="fn_grain"><button type="button" data-v="day">일</button><button type="button" class="on" data-v="month">월</button><button type="button" data-v="year">연</button></div>
+            <button class="btn sm ghost" onclick="loadFunnel()">새로고침</button></div></h3>
+          <p class="note" style="margin:0 0 8px">GA4 에서 매일 가져온 방문량(전체 · 구독문의 페이지 · 견적서 페이지)과 이 시스템의 문의·구매를 한 표에 놓습니다. <b>방문량이 비어 있으면 GA 수집이 아직 안 붙은 것</b>입니다 — 저장소 Secrets 에 GA_PROPERTY_ID · GA_SA_JSON 을 넣으면 채워집니다.</p>
+          <div id="fnBody" class="note">불러오는 중…</div>
         </div>
         <div class="card">
           <h3>구독 견적서 발행 <span class="sub" id="qtCount"></span><div class="actions"><span class="note">홈페이지 견적서 페이지에서 발행된 견적 · 검색어는 위 검색창과 공유</span></div></h3>
@@ -1538,6 +1556,11 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <h3>매장 코드 오입력 · 잠금 <span>/store 에서 코드를 <b>15분 안에 5번</b> 틀리면 그 기기가 15분 잠깁니다. 담당자가 급하면 여기서 바로 풀어 주세요. 잠길 때 알림(store.pin_lock)도 갑니다</span>
             <span style="margin-left:auto;display:flex;gap:6px"><select id="pinHours" class="sm" onchange="loadPinAttempts()"><option value="24">최근 24시간</option><option value="72" selected>최근 3일</option><option value="168">최근 7일</option></select><button class="btn sm ghost" onclick="loadPinAttempts()">새로고침</button></span></h3>
           <div class="tw"><table><thead><tr><th>기기 / IP</th><th>틀린 횟수</th><th>마지막</th><th>입력한 코드</th><th>상태</th><th></th></tr></thead><tbody id="tbPin"><tr><td colspan="6" class="empty">불러오는 중…</td></tr></tbody></table></div>
+        </div>
+        <div class="card">
+          <h3>자주 가는 곳 <span>담당자 화면 왼쪽 메뉴 "자주 가는 곳"에 새 창 링크로 나옵니다. 이름 · 주소 · 짧은 설명</span>
+            <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="qlAdd()">+ 추가</button><button class="btn sm ghost" onclick="loadQuickLinks()">새로고침</button><button class="btn sm" onclick="saveQuickLinks()">저장</button></span></h3>
+          <div class="tw"><table><thead><tr><th style="width:60px"></th><th>이름</th><th>주소 (https://…)</th><th>설명</th><th style="width:60px"></th></tr></thead><tbody id="tbQl"></tbody></table></div>
         </div>
         <div class="card">
           <h3>사은품 링크 · 계정 <span>담당자 화면 판매·상담 입력의 사은품 칸 아래에 버튼으로 나옵니다. 오피스콘 계정은 담당자 코드를 통과한 화면에서만 보입니다</span>
@@ -3021,7 +3044,7 @@ function wizMount(host, cfg){
       </div>
       ${(d.slips||[]).map(sp=>`<div class="wiz-slip${sp.n_miss||sp.n_ambig?' bad':''}">
         <div class="h"><b>${esc(sp.channel||'')}</b><span class="mono">${esc(sp.order_no)}</span>${sp.already?'<span class="tg bad">이미 만든 주문</span>':''}<span class="r">${esc(String(sp.io_date))}</span></div>
-        <div class="meta"><div><label>거래처</label><b>${esc(sp.cust_name||'—')}</b> <span class="mono sub" style="display:inline">${esc(sp.cust_code||'코드없음')}</span></div><div><label>출하창고</label><b>${esc(d.wh_name||d.wh)}</b></div><div><label>영업담당 · 판매담당자</label><b>${esc(sp.emp_code||'—')} · ${esc(sp.handler||'—')}</b></div><div><label>주문No. (샵링커)</label><b class="mono">${esc(sp.order_ref||'—')}</b></div><div><label>특이사항</label><b>${esc(sp.remark||'')}</b></div><div><label>택배비</label><b>${sp.fee_known?(Number(sp.ship_fee)?`${n(sp.ship_fee)}원${(sp.trk_n||1)>1?` · 운송장 ${sp.trk_n}건`:''}`:'없음'):'<span style="color:#C88A0E">미수집</span>'}</b></div><div><label>합계</label><b>${n(sp.amount)}원</b></div></div>
+        <div class="meta"><div><label>거래처</label><b>${esc(sp.cust_name||'—')}</b> <span class="mono sub" style="display:inline">${esc(sp.cust_code||'코드없음')}</span></div><div><label>출하창고</label><b>${esc(d.wh_name||d.wh)}</b></div><div><label>영업담당 · 판매담당자</label><b>${esc(sp.emp_code||'—')} · ${esc(sp.handler||'—')}</b></div><div><label>주문No. (샵링커)</label><b class="mono">${esc(sp.order_ref||'—')}</b></div><div><label>특이사항</label><b>${esc(sp.remark||'')}</b></div><div><label>택배비</label><b>${sp.fee_known?(Number(sp.ship_fee)?`${n(sp.ship_fee)}원${(sp.trk_n||1)>1?` · 운송장 ${sp.trk_n}건`:''}`:'없음')+(sp.fee_type?` <span class="sub" style="display:inline">${esc(sp.fee_type)}</span>`:''):'<span style="color:#C88A0E">미수집</span>'}</b></div><div><label>합계</label><b>${n(sp.amount)}원</b></div></div>
         <div style="overflow:auto"><table><thead><tr><th>#</th><th>품목코드</th><th>품목명</th><th>샵링커 상품 · 옵션</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th class="num">재고</th><th>적요</th></tr></thead><tbody>
           ${(sp.lines||[]).map(l=>`<tr${l.short?' style="background:#FFF6F5"':l.fee?' style="background:#F7F8FB"':''}><td class="sub">${l.fee?'배송':l.line}</td>
             <td class="mono" style="color:${l.item_code?'#0F7B6C':'#B3261E'}">${esc(l.item_code||'—')}</td><td>${esc(l.item_name||'')}</td>
@@ -3460,7 +3483,7 @@ async function loadOption(){
       <td class="mono" style="font-size:calc(12px * var(--font-scale))">${esc(x.code||'')}</td>
       ${ps.map(p=>`<td style="text-align:center"><input type="checkbox" data-s="${x.id}" data-p="${p.code}" ${(x.perms||[]).includes(p.code)?'checked':''} onchange="togglePerm(${x.id})" style="width:16px;height:16px;cursor:pointer"></td>`).join('')}
       <td style="white-space:nowrap"><button class="btn sm ghost" onclick='openStaffModal(${JSON.stringify(x).replace(/'/g,"&#39;")})'>수정</button>${x.custom?`<button class="btn sm ghost" onclick="resetPerm(${x.id})">기본값</button>`:''}</td></tr>`).join('');
-  loadEcConfig(); loadPinAttempts(); loadGiftLinks();
+  loadEcConfig(); loadPinAttempts(); loadGiftLinks(); loadQuickLinks();
 }
 /* ── 매장 코드 오입력·잠금 (mvp_78) ── */
 async function loadPinAttempts(){
@@ -3478,6 +3501,27 @@ async function pinUnlock(key){
   try{ const r=await rpc('fn_pin_unlock',{p_key:key}); toast(`잠금 해제 (기록 ${r.cleared}건 정리)`,'ok'); loadPinAttempts(); }catch(e){ toast(e.message,'bad'); }
 }
 /* ── 사은품 링크·계정 (app_setting gift_links) ── */
+/* ═══ 자주 가는 곳 (담당자 사이드바 링크) ═══ */
+let QL=[];
+function qlRender(){
+  $('tbQl').innerHTML = QL.map((l,i)=>`<tr><td style="white-space:nowrap"><button class="btn sm ghost" onclick="qlMove(${i},-1)" ${i===0?'disabled':''}>▲</button><button class="btn sm ghost" onclick="qlMove(${i},1)" ${i===QL.length-1?'disabled':''}>▼</button></td>
+    <td><input class="in" value="${esc(l.name||'')}" oninput="QL[${i}].name=this.value" placeholder="DPS"></td>
+    <td><input class="in" value="${esc(l.url||'')}" oninput="QL[${i}].url=this.value" placeholder="https://" style="min-width:320px"></td>
+    <td><input class="in" value="${esc(l.note||'')}" oninput="QL[${i}].note=this.value" placeholder="새 창"></td>
+    <td><button class="btn sm ghost" onclick="QL.splice(${i},1);qlRender()">지우기</button></td></tr>`).join('') || '<tr><td colspan="5" class="note">없음 — [+ 추가]</td></tr>';
+}
+function qlAdd(){ QL.push({name:'',url:'',note:''}); qlRender(); }
+function qlMove(i,d){ const j=i+d; if(j<0||j>=QL.length) return; [QL[i],QL[j]]=[QL[j],QL[i]]; qlRender(); }
+async function loadQuickLinks(){
+  try{ const v=await rpc('fn_setting_get',{p_key:'quick_links'},{fresh:true}); QL=v?JSON.parse(v):[]; if(!Array.isArray(QL)) QL=[]; }catch(e){ QL=[]; }
+  qlRender();
+}
+async function saveQuickLinks(){
+  const clean=QL.map(l=>({name:(l.name||'').trim(),url:(l.url||'').trim(),note:(l.note||'').trim()})).filter(l=>l.name&&l.url);
+  if(clean.some(l=>!/^https?:\/\//i.test(l.url))) return toast('주소는 http:// 또는 https:// 로 시작해야 합니다','bad');
+  try{ await rpc('fn_setting_set',{p_key:'quick_links',p_value:JSON.stringify(clean)}); QL=clean; qlRender(); toast(`링크 ${clean.length}개 저장 — 담당자 화면을 새로고침하면 보입니다`,'ok'); rpcClear(); }
+  catch(e){ toast(e.message,'bad'); }
+}
 async function loadGiftLinks(){
   try{ const v=await rpc('fn_setting_get',{p_key:'gift_links'},{fresh:true}); const L=v?JSON.parse(v):{};
     document.querySelectorAll('#giftLinkForm input').forEach(i=>i.value=L[i.dataset.k]||'');
@@ -4569,7 +4613,43 @@ function renderConsultSummary(m){
   const hd=(m.by_handler||[]).slice(0,6).map(x=>`${esc(x.k)} <b>${n(x.n)}</b>${x.won?`(완료 ${x.won})`:''}`).join(' · ');
   $('cMeta').innerHTML=`<span>출처 ${src||'—'}</span><span>상담사 ${hd||'—'}</span><span>마지막 상담일 <b>${esc(m.last_at||'—')}</b></span><span>최근 반영 <b>${esc(m.loaded_at||'—')}</b></span>`;
 }
+/* ═══ 처리현황 : 문의 → 구매 (일/월/연) · 채널별 상태 ═══ */
+let CS_LOADED=false;
+async function loadConsultStats(){
+  const box=$('csBody'); if(!box) return;
+  const sel=$('cs_hd'); if(sel && sel.options.length<=1) sel.innerHTML='<option value="">전체 상담사</option>'+STAFF.map(h=>`<option>${esc(h.name)}</option>`).join('');
+  const grain=(($('cs_grain').querySelector('button.on')||{}).dataset||{}).v||'month';
+  let d; try{ d=await rpc('fn_consult_stats',{p_grain:grain,p_from:P.from,p_to:P.to,p_handler:$('cs_hd').value||null,p_include_deleted:$('cs_del').classList.contains('on')}); }
+  catch(e){ box.innerHTML=esc(e.message); return; }
+  const t=d.total||{}, Pd=d.periods||[], C=d.channels||[], CP=d.channel_periods||[];
+  $('csSub').textContent=`${d.from} ~ ${d.to}${d.handler?' · '+d.handler:''}${d.include_deleted?' · 삭제 포함':''}${d.deleted_n?` · 삭제 ${d.deleted_n}건 제외 중`:''}`;
+  const fmtP=x=> grain==='day'? x.slice(5).replace('-','/') : grain==='month'? x.slice(2).replace('-','.') : x;
+  const kpi=`<div class="mkpis" style="margin-bottom:12px"><div class="mk"><div class="t">문의</div><div class="v">${n(t.total||0)}<small>건</small></div></div><div class="mk"><div class="t">구매</div><div class="v">${n(t.bought||0)}<small>건</small></div></div><div class="mk"><div class="t">구매 성공률</div><div class="v">${t.rate||0}<small>%</small></div></div><div class="mk"><div class="t">미완료</div><div class="v">${n(t.open||0)}<small>건</small></div></div><div class="mk"><div class="t">보류</div><div class="v">${n(t.hold||0)}<small>건</small></div></div><div class="mk"><div class="t">거절</div><div class="v">${n(t.reject||0)}<small>건</small></div></div></div>`;
+  const th=k=>`<tr><th>${k}</th><th class="num">문의</th><th class="num">미완료</th><th class="num">보류</th><th class="num">완료</th><th class="num">거절</th><th class="num">구매</th><th class="num">성공률</th></tr>`;
+  const row=(k,x)=>`<tr><td>${esc(k)}</td><td class="num">${n(x.total)}</td><td class="num">${n(x.open)}</td><td class="num">${n(x.hold)}</td><td class="num">${n(x.done)}</td><td class="num">${n(x.reject)}</td><td class="num"><b>${n(x.bought)}</b></td><td class="num">${x.rate!=null?x.rate+'%':'-'}</td></tr>`;
+  const ps=Pd.map(x=>x.p); const chs=[...new Set(CP.map(x=>x.ch))];
+  const t3=chs.length?`<details style="margin-top:12px"><summary style="cursor:pointer">채널 × ${grain==='day'?'일':grain==='year'?'연':'월'} 상세 (문의 / 구매)</summary><div class="tw" style="margin-top:8px"><table><thead><tr><th>채널</th>${ps.map(x=>`<th class="num">${fmtP(x)}</th>`).join('')}</tr></thead><tbody>${chs.map(c=>`<tr><td>${esc(c)}</td>${ps.map(pp=>{const x=CP.find(y=>y.p===pp&&y.ch===c); return `<td class="num">${x?`${n(x.total)} / <b>${n(x.bought)}</b>`:'·'}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div></details>`:'';
+  const M=(d.methods||[]);
+  box.className=''; box.innerHTML=kpi
+    +`<div class="dgrid d11"><div><div class="tw"><table><thead>${th(grain==='day'?'일별':grain==='year'?'연별':'월별')}</thead><tbody>${Pd.slice().reverse().map(x=>row(fmtP(x.p),x)).join('')||'<tr><td colspan="8" class="note">없음</td></tr>'}</tbody></table></div></div>`
+    +`<div><div class="tw"><table><thead>${th('채널별')}</thead><tbody>${C.map(x=>row(x.ch,x)).join('')||'<tr><td colspan="8" class="note">없음</td></tr>'}</tbody></table></div></div></div>`
+    +t3+(M.length?`<p class="note" style="margin-top:10px">상담 방법 · ${M.map(x=>`${esc(x.m)} ${n(x.total)}건 (구매 ${n(x.bought)})`).join(' · ')}</p>`:'');
+}
+async function loadFunnel(){
+  const card=$('funnelCard'), box=$('fnBody'); if(!card||!box) return;
+  const grain=(($('fn_grain').querySelector('button.on')||{}).dataset||{}).v||'month';
+  let d; try{ d=await rpc('fn_funnel_stats',{p_grain:grain,p_from:P.from,p_to:P.to}); }
+  catch(e){ card.classList.add('hidden'); return; }   /* 권한 없으면 카드 자체를 안 보인다 */
+  card.classList.remove('hidden');
+  const fmtP=x=> grain==='day'? x.slice(5).replace('-','/') : grain==='month'? x.slice(2).replace('-','.') : x;
+  $('fnSub').textContent=d.has_traffic?`방문량 마지막 ${d.last_traffic}`:'방문량 없음 — GA 수집 대기';
+  box.className=''; box.innerHTML=`<div class="tw"><table><thead><tr><th>${grain==='day'?'일':grain==='year'?'연':'월'}</th><th class="num">방문 (전체)</th><th class="num">구독문의 페이지</th><th class="num">견적서 페이지</th><th class="num">홈페이지 문의</th><th class="num">문의 전체</th><th class="num">구매</th><th class="num">문의율</th><th class="num">구매율</th></tr></thead><tbody>${
+    (d.periods||[]).slice().reverse().map(x=>`<tr><td>${fmtP(x.p)}</td><td class="num">${n(x.visits_all)}</td><td class="num">${n(x.visits_sub)}</td><td class="num">${n(x.visits_quote)}</td><td class="num">${n(x.web_inquiries)}</td><td class="num">${n(x.inquiries)}</td><td class="num"><b>${n(x.bought)}</b></td><td class="num">${x.inq_rate!=null?x.inq_rate+'%':'-'}</td><td class="num">${x.buy_rate!=null?x.buy_rate+'%':'-'}</td></tr>`).join('')||'<tr><td colspan="9" class="note">없음</td></tr>'}</tbody></table></div>`;
+}
+document.addEventListener('click', e=>{ const b=e.target.closest('#cs_grain button, #fn_grain button'); if(!b) return;
+  b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); if(b.parentNode.id==='cs_grain') loadConsultStats(); else loadFunnel(); });
 async function loadConsults(page){
+  if(!CS_LOADED){ CS_LOADED=true; loadConsultStats(); loadFunnel(); }
   if(!ROUTES_LOADED){ ROUTES_LOADED=true;
     $('cHd').innerHTML='<option value="">전체 상담사</option>'+STAFF.map(h=>`<option>${esc(h.name)}</option>`).join('');
     try{ const rt=await rpc('fn_consult_routes')||[]; $('cRoute').innerHTML='<option value="">전체 유입경로</option>'+rt.map(x=>`<option>${esc(x)}</option>`).join(''); }catch(e){}
@@ -4585,9 +4665,9 @@ async function loadConsults(page){
   CONSULT_ROWS=rows; loadQuotes();
   if(cPage===0){ rpc('fn_consult_summary',{p_from:P.from,p_to:P.to,p_result:$('cRes').value||null,p_q:$('cQ').value||null,p_handler:$('cHd').value||null,p_route:$('cRoute').value||null}).then(renderConsultSummary).catch(()=>renderConsultSummary(null)); }
   const here=new Set(rows.map(r=>r.id)); [...C_SEL].forEach(id=>{ if(!here.has(id)) C_SEL.delete(id); });
-  $('tbConsults').innerHTML=rows.map(c=>`<tr id="crow_${c.id}" class="${C_SEL.has(c.id)?'sel':''}"><td><input type="checkbox" ${C_SEL.has(c.id)?'checked':''} onchange="cSel(${c.id},this.checked)" aria-label="${esc(c.customer_name||'')} 고르기"></td><td class="mono">${dtfmt(c.consult_at).slice(0,10)}</td><td class="mono" style="font-size:calc(11px * var(--font-scale));color:var(--muted)">${esc(c.source_ref)}</td><td><b>${esc(c.customer_name||'-')}</b></td><td class="mono">${esc(c.phone||'-')}</td><td>${esc(c.interest_category||'')}${c.interest_model_code?' <span class="mono" style="color:var(--muted)">'+esc(c.interest_model_code)+'</span>':''}${c.purchase_item?`<div style="font-size:calc(11px * var(--font-scale));color:var(--ok)">구매 ${esc(c.purchase_item)}</div>`:''}${(c.next_model_code||c.next_category)?`<div style="font-size:calc(11px * var(--font-scale));color:var(--navy)" title="${esc(c.next_note||'')}">다음 ${esc(c.next_model_code||c.next_category)}${c.next_expected_date?' · '+String(c.next_expected_date).slice(5).replace('-','/'):''}</div>`:''}</td><td style="font-size:calc(12px * var(--font-scale))">${esc(c.inflow_route||'')}</td><td>${esc(c.handler||'')}</td><td class="num">${c.expected_amount?n(c.expected_amount):''}</td><td class="mono">${dfmt(c.expected_purchase_date)}</td><td style="font-size:calc(11.5px * var(--font-scale));white-space:nowrap">${c.callback_at?(c.callback_done_at?`<span class="tag y">완료</span>`:(new Date(c.callback_at)<new Date()?`<span class="tag n">지남</span>`:`<span class="tag 보류">예정</span>`))+' '+String(c.callback_at).slice(5,16).replace('T',' '):''}</td>
+  $('tbConsults').innerHTML=rows.map(c=>`<tr id="crow_${c.id}" class="${C_SEL.has(c.id)?'sel':''}"><td><input type="checkbox" ${C_SEL.has(c.id)?'checked':''} onchange="cSel(${c.id},this.checked)" aria-label="${esc(c.customer_name||'')} 고르기"></td><td class="mono">${dtfmt(c.consult_at).slice(0,10)}</td><td class="mono" style="font-size:calc(11px * var(--font-scale));color:var(--muted)">${esc(c.source_ref)}</td><td><b>${esc(c.customer_name||'-')}</b>${Number(c.prior)>0?` <span class="tag n" title="이 고객의 다른 상담 ${c.prior}건">${Number(c.prior)+1}회째</span>`:''}${Number(c.quote_n)>0?` <span class="tag y" title="견적서 ${c.quote_n}건 — 아래 견적서 표에서 확인">견적 ${c.quote_n}</span>`:''}</td><td class="mono">${esc(c.phone||'-')}</td><td>${esc(c.interest_category||'')}${c.interest_model_code?' <span class="mono" style="color:var(--muted)">'+esc(c.interest_model_code)+'</span>':''}${c.purchase_item?`<div style="font-size:calc(11px * var(--font-scale));color:var(--ok)">구매 ${esc(c.purchase_item)}</div>`:''}${(c.next_model_code||c.next_category)?`<div style="font-size:calc(11px * var(--font-scale));color:var(--navy)" title="${esc(c.next_note||'')}">다음 ${esc(c.next_model_code||c.next_category)}${c.next_expected_date?' · '+String(c.next_expected_date).slice(5).replace('-','/'):''}</div>`:''}</td><td style="font-size:calc(12px * var(--font-scale))">${c.channel_label?`<b>${esc(c.channel_label)}</b> `:''}${esc(c.inflow_route||'')}<select class="in" style="display:block;margin-top:3px;padding:2px 6px;font-size:calc(11.5px * var(--font-scale))" onchange="setMethod(${c.id},this.value)" title="상담 방법"><option value="">방법 -</option>${['대면','전화','메시지'].map(m=>`<option ${m===c.method?'selected':''}>${m}</option>`).join('')}</select></td><td>${esc(c.handler||'')}</td><td class="num">${c.expected_amount?n(c.expected_amount):''}</td><td class="mono">${dfmt(c.expected_purchase_date)}</td><td style="font-size:calc(11.5px * var(--font-scale));white-space:nowrap">${c.callback_at?(c.callback_done_at?`<span class="tag y">완료</span>`:(new Date(c.callback_at)<new Date()?`<span class="tag n">지남</span>`:`<span class="tag 보류">예정</span>`))+' '+String(c.callback_at).slice(5,16).replace('T',' '):''}</td>
     <td><select class="in" style="padding:3px 6px;font-size:calc(12px * var(--font-scale))" onchange="setResult(${c.id},this.value)">${['진행전','진행중','보류','상담완료','구매완료','거절','종료'].map(r=>`<option ${r===c.result?'selected':''}>${r}</option>`).join('')}</select></td><td class="wrap" style="font-size:calc(12px * var(--font-scale));color:var(--ink-2)">${c.gift_name?`<span class="tag 보류" title="사은품">🎁 ${esc(c.gift_name)}${c.gift_amount?' '+n(c.gift_amount):''}</span> `:''}${esc(c.content||'')}</td>
-    <td style="white-space:nowrap">${c.hidden_at?`<span class="tag n" title="${esc(c.hidden_by||'')} · ${esc(c.hidden_reason||'')}">숨김</span> <button class="btn sm ghost" onclick="hideConsult(${c.id},false)">되살리기</button>`:`<button class="btn sm ghost" onclick="hideConsult(${c.id},true)">숨기기</button>`}</td></tr>`).join('')||'<tr><td colspan="14" class="note" style="text-align:center;padding:24px">없음</td></tr>';
+    <td style="white-space:nowrap">${c.deleted_at?`<span class="tag 거절" title="${esc(c.deleted_by||'')} · ${esc(c.delete_reason||'')} · ${dtfmt(c.deleted_at)}">삭제</span> <button class="btn sm ghost" onclick="restoreConsult(${c.id})">되살리기</button>`:c.hidden_at?`<span class="tag n" title="${esc(c.hidden_by||'')} · ${esc(c.hidden_reason||'')}">숨김</span> <button class="btn sm ghost" onclick="hideConsult(${c.id},false)">되살리기</button>`:`<button class="btn sm ghost" onclick="hideConsult(${c.id},true)">숨기기</button>`}</td></tr>`).join('')||'<tr><td colspan="14" class="note" style="text-align:center;padding:24px">없음</td></tr>';
   cSelSync();
 }
 let CONSULT_ROWS=[];
@@ -4619,6 +4699,13 @@ async function cBulkHide(hide){
   try{ await rpc('fn_consult_hide',{p_ids:ids,p_hide:hide,p_reason:reason});
     toast(hide?`${ids.length}건 숨겼습니다`:`${ids.length}건 되살렸습니다`,'ok'); C_SEL.clear(); loadConsults(cPage);
   }catch(e){ toast(e.message,'bad'); }
+}
+async function setMethod(id, m){
+  try{ await rpc('fn_consult_save',{p_id:id,p_data:{method:m}}); toast(m?`상담 방법 ${m}`:'상담 방법 지움','ok'); }catch(e){ toast(e.message,'bad'); }
+}
+async function restoreConsult(id){
+  if(!confirm('삭제한 상담을 되살립니다. 통계에 다시 들어갑니다. 계속할까요?')) return;
+  try{ await rpc('fn_consult_save',{p_id:id,p_data:{restore:true}}); toast('되살렸습니다','ok'); loadConsults(cPage); }catch(e){ toast(e.message,'bad'); }
 }
 async function hideConsult(id, hide){
   let reason=null;

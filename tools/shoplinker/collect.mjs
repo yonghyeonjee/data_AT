@@ -74,8 +74,11 @@ const DELIVERY = { delv0094: "CJ대한통운", delv0049: "삼성물류배송" };
 // 샵링커는 상품 줄마다 같은 배송비를 붙여 준다. "운송장 1개 = 배송비 1건" 으로 합치는 일은
 // DB(core.f_sl_fee) 가 송장번호 기준으로 처리하므로, 여기서는 줄에 실린 값을 그대로 넘긴다.
 // 응답 필드 이름이 확실하지 않아 후보를 순서대로 본다. `node collect.mjs --fields` 로 실제 이름을 확인할 수 있다.
+// 2026-09-11 실측 확인 : 배송비 = delivery_fee, 구분 = delivery_fee_type (신용 / 유료 …)
+// 나머지는 샵링커가 필드명을 바꿨을 때를 대비한 예비 후보다.
 const FEE_KEYS = [
-  "delivery_price", "delivery_amt", "delivery_cost", "delivery_fee", "delivery_charge",
+  "delivery_fee",
+  "delivery_price", "delivery_amt", "delivery_cost", "delivery_charge",
   "deliv_price", "dlv_price", "dlv_cost", "ship_price", "shipping_fee", "shipping_price",
   "order_delivery_price", "mall_delivery_price", "delivery_money",
 ];
@@ -287,6 +290,7 @@ function mapRow(o, job) {
       job, mall_id: S(o.mall_id), ship_no: S(o.ship_no),
       delivery: DELIVERY[deliv] ?? deliv, invoice: S(o.invoice),
       item_gubun: S(o.item_gubun), order_input_type: S(o.order_input_type),
+      fee_type: S(o.delivery_fee_type),
       exchange_org_id: S(o.exchange_org_id), receive: S(o.receive),
       // 배송비 필드를 못 찾았을 때, 어떤 금액 필드가 오는지 한 번은 남겨 둔다
       ...(feeOf(o) === null ? { fee_dbg: Object.fromEntries(

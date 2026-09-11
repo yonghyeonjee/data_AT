@@ -322,3 +322,51 @@ begin
   end loop;
   return jsonb_build_object('ok', ok > 0, 'made', ok, 'ids', to_jsonb(made), 'skipped', skip, 'batch_id', case when ok > 0 then v_batch end);
 end $fn$;
+
+
+/* ═══════════════════════════════════════════════════════════════
+   2026-09-11 추가 — 배송비 필드 확정 후 수정분 (DB 에 이미 적용됨)
+
+   샵링커 응답 실측 : 배송비 = delivery_fee, 구분 = delivery_fee_type (신용 / 유료 …)
+   묶음 기준은 송장번호(tracking_no). 송장이 아직 없으면 배송번호(ship_no) 로 묶는다.
+   실제 데이터 확인 : 최근 14일 다줄 주문 212건 전부 "송장 1개 = 배송비 1건" 으로 떨어졌다
+   (배송번호가 2개인데 송장이 1개인 건도 2건 있었고, 규칙대로 1건으로 센다).
+   ═══════════════════════════════════════════════════════════════ */
+
+insert into core.app_setting(key,value) values ('sl_fee_skip_types','착불,수취인부담')
+on conflict (key) do nothing;
+
+create or replace function core.f_sl_fee(p_order_no text)
+returns jsonb language sql stable
+set search_path to 'pg_catalog','public' as $fn$
+  with l as (
+    select nullif(btrim(o.tracking_no),'') trk,
+           nullif(btrim(o.raw_payload->>'ship_no'),'') shp,
+           nullif(btrim(coalesce(o.raw_payload->>'fee_type','')),'') ft,
+           o.shipping_fee sf
+      from core.orders o
+     where o.source = 'shoplinker' and o.order_no = p_order_no
+       and coalesce(o.refund_amount,0) = 0
+  ), m as (
+    select count(l.trk) > 0 use_trk from l          -- 송장이 하나라도 있으면 송장 기준
+  ), g as (
+    select case when (select m.use_trk from m) then coalesce(l.trk,'#') else coalesce(l.shp,'#') end t,
+           max(case when l.ft is not null and l.ft = any(array(
+                      select btrim(x) from unnest(string_to_array(
+                        coalesce((select value from core.app_setting where key='sl_fee_skip_types'),'착불,수취인부담'), ',')) x
+                       where btrim(x) <> '')) then 0
+                    else coalesce(l.sf,0) end) f,   -- 착불류는 우리 매출이 아니므로 0
+           bool_or(l.sf is not null) k,
+           max(l.ft) ft
+      from l group by 1
+  )
+  select jsonb_build_object('fee', coalesce(sum(f),0), 'trk', count(*) filter (where t <> '#'),
+                            'known', coalesce(bool_or(k),false), 'type', max(ft))
+    from g;
+$fn$;
+
+comment on function core.f_sl_fee(text) is
+  '샵링커 주문 1건의 배송비 — 송장번호(없으면 배송번호 ship_no) 하나당 한 번만 센다. 착불류(sl_fee_skip_types)는 0. {fee, trk, known, type}';
+
+/* core.f_sl_range · core.f_sl_preview 는 위 함수를 주문당 한 번만 호출하도록 바꿨고
+   응답에 fee_type 을 함께 싣는다. (적용 완료 — pg_get_functiondef 로 확인 가능) */
