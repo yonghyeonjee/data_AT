@@ -114,6 +114,12 @@ html.resuming body::after{content:'이어서 여는 중…';position:fixed;inset
 .tabs{display:flex;gap:4px;margin-top:12px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--line)}
 .subtabs{display:flex;margin:12px -18px -10px;padding:0 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-top:1px solid var(--line)}
 .subtabs::-webkit-scrollbar{display:none}
+/* 옆으로 더 있다는 것을 보이게 — 끝에 닿으면 사라진다 */
+.subtabs{position:relative;scroll-snap-type:x proximity}
+.subtabs a{scroll-snap-align:center}
+.subtabs.more-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 38px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 38px),transparent)}
+.subtabs.more-l{-webkit-mask-image:linear-gradient(to right,transparent,#000 38px);mask-image:linear-gradient(to right,transparent,#000 38px)}
+.subtabs.more-l.more-r{-webkit-mask-image:linear-gradient(to right,transparent,#000 38px,#000 calc(100% - 38px),transparent);mask-image:linear-gradient(to right,transparent,#000 38px,#000 calc(100% - 38px),transparent)}
 .subtabs .st-wrap{display:inline-flex;gap:4px;margin:0 auto;padding:6px 0 0}
 .subtabs a{position:relative;padding:9px 12px 10px;font-size:calc(14px * var(--font-scale));font-weight:600;color:var(--muted);text-decoration:none;white-space:nowrap;line-height:1;flex:0 0 auto;letter-spacing:-.01em}
 .subtabs a::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2.5px;border-radius:2px;background:transparent}
@@ -185,6 +191,10 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .mth button{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:1px 7px;font-size:calc(11px * var(--font-scale));font-weight:700;cursor:pointer;width:auto;margin:0}
 .mth button.on{background:#5C3D9E;border-color:#5C3D9E;color:#fff}
 .qlist{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.qlist .qlrow{display:inline-flex;align-items:stretch}
+.qlist .qlrow .ql:first-child{border-radius:6px 0 0 6px}
+.qlist .ql.send{border-radius:0 6px 6px 0;border-left:0;background:var(--navy,#1428A0);color:#fff;border-color:var(--navy,#1428A0);min-height:30px}
+@media (max-width:560px){ .qlist .ql{min-height:36px;padding:4px 10px} .qlist .ql.send{min-height:36px} }
 .qlist .ql{border:1px solid #CDD3DE;background:#F7F8FB;color:var(--navy,#1428A0);border-radius:6px;padding:2px 8px;font-size:calc(11.5px * var(--font-scale));font-weight:600;cursor:pointer;width:auto;margin:0;font-family:inherit}
 .crow.trash{opacity:.75;border-style:dashed}
 .subtabs a.so{color:var(--faint);font-size:calc(15px * var(--font-scale));padding-left:8px;padding-right:8px} .subtabs a.so:hover{color:var(--brand,#2F5BEA)}
@@ -613,6 +623,7 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .csearchbox .go{position:absolute;right:5px;top:5px;bottom:5px;width:34px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:calc(15px * var(--font-scale));cursor:pointer}
 .cflt{flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .cflt button{flex:1 1 88px;padding:9px 4px;font-size:calc(12.5px * var(--font-scale))}
+@media (max-width:560px){ .cflt{gap:4px;margin-bottom:8px} .cflt button{flex:1 1 60px;padding:7px 2px;font-size:calc(11.5px * var(--font-scale))} }
 .cflt button i{font-style:normal;font-weight:700;opacity:.65;margin-left:3px}
 .cflt button.on i{opacity:1}
 .bulkbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;border:1.5px solid var(--line-2);border-radius:11px;background:var(--surface-2, #F7F8FA);margin-bottom:10px}
@@ -622,6 +633,9 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .bulkbar .acts{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
 .bulkbar .acts button{padding:7px 11px;border:1.5px solid var(--line-2);background:#fff;border-radius:8px;font-weight:700;font-size:calc(12.5px * var(--font-scale));cursor:pointer;color:var(--ink-2)}
 .bulkbar .acts button:disabled{opacity:.4;cursor:default}
+/* 고른 게 없으면 일괄 버튼을 숨긴다 — 못 누르는 버튼이 자리를 먹고 [삭제]가 늘 보이는 것을 막는다 */
+.bulkbar.idle .acts{display:none}
+.bulkbar.idle{padding:7px 12px}
 .bulkbar .acts button.bad{color:var(--bad)}
 .bulkbar .acts button:not(:disabled):hover{border-color:var(--navy)}
 .crow{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:#fff}
@@ -631,23 +645,76 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .crow .ttl{font-weight:700;font-size:calc(15px * var(--font-scale));display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .crow .meta{font-size:calc(12px * var(--font-scale));color:var(--muted);margin-top:4px;line-height:1.55}
 .crow .acts{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+/* 되돌리기 어려운 것(거절·삭제)은 줄을 바꿔 아래로 내리고 옅게 — 오탭 방지 */
+.crow .acts .danger-wrap{flex-basis:100%;display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:1px dashed var(--line);opacity:.75}
+.crow .acts .danger-wrap:hover{opacity:1}
+.crow .acts .danger-wrap .mini{font-size:calc(12px * var(--font-scale))}
 /* 한 줄 보기 — 평소엔 요약 한 줄, 누르면 아래가 열린다 */
 .crow{padding:10px 12px}
 .crow .hd{display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;flex-wrap:wrap;font-size:calc(14px * var(--font-scale))}
-.crow .hd .nm{font-weight:700;white-space:nowrap}
-.crow .hd .tel{color:var(--muted);font-weight:500;font-size:calc(12.5px * var(--font-scale));white-space:nowrap}
-.crow .hd .key{color:var(--ink-2);font-size:calc(12.5px * var(--font-scale));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46%}
-.crow .hd .dt{margin-left:auto;color:var(--faint);font-size:calc(12px * var(--font-scale));white-space:nowrap}
+.crow .hd .nm{font-weight:700;white-space:nowrap;flex:none}
+.crow .hd .tel{color:var(--muted);font-weight:500;font-size:calc(12.5px * var(--font-scale));white-space:nowrap;flex:none}
+.crow .hd .tel .ps{display:none}
+.crow .hd > .tag{flex:none}
+.crow .hd .key{color:var(--ink-2);font-size:calc(12.5px * var(--font-scale));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 60px;min-width:0}
+.crow .hd .dt{margin-left:auto;color:var(--faint);font-size:calc(12px * var(--font-scale));white-space:nowrap;flex:none}
 .crow .hd .caret{color:var(--muted);font-size:calc(11px * var(--font-scale));transition:transform .15s;flex:none}
 .crow.open .hd .caret{transform:rotate(180deg)}
-.crow .hd .qk{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:26px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;text-decoration:none;font-size:calc(13px * var(--font-scale));line-height:1}
+.crow .hd .qk{flex:none;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1.5px solid var(--line-2);border-radius:10px;background:#fff;text-decoration:none;font-size:calc(16px * var(--font-scale));line-height:1}
+.crow .hd .caret{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center}
 .crow .hd .qk:hover{border-color:var(--navy)}
 .crow .more{display:none}
 .crow.open .more{display:block;margin-top:8px;padding-top:9px;border-top:1px dashed var(--line-2)}
 .crow.open{border-color:var(--line-2);box-shadow:0 1px 3px rgba(16,24,40,.06)}
-@media (max-width:520px){ .crow .hd .key{max-width:100%;flex-basis:100%} .crow .hd .dt{margin-left:0} }
+@media (max-width:560px){
+  /* 좁은 화면에서도 '한 줄'을 지킨다 — 넘치는 건 자르고, 급하지 않은 표시는 펼쳤을 때만 */
+  .crow .hd{flex-wrap:nowrap;overflow:hidden;gap:6px}
+  .crow .hd .key{display:none}                 /* 관심 품목은 펼치면 나온다 — 좁은 화면에선 이름+번호로 알아본다 */
+  .crow .hd .tag:not(.late){display:none}      /* 회차·견적N·콜백은 펼치면 나온다. 지연 뱃지만 남긴다 */
+  .crow .hd .tel{font-size:calc(12px * var(--font-scale))}
+  .crow .hd .dt{display:none}                  /* 날짜는 펼치면 나온다 — 급한 건 '며칠째' 뱃지가 알려준다 */
+  /* 좁은 화면에선 번호가 남는 자리를 먹고, 모자라면 번호부터 줄인다 — 📞 와 ▼ 는 절대 잘리지 않게 */
+  .crow .hd .tel{flex:1 1 auto;min-width:0;text-align:right}
+  .crow .hd .tel .pf{display:none} .crow .hd .tel .ps{display:inline}   /* 뒷 4자리만 */
+  .crow .hd .tel .ps::before{content:'⋯'}
+  .crow .hd .nm{max-width:34vw;overflow:hidden;text-overflow:ellipsis}
+  .crow .hd .qk{width:42px;height:42px}
+  .crow .hd .caret{width:22px;height:22px;font-size:calc(10px * var(--font-scale))}
+  .crow{padding:8px 10px}
+
+  /* 버튼이 손가락에 맞게 */
+  .crow .acts .mini{min-height:40px;padding:8px 12px}
+}
 .crow .acts .mini{padding:6px 10px}
-.res{padding:3px 9px;border-radius:999px;font-size:calc(11px * var(--font-scale));font-weight:700}
+.qs{max-height:88vh;overflow:auto;padding-bottom:18px}
+.qs-link{font-family:ui-monospace,Menlo,monospace;font-size:calc(12px * var(--font-scale));word-break:break-all;
+  background:var(--surface-2,#F7F8FA);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin:10px 0 12px;color:var(--ink-2)}
+.qs-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qs-btns .btn{margin:0;min-height:48px;font-size:calc(14px * var(--font-scale))}
+@media (max-width:420px){ .qs-btns{grid-template-columns:1fr} }
+.hlbox{overflow-x:auto}
+.hlbox table{width:100%;border-collapse:collapse;font-size:calc(13px * var(--font-scale));min-width:420px}
+.hlbox th,.hlbox td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.hlbox th:first-child,.hlbox td:first-child{text-align:left}
+.hlbox th{color:var(--muted);font-weight:600;font-size:calc(11.5px * var(--font-scale))}
+.hlbox td.nm button{background:none;border:0;padding:4px 2px;font:inherit;font-weight:700;color:var(--navy);cursor:pointer;text-decoration:underline;min-height:36px}
+.hlbox .w{color:#8A6300;font-weight:700}
+.hlbox .b{color:#A6342A;font-weight:700}
+.hlbox tr.me{background:var(--accent-soft,#EEF2FF)}
+.hlbox .tot{font-weight:700;border-top:2px solid var(--line-2)}
+.linkchip{display:flex;align-items:center;gap:9px;border:1.5px solid var(--line-2);background:var(--surface-2,#F7F8FA);border-radius:11px;padding:9px 12px;margin-bottom:10px;font-size:calc(13px * var(--font-scale))}
+.linkchip b{font-weight:700}
+.linkchip .x{margin-left:auto;min-width:40px;min-height:36px;border:1.5px solid var(--line-2);background:#fff;border-radius:9px;cursor:pointer;font-weight:700;color:var(--muted)}
+.qpick{border:1.5px solid var(--accent);background:var(--accent-soft,#EEF2FF);border-radius:11px;padding:10px 12px;margin-bottom:12px}
+.qpick .t{font-weight:700;font-size:calc(13px * var(--font-scale));margin-bottom:7px}
+.qpick .r{display:flex;gap:6px;flex-wrap:wrap}
+.qpick .r button{padding:9px 12px;min-height:40px;border:1.5px solid var(--accent);background:#fff;color:var(--navy);border-radius:9px;font-weight:700;font-size:calc(12.5px * var(--font-scale));cursor:pointer}
+.qpick .r button:hover{background:var(--accent);color:#fff}
+.crow .hd .tag.late{font-weight:700}
+.crow .hd .tag.late.d14{background:#FFF4D6;color:#8A6300}
+.crow .hd .tag.late.d30{background:#FDE8E5;color:#A6342A}
+
+.res{padding:3px 9px;border-radius:999px;font-size:calc(11px * var(--font-scale));font-weight:700;white-space:nowrap;flex:none}
 .res.open{background:#EEF2FF;color:#2F5BEA}
 .res.pre{background:#F3F4F7;color:#646D7C}
 .res.hold{background:#FFF4D6;color:#8A6300}
@@ -732,6 +799,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
     <div class="home-kpi" id="homeKpi"></div>
     <div class="cta2"><button onclick="goTab('consult')">＋ 상담 입력</button><button class="alt" onclick="openQuote()">견적서 발행 ↗</button></div>
+    <div class="card hidden" id="hlCard">
+      <h2>담당자별 밀린 상담 <span id="hlSub">점장 · 대표만 보입니다</span></h2>
+      <p class="note-in" style="margin-top:0">누구에게 배정할지 정할 때 봅니다. <b>14일·30일</b>은 그만큼 손 안 댄 건수입니다. 이름을 누르면 그 담당자 건만 아래에서 봅니다.</p>
+      <div class="hlbox" id="hlBody"><div class="empty">불러오는 중…</div></div>
+    </div>
     <div class="card hidden" id="allCard">
       <h2>전체 상담 · 배정 <span id="allSub">점장 · 대표만 보입니다</span></h2>
       <p class="note-in" style="margin-top:0">미배정 건을 담당자에게 배정하거나, 담당을 바꿉니다. 넘긴 기록은 그 상담에 남습니다.</p>
@@ -822,6 +894,8 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
     <div class="card">
       <h2>판매 1건 <span>필수 6개 · 30초</span></h2>
+      <div class="linkchip hidden" id="s_link"></div>
+      <div class="qpick hidden" id="s_qpick"></div>
       <div class="grid2">
         <div class="f"><label>판매일 <span class="req">*</span></label><input class="in" type="date" id="s_date"></div>
         <div class="f"><label>담당 프로 <span class="hint" id="s_handlerHint"></span></label><select class="in" id="s_handler"></select></div>
@@ -1395,6 +1469,8 @@ function render(){
   renderDailyLists(s);
   renderHome(s);
   /* 점장·대표·전체 권한이면 전체 상담·배정 카드 */
+  const hc=$('hlCard'); if(hc){ hc.classList.toggle('hidden', !s.is_mgr);
+    if(s.is_mgr && !HL_LOADED){ HL_LOADED=true; loadHandlerLoad(); } }
   const ac=$('allCard'); if(ac){ ac.classList.toggle('hidden', !s.is_mgr);
     if(s.is_mgr && !ALL_LOADED){ ALL_LOADED=true; loadAllConsults(); } }
   const lc=$('lvCard'); if(lc){ lc.classList.toggle('hidden', !s.is_mgr); if(s.is_mgr && !LV_LOADED){ LV_LOADED=true; loadLeave(); } }
@@ -2491,7 +2567,8 @@ function syncNav(){
   side.innerHTML=NAV_GROUPS.map(([g,ts])=>{ const items=ts.map(tabInfo).filter(x=>x&&!x.hidden); if(!items.length) return '';
     return `<div class="grp">${g}</div>`+items.map(x=>`<button class="it${x.active?' active':''}" onclick="goTab('${x.t}');sideClose()">${NAV_ICON[x.t]||''}<span>${esc(x.label)}</span>${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join(''); }).join('');
   /* 하단 탭바 : 앞 4개 + 더보기(서랍) */
-  const vis=['home','consult','stock','order','daily','report','online','sale'].map(tabInfo).filter(x=>x&&!x.hidden);
+  /* 하단 4칸은 매장에서 손이 가장 많이 가는 순서 — 판매 입력이 [더보기] 안에 숨지 않게 */
+  const vis=['home','consult','sale','stock','order','daily','report','online'].map(tabInfo).filter(x=>x&&!x.hidden);
   const first=vis.slice(0,4), rest=vis.slice(4);
   const restBadge=rest.reduce((a,x)=>a+(Number(x.badge)||0),0), restActive=rest.some(x=>x.active);
   bn.innerHTML=first.map(x=>`<button class="${x.active?'active':''}" onclick="goTab('${x.t}')">${NAV_ICON[x.t]||''}${esc(x.label)}${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join('')
@@ -2567,6 +2644,70 @@ function secOrderOpen(name){
   };
   draw(); mask.addEventListener('click',e=>{ if(e.target===mask) mask.remove(); }); document.body.appendChild(mask);
 }
+/* ═══ 견적서 보내기 : 링크 복사 · 문자 · 카카오/공유 ═══════════════════
+   고객은 로그인하지 않으므로 견적번호로 열면 남의 견적이 보인다.
+   그래서 견적마다 추측 불가능한 토큰 + 유효기간을 서버에서 받아 쓴다. */
+function qsMsg(d){
+  const 월 = d.monthly ? `월 ${won(d.monthly)}` : (d.final ? won(d.final) : '');
+  return `[삼성스토어 시흥점] ${d.name||''} 님 견적서입니다.\n`
+       + (d.models?`· ${d.models}\n`:'') + (월?`· ${월}\n`:'')
+       + `${d.url}\n(${d.expires_d}일간 열람 가능)`;
+}
+async function qsOpen(no, name){
+  if(!no) return toast('견적번호가 없습니다','bad');
+  let d; try{ d=await rpc('fn_quote_share',{p_code:CODE,p_no:no},{fresh:true}); }
+  catch(e){ return toast(e.message,'bad'); }
+  const tel=(d.phone||'').replace(/\D/g,'');
+  const mask=document.createElement('div'); mask.className='mask on';
+  mask.style.cssText='position:fixed;inset:0;background:rgba(16,20,32,.5);z-index:1300;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  mask.innerHTML=`<div class="card qs" style="max-width:460px;width:100%;margin:0;border-radius:18px 18px 0 0">
+    <h2>견적서 보내기 <span>${esc(d.no)}${d.ver>1?` · ${d.ver}차`:''}</span></h2>
+    <p class="note-in" style="margin-top:0"><b>${esc(d.name||name||'')}</b> 님 · ${esc(d.models||'')}
+      ${d.monthly?` · 월 ${won(d.monthly)}`:(d.final?` · ${won(d.final)}`:'')}</p>
+    <div class="qs-link" id="qsUrl">${esc(d.url)}</div>
+    <div class="qs-btns">
+      <button class="btn" id="qsCopy">🔗 링크 복사</button>
+      <button class="btn" id="qsSms">💬 문자로 보내기</button>
+      <button class="btn" id="qsShare">↗ 카카오 · 공유</button>
+      <a class="btn" id="qsOpenLink" href="${esc(d.url)}" target="_blank" rel="noopener">👁 고객 화면 미리보기</a>
+    </div>
+    <p class="note-in" style="margin:12px 0 0">
+      <b>${d.expires_d}일</b> 뒤(${String(d.expires_at).slice(0,10)})까지 열립니다 · 지금까지 <b>${d.views||0}번</b> 열림${d.last_view_at?` (마지막 ${String(d.last_view_at).slice(5,10).replace('-','/')})`:''}<br>
+      링크를 받은 사람만 볼 수 있습니다. 잘못 보냈으면 <a href="javascript:void 0" id="qsRevoke" style="color:var(--bad,#A6342A);font-weight:700">링크 끊기</a>.
+    </p>
+    <button class="btn sm ghost" id="qsClose" style="width:100%;margin:12px 0 0">닫기</button>
+  </div>`;
+  const close=()=>mask.remove();
+  mask.addEventListener('click',e=>{ if(e.target===mask) close(); });
+  mask.querySelector('#qsClose').onclick=close;
+  mask.querySelector('#qsCopy').onclick=async()=>{ await qsCopy(d.url); };
+  mask.querySelector('#qsSms').onclick=()=>{
+    if(!QS_CAN_SMS){
+      toast('문자 자동 발송은 아직 연동 전입니다 — 링크를 복사해 보내주세요','bad');
+      qsCopy(d.url); return; }
+    /* 휴대폰에서는 문자앱이 내용까지 채워진 채로 열린다 (내 번호로 나감) */
+    const body=encodeURIComponent(qsMsg(d));
+    location.href = (/iPhone|iPad|Mac/i.test(navigator.userAgent) ? `sms:${tel}&body=${body}` : `sms:${tel}?body=${body}`);
+  };
+  mask.querySelector('#qsShare').onclick=async()=>{
+    const txt=qsMsg(d);
+    if(navigator.share){ try{ await navigator.share({title:`${d.name||''} 님 견적서`, text:txt, url:d.url}); return; }
+      catch(e){ if(e.name==='AbortError') return; } }
+    await qsCopy(txt, '문자 내용을 복사했습니다 — 카카오톡에 붙여 넣으세요');
+  };
+  mask.querySelector('#qsRevoke').onclick=async()=>{
+    if(!confirm(`${d.no} 링크를 끊습니다.\n이미 보낸 링크도 더 이상 열리지 않습니다. 계속할까요?`)) return;
+    try{ await rpc('fn_quote_share_revoke',{p_code:CODE,p_no:d.no}); toast('링크를 끊었습니다','ok'); close(); }
+    catch(e){ toast(e.message,'bad'); }
+  };
+  document.body.appendChild(mask);
+}
+/* 문자앱 연결은 휴대폰에서만 뜻이 있다 — PC 에서는 안내로 대신한다 */
+const QS_CAN_SMS = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+async function qsCopy(t, msg){
+  try{ await navigator.clipboard.writeText(t); toast(msg||'링크를 복사했습니다','ok'); }
+  catch(e){ prompt('아래를 복사하세요', t); }
+}
 async function secOrderSave(){ try{ await rpc('fn_store_pref',{p_code:CODE,p_key:'sec_order',p_value:SEC_ORDER}); }catch(e){ toast('순서 저장 실패: '+e.message,'bad'); } }
 function buildSubTabs(name){
   const bar=$('subTabs'), panel=$('tab-'+name); if(!bar||!panel) return;
@@ -2584,7 +2725,13 @@ function buildSubTabs(name){
   bar.querySelectorAll('a[data-sec]').forEach(a=>a.onclick=e=>{ e.preventDefault(); const el=document.getElementById(a.dataset.sec); if(!el) return;
     const top=el.getBoundingClientRect().top+window.scrollY-(document.querySelector('.topbar').offsetHeight+8); window.scrollTo({top,behavior:'smooth'}); subTabActive(a.dataset.sec); });
   if(!cur) subTabActive(cards[0].id);
+  bar.onscroll=subTabEdge; setTimeout(subTabEdge,60);
 }
+/* 좌·우로 더 있는지 표시 — 좁은 화면에서 잘린 탭이 있다는 것을 알려 준다 */
+function subTabEdge(){ const b=$('subTabs'); if(!b) return;
+  const more = b.scrollWidth - b.clientWidth > 4;
+  b.classList.toggle('more-l', more && b.scrollLeft > 4);
+  b.classList.toggle('more-r', more && b.scrollLeft < b.scrollWidth - b.clientWidth - 4); }
 function subTabActive(id){ document.querySelectorAll('#subTabs a').forEach(a=>{ const on=a.dataset.sec===id; a.classList.toggle('on',on); if(on) a.scrollIntoView({block:'nearest',inline:'nearest'}); }); }
 (function(){ let t=null; window.addEventListener('scroll',()=>{ if(t) return; t=setTimeout(()=>{ t=null; const bar=$('subTabs'); if(!bar||bar.classList.contains('hidden')) return;
   const line=document.querySelector('.topbar').offsetHeight+40; let best=null; bar.querySelectorAll('a[data-sec]').forEach(a=>{ const el=document.getElementById(a.dataset.sec); if(el && el.getBoundingClientRect().top<=line) best=a.dataset.sec; });
@@ -2653,7 +2800,10 @@ async function submitSale(){
     customer_name:$('s_name').value.trim(), customer_phone:$('s_phone').value.trim(),
     product_name:$('s_product').value.trim(), model_code:$('s_model').value.trim(),
     qty:Number($('s_qty').value)||1, gross_amount:saleItems().reduce((a,x)=>a+(x.amount||0),0), items:saleItems(), payment_method:$('s_pay').value,
-    consult_ref:$('s_consult').value.trim(), consent_marketing:$('s_consent').classList.contains('on'), notes:$('s_notes').value.trim(),
+    /* 상담 연결 : id 가 있으면 id 로(정확), 없으면 손으로 적은 상담번호로 */
+    consult_id:$('s_consult').dataset.cid||null,
+    consult_ref:($('s_consult').dataset.cid ? ($('s_consult').dataset.ref||'') : $('s_consult').value.trim()),
+    consent_marketing:$('s_consent').classList.contains('on'), notes:$('s_notes').value.trim(),
     next_model_code:$('s_next').value.trim()||null, next_expected_date:$('s_next_date').value||null, next_note:$('s_next_note').value.trim()||null,
     request_order:false, /* 매장 판매 → 주문서 요청 주석 처리 (주문서 탭에서 직접) */ gift_name:$('s_gift').value.trim()||null, gift_amount:num($('s_gift_amt'))||null };
   if(!p.product_name) return toast('상품명을 입력하세요','bad');
@@ -2747,7 +2897,7 @@ function renderHome(s){
   $('qtList').innerHTML=qt.length?qt.map(x=>`
     <div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span></div>
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.models||'')}${x.final?` · 최종 ${won(x.final)}`:''}${x.monthly?` · 월 ${won(x.monthly)}`:''}${x.memo?' · '+esc(x.memo):''}</div></div>
-      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">견적서 열기 ↗</button>${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}')">상담 입력</button>`:''}</div></div>`).join(''):'<div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div>';
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button>${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}')">상담 입력</button>`:''}</div></div>`).join(''):'<div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div>';
   $('mcSub').textContent=s.my_customer_count?`${s.my_customer_count}명 · 최근 ${mc.length}명 표시`:'';
   $('mcuList').innerHTML=mc.length?mc.map(x=>`
     <div class="item oc"><div><div class="p">${esc(x.name)} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small>${x.consent?'<span class="mine">수신동의</span>':''}</div>
@@ -2814,8 +2964,8 @@ function renderMyConsults(){
     const meta = [
       String(x.at).slice(5,10).replace('-','/'),
       esc(x.route||''),
-      x.detail?`<b style="color:var(--ink-2)">${esc(x.detail)}</b>`:'',
-      x.content?esc(x.content):'',
+      x.detail&&x.detail!==x.route?`<b style="color:var(--ink-2)">${esc(x.detail)}</b>`:'',
+      x.content&&x.content!==x.route&&x.content!==x.detail?esc(x.content):'',
       x.expected?`예상 ${won(x.expected)}`:'',
       x.expect_date?`예정 ${String(x.expect_date).slice(5).replace('-','/')}`:'',
       x.callback_at?`콜백 ${fmtWhen(x.callback_at).join(' ')}`:''
@@ -2824,7 +2974,7 @@ function renderMyConsults(){
       ? `<div class="meta" style="color:var(--sub)">구매 <b>${esc(x.bought||'-')}</b>${x.buy_amount?` · ${won(x.buy_amount)}`:''}</div>` : '';
     const nxt = (x.next_model||x.next_cat)
       ? `<div class="meta" style="color:var(--navy)">다음 <b>${esc(x.next_model||x.next_cat)}</b>${x.next_date?` (${String(x.next_date).slice(5).replace('-','/')})`:''}${x.next_note?` · ${esc(x.next_note)}`:''}</div>` : '';
-    const A=[];
+    const A=[], DZ=[];   /* DZ = 되돌리기 어려운 것(거절·삭제) — 아래 줄로 따로 뺀다 */
     const trash = MC_FLT==='trash';
     if(trash){
       if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
@@ -2835,43 +2985,47 @@ function renderMyConsults(){
     if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
     A.push(`<button class="mini" onclick="openQuote(${qArg})">견적서 ${x.quote?'열기':'만들기'} ↗</button>`);
     if(x.bucket==='open'||x.bucket==='hold'){
-      A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}')">구매 확정</button>`);
+      A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}',${x.id})">구매 확정</button>`);
       A.push(`<button class="mini" onclick="ocPick(${x.id})">재연락</button>`);
       A.push(`<button class="mini" onclick="mcAct(${x.id},'done','상담완료')">상담완료</button>`);
       A.push(x.bucket==='hold'
         ? `<button class="mini" onclick="mcAct(${x.id},'resume','다시 진행')">다시 진행</button>`
         : `<button class="mini warn" onclick="mcAct(${x.id},'hold','보류')">보류</button>`);
       if(x.result==='진행전') A.push(`<button class="mini" onclick="mcAct(${x.id},'start','상담 시작')">상담 시작</button>`);
-      A.push(`<button class="mini bad" onclick="mcAct(${x.id},'reject','거절')">거절</button>`);
+      DZ.push(`<button class="mini bad" onclick="mcAct(${x.id},'reject','거절')">거절</button>`);
     } else {
       /* 상담완료 뒤에 구매로 이어지는 일이 잦다 — '다시 진행'을 거치지 않고 바로 판매로 */
-      if(x.result!=='구매완료') A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}')">구매 확정</button>`);
+      if(x.result!=='구매완료') A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}',${x.id})">구매 확정</button>`);
       A.push(`<button class="mini" onclick="mcAct(${x.id},'resume','다시 진행')">다시 진행</button>`);
     }
     A.push(`<button class="mini" onclick="ocToConsult('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')">후속 상담</button>`);
     A.push(`<button class="mini" onclick="asgOpen([${x.id}],'${nm}')" title="다른 담당자에게 넘기기">넘기기</button>`);
-    A.push(`<button class="mini" style="color:var(--bad,#B3261E)" onclick="mcDelete(${x.id},'${nm}')" title="실수로 넣은 상담 — 통계에서 빠지고 7일 안에 되살릴 수 있습니다">삭제</button>`);
+    DZ.push(`<button class="mini" style="color:var(--bad,#B3261E)" onclick="mcDelete(${x.id},'${nm}')" title="실수로 넣은 상담 — 통계에서 빠지고 7일 안에 되살릴 수 있습니다">삭제</button>`);
     }
     /* 상담 방법 : 대면 · 전화 · 메시지 — 누르면 바로 바뀐다 */
     const mth = trash ? '' : `<span class="mth" title="상담 방법">${['대면','전화','메시지'].map(m=>`<button type="button" class="${x.method===m?'on':''}" onclick="mcMethod(${x.id},'${m}')">${m}</button>`).join('')}</span>`;
     const qn = (x.quotes||[]).length;
-    const qlist = qn ? `<div class="meta qlist"><b>견적서 ${qn}건</b> ${x.quotes.map(q=>`<button type="button" class="ql" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(x.tel||'')}'})" title="${esc(q.models||'')}${q.counselor?' · '+esc(q.counselor):''}">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>`).join('')}</div>` : '';
+    const qlist = qn ? `<div class="meta qlist"><b>견적서 ${qn}건</b> ${x.quotes.map(q=>`<span class="qlrow"><button type="button" class="ql" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(x.tel||'')}'})" title="${esc(q.models||'')}${q.counselor?' · '+esc(q.counselor):''}">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button><button type="button" class="ql send" title="고객에게 보내기" onclick="qsOpen('${esc(q.no)}','${nm}')">보내기</button></span>`).join('')}</div>` : '';
     const delInfo = trash ? `<div class="meta" style="color:var(--bad,#B3261E)">삭제 ${String(x.deleted_at||'').slice(5,16).replace('T',' ')}${x.delete_reason?' · '+esc(x.delete_reason):''}</div>` : '';
     const isOpen = MC_OPEN.has(x.id);
     /* 접힌 줄에 남길 한 가지 — 관심 품목이 있으면 그것, 없으면 모델, 그것도 없으면 유입 */
     const key = x.interest || x.model || x.route || '';
     const cb = x.callback_at ? `<span class="tag re" title="콜백 약속">${fmtWhen(x.callback_at).join(' ')}</span>` : '';
+    /* 며칠째 손 안 댔는지 — 오래된 건이 조용히 묻히지 않게 접힌 줄에 바로 보인다 */
+    const ageD = Math.floor((Date.now() - new Date(x.at).getTime())/864e5);
+    const late = (x.bucket==='open'||x.bucket==='hold') && ageD>=14
+      ? `<span class="tag late ${ageD>=30?'d30':'d14'}" title="${ageD}일째 진행 중입니다">${ageD}일</span>` : '';
     return `<div class="crow${sel?' sel':''}${trash?' trash':''}${isOpen?' open':''}" id="mcrow_${x.id}">
       <input type="checkbox" ${sel?'checked':''} onchange="mcSel(${x.id},this.checked)" aria-label="${nm} 고르기">
       <div class="body">
         <div class="hd" onclick="mcToggle(${x.id},event)" title="눌러서 펼치기">
           <span class="res ${cls}">${esc(lbl)}</span>
           <span class="nm">${nm}</span>
-          <small class="tel">${esc(x.phone||'')}</small>
+          <small class="tel"><span class="pf">${esc(x.phone||'')}</span><span class="ps">${esc(String(x.phone||'').slice(-4))}</span></small>
           ${key?`<span class="key">${esc(key)}</span>`:''}
           ${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담이 ${x.prior}건 더 있습니다">${Number(x.prior)+1}회째</span>`:''}
           ${qn?`<span class="tag" title="견적서 ${qn}건">견적 ${qn}</span>`:''}
-          ${cb}
+          ${cb}${late}
           ${x.handler&&x.handler!==ME?`<span class="tag hd">${esc(x.handler)}</span>`:''}
           <span class="dt">${String(x.at).slice(5,10).replace('-','/')}</span>
           ${x.tel&&!trash?`<a class="qk" href="tel:${esc(x.tel)}" title="${nm} 님에게 전화" onclick="event.stopPropagation()">📞</a>`:''}
@@ -2882,11 +3036,10 @@ function renderMyConsults(){
           ${x.src?`<span class="tag src">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}
           ${x.src2?`<span class="tag hd">${esc(x.src2)}</span>`:''}
           ${x.model&&x.model!==key?`<span class="tag">${esc(x.model)}</span>`:''}
-          ${x.method?`<span class="tag mth-t">${esc(x.method)}</span>`:''}
-          ${mth}</div>
+          <span class="note-in" style="margin:0 2px 0 0;font-size:calc(11.5px * var(--font-scale))">상담방법</span>${mth}</div>
         <div class="meta">${meta}</div>${buy}${nxt}${qlist}${delInfo}
         ${x.moved?`<div class="meta" style="color:var(--faint)">${esc(x.moved.from||'미배정')} → 나 · ${esc(x.moved.by)} 배정 · ${esc(x.moved.at)}</div>`:''}
-        <div class="acts">${A.join('')}</div>
+        <div class="acts">${A.join('')}${DZ.length?`<div class="danger-wrap">${DZ.join('')}</div>`:''}</div>
         <div class="ocpick hidden" id="ocpick_${x.id}">
           <div class="q"><button onclick="ocQuick(${x.id},0,'14:00')">오늘 2시</button><button onclick="ocQuick(${x.id},1,'10:00')">내일 10시</button><button onclick="ocQuick(${x.id},1,'14:00')">내일 2시</button><button onclick="ocQuick(${x.id},7,'10:00')">일주일 뒤</button></div>
           <div class="r"><input class="in" type="date" id="ocd_${x.id}"><select class="in" id="oct_${x.id}">${['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'].map(t=>`<option${t==='14:00'?' selected':''}>${t}</option>`).join('')}</select><button class="mini ok" onclick="ocSave(${x.id})">저장</button><button class="mini" onclick="$('ocpick_${x.id}').classList.add('hidden')">취소</button></div>
@@ -2903,8 +3056,9 @@ function mcToggleAll(on){ MC_ROWS.forEach(x=>{ on?MC_SEL.add(x.id):MC_SEL.delete
   const r=$('mcrow_'+x.id); if(r){ r.classList.toggle('sel',on); const c=r.querySelector('input[type=checkbox]'); if(c) c.checked=on; } }); mcSelSync(); }
 function mcSelSync(){
   const n=MC_SEL.size, all=$('mc_all');
+  { const bb=document.querySelector('.bulkbar'); if(bb) bb.classList.toggle('idle', !n); }
   if(all){ all.checked = n>0 && n===MC_ROWS.length; all.indeterminate = n>0 && n<MC_ROWS.length; }
-  $('mc_selN').textContent = n ? `${n}건 선택 (이 쪽)` : '고른 건 없음';
+  $('mc_selN').textContent = n ? `${n}건 선택 (이 쪽)` : '왼쪽 네모를 켜면 여러 건을 한 번에 처리합니다';
   $('mc_acts').querySelectorAll('button').forEach(b=>b.disabled = !n || MC_BUSY || MC_FLT==='trash');
 }
 async function mcAct(id, action, what){
@@ -2961,14 +3115,62 @@ async function cbAction(id,act){
     await loadStatus(); render();
   }catch(e){ toast(e.message,'bad'); }
 }
-function toSale(ref,name,tel,product,model){ goTab('sale'); $('s_consult').value=ref;
+/* 상담 → 판매. 고객이 적어 준 문장은 상품명이 될 수 없으므로 짧은 품목명일 때만 채운다 */
+function looksLikeProduct(t){ t=String(t||'').trim();
+  return !!t && t.length<=20 && t.split(/\s+/).length<=3 && !/(요|다|죠|네요|같아|했|입니다)$/.test(t); }
+function toSale(ref,name,tel,product,model,id){
+  goTab('sale');
+  /* 상담은 id 로 잇는다. 내부 값(csv:… 같은 것)을 담당자에게 보여줄 이유가 없다 */
+  $('s_consult').value = /^(SC|SH)/i.test(String(ref||'')) ? ref : '';
+  $('s_consult').dataset.cid = id||''; $('s_consult').dataset.ref = ref||'';
+  const row0=(MC_ROWS||[]).find(r=>r.id===id) || {};
+  linkChipShow(name, row0, ref);
   if(name) $('s_name').value=name;
   if(tel){ $('s_phone').value=tel; hyphen($('s_phone')); }
-  /* 상담에서 본 관심 품목·모델을 미리 채워 둔다 — 맞으면 그대로, 아니면 고쳐 쓴다 */
-  if(product && !$('s_product').value) $('s_product').value=product;
+  if(product && !$('s_product').value){
+    if(looksLikeProduct(product)) $('s_product').value=product;
+    else $('s_product').placeholder='고객이 말한 것 : '+product;
+  }
   if(model && !$('s_model').value) $('s_model').value=String(model).toUpperCase();
+  /* 이 상담에 견적서가 있으면 금액을 손으로 옮겨 적지 않게 골라 넣는다 */
+  const row=(MC_ROWS||[]).find(r=>r.id===id) || {};
+  qpickShow(row.quotes||[], name);
+  /* 견적서가 한 건뿐이면 고를 것이 없으니 바로 넣는다 */
+  if((row.quotes||[]).length===1) qpickUse(0);
   toast('상담번호 연결됨 · 상품과 금액을 확인하세요','ok');
   ($('s_product').value ? $('s_amount') : $('s_product')).focus(); }
+/* 어느 상담에 붙는 판매인지 사람 말로 보여 준다 */
+function linkChipShow(name, row, ref){
+  const el=$('s_link'); if(!el) return;
+  if(!name && !ref){ el.classList.add('hidden'); el.innerHTML=''; return; }
+  const when = row.at ? String(row.at).slice(5,10).replace('-','/') : '';
+  el.innerHTML = `<span>🔗 <b>${esc(name||'')}</b> 님 상담에 연결됩니다`
+    + `${row.src?` · ${esc(row.src)}`:''}${when?` · ${when}`:''}</span>`
+    + `<button type="button" class="x" title="연결 끊기" onclick="linkChipClear()">해제</button>`;
+  el.classList.remove('hidden');
+}
+function linkChipClear(){ const c=$('s_consult'); c.value=''; c.dataset.cid=''; c.dataset.ref='';
+  $('s_link').classList.add('hidden'); $('s_link').innerHTML=''; qpickShow([]); toast('상담 연결을 해제했습니다','ok'); }
+function qpickShow(qs, name){
+  const box=$('s_qpick'); if(!box) return;
+  if(!qs || !qs.length){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  box.innerHTML = `<div class="t">${esc(name||'')} 님 견적서 ${qs.length}건 — 누르면 금액·구분이 채워집니다</div>
+    <div class="r">${qs.map((q,i)=>`<button type="button" onclick="qpickUse(${i})">${esc(q.no)}${q.ver>1?' v'+q.ver:''}`
+      +`${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''}</button>`).join('')}</div>`;
+  box.dataset.qs = JSON.stringify(qs); box.classList.remove('hidden');
+}
+function qpickUse(i){
+  const box=$('s_qpick'); let qs=[]; try{ qs=JSON.parse(box.dataset.qs||'[]'); }catch(e){}
+  const q=qs[i]; if(!q) return;
+  if(q.final) { $('s_amount').value=Number(q.final).toLocaleString('ko-KR'); }
+  if(q.models && !$('s_product').value) $('s_product').value=q.models;
+  const kind = q.monthly ? '구독' : '일시불';
+  $('s_kind').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===kind));
+  box.querySelectorAll('.r button').forEach((b,j)=>b.style.background = j===i ? 'var(--accent)' : '');
+  box.querySelectorAll('.r button').forEach((b,j)=>b.style.color = j===i ? '#fff' : '');
+  toast(`${q.no} 적용 — ${won(q.final||0)} · ${kind}`,'ok');
+  $('s_product').value ? $('s_amount').focus() : $('s_product').focus();
+}
 /* 진행중 상담의 고객 이름 → 같은 고객으로 상담 입력 (후속 상담) */
 function ocToConsult(ref,name,tel,interest){ goTab('consult'); custClear('c');
   $('c_name').value=name||''; if(tel){ $('c_phone').value=tel; hyphen($('c_phone')); }
@@ -3350,6 +3552,33 @@ async function asgTo(name){
   }catch(e){ toast(e.message,'bad'); }
 }
 const n2=v=>Number(v||0).toLocaleString('ko-KR');
+/* ═══ 담당자별 밀린 상담 (점장·대표) ═══ */
+let HL_LOADED=false;
+async function loadHandlerLoad(){
+  let d; try{ d=await rpc('fn_store_handler_load',{p_code:CODE},{fresh:true}); }
+  catch(e){ $('hlBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  const rows=d.rows||[];
+  $('hlSub').textContent = `미완료 ${d.total}건 · 14일↑ ${d.d14} · 30일↑ ${d.d30}`;
+  if(!rows.length){ $('hlBody').innerHTML='<div class="empty">밀린 상담이 없습니다</div>'; return; }
+  $('hlBody').innerHTML = `<table><thead><tr><th>담당</th><th>미완료</th><th>14일↑</th><th>30일↑</th><th>지난 콜백</th><th>가장 오래된</th></tr></thead><tbody>`
+    + rows.map(r=>`<tr class="${r.handler===ME?'me':''}">
+        <td class="nm"><button onclick="hlPick('${esc(r.handler)}')">${esc(r.handler)}</button></td>
+        <td>${r.n}</td>
+        <td class="${r.d14?'w':''}">${r.d14||''}</td>
+        <td class="${r.d30?'b':''}">${r.d30||''}</td>
+        <td class="${r.cb_late?'b':''}">${r.cb_late||''}</td>
+        <td>${r.oldest?String(r.oldest).slice(5).replace('-','/')+` <span class="${r.days>=30?'b':(r.days>=14?'w':'')}">${r.days}일</span>`:'-'}</td></tr>`).join('')
+    + `<tr class="tot"><td>합계</td><td>${d.total}</td><td class="w">${d.d14}</td><td class="b">${d.d30}</td><td></td><td></td></tr>`
+    + `</tbody></table>`;
+}
+/* 이름을 누르면 아래 전체 상담 목록을 그 담당자로 걸러 준다 */
+function hlPick(name){
+  const q=$('all_q'); if(q){ q.value=name; }
+  const seg=$('all_scope'); if(seg){ seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v==='open')); }
+  if(typeof loadAllConsults==='function') loadAllConsults();
+  const el=$('allCard'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  toast(`${name} 담당 건만 봅니다`,'ok');
+}
 /* 전체 상담 (점장·대표·전체 권한) */
 let ALL_SCOPE='open', ALL_HD='', ALL_SRC='', ALL_LOADED=false, ALL_ROWS=[], ALL_PG=0;
 function allGo(p){ ALL_PG=Math.max(0,p); renderAllConsults(); const el=$('allCard')||$('allList'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
