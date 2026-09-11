@@ -150,9 +150,12 @@ end $outer$;
 - `gmail_inquiry.gs` — 홈페이지 문의 지메일 수집
 
 ### 즉시 할 일
-1. **저장소 루트 정리** — `_저장소정리.md` 참고
-2. **노출된 키 교체** — `quote_forward.gs` 등이 루트에 올라가 키가 공개됐다. `_secrets.local.md` 참고
+1. ~~저장소 루트 정리~~ — 완료 (v98)
+2. **노출된 키 교체** — `gas_forward` · `gmail_inquiry` 두 개. 저장소 안의 값은 `PASTE_DC_KEY_HERE`
+   자리표시자로 바꿔 두었으니, 키를 새로 발급한 뒤 **Apps Script 편집기에서만** 채워 넣는다.
+   저장소에는 절대 실제 값을 다시 넣지 않는다. `_secrets.local.md` 참고
 3. 담당 프로 휴대폰 — Apps Script 에서 `syncNamecards` 1회 실행하면 네임카드에서 자동으로 채워진다
+4. GitHub Secrets `GA_PROPERTY_ID` · `GA_SA_JSON` · `GA_INGEST_KEY` — 없으면 GA4 수집이 건너뛴다
 
 ### 판단 대기 (사람이 정해야 함)
 - 담당자·상담상태를 **개발사 관리자에 계속 적을지, 이 시스템으로 옮길지** — 성공률 통계가 여기 달려 있다

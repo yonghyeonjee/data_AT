@@ -26,7 +26,7 @@ const PROP   = env("GA_PROPERTY_ID");
 const SA     = JSON.parse(env("GA_SA_JSON"));
 const SB_URL = env("SUPABASE_URL");
 const SB_KEY = env("SUPABASE_SERVICE_ROLE_KEY");
-const INGEST = env("GA_INGEST_KEY", "ga-trf-9b1e4c72a8d05f36");
+const INGEST = env("GA_INGEST_KEY");
 const RE_SUB   = new RegExp(env("GA_PATH_SUB", "subscribe|구독|%EA%B5%AC%EB%8F%85"), "i");
 const RE_QUOTE = new RegExp(env("GA_PATH_QUOTE", "quote_subscribe|calc_subscribe|견적|%EA%B2%AC%EC%A0%81"), "i");
 

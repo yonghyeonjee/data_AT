@@ -32,13 +32,14 @@ jobs:
         env:
           GA_PROPERTY_ID: ${{ secrets.GA_PROPERTY_ID }}
           GA_SA_JSON: ${{ secrets.GA_SA_JSON }}
+          GA_INGEST_KEY: ${{ secrets.GA_INGEST_KEY }}
           GA_PATH_SUB: ${{ vars.GA_PATH_SUB }}
           GA_PATH_QUOTE: ${{ vars.GA_PATH_QUOTE }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          if [ -z "$GA_PROPERTY_ID" ] || [ -z "$GA_SA_JSON" ]; then
-            echo "GA_PROPERTY_ID · GA_SA_JSON Secrets 가 없어 건너뜁니다 (설정하면 다음 날부터 채워집니다)"; exit 0; fi
+          if [ -z "$GA_PROPERTY_ID" ] || [ -z "$GA_SA_JSON" ] || [ -z "$GA_INGEST_KEY" ]; then
+            echo "GA_PROPERTY_ID · GA_SA_JSON · GA_INGEST_KEY Secrets 가 없어 건너뜁니다 (설정하면 다음 날부터 채워집니다)"; exit 0; fi
           if [ "${{ inputs.paths }}" = "true" ]; then node tools/ga/collect.mjs --paths; exit $?; fi
           ARGS=""
           [ -n "${{ inputs.from }}" ] && ARGS="$ARGS --from ${{ inputs.from }}"

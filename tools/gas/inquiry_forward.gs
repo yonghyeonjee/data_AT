@@ -21,7 +21,7 @@
  ***********************************************************************/
 var DC_URL  = typeof DC_URL  !== 'undefined' ? DC_URL  : 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
 var DC_ANON = typeof DC_ANON !== 'undefined' ? DC_ANON : 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';   // 공개키 (브라우저에도 있는 값)
-var DC_KEY  = typeof DC_KEY  !== 'undefined' ? DC_KEY  : 'dc_15a3039ac89b4cf5045b62688391e85099ea9a63';         // 서버간 전달 키 (Datacenter core.api_key 해시와 대조)
+var DC_KEY  = typeof DC_KEY  !== 'undefined' ? DC_KEY  : 'PASTE_DC_KEY_HERE';         // 서버간 전달 키 (Datacenter core.api_key 해시와 대조)
 
 function dcRpc_(fn, payload) {
   const res = UrlFetchApp.fetch(DC_URL + fn, {

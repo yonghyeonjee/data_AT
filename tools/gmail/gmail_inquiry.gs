@@ -24,7 +24,7 @@
 
 var DC_URL   = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
 var DC_ANON  = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
-var DC_KEY   = 'gm-inq-2f7c9a41d3e85b60';          // fn_inquiry_mail_ingest 전용 키
+var DC_KEY   = 'PASTE_DC_KEY_HERE';          // fn_inquiry_mail_ingest 전용 키
 var LABEL    = 'DC적재';        // 넘긴 메일
 var LABEL_NG = 'DC확인필요';     // 표를 못 읽은 메일 (사람이 한 번 봐야 함)
 var QUERY    = 'subject:견적문의 newer_than:30d -label:' + LABEL + ' -label:' + LABEL_NG;
