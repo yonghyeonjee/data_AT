@@ -1,0 +1,46 @@
+name: GA4 방문량 수집
+
+on:
+  schedule:
+    - cron: "10 3 * * *"     # 12:10 KST — 전날까지 확정된 방문량
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "시작일 YYYY-MM-DD (비우면 최근 3일)"
+        required: false
+      to:
+        description: "종료일 YYYY-MM-DD (비우면 오늘)"
+        required: false
+      paths:
+        description: "경로별 세션 상위 40개만 보기 (정규식 정할 때 · 적재하지 않음)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ga-traffic
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: 수집
+        env:
+          GA_PROPERTY_ID: ${{ secrets.GA_PROPERTY_ID }}
+          GA_SA_JSON: ${{ secrets.GA_SA_JSON }}
+          GA_PATH_SUB: ${{ vars.GA_PATH_SUB }}
+          GA_PATH_QUOTE: ${{ vars.GA_PATH_QUOTE }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$GA_PROPERTY_ID" ] || [ -z "$GA_SA_JSON" ]; then
+            echo "GA_PROPERTY_ID · GA_SA_JSON Secrets 가 없어 건너뜁니다 (설정하면 다음 날부터 채워집니다)"; exit 0; fi
+          if [ "${{ inputs.paths }}" = "true" ]; then node tools/ga/collect.mjs --paths; exit $?; fi
+          ARGS=""
+          [ -n "${{ inputs.from }}" ] && ARGS="$ARGS --from ${{ inputs.from }}"
+          [ -n "${{ inputs.to }}"   ] && ARGS="$ARGS --to ${{ inputs.to }}"
+          node tools/ga/collect.mjs $ARGS
