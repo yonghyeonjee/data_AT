@@ -238,6 +238,8 @@ end $outer$;
   **`ocToConsult(id,ref,name,tel,interest)`** (첫 인자 id 추가) — 상담 내용에 "이전 상담 … 이어서" 를 더 이상 안 넣는다. 대신 `#c_stick`(position:sticky, top = `--tb-h` 상단 바 높이) 에 이름·번호·N회째 + [이전 상담 N건 보기](`csRow`: 날짜·상태·완료일·채널·담당·내용·[상세]). 넓은 화면은 자동 펼침, 폰은 접힘. `pickMine(key,name)` 은 `fn_store_customer_detail`(consults 에 phone·done_at 추가) 로 같은 헤더. `custClear('c')` 가 헤더도 숨긴다.
   **기존 고객 찾기는 접혀 있다** — `#c_findBtn`(`.foldbtn`) → `cFindToggle()` 로 `#c_findBox` 펼침.
   같은 고객 추가 상담은 **`crm.consult` 에 줄이 하나 더 생길 뿐** 이전 줄은 절대 지워지지 않는다 (삭제는 [삭제]로만, 7일 안 복구). 묶는 키는 buyer_key(LINK.c)·전화번호. `_secrets` 없음.
+- **하단 탭바 [상담 입력]이 안 눌리던 버그 (2026-09-13)** — `.toast` 가 사라진 뒤에도 opacity:0 으로 bottom:28px 자리에 남아(z-index 99) 하단 탭바 가운데 버튼의 탭을 먹었다.
+  `.toast{pointer-events:none}` + 폰(≤999px)에서는 `bottom:calc(84px + safe-area)` 로 탭바 위에 뜬다. UAT T30(폰)이 토스트를 띄운 채 탭바를 실제로 탭해 잡는다.
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
