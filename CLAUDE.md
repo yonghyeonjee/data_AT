@@ -254,6 +254,7 @@ end $outer$;
   `core.f_consult_stats` 에 `handlers` 키 추가 (mvp_130). 원본 시트(구독 상담 성과 대시보드)와 8월 대조 완료 — 구독 문의 26·계약 5·보류 12·거절 2 일치, 홈페이지 문의 20 일치. 시트 상담결과 29건을 DB 에 반영했다(sql/mvp_130).
   **시트의 상담결과는 시트에서만 고쳐지고 DB 로 안 온다** — GAS 는 접수만 넣는다. 담당자가 이 시스템에서 상태를 바꾸기 전까지는 월말에 같은 방식으로 맞춰야 한다 ('판단 대기' 항목).
 - **상담 흐름도** — `scratchpad/flow/flow.html` (5레인: 문의 창구 → 통합 데이터센터 → 상담 처리 → 데이터 처리 후 수합 → CRM 발송(개발중)), `ptest/flow_render.mjs` 로 PNG·PDF. 카카오채널 상담은 흐름도에서 뺐다(대표님 지시).
+- **관리자 화면도 같은 상품명 규칙 + 수량** — 대시보드 상위 상품 랭크·표·파레토 툴팁·워터폴(상품), 주문 목록, 주문서 요청에서 모델 코드가 이름 앞. `rankHTML` 은 `q`(개) 가 있으면 "N개 · M건" 으로, 상위 상품·카테고리 랭크에 `qty` 를 넘긴다.
 - **대시보드 `/dash/` 상위 상품은 모델 코드가 맨 앞** (`PR[id][0]+'  '+PR[id][1]`, 표 셀도 모델 먼저).
 - **상단 [로그아웃] (2026-09-13)** — 이름 옆 `#btnLogout`(`.pill.btnp`, 폰은 아이콘만·40px) → `logoutStore()` = 확인 → staff_code·st_open 지우고 새로고침 (아래 "담당자 변경"과 같음).
 - **견적서 마감일** — `crm.quote.summary->>'until'`('YYYY.MM.DD', 발행일+7일)을 `fn_store_quotes`·`fn_store_consults_my`(quotes)·`fn_store_consult_detail`(quotes)이 `until` 로 준다. 화면 `qUntil(u,small)` = 노란 [마감 M/D], 지났으면 빨간 [마감 지남 M/D] — 견적서 탭·홈 찾기·내 상담 줄 견적 목록·상세 팝업.

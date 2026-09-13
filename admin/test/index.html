@@ -2554,7 +2554,7 @@ async function loadOqReq(){
   const ST={open:['대기','보류'],taken:['처리 중','진행중'],done:['처리됨','y'],skip:['불필요','n']};
   tb.innerHTML=(d.rows||[]).map(r=>{ const st=ST[r.status]||[r.status,'n']; return `<tr${r.status==='open'?' style="background:#FFF4EC"':''}>
       <td class="mono" style="font-size:calc(11.5px * var(--font-scale))">#${r.id}<div style="color:var(--muted)">${esc(r.at)}</div></td><td>${esc(r.by)}</td>
-      <td><b>${esc(r.product||'')}</b>${r.model?`<div class="mono" style="font-size:calc(11px * var(--font-scale));color:var(--muted)">${esc(r.model)}</div>`:''}</td>
+      <td>${r.model?`<span class="mono" style="font-weight:700">${esc(r.model)}</span> `:''}<b>${esc(r.product||'')}</b></td>
       <td class="num">${n(r.qty)}</td><td class="num">${n(r.amount||0)}</td><td>${esc(r.cust||'-')}</td>
       <td><span class="tag ${st[1]}">${st[0]}</span>${r.taken_by&&r.status==='taken'?` <span class="note">${esc(r.taken_by)}</span>`:''}${r.done_by?` <span class="note">${esc(r.done_by)} ${esc(r.done_at||'')}${r.queue_id?` · 주문서 #${r.queue_id}`:''}</span>`:''}</td></tr>`; }).join('')
     ||'<tr><td colspan="7" class="empty">요청이 없습니다</td></tr>';
@@ -4390,7 +4390,7 @@ function drawTrend(){
 /* ── 워터폴 ── */
 function drawWf(){
   const k=DK, host=$('chWf');
-  const raw = (WFMODE==='ch' ? k.wf_channel : k.wf_product).map(x=>({k:String(x.k),name:x.name||x.k,d:Number(x.d)||0}));
+  const raw = (WFMODE==='ch' ? k.wf_channel : k.wf_product).map(x=>({k:String(x.k),name:WFMODE==='pd'?(String(x.k)+' '+(x.name||'')).trim():(x.name||x.k),d:Number(x.d)||0}));
   const start=Number(k.prev.net)||0, end=Number(k.total.net)||0;
   if(!raw.length && !start && !end){ host.innerHTML=empty(); $('wfNote').textContent=''; return; }
   const TOPN=10;
@@ -4452,14 +4452,14 @@ function rankHTML(rows,keyCur,keyPrev,unit){
     const cl=rt===null?'fl':Math.abs(rt)<0.05?'fl':rt>0?'up':'dn';
     return `<div class="rk-tr"><div class="i">${i+1}</div><div class="nm" title="${esc(x.name||x.k)}">${esc(x.k)}</div>
       <div class="rk-bar"><i style="width:${(Math.abs(c)/mx*100).toFixed(1)}%;background:${x.color||'var(--navy)'}"></i>${p?`<u style="left:${(Math.abs(p)/mx*100).toFixed(1)}%"></u>`:''}</div>
-      <div class="v">${fmtT(c)}${unit||''}<small style="color:var(--faint);font-weight:400"> ${x.cnt!=null?n(x.cnt)+'건':''}</small></div>
+      <div class="v">${fmtT(c)}${unit||''}<small style="color:var(--faint);font-weight:400"> ${x.q!=null?n(x.q)+'개':''}${x.q!=null&&x.cnt!=null?' · ':''}${x.cnt!=null?n(x.cnt)+'건':''}</small></div>
       <div class="d ${cl}">${rt===null?'신규':(rt>0?'+':'')+rt.toFixed(0)+'%'}</div></div>`; }).join('');
 }
 function drawRanks(){
   const k=DK;
   const pk = M==='gross'?'prev_gross':M==='refund'?'prev_refund':'prev';
   $('rkChannel').innerHTML=rankHTML(k.by_name.map(x=>({k:x.k,cnt:x.cnt,color:TCOL[x.type]||'var(--navy)',[M]:x[M],[pk]:x[pk]})).sort((a,b)=>b[M]-a[M]).slice(0,12), M, pk);
-  $('rkProduct').innerHTML=rankHTML(k.top_products.slice(0,12).map(x=>({k:(x.name||x.mc||'').slice(0,26),name:x.name,cnt:x.cnt,net:x.net,prev:x.prev,color:'var(--navy-2)'})),'net','prev');
+  $('rkProduct').innerHTML=rankHTML(k.top_products.slice(0,12).map(x=>({k:((x.mc?x.mc+'  ':'')+(x.name||'')).slice(0,34),name:(x.mc?x.mc+' ':'')+(x.name||''),cnt:x.cnt,q:x.qty,net:x.net,prev:x.prev,color:'var(--navy-2)'})),'net','prev');
 }
 
 /* ── 채널 탭 ── */
@@ -4519,7 +4519,7 @@ function drawProductTab(){
     <div class="dnote">건수는 소모품이, 금액은 대물이 이깁니다. 재고·프로모션은 대물, 재구매 CRM 은 소모품 쪽에서 나옵니다.</div>`
     : empty();
   $('rkCategory').innerHTML = (k.by_category||[]).length
-    ? rankHTML(k.by_category.map(x=>({k:x.k,cnt:x.cnt,net:Number(x.net)||0,prev:Number(x.prev)||0,color:KCOL[x.kind]||'var(--navy)'})),'net','prev')
+    ? rankHTML(k.by_category.map(x=>({k:x.k,cnt:x.cnt,q:x.qty,net:Number(x.net)||0,prev:Number(x.prev)||0,color:KCOL[x.kind]||'var(--navy)'})),'net','prev')
     : empty();
 
   const allNet=Number(k.product_net_all)||ps.reduce((a,x)=>a+x.net,0)||1;
@@ -4529,7 +4529,7 @@ function drawProductTab(){
     const mx=Math.max(...ps.map(x=>x.net)), xs=i=>l+iw*i+iw/2, ys=v=>t+(H-t-b)*(1-v/mx), yc=p=>t+(H-t-b)*(1-p/100);
     let acc=0; const cum=ps.map(x=>{acc+=x.net; return acc/allNet*100;});
     const bars=ps.map((x,i)=>`<rect x="${(xs(i)-bw/2).toFixed(1)}" y="${ys(x.net).toFixed(1)}" width="${bw.toFixed(1)}" height="${(ys(0)-ys(x.net)).toFixed(1)}" fill="#3E5BC9" rx="1"
-      onmousemove="showTip(event,'${esc((x.name||x.mc||'').slice(0,40)).replace(/'/g,'')}<br><b>${fmtT(x.net)}원</b> · ${n(x.qty)}개<br>누적 ${cum[i].toFixed(1)}%')" onmouseleave="hideTip()"/>`).join('');
+      onmousemove="showTip(event,'${esc(((x.mc?x.mc+' ':'')+(x.name||'')).slice(0,44)).replace(/'/g,'')}<br><b>${fmtT(x.net)}원</b> · ${n(x.qty)}개<br>누적 ${cum[i].toFixed(1)}%')" onmouseleave="hideTip()"/>`).join('');
     const line=`<polyline points="${ps.map((_,i)=>xs(i).toFixed(1)+','+yc(cum[i]).toFixed(1)).join(' ')}" fill="none" stroke="#B3261E" stroke-width="2"/>`;
     const l80=`<line x1="${l}" x2="${W-r}" y1="${yc(80).toFixed(1)}" y2="${yc(80).toFixed(1)}" stroke="#8A5D00" stroke-width="1.5" stroke-dasharray="6 4"/><text x="${W-r+5}" y="${yc(80)+4}" fill="#8A5D00">80%</text>`;
     const ticks=[0,.5,1].map(f=>`<line x1="${l}" x2="${W-r}" y1="${ys(mx*f).toFixed(1)}" y2="${ys(mx*f).toFixed(1)}"/><text x="${l-8}" y="${ys(mx*f)+4}" text-anchor="end">${f?fmtT(mx*f):0}</text>`).join('');
@@ -4551,7 +4551,7 @@ function drawProductTab(){
     </tbody></table>` : empty();
 
   $('tbTop').innerHTML=k.top_products.map((x,i)=>{const rt=dRate(x.net,x.prev);
-    return `<tr><td class="num" style="color:var(--faint)">${i+1}</td><td class="wrap">${esc(x.name||x.mc)}${x.cat?` <span class="tag" style="background:var(--surface-3);color:var(--muted)">${esc(x.cat)}</span>`:''}</td>
+    return `<tr><td class="num" style="color:var(--faint)">${i+1}</td><td class="wrap">${x.mc?`<span class="mono" style="font-weight:700">${esc(x.mc)}</span> `:''}${esc(x.name||'')}${x.cat?` <span class="tag" style="background:var(--surface-3);color:var(--muted)">${esc(x.cat)}</span>`:''}</td>
       <td class="num">${n(x.qty)}</td><td class="num"><b>${n(x.net)}</b></td>
       <td class="num" style="color:${rt===null?'var(--faint)':rt>0?'var(--ok)':'var(--bad)'}">${rt===null?'신규':(rt>0?'+':'')+rt.toFixed(0)+'%'}</td></tr>`;}).join('')
     ||'<tr><td colspan="5" class="note">없음</td></tr>';
@@ -4605,7 +4605,7 @@ async function loadOrders(page){
   $('tbOrders').innerHTML=oRows.map(o=>`<tr>
     <td class="mono">${dfmt(o.order_at)}</td><td><span class="tag ${o.channel_type}">${o.channel_type}</span></td><td>${esc(o.channel_name)}<div style="font-size:calc(10.5px * var(--font-scale));color:var(--faint)" class="mono">${esc(o.order_no||'')}</div></td>
     <td><b>${esc(o.customer_name)}</b></td><td class="mono" style="color:${unmask?'var(--bad)':'var(--muted)'}">${esc(o.customer_phone||'-')}</td>
-    <td class="wrap">${esc(o.product_name||'')}${o.model_code?`<div style="font-size:calc(10.5px * var(--font-scale));color:var(--faint)" class="mono">${esc(o.model_code)}</div>`:''}</td><td class="num">${n(o.qty)}</td><td class="num">${n(o.gross_amount)}</td><td class="num" style="color:var(--bad)">${Number(o.refund_amount)?n(o.refund_amount):''}</td>
+    <td class="wrap">${o.model_code?`<span class="mono" style="font-weight:700">${esc(o.model_code)}</span> `:''}${esc(o.product_name||'')}</td><td class="num">${n(o.qty)}</td><td class="num">${n(o.gross_amount)}</td><td class="num" style="color:var(--bad)">${Number(o.refund_amount)?n(o.refund_amount):''}</td>
     <td class="num"><b>${n(o.net_amount)}</b></td><td>${esc(o.handler||'')}</td><td style="color:var(--muted);font-size:calc(12px * var(--font-scale))">${esc(o.status)}</td>
     <td><button class="btn sm ghost" onclick="openOrderModal(${o.id})">수정</button>${ME.can_delete?`<button class="btn sm danger" style="margin-left:4px" onclick="delOrder(${o.id})">삭제</button>`:''}</td></tr>`).join('')||'<tr><td colspan="13" class="note" style="text-align:center;padding:24px">조건에 맞는 주문이 없습니다</td></tr>';
   if(oPage===0){ try{ renderOrderSummary(await rpc('fn_order_summary',a)); }catch(e){ renderOrderSummary(null); } }
