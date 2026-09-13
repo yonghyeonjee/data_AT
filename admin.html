@@ -559,6 +559,11 @@ textarea.in{height:auto}
 .btn.ok{background:var(--teal)} .btn.ok:hover{background:#0B5F53}
 .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 .filters .in{min-width:130px}
+.iqcond{gap:6px 10px;margin-top:-4px} .iqcond .lb{font-size:calc(12px * var(--font-scale));font-weight:700;color:var(--muted)}
+.chks{display:flex;flex-wrap:wrap;gap:6px}
+.chk{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;font-size:calc(12.5px * var(--font-scale));font-weight:600;color:var(--ink-2);cursor:pointer;user-select:none;white-space:nowrap}
+.chk input{accent-color:var(--navy);width:15px;height:15px;margin:0;cursor:pointer}
+.chk:has(input:checked){border-color:var(--navy);background:#EEF2FF;color:var(--navy)}
 .switch{display:inline-flex;align-items:center;gap:8px;font-size:calc(12.5px * var(--font-scale));font-weight:600;color:var(--ink-2);cursor:pointer;padding:0 10px;height:36px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;user-select:none}
 .switch .sw{width:32px;height:18px;border-radius:9px;background:var(--line-2);position:relative;transition:.2s}
 .switch .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
@@ -1189,6 +1194,22 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
               <button type="button" data-s="hidden">삭제됨</button>
               <button type="button" data-s="all">전체</button>
             </div>
+          </div>
+          <div class="filters iqcond" id="iqCond">
+            <span class="lb">상태</span>
+            <div class="chks" id="iqStatus">
+              <label class="chk"><input type="checkbox" value="접수">접수</label>
+              <label class="chk"><input type="checkbox" value="진행중">진행중</label>
+              <label class="chk"><input type="checkbox" value="보류">보류</label>
+              <label class="chk"><input type="checkbox" value="구매완료">구매완료</label>
+              <label class="chk"><input type="checkbox" value="종료">종료</label>
+              <label class="chk"><input type="checkbox" value="확인완료">확인완료</label>
+              <label class="chk"><input type="checkbox" value="기록">기록</label>
+              <label class="chk"><input type="checkbox" value="(없음)">미기재</label>
+            </div>
+            <span class="lb">담당</span>
+            <div class="chks" id="iqHandler"><label class="chk"><input type="checkbox" value="(미배정)">미배정</label></div>
+            <button class="btn sm ghost" id="iqCondClear" onclick="iqCondClear()" hidden>조건 지우기</button>
           </div>
           <div class="qmeta" id="iqMeta"></div>
           <div class="tw"><table class="iqt"><thead><tr>
@@ -1868,6 +1889,7 @@ function handlerSelect(id, value, extra){
     <option value="">(없음)</option>${names.map(nm=>`<option ${nm===value?'selected':''}>${esc(nm)}</option>`).join('')}<option value="__custom">직접 입력…</option></select>`;
 }
 function fillHandlerOptions(){
+  iqFillHandlers();
   $('oHd').innerHTML='<option value="">전체 담당</option>'+STAFF.map(h=>`<option>${esc(h.name)}</option>`).join('');
   $('handlerList').innerHTML=STAFF.filter(x=>x.active).map(h=>`<option value="${esc(h.name)}">`).join('');
 }
@@ -2369,12 +2391,14 @@ let iqPage=0, IQ_FORM='', IQ_SHOW='real', IQ_ROWS=[];
 document.addEventListener('click', e=>{
   const b=e.target.closest('#iqForm button'); if(b){ $('iqForm').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); IQ_FORM=b.dataset.f||''; loadInquiry(0); return; }
   const c=e.target.closest('#iqShow button'); if(c){ $('iqShow').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===c)); IQ_SHOW=c.dataset.s; loadInquiry(0); }
+  const k=e.target.closest('#iqCond input[type=checkbox]'); if(k){ iqCondSync(); loadInquiry(0); }
 });
 const IQ_TONE={quote:'a',subscribe:'b',supply:'c',b2b:'d',store:'n'};
 async function loadInquiry(page){
   iqPage=Math.max(0,page||0);
   const usePeriod=true;
   const args={p_form:IQ_FORM||null,p_q:$('iqQ').value.trim()||null,p_limit:pgSize('inquiry'),p_offset:iqPage*pgSize('inquiry'),
+              p_status:iqChecked('iqStatus'),p_handler:iqChecked('iqHandler'),
               p_unmask:$('iqUnmask').classList.contains('on'), p_show:IQ_SHOW,
               p_from:usePeriod?P.from:null,p_to:usePeriod?P.to:null};
   let d; try{ d=await rpc('fn_inquiry_list',args); }catch(e){ return toast(e.message,'bad'); }
@@ -2405,6 +2429,13 @@ async function loadInquiry(page){
                   :`<button class="btn sm danger" onclick="delInquiry(${i})">삭제</button>`}</td></tr>`).join('')
     ||'<tr><td colspan="10" class="note" style="text-align:center;padding:24px">이 조건에 해당하는 문의가 없습니다</td></tr>';
 }
+/* 상태·담당 체크박스 — 여러 개 고를 수 있고, 고른 게 없으면 전체. 값은 쉼표로 묶어 서버로 간다 */
+function iqChecked(id){ const v=[...document.querySelectorAll('#'+id+' input:checked')].map(x=>x.value); return v.length?v.join(','):null; }
+function iqCondSync(){ const on=!!(iqChecked('iqStatus')||iqChecked('iqHandler')); const b=$('iqCondClear'); if(b) b.hidden=!on; }
+function iqCondClear(){ document.querySelectorAll('#iqCond input:checked').forEach(x=>x.checked=false); iqCondSync(); loadInquiry(0); }
+function iqFillHandlers(){ const el=$('iqHandler'); if(!el) return; const keep=new Set([...el.querySelectorAll('input:checked')].map(x=>x.value));
+  el.innerHTML=[['(미배정)','미배정']].concat((STAFF||[]).filter(x=>x.active).map(x=>[x.name,x.name]))
+    .map(([v,l])=>`<label class="chk"><input type="checkbox" value="${esc(v)}"${keep.has(v)?' checked':''}>${esc(l)}</label>`).join(''); }
 /* 행을 누르면 전체 내용을 펼쳐 본다 (표는 한 줄로 잘려 있으므로) */
 async function openInquiry(i){
   const r=IQ_ROWS[i]; if(!r) return;
@@ -5214,7 +5245,7 @@ const PAGE_INFO={
   notify:{d:'잔디·카카오로 나가는 알림을 켜고 끄는 페이지입니다. 보내는 곳(채널)과 보낼 일(규칙)이 나뉘어 있습니다.',
     s:['먼저 [보내는 곳]에 잔디 웹훅 주소를 넣고 켭니다.','[보낼 일]에서 규칙을 켜면 그 일이 생길 때 자동으로 나갑니다.','문구의 {name} {phone} {summary} 자리는 실제 값으로 바뀝니다.','[테스트]로 실제 방에 한 번 보내보고 확인하세요.']},
   inbox:{d:'홈페이지 4개 폼(견적·구독·소모품/렌탈·VMS·B2B)과 매장 접수가 한 화면에 모입니다. 원래 견적은 견적표, 구독·매장은 접수함, 소모품/VMS는 상담에 흩어져 있던 것을 합친 목록입니다.',
-    s:['위 [전체/견적/구독/소모품·렌탈/VMS·B2B/매장] 버튼으로 폼별로 봅니다.','연락처는 기본 가림입니다. [연락처 보기]를 켜면 감사로그에 남습니다.','아래 [고객 접수함]은 승인·반려 같은 처리를 하는 기존 화면입니다.']},
+    s:['위 [전체/견적/구독/소모품·렌탈/VMS·B2B/매장] 버튼으로 폼별로 봅니다.','상태·담당 체크박스는 여러 개 고를 수 있습니다. 고른 게 없으면 전체이고, 검색어·기간과 함께 걸립니다.','연락처는 기본 가림입니다. [연락처 보기]를 켜면 감사로그에 남습니다.','아래 [고객 접수함]은 승인·반려 같은 처리를 하는 기존 화면입니다.']},
 };
 let DATA_STAMP='';
 function renderIntro(v){
