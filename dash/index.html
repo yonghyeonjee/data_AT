@@ -1379,7 +1379,7 @@ function drawTopPr(){
   $('#pv-title').textContent='상위 상품';
   const items=Object.keys(pa.byP).map(id=>({id:+id,o:pa.byP[id]})).filter(x=>x.o[key]>0).sort((x,y)=>y.o[key]-x.o[key]).slice(0,10);
   const tot=Object.keys(pa.byP).reduce((s,id)=>s+Math.max(0,pa.byP[id][key]),0)||1;
-  $('#toppr').innerHTML=hbars(items.map(x=>({l:PR[x.id][1],sub:PR[x.id][0]+' · '+PR[x.id][2],v:x.o[key],
+  $('#toppr').innerHTML=hbars(items.map(x=>({l:PR[x.id][0]+'  '+PR[x.id][1],sub:PR[x.id][2],v:x.o[key],
     q:x.o.q.toLocaleString()+'개',note:'비중 '+pct(x.o[key],tot).toFixed(1)+'%',id:x.id})),i=>i<3?'#1428A0':'#3E5BC9');
   $('#toppr').querySelectorAll('.rk').forEach(el=>{
     el.onclick=()=>openPr(+el.dataset.id);
@@ -1492,7 +1492,7 @@ function openCh(ci){
     for(const c of PC){if(c[1]!==ci||!mset.has(c[0]))continue;byP[c[2]]=(byP[c[2]]||0)+pval(c);}
     const it=Object.keys(byP).map(id=>({id:+id,v:byP[id]})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v).slice(0,8);
     h+='<div class="dw-s">이 채널 상위 상품</div>';
-    h+=it.length?hbars(it.map(x=>({l:PR[x.id][1],sub:PR[x.id][0],v:x.v,id:x.id})),'#3E5BC9')
+    h+=it.length?hbars(it.map(x=>({l:PR[x.id][0]+'  '+PR[x.id][1],v:x.v,id:x.id})),'#3E5BC9')
       :'<div class="empty">샵링커 상품 데이터가 없는 채널입니다</div>';}
   const sbHtml=subBlocks(ci);
   if(sbHtml)h+='<div class="grid"><div class="card sp12"><div class="card-h"><h2>담당자별</h2>'
@@ -1597,7 +1597,7 @@ function drawPList(){
   $('#prows').innerHTML=items.slice(0,pLimit).map((x,i)=>{
     const m=PR[x.id];
     return '<tr data-p="'+x.id+'"><td class="c-num" style="text-align:left;color:#6B727C">'+(i+1)+'</td>'
-      +'<td><span class="p-name">'+esc(m[1])+'</span><span class="p-model">'+esc(m[0])+'</span></td>'
+      +'<td><span class="p-name"><span class="p-model" style="display:inline;margin:0 6px 0 0;color:var(--ink)">'+esc(m[0])+'</span>'+esc(m[1])+'</span></td>'
       +'<td class="hide-s"><span class="catchip">'+esc(m[2])+'</span></td>'
       +'<td class="c-num hide-s">'+x.o.q.toLocaleString()+'</td>'
       +'<td class="c-num">'+wonS(x.o[key])+' <span class="pct" style="display:inline">'+pct(x.o[key],tot).toFixed(1)+'%</span></td></tr>';}).join('');
@@ -1796,7 +1796,7 @@ function renderCV(){
     for(const c of PC){if(c[1]!==ci||!mset.has(c[0]))continue;byP[c[2]]=(byP[c[2]]||0)+pval(c);}
     const it=Object.keys(byP).map(id=>({id:+id,v:byP[id]})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
     const ptot=it.reduce((s,x)=>s+x.v,0)||1;
-    pbox.innerHTML=it.length?hbars(it.slice(0,12).map(x=>({l:PR[x.id][1],sub:PR[x.id][0]+' · '+PR[x.id][2],
+    pbox.innerHTML=it.length?hbars(it.slice(0,12).map(x=>({l:PR[x.id][0]+'  '+PR[x.id][1],sub:PR[x.id][2],
       v:x.v,q:pct(x.v,ptot).toFixed(1)+'%',id:x.id})),i=>i<3?'#1428A0':'#3E5BC9')
       :'<div class="empty">샵링커 상품 데이터가 없는 채널입니다</div>';
     pbox.querySelectorAll('.rk').forEach(el=>el.onclick=()=>openPr(+el.dataset.id));
