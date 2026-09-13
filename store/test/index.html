@@ -929,6 +929,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="tabs">
       <button class="tab active" data-tab="home">홈</button>
       <button class="tab" data-tab="inbox">상담</button>
+      <button class="tab" data-tab="assign" data-mgr="1">배정</button>
       <button class="tab" data-tab="consult" data-perm="consult">＋ 상담 입력</button>
       <button class="tab" data-tab="quote">견적서</button>
       <button class="tab" data-tab="customer">내 고객</button>
@@ -970,13 +971,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
   </section>
 
-  <!-- ── 상담 : 내 상담 · 배정 ── -->
-  <section class="panel hidden" id="tab-inbox">
-    <div class="intro"><b>내 상담을 처리하는 화면</b>입니다. 찾고, 상태를 바꾸고, 견적서를 열고, 구매로 넘기는 일이 전부 여기서 됩니다.
-      <details><summary>사용 방법</summary><ol><li><i>1</i><span><b>콜백 약속</b>: 상담에서 콜백 예정을 잡으면 여기에 시간순으로 뜹니다. 전화 버튼으로 바로 걸고, 끝나면 완료를 누르세요. 지난 약속은 빨간색입니다.</span></li><li><i>2</i><span><b>내 상담</b>: 상태(미완료·보류·완료·거절)로 골라 보고, 이름·번호·모델로 찾습니다. 처음 열면 <b>미완료</b>만 보입니다.</span></li><li><i>3</i><span><b>여러 건 한 번에</b>: 체크박스를 클릭하거나 <b>전체선택</b>을 누른 뒤 위의 버튼을 누르면 고른 건 전부에 같은 처리가 됩니다.</span></li><li><i>4</i><span><b>상담 완료가 곧 판매는 아닙니다</b>. 구매까지 갔으면 <b>구매 확정</b>, 안 샀으면 <b>상담완료</b>를 누르세요.</span></li></ol></details>
-    </div>
+  <!-- ── 배정 (점장님·대표님) ── -->
+  <section class="panel hidden" id="tab-assign">
+    <div class="intro"><b>들어온 문의를 담당자에게 배정</b>하는 화면입니다. 미배정 건을 정하고, 담당을 바꾸고, 체크박스로 여러 건을 한 번에 넘깁니다. 넘긴 기록은 그 상담에 남고, 넘겨받은 프로님의 CRM 에 알림이 쌓입니다.</div>
     <div class="card hidden" id="allCard">
-      <h2>전체 상담 · 배정 <span id="allSub">점장님 · 대표님만 보입니다</span></h2>
+      <h2>전체 상담 · 배정 <span id="allSub"></span></h2>
       <p class="note-in" style="margin-top:0">미배정 건을 담당자에게 배정하거나, 담당을 바꿉니다. 넘긴 기록은 그 상담에 남습니다.</p>
       <div class="daterow">
         <div class="seg sm" id="all_scope"><button type="button" data-v="unassigned">미배정</button><button type="button" class="on" data-v="open">진행중 전체</button><button type="button" data-v="all">전체</button></div>
@@ -990,6 +989,13 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </div>
       <div class="chips filter" id="all_hd2" role="radiogroup" aria-label="담당" style="margin-top:8px"></div>
       <div class="list" id="allList" style="margin-top:14px"><div class="empty">불러오는 중…</div></div>
+    </div>
+  </section>
+
+  <!-- ── 상담 : 내 상담 ── -->
+  <section class="panel hidden" id="tab-inbox">
+    <div class="intro"><b>내 상담을 처리하는 화면</b>입니다. 찾고, 상태를 바꾸고, 견적서를 열고, 구매로 넘기는 일이 전부 여기서 됩니다.
+      <details><summary>사용 방법</summary><ol><li><i>1</i><span><b>콜백 약속</b>: 상담에서 콜백 예정을 잡으면 여기에 시간순으로 뜹니다. 전화 버튼으로 바로 걸고, 끝나면 완료를 누르세요. 지난 약속은 빨간색입니다.</span></li><li><i>2</i><span><b>내 상담</b>: 상태(미완료·보류·완료·거절)로 골라 보고, 이름·번호·모델로 찾습니다. 처음 열면 <b>미완료</b>만 보입니다.</span></li><li><i>3</i><span><b>여러 건 한 번에</b>: 체크박스를 클릭하거나 <b>전체선택</b>을 누른 뒤 위의 버튼을 누르면 고른 건 전부에 같은 처리가 됩니다.</span></li><li><i>4</i><span><b>상담 완료가 곧 판매는 아닙니다</b>. 구매까지 갔으면 <b>구매 확정</b>, 안 샀으면 <b>상담완료</b>를 누르세요.</span></li></ol></details>
     </div>
     <div class="card" id="mcCard">
       <h2>내 상담 <span id="mcHead"></span></h2>
@@ -1776,14 +1782,13 @@ function render(){
   /* 점장님·대표님·전체 권한이면 전체 상담·배정 카드 */
   const hc=$('hlCard'); if(hc){ hc.classList.toggle('hidden', !s.is_mgr);
     if(s.is_mgr && !HL_LOADED){ HL_LOADED=true; loadHandlerLoad(); } }
-  const ac=$('allCard'); if(ac){ ac.classList.toggle('hidden', !s.is_mgr);
-    if(s.is_mgr && !ALL_LOADED){ ALL_LOADED=true; loadAllConsults(); } }
+  const ac=$('allCard'); if(ac){ ac.classList.toggle('hidden', !s.is_mgr); }   /* 목록은 배정 탭을 열 때 불러온다 */
   const lc=$('lvCard'); if(lc){ lc.classList.toggle('hidden', !s.is_mgr); if(s.is_mgr && !LV_LOADED){ LV_LOADED=true; loadLeave(); } }
   const sw=$('st_who'); if(sw) sw.classList.toggle('hidden', !s.is_mgr);
   if(!ST_LOADED){ ST_LOADED=true; loadStats(); }
   if(!QL_LOADED){ QL_LOADED=true; loadQuickLinks(); loadSecOrder(); }
   /* 상담 탭 배지는 20초 폴링(inboxCheck)이 맡는다. 첫 화면에서 아직 없을 때만 미배정 수로 채운다 */
-  if(s.is_mgr && !document.querySelector('.tab[data-tab="inbox"] .n')) setTabBadge('inbox', Number(s.unassigned_n||0), true);
+  if(s.is_mgr) setTabBadge('assign', Number(s.unassigned_n||0), true);
 }
 
 /* ═══ 남의 자료는 안 보인다 ═══════════════════════════════════════════
@@ -1811,7 +1816,7 @@ function applyPerms(){
   let firstVisible=null, activeGone=false;
   document.querySelectorAll('.tab').forEach(b=>{
     const need=b.dataset.perm;
-    const ok = !need || PERMS.includes(need);
+    const ok = (!need || PERMS.includes(need)) && !(b.dataset.mgr && !(STATUS&&STATUS.is_mgr));
     b.classList.toggle('hidden', !ok);
     if(ok && !firstVisible) firstVisible=b;
     if(!ok && b.classList.contains('active')) activeGone=true;
@@ -2842,9 +2847,10 @@ NAV_ICON.inbox   ='<svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6a2 2 0 0 
 NAV_ICON.quote   ='<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 12h6M10 16h4"/></svg>';
 NAV_ICON.customer='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 NAV_ICON.stats   ='<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>';
+NAV_ICON.assign  ='<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 8h6M19 5l3 3-3 3"/></svg>';
 NAV_ICON.alerts  ='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
-const NAV_GROUPS=[['상담',['home','inbox','consult','quote','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','report','online']]];
-const NAV_LABEL={home:'홈', inbox:'상담', consult:'상담 입력', quote:'견적서', customer:'내 고객', alerts:'CRM', stats:'처리현황'};
+const NAV_GROUPS=[['상담',['home','inbox','assign','consult','quote','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','report','online']]];
+const NAV_LABEL={home:'홈', inbox:'상담', consult:'상담 입력', quote:'견적서', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'처리현황'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
 const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
 const CALC_URL ='https://www.samsungsh.co.kr/main/html.php?htmid=service/calc_subscribe.html';
@@ -2878,7 +2884,7 @@ function syncNav(){
     return `<div class="grp">${g}</div>`+items.map(x=>`<button class="it${x.active?' active':''}" onclick="goTab('${x.t}');sideClose()">${NAV_ICON[x.t]||''}<span>${esc(x.label)}</span>${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join(''); }).join('');
   /* 하단 탭바 : 앞 4개 + 더보기(서랍) */
   /* 하단 4칸은 매장에서 손이 가장 많이 가는 순서 — 판매 입력이 [더보기] 안에 숨지 않게 */
-  const vis=['home','inbox','consult','sale','stock','order','daily','report','online','quote','customer','alerts','stats'].map(tabInfo).filter(x=>x&&!x.hidden);
+  const vis=['home','inbox','consult','sale','assign','stock','order','daily','report','online','quote','customer','alerts','stats'].map(tabInfo).filter(x=>x&&!x.hidden);
   const first=vis.slice(0,4), rest=vis.slice(4);
   const restBadge=rest.reduce((a,x)=>a+(Number(x.badge)||0),0), restActive=rest.some(x=>x.active);
   bn.innerHTML=first.map(x=>`<button class="${x.active?'active':''}" onclick="goTab('${x.t}')">${NAV_ICON[x.t]||''}${esc(x.label)}${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join('')
@@ -2898,7 +2904,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') sideClose(); });
 function goTab(name, fromHistory){
   const b=document.querySelector(`.tab[data-tab="${name}"]`); if(!b || b.classList.contains('hidden')) return;
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  ['home','inbox','quote','customer','alerts','stats','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  ['home','inbox','assign','quote','customer','alerts','stats','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
   if(name==='report' && !REPORT_LOADED) loadReport();
   if(name==='online' && !OC_LOADED) loadOnlineDay();
@@ -2906,6 +2912,7 @@ function goTab(name, fromHistory){
   if(name==='order') initOrderTab();
   if(name==='customer') loadMyCustomers();
   if(name==='alerts') loadAlerts();
+  if(name==='assign' && !ALL_LOADED){ ALL_LOADED=true; loadAllConsults(); }
   if(name==='inbox'){ const dn=$('mcDevNote'); if(dn) dn.classList.toggle('hidden', !/개발/.test((STATUS&&STATUS.dept)||'')); }
   if(name==='daily' && $('m_month') && !$('m_month').value) setMonth(0);
   if(name==='consult') loadInqCodes();
@@ -3255,7 +3262,7 @@ function renderFlow(s){
   const steps=[
     /* 단계는 '내 일'의 상태로 나눈다 — 새 문의(연락 전) → 내 상담(상담중·보류) → 콜백 → 견적서 → 구매 확정. 날짜로 자르지 않는다 (어제 새벽에 온 것도 새 문의) */
     {k:'새 문의', v:pre,                              sub:'연락 전', go:"mcJump('pre')", warn:pre>0, tip:`나에게 배정됐는데 아직 통화하지 않은 문의${Number(s.today_mine||0)>0?` · 오늘 ${s.today_mine}건 들어옴`:''}. 온라인 폼 · 홈페이지 · 방문 접수 · 직접 입력 모두 포함`},
-    s.is_mgr ? {k:'배정', v:s.unassigned_n||0,      sub:'미배정',    go:"goTab('inbox')", alarm:Number(s.unassigned_n||0)>0} : null,
+    s.is_mgr ? {k:'배정', v:s.unassigned_n||0,      sub:'미배정',    go:"goTab('assign')", alarm:Number(s.unassigned_n||0)>0} : null,
     {k:'내 상담', v:oc.length-pre-hold,               sub:hold?`상담중 · 보류 ${hold}`:'상담중', go:"mcJump('ing')", tip:`통화한 뒤 진행 중인 상담${hold?` · 보류 ${hold}건은 상담 탭 [보류]`:''}`},
     {k:'콜백',   v:due,                              sub:late?'지난 약속 '+late:'오늘', go:"document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})", alarm:late>0, warn:due>0&&!late},
     {k:'견적서', v:(s.quotes||[]).length,            sub:'최근 90일', go:"goTab('quote')"},
@@ -3266,7 +3273,7 @@ function renderFlow(s){
 /* 홈 : 지금 챙길 것 — 없으면 안 보인다 */
 function renderHomeAlert(s){
   const al=$('homeAlert'); if(!al) return; const items=[];
-  if(s.is_mgr && Number(s.unassigned_n||0)>0) items.push(`<button type="button" class="al bad" onclick="goTab('inbox')"><b>미배정 문의 ${s.unassigned_n}건</b><span>담당자를 정해 주세요 ›</span></button>`);
+  if(s.is_mgr && Number(s.unassigned_n||0)>0) items.push(`<button type="button" class="al bad" onclick="goTab('assign')"><b>미배정 문의 ${s.unassigned_n}건</b><span>담당자를 정해 주세요 ›</span></button>`);
   const late=(s.callbacks||[]).filter(x=>x.overdue).length;
   if(late) items.push(`<button type="button" class="al warn" onclick="document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})"><b>지난 콜백 ${late}건</b><span>약속 시각이 지났습니다 ›</span></button>`);
   al.innerHTML=items.join(''); al.classList.toggle('hidden', !items.length);
@@ -3308,7 +3315,7 @@ function renderAlerts(){
 function msgSend(name, phone){ $('msgTo').textContent = `받는 사람: ${name||'-'}${phone?' · '+phone:''}`; $('msgDlg').classList.remove('hidden'); }
 function msgClose(){ $('msgDlg').classList.add('hidden'); }
 function alOpenQuote(no){ goTab('quote'); const q=$('qt_q'); if(q){ q.value=no; quoteFilter(); } }
-function alOpenConsult(name){ goTab('inbox'); if(STATUS&&STATUS.is_mgr){ $('all_q').value=name; loadAllConsults(); } $('mc_q').value=name; toolsToggle('mcTools',true); MC_FLT='all'; const f=$('mc_flt'); if(f) f.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all')); mcSearch(); }
+function alOpenConsult(name){ const mgr=!!(STATUS&&STATUS.is_mgr); goTab(mgr?'assign':'inbox'); if(mgr){ $('all_q').value=name; loadAllConsults(); return; } $('mc_q').value=name; toolsToggle('mcTools',true); MC_FLT='all'; const f=$('mc_flt'); if(f) f.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all')); mcSearch(); }
 document.addEventListener('click', e=>{ const c=e.target.closest('#al_kind .chip'); if(!c) return;
   AL_KIND=c.dataset.v||''; $('al_kind').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); renderAlerts(); });
 /* ═══ 내 고객 : 내가 상담·판매한 고객 전부 — 마지막 상태·상담 횟수·지난 날짜, 줄을 누르면 이력이 아래로 펼쳐진다 ═══ */
@@ -3425,7 +3432,7 @@ async function homeFind(){
 }
 /* 찾은 검색어 그대로 상담 탭으로 — 점장님은 전체 상담·배정, 담당자는 내 상담 */
 function findOpen(){
-  const q=$('home_q').value.trim(); goTab('inbox');
+  const q=$('home_q').value.trim(); goTab((STATUS&&STATUS.is_mgr)?'assign':'inbox');
   if(STATUS&&STATUS.is_mgr){ const sg=$('all_scope'); if(sg){ ALL_SCOPE='all'; sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all')); }
     $('all_q').value=q; loadAllConsults(); setTimeout(()=>{ const el=$('allCard'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },80); }
   else { $('mc_q').value=q; toolsToggle('mcTools',true); MC_FLT='all'; const f=$('mc_flt'); if(f) f.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all'));
@@ -4179,7 +4186,7 @@ async function loadHandlerLoad(){
 }
 /* 이름을 누르면 아래 전체 상담 목록을 그 담당자로 걸러 준다 */
 function hlPick(name){
-  goTab('inbox');
+  goTab('assign');
   const q=$('all_q'); if(q){ q.value=name; }
   const seg=$('all_scope'); if(seg){ seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v==='open')); }
   if(typeof loadAllConsults==='function') loadAllConsults();
@@ -4425,8 +4432,7 @@ function stopRealtimeSubscription(){
 let INBOX_LAST=null;
 function inboxCheck(ib){
   if(!ib) return;
-  { const cnt=(ib.mine_open||0)+(STATUS&&STATUS.is_mgr?(ib.unassigned||0):0);
-    setTabBadge('inbox', cnt, ib.unassigned>0&&STATUS&&STATUS.is_mgr); syncNav(); }
+  { setTabBadge('inbox', ib.mine_open||0, false); if(STATUS&&STATUS.is_mgr) setTabBadge('assign', ib.unassigned||0, (ib.unassigned||0)>0); syncNav(); }
   if(INBOX_LAST===null){ INBOX_LAST=ib.last_id||0; return; }
   if((ib.last_id||0) > INBOX_LAST){
     INBOX_LAST=ib.last_id; const L=ib.last||{};
