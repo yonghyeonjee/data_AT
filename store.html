@@ -691,6 +691,7 @@ html.fs-big .item .a{text-align:left}
 html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 /* ── 상담 작업대 (내 상담 목록) ── */
 .cbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.tools-toggle{display:none}  /* 넓은 화면은 도구가 늘 펼쳐져 있다 — 폰 규칙은 모바일 보정 블록 */
 .csearchbox{position:relative;flex:1;min-width:180px;display:flex}
 .csearchbox .in{flex:1;padding-right:44px}
 .csearchbox .go{position:absolute;right:5px;top:5px;bottom:5px;width:34px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:calc(15px * var(--font-scale));cursor:pointer}
@@ -803,6 +804,11 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .side .lk small{margin-left:auto;font-size:calc(10.5px * var(--font-scale));color:#8792B8;font-weight:600}
 
 /* ═══ 모바일 보정 — 스타일시트 맨 끝: 앞의 규칙과 특이도가 같아도 여기가 이긴다 ═══ */
+@media (max-width:640px){
+  .tools-toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 14px;margin:0 0 10px;border:1.5px solid var(--line);border-radius:10px;background:#F7F8FB;color:var(--ink);font:inherit;font-size:calc(13px * var(--font-scale));font-weight:700;cursor:pointer;text-align:left}
+  .tools-toggle i{margin-left:auto;font-style:normal;font-weight:600;color:var(--navy)}
+  .tools{display:none} .tools.open{display:block}
+}
 @media(max-width:999px){
   /* 서랍 : --side-w 는 넓은 화면의 고정 메뉴용(34vw). 폰에서 그대로 쓰면 122px 이 돼 글자가 전부 두 줄로 꺾인다 */
   .side{width:min(86vw, 340px)}
@@ -926,7 +932,6 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel" id="tab-home">
     <div class="flow" id="homeFlow" aria-label="일의 흐름"></div>
     <div class="alert hidden" id="homeAlert"></div>
-    <div class="home-kpi" id="homeKpi"></div>
     <div class="cta2"><button onclick="goTab('consult')">＋ 상담 입력</button><button class="alt" onclick="openQuote()">견적서 발행 ↗</button></div>
     <div class="card" id="findCard">
       <h2>찾기 <span>상담 · 견적서 한 번에</span></h2>
@@ -961,13 +966,18 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <input class="in" id="all_q" placeholder="이름 · 번호 · 모델" onkeydown="if(event.key==='Enter')loadAllConsults()">
         <button class="btn ghost sm" onclick="loadAllConsults()">조회</button>
       </div>
+      <button type="button" class="tools-toggle" id="allToolsBtn" onclick="toolsToggle('allTools')" aria-expanded="false">⌕ 기간 · 출처 <i>펼치기</i></button>
+      <div class="tools" id="allTools">
       <div class="prow" id="all_period" style="margin-top:8px"></div>
       <div class="chips filter" id="all_hd" role="radiogroup" aria-label="출처" style="margin-top:8px"></div>
+      </div>
       <div class="chips filter" id="all_hd2" role="radiogroup" aria-label="담당" style="margin-top:8px"></div>
       <div class="list" id="allList" style="margin-top:14px"><div class="empty">불러오는 중…</div></div>
     </div>
     <div class="card" id="mcCard">
       <h2>내 상담 <span id="mcHead"></span></h2>
+      <button type="button" class="tools-toggle" id="mcToolsBtn" onclick="toolsToggle('mcTools')" aria-expanded="false">⌕ 찾기 · 기간 <i>펼치기</i></button>
+      <div class="tools" id="mcTools">
       <div class="cbar">
         <div class="csearchbox"><input class="in" id="mc_q" placeholder="이름 · 번호 뒷자리 · 상담번호 · 모델 · 내용으로 찾기" autocomplete="off" onkeydown="if(event.key==='Enter')mcSearch()"><button type="button" class="go" onclick="mcSearch()" aria-label="찾기">⌕</button></div>
         <button class="btn sm ghost" onclick="mcClearQ()">지우기</button>
@@ -975,6 +985,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button class="btn sm ghost" id="mc_openall" onclick="mcOpenAll()">모두 펼치기</button>
       </div>
       <div class="prow" id="mc_period"></div>
+      </div>
       <div class="seg sm cflt" id="mc_flt">
         <button type="button" data-v="open" class="on">미완료 <i>0</i></button>
         <button type="button" data-v="hold">보류 <i>0</i></button>
@@ -1004,11 +1015,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel hidden" id="tab-quote">
     <div class="intro"><b>견적서</b>는 홈페이지 견적서 페이지에서 만들고, 여기서 찾아 고객에게 보냅니다. 상담 줄의 <b>견적서 만들기</b>를 누르면 고객 정보가 채워진 채 열립니다.</div>
     <div class="cta2"><button onclick="openQuote()">견적서 발행 ↗</button><button class="alt" onclick="openCalc()">구독료 계산기 ↗</button></div>
-    <div class="cbar" style="margin-bottom:10px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
-    <div class="prow" id="qt_period"></div>
     <div class="card" id="qtCard">
-      <h2>내 견적서 <span id="qtSub">최근 90일</span><span style="margin-left:auto"><button class="btn sm ghost" onclick="openQuote()" style="margin:0">견적서 발행 ↗</button></span></h2>
-      <div class="list" id="qtList"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
+      <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
+    <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
+    <div class="prow" id="qt_period"></div>
+      <div class="list" id="qtList" style="margin-top:12px"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
     </div>
   </section>
 
@@ -3245,6 +3256,12 @@ async function cuToggle(key){
       <div class="hrow"><div class="hl"><b>${dt(o.at)}</b><span>${esc(o.product||'')}</span></div>
         <div class="hb">${esc([o.channel,o.kind,o.status].filter(Boolean).join(' · '))} · ${won(o.amount)}${o.refund?` (환불 ${won(o.refund)})`:''}${o.handler&&o.handler!==ME?` · 담당 ${esc(o.handler)}`:''}</div></div>`).join(''):'<div class="empty sm">구매 기록이 없습니다</div>'}</div>`;
 }
+/* 폰에서 찾기·기간 도구 접기/펼치기 — 값이 들어 있으면(검색어·기간) 자동으로 펼친다 */
+function toolsToggle(id, force){ const box=$(id), btn=$(id+'Btn'); if(!box||!btn) return;
+  const open = force!==undefined ? !!force : !box.classList.contains('open');
+  box.classList.toggle('open',open); btn.setAttribute('aria-expanded', open?'true':'false'); btn.querySelector('i').textContent = open?'접기':'펼치기'; }
+function toolsAuto(){ const mc=($('mc_q')&&$('mc_q').value.trim())||periodOf('mc').from||periodOf('mc').to; if(mc) toolsToggle('mcTools',true);
+  const al=periodOf('all').from||periodOf('all').to; if(al) toolsToggle('allTools',true); }
 /* ═══ 기간 : 캘린더 두 칸 + 빠른 선택(전체·7일·30일·이 달). 목록마다 같은 모양, 값은 periodOf(pfx) 로 읽는다 ═══ */
 function periodBar(pfx, onChange){
   const host=$(pfx+'_period'); if(!host) return;
@@ -3290,16 +3307,13 @@ function findOpen(){
   const q=$('home_q').value.trim(); goTab('inbox');
   if(STATUS&&STATUS.is_mgr){ const sg=$('all_scope'); if(sg){ ALL_SCOPE='all'; sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all')); }
     $('all_q').value=q; loadAllConsults(); setTimeout(()=>{ const el=$('allCard'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },80); }
-  else { $('mc_q').value=q; MC_FLT='all'; const f=$('mc_flt'); if(f) f.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all'));
+  else { $('mc_q').value=q; toolsToggle('mcTools',true); MC_FLT='all'; const f=$('mc_flt'); if(f) f.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all'));
     mcSearch(); setTimeout(()=>{ const el=$('mcCard'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },80); }
 }
 function renderHome(s){
   const cbs=s.callbacks||[], oc=s.my_open_consults||[], mc=s.my_customers||[];
   const due=cbs.filter(x=>x.overdue||x.today).length;
-  $('homeKpi').innerHTML=`<button class="${due?'bad':''}" onclick="document.getElementById('cbList').scrollIntoView({behavior:'smooth'})"><div class="v">${due}</div><div class="k">오늘 콜백</div></button>
-    <button onclick="mcJump('open')"><div class="v">${oc.length}</div><div class="k">진행중 상담</div></button>
-    <button class="ok" onclick="goTab('customer')"><div class="v">${s.my_customer_count||0}</div><div class="k">내 고객</div></button>
-    <button class="${(s.open_sales||[]).filter(x=>x.mine).length?'warn':''}" onclick="goTab('sale')"><div class="v">${(s.open_sales||[]).filter(x=>x.mine).length}</div><div class="k">확정 대기</div></button>`;
+  /* 홈 KPI 줄은 뺐다 — 흐름 띠(renderFlow)가 같은 숫자를 보여준다 */
   if(MC_LOADED) loadMyConsults(MC_OFF, true);
   $('cbSub').textContent=cbs.length?`${cbs.length}건 · 지난 약속 ${cbs.filter(x=>x.overdue).length}`:'';
   $('cbList').innerHTML=cbs.length?cbs.map(x=>{ const [d,hm]=fmtWhen(x.at); return `
@@ -4018,11 +4032,11 @@ function renderAllConsults(){
     <div class="item oc"><div>
       <div class="p">${x.name?`<a href="javascript:void 0" onclick="ocToConsult('${esc(x.ref||'')}','${esc(x.name)}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 고객으로 상담 입력 열기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a>`:'<span style="color:var(--muted)">이름 없음</span>'} ${x.interest?`<span class="tag 일시불">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag" style="background:#EEF2FF;color:#2F5BEA">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag" style="background:#F3F4F7;color:#646D7C">유입 ${esc(x.via)}</span>`:''}
         <span class="tag hd">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='진행전'?'<span class="tag new">진행 전</span>':x.result==='보류'?'<span class="tag" style="background:#FBF1DC;color:#8A5A00">보류</span>':''}${x.method?`<span class="tag mth-t">${esc(x.method)}</span>`:''}${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담 ${x.prior}건">${Number(x.prior)+1}회째</span>`:''}${Number(x.quote_n)>0?`<span class="tag" title="견적서 ${x.quote_n}건">견적 ${x.quote_n}</span>`:''}</div>
-      <div class="m">${esc(x.at)} · ${esc(x.route||'')}${x.phone?' · '+esc(x.phone):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.content?' · '+esc(x.content):''}</div>
+      <div class="m">${esc(fmtAt(x.at))} · ${esc(x.route||'')}${x.phone?' · '+esc(x.phone):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.content?' · '+esc(x.content):''}</div>
       ${x.last_move?`<div class="mv">${esc(x.last_move.from||'미배정')} → ${esc(x.last_move.to)} · ${esc(x.last_move.by)} 배정 · ${esc(x.last_move.at)}</div>`:''}</div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}
-        <button class="mini" onclick="ocToConsult('${esc(x.ref||'')}','${esc(x.name||'')}','${esc(x.tel||'')}','${esc(x.interest||'')}')">상담 이동</button>
-        <button class="mini ok" onclick="asgOpen([${x.id}],'${esc(x.name||'')}')">배정</button>
+        <button class="mini" onclick="ocToConsult('${esc(x.ref||'')}','${esc(x.name||'')}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 고객으로 새 상담을 적습니다">＋ 새 상담</button>
+        <button class="mini ok" onclick="asgOpen([${x.id}],'${esc(x.name||'')}')">${x.handler?'담당 바꾸기':'배정'}</button>
         ${x.handler!==ME?`<button class="mini" onclick="asgTo2(${x.id})">내가 맡기</button>`:''}</div></div>`).join('')
     :'<div class="empty">해당하는 상담이 없습니다</div>')
     + (ALL_ROWS.length>per ? `<div class="pager">${pgBar('allcon',ALL_PG,ALL_ROWS.length,'allGo')}</div>` : '')
