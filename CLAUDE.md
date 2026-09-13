@@ -219,7 +219,7 @@ end $outer$;
 - **알림 탭 이름은 'CRM'** (대표님이 좋아하는 이름. '알림 내역'→'알림 보내기'→'CRM' 순으로 바뀜). 목록 맨 위에 항상 (예시) 줄 하나 — 자동 알림이 쌓이는 모양 + [상담 열기]·[메시지 보내기].
   **문서·화면의 호칭은 존대**: 점장님 · 대표님 · 프로님 (담당자·고객은 그대로).
 - (옛 이름) — 줄마다 [메시지 보내기] → `#msgDlg` "개발 전" 안내창. '자동 알림 (개발 전)' 카드에 예정 템플릿 3개(견적서 유효기한 안내 · 콜백 당일 안내 · 상담 뒤 감사 메시지). 센드온이 붙으면 여기서 템플릿을 고르고 보내며, 보낸 내역은 같은 목록에 쌓인다.
-- **알림 내역 탭 (`alerts`, `fn_store_alerts`)** — 견적서 보냄·열람(quote_share) · 배정(consult_assign) · 새 문의(외부 접수) · 콜백, 최근 90일. 문자 알림은 '개발중' 표시(`.devtag`), 견적서 보내기의 [문자로 보내기]도 개발중 태그.
+- **알림 내역 탭 (`alerts`, `fn_store_alerts`)** — 견적서 보냄·열람(quote_share) · 배정(consult_assign) · 새 문의(외부 접수) · 콜백, 최근 90일. 문자 알림은 '개발중' 표시(`.devtag`). 견적서 보내기의 [문자로 보내기 (mobile)] 는 개발중 태그를 뺐다 (2026-09-13) — 휴대폰이면 `sms:` 로 문자앱을 열고, PC 면 링크 복사.
 - **상담 [테스트로] (mvp_121)** — 펼친 줄 맨 아래, dept 가 개발·온라인인 담당자에게만. `fn_store_consult_update` p_action='test' 가 hidden_*='테스트' 로 숨겨 목록·통계에서 뺀다. 복구는 관리자 문의 관리 [삭제됨].
   **담당자가 개발 계정(dept='개발': 지용현·test)이면 자동으로 테스트 숨김** — 트리거 `trg_consult_dev_is_test`(BEFORE insert/update of handler).
   **개발 계정은 테스트 숨김 건을 자기 화면에서 본다 (mvp_123)** — `crm.consult_scoped`(이제 crm.consult 직접) 와 `fn_store_consults_my` 가 `hidden_reason like '테스트%'` 를 `core.f_staff_is_dev(dc.me)` 일 때만 통과.
@@ -230,7 +230,7 @@ end $outer$;
 - **테스트 견적서 제외 (mvp_122)** — `core.f_quote_is_test(quote_no,name,counselor)`: 문의 관리 플래그(hidden/is_test) | 이름 테스트 패턴(홍길동·이순신·지용현·테스트·test·자음만·숫자만) | 담당이 개발 계정.
   `fn_store_quotes`(견적서 탭·홈 찾기) 와 `fn_store_alerts` 견적서 줄에서 뺀다. 견적서를 테스트로 넘기려면 관리자 문의 관리 [견적] 에서 [테스트로 표시]/[숨기기].
 - **휴가 입력은 팝업** — 달력 날짜를 누르면 `#lvAdd`(.lvmask/.lvdlg) 창이 뜨고 누구·시작·종료·메모를 넣는다. 두 번 눌러 기간 잡던 방식은 없앴다(LV_PICK 은 표시용).
-- **문자 발송은 나중에 센드온(Sendon) API 로 붙인다 (예정)** — 붙일 자리: ① 견적서 보내기 창의 [문자로 보내기] (`QS_CAN_SMS` 가 false 라 지금은 링크 복사, `qsMsg(d)` 가 문자 본문을 이미 만든다)
+- **문자 발송은 나중에 센드온(Sendon) API 로 붙인다 (예정)** — 붙일 자리: ① 견적서 보내기 창의 [문자로 보내기 (mobile)] (휴대폰은 `sms:` 문자앱, PC 는 `QS_CAN_SMS` 가 false 라 링크 복사. `qsMsg(d)` 가 문자 본문을 이미 만든다)
   ② 알림 내역 탭의 '문자 알림' 카드 (`fn_store_alerts` 의 `sms` 키가 상태를 준다 — 지금은 '개발중') ③ 보낸 기록은 `crm.send_log`(buyer_key·channel·campaign·sent_at·status·error_msg, 현재 0건) 에 쌓아 알림 내역에 'sms' kind 로 합친다.
   키는 `core.api_key` 방식이 아니라 서버(Edge Function 또는 DB `extensions.http_post`) 쪽에 두고 화면에는 절대 넣지 않는다. 컨테이너에서 외부 HTTP 는 막히므로 실제 연동 테스트는 Supabase 쪽에서 한다.
 - **상담 상세 보기 팝업 + 상담 입력 고객 고정 헤더 (mvp_126)** — `fn_store_consult_detail(p_code,p_id)` 가 한 건의 전부(완료일 `done_at` = 결과가 상담완료·거절·구매완료·확인완료·종료일 때 updated_at, `journal` = notes 를 ' / ' 로 나눈 진행 기록, 배정 이력, 견적서, 연결 주문, `others` = 같은 고객(buyer_key 또는 번호 10자리 일치)의 다른 상담)를 준다.
