@@ -692,6 +692,7 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 /* ── 상담 작업대 (내 상담 목록) ── */
 .cbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
 .tools-toggle{display:none}  /* 넓은 화면은 도구가 늘 펼쳐져 있다 — 폰 규칙은 모바일 보정 블록 */
+.legend{margin:6px 0 10px;font-size:calc(12px * var(--font-scale));color:var(--muted);line-height:1.6} .legend b{color:var(--ink);font-weight:700}
 .csearchbox{position:relative;flex:1;min-width:180px;display:flex}
 .csearchbox .in{flex:1;padding-right:44px}
 .csearchbox .go{position:absolute;right:5px;top:5px;bottom:5px;width:34px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:calc(15px * var(--font-scale));cursor:pointer}
@@ -956,7 +957,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <!-- ── 상담 : 내 상담 · 배정 ── -->
   <section class="panel hidden" id="tab-inbox">
     <div class="intro"><b>내 상담을 처리하는 화면</b>입니다. 찾고, 상태를 바꾸고, 견적서를 열고, 구매로 넘기는 일이 전부 여기서 됩니다.
-      <details><summary>사용 방법</summary><ol><li><i>1</i><span><b>콜백 약속</b>: 상담에서 콜백 예정을 잡으면 여기에 시간순으로 뜹니다. 전화 버튼으로 바로 걸고, 끝나면 완료를 누르세요. 지난 약속은 빨간색입니다.</span></li><li><i>2</i><span><b>내 상담</b>: 상태(미완료·보류·완료·거절)로 골라 보고, 이름·번호·모델로 찾습니다. 처음 열면 <b>미완료</b>만 보입니다.</span></li><li><i>3</i><span><b>여러 건 한 번에</b>: 왼쪽 네모를 켜거나 <b>전체선택</b>을 누른 뒤 위의 버튼을 누르면 고른 건 전부에 같은 처리가 됩니다.</span></li><li><i>4</i><span><b>상담 완료가 곧 판매는 아닙니다</b>. 구매까지 갔으면 <b>구매 확정</b>, 안 샀으면 <b>상담완료</b>를 누르세요.</span></li></ol></details>
+      <details><summary>사용 방법</summary><ol><li><i>1</i><span><b>콜백 약속</b>: 상담에서 콜백 예정을 잡으면 여기에 시간순으로 뜹니다. 전화 버튼으로 바로 걸고, 끝나면 완료를 누르세요. 지난 약속은 빨간색입니다.</span></li><li><i>2</i><span><b>내 상담</b>: 상태(미완료·보류·완료·거절)로 골라 보고, 이름·번호·모델로 찾습니다. 처음 열면 <b>미완료</b>만 보입니다.</span></li><li><i>3</i><span><b>여러 건 한 번에</b>: 체크박스를 클릭하거나 <b>전체선택</b>을 누른 뒤 위의 버튼을 누르면 고른 건 전부에 같은 처리가 됩니다.</span></li><li><i>4</i><span><b>상담 완료가 곧 판매는 아닙니다</b>. 구매까지 갔으면 <b>구매 확정</b>, 안 샀으면 <b>상담완료</b>를 누르세요.</span></li></ol></details>
     </div>
     <div class="card hidden" id="allCard">
       <h2>전체 상담 · 배정 <span id="allSub">점장 · 대표만 보입니다</span></h2>
@@ -994,6 +995,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button type="button" data-v="all">전체 <i>0</i></button>
         <button type="button" data-v="trash" title="삭제한 상담 — 7일 안에는 되살릴 수 있습니다">휴지통 <i>0</i></button>
       </div>
+      <div class="legend"><b>연락 전</b> 아직 통화 안 한 문의 · <b>상담중</b> 통화한 뒤 진행 중 · <b>보류</b> 고객 사정으로 멈춤 · <b>완료</b> 상담 끝(판매 아님) · <b>구매함</b> 판매로 이어짐</div>
       <div class="bulkbar">
         <label class="allck"><input type="checkbox" id="mc_all" onchange="mcToggleAll(this.checked)"> 전체선택</label>
         <b id="mc_selN">고른 건 없음</b>
@@ -1107,7 +1109,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
             <button type="button" data-v="직판">직판</button>
           </div>
         </div>
-        <div class="f"><label>단계 <span class="req">*</span><span class="hint">매출=미확정</span></label>
+        <div class="f"><label>단계 <span class="req">*</span><span class="hint">매출 = 아직 미확정(설치·배송 전)</span></label>
           <div class="seg" id="s_stage">
             <button type="button" data-v="매출" class="on open">매출</button>
             <button type="button" data-v="판매완료">판매완료</button>
@@ -1122,7 +1124,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="hist hidden" id="s_hist"></div>
       <div class="grid2">
         <div class="f"><label>고객명 <span class="hint">비워도 됨</span></label><input class="in" id="s_name" placeholder="홍길동" autocomplete="off"></div>
-        <div class="f"><label>휴대폰 <span class="hint">CRM 연결 키</span></label><input class="in" type="tel" id="s_phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)"></div>
+        <div class="f"><label>휴대폰 <span class="hint">번호로 같은 고객을 묶습니다</span></label><input class="in" type="tel" id="s_phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)"></div>
       </div>
       <div class="f"><label>상품명 <span class="req">*</span><span class="hint">DPS 화면 그대로</span></label><input class="in" id="s_product" placeholder="예: 비스포크 AI 콤보 세탁건조기" autocomplete="off" list="productList"><datalist id="productList"></datalist></div>
       <div class="grid3">
@@ -1136,7 +1138,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="grid2">
         <div class="f"><label>결제</label>
           <select class="in" id="s_pay"><option value="">선택 안 함</option><option>삼성카드</option><option>타사카드</option><option>현금</option><option>구독(월납)</option><option>기타</option></select></div>
-        <div class="f"><label>상담번호 <span class="hint">있으면 자동 연결</span></label><input class="in" id="s_consult" placeholder="SC260902-000001" autocomplete="off"></div>
+        <div class="f"><label>상담번호 <span class="hint">상담에서 넘어온 건이면 자동으로 채워집니다</span></label><input class="in" id="s_consult" placeholder="SC260902-000001" autocomplete="off"></div>
       </div>
       <div class="nextbox">
         <div class="nb-t">다음 구매 관심 <span class="hint">적으면 이 고객이 가망고객으로 이어집니다 (선택)</span></div>
@@ -1237,7 +1239,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="grid3">
         <div class="f"><label>상담 상태 <span class="hint">상담완료 ≠ 판매</span></label>
           <select class="in" id="c_result" onchange="cResultChanged()">
-            <option value="진행전">상담 진행 전</option>
+            <option value="진행전">연락 전 (아직 통화 안 함)</option>
             <option value="진행중" selected>상담중</option>
             <option value="보류">보류</option>
             <option value="상담완료">상담 완료 (구매 없음)</option>
@@ -1256,7 +1258,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="grid2">
           <div class="f"><label>구매 구분</label>
             <div class="seg" id="c_kind"><button type="button" data-v="일시불" class="on">일시불</button><button type="button" data-v="구독">구독</button><button type="button" data-v="직판">직판</button></div></div>
-          <div class="f"><label>모델코드 <span class="hint">알면</span></label><input class="in" id="c_buy_model" placeholder="RQ33DB7411AP" style="text-transform:uppercase" autocomplete="off"></div>
+          <div class="f"><label>모델코드 <span class="hint">알면 적기</span></label><input class="in" id="c_buy_model" placeholder="RQ33DB7411AP" style="text-transform:uppercase" autocomplete="off"></div>
         </div>
       </div>
       </div>
@@ -3169,14 +3171,14 @@ function renderFlow(s){
   const wait=(s.open_sales||[]).filter(x=>x.mine).length;
   const steps=[
     /* 문의 = 오늘 밖에서 들어온 것(온라인 폼·홈페이지·방문 접수) — 직접 입력한 상담은 이미 '상담'이라 안 센다 */
-    {k:'문의',   v:s.today_consults||0,             sub:Number(s.today_mine||0)>0?`오늘 접수 · 내 것 ${s.today_mine}`:'오늘 접수', go:"goTab('inbox')"},
+    {k:'접수',   v:s.today_consults||0,             sub:Number(s.today_mine||0)>0?`오늘 들어온 문의 · 내 것 ${s.today_mine}`:'오늘 들어온 문의', go:"goTab('inbox')", tip:'오늘 온라인 폼 · 홈페이지 · 방문 접수 태블릿으로 들어온 문의입니다. 직접 입력한 상담은 세지 않습니다'},
     s.is_mgr ? {k:'배정', v:s.unassigned_n||0,      sub:'미배정',    go:"goTab('inbox')", alarm:Number(s.unassigned_n||0)>0} : null,
-    {k:'상담',   v:(s.my_open_consults||[]).length,  sub:(()=>{ const pre=(s.my_open_consults||[]).filter(x=>x.result==='진행전').length; return pre?`미완료 · 연락 전 ${pre}`:'미완료'; })(), go:"mcJump('open')", warn:(s.my_open_consults||[]).some(x=>x.result==='진행전')},
+    {k:'내 상담', v:(s.my_open_consults||[]).length,  sub:(()=>{ const pre=(s.my_open_consults||[]).filter(x=>x.result==='진행전').length; return pre?`미완료 · 연락 전 ${pre}`:'미완료'; })(), go:"mcJump('open')", warn:(s.my_open_consults||[]).some(x=>x.result==='진행전'), tip:'내가 맡은 미완료 상담. 연락 전 = 아직 통화 안 한 건'},
     {k:'콜백',   v:due,                              sub:late?'지난 약속 '+late:'오늘', go:"document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})", alarm:late>0, warn:due>0&&!late},
     {k:'견적서', v:(s.quotes||[]).length,            sub:'최근 90일', go:"goTab('quote')"},
     {k:'구매 확정', v:wait,                           sub:'확정 대기', go:"goTab('sale')", warn:wait>0},
   ].filter(Boolean);
-  el.innerHTML=steps.map((st,i)=>`<button type="button" class="step${st.alarm?' alarm':st.warn?' warn':''}" onclick="${st.go}"><i>${i+1}</i><b>${st.k}</b><span class="v">${st.v}</span><small>${st.sub}</small></button>`).join('<span class="arr" aria-hidden="true">›</span>');
+  el.innerHTML=steps.map((st,i)=>`<button type="button" class="step${st.alarm?' alarm':st.warn?' warn':''}" onclick="${st.go}"${st.tip?` title="${esc(st.tip)}"`:''}><i>${i+1}</i><b>${st.k}</b><span class="v">${st.v}</span><small>${st.sub}</small></button>`).join('<span class="arr" aria-hidden="true">›</span>');
 }
 /* 홈 : 지금 챙길 것 — 없으면 안 보인다 */
 function renderHomeAlert(s){
@@ -3346,7 +3348,7 @@ function mcOpenAll(){ MC_ALLOPEN=!MC_ALLOPEN;
   const b=$('mc_openall'); if(b) b.textContent = MC_ALLOPEN ? '모두 접기' : '모두 펼치기'; }
 const MC_PAGE = () => pgSize('mc');
 const RES_UI = {
-  '진행전'  : ['pre',   '진행 전'],
+  '진행전'  : ['pre',   '연락 전'],
   '진행중'  : ['open',  '상담중'],
   '보류'    : ['hold',  '보류'],
   '상담완료': ['done',  '상담완료'],
@@ -3417,7 +3419,7 @@ function renderMyConsults(){
       A.push(x.bucket==='hold'
         ? `<button class="mini" onclick="mcAct(${x.id},'resume','다시 진행')">다시 진행</button>`
         : `<button class="mini warn" onclick="mcAct(${x.id},'hold','보류')">보류</button>`);
-      if(x.result==='진행전') A.push(`<button class="mini" onclick="mcAct(${x.id},'start','상담 시작')">상담 시작</button>`);
+      if(x.result==='진행전') A.push(`<button class="mini" onclick="mcAct(${x.id},'start','상담 시작')" title="고객과 통화했으면 누르세요 — 상태가 상담중으로 바뀝니다">연락함 → 상담중</button>`);
       DZ.push(`<button class="mini bad" onclick="mcAct(${x.id},'reject','거절')">거절</button>`);
     } else {
       /* 상담완료 뒤에 구매로 이어지는 일이 잦다 — '다시 진행'을 거치지 않고 바로 판매로 */
@@ -3484,7 +3486,7 @@ function mcSelSync(){
   const n=MC_SEL.size, all=$('mc_all');
   { const bb=document.querySelector('.bulkbar'); if(bb) bb.classList.toggle('idle', !n); }
   if(all){ all.checked = n>0 && n===MC_ROWS.length; all.indeterminate = n>0 && n<MC_ROWS.length; }
-  $('mc_selN').textContent = n ? `${n}건 선택 (이 쪽)` : '왼쪽 네모를 켜면 여러 건을 한 번에 처리합니다';
+  $('mc_selN').textContent = n ? `${n}건 선택 (이 페이지)` : '체크박스를 클릭하면 여러 건을 한 번에 처리합니다';
   $('mc_acts').querySelectorAll('button').forEach(b=>b.disabled = !n || MC_BUSY || MC_FLT==='trash');
 }
 async function mcAct(id, action, what){
@@ -4032,7 +4034,7 @@ function renderAllConsults(){
   el.innerHTML=(ALL_ROWS.length?rows.map(x=>`
     <div class="item oc"><div>
       <div class="p">${x.name?`<a href="javascript:void 0" onclick="ocToConsult('${esc(x.ref||'')}','${esc(x.name)}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 고객으로 상담 입력 열기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a>`:'<span style="color:var(--muted)">이름 없음</span>'} ${x.interest?`<span class="tag 일시불">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag" style="background:#EEF2FF;color:#2F5BEA">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag" style="background:#F3F4F7;color:#646D7C">유입 ${esc(x.via)}</span>`:''}
-        <span class="tag hd">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='진행전'?'<span class="tag new">진행 전</span>':x.result==='보류'?'<span class="tag" style="background:#FBF1DC;color:#8A5A00">보류</span>':''}${x.method?`<span class="tag mth-t">${esc(x.method)}</span>`:''}${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담 ${x.prior}건">${Number(x.prior)+1}회째</span>`:''}${Number(x.quote_n)>0?`<span class="tag" title="견적서 ${x.quote_n}건">견적 ${x.quote_n}</span>`:''}</div>
+        <span class="tag hd">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='진행전'?'<span class="tag new">연락 전</span>':x.result==='보류'?'<span class="tag" style="background:#FBF1DC;color:#8A5A00">보류</span>':''}${x.method?`<span class="tag mth-t">${esc(x.method)}</span>`:''}${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담 ${x.prior}건">${Number(x.prior)+1}회째</span>`:''}${Number(x.quote_n)>0?`<span class="tag" title="견적서 ${x.quote_n}건">견적 ${x.quote_n}</span>`:''}</div>
       <div class="m">${esc(fmtAt(x.at))} · ${esc(x.route||'')}${x.phone?' · '+esc(x.phone):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.content?' · '+esc(x.content):''}</div>
       ${x.last_move?`<div class="mv">${esc(x.last_move.from||'미배정')} → ${esc(x.last_move.to)} · ${esc(x.last_move.by)} 배정 · ${esc(x.last_move.at)}</div>`:''}</div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}
