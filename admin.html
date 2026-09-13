@@ -564,6 +564,9 @@ textarea.in{height:auto}
 .chk{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;font-size:calc(12.5px * var(--font-scale));font-weight:600;color:var(--ink-2);cursor:pointer;user-select:none;white-space:nowrap}
 .chk input{accent-color:var(--navy);width:15px;height:15px;margin:0;cursor:pointer}
 .chk:has(input:checked){border-color:var(--navy);background:#EEF2FF;color:var(--navy)}
+.bulk{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 12px;border:1px solid var(--navy);background:#EEF2FF;border-radius:10px;margin:0 0 10px}
+.bulk b{font-size:calc(13px * var(--font-scale));color:var(--navy);margin-right:6px}
+.iqt .iqck,#iqAll{width:16px;height:16px;accent-color:var(--navy);cursor:pointer;margin:0}
 .switch{display:inline-flex;align-items:center;gap:8px;font-size:calc(12.5px * var(--font-scale));font-weight:600;color:var(--ink-2);cursor:pointer;padding:0 10px;height:36px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;user-select:none}
 .switch .sw{width:32px;height:18px;border-radius:9px;background:var(--line-2);position:relative;transition:.2s}
 .switch .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
@@ -1212,7 +1215,17 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <button class="btn sm ghost" id="iqCondClear" onclick="iqCondClear()" hidden>조건 지우기</button></div>
           </div>
           <div class="qmeta" id="iqMeta"></div>
+          <div class="bulk" id="iqBulk" hidden>
+            <b id="iqBulkN">0건 선택</b>
+            <button class="btn sm" onclick="iqBulk('hide')">숨기기</button>
+            <button class="btn sm ghost" onclick="iqBulk('test')">테스트로 표시</button>
+            <button class="btn sm ghost" onclick="iqBulk('real')">실제로 되돌리기</button>
+            <button class="btn sm ghost" onclick="iqBulk('restore')">복구</button>
+            <span style="flex:1"></span>
+            <button class="btn sm ghost" onclick="iqToggleAll(false)">선택 해제</button>
+          </div>
           <div class="tw"><table class="iqt"><thead><tr>
+            <th style="width:34px"><input type="checkbox" id="iqAll" title="이 페이지 전체 선택" onclick="iqToggleAll(this.checked)"></th>
             <th style="width:96px">접수</th><th style="width:104px">구분</th><th style="width:150px">고객</th>
             <th>관심 · 상품</th><th style="width:120px">목적</th><th style="width:130px">지역</th>
             <th>메모</th><th style="width:74px">담당</th><th style="width:78px">상태</th><th style="width:150px"></th>
@@ -2415,7 +2428,8 @@ async function loadInquiry(page){
   $('iqCount').textContent=`총 ${n(d.total||0)}건 · ${d.total?iqPage*LIM+1:0}~${Math.min(d.total||0,(iqPage+1)*LIM)}`;
   $('iqPg').innerHTML=pgBar('inquiry',iqPage,d.total||0,'loadInquiry');
   const cell=(v,cls)=>`<td><span class="ell ${cls||''}" title="${esc(v||'')}">${esc(v||'')||'<span class="note">—</span>'}</span></td>`;
-  $('tbInquiry').innerHTML=IQ_ROWS.map((r,i)=>`<tr${r.hidden?' style="opacity:.45"':''} onclick="if(!event.target.closest('button,a'))openInquiry(${i})">
+  $('tbInquiry').innerHTML=IQ_ROWS.map((r,i)=>`<tr${r.hidden?' style="opacity:.45"':''} onclick="if(!event.target.closest('button,a,input,label'))openInquiry(${i})">
+      <td><input type="checkbox" class="iqck" data-i="${i}" onclick="iqSelSync()"></td>
       <td><span class="mono" style="font-size:calc(11.5px * var(--font-scale))">${esc(r.at)}</span></td>
       <td><span class="tag ${IQ_TONE[r.form]||''}">${esc((r.form_label||'').replace(' 문의','').replace(' 접수',''))}</span>${r.is_test?'<span class="tag n" style="margin-left:3px">T</span>':''}${r.hidden?'<span class="tag bad" style="margin-left:3px">삭제</span>':''}</td>
       <td><b class="ell">${esc(r.name||'—')}</b>${r.tel?`<a class="sub" href="tel:${esc(r.tel)}" onclick="event.stopPropagation()">${esc(r.phone)}</a>`:''}</td>
@@ -2427,7 +2441,32 @@ async function loadInquiry(page){
         <button class="btn sm ghost" onclick="markInquiryTest(${i},${!r.is_test})">${r.is_test?'실제':'테스트'}</button>
         ${r.hidden?`<button class="btn sm ghost" onclick="restoreInquiry(${i})">복구</button>`
                   :`<button class="btn sm danger" onclick="delInquiry(${i})">삭제</button>`}</td></tr>`).join('')
-    ||'<tr><td colspan="10" class="note" style="text-align:center;padding:24px">이 조건에 해당하는 문의가 없습니다</td></tr>';
+    ||'<tr><td colspan="11" class="note" style="text-align:center;padding:24px">이 조건에 해당하는 문의가 없습니다</td></tr>';
+  iqSelSync();
+}
+/* ── 줄 체크박스 → 일괄 처리. 폼이 섞여 있어도 폼별로 나눠 보낸다 (fn_inquiry_flag 는 폼 하나씩) ── */
+function iqSelected(){ return [...document.querySelectorAll('#tbInquiry .iqck:checked')].map(x=>IQ_ROWS[Number(x.dataset.i)]).filter(Boolean); }
+function iqSelSync(){ const n=iqSelected().length, all=document.querySelectorAll('#tbInquiry .iqck').length;
+  $('iqBulk').hidden = n===0; $('iqBulkN').textContent=`${n}건 선택`;
+  const a=$('iqAll'); if(a){ a.checked = all>0 && n===all; a.indeterminate = n>0 && n<all; } }
+function iqToggleAll(on){ document.querySelectorAll('#tbInquiry .iqck').forEach(x=>x.checked=!!on); iqSelSync(); }
+async function iqBulk(action){
+  const rows=iqSelected(); if(!rows.length) return;
+  const L={hide:['숨기기','목록에서 숨깁니다. [삭제됨]에서 되살릴 수 있습니다.'], test:['테스트로 표시','테스트로 표시하고 통계에서 뺍니다.'],
+           real:['실제로 되돌리기','실제 문의로 되돌립니다.'], restore:['복구','숨긴 것을 목록에 되살립니다.']}[action];
+  const ok=await modal({title:`${rows.length}건 ${L[0]}`, ok:L[0], cancel:'취소', danger:action==='hide',
+    html:`<p style="font-size:calc(13.5px * var(--font-scale));line-height:1.8">${L[1]}</p>
+      <div class="note" style="max-height:180px;overflow:auto;line-height:1.7">${rows.slice(0,30).map(r=>esc(`${r.at} · ${r.form_label} · ${r.name||'—'}`)).join('<br>')}${rows.length>30?`<br>… 외 ${rows.length-30}건`:''}</div>`});
+  if(!ok) return;
+  const byForm={}; rows.forEach(r=>{ (byForm[r.form]=byForm[r.form]||[]).push(r.id); });
+  const args={hide:{p_hidden:true}, test:{p_is_test:true}, real:{p_is_test:false}, restore:{p_hidden:false}}[action];
+  let n=0, fail=0;
+  for(const [form,ids] of Object.entries(byForm)){
+    try{ await rpc('fn_inquiry_flag',Object.assign({p_form:form,p_ids:ids},args)); n+=ids.length; }
+    catch(e){ fail+=ids.length; toast(`${form}: ${e.message}`,'bad'); }
+  }
+  toast(`${n}건 ${L[0]} 완료${fail?` · ${fail}건 실패`:''}`, fail?'bad':'ok');
+  loadInquiry(iqPage);
 }
 /* 상태·담당 체크박스 — 여러 개 고를 수 있고, 고른 게 없으면 전체. 값은 쉼표로 묶어 서버로 간다 */
 function iqChecked(id){ const v=[...document.querySelectorAll('#'+id+' input:checked')].map(x=>x.value); return v.length?v.join(','):null; }
@@ -5245,7 +5284,7 @@ const PAGE_INFO={
   notify:{d:'잔디·카카오로 나가는 알림을 켜고 끄는 페이지입니다. 보내는 곳(채널)과 보낼 일(규칙)이 나뉘어 있습니다.',
     s:['먼저 [보내는 곳]에 잔디 웹훅 주소를 넣고 켭니다.','[보낼 일]에서 규칙을 켜면 그 일이 생길 때 자동으로 나갑니다.','문구의 {name} {phone} {summary} 자리는 실제 값으로 바뀝니다.','[테스트]로 실제 방에 한 번 보내보고 확인하세요.']},
   inbox:{d:'홈페이지 4개 폼(견적·구독·소모품/렌탈·VMS·B2B)과 매장 접수가 한 화면에 모입니다. 원래 견적은 견적표, 구독·매장은 접수함, 소모품/VMS는 상담에 흩어져 있던 것을 합친 목록입니다.',
-    s:['위 [전체/견적/구독/소모품·렌탈/VMS·B2B/매장] 버튼으로 폼별로 봅니다.','상태·담당 체크박스는 여러 개 고를 수 있습니다. 고른 게 없으면 전체이고, 검색어·기간과 함께 걸립니다.','연락처는 기본 가림입니다. [연락처 보기]를 켜면 감사로그에 남습니다.','아래 [고객 접수함]은 승인·반려 같은 처리를 하는 기존 화면입니다.']},
+    s:['위 [전체/견적/구독/소모품·렌탈/VMS·B2B/매장] 버튼으로 폼별로 봅니다.','상태·담당 체크박스는 여러 개 고를 수 있습니다. 고른 게 없으면 전체이고, 검색어·기간과 함께 걸립니다.','줄 앞 체크박스로 여러 건을 골라 한 번에 숨기기·테스트 표시·복구합니다. 맨 위 체크박스는 이 페이지 전체입니다.','연락처는 기본 가림입니다. [연락처 보기]를 켜면 감사로그에 남습니다.','아래 [고객 접수함]은 승인·반려 같은 처리를 하는 기존 화면입니다.']},
 };
 let DATA_STAMP='';
 function renderIntro(v){
