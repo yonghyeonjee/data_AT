@@ -1289,7 +1289,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </div>
       <div class="cstick hidden" id="c_stick" aria-live="polite">
         <div class="who"><b id="cs_name"></b><span class="ph" id="cs_phone"></span><span class="nth" id="cs_nth"></span><button type="button" class="x" onclick="custClear('c')" title="이 고객 연결을 풀고 빈 폼으로">다른 고객 ×</button></div>
-        <div class="note">이 고객으로 <b>새 상담 한 건이 추가</b>됩니다. 이전 상담은 지워지지 않고 그대로 남습니다.</div>
+        <div class="note" id="cs_note">이 고객으로 <b>새 상담 한 건이 추가</b>됩니다. 이전 상담은 지워지지 않고 그대로 남습니다.</div>
         <button type="button" class="fold" id="cs_foldBtn" aria-expanded="false" onclick="csFold()">이전 상담 <span id="cs_cnt">0</span>건 <i id="cs_foldI">보기 ▾</i></button>
         <div class="hlist" id="cs_list"></div>
       </div>
@@ -3842,6 +3842,11 @@ function csShow(o){ const box=$('c_stick'); if(!box) return;
   $('cs_cnt').textContent = n;
   $('cs_list').innerHTML = o.err ? `<div class="empty sm">${esc(o.err)}</div>` : (list&&n ? list.map(csRow).join('') : '<div class="empty sm">이전 상담이 없습니다 — 첫 상담입니다</div>');
   $('cs_foldBtn').classList.toggle('hidden', !list);
+  /* 같은 고객의 열린 상담은 하나만 — 내(또는 미배정) 진행 중 건은 저장할 때 '상담완료'로 정리된다 */
+  const openMine = (list||[]).filter(k=>['진행전','진행중','보류'].includes(k.result) && (!k.handler || k.handler===ME)).length;
+  $('cs_note').innerHTML = openMine
+    ? `저장하면 이 고객의 <b>진행 중인 이전 상담 ${openMine}건은 상담완료로 정리</b>되고 새 상담이 이어집니다. 지워지는 건 없고 기록은 그대로 남습니다.`
+    : `이 고객으로 <b>새 상담 한 건이 추가</b>됩니다. 이전 상담은 지워지지 않고 그대로 남습니다.`;
   /* 넓은 화면은 이전 상담을 바로 펼치고, 폰은 접어 둔다(폼이 가려지지 않게) */
   if(list && n && window.innerWidth>640 && !$('cs_list').classList.contains('open')) csFold(true); }
 function csFold(force){ const l=$('cs_list'), b=$('cs_foldBtn'); const open = force!==undefined ? !!force : !l.classList.contains('open');
@@ -4041,13 +4046,16 @@ async function submitConsult(){
           notes:'상담 '+r.ref+' 에서 바로 등록' }});
       }catch(e){ toast('상담은 저장됐지만 판매 등록에 실패했습니다: '+e.message,'bad'); }
     }
-    toast(sale ? `상담 저장 · 판매 ${won(buyAmt)} 함께 등록됨`
-               : (r.callback_at?`상담 저장됨 · 콜백 ${fmtWhen(r.callback_at).join(' ')} 예약`:'상담 저장됨'),'ok');
+    const closedN=(r.closed||[]).length;
+    toast((sale ? `상담 저장 · 판매 ${won(buyAmt)} 함께 등록됨`
+               : (r.callback_at?`상담 저장됨 · 콜백 ${fmtWhen(r.callback_at).join(' ')} 예약`:'상담 저장됨'))
+          + (closedN?` · 이전 진행 중 상담 ${closedN}건은 상담완료로 정리됨`:''),'ok');
     $('c_ref').classList.remove('hidden');
     $('c_ref').innerHTML = `상담번호 <b style="color:var(--ink);font-size:calc(15px * var(--font-scale))">${r.ref}</b>`
       + (sale?`<br>판매도 함께 등록됐습니다 (주문번호 ${esc(sale.order_no)}) — 배송·설치가 끝나면 <b>판매 입력 › 확정 대기</b>에서 판매완료로 바꾸세요`
              :`<br>나중에 구매로 이어지면 '상담' 탭에서 <b>구매 확정</b>을 누르면 됩니다`)
-      + (r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '상담' 탭에서 알려드립니다`:'');
+      + (r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '상담' 탭에서 알려드립니다`:'')
+      + (closedN?`<br>같은 고객의 이전 진행 중 상담 <b>${r.closed.map(esc).join(', ')}</b> 은 <b>상담완료</b>로 정리됐습니다 (기록은 남아 있고, 상세 보기에서 볼 수 있습니다)`:'');
     ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt',
      'c_purchase','c_buy_amt','c_buy_model','c_next','c_next_date','c_next_note','c_ch_etc','c_cat_etc','c_detail'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
     loadGifts(); custClear('c');
