@@ -3483,8 +3483,11 @@ let CU_ROWS=[], CU_DETAIL={}, CU_SEQ=0;
 function cuFillChannels(){ const sel=$('cu_ch'); if(!sel||!INQ||sel.options.length>1) return;
   sel.innerHTML='<option value="">전체 채널</option>'+(INQ.channels||[]).map(c=>`<option value="${esc(c.code)}">${esc(c.label)}</option>`).join(''); }
 async function loadMyCustomers(){
-  const box=$('mcuList'); if(!box) return; cuFillChannels();
+  const box=$('mcuList'); if(!box) return;
   const seq=++CU_SEQ; const pd=periodOf('cu');
+  /* 채널 목록(fn_inq_codes)은 상담 입력 탭에서만 불러왔었다 — 내 고객 탭을 먼저 열면 '전체 채널'만 보이던 버그 */
+  if(!INQ){ try{ await loadInqCodes(); }catch(e){} if(seq!==CU_SEQ) return; }
+  cuFillChannels();
   box.innerHTML='<div class="empty">불러오는 중…</div>';
   try{
     const rows=await rpc('fn_store_my_customers',{p_code:CODE,p_q:($('cu_q').value||'').trim()||null,p_from:pd.from,p_to:pd.to,p_channel:$('cu_ch').value||null});
