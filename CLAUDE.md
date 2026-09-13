@@ -212,6 +212,8 @@ end $outer$;
   '재연락' 이라는 말은 화면에서 전부 '콜백' 으로 통일했다. UAT T8 은 이제 [삭제]↔[구매 확정]·[완료] 거리를 잰다.
 - **알림 내역 탭 (`alerts`, `fn_store_alerts`)** — 견적서 보냄·열람(quote_share) · 배정(consult_assign) · 새 문의(외부 접수) · 콜백, 최근 90일. 문자 알림은 '개발중' 표시(`.devtag`), 견적서 보내기의 [문자로 보내기]도 개발중 태그.
 - **상담 [테스트로] (mvp_121)** — 펼친 줄 맨 아래, dept 가 개발·온라인인 담당자에게만. `fn_store_consult_update` p_action='test' 가 hidden_*='테스트' 로 숨겨 목록·통계에서 뺀다. 복구는 관리자 문의 관리 [삭제됨].
+  **담당자가 개발 계정(dept='개발': 지용현·test)이면 자동으로 테스트 숨김** — 트리거 `trg_consult_dev_is_test`(BEFORE insert/update of handler). 그래서 지용현 담당 상담은 담당자 화면 내 상담에 안 보이고
+  관리자 문의 관리 [삭제됨]/[테스트] 에서만 보인다. 실제 건을 지용현이 맡게 되면 담당을 다른 사람으로 바꾸면 숨김이 풀리진 않으니 [복구]까지 해야 한다.
 - **문자 발송은 나중에 센드온(Sendon) API 로 붙인다 (예정)** — 붙일 자리: ① 견적서 보내기 창의 [문자로 보내기] (`QS_CAN_SMS` 가 false 라 지금은 링크 복사, `qsMsg(d)` 가 문자 본문을 이미 만든다)
   ② 알림 내역 탭의 '문자 알림' 카드 (`fn_store_alerts` 의 `sms` 키가 상태를 준다 — 지금은 '개발중') ③ 보낸 기록은 `crm.send_log`(buyer_key·channel·campaign·sent_at·status·error_msg, 현재 0건) 에 쌓아 알림 내역에 'sms' kind 로 합친다.
   키는 `core.api_key` 방식이 아니라 서버(Edge Function 또는 DB `extensions.http_post`) 쪽에 두고 화면에는 절대 넣지 않는다. 컨테이너에서 외부 HTTP 는 막히므로 실제 연동 테스트는 Supabase 쪽에서 한다.
