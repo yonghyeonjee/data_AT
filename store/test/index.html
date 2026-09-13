@@ -695,6 +695,11 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .devtag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:#FFF4E5;color:#9A5B00;font-size:calc(11px * var(--font-scale));font-weight:700;vertical-align:middle;letter-spacing:0}
 .seg.cres button{flex:1}
 #alList .item .m{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.5}
+.statebar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:6px 0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#FAFBFD}
+.statebar .seg{display:flex;flex:1 1 260px;min-width:0} .statebar .seg button{flex:1;white-space:nowrap;padding:8px 4px;min-height:40px;font-size:calc(12.5px * var(--font-scale))}
+.statebar .lb{font-size:calc(12px * var(--font-scale));font-weight:800;color:var(--navy)}
+.statebar .seg button.off{opacity:.45;cursor:not-allowed} .statebar .seg button.rej:not(.on){color:#B91C1C}
+.statebar .hint{flex-basis:100%;font-size:calc(12px * var(--font-scale));color:var(--muted);line-height:1.5}
 .legend{margin:6px 0 10px;font-size:calc(12px * var(--font-scale));color:var(--muted);line-height:1.6} .legend b{color:var(--ink);font-weight:700}
 .csearchbox{position:relative;flex:1;min-width:180px;display:flex}
 .csearchbox .in{flex:1;padding-right:44px}
@@ -3481,7 +3486,7 @@ function renderMyConsults(){
       ? `<div class="meta" style="color:var(--sub)">구매 <b>${esc(x.bought||'-')}</b>${x.buy_amount?` · ${won(x.buy_amount)}`:''}</div>` : '';
     const nxt = (x.next_model||x.next_cat)
       ? `<div class="meta" style="color:var(--navy)">다음 <b>${esc(x.next_model||x.next_cat)}</b>${x.next_date?` (${String(x.next_date).slice(5).replace('-','/')})`:''}${x.next_note?` · ${esc(x.next_note)}`:''}</div>` : '';
-    const A=[], DZ=[];   /* DZ = 되돌리기 어려운 것(거절·삭제) — 아래 줄로 따로 뺀다 */
+    const A=[], A2=[], DZ=[];   /* A = 하는 일 · A2 = 새 상담·넘기기 · DZ = 되돌리기 어려운 것(삭제) — 줄을 나눈다 */
     const trash = MC_FLT==='trash';
     if(trash){
       if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
@@ -3489,24 +3494,13 @@ function renderMyConsults(){
         ? `<button class="mini ok" onclick="mcRestore(${x.id})">되살리기</button>`
         : `<span class="mini" style="opacity:.6" title="7일이 지나 점장·대표만 되살릴 수 있습니다">7일 지남</span>`);
     } else {
+    /* 1줄: 하는 일 — 전화 · 콜백 · 견적서 · 구매 확정.  2줄: 상태(시스템이 가진 상태 그대로 골라서 바꾼다).  3줄: 새 상담 · 넘기기 · 삭제 */
     if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
+    if(x.result!=='구매완료') A.push(`<button class="mini" onclick="ocPick(${x.id})" title="다음에 연락할 날짜·시간을 잡습니다 — 홈 [콜백 약속]에 뜹니다">📅 콜백</button>`);
     A.push(`<button class="mini" onclick="openQuote(${qArg})">견적서 ${x.quote?'열기':'만들기'} ↗</button>`);
-    if(x.bucket==='open'||x.bucket==='hold'){
-      A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}',${x.id})">구매 확정</button>`);
-      A.push(`<button class="mini" onclick="ocPick(${x.id})">재연락</button>`);
-      A.push(`<button class="mini" onclick="mcAct(${x.id},'done','상담완료')" title="이 상담을 끝냅니다 (판매 아님 · 다시 열 수 있습니다)">상담완료</button>`);
-      A.push(x.bucket==='hold'
-        ? `<button class="mini" onclick="mcAct(${x.id},'resume','다시 진행')">다시 진행</button>`
-        : `<button class="mini warn" onclick="mcAct(${x.id},'hold','보류')">보류</button>`);
-      if(x.result==='진행전') A.push(`<button class="mini" onclick="mcAct(${x.id},'start','상담 시작')" title="고객과 통화했으면 누르세요 — 상태가 상담중으로 바뀝니다">연락함 → 상담중</button>`);
-      DZ.push(`<button class="mini bad" onclick="mcAct(${x.id},'reject','거절')">거절</button>`);
-    } else {
-      /* 상담완료 뒤에 구매로 이어지는 일이 잦다 — '다시 진행'을 거치지 않고 바로 판매로 */
-      if(x.result!=='구매완료') A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}',${x.id})">구매 확정</button>`);
-      A.push(`<button class="mini" onclick="mcAct(${x.id},'resume','다시 진행')">다시 진행</button>`);
-    }
-    A.push(`<button class="mini" onclick="ocToConsult('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 건은 그대로 두고, 같은 고객으로 새 상담을 하나 더 적습니다">＋ 새 상담</button>`);
-    A.push(`<button class="mini" onclick="asgOpen([${x.id}],'${nm}')" title="다른 담당자에게 넘기기">넘기기</button>`);
+    if(x.result!=='구매완료') A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}',${x.id})">구매 확정</button>`);
+    A2.push(`<button class="mini" onclick="ocToConsult('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 건은 그대로 두고, 같은 고객으로 새 상담을 하나 더 적습니다">＋ 새 상담</button>`);
+    A2.push(`<button class="mini" onclick="asgOpen([${x.id}],'${nm}')" title="다른 담당자에게 넘기기">넘기기</button>`);
     DZ.push(`<button class="mini" style="color:var(--bad,#B3261E)" onclick="mcDelete(${x.id},'${nm}')" title="실수로 넣은 상담 — 통계에서 빠지고 7일 안에 되살릴 수 있습니다">삭제</button>`);
     }
     /* 상담 방법 : 대면 · 전화 · 메시지 — 누르면 바로 바뀐다 */
@@ -3546,7 +3540,9 @@ function renderMyConsults(){
           <span class="note-in" style="margin:0 2px 0 0;font-size:calc(11.5px * var(--font-scale))">상담방법</span>${mth}</div>
         <div class="meta">${meta}</div>${buy}${nxt}${qlist}${delInfo}
         ${x.moved?`<div class="meta" style="color:var(--faint)">${esc(x.moved.from||'미배정')} → 나 · ${esc(x.moved.by)} 배정 · ${esc(x.moved.at)}</div>`:''}
-        <div class="acts">${A.join('')}${DZ.length?`<div class="danger-wrap">${DZ.join('')}</div>`:''}</div>
+        <div class="acts">${A.join('')}</div>
+        ${trash?'':stateBar(x)}
+        <div class="acts">${A2.join('')}${DZ.length?`<div class="danger-wrap">${DZ.join('')}</div>`:''}</div>
         <div class="ocpick hidden" id="ocpick_${x.id}">
           <div class="q"><button onclick="ocQuick(${x.id},0,'14:00')">오늘 2시</button><button onclick="ocQuick(${x.id},1,'10:00')">내일 10시</button><button onclick="ocQuick(${x.id},1,'14:00')">내일 2시</button><button onclick="ocQuick(${x.id},7,'10:00')">일주일 뒤</button></div>
           <div class="r"><input class="in" type="date" id="ocd_${x.id}"><select class="in" id="oct_${x.id}">${['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'].map(t=>`<option${t==='14:00'?' selected':''}>${t}</option>`).join('')}</select><button class="mini ok" onclick="ocSave(${x.id})">저장</button><button class="mini" onclick="$('ocpick_${x.id}').classList.add('hidden')">취소</button></div>
@@ -3567,6 +3563,23 @@ function mcSelSync(){
   if(all){ all.checked = n>0 && n===MC_ROWS.length; all.indeterminate = n>0 && n<MC_ROWS.length; }
   $('mc_selN').textContent = n ? `${n}건 선택 (이 페이지)` : '체크박스를 클릭하면 여러 건을 한 번에 처리합니다';
   $('mc_acts').querySelectorAll('button').forEach(b=>b.disabled = !n || MC_BUSY || MC_FLT==='trash');
+}
+/* ═══ 상태 바 : 시스템이 가진 상태 그대로 한 줄에 — 지금 상태가 켜져 있고, 다른 걸 누르면 그 상태로 바뀐다 ═══ */
+const STATE_STEPS=[
+  {v:'진행전',  l:'연락 전', act:null,     hint:'아직 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요.'},
+  {v:'진행중',  l:'상담중',  act:'resume', hint:'통화한 뒤 진행 중입니다. 다음 연락은 [콜백]으로 잡으세요.'},
+  {v:'보류',    l:'보류',    act:'hold',   hint:'고객 사정으로 잠시 멈춤. 목록에는 남습니다.'},
+  {v:'상담완료',l:'완료',    act:'done',   hint:'상담이 끝났고 사지 않았습니다. 샀으면 [구매 확정]을 누르세요.'},
+  {v:'거절',    l:'거절',    act:'reject', hint:'고객이 거절했습니다.'},
+  {v:'구매완료',l:'구매함',  act:null,     hint:'구매로 이어졌습니다. 판매 입력에 올라가 있습니다.'},
+];
+function stateBar(x){
+  const cur = x.result==='종료' ? '상담완료' : x.result==='확인완료' ? '상담완료' : x.result;
+  const step = STATE_STEPS.find(t=>t.v===cur) || STATE_STEPS[1];
+  const btns = STATE_STEPS.filter(t=>t.v!=='구매완료' || cur==='구매완료').map(t=>{
+    const on = t.v===cur; const act = on ? null : (t.v==='진행중' && cur==='진행전' ? 'start' : t.act);
+    return `<button type="button" class="${on?'on':''}${act?'':' off'}${t.v==='거절'?' rej':''}" ${act?`onclick="mcAct(${x.id},'${act}','${t.l}')"`:'disabled'} title="${esc(t.hint)}">${t.l}</button>`; }).join('');
+  return `<div class="statebar"><span class="lb">상태</span><span class="seg sm">${btns}</span><small class="hint">${esc(step.hint)}</small></div>`;
 }
 async function mcAct(id, action, what){
   try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:action});
@@ -4204,11 +4217,11 @@ function giftAcct(){ const L=(GIFTS&&GIFTS.links)||{};
   try{ navigator.clipboard&&navigator.clipboard.writeText(`${L.login_id||''}\t${L.login_pw||''}`); }catch(e){}
   alert(txt+'\n\n(아이디·비밀번호는 클립보드에 복사됨)'); }
 
-/* ═══ 진행중 상담 : 보류 · 재연락 일정 · 종료 ═══ */
+/* ═══ 진행중 상담 : 보류 · 콜백 일정 · 종료 ═══ */
 async function ocAct(id, action, at, memo){ /* 재연락·보류 등 — 목록도 같이 새로 그린다 */
   if(action==='close' && !confirm('이 상담을 종료할까요? (목록에서 빠집니다)')) return;
   try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:action,p_at:at||null,p_memo:memo||null});
-    toast({hold:'보류로 바꿨습니다',resume:'다시 진행합니다',close:'종료했습니다',callback:'재연락 일정을 잡았습니다 — 콜백 약속에 뜹니다'}[action]||'저장됨','ok');
+    toast({hold:'보류로 바꿨습니다',resume:'다시 진행합니다',close:'종료했습니다',callback:'콜백 일정을 잡았습니다 — 콜백 약속에 뜹니다'}[action]||'저장됨','ok');
     await loadStatus(); render(); }catch(e){ toast(e.message,'bad'); } }
 function ocPick(id){ const el=$('ocpick_'+id); if(!el) return; document.querySelectorAll('.ocpick').forEach(x=>{ if(x!==el) x.classList.add('hidden'); });
   el.classList.toggle('hidden'); if(!el.classList.contains('hidden')){ const d=$('ocd_'+id); if(!d.value) d.value=todayStr(1); } }
