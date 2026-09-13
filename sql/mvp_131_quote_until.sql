@@ -1,0 +1,6 @@
+-- mvp_131 · 견적서 마감일(유효기한) 을 담당자 화면에 (2026-09-13)
+-- crm.quote 에 별도 컬럼은 없고 summary->>'until' ('YYYY.MM.DD', 견적 페이지 validDays 7) 이 마감일이다.
+-- 부분 치환 (pg_get_functiondef) :
+--   fn_store_quotes        : 'monthly', q.monthly, → 'monthly', q.monthly, 'until', q.summary->>'until',
+--   fn_store_consults_my   : quotes jsonb_build_object 에 'until', q.summary->>'until'
+--   fn_store_consult_detail: quotes jsonb_build_object 에 'until', q.summary->>'until'

@@ -108,6 +108,8 @@ html.resuming body::after{content:'이어서 여는 중…';position:fixed;inset
 .topbar h1{font-size:calc(18px * var(--font-scale));font-weight:800;letter-spacing:-.02em}
 .topbar h1 small{font-weight:500;color:var(--muted);font-size:calc(13px * var(--font-scale));margin-left:6px}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:calc(12px * var(--font-scale));font-weight:600;background:var(--surface);border:1px solid var(--line)}
+.pill.btnp{cursor:pointer;font:inherit;font-size:calc(12px * var(--font-scale));font-weight:700;color:var(--navy);min-height:32px;padding:0 10px}
+.pill.btnp:hover{background:var(--accent-soft)}
 .pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .tabs{display:flex;gap:4px;margin-top:12px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--line)}
@@ -263,6 +265,9 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .mini.bad{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
 /* 고객 찾기 */
 .csearch{position:relative}
+.csearch .in,.csearchbox .in,#all_q{border:2px solid #8CC7C0;background:#F3FAF9;font-weight:600}
+.csearch .in:focus,.csearchbox .in:focus,#all_q:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(15,118,110,.14)}
+.csearch .in::placeholder,.csearchbox .in::placeholder,#all_q::placeholder{color:#6E8C88;font-weight:500}
 .csearch .in{padding-right:44px}
 .csearch .go{position:absolute;right:6px;top:6px;bottom:6px;width:34px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-weight:800;cursor:pointer}
 .cres{margin-top:8px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
@@ -885,6 +890,7 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
   .tools-toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 14px;margin:0 0 10px;border:1.5px solid var(--line);border-radius:10px;background:#F7F8FB;color:var(--ink);font:inherit;font-size:calc(13px * var(--font-scale));font-weight:700;cursor:pointer;text-align:left}
   .tools-toggle i{margin-left:auto;font-style:normal;font-weight:600;color:var(--navy)}
   .tools{display:none} .tools.open{display:block}
+  .pill.btnp{min-height:40px;padding:0 9px} .pill.btnp span{display:none}   /* 폰은 아이콘만 (터치 40px) */
   .lvdlg.wide{width:100%;max-height:94vh;padding:14px 12px 12px}
   .dv .kv{grid-template-columns:78px 1fr}
   .cstick{padding:8px 10px} .cstick .hlist{max-height:32vh} .cstick .who .x{padding:0 2px}
@@ -993,6 +999,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div style="display:flex;gap:6px">
         <span class="pill" id="pillToday">오늘 0건</span>
         <span class="pill warn hidden" id="pillUnclosed"></span>
+        <button type="button" class="pill btnp" id="btnLogout" onclick="logoutStore()" title="로그아웃 — 담당자 코드를 다시 입력합니다" aria-label="로그아웃"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5M15 12H3M21 3v18"/></svg><span>로그아웃</span></button>
       </div>
     </div>
     <div class="tabs">
@@ -3532,8 +3539,11 @@ function periodBar(pfx, onChange){
 const periodOf=pfx=>({ from:($(pfx+'_from')||{}).value||null, to:($(pfx+'_to')||{}).value||null });
 
 /* ═══ 견적서 목록 — 홈 찾기와 견적서 탭이 같이 쓴다 ═══ */
+/* 견적서 마감일(유효기한, summary.until 'YYYY.MM.DD') — 지났으면 빨간 태그 */
+function qUntil(u, small){ if(!u) return ''; const d=String(u).replace(/\./g,'-').slice(0,10); const over=d<todayStr(); const md=d.slice(5).replace('-','/');
+  return `<span class="tag${over?'':''}" style="${over?'background:#FDECEC;color:#B3261E':'background:#FBF1DC;color:#8A5A00'}${small?';font-size:calc(10.5px * var(--font-scale));padding:1px 6px':''}" title="견적 유효기한 ${d}">${over?'마감 지남':'마감'} ${md}</span>`; }
 function quoteRow(x){ return `
-    <div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span></div>
+    <div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qUntil(x.until)}</div>
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.models||'')}${x.final?` · 최종 ${won(x.final)}`:''}${x.monthly?` · 월 ${won(x.monthly)}`:''}${x.memo?' · '+esc(x.memo):''}</div></div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button>${/개발|온라인/.test((STATUS&&STATUS.dept)||'')?`<button class="mini" style="opacity:.8" onclick="qtTest('${esc(x.no)}','${esc(x.name||'')}')" title="테스트로 만든 견적 — 목록·알림에서 뺍니다">테스트로</button>`:''}${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}')">상담 입력</button>`:''}</div></div>`; }
 async function qtTest(no, name){
@@ -3686,7 +3696,7 @@ function renderMyConsults(){
     /* 상담 방법 : 대면 · 전화 · 메시지 — 누르면 바로 바뀐다 */
     const mth = trash ? '' : `<span class="mth" title="상담 방법">${['대면','전화','메시지'].map(m=>`<button type="button" class="${x.method===m?'on':''}" onclick="mcMethod(${x.id},'${m}')">${m}</button>`).join('')}</span>`;
     const qn = (x.quotes||[]).length;
-    const qlist = qn ? `<div class="meta qlist"><b>견적서 ${qn}건</b> ${x.quotes.map(q=>`<span class="qlrow"><button type="button" class="ql" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(x.tel||'')}'})" title="${esc(q.models||'')}${q.counselor?' · '+esc(q.counselor):''}">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button><button type="button" class="ql send" title="고객에게 보내기" onclick="qsOpen('${esc(q.no)}','${nm}')">보내기</button></span>`).join('')}</div>` : '';
+    const qlist = qn ? `<div class="meta qlist"><b>견적서 ${qn}건</b> ${x.quotes.map(q=>`<span class="qlrow"><button type="button" class="ql" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(x.tel||'')}'})" title="${esc(q.models||'')}${q.counselor?' · '+esc(q.counselor):''}">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>${qUntil(q.until,true)}<button type="button" class="ql send" title="고객에게 보내기" onclick="qsOpen('${esc(q.no)}','${nm}')">보내기</button></span>`).join('')}</div>` : '';
     const delInfo = trash ? `<div class="meta" style="color:var(--bad,#B3261E)">삭제 ${String(x.deleted_at||'').slice(5,16).replace('T',' ')}${x.delete_reason?' · '+esc(x.delete_reason):''}</div>` : '';
     const isOpen = MC_OPEN.has(x.id);
     /* 접힌 줄에 남길 한 가지 — 관심 품목이 있으면 그것, 없으면 모델, 그것도 없으면 유입 */
@@ -3949,7 +3959,7 @@ function cdHTML(d){
   const what=kv([['관심 품목',esc(d.interest||'')],['모델',esc(d.model||'')],['상세',esc(d.detail||'')],['예상 금액',d.expected?won(d.expected):''],['구매 예정',d.expect_date?csDt(d.expect_date):''],['멤버십',esc(d.membership||'')],['수신 동의',d.consent?'동의':''],['사은품',d.gift?esc(d.gift)+(d.gift_amount?` (${won(d.gift_amount)})`:''):'']]);
   const next=(d.next_cat||d.next_model||d.next_date||d.next_note)?kv([['다음 관심',esc([d.next_cat,d.next_model].filter(Boolean).join(' '))],['예정',d.next_date?csDt(d.next_date):''],['메모',esc(d.next_note||'')]]):'';
   const buy=(d.bought||d.order)?kv([['구매 품목',esc(d.bought||(d.order&&d.order.product)||'')],['주문',d.order?`${esc(d.order.no||'')} · ${csDt(d.order.at)} · ${won(d.order.amount)}${d.order.status?' · '+esc(d.order.status):''}`:'']]):'';
-  const quotes=(d.quotes||[]).length?`<div class="acts">${d.quotes.map(q=>`<button type="button" class="mini" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(d.tel||'')}'})">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>`).join('')}</div>`:'';
+  const quotes=(d.quotes||[]).length?`<div class="acts">${d.quotes.map(q=>`<button type="button" class="mini" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(d.tel||'')}'})">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>${qUntil(q.until,true)}`).join('')}</div>`:'';
   const moves=(d.moves||[]).length?`<ul class="jl">${d.moves.map(m=>`<li>${esc(m.from||'미배정')} → <b>${esc(m.to||'')}</b> · ${esc(m.by||'')} · ${at(m.at)}${m.note?' · '+esc(m.note):''}</li>`).join('')}</ul>`:'';
   const journal=(d.journal||[]).length?`<ul class="jl">${d.journal.map(j=>`<li>${esc(j)}</li>`).join('')}</ul>`:'';
   const others=(d.others||[]);
@@ -4728,6 +4738,9 @@ const LOCK_IDLE_MIN=30; let LOCK_T=null, LOCKED=false;
 function lockTouch(){ if(LOCKED || !CODE || $('app').classList.contains('hidden')) return; clearTimeout(LOCK_T); LOCK_T=setTimeout(()=>lockStore('자리를 비운 지 '+LOCK_IDLE_MIN+'분이 지나 잠겼습니다. 담당자 코드를 다시 입력하세요.'), LOCK_IDLE_MIN*60e3); }
 ['mousemove','keydown','click','touchstart','scroll'].forEach(ev=>document.addEventListener(ev, lockTouch, {passive:true}));
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') lockTouch(); });
+/* 로그아웃 = 담당자 코드를 지우고 처음 화면으로 (아래 '담당자 변경'과 같다) */
+function logoutStore(){ if(!confirm('로그아웃할까요? 다시 쓰려면 담당자 코드를 입력합니다.')) return;
+  try{ localStorage.removeItem('staff_code'); sessionStorage.removeItem('st_open'); }catch(e){} location.reload(); }
 function lockStore(why){ if(LOCKED) return; LOCKED=true;
   document.querySelector('#pinScreen .sub').textContent = why || '담당자 코드 4자리를 입력하세요';
   $('pinInput').value=''; $('pinErr').textContent=''; $('pinScreen').classList.remove('hidden'); $('app').classList.add('hidden'); setTimeout(()=>$('pinInput').focus(),50); }
