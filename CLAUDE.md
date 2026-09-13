@@ -220,6 +220,8 @@ end $outer$;
   **개발 계정은 테스트 숨김 건을 자기 화면에서 본다 (mvp_123)** — `crm.consult_scoped`(이제 crm.consult 직접) 와 `fn_store_consults_my` 가 `hidden_reason like '테스트%'` 를 `core.f_staff_is_dev(dc.me)` 일 때만 통과.
   테스트 견적도 개발 계정에게는 보인다. 통계·매장 담당자에게는 여전히 안 보임. 내 상담 범례에 "개발 계정이라 테스트 건도 보입니다" 가 붙는다.
   실제 건을 지용현이 맡게 되면 담당을 바꿔도 숨김이 풀리진 않으니 관리자 문의 관리 [삭제됨]에서 [복구]까지 해야 한다.
+- **테스트 이름 견적서도 저장된다 (mvp_124)** — 전엔 `fn_submit_quote` 가 이름에 test·테스트 가 있으면 건너뛰어(skipped) [고객에게 보내기]가 notfound 였다.
+  이제 저장하고 트리거 `trg_quote_test_flag` 가 문의 관리 플래그(hidden+is_test)를 자동으로 붙인다. 발행 직후 링크가 안 만들어지면 사유가 "견적서가 아직 저장되지 않았습니다 — [발행 (시트 저장)]…" 로 나온다.
 - **테스트 견적서 제외 (mvp_122)** — `core.f_quote_is_test(quote_no,name,counselor)`: 문의 관리 플래그(hidden/is_test) | 이름 테스트 패턴(홍길동·이순신·지용현·테스트·test·자음만·숫자만) | 담당이 개발 계정.
   `fn_store_quotes`(견적서 탭·홈 찾기) 와 `fn_store_alerts` 견적서 줄에서 뺀다. 견적서를 테스트로 넘기려면 관리자 문의 관리 [견적] 에서 [테스트로 표시]/[숨기기].
 - **휴가 입력은 팝업** — 달력 날짜를 누르면 `#lvAdd`(.lvmask/.lvdlg) 창이 뜨고 누구·시작·종료·메모를 넣는다. 두 번 눌러 기간 잡던 방식은 없앴다(LV_PICK 은 표시용).
