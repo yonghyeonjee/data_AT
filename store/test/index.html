@@ -224,6 +224,24 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .total b{font-size:calc(20px * var(--font-scale));font-variant-numeric:tabular-nums}
 
 .list{display:flex;flex-direction:column;gap:8px}
+/* 내 고객 아코디언 */
+.cuitem{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.cuitem .head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:12px 14px;min-height:44px;cursor:pointer;user-select:none}
+.cuitem .head:hover{background:#FAFBFD}
+.cuitem .who{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:calc(14px * var(--font-scale));font-weight:700;flex:1 1 220px;min-width:0}
+.cuitem .who .ph{font-weight:500;color:var(--muted);font-size:calc(12.5px * var(--font-scale))}
+.cuitem .who .mine{font-size:calc(11px * var(--font-scale))} .cuitem .who .mine.cb{background:#FFF4E5;color:#9A5B00}
+.cuitem .meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:calc(12.5px * var(--font-scale));color:var(--muted);flex:1 1 100%}
+.cuitem .meta .ch{color:var(--navy);font-weight:600} .cuitem .meta .it{color:var(--ink)} .cuitem .meta .stale{color:#B45309;font-weight:700}
+.cuitem .chev{position:absolute;right:14px;top:12px;color:var(--faint);font-size:14px;transition:transform .15s} .cuitem{position:relative} .cuitem.open .chev{transform:rotate(180deg)}
+.cuitem .body{border-top:1px solid var(--line);padding:10px 14px 12px;background:#FAFBFD}
+.cuitem .acts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px} .cuitem .acts .mini{min-height:40px;display:inline-flex;align-items:center;text-decoration:none}
+.cuitem .acts .mini.pri{background:var(--navy);color:#fff;border-color:var(--navy)}
+.cuitem .hsec{margin-top:8px} .cuitem .ht{font-size:calc(12.5px * var(--font-scale));font-weight:800;color:var(--ink);margin:6px 0 2px} .cuitem .ht small{font-weight:500;color:var(--muted);margin-left:4px}
+.cuitem .hrow{padding:8px 0;border-top:1px dashed var(--line);font-size:calc(13px * var(--font-scale));line-height:1.55}
+.cuitem .hl{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px} .cuitem .hmuted{color:var(--muted);font-size:calc(12px * var(--font-scale))}
+.cuitem .hb{color:var(--ink-2,#2B3140);margin-top:2px} .cuitem .hc{margin-top:3px;color:var(--ink);white-space:pre-wrap;word-break:break-word} .cuitem .hcb{margin-top:3px;color:#B45309;font-weight:700}
+.cuitem .empty.sm{padding:8px 0;font-size:calc(12.5px * var(--font-scale))}
 .item{display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
 .item .t{font-size:calc(12px * var(--font-scale));color:var(--faint);font-variant-numeric:tabular-nums}
 .item .p{font-weight:600;font-size:calc(14px * var(--font-scale))}
@@ -995,7 +1013,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
 
   <!-- ── 내 고객 ── -->
   <section class="panel hidden" id="tab-customer">
-    <div class="intro"><b>내 고객</b>은 판매·상담에 고객명과 번호를 남기면 자동으로 생깁니다. 이름을 누르면 그 고객으로 상담 입력이 열립니다.</div>
+    <div class="intro"><b>내 고객</b>은 내가 상담하거나 판매한 고객 전부입니다. 판매·상담에 고객명과 번호를 남기면 자동으로 생깁니다. 줄을 누르면 상담·구매 이력이 아래로 펼쳐집니다.</div>
     <div class="card" id="mcuFind">
       <h2>고객 찾기 <span>이름 · 번호 뒷자리 — 내 고객이 아니어도 찾아집니다</span></h2>
       <div class="csearch"><input class="in" id="mcu_q" placeholder="홍길동 / 1234" autocomplete="off" onkeydown="if(event.key==='Enter')mcuFind()"><button type="button" class="go" onclick="mcuFind()" aria-label="찾기">⌕</button></div>
@@ -1003,7 +1021,13 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
     <div class="card" id="mcuCard">
       <h2>내 고객 <span id="mcSub"></span></h2>
-      <div class="list" id="mcuList"><div class="empty">아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.</div></div>
+      <div class="csearch"><input class="in" id="cu_q" placeholder="이름 · 번호 뒷자리" autocomplete="off" onkeydown="if(event.key==='Enter')loadMyCustomers()"><button type="button" class="go" onclick="loadMyCustomers()" aria-label="찾기">⌕</button></div>
+      <div class="prow" id="cu_period" style="margin-top:8px"></div>
+      <div class="row2" style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label for="cu_ch" class="lbl" style="font-size:calc(12.5px * var(--font-scale));color:var(--muted);font-weight:600">문의 채널</label>
+        <select class="in" id="cu_ch" style="flex:1;min-width:160px" onchange="loadMyCustomers()"><option value="">전체 채널</option></select>
+      </div>
+      <div class="list" id="mcuList" style="margin-top:12px"><div class="empty">불러오는 중…</div></div>
     </div>
   </section>
 
@@ -1613,7 +1637,7 @@ async function start(){
   }catch(e){}
   $('s_date').value = todayStr(); $('c_date').value = todayStr(); $('d_date').value = todayStr(-1);
   cResultChanged();
-  periodBar('mc',()=>loadMyConsults(0)); periodBar('all',()=>loadAllConsults()); periodBar('qt',()=>quoteFilter()); periodBar('st',()=>loadStats());
+  periodBar('mc',()=>loadMyConsults(0)); periodBar('all',()=>loadAllConsults()); periodBar('qt',()=>quoteFilter()); periodBar('st',()=>loadStats()); periodBar('cu',()=>loadMyCustomers());
   render();
   if(!MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
   REQ_SEEN=null; loadRequests(); reqPoll(); loadGifts(); askNotify();
@@ -2782,6 +2806,7 @@ function goTab(name, fromHistory){
   if(name==='stock' && !STK_LOADED) loadStk();
   if(name==='order') initOrderTab();
   if(name==='consult') routeTipShow();
+  if(name==='customer') loadMyCustomers();
   if(name==='consult') loadInqCodes();
   if(!fromHistory){ try{ (history.state&&history.state.tab===name) ? history.replaceState({tab:name},'','#'+name) : history.pushState({tab:name},'','#'+name); }catch(e){} }
   gfabShow(name);
@@ -3147,6 +3172,66 @@ async function mcuFind(){
         <div class="h">${x.orders?`구매 ${x.orders}건 · ${won(x.spent)}`:'구매 이력 없음'}${x.consults?` · 상담 ${x.consults}건`:''}</div></div><div class="pick">상담 입력 ›</div></div>`).join('');
   }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
 }
+/* ═══ 내 고객 : 내가 상담·판매한 고객 전부 — 마지막 상태·상담 횟수·지난 날짜, 줄을 누르면 이력이 아래로 펼쳐진다 ═══ */
+let CU_ROWS=[], CU_DETAIL={}, CU_SEQ=0;
+function cuFillChannels(){ const sel=$('cu_ch'); if(!sel||!INQ||sel.options.length>1) return;
+  sel.innerHTML='<option value="">전체 채널</option>'+(INQ.channels||[]).map(c=>`<option value="${esc(c.code)}">${esc(c.label)}</option>`).join(''); }
+async function loadMyCustomers(){
+  const box=$('mcuList'); if(!box) return; cuFillChannels();
+  const seq=++CU_SEQ; const pd=periodOf('cu');
+  box.innerHTML='<div class="empty">불러오는 중…</div>';
+  try{
+    const rows=await rpc('fn_store_my_customers',{p_code:CODE,p_q:($('cu_q').value||'').trim()||null,p_from:pd.from,p_to:pd.to,p_channel:$('cu_ch').value||null});
+    if(seq!==CU_SEQ) return;
+    CU_ROWS=rows||[]; renderMyCustomers();
+  }catch(e){ if(seq===CU_SEQ) box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
+}
+const cuAgo=d=> d==null?'':(d<=0?'오늘':d===1?'어제':`${d}일 전`);
+function renderMyCustomers(){
+  const box=$('mcuList'); const rows=CU_ROWS; const filtered=!!($('cu_q').value.trim()||periodOf('cu').from||periodOf('cu').to||$('cu_ch').value);
+  $('mcSub').textContent = rows.length ? `${rows.length}명${filtered?' · 조건 적용':''}` : '';
+  if(!rows.length){ box.innerHTML=`<div class="empty">${filtered?'이 조건에 맞는 고객이 없습니다. 기간·채널을 [전체]로 두면 다 보입니다.':'아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.'}</div>`; return; }
+  box.innerHTML=rows.map(x=>{
+    const ru=RES_UI[x.last_result]||(x.last_result?['pre',x.last_result]:null);
+    const d=Number(x.days); const stale=x.consult_n>0 && d>=30;
+    return `<div class="cuitem" id="cu_${esc(x.key)}">
+      <div class="head" role="button" tabindex="0" aria-expanded="false" onclick="cuToggle('${esc(x.key)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cuToggle('${esc(x.key)}')}">
+        <div class="who"><b>${esc(x.name||'—')}</b><span class="ph">${x.phone||'번호 없음'}</span>${x.consent?'<span class="mine">수신동의</span>':''}${x.open_callback?'<span class="mine cb">콜백 대기</span>':''}</div>
+        <div class="meta">${ru?`<span class="res ${ru[0]}">${esc(ru[1])}</span>`:'<span class="res pre">구매만</span>'}<span>상담 ${x.consult_n||0}회</span><span class="${stale?'stale':''}">${cuAgo(d)}</span>${x.last_channel?`<span class="ch">${esc(x.last_channel)}</span>`:''}${x.last_interest?`<span class="it">${esc(x.last_interest)}</span>`:''}${x.orders?`<span>구매 ${x.orders}건 ${won(x.spent)}</span>`:''}</div>
+        <span class="chev" aria-hidden="true">▾</span>
+      </div>
+      <div class="body hidden" id="cub_${esc(x.key)}"></div>
+    </div>`; }).join('');
+}
+async function cuToggle(key){
+  const it=$('cu_'+key), body=$('cub_'+key); if(!it||!body) return;
+  const open=!it.classList.contains('open');
+  it.classList.toggle('open',open); body.classList.toggle('hidden',!open);
+  it.querySelector('.head').setAttribute('aria-expanded', open?'true':'false');
+  if(!open) return;
+  const x=CU_ROWS.find(r=>r.key===key)||{};
+  const acts=`<div class="acts"><button class="mini pri" onclick="pickMine('${esc(key)}','${esc(x.name||'')}')">＋ 상담 입력</button>${x.tel?`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`:''}</div>`;
+  if(!CU_DETAIL[key]){
+    body.innerHTML=acts+'<div class="empty">이력을 불러오는 중…</div>';
+    try{ CU_DETAIL[key]=await rpc('fn_store_customer_detail',{p_code:CODE,p_key:key}); }
+    catch(e){ body.innerHTML=acts+`<div class="empty">${esc(e.message)}</div>`; return; }
+  }
+  const d=CU_DETAIL[key]||{}; const ks=d.consults||[], os=d.orders||[];
+  const dt=v=>v?String(v).slice(0,10).replace(/-/g,'.'):'';
+  const hm=v=>v?String(v).slice(11,16):'';
+  body.innerHTML=acts+
+    `<div class="hsec"><div class="ht">상담 이력 <small>${ks.length}건</small></div>${ks.length?ks.map(k=>{ const ru=RES_UI[k.result]||['pre',k.result||'']; return `
+      <div class="hrow">
+        <div class="hl"><span class="res ${ru[0]}">${esc(ru[1])}</span><b>${dt(k.at)}</b><span class="hmuted">${esc([k.channel,k.route,k.type,k.method].filter(Boolean).join(' · '))}</span>${k.handler&&k.handler!==ME?`<span class="hmuted">담당 ${esc(k.handler)}</span>`:''}</div>
+        <div class="hb">${esc([k.interest,k.model,k.detail].filter(Boolean).join(' '))}${k.expected?` · 예상 ${won(k.expected)}`:''}${k.bought?` · 구매 ${esc(k.bought)}`:''}</div>
+        ${k.content?`<div class="hc">${esc(k.content)}</div>`:''}
+        ${k.callback_at&&!k.callback_done?`<div class="hcb">콜백 ${dt(k.callback_at)} ${hm(k.callback_at)}</div>`:''}
+        ${k.next_cat||k.next_model?`<div class="hb">다음 관심 ${esc([k.next_cat,k.next_model].filter(Boolean).join(' '))}${k.next_date?` · ${dt(k.next_date)}`:''}</div>`:''}
+      </div>`; }).join(''):'<div class="empty sm">상담 기록이 없습니다</div>'}</div>
+    <div class="hsec"><div class="ht">구매 이력 <small>${os.length}건</small></div>${os.length?os.map(o=>`
+      <div class="hrow"><div class="hl"><b>${dt(o.at)}</b><span>${esc(o.product||'')}</span></div>
+        <div class="hb">${esc([o.channel,o.kind,o.status].filter(Boolean).join(' · '))} · ${won(o.amount)}${o.refund?` (환불 ${won(o.refund)})`:''}${o.handler&&o.handler!==ME?` · 담당 ${esc(o.handler)}`:''}</div></div>`).join(''):'<div class="empty sm">구매 기록이 없습니다</div>'}</div>`;
+}
 /* ═══ 기간 : 캘린더 두 칸 + 빠른 선택(전체·7일·30일·이 달). 목록마다 같은 모양, 값은 periodOf(pfx) 로 읽는다 ═══ */
 function periodBar(pfx, onChange){
   const host=$(pfx+'_period'); if(!host) return;
@@ -3214,10 +3299,7 @@ function renderHome(s){
     </div>`; }).join(''):'<div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div>';
   quoteFilter();   /* 견적서 목록은 quoteFilter 가 그린다 (견적서 탭 검색과 공용) */
   $('mcSub').textContent=s.my_customer_count?`${s.my_customer_count}명 · 최근 ${mc.length}명 표시`:'';
-  $('mcuList').innerHTML=mc.length?mc.map(x=>`
-    <div class="item oc"><div><div class="p">${esc(x.name)} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small>${x.consent?'<span class="mine">수신동의</span>':''}</div>
-      <div class="m">${String(x.last_at).slice(5,10).replace('-','/')} ${esc(x.last_what||'')}${x.orders?` · 구매 ${x.orders}건 ${won(x.spent)}`:''}</div></div>
-      <div class="act"><button class="mini" onclick="pickMine('${x.key}','${esc(x.name)}')">상담 입력</button></div></div>`).join(''):'<div class="empty">아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.</div>';
+  /* 내 고객 목록은 탭을 열 때 fn_store_my_customers 로 따로 그린다 (loadMyCustomers) */
   setTabBadge('home', due, cbs.some(x=>x.overdue));
   renderFlow(s); renderHomeAlert(s);
   $('productList').innerHTML=(s.recent_products||[]).map(p=>`<option value="${esc(p)}">`).join('');
@@ -3304,7 +3386,7 @@ function renderMyConsults(){
     if(x.bucket==='open'||x.bucket==='hold'){
       A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}',${x.id})">구매 확정</button>`);
       A.push(`<button class="mini" onclick="ocPick(${x.id})">재연락</button>`);
-      A.push(`<button class="mini" onclick="mcAct(${x.id},'done','상담완료')">상담완료</button>`);
+      A.push(`<button class="mini" onclick="mcAct(${x.id},'done','상담완료')" title="이 상담을 끝냅니다 (판매 아님 · 다시 열 수 있습니다)">상담완료</button>`);
       A.push(x.bucket==='hold'
         ? `<button class="mini" onclick="mcAct(${x.id},'resume','다시 진행')">다시 진행</button>`
         : `<button class="mini warn" onclick="mcAct(${x.id},'hold','보류')">보류</button>`);
@@ -3315,7 +3397,7 @@ function renderMyConsults(){
       if(x.result!=='구매완료') A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}',${x.id})">구매 확정</button>`);
       A.push(`<button class="mini" onclick="mcAct(${x.id},'resume','다시 진행')">다시 진행</button>`);
     }
-    A.push(`<button class="mini" onclick="ocToConsult('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')">후속 상담</button>`);
+    A.push(`<button class="mini" onclick="ocToConsult('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 건은 그대로 두고, 같은 고객으로 새 상담을 하나 더 적습니다">＋ 새 상담</button>`);
     A.push(`<button class="mini" onclick="asgOpen([${x.id}],'${nm}')" title="다른 담당자에게 넘기기">넘기기</button>`);
     DZ.push(`<button class="mini" style="color:var(--bad,#B3261E)" onclick="mcDelete(${x.id},'${nm}')" title="실수로 넣은 상담 — 통계에서 빠지고 7일 안에 되살릴 수 있습니다">삭제</button>`);
     }
