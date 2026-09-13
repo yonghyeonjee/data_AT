@@ -692,6 +692,9 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 /* ── 상담 작업대 (내 상담 목록) ── */
 .cbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
 .tools-toggle{display:none}  /* 넓은 화면은 도구가 늘 펼쳐져 있다 — 폰 규칙은 모바일 보정 블록 */
+.devtag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:#FFF4E5;color:#9A5B00;font-size:calc(11px * var(--font-scale));font-weight:700;vertical-align:middle;letter-spacing:0}
+.seg.cres button{flex:1}
+#alList .item .m{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.5}
 .legend{margin:6px 0 10px;font-size:calc(12px * var(--font-scale));color:var(--muted);line-height:1.6} .legend b{color:var(--ink);font-weight:700}
 .csearchbox{position:relative;flex:1;min-width:180px;display:flex}
 .csearchbox .in{flex:1;padding-right:44px}
@@ -917,6 +920,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <button class="tab" data-tab="consult" data-perm="consult">＋ 상담 입력</button>
       <button class="tab" data-tab="quote">견적서</button>
       <button class="tab" data-tab="customer">내 고객</button>
+      <button class="tab" data-tab="alerts">알림 내역</button>
       <button class="tab" data-tab="stock" data-perm="stock">재고</button>
       <button class="tab" data-tab="order" data-perm="order">주문서</button>
       <button class="tab" data-tab="daily" data-perm="daily">일 마감</button>
@@ -1042,6 +1046,22 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <select class="in" id="cu_ch" style="flex:1;min-width:160px" onchange="loadMyCustomers()"><option value="">전체 채널</option></select>
       </div>
       <div class="list" id="mcuList" style="margin-top:12px"><div class="empty">불러오는 중…</div></div>
+    </div>
+  </section>
+
+  <!-- ── 알림 내역 ── -->
+  <section class="panel hidden" id="tab-alerts">
+    <div class="intro"><b>나에게 온 알림</b>을 시간순으로 모아 봅니다. 견적서를 보냈는지·고객이 열어봤는지, 나에게 배정된 상담, 새로 들어온 문의, 콜백 약속.</div>
+    <div class="card">
+      <h2>알림 내역 <span id="alSub"></span></h2>
+      <div class="chips filter" id="al_kind" role="radiogroup" aria-label="종류" style="margin-bottom:10px">
+        <span class="chip on" data-v="" data-l="전체">전체</span><span class="chip" data-v="quote" data-l="견적서">견적서</span><span class="chip" data-v="assign" data-l="배정">배정</span><span class="chip" data-v="inquiry" data-l="새 문의">새 문의</span><span class="chip" data-v="callback" data-l="콜백">콜백</span>
+      </div>
+      <div class="list" id="alList"><div class="empty">불러오는 중…</div></div>
+    </div>
+    <div class="card">
+      <h2>문자 알림 <span class="devtag">개발중</span></h2>
+      <p class="note-in" style="margin:0">문자 자동 발송은 아직 연동 전입니다. 지금은 견적서 [보내기]에서 링크를 복사해 문자·카카오톡에 붙여 넣습니다. 연동되면 보낸 문자가 여기에 쌓입니다.</p>
     </div>
   </section>
 
@@ -1237,8 +1257,14 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </div>
       <div class="fgrp a"><div class="fgrp-t">어디까지 갔나</div>
       <div class="grid3">
-        <div class="f"><label>상담 상태 <span class="hint">상담완료 ≠ 판매</span></label>
-          <select class="in" id="c_result" onchange="cResultChanged()">
+        <div class="f"><label>상담 상태 <span class="hint">완료 = 안 삼 · 구매함 = 판매까지</span></label>
+          <div class="seg sm cres" id="c_res_seg">
+            <button type="button" data-v="진행중" class="on">상담중</button>
+            <button type="button" data-v="보류">보류</button>
+            <button type="button" data-v="상담완료">완료</button>
+            <button type="button" data-v="구매완료">구매함</button>
+          </div>
+          <select class="in hidden" id="c_result" onchange="cResultChanged()">
             <option value="진행전">연락 전 (아직 통화 안 함)</option>
             <option value="진행중" selected>상담중</option>
             <option value="보류">보류</option>
@@ -1316,7 +1342,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="seg sm" id="d_scope" style="margin-left:auto"><button type="button" class="on" data-v="mine">본인</button><button type="button" data-v="all">전체</button></div>
       </div>
       <div id="d_unclosedWrap" class="hidden" style="margin-bottom:12px">
-        <div style="font-size:calc(12px * var(--font-scale));color:var(--warn);font-weight:600">미마감 날짜 — 눌러서 열기</div>
+        <div style="font-size:calc(12px * var(--font-scale));color:var(--muted);font-weight:600">아직 마감하지 않은 날 — 필요하면 눌러서 열기</div>
         <div class="unclosed" id="d_unclosed"></div>
       </div>
       <div class="d-sum" id="d_sum"></div>
@@ -1337,6 +1363,24 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="card">
       <h2>최근 마감 <span id="d_recentSub">7일 · 본인</span></h2>
       <div class="list" id="d_recent"><div class="empty">없음</div></div>
+    </div>
+    <div class="card">
+      <h2>일일 업무 텍스트 <span>그날 마감 숫자 그대로 · 복사해서 보고에 붙여넣기</span></h2>
+      <textarea class="copybox" id="d_text" readonly placeholder="날짜를 고르면 그날 마감 내용이 여기 텍스트로 만들어집니다"></textarea>
+      <div class="cbar" style="margin-top:8px"><button class="btn sm" onclick="copyDailyText()">복사</button></div>
+    </div>
+    <div class="card" id="mCard">
+      <h2>월 마감 <span id="m_sub">일 마감을 달로 모아 봅니다</span></h2>
+      <div class="daterow">
+        <input class="in" type="month" id="m_month" onchange="loadMonthClose()">
+        <button class="btn ghost sm" onclick="setMonth(-1)">지난달</button>
+        <button class="btn ghost sm" onclick="setMonth(0)">이번 달</button>
+        <div class="seg sm" id="m_scope" style="margin-left:auto"><button type="button" class="on" data-v="mine">본인</button><button type="button" data-v="all">전체</button></div>
+      </div>
+      <div class="d-sum" id="m_sum"></div>
+      <div class="tw"><table class="slt" id="m_tbl"></table></div>
+      <textarea class="copybox" id="m_text" readonly style="margin-top:10px;min-height:120px"></textarea>
+      <div class="cbar" style="margin-top:8px"><button class="btn sm" onclick="copyMonthText()">월 보고 텍스트 복사</button></div>
     </div>
   </section>
 
@@ -2771,8 +2815,9 @@ NAV_ICON.inbox   ='<svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6a2 2 0 0 
 NAV_ICON.quote   ='<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 12h6M10 16h4"/></svg>';
 NAV_ICON.customer='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 NAV_ICON.stats   ='<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>';
-const NAV_GROUPS=[['상담',['home','inbox','consult','quote','customer']],['매장',['stock','order','daily','sale']],['현황',['stats','report','online']]];
-const NAV_LABEL={home:'홈', inbox:'상담', consult:'상담 입력', quote:'견적서', customer:'내 고객', stats:'처리현황'};
+NAV_ICON.alerts  ='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
+const NAV_GROUPS=[['상담',['home','inbox','consult','quote','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','report','online']]];
+const NAV_LABEL={home:'홈', inbox:'상담', consult:'상담 입력', quote:'견적서', customer:'내 고객', alerts:'알림 내역', stats:'처리현황'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
 const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
 const CALC_URL ='https://www.samsungsh.co.kr/main/html.php?htmid=service/calc_subscribe.html';
@@ -2806,7 +2851,7 @@ function syncNav(){
     return `<div class="grp">${g}</div>`+items.map(x=>`<button class="it${x.active?' active':''}" onclick="goTab('${x.t}');sideClose()">${NAV_ICON[x.t]||''}<span>${esc(x.label)}</span>${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join(''); }).join('');
   /* 하단 탭바 : 앞 4개 + 더보기(서랍) */
   /* 하단 4칸은 매장에서 손이 가장 많이 가는 순서 — 판매 입력이 [더보기] 안에 숨지 않게 */
-  const vis=['home','inbox','consult','sale','stock','order','daily','report','online','quote','customer','stats'].map(tabInfo).filter(x=>x&&!x.hidden);
+  const vis=['home','inbox','consult','sale','stock','order','daily','report','online','quote','customer','alerts','stats'].map(tabInfo).filter(x=>x&&!x.hidden);
   const first=vis.slice(0,4), rest=vis.slice(4);
   const restBadge=rest.reduce((a,x)=>a+(Number(x.badge)||0),0), restActive=rest.some(x=>x.active);
   bn.innerHTML=first.map(x=>`<button class="${x.active?'active':''}" onclick="goTab('${x.t}')">${NAV_ICON[x.t]||''}${esc(x.label)}${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join('')
@@ -2826,13 +2871,15 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') sideClose(); });
 function goTab(name, fromHistory){
   const b=document.querySelector(`.tab[data-tab="${name}"]`); if(!b || b.classList.contains('hidden')) return;
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  ['home','inbox','quote','customer','stats','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  ['home','inbox','quote','customer','alerts','stats','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
   if(name==='report' && !REPORT_LOADED) loadReport();
   if(name==='online' && !OC_LOADED) loadOnlineDay();
   if(name==='stock' && !STK_LOADED) loadStk();
   if(name==='order') initOrderTab();
   if(name==='customer') loadMyCustomers();
+  if(name==='alerts') loadAlerts();
+  if(name==='daily' && $('m_month') && !$('m_month').value) setMonth(0);
   if(name==='consult') loadInqCodes();
   if(!fromHistory){ try{ (history.state&&history.state.tab===name) ? history.replaceState({tab:name},'','#'+name) : history.pushState({tab:name},'','#'+name); }catch(e){} }
   gfabShow(name);
@@ -2905,7 +2952,7 @@ async function qsOpen(no, name){
     <div class="qs-link" id="qsUrl">${esc(d.url)}</div>
     <div class="qs-btns">
       <button class="btn" id="qsCopy">🔗 링크 복사</button>
-      <button class="btn" id="qsSms">💬 문자로 보내기</button>
+      <button class="btn" id="qsSms" title="문자 자동 발송은 아직 연동 전입니다 — 누르면 링크를 복사합니다">💬 문자로 보내기 <span class="devtag">개발중</span></button>
       <button class="btn" id="qsShare">↗ 카카오 · 공유</button>
       <a class="btn" id="qsOpenLink" href="${esc(d.url)}" target="_blank" rel="noopener">👁 고객 화면 미리보기</a>
     </div>
@@ -3019,7 +3066,14 @@ $('c_cat').addEventListener('click', e=>{ const c=e.target.closest('.chip'); if(
   box.classList.toggle('hidden', !show); if(show) box.focus(); else box.value='';
 });
 /* 상태가 '구매함' 일 때만 구매 제품 칸을 연다 — 상담 완료가 곧 판매는 아니다 */
+/* 상태 버튼 4개 ↔ 숨은 select (저장 코드는 select 값을 읽는다). 값이 네 개 밖(연락 전·거절)이면 그 값의 버튼을 임시로 보여준다 */
+function cResSync(){ const seg=$('c_res_seg'); if(!seg) return; const v=$('c_result').value;
+  seg.querySelectorAll('button.tmp').forEach(b=>b.remove());
+  if(!seg.querySelector(`button[data-v="${v}"]`)){ const b=document.createElement('button'); b.type='button'; b.dataset.v=v; b.className='tmp'; b.textContent=(RES_UI[v]||[0,v])[1]; seg.appendChild(b); }
+  seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===v)); }
+document.addEventListener('click', e=>{ const b=e.target.closest('#c_res_seg button'); if(!b) return; $('c_result').value=b.dataset.v; cResultChanged(); });
 function cResultChanged(){
+  cResSync();
   const buy = $('c_result').value === '구매완료';
   $('c_buybox').classList.toggle('hidden', !buy);
   if(buy) setTimeout(()=>$('c_purchase').focus(), 60);
@@ -3172,9 +3226,9 @@ function renderFlow(s){
   const oc=s.my_open_consults||[], pre=oc.filter(x=>x.result==='진행전').length, hold=oc.filter(x=>x.result==='보류').length;
   const steps=[
     /* 단계는 '내 일'의 상태로 나눈다 — 새 문의(연락 전) → 내 상담(상담중·보류) → 콜백 → 견적서 → 구매 확정. 날짜로 자르지 않는다 (어제 새벽에 온 것도 새 문의) */
-    {k:'새 문의', v:pre,                              sub:Number(s.today_mine||0)>0?`아직 연락 전 · 오늘 +${s.today_mine}`:'아직 연락 전', go:"mcJump('open')", warn:pre>0, tip:'나에게 배정됐는데 아직 통화하지 않은 문의입니다. 온라인 폼 · 홈페이지 · 방문 접수 · 직접 입력 모두 포함'},
+    {k:'새 문의', v:pre,                              sub:'연락 전', go:"mcJump('open')", warn:pre>0, tip:`나에게 배정됐는데 아직 통화하지 않은 문의${Number(s.today_mine||0)>0?` · 오늘 ${s.today_mine}건 들어옴`:''}. 온라인 폼 · 홈페이지 · 방문 접수 · 직접 입력 모두 포함`},
     s.is_mgr ? {k:'배정', v:s.unassigned_n||0,      sub:'미배정',    go:"goTab('inbox')", alarm:Number(s.unassigned_n||0)>0} : null,
-    {k:'내 상담', v:oc.length-pre,                    sub:hold?`상담중 · 보류 ${hold}`:'상담중', go:"mcJump('open')", tip:'통화한 뒤 진행 중인 상담(보류 포함)'},
+    {k:'내 상담', v:oc.length-pre,                    sub:hold?'상담중+보류':'상담중', go:"mcJump('open')", tip:`통화한 뒤 진행 중인 상담${hold?` · 보류 ${hold}건 포함`:''}`},
     {k:'콜백',   v:due,                              sub:late?'지난 약속 '+late:'오늘', go:"document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})", alarm:late>0, warn:due>0&&!late},
     {k:'견적서', v:(s.quotes||[]).length,            sub:'최근 90일', go:"goTab('quote')"},
     {k:'구매 확정', v:wait,                           sub:'확정 대기', go:"goTab('sale')", warn:wait>0},
@@ -3187,7 +3241,6 @@ function renderHomeAlert(s){
   if(s.is_mgr && Number(s.unassigned_n||0)>0) items.push(`<button type="button" class="al bad" onclick="goTab('inbox')"><b>미배정 문의 ${s.unassigned_n}건</b><span>담당자를 정해 주세요 ›</span></button>`);
   const late=(s.callbacks||[]).filter(x=>x.overdue).length;
   if(late) items.push(`<button type="button" class="al warn" onclick="document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})"><b>지난 콜백 ${late}건</b><span>약속 시각이 지났습니다 ›</span></button>`);
-  if(((s.perms||[]).includes('daily')) && (s.unclosed_days||[]).length) items.push(`<button type="button" class="al" onclick="goTab('daily')"><b>일 마감 안 한 날 ${s.unclosed_days.length}일</b><span>마감하러 가기 ›</span></button>`);
   al.innerHTML=items.join(''); al.classList.toggle('hidden', !items.length);
 }
 /* ═══ 내 고객 탭 찾기 — 상담 입력의 고객 찾기와 같은 RPC ═══ */
@@ -3200,6 +3253,31 @@ async function mcuFind(){
         <div class="h">${x.orders?`구매 ${x.orders}건 · ${won(x.spent)}`:'구매 이력 없음'}${x.consults?` · 상담 ${x.consults}건`:''}</div></div><div class="pick">상담 입력 ›</div></div>`).join('');
   }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
 }
+/* ═══ 알림 내역 : 나에게 온 것들 — 견적서 보냄·열람 · 배정 · 새 문의 · 콜백 (fn_store_alerts) ═══ */
+let AL_ROWS=[], AL_KIND='';
+async function loadAlerts(){
+  const box=$('alList'); if(!box) return; box.innerHTML='<div class="empty">불러오는 중…</div>';
+  try{ const d=await rpc('fn_store_alerts',{p_code:CODE,p_limit:150}); AL_ROWS=d.rows||[]; }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  renderAlerts();
+}
+function renderAlerts(){
+  const box=$('alList'); const rows=AL_KIND?AL_ROWS.filter(x=>x.kind===AL_KIND):AL_ROWS;
+  $('alSub').textContent = rows.length?`${rows.length}건 · 최근 90일`:'';
+  const ICO={quote:'📄',assign:'👤',inquiry:'📥',callback:'📞'};
+  const when=v=>{ v=String(v||''); return v.length>=16 ? v.slice(5,10).replace('-','/')+' '+v.slice(11,16) : v; };
+  box.innerHTML = rows.length ? rows.map(x=>{
+    const badge = x.kind==='quote' ? (x.viewed?'<span class="mine">고객이 열어봄</span>':'<span class="res pre">아직 안 열어봄</span>')
+                : x.kind==='callback' ? (x.done?'<span class="res done">완료</span>':x.overdue?'<span class="res alarm" style="background:#FEE2E2;color:#B91C1C">지남</span>':'<span class="res open">예정</span>')
+                : x.kind==='inquiry' && x.result==='진행전' ? '<span class="res pre">연락 전</span>' : '';
+    const act = x.kind==='quote' ? `<button class="mini" onclick="alOpenQuote('${esc(x.quote_no||'')}')">견적서</button>`
+              : `<button class="mini" onclick="alOpenConsult('${esc((x.title||'').split(' 님')[0])}')">상담 열기</button>`;
+    return `<div class="item oc"><div><div class="p">${ICO[x.kind]||''} ${esc(x.title||'')} ${badge}</div><div class="m">${when(x.at)} · ${esc(x.detail||'')}</div></div><div class="act">${act}</div></div>`; }).join('')
+    : '<div class="empty">알림이 없습니다</div>';
+}
+function alOpenQuote(no){ goTab('quote'); const q=$('qt_q'); if(q){ q.value=no; quoteFilter(); } }
+function alOpenConsult(name){ goTab('inbox'); if(STATUS&&STATUS.is_mgr){ $('all_q').value=name; loadAllConsults(); } $('mc_q').value=name; toolsToggle('mcTools',true); MC_FLT='all'; const f=$('mc_flt'); if(f) f.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all')); mcSearch(); }
+document.addEventListener('click', e=>{ const c=e.target.closest('#al_kind .chip'); if(!c) return;
+  AL_KIND=c.dataset.v||''; $('al_kind').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); renderAlerts(); });
 /* ═══ 내 고객 : 내가 상담·판매한 고객 전부 — 마지막 상태·상담 횟수·지난 날짜, 줄을 누르면 이력이 아래로 펼쳐진다 ═══ */
 let CU_ROWS=[], CU_DETAIL={}, CU_SEQ=0;
 function cuFillChannels(){ const sel=$('cu_ch'); if(!sel||!INQ||sel.options.length>1) return;
@@ -3788,8 +3866,9 @@ $('d_scope').addEventListener('click', e=>{ const b=e.target.closest('button'); 
 function renderDailyLists(s){
   const all=dScopeAll();
   const un = ((s.perms||[]).includes('daily')) ? (all ? (s.unclosed_days||[]) : (s.unclosed_mine||[])) : [];   /* 일 마감 권한 없으면 미마감 배지도 없다 */
-  if(un.length){ $('pillUnclosed').textContent = `미마감 ${un.length}일`; $('pillUnclosed').classList.remove('hidden');
-    $('d_unclosedWrap').classList.remove('hidden');
+  /* 미마감은 재촉하지 않는다 — 상단 배지·탭 배지 없이 일 마감 탭 안에서만 조용히 보여준다 */
+  $('pillUnclosed').classList.add('hidden');
+  if(un.length){ $('d_unclosedWrap').classList.remove('hidden');
     $('d_unclosed').innerHTML = un.map(d=>`<span class="chip" onclick="$('d_date').value='${d}';loadDailyDay()">${d.slice(5).replace('-','/')}</span>`).join('');
   } else { $('pillUnclosed').classList.add('hidden'); $('d_unclosedWrap').classList.add('hidden'); }
   const cr = all ? (s.closed_recent||[]) : (s.closed_mine||[]);
@@ -3797,7 +3876,7 @@ function renderDailyLists(s){
   $('d_recent').innerHTML = cr.length ? cr.map(x=>`
     <div class="item"><div class="t">${x.d.slice(5).replace('-','/')}</div><div class="p">마감 완료${all&&x.by?` <small style="color:var(--faint)">· ${esc(x.by)}</small>`:''}${Number(x.pending)?` <small style="color:var(--warn)">· 미확정 ${wonS(x.pending)}</small>`:''}</div><div class="a">${won(x.net)}</div>
       <div class="ed"><button onclick="dailyEdit('${x.d}')">수정</button><button class="del" onclick="dailyDelete('${x.d}','${won(x.net)}')">삭제</button></div></div>`).join('') : `<div class="empty">최근 7일 ${all?'매장':'내'} 마감 없음</div>`;
-  document.querySelectorAll('.tab').forEach(b=>{ if(b.dataset.tab==='daily'){ b.innerHTML = '일 마감' + (un.length?`<span class="n">${un.length}</span>`:''); } });
+  /* 탭 배지 없음 (재촉 금지) */
 }
 /* 날짜를 고르면 : 판매 입력 집계(자동) + 이미 저장한 마감(있으면 그 값) 을 표로 */
 async function loadDailyDay(){
@@ -3826,6 +3905,7 @@ async function loadDailyDay(){
     $('d_cash_s').value=fmt(c.sales); $('d_cash_r').value=fmt(c.refund); $('d_sub_s').value=fmt(sb.sales); $('d_sub_r').value=fmt(sb.refund);
     dpsDiff();
   }
+  refreshDailyText();
 }
 function addDailyRow(r){ r=r||{}; const handlers=(STATUS&&STATUS.staff)||[];
   const row=document.createElement('div'); row.className='drow'+(r.auto?' auto':''); const fmt=v=>Number(v)?Number(v).toLocaleString('ko-KR'):'';
@@ -3857,10 +3937,54 @@ async function submitDaily(){
   const b=$('d_btn'); b.disabled=true; const t=b.textContent; b.textContent='저장 중…';
   try{ await rpc('fn_store_daily_submit',{p_code:CODE,p_date:d,p_rows:rows});
     toast(`${d} 마감 저장 · ${won(total)}`,'ok');
-    await loadStatus(); render(); await loadDailyDay();
+    await loadStatus(); render(); await loadDailyDay(); loadMonthClose();
   }catch(e){ toast(e.message,'bad'); }
   finally{ b.disabled=false; b.textContent=t; }
 }
+/* ═══ 일일 업무 텍스트 : 그날 마감 표 그대로 (판매 입력 → 일 마감 → 여기 → 월 마감) ═══ */
+function dailyText(){
+  const d=$('d_date').value; if(!d) return '';
+  let rows=[]; try{ rows=dailyRows(); }catch(e){ rows=[]; }
+  const all=dScopeAll();
+  const tot=rows.reduce((a,x)=>a+Number(x.sales||0)-Number(x.refund||0),0), pend=rows.reduce((a,x)=>a+Number(x.pending||0),0);
+  const L=[`[삼성스토어 시흥] ${d} 일일 마감${all?' · 매장 전체':' · '+ME}`, `판매완료 ${won(tot)}${pend?` · 미확정 ${won(pend)}`:''}`, ''];
+  rows.forEach(x=>L.push(`- ${x.handler||'-'} | ${x.sale_kind} | 판매완료 ${won(x.sales)}${Number(x.pending)?` · 미확정 ${won(x.pending)}`:''}${Number(x.refund)?` · 환불 ${won(x.refund)}`:''}`));
+  const T=(D_PRE&&D_PRE.total)||{}; if(Number(T.n)) L.push('', `판매 입력 ${Number(T.n).toLocaleString('ko-KR')}건`);
+  return L.join('\n');
+}
+function refreshDailyText(){ const t=$('d_text'); if(t) t.value=dailyText(); }
+async function copyDailyText(){ const t=$('d_text').value; if(!t) return toast('먼저 날짜를 고르세요','bad');
+  try{ await navigator.clipboard.writeText(t); toast('복사됨 — 보고에 붙여 넣으세요','ok'); }catch(e){ $('d_text').select(); document.execCommand('copy'); toast('복사됨','ok'); } }
+/* ═══ 월 마감 : 일 마감을 달로 모아 본다 ═══ */
+let M_DATA=null;
+const mScopeAll=()=>{ const b=document.querySelector('#m_scope button.on'); return !!(b&&b.dataset.v==='all'); };
+function setMonth(off){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()+off); const v=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; $('m_month').value=v; loadMonthClose(); }
+async function loadMonthClose(){
+  const el=$('m_month'); if(!el) return; if(!el.value){ setMonth(0); return; }
+  $('m_sum').innerHTML='<span>불러오는 중…</span>';
+  let m; try{ m=await rpc('fn_store_month_close',{p_code:CODE,p_month:el.value+'-01',p_all:mScopeAll()}); }catch(e){ $('m_sum').innerHTML=`<span class="warn">${esc(e.message)}</span>`; return; }
+  M_DATA=m; const T=m.total||{}, days=m.by_day||[], miss=m.missing||[];
+  $('m_sub').textContent=`${el.value.replace('-','년 ')}월 · ${mScopeAll()?'매장 전체':ME}`;
+  $('m_sum').innerHTML=`<span>순매출 <b>${wonS(T.net||0)}</b></span><span>판매완료 <b>${wonS(T.sales||0)}</b></span><span>환불 <b>${wonS(T.refund||0)}</b></span><span>마감 <b>${T.days_closed||0}일</b>${miss.length?` <small style="color:var(--muted)">· 안 한 날 ${miss.length}일</small>`:''}</span>`;
+  const md=v=>String(v).slice(5).replace('-','/');
+  $('m_tbl').innerHTML = days.length ? `<thead><tr><th>날짜</th><th class="num">일시불</th><th class="num">구독</th><th class="num">직판</th><th class="num">환불</th><th class="num">순매출</th></tr></thead><tbody>`
+    + days.map(x=>`<tr><td>${md(x.d)}</td><td class="num">${wonS(x.lump||0)}</td><td class="num">${wonS(x.sub||0)}</td><td class="num">${wonS(x.direct||0)}</td><td class="num">${wonS(x.refund||0)}</td><td class="num"><b>${wonS(x.net||0)}</b></td></tr>`).join('')
+    + `<tr><td><b>합계</b></td><td class="num"><b>${wonS(T.lump||0)}</b></td><td class="num"><b>${wonS(T.sub||0)}</b></td><td class="num"><b>${wonS(T.direct||0)}</b></td><td class="num"><b>${wonS(T.refund||0)}</b></td><td class="num"><b>${wonS(T.net||0)}</b></td></tr></tbody>`
+    : '<tbody><tr><td class="note" style="text-align:center;padding:16px">이 달에 저장된 마감이 없습니다. 일 마감에서 날짜별로 저장하면 여기 모입니다.</td></tr></tbody>';
+  $('m_text').value=monthText(m, el.value);
+}
+function monthText(m, ym){
+  const T=m.total||{}, days=m.by_day||[], H=m.by_handler||[], miss=m.missing||[]; const md=v=>String(v).slice(5).replace('-','/');
+  const L=[`[삼성스토어 시흥] ${ym.replace('-','년 ')}월 월 마감${mScopeAll()?' · 매장 전체':' · '+ME}`,
+    `순매출 ${won(T.net||0)} · 판매완료 ${won(T.sales||0)} · 환불 ${won(T.refund||0)} · 마감 ${T.days_closed||0}일`, ''];
+  days.forEach(x=>L.push(`■ ${md(x.d)} — 순매출 ${won(x.net||0)} (일시불 ${won(x.lump||0)} · 구독 ${won(x.sub||0)} · 직판 ${won(x.direct||0)}${Number(x.refund)?` · 환불 ${won(x.refund)}`:''})`));
+  if(mScopeAll() && H.length){ L.push('', '프로별'); H.forEach(x=>L.push(`  ${x.h}: ${won(x.net||0)} (${x.days}일)`)); }
+  if(miss.length) L.push('', `마감 안 한 날: ${miss.map(md).join(', ')}`);
+  return L.join('\n');
+}
+async function copyMonthText(){ const t=$('m_text').value; if(!t) return toast('먼저 달을 고르세요','bad');
+  try{ await navigator.clipboard.writeText(t); toast('복사됨 — 보고에 붙여 넣으세요','ok'); }catch(e){ $('m_text').select(); document.execCommand('copy'); toast('복사됨','ok'); } }
+document.addEventListener('click', e=>{ const b=e.target.closest('#m_scope button'); if(!b) return; $('m_scope').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); loadMonthClose(); });
 /* DPS 합계 대사 */
 function dpsDiff(){ const sc=(D_PRE&&D_PRE.store_closed)||[]; const f=k=>Number((sc.find(x=>x.sale_kind===k)||{}).sales||0)-Number((sc.find(x=>x.sale_kind===k)||{}).refund||0);
   [['일시불','d_cash'],['구독','d_sub']].forEach(([k,id])=>{ const dps=num($(id+'_s'))-num($(id+'_r')), mine=f(k); const el=$(id+'_diff');
