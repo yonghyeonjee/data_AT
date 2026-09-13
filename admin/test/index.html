@@ -76,7 +76,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .login-card button{width:100%;padding:14px;background:var(--navy);color:#fff;border:0;border-radius:10px;font-weight:700;font-size:calc(15px * var(--font-scale));cursor:pointer;transition:.15s;margin-top:4px;letter-spacing:-.01em}
 .login-card button:hover{background:var(--navy-ink)}
 .login-card .err{color:var(--bad);font-size:calc(13px * var(--font-scale));margin-top:10px;min-height:18px}
-.login-card .links{margin-top:22px;display:flex;gap:14px;font-size:calc(12px * var(--font-scale));color:var(--faint);align-items:center}
+.login-card .links{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px 14px;font-size:calc(12px * var(--font-scale));color:var(--faint);align-items:center;white-space:nowrap}
 .login-card .links a{color:var(--muted);text-decoration:none} .login-card .links a:hover{color:var(--navy)}
 .login-card .links .sp{flex:1}
 .lg-foot{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-size:calc(11px * var(--font-scale));color:var(--faint)}
@@ -887,9 +887,19 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       <button type="submit">로그인</button>
       <div class="err" id="lErr"></div>
       </form>
-      <div class="links"><a href="/store.html" target="_blank">담당자 화면 ↗</a><a href="/" target="_blank">고객센터 ↗</a><span class="sp"></span><span>내부용 · 무단 접근 금지</span></div>
+      <div class="links"><a href="/store.html" target="_blank">담당자 화면 ↗</a><a href="/" target="_blank">고객센터 ↗</a><a href="#" onclick="qrShow();return false">▦ QR 보기</a><span class="sp"></span><span>내부용 · 무단 접근 금지</span></div>
     </div>
     <div class="lg-foot">© (주)삼성앤텍 · Datacenter</div>
+  </div>
+</div>
+
+<div id="qrDlg" class="hidden" onclick="if(event.target===this)qrClose()" style="position:fixed;inset:0;z-index:9000;background:rgba(10,16,40,.55);display:flex;align-items:center;justify-content:center;padding:16px">
+  <div role="dialog" aria-modal="true" aria-label="이 화면의 QR" style="background:#fff;border-radius:14px;padding:20px 20px 16px;width:min(360px,100%);text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)">
+    <h3 style="margin:0 0 10px;font-size:16px;font-weight:800">이 화면의 QR</h3>
+    <div id="qrBox" style="display:flex;justify-content:center;margin:4px 0 8px"></div>
+    <div id="qrUrl" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;word-break:break-all"></div>
+    <p style="margin:8px 0 0;font-size:12px;color:#646D7C">폰 카메라로 찍으면 이 주소가 바로 열립니다. 아이디·비밀번호는 각자 넣습니다.</p>
+    <button type="button" onclick="qrClose()" style="margin-top:12px;width:100%;min-height:42px;border:0;border-radius:10px;background:#1428A0;color:#fff;font-weight:700;font-size:14px;cursor:pointer">닫기</button>
   </div>
 </div>
 
@@ -1779,6 +1789,98 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 <div id="modalHost"></div>
 
 <script>
+/* 작은 QR 인코더 — 바이트 모드 · 오류정정 M · 버전 1~10 · 외부 라이브러리 없음 (로그인 화면 QR 용) */
+const QR=(function(){
+  const EXP=new Array(256), LOG=new Array(256);
+  for(let i=0,x=1;i<256;i++){ EXP[i]=x; LOG[x]=i; x<<=1; if(x&256) x^=0x11D; }
+  const mul=(a,b)=>(!a||!b)?0:EXP[(LOG[a]+LOG[b])%255];
+  /* 버전별 (레벨 M): [총 코드워드, 블록당 EC, [블록 수, 블록 데이터 길이]...] */
+  const TBL={1:[26,10,[[1,16]]],2:[44,16,[[1,28]]],3:[70,26,[[1,44]]],4:[100,18,[[2,32]]],5:[134,24,[[2,43]]],
+    6:[172,16,[[4,27]]],7:[196,18,[[4,31]]],8:[242,22,[[2,38],[2,39]]],9:[292,22,[[3,36],[2,37]]],10:[346,26,[[4,43],[1,44]]]};
+  const ALIGN={1:[],2:[6,18],3:[6,22],4:[6,26],5:[6,30],6:[6,34],7:[6,22,38],8:[6,24,42],9:[6,26,46],10:[6,28,50]};
+  function rsGen(n){ let g=[1]; for(let i=0;i<n;i++){ const ng=new Array(g.length+1).fill(0); for(let j=0;j<g.length;j++){ ng[j]^=g[j]; ng[j+1]^=mul(g[j],EXP[i]); } g=ng; } return g; }
+  function rsEC(data,n){ const g=rsGen(n); const r=new Array(n).fill(0);
+    for(const d of data){ const f=d^r[0]; r.shift(); r.push(0); if(f) for(let j=0;j<n;j++) r[j]^=mul(g[j+1],f); } return r; }
+  function bytes(str){ return Array.from(new TextEncoder().encode(str)); }
+  function build(str){
+    const B=bytes(str); let v=1;
+    for(;v<=10;v++){ const cap=TBL[v][2].reduce((a,[k,n])=>a+k*n,0); const need=Math.ceil((4+(v<10?8:16)+B.length*8)/8); if(need<=cap) break; }
+    if(v>10) throw new Error('QR: 내용이 너무 깁니다');
+    const [total,ecn,blocks]=TBL[v]; const cap=blocks.reduce((a,[k,n])=>a+k*n,0);
+    const bits=[]; const put=(val,len)=>{ for(let i=len-1;i>=0;i--) bits.push((val>>i)&1); };
+    put(4,4); put(B.length, v<10?8:16); B.forEach(b=>put(b,8));
+    for(let i=0;i<4&&bits.length<cap*8;i++) bits.push(0);
+    while(bits.length%8) bits.push(0);
+    const data=[]; for(let i=0;i<bits.length;i+=8){ let x=0; for(let j=0;j<8;j++) x=(x<<1)|bits[i+j]; data.push(x); }
+    for(let p=0;data.length<cap;p++) data.push(p%2?0x11:0xEC);
+    /* 블록 나누고 EC 붙이고 인터리브 */
+    const dBlocks=[], eBlocks=[]; let off=0;
+    for(const [k,n] of blocks) for(let i=0;i<k;i++){ const d=data.slice(off,off+n); off+=n; dBlocks.push(d); eBlocks.push(rsEC(d,ecn)); }
+    const out=[]; const maxD=Math.max(...dBlocks.map(b=>b.length));
+    for(let i=0;i<maxD;i++) for(const b of dBlocks) if(i<b.length) out.push(b[i]);
+    for(let i=0;i<ecn;i++) for(const b of eBlocks) out.push(b[i]);
+    if(out.length!==total) throw new Error('QR: 코드워드 수 불일치 '+out.length+'/'+total);
+    return {v, cw:out};
+  }
+  function matrix(str){
+    const {v,cw}=build(str); const N=17+4*v;
+    const M=Array.from({length:N},()=>new Array(N).fill(null));   /* null = 아직 안 채움 */
+    const F=Array.from({length:N},()=>new Array(N).fill(false));  /* 기능 패턴 자리 */
+    const set=(r,c,val)=>{ M[r][c]=val?1:0; F[r][c]=true; };
+    const finder=(r0,c0)=>{ for(let r=-1;r<=7;r++) for(let c=-1;c<=7;c++){ const rr=r0+r, cc=c0+c; if(rr<0||cc<0||rr>=N||cc>=N) continue;
+      const on = (r>=0&&r<=6&&(c===0||c===6)) || (c>=0&&c<=6&&(r===0||r===6)) || (r>=2&&r<=4&&c>=2&&c<=4); set(rr,cc,on); } };
+    finder(0,0); finder(0,N-7); finder(N-7,0);
+    const al=ALIGN[v]; for(const r of al) for(const c of al){ if(F[r][c]) continue;
+      for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){ set(r+dr,c+dc, Math.max(Math.abs(dr),Math.abs(dc))!==1); } }
+    for(let i=8;i<N-8;i++){ if(!F[6][i]) set(6,i,i%2===0); if(!F[i][6]) set(i,6,i%2===0); }
+    /* 포맷 정보 자리 예약 (마스크 뒤에 채움) + 다크 모듈 */
+    for(let i=0;i<8;i++){ F[8][i]=true; F[i][8]=true; F[8][N-1-i]=true; F[N-1-i][8]=true; } F[8][8]=true; set(N-8,8,true);
+    if(v>=7){ for(let i=0;i<6;i++) for(let j=0;j<3;j++){ F[i][N-11+j]=true; F[N-11+j][i]=true; } }
+    /* 데이터 지그재그 배치 */
+    const bits=[]; for(const b of cw) for(let i=7;i>=0;i--) bits.push((b>>i)&1);
+    let bi=0, up=true;
+    for(let c=N-1;c>0;c-=2){ if(c===6) c--; 
+      for(let k=0;k<N;k++){ const r=up?N-1-k:k; for(const cc of [c,c-1]){ if(F[r][cc]) continue; M[r][cc]= bi<bits.length ? bits[bi++] : 0; } }
+      up=!up; }
+    /* 마스크 8개 중 벌점 최소 */
+    const masks=[(r,c)=>(r+c)%2===0,(r,c)=>r%2===0,(r,c)=>c%3===0,(r,c)=>(r+c)%3===0,(r,c)=>(Math.floor(r/2)+Math.floor(c/3))%2===0,(r,c)=>(r*c)%2+(r*c)%3===0,(r,c)=>((r*c)%2+(r*c)%3)%2===0,(r,c)=>((r+c)%2+(r*c)%3)%2===0];
+    let best=null, bestPen=Infinity;
+    for(let m=0;m<8;m++){ const G=M.map((row,r)=>row.map((x,c)=>F[r][c]?x:(x^(masks[m](r,c)?1:0)))); writeFormat(G,N,m,v); const p=penalty(G,N); if(p<bestPen){ bestPen=p; best=G; } }
+    return best;
+  }
+  function writeFormat(G,N,mask,v){
+    /* 레벨 M = 00 */
+    let data=(0<<3)|mask; let f=data<<10; const g=0x537; for(let i=14;i>=10;i--) if(f&(1<<i)) f^=g<<(i-10); const fmt=((data<<10)|f)^0x5412;
+    const bit=i=>(fmt>>i)&1;
+    /* 왼쪽 위 */
+    const posA=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+    for(let i=0;i<15;i++){ const [r,c]=posA[i]; G[r][c]=bit(i); }
+    /* 나머지 두 곳 */
+    for(let i=0;i<7;i++) G[N-1-i][8]=bit(i);
+    for(let i=7;i<15;i++) G[8][N-15+i]=bit(i);
+    if(v>=7){ let d=v<<12; const gg=0x1F25; for(let i=17;i>=12;i--) if(d&(1<<i)) d^=gg<<(i-12); const vi=(v<<12)|d;
+      for(let i=0;i<18;i++){ const b=(vi>>i)&1; const r=Math.floor(i/3), c=i%3; G[r][N-11+c]=b; G[N-11+c][r]=b; } }
+  }
+  function penalty(G,N){ let p=0;
+    for(let r=0;r<N;r++){ let run=1; for(let c=1;c<N;c++){ if(G[r][c]===G[r][c-1]){ run++; if(run===5) p+=3; else if(run>5) p++; } else run=1; } }
+    for(let c=0;c<N;c++){ let run=1; for(let r=1;r<N;r++){ if(G[r][c]===G[r-1][c]){ run++; if(run===5) p+=3; else if(run>5) p++; } else run=1; } }
+    for(let r=0;r<N-1;r++) for(let c=0;c<N-1;c++){ const x=G[r][c]; if(x===G[r][c+1]&&x===G[r+1][c]&&x===G[r+1][c+1]) p+=3; }
+    const pat=[1,0,1,1,1,0,1,0,0,0,0], pat2=[0,0,0,0,1,0,1,1,1,0,1];
+    for(let r=0;r<N;r++) for(let c=0;c<=N-11;c++){ let a=true,b=true; for(let i=0;i<11;i++){ if(G[r][c+i]!==pat[i]) a=false; if(G[r][c+i]!==pat2[i]) b=false; } if(a) p+=40; if(b) p+=40;
+      let a2=true,b2=true; for(let i=0;i<11;i++){ if(G[c+i][r]!==pat[i]) a2=false; if(G[c+i][r]!==pat2[i]) b2=false; } if(a2) p+=40; if(b2) p+=40; }
+    let dark=0; for(const row of G) for(const x of row) dark+=x; const k=Math.floor(Math.abs(dark*100/(N*N)-50)/5); p+=k*10;
+    return p; }
+  function svg(str,size,margin){ const G=matrix(str); const N=G.length, m=margin==null?4:margin, S=N+m*2; let d='';
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(G[r][c]) d+=`M${c+m} ${r+m}h1v1h-1z`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" width="${size||240}" height="${size||240}" shape-rendering="crispEdges" role="img" aria-label="QR 코드"><rect width="${S}" height="${S}" fill="#fff"/><path d="${d}" fill="#111"/></svg>`; }
+  return {matrix, svg, _rsEC:rsEC, _EXP:EXP, _LOG:LOG, _mul:mul};
+})();
+/* 로그인 화면 [QR 보기] — 이 페이지 주소를 QR 로. 카메라로 찍으면 바로 열린다 */
+function qrShow(){ const url=location.origin+location.pathname; const box=document.getElementById('qrDlg'); if(!box) return;
+  document.getElementById('qrBox').innerHTML=QR.svg(url,260); document.getElementById('qrUrl').textContent=url; box.classList.remove('hidden'); }
+function qrClose(){ const box=document.getElementById('qrDlg'); if(box) box.classList.add('hidden'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') qrClose(); });
+
 /* ═══════════════ 설정 ═══════════════ */
 /* 환경 : /admin/test/ 아래에 올린 파일은 test, 그 외(admin.html)는 prod. 메뉴는 /admin/option 의 테스트·배포 체크를 따른다 */
 const DC_ENV = /\/test\//.test(location.pathname) ? 'test' : 'prod';

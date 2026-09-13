@@ -259,6 +259,9 @@ end $outer$;
 - **상단 [로그아웃] (2026-09-13)** — 이름 옆 `#btnLogout`(`.pill.btnp`, 폰은 아이콘만·40px) → `logoutStore()` = 확인 → staff_code·st_open 지우고 새로고침 (아래 "담당자 변경"과 같음).
 - **견적서 마감일** — `crm.quote.summary->>'until'`('YYYY.MM.DD', 발행일+7일)을 `fn_store_quotes`·`fn_store_consults_my`(quotes)·`fn_store_consult_detail`(quotes)이 `until` 로 준다. 화면 `qUntil(u,small)` = 노란 [마감 M/D], 지났으면 빨간 [마감 지남 M/D] — 견적서 탭·홈 찾기·내 상담 줄 견적 목록·상세 팝업.
 - **검색 칸은 청록 2px 테두리 + 연한 배경** (`.csearch .in, .csearchbox .in, #all_q`) — 홈·상담·배정·견적서·내 고객 모두.
+- **로그인 화면 [QR 보기]** — 담당자 PIN 카드(`.pin-qr` → `qrShow()`, `#qrDlg` .lvmask) · 관리자 로그인 링크 줄(`#qrDlg` 인라인 스타일). QR 인코더는 외부 라이브러리 없이 **각 파일에 인라인**(`const QR=…`, 바이트 모드·레벨 M·버전 1~10, 원본 `scratchpad/qr/qr.js`).
+  파이썬 독립 디코더로 4개 주소 왕복 검증했다(CDN 은 컨테이너에서 막혀 있고, 페이지도 외부 의존 없이 두는 게 맞다). 주소 = `location.origin+location.pathname`(쿼리 제외).
+- **대시보드 판매 개수** — 채널 순위 금액 옆 `.rk-q` "N개"(샵링커 상품 셀 `PC[c][3]` 합, 상품 데이터 있는 채널만) · 채널 드로어 상위 상품 q "N개" + 카테고리 sub.
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
