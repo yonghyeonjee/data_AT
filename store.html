@@ -1010,7 +1010,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button type="button" data-v="all">전체 <i>0</i></button>
         <button type="button" data-v="trash" title="삭제한 상담 — 7일 안에는 되살릴 수 있습니다">휴지통 <i>0</i></button>
       </div>
-      <div class="legend"><b>연락 전</b> 아직 통화 안 한 문의 · <b>상담중</b> 통화한 뒤 진행 중 · <b>보류</b> 고객 사정으로 멈춤 · <b>완료</b> 상담 끝(판매 아님) · <b>구매함</b> 판매로 이어짐</div>
+      <div class="legend"><b>연락 전</b> 아직 통화 안 한 문의 · <b>상담중</b> 통화한 뒤 진행 중 · <b>보류</b> 고객 사정으로 멈춤 · <b>완료</b> 상담 끝(판매 아님) · <b>구매함</b> 판매로 이어짐<span id="mcDevNote" class="hidden"> · <b>개발 계정</b>이라 테스트 건도 보입니다 (통계·다른 담당자에게는 안 보임)</span></div>
       <div class="bulkbar">
         <label class="allck"><input type="checkbox" id="mc_all" onchange="mcToggleAll(this.checked)"> 전체선택</label>
         <b id="mc_selN">고른 건 없음</b>
@@ -2904,6 +2904,7 @@ function goTab(name, fromHistory){
   if(name==='order') initOrderTab();
   if(name==='customer') loadMyCustomers();
   if(name==='alerts') loadAlerts();
+  if(name==='inbox'){ const dn=$('mcDevNote'); if(dn) dn.classList.toggle('hidden', !/개발/.test((STATUS&&STATUS.dept)||'')); }
   if(name==='daily' && $('m_month') && !$('m_month').value) setMonth(0);
   if(name==='consult') loadInqCodes();
   if(!fromHistory){ try{ (history.state&&history.state.tab===name) ? history.replaceState({tab:name},'','#'+name) : history.pushState({tab:name},'','#'+name); }catch(e){} }
