@@ -1819,6 +1819,8 @@ function render(){
   /* 취소·환불은 내 건이거나 점장님·대표님만 */
   const canCx = x => x.mine || (STATUS && STATUS.is_mgr);
   const cxBtn = x => canCx(x) ? `<button class="mini bad" onclick="cancelOpen(${x.id})">취소·환불</button>` : '';
+  /* 개발·온라인사업부만: 테스트로 넣은 판매를 집계에서 뺀다 (관리자 주문·판매·매출 흐름 › 테스트 카드에서 해제) */
+  const tsBtn = x => /개발|온라인/.test((STATUS&&STATUS.dept)||'') ? `<button class="mini" style="opacity:.8" onclick="saleTest(${x.id},'${esc(x.product||'')}')" title="테스트로 넣은 판매 — 확정 대기·현황·일 마감에서 뺍니다">테스트로</button>` : '';
   const stageBtn = x => (x.stage==='취소'||x.stage==='환불')
                         ? (canCx(x) ? `<button class="mini" onclick="cancelUndo(${x.id})">되돌리기</button>` : '')
                       : x.stage==='매출' ? `<button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료로</button>`+cxBtn(x)
@@ -1826,13 +1828,13 @@ function render(){
   $('todayList').innerHTML = s.today_sales.length ? s.today_sales.map(x=>`
     <div class="item"><div class="t">${x.time}</div>
       <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span><span class="tag ${x.stage||''}">${x.stage||''}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}</div></div>
-      <div class="act"><div class="a">${won(x.amount)}</div>${stageBtn(x)}</div></div>`).join('') : '<div class="empty">아직 없습니다</div>';
+      <div class="act"><div class="a">${won(x.amount)}</div>${stageBtn(x)}${tsBtn(x)}</div></div>`).join('') : '<div class="empty">아직 없습니다</div>';
   const op = s.open_sales || [];
   $('openSum').textContent = op.length ? `${s.open_count||op.length}건 · ${won(op.reduce((a,x)=>a+Number(x.amount),0))}` : '최근 60일 · 내 건 우선';
   $('openList').innerHTML = op.length ? op.map(x=>`
     <div class="item"><div class="t">${String(x.date).slice(5).replace('-','/')}</div>
       <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}</div></div>
-      <div class="act"><div class="a">${won(x.amount)}</div><button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료</button>${cxBtn(x)}</div></div>`).join('') : '<div class="empty">확정 대기 건이 없습니다</div>';
+      <div class="act"><div class="a">${won(x.amount)}</div><button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료</button>${cxBtn(x)}${tsBtn(x)}</div></div>`).join('') : '<div class="empty">확정 대기 건이 없습니다</div>';
   if($('r_handler').options.length<=1){ $('r_handler').innerHTML = '<option value="">전체 프로</option>' + handlers.map(h=>`<option ${h===ME?'selected':''}>${h}</option>`).join(''); }
   lockToMe();
   if(!$('r_from').value) setReportRange('day');
@@ -3890,6 +3892,12 @@ function cdHTML(d){
 function histHTML(x){ if(!x.history||!x.history.length) return ''; return `<div class="h">이전 이력 ${x.consults?`· 상담 ${x.consults}건`:''} ${x.orders?`· 구매 ${x.orders}건`:''} ${x.handler?`· 담당 ${esc(x.handler)}${x.handler===ME?'<span class="mine">내 고객</span>':''}`:''}</div>`+
   x.history.map(h=>`<div class="e"><div class="d">${String(h.at).slice(2,10).replace(/-/g,'.')}</div><div class="t ${h.type==='구매'?'buy':'talk'}">${h.type}</div><div class="b">${esc(h.title)}<small>${esc(h.detail||'')}${h.handler?' · '+esc(h.handler):''}</small></div></div>`).join(''); }
 
+/* ═══ 판매 [테스트로] — is_test 로 표시해 확정 대기·현황·일 마감 집계에서 뺀다. 되돌리기는 관리자 › 주문·판매·매출 흐름 › 테스트 카드 ═══ */
+async function saleTest(id, product){
+  if(!confirm(`'${product||'이 판매'}' 를 테스트로 표시할까요?\n확정 대기·현황·일 마감에서 빠집니다. 되돌리려면 관리자 화면 [주문·판매·매출 흐름] › 테스트 카드에서 해제하세요.`)) return;
+  try{ await rpc('fn_store_sale_flag',{p_code:CODE,p_id:id,p_test:true}); toast('테스트로 표시했습니다 — 집계에서 빠집니다','ok'); REPORT_LOADED=false; await loadStatus(); render(); }
+  catch(e){ toast(e.message,'bad'); }
+}
 /* ═══ 단계 변경 ═══ */
 async function setStage(id, stage){
   try{ const r = await rpc('fn_store_sale_stage',{p_code:CODE,p_id:id,p_stage:stage});
