@@ -295,6 +295,8 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .alert .al{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:11px 14px;border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:10px;background:#fff;cursor:pointer;text-align:left;font:inherit}
 .alert .al b{font-size:calc(14px * var(--font-scale));color:var(--ink)} .alert .al span{font-size:calc(12.5px * var(--font-scale));color:var(--muted);white-space:nowrap}
 .alert .al.bad{border-left-color:var(--bad);background:#FFF8F7} .alert .al.warn{border-left-color:var(--warn);background:#FFFDF7}
+/* 홈 찾기 결과 — 상담 묶음 · 견적서 묶음 */
+.fsec{margin-top:12px} .fsec>b{display:block;font-size:calc(12.5px * var(--font-scale));color:var(--muted);margin:0 0 6px;font-weight:700} .fsec>b small{font-weight:500}
 /* 필터 칩 : 한 줄에 하나만 고른다 — 고른 것은 채우고 ✓, 나머지는 테두리만 */
 .chips.filter{align-items:center;gap:6px}
 .chips.filter .lbl{font-size:calc(11.5px * var(--font-scale));font-weight:700;color:var(--muted);letter-spacing:.04em;margin-right:2px;flex:0 0 auto}
@@ -882,6 +884,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="alert hidden" id="homeAlert"></div>
     <div class="home-kpi" id="homeKpi"></div>
     <div class="cta2"><button onclick="goTab('consult')">＋ 상담 입력</button><button class="alt" onclick="openQuote()">견적서 발행 ↗</button></div>
+    <div class="card" id="findCard">
+      <h2>찾기 <span>상담 · 견적서 한 번에</span></h2>
+      <div class="cbar"><div class="csearchbox"><input class="in" id="home_q" placeholder="이름 · 번호 뒷자리 · 견적번호 · 모델" autocomplete="off" onkeydown="if(event.key==='Enter')homeFind()"><button type="button" class="go" onclick="homeFind()" aria-label="찾기">⌕</button></div></div>
+      <div id="findBody" class="hidden"></div>
+    </div>
     <div class="card" id="cbCard">
       <h2>콜백 약속 <span id="cbSub"></span></h2>
       <div id="cbList"><div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div></div>
@@ -951,6 +958,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel hidden" id="tab-quote">
     <div class="intro"><b>견적서</b>는 홈페이지 견적서 페이지에서 만들고, 여기서 찾아 고객에게 보냅니다. 상담 줄의 <b>견적서 만들기</b>를 누르면 고객 정보가 채워진 채 열립니다.</div>
     <div class="cta2"><button onclick="openQuote()">견적서 발행 ↗</button><button class="alt" onclick="openCalc()">구독료 계산기 ↗</button></div>
+    <div class="cbar" style="margin-bottom:10px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
     <div class="card" id="qtCard">
       <h2>내 견적서 <span id="qtSub">최근 90일</span><span style="margin-left:auto"><button class="btn sm ghost" onclick="openQuote()" style="margin:0">견적서 발행 ↗</button></span></h2>
       <div class="list" id="qtList"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
@@ -3015,6 +3023,42 @@ function renderHomeAlert(s){
   if((s.unclosed_days||[]).length) items.push(`<button type="button" class="al" onclick="goTab('daily')"><b>일 마감 안 한 날 ${s.unclosed_days.length}일</b><span>마감하러 가기 ›</span></button>`);
   al.innerHTML=items.join(''); al.classList.toggle('hidden', !items.length);
 }
+/* ═══ 견적서 목록 — 홈 찾기와 견적서 탭이 같이 쓴다 ═══ */
+function quoteRow(x){ return `
+    <div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span></div>
+      <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.models||'')}${x.final?` · 최종 ${won(x.final)}`:''}${x.monthly?` · 월 ${won(x.monthly)}`:''}${x.memo?' · '+esc(x.memo):''}</div></div>
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button>${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}')">상담 입력</button>`:''}</div></div>`; }
+function quoteMatch(x,q){ q=String(q||'').trim().toLowerCase(); if(!q) return true; const d=q.replace(/\D/g,'');
+  return [x.name,x.no,x.models,x.memo].some(v=>String(v||'').toLowerCase().includes(q)) || (d.length>=3 && String(x.tel||'').includes(d)); }
+function quoteFilter(){
+  const q=($('qt_q')||{}).value||''; const all=(STATUS&&STATUS.quotes)||[]; const list=all.filter(x=>quoteMatch(x,q));
+  $('qtSub').textContent=(q?`${list.length}건 찾음 / `:'')+(all.length?`${all.length}건 · 최근 90일`:'최근 90일');
+  $('qtList').innerHTML=list.length?list.map(quoteRow).join(''):`<div class="empty">${q?'맞는 견적서가 없습니다':'홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.'}</div>`;
+}
+/* ═══ 홈 찾기 — 상담과 견적서를 한 번에. 상담은 서버(내 것 / 점장은 전체), 견적서는 이미 받아 둔 90일치에서 ═══ */
+const fmtAt=v=>{ v=String(v||''); return v.length>10 ? v.slice(5,10).replace('-','/') : v; };
+async function homeFind(){
+  const q=$('home_q').value.trim(); const box=$('findBody'); if(!q){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  box.classList.remove('hidden'); box.innerHTML='<div class="empty">찾는 중…</div>';
+  const mgr=!!(STATUS&&STATUS.is_mgr); let rows=[];
+  try{ const d= mgr ? await rpc('fn_store_consults_all',{p_code:CODE,p_scope:'all',p_q:q,p_limit:50})
+                    : await rpc('fn_store_consults_my',{p_code:CODE,p_filter:'all',p_q:q,p_limit:50,p_offset:0});
+       rows=d.rows||[]; }catch(e){ rows=[]; }
+  const qs=((STATUS&&STATUS.quotes)||[]).filter(x=>quoteMatch(x,q));
+  const crow=x=>`<div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small>${x.src?` <span class="tag">${esc(x.src)}</span>`:''}${x.result?` <span class="tag">${esc(x.result)}</span>`:''}</div>
+      <div class="m">${fmtAt(x.at)}${x.handler?' · '+esc(x.handler):' · 미배정'}${x.interest?' · '+esc(x.interest):''}${x.content?' · '+esc(String(x.content).slice(0,60)):''}</div></div>
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="findOpen()">상담 열기</button></div></div>`;
+  box.innerHTML=`<div class="fsec"><b>상담 ${rows.length}건</b>${rows.length?rows.map(crow).join(''):'<div class="empty">맞는 상담이 없습니다</div>'}</div>
+    <div class="fsec"><b>견적서 ${qs.length}건 <small>최근 90일</small></b>${qs.length?qs.map(quoteRow).join(''):'<div class="empty">맞는 견적서가 없습니다</div>'}</div>`;
+}
+/* 찾은 검색어 그대로 상담 탭으로 — 점장은 전체 상담·배정, 담당자는 내 상담 */
+function findOpen(){
+  const q=$('home_q').value.trim(); goTab('inbox');
+  if(STATUS&&STATUS.is_mgr){ const sg=$('all_scope'); if(sg){ ALL_SCOPE='all'; sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all')); }
+    $('all_q').value=q; loadAllConsults(); setTimeout(()=>{ const el=$('allCard'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },80); }
+  else { $('mc_q').value=q; MC_FLT='all'; const f=$('mc_flt'); if(f) f.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all'));
+    mcSearch(); setTimeout(()=>{ const el=$('mcCard'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },80); }
+}
 function renderHome(s){
   const cbs=s.callbacks||[], oc=s.my_open_consults||[], mc=s.my_customers||[];
   const due=cbs.filter(x=>x.overdue||x.today).length;
@@ -3031,12 +3075,7 @@ function renderHome(s){
         <div class="what">${esc([x.interest,x.model].filter(Boolean).join(' '))}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}</div>
         <div class="row">${x.tel?`<a class="call" href="tel:${x.tel}">📞 전화</a>`:''}<button class="done" onclick="cbAction(${x.id},'done')">완료</button><button onclick="cbAction(${x.id},'tomorrow')">내일로</button><button onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매 확정</button></div></div>
     </div>`; }).join(''):'<div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div>';
-  const qt=s.quotes||[];
-  $('qtSub').textContent=qt.length?`${qt.length}건 · 최근 90일`:'최근 90일';
-  $('qtList').innerHTML=qt.length?qt.map(x=>`
-    <div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span></div>
-      <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.models||'')}${x.final?` · 최종 ${won(x.final)}`:''}${x.monthly?` · 월 ${won(x.monthly)}`:''}${x.memo?' · '+esc(x.memo):''}</div></div>
-      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button>${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}')">상담 입력</button>`:''}</div></div>`).join(''):'<div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div>';
+  quoteFilter();   /* 견적서 목록은 quoteFilter 가 그린다 (견적서 탭 검색과 공용) */
   $('mcSub').textContent=s.my_customer_count?`${s.my_customer_count}명 · 최근 ${mc.length}명 표시`:'';
   $('mcuList').innerHTML=mc.length?mc.map(x=>`
     <div class="item oc"><div><div class="p">${esc(x.name)} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small>${x.consent?'<span class="mine">수신동의</span>':''}</div>
