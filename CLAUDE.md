@@ -211,6 +211,7 @@ end $outer$;
 - **펼친 상담 줄은 3줄** — 하는 일(전화·콜백·견적서·구매 확정) / 상태 바(`stateBar`·`STATE_STEPS`: 연락 전·상담중·보류·완료·거절, 지금 상태 켜짐, 누르면 `mcAct` start/resume/hold/done/reject, 아래 한 줄 뜻 설명) / 새 상담·넘기기·(떨어져서)삭제.
   '재연락' 이라는 말은 화면에서 전부 '콜백' 으로 통일했다. UAT T8 은 이제 [삭제]↔[구매 확정]·[완료] 거리를 잰다.
 - **알림 내역 탭 (`alerts`, `fn_store_alerts`)** — 견적서 보냄·열람(quote_share) · 배정(consult_assign) · 새 문의(외부 접수) · 콜백, 최근 90일. 문자 알림은 '개발중' 표시(`.devtag`), 견적서 보내기의 [문자로 보내기]도 개발중 태그.
+- **상담 [테스트로] (mvp_121)** — 펼친 줄 맨 아래, dept 가 개발·온라인인 담당자에게만. `fn_store_consult_update` p_action='test' 가 hidden_*='테스트' 로 숨겨 목록·통계에서 뺀다. 복구는 관리자 문의 관리 [삭제됨].
 - **문자 발송은 나중에 센드온(Sendon) API 로 붙인다 (예정)** — 붙일 자리: ① 견적서 보내기 창의 [문자로 보내기] (`QS_CAN_SMS` 가 false 라 지금은 링크 복사, `qsMsg(d)` 가 문자 본문을 이미 만든다)
   ② 알림 내역 탭의 '문자 알림' 카드 (`fn_store_alerts` 의 `sms` 키가 상태를 준다 — 지금은 '개발중') ③ 보낸 기록은 `crm.send_log`(buyer_key·channel·campaign·sent_at·status·error_msg, 현재 0건) 에 쌓아 알림 내역에 'sms' kind 로 합친다.
   키는 `core.api_key` 방식이 아니라 서버(Edge Function 또는 DB `extensions.http_post`) 쪽에 두고 화면에는 절대 넣지 않는다. 컨테이너에서 외부 HTTP 는 막히므로 실제 연동 테스트는 Supabase 쪽에서 한다.

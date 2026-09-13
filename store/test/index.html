@@ -3501,6 +3501,8 @@ function renderMyConsults(){
     if(x.result!=='구매완료') A.push(`<button class="mini ok" onclick="toSale('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}','${esc(x.model||'')}',${x.id})">구매 확정</button>`);
     A2.push(`<button class="mini" onclick="ocToConsult('${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 건은 그대로 두고, 같은 고객으로 새 상담을 하나 더 적습니다">＋ 새 상담</button>`);
     A2.push(`<button class="mini" onclick="asgOpen([${x.id}],'${nm}')" title="다른 담당자에게 넘기기">넘기기</button>`);
+    /* 개발·온라인사업부만: 테스트로 넣은 건을 숨겨 통계에서 뺀다 (관리자 문의 관리 [삭제됨]에서 복구) */
+    if(/개발|온라인/.test((STATUS&&STATUS.dept)||'')) DZ.push(`<button class="mini" onclick="mcTest(${x.id},'${nm}')" title="테스트로 넣은 건 — 숨기고 통계에서 뺍니다">테스트로</button>`);
     DZ.push(`<button class="mini" style="color:var(--bad,#B3261E)" onclick="mcDelete(${x.id},'${nm}')" title="실수로 넣은 상담 — 통계에서 빠지고 7일 안에 되살릴 수 있습니다">삭제</button>`);
     }
     /* 상담 방법 : 대면 · 전화 · 메시지 — 누르면 바로 바뀐다 */
@@ -3585,6 +3587,10 @@ async function mcAct(id, action, what){
   try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:action});
     toast(`${what} 처리했습니다`,'ok'); await loadStatus(); render(); loadMyConsults(MC_OFF,true);
   }catch(e){ toast(e.message,'bad'); }
+}
+async function mcTest(id, name){
+  if(!confirm(`${name||'이 상담'} 을(를) 테스트로 표시합니다.\n목록과 통계에서 빠집니다. 되살리려면 관리자 화면 문의 관리 [삭제됨]에서 복구하세요.`)) return;
+  await mcAct(id, 'test', '테스트로 표시');
 }
 async function mcDelete(id, name){
   const why = prompt(`${name||'이 상담'} 을(를) 삭제합니다.\n통계에서 빠지고, 7일 안에는 [휴지통]에서 되살릴 수 있습니다.\n\n사유 (선택):`, '실수 입력');
