@@ -3168,9 +3168,10 @@ function renderFlow(s){
   const cbs=s.callbacks||[], due=cbs.filter(x=>x.overdue||x.today).length, late=cbs.filter(x=>x.overdue).length;
   const wait=(s.open_sales||[]).filter(x=>x.mine).length;
   const steps=[
-    {k:'문의',   v:s.today_consults||0,             sub:'오늘 접수', go:"goTab('inbox')"},
+    /* 문의 = 오늘 밖에서 들어온 것(온라인 폼·홈페이지·방문 접수) — 직접 입력한 상담은 이미 '상담'이라 안 센다 */
+    {k:'문의',   v:s.today_consults||0,             sub:Number(s.today_mine||0)>0?`오늘 접수 · 내 것 ${s.today_mine}`:'오늘 접수', go:"goTab('inbox')"},
     s.is_mgr ? {k:'배정', v:s.unassigned_n||0,      sub:'미배정',    go:"goTab('inbox')", alarm:Number(s.unassigned_n||0)>0} : null,
-    {k:'상담',   v:(s.my_open_consults||[]).length,  sub:'진행중',    go:"mcJump('open')"},
+    {k:'상담',   v:(s.my_open_consults||[]).length,  sub:(()=>{ const pre=(s.my_open_consults||[]).filter(x=>x.result==='진행전').length; return pre?`미완료 · 연락 전 ${pre}`:'미완료'; })(), go:"mcJump('open')", warn:(s.my_open_consults||[]).some(x=>x.result==='진행전')},
     {k:'콜백',   v:due,                              sub:late?'지난 약속 '+late:'오늘', go:"document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})", alarm:late>0, warn:due>0&&!late},
     {k:'견적서', v:(s.quotes||[]).length,            sub:'최근 90일', go:"goTab('quote')"},
     {k:'구매 확정', v:wait,                           sub:'확정 대기', go:"goTab('sale')", warn:wait>0},
