@@ -919,7 +919,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <button class="tab" data-tab="customer">내 고객</button>
       <button class="tab" data-tab="stock" data-perm="stock">재고</button>
       <button class="tab" data-tab="order" data-perm="order">주문서</button>
-      <button class="tab" data-tab="daily">일 마감</button>
+      <button class="tab" data-tab="daily" data-perm="daily">일 마감</button>
       <button class="tab" data-tab="stats">처리현황</button>
       <button class="tab" data-tab="report" data-perm="report">판매현황</button>
       <button class="tab" data-tab="online" data-perm="channel">온라인</button>
@@ -3187,7 +3187,7 @@ function renderHomeAlert(s){
   if(s.is_mgr && Number(s.unassigned_n||0)>0) items.push(`<button type="button" class="al bad" onclick="goTab('inbox')"><b>미배정 문의 ${s.unassigned_n}건</b><span>담당자를 정해 주세요 ›</span></button>`);
   const late=(s.callbacks||[]).filter(x=>x.overdue).length;
   if(late) items.push(`<button type="button" class="al warn" onclick="document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})"><b>지난 콜백 ${late}건</b><span>약속 시각이 지났습니다 ›</span></button>`);
-  if((s.unclosed_days||[]).length) items.push(`<button type="button" class="al" onclick="goTab('daily')"><b>일 마감 안 한 날 ${s.unclosed_days.length}일</b><span>마감하러 가기 ›</span></button>`);
+  if(((s.perms||[]).includes('daily')) && (s.unclosed_days||[]).length) items.push(`<button type="button" class="al" onclick="goTab('daily')"><b>일 마감 안 한 날 ${s.unclosed_days.length}일</b><span>마감하러 가기 ›</span></button>`);
   al.innerHTML=items.join(''); al.classList.toggle('hidden', !items.length);
 }
 /* ═══ 내 고객 탭 찾기 — 상담 입력의 고객 찾기와 같은 RPC ═══ */
@@ -3787,7 +3787,7 @@ $('d_scope').addEventListener('click', e=>{ const b=e.target.closest('button'); 
   if(STATUS) renderDailyLists(STATUS); loadDailyDay(); });
 function renderDailyLists(s){
   const all=dScopeAll();
-  const un = all ? (s.unclosed_days||[]) : (s.unclosed_mine||[]);
+  const un = ((s.perms||[]).includes('daily')) ? (all ? (s.unclosed_days||[]) : (s.unclosed_mine||[])) : [];   /* 일 마감 권한 없으면 미마감 배지도 없다 */
   if(un.length){ $('pillUnclosed').textContent = `미마감 ${un.length}일`; $('pillUnclosed').classList.remove('hidden');
     $('d_unclosedWrap').classList.remove('hidden');
     $('d_unclosed').innerHTML = un.map(d=>`<span class="chip" onclick="$('d_date').value='${d}';loadDailyDay()">${d.slice(5).replace('-','/')}</span>`).join('');
