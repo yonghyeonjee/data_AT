@@ -142,6 +142,10 @@ section.panel{padding:16px 18px}
 .card h2 span{font-size:calc(13px * var(--font-scale));color:var(--muted);font-weight:500;letter-spacing:0}
 
 .f{margin-bottom:14px}
+/* 유입경로 말풍선 — 상담 입력을 열면 뜨고, 스크롤하거나 값을 고르면 사라진다. 아래 칸을 가리지 않도록 위로 띄우고 탭은 통과시킨다 */
+.bubble{position:absolute;right:0;bottom:calc(100% + 6px);z-index:6;width:max-content;max-width:min(360px, calc(100vw - 48px));box-sizing:border-box;background:var(--navy);color:#fff;font-size:calc(12.5px * var(--font-scale));line-height:1.5;padding:8px 12px;border-radius:10px;box-shadow:0 6px 16px rgba(20,40,160,.28);pointer-events:none;animation:bubIn .25s ease-out}
+.bubble:after{content:'';position:absolute;right:18px;top:100%;border:6px solid transparent;border-top-color:var(--navy)}
+@keyframes bubIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .f label{display:block;font-size:calc(14px * var(--font-scale));font-weight:700;color:var(--ink);margin-bottom:7px;letter-spacing:-.01em}
 .f label .req{font-size:0;display:inline-block;vertical-align:middle;margin-left:6px}
 .f label .req::after{content:'필수';font-size:calc(10.5px * var(--font-scale));font-weight:800;color:#fff;background:var(--bad);padding:2px 7px;border-radius:5px;letter-spacing:.03em;line-height:1.3}
@@ -1182,8 +1186,9 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <input class="in" id="c_detail" placeholder="예: 김치냉장고 키친핏 4도어, 25평 무풍 스탠드, 아이 방 공기청정기" autocomplete="off"></div>
       <div class="grid2">
         <div class="f"><label>관심 모델 <span class="sub" style="font-weight:400;color:var(--muted)">여러 개면 Enter 나 쉼표로 추가</span></label><input class="in" id="c_model" placeholder="AF60F17D11GRT" style="text-transform:uppercase" autocomplete="off"><div class="chips tagchips" id="c_models"></div><div id="c_subq" class="subq"></div></div>
-        <div class="f"><label>유입경로 <span class="req">*</span></label>
-          <select class="in" id="c_route"><option value="">선택</option></select></div>
+        <div class="f" style="position:relative"><label>유입경로 <span class="req">*</span></label>
+          <div class="bubble hidden" id="routeTip" aria-hidden="true">혹시 어디서 보고 오셨는지 물어봐주시면 좋습니다.</div>
+          <select class="in" id="c_route" onchange="routeTipHide()"><option value="">선택</option></select></div>
       </div>
       <div class="grid3">
         <div class="f"><label>상담 상태 <span class="hint">상담완료 ≠ 판매</span></label>
@@ -2776,6 +2781,7 @@ function goTab(name, fromHistory){
   if(name==='online' && !OC_LOADED) loadOnlineDay();
   if(name==='stock' && !STK_LOADED) loadStk();
   if(name==='order') initOrderTab();
+  if(name==='consult') routeTipShow();
   if(name==='consult') loadInqCodes();
   if(!fromHistory){ try{ (history.state&&history.state.tab===name) ? history.replaceState({tab:name},'','#'+name) : history.pushState({tab:name},'','#'+name); }catch(e){} }
   gfabShow(name);
@@ -3792,6 +3798,11 @@ async function loadInqCodes(){
   try{ INQ=await rpc('fn_inq_codes',{}); }catch(e){ INQ={channels:[],types:[]}; }
   renderInqChips(); return INQ;
 }
+/* 유입경로 말풍선 : 상담 입력 탭을 열 때 값이 비어 있으면 띄우고, 어느 쪽이든 스크롤하면 바로 지운다 */
+function routeTipShow(){ const t=$('routeTip'), sel=$('c_route'); if(!t||!sel) return; if(sel.value){ t.classList.add('hidden'); return; }
+  t.classList.remove('hidden'); clearTimeout(routeTipShow.t); routeTipShow.t=setTimeout(routeTipHide, 12000); }
+function routeTipHide(){ const t=$('routeTip'); if(t) t.classList.add('hidden'); clearTimeout(routeTipShow.t); }
+window.addEventListener('scroll', ()=>{ const t=$('routeTip'); if(t && !t.classList.contains('hidden')) routeTipHide(); }, {capture:true, passive:true});
 /* 유입경로 : 고른 문의 채널의 것이 위로 오고, 채널 공통(지인소개·기타)이 아래로 */
 function renderRoutes(){
   const sel=$('c_route'); if(!sel||!INQ) return;
