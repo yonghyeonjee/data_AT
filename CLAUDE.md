@@ -157,7 +157,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-13 · v99)
+## 지금 상태 (2026-09-13 · v100)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -233,6 +233,11 @@ end $outer$;
 - **문자 발송은 나중에 센드온(Sendon) API 로 붙인다 (예정)** — 붙일 자리: ① 견적서 보내기 창의 [문자로 보내기] (`QS_CAN_SMS` 가 false 라 지금은 링크 복사, `qsMsg(d)` 가 문자 본문을 이미 만든다)
   ② 알림 내역 탭의 '문자 알림' 카드 (`fn_store_alerts` 의 `sms` 키가 상태를 준다 — 지금은 '개발중') ③ 보낸 기록은 `crm.send_log`(buyer_key·channel·campaign·sent_at·status·error_msg, 현재 0건) 에 쌓아 알림 내역에 'sms' kind 로 합친다.
   키는 `core.api_key` 방식이 아니라 서버(Edge Function 또는 DB `extensions.http_post`) 쪽에 두고 화면에는 절대 넣지 않는다. 컨테이너에서 외부 HTTP 는 막히므로 실제 연동 테스트는 Supabase 쪽에서 한다.
+- **상담 상세 보기 팝업 + 상담 입력 고객 고정 헤더 (mvp_126)** — `fn_store_consult_detail(p_code,p_id)` 가 한 건의 전부(완료일 `done_at` = 결과가 상담완료·거절·구매완료·확인완료·종료일 때 updated_at, `journal` = notes 를 ' / ' 로 나눈 진행 기록, 배정 이력, 견적서, 연결 주문, `others` = 같은 고객(buyer_key 또는 번호 10자리 일치)의 다른 상담)를 준다.
+  화면 `cdOpen(id)` → `#cdDlg`(전역, `.lvdlg.wide.dv`). 내 상담 줄 첫 줄 [상세 보기] · 배정 줄 [상세 보기]·이름 클릭 · 내 고객 아코디언 상담 줄 [상세] · 홈 찾기 [상세]. 팝업 안 다른 상담 [상세] 는 그 건으로 넘어간다.
+  **`ocToConsult(id,ref,name,tel,interest)`** (첫 인자 id 추가) — 상담 내용에 "이전 상담 … 이어서" 를 더 이상 안 넣는다. 대신 `#c_stick`(position:sticky, top = `--tb-h` 상단 바 높이) 에 이름·번호·N회째 + [이전 상담 N건 보기](`csRow`: 날짜·상태·완료일·채널·담당·내용·[상세]). 넓은 화면은 자동 펼침, 폰은 접힘. `pickMine(key,name)` 은 `fn_store_customer_detail`(consults 에 phone·done_at 추가) 로 같은 헤더. `custClear('c')` 가 헤더도 숨긴다.
+  **기존 고객 찾기는 접혀 있다** — `#c_findBtn`(`.foldbtn`) → `cFindToggle()` 로 `#c_findBox` 펼침.
+  같은 고객 추가 상담은 **`crm.consult` 에 줄이 하나 더 생길 뿐** 이전 줄은 절대 지워지지 않는다 (삭제는 [삭제]로만, 7일 안 복구). 묶는 키는 buyer_key(LINK.c)·전화번호. `_secrets` 없음.
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
