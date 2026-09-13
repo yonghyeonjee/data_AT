@@ -334,7 +334,13 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .lvchip{display:block;font-size:calc(10px * var(--font-scale));color:#fff;border-radius:4px;padding:1px 3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lvmore{font-size:calc(10px * var(--font-scale));color:var(--muted)}
 .lvdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
-.lvadd{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.lvmask{position:fixed;inset:0;z-index:70;background:rgba(15,27,77,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.lvdlg{background:#fff;border-radius:14px;padding:18px 18px 16px;width:min(440px,100%);box-shadow:0 20px 50px rgba(0,0,0,.25);animation:bubIn .18s ease-out}
+.lvdlg h3{margin:0 0 12px;font-size:calc(16px * var(--font-scale));font-weight:800}
+.lvform{display:grid;gap:10px} .lvform label{display:block;font-size:calc(12.5px * var(--font-scale));font-weight:600;color:var(--muted);margin-bottom:4px} .lvform label small{font-weight:400}
+.lvform .two{display:grid;grid-template-columns:1fr 1fr;gap:8px} .lvform .in{width:100%;box-sizing:border-box}
+.lvform .btns{display:flex;gap:8px;margin-top:4px} .lvform .btns .btn{flex:1;margin:0;min-height:44px}
+@keyframes bubIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .lvcal-hd .btn{min-width:40px;padding-left:8px;padding-right:8px}
 /* 좁은 폰 : 주차 열을 좁히고 칸 사이를 1px 로, 카드 여백 안쪽으로 16px 넓혀 날짜 칸을 40px 이상으로 */
 @media(max-width:480px){ .lvcal{grid-template-columns:20px repeat(7,1fr);gap:1px;margin:0 -16px} .lvcal .wk{font-size:calc(8.5px * var(--font-scale));letter-spacing:-.02em;padding:0} .lvcal .day{min-height:52px;padding:2px} .lvchip{font-size:calc(9.5px * var(--font-scale));padding:1px 2px} }
@@ -1094,15 +1100,16 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button type="button" class="btn sm" onclick="lvAddOpen()" style="margin:0">＋ 휴가</button>
       </div>
       <div class="lvcal" id="lvCal" aria-label="휴가 달력"></div>
-      <p class="note-in" style="margin:6px 0 0">날짜를 누르면 시작일, 한 번 더 누르면 종료일이 됩니다. 이름 색은 담당자마다 다릅니다. <b>W37</b> 은 1월 1일이 든 주를 1주로 센 주차입니다.</p>
-      <div class="lvadd hidden" id="lvAdd">
-        <div class="daterow">
-          <select class="in" id="lv_staff"></select>
-          <input class="in" type="date" id="lv_from" title="시작일">
-          <input class="in" type="date" id="lv_to" title="종료일">
-          <input class="in" id="lv_note" placeholder="메모 (선택)">
-          <button class="btn sm" onclick="lvSave()" style="margin:0">추가</button>
-          <button class="btn sm ghost" onclick="lvAddClose()" style="margin:0">닫기</button>
+      <p class="note-in" style="margin:6px 0 0">날짜를 누르면 창이 뜹니다. 종료일과 메모는 창에서 넣습니다. 이름 색은 담당자마다 다릅니다. <b>W37</b> 은 1월 1일이 든 주를 1주로 센 주차입니다.</p>
+      <div class="lvmask hidden" id="lvAdd" onclick="if(event.target===this)lvAddClose()">
+        <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="lvAddTitle">
+          <h3 id="lvAddTitle">휴가 추가</h3>
+          <div class="lvform">
+            <div><label for="lv_staff">누구</label><select class="in" id="lv_staff"></select></div>
+            <div class="two"><div><label for="lv_from">시작일</label><input class="in" type="date" id="lv_from"></div><div><label for="lv_to">종료일</label><input class="in" type="date" id="lv_to" onchange="if($('lv_from').value&&this.value<$('lv_from').value)this.value=$('lv_from').value"></div></div>
+            <div><label for="lv_note">메모 <small>(선택)</small></label><input class="in" id="lv_note" placeholder="예: 연차 · 오후 반차"></div>
+            <div class="btns"><button class="btn ghost" onclick="lvAddClose()">닫기</button><button class="btn" onclick="lvSave()">추가</button></div>
+          </div>
         </div>
       </div>
       <div class="daterow" style="margin-top:12px;margin-bottom:6px">
@@ -3180,14 +3187,14 @@ function lvRender(){
   }
   cal.innerHTML=html; lvRenderList();
 }
-function lvTap(ds){
-  if(!LV_PICK){ LV_PICK=ds; lvAddOpen(ds, ds); toast('종료일을 누르세요 (같은 날이면 그대로 추가)','ok'); }
-  else { const f=LV_PICK<ds?LV_PICK:ds, t=LV_PICK<ds?ds:LV_PICK; LV_PICK=null; lvAddOpen(f, t); }
-  lvRender();
-}
+/* 날짜를 누르면 팝업 — 시작일·종료일이 그 날로 채워지고, 종료일은 창에서 바꾼다 */
+function lvTap(ds){ LV_PICK=ds; lvAddOpen(ds, ds); lvRender(); }
 function lvAddOpen(f, t){ const box=$('lvAdd'); box.classList.remove('hidden'); if(f) $('lv_from').value=f; if(t) $('lv_to').value=t;
-  if(!$('lv_from').value){ $('lv_from').value=todayStr(); $('lv_to').value=todayStr(); } $('lv_staff').focus(); }
+  if(!$('lv_from').value){ $('lv_from').value=todayStr(); $('lv_to').value=todayStr(); }
+  const d=$('lv_from').value; $('lvAddTitle').textContent = d ? `휴가 추가 · ${d.slice(5).replace('-','/')}` : '휴가 추가';
+  $('lv_note').value=''; setTimeout(()=>$('lv_staff').focus(),50); }
 function lvAddClose(){ $('lvAdd').classList.add('hidden'); LV_PICK=null; lvRender(); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('lvAdd').classList.contains('hidden')) lvAddClose(); });
 function lvRange(b){ $('lv_range').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); lvRenderList(); }
 function lvRenderList(){
   const box=$('lvList'); if(!box||!LV) return; const mode=(($('lv_range').querySelector('button.on')||{}).dataset||{}).v||'month';
