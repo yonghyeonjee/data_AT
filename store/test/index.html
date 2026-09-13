@@ -1145,7 +1145,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel hidden" id="tab-stats">
     <div class="card" id="stCard">
       <h2>처리현황 <span id="stSub"></span></h2>
-      <p class="note-in" style="margin-top:0">문의가 얼마나 들어와서 얼마나 구매로 이어졌는지. <b>삭제한 상담은 빠집니다.</b></p>
+      <p class="note-in" style="margin-top:0">문의가 얼마나 들어와서 얼마나 구매로 이어졌는지. <b>삭제한 상담은 빠집니다.</b> [＋ 새 상담]으로 이어진 상담은 <b>한 건</b>으로 셉니다 — 문의 날짜·채널은 처음 들어온 건, 결과는 마지막 건 기준.</p>
       <div class="daterow">
         <div class="seg sm" id="st_grain"><button type="button" data-v="day">일</button><button type="button" class="on" data-v="month">월</button><button type="button" data-v="year">연</button></div>
         <div class="seg sm hidden" id="st_who"><button type="button" class="on" data-v="me">내 것</button><button type="button" data-v="">전체</button></div>
@@ -3870,7 +3870,8 @@ function cdHTML(d){
   const bucketTxt={open:'진행 중',hold:'보류',done:'완료',closed:'확인완료',reject:'거절',buy:'구매'}[d.bucket]||'';
   const when=kv([['상담일',at(d.at)],['접수',d.created_at&&csDt(d.created_at)!==csDt(d.at)?at(d.created_at):''],['마지막 변경',at(d.updated_at)],
     ['완료일',d.done_at?at(d.done_at):(d.bucket==='open'||d.bucket==='hold'?'<span style="color:var(--muted)">아직 진행 중</span>':''),d.done_at?'done':''],
-    ['콜백',d.callback_at?at(d.callback_at)+(d.callback_done_at?' (완료)':' (예정)'):''],['담당',d.handler?esc(d.handler)+(d.mine?' (나)':''):'미배정']]);
+    ['콜백',d.callback_at?at(d.callback_at)+(d.callback_done_at?' (완료)':' (예정)'):''],['담당',d.handler?esc(d.handler)+(d.mine?' (나)':''):'미배정'],
+    ['이어진 상담',d.superseded_by?`<button type="button" class="mini" onclick="cdOpen(${d.superseded_by})">${esc(d.superseded_ref||'다음 상담')} 으로 이어짐 ↗</button> <small style="color:var(--muted)">통계에서는 한 건으로 셉니다</small>`:'']]);
   const how=kv([['채널',d.channel?esc(d.channel)+(d.ch_etc?` (${esc(d.ch_etc)})`:''):''],['유입경로',esc(d.route||'')],['문의 유형',esc(d.type||'')],['상담 방법',esc(d.method||'')],['출처 번호',esc(d.ref||'')]]);
   const what=kv([['관심 품목',esc(d.interest||'')],['모델',esc(d.model||'')],['상세',esc(d.detail||'')],['예상 금액',d.expected?won(d.expected):''],['구매 예정',d.expect_date?csDt(d.expect_date):''],['멤버십',esc(d.membership||'')],['수신 동의',d.consent?'동의':''],['사은품',d.gift?esc(d.gift)+(d.gift_amount?` (${won(d.gift_amount)})`:''):'']]);
   const next=(d.next_cat||d.next_model||d.next_date||d.next_note)?kv([['다음 관심',esc([d.next_cat,d.next_model].filter(Boolean).join(' '))],['예정',d.next_date?csDt(d.next_date):''],['메모',esc(d.next_note||'')]]):'';
