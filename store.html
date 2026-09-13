@@ -142,10 +142,11 @@ section.panel{padding:16px 18px}
 .card h2 span{font-size:calc(13px * var(--font-scale));color:var(--muted);font-weight:500;letter-spacing:0}
 
 .f{margin-bottom:14px}
-/* 유입경로 말풍선 — 상담 입력을 열면 뜨고, 스크롤하거나 값을 고르면 사라진다. 아래 칸을 가리지 않도록 위로 띄우고 탭은 통과시킨다 */
-.bubble{position:absolute;right:0;bottom:calc(100% + 6px);z-index:6;width:max-content;max-width:min(360px, calc(100vw - 48px));box-sizing:border-box;background:var(--navy);color:#fff;font-size:calc(12.5px * var(--font-scale));line-height:1.5;padding:8px 12px;border-radius:10px;box-shadow:0 6px 16px rgba(20,40,160,.28);pointer-events:none;animation:bubIn .25s ease-out}
-.bubble:after{content:'';position:absolute;right:18px;top:100%;border:6px solid transparent;border-top-color:var(--navy)}
-@keyframes bubIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* 상담 입력 영역 — 배경을 번갈아 칠해 어디까지가 한 묶음인지 보이게 */
+.fsec{padding:14px 14px 2px;border-radius:12px;margin-bottom:10px;border:1px solid transparent}
+.fsec.a{background:#F6F7FA;border-color:#EDEFF4} .fsec.b{background:#EEF2FA;border-color:#DFE6F5}
+.fsec-t{font-size:calc(12px * var(--font-scale));font-weight:800;color:var(--navy);letter-spacing:.02em;margin:0 0 10px}
+.fsec .nextbox{margin-left:0;margin-right:0}
 .f label{display:block;font-size:calc(14px * var(--font-scale));font-weight:700;color:var(--ink);margin-bottom:7px;letter-spacing:-.01em}
 .f label .req{font-size:0;display:inline-block;vertical-align:middle;margin-left:6px}
 .f label .req::after{content:'필수';font-size:calc(10.5px * var(--font-scale));font-weight:800;color:#fff;background:var(--bad);padding:2px 7px;border-radius:5px;letter-spacing:.03em;line-height:1.3}
@@ -1176,10 +1177,13 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim()})">구독 견적서 열기 ↗</button>
         <button class="btn sm ghost" onclick="openCalc()">구독료 계산기 ↗</button>
       </div>
+      <div class="fsec a"><div class="fsec-t">언제 · 누가</div>
       <div class="grid2">
         <div class="f"><label>상담일 <span class="req">*</span></label><input class="in" type="date" id="c_date"></div>
         <div class="f"><label>상담사 <span class="hint" id="c_handlerHint"></span></label><select class="in" id="c_handler"></select></div>
       </div>
+      </div>
+      <div class="fsec b"><div class="fsec-t">고객</div>
       <div class="f"><label>기존 고객 찾기 <span class="hint">이름 또는 번호 뒷자리 4자리 이상</span></label>
         <div class="csearch"><input class="in" id="c_csq" placeholder="홍길동 / 1234" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();custSearch('c')}"><button type="button" class="go" onclick="custSearch('c')">⌕</button></div>
         <div class="cres hidden" id="c_cres"></div>
@@ -1190,13 +1194,19 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="f"><label>고객명 <span class="req">*</span></label><input class="in" id="c_name" placeholder="홍길동" autocomplete="off"></div>
         <div class="f"><label>휴대폰</label><input class="in" type="tel" id="c_phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)"></div>
       </div>
+      </div>
+      <div class="fsec a"><div class="fsec-t">어떻게 들어온 문의인지</div>
       <div class="f"><label>상담 방법 <span class="hint">어떻게 상담했는지</span></label>
         <div class="seg sm" id="c_method"><button type="button" data-v="대면">대면</button><button type="button" data-v="전화">전화</button><button type="button" data-v="메시지">메시지</button></div></div>
-      <div class="f"><label>문의 채널 <span class="req">*</span> <span class="hint">어디로 들어온 문의인지</span></label>
+      <div class="f"><label>문의 채널 <span class="req">*</span> <span class="hint">어디로 들어온 문의인지 — <b>혹시 어디서 보고 오셨는지 물어봐주시면 좋습니다</b></span></label>
         <div class="chips" id="c_ch"></div>
         <input class="in hidden" id="c_ch_etc" placeholder="기타 — 어디로 들어왔는지 적어 주세요" style="margin-top:6px"></div>
       <div class="f"><label>문의 유형 <span class="req">*</span> <span class="hint">무엇을 물어봤는지</span></label>
         <div class="chips" id="c_ty"></div></div>
+      <div class="f"><label>유입경로 <span class="req">*</span> <span class="hint">고른 문의 채널의 경로가 위에 옵니다</span></label>
+          <select class="in" id="c_route"><option value="">선택</option></select></div>
+      </div>
+      <div class="fsec b"><div class="fsec-t">무엇에 관심이 있나</div>
       <div class="f"><label>관심 품목 <span class="req">*</span></label>
         <div class="chips" id="c_cat">
           <span class="chip" data-v="TV">TV</span><span class="chip" data-v="냉장고">냉장고</span><span class="chip" data-v="세탁·건조">세탁·건조</span>
@@ -1209,11 +1219,10 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="f"><label>상세 관심 품목 <span class="hint">고객이 말한 그대로 — 나중에 이 말로 찾습니다</span></label>
         <input class="in" id="c_detail" placeholder="예: 김치냉장고 키친핏 4도어, 25평 무풍 스탠드, 아이 방 공기청정기" autocomplete="off"></div>
       <div class="grid2">
-        <div class="f"><label>관심 모델 <span class="sub" style="font-weight:400;color:var(--muted)">여러 개면 Enter 나 쉼표로 추가</span></label><input class="in" id="c_model" placeholder="AF60F17D11GRT" style="text-transform:uppercase" autocomplete="off"><div class="chips tagchips" id="c_models"></div><div id="c_subq" class="subq"></div></div>
-        <div class="f" style="position:relative"><label>유입경로 <span class="req">*</span></label>
-          <div class="bubble hidden" id="routeTip" aria-hidden="true">혹시 어디서 보고 오셨는지 물어봐주시면 좋습니다.</div>
-          <select class="in" id="c_route" onchange="routeTipHide()"><option value="">선택</option></select></div>
+        <div class="f" style="grid-column:1 / -1"><label>관심 모델 <span class="sub" style="font-weight:400;color:var(--muted)">여러 개면 Enter 나 쉼표로 추가</span></label><input class="in" id="c_model" placeholder="AF60F17D11GRT" style="text-transform:uppercase" autocomplete="off"><div class="chips tagchips" id="c_models"></div><div id="c_subq" class="subq"></div></div>
       </div>
+      </div>
+      <div class="fsec a"><div class="fsec-t">어디까지 갔나</div>
       <div class="grid3">
         <div class="f"><label>상담 상태 <span class="hint">상담완료 ≠ 판매</span></label>
           <select class="in" id="c_result" onchange="cResultChanged()">
@@ -1239,6 +1248,8 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           <div class="f"><label>모델코드 <span class="hint">알면</span></label><input class="in" id="c_buy_model" placeholder="RQ33DB7411AP" style="text-transform:uppercase" autocomplete="off"></div>
         </div>
       </div>
+      </div>
+      <div class="fsec b"><div class="fsec-t">다음에 살 것</div>
       <div class="nextbox">
         <div class="nb-t">다음 구매 관심 <span class="hint">팔고 끝이 아니라 다음에 살 제품을 계속 봅니다 — 상담고객이 곧 가망고객입니다</span></div>
         <div class="grid2">
@@ -1247,6 +1258,8 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         </div>
         <div class="f"><label>다음 구매 메모</label><input class="in" id="c_next_note" placeholder="예: 이사 후 냉장고, 아이 방 에어컨"></div>
       </div>
+      </div>
+      <div class="fsec a"><div class="fsec-t">메모 · 약속 · 동의</div>
       <div class="f"><label>상담 내용</label><textarea class="in" id="c_content" placeholder="문의 모델, 가격 비교 대상, 다음 연락 시점 등"></textarea></div>
       <div class="f"><label>콜백 예정 <span class="hint">"내일 2시에 전화 주세요" — 시스템이 기억합니다</span></label>
         <div class="grid2"><input class="in" type="date" id="c_cbDate"><input class="in" type="time" id="c_cbTime" step="600"></div>
@@ -1264,6 +1277,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="toggle" id="c_consent" onclick="this.classList.toggle('on')">
           <div><b>마케팅 수신 동의</b><small>동의 받은 경우에만</small></div><div class="sw"></div>
         </div>
+      </div>
       </div>
       <button class="btn" id="c_btn" onclick="submitConsult()">저장</button>
       <div id="c_ref" class="empty hidden"></div>
@@ -2805,7 +2819,6 @@ function goTab(name, fromHistory){
   if(name==='online' && !OC_LOADED) loadOnlineDay();
   if(name==='stock' && !STK_LOADED) loadStk();
   if(name==='order') initOrderTab();
-  if(name==='consult') routeTipShow();
   if(name==='customer') loadMyCustomers();
   if(name==='consult') loadInqCodes();
   if(!fromHistory){ try{ (history.state&&history.state.tab===name) ? history.replaceState({tab:name},'','#'+name) : history.pushState({tab:name},'','#'+name); }catch(e){} }
@@ -3880,11 +3893,6 @@ async function loadInqCodes(){
   try{ INQ=await rpc('fn_inq_codes',{}); }catch(e){ INQ={channels:[],types:[]}; }
   renderInqChips(); return INQ;
 }
-/* 유입경로 말풍선 : 상담 입력 탭을 열 때 값이 비어 있으면 띄우고, 어느 쪽이든 스크롤하면 바로 지운다 */
-function routeTipShow(){ const t=$('routeTip'), sel=$('c_route'); if(!t||!sel) return; if(sel.value){ t.classList.add('hidden'); return; }
-  t.classList.remove('hidden'); clearTimeout(routeTipShow.t); routeTipShow.t=setTimeout(routeTipHide, 12000); }
-function routeTipHide(){ const t=$('routeTip'); if(t) t.classList.add('hidden'); clearTimeout(routeTipShow.t); }
-window.addEventListener('scroll', ()=>{ const t=$('routeTip'); if(t && !t.classList.contains('hidden')) routeTipHide(); }, {capture:true, passive:true});
 /* 유입경로 : 고른 문의 채널의 것이 위로 오고, 채널 공통(지인소개·기타)이 아래로 */
 function renderRoutes(){
   const sel=$('c_route'); if(!sel||!INQ) return;
