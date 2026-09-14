@@ -583,6 +583,9 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .wiz-flt button{border:1px solid #E4E7EE;background:#fff;border-radius:999px;padding:5px 12px;font-size:calc(12px * var(--font-scale));font-weight:600;color:#646D7C;cursor:pointer}
 .wiz-flt button.on{background:var(--wz);border-color:var(--wz);color:#fff}
 .wiz-flt .sp{flex:1}
+/* 필터 칸이 한 줄에 여러 개 들어가게 (전엔 .in 이 100% 라 줄마다 하나씩) */
+.wiz-flt .in{flex:0 1 auto;width:auto;min-width:118px;max-width:200px}
+@media (max-width:760px){ .wiz-flt .in{flex:1 1 46%;max-width:none} .wiz-flt .sp{flex-basis:100%} }
 .wiz-tw{overflow:auto;max-height:52vh;border:1px solid #EEF0F4;border-radius:10px}
 .wiz table{width:100%;border-collapse:collapse;font-size:calc(12.5px * var(--font-scale))}
 .wiz th{position:sticky;top:0;background:#F7F8FB;text-align:left;font-size:calc(11px * var(--font-scale));font-weight:700;color:#646D7C;padding:9px 10px;border-bottom:1px solid #EEF0F4;white-space:nowrap;z-index:1}
@@ -898,6 +901,8 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 
 /* ── 여러 건 · 표로 입력 (판매·상담 공용) — 칸은 한 건씩 폼과 같고, 표는 카드 안에서 옆으로 스크롤 ── */
 .reqtxt{color:var(--bad,#C62828)}
+.wz-sortlbl{font-size:calc(12px * var(--font-scale));color:var(--muted);font-weight:700;align-self:center;margin-left:6px}
+.cand-amb{padding:3px 0}
 .gview{display:flex;align-items:center;gap:10px;margin:0 0 8px} .gview .seg{width:auto} .gview .seg button{flex:0 0 auto;padding:8px 12px;min-height:40px} .gview .hint{color:var(--faint);font-size:calc(12px * var(--font-scale))}
 .gtbl{border:1.5px solid var(--line-2);border-radius:12px;padding:6px 10px 4px;background:#fff;overflow-x:auto;overscroll-behavior-x:contain}
 .gtbl .gh,.gtbl .gr{display:flex;gap:6px;align-items:center;min-width:max-content}
@@ -1288,12 +1293,26 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="intro">판매 1건을 <b>DPS 입력 직후 같은 자리에서</b> 남기는 화면입니다. 여기 들어간 건이 본사 대시보드의 상품·고객 분석 재료가 됩니다.
       <details><summary>사용 방법</summary><ol><li><i>1</i><span>필수 항목은 상품명·판매가·구분·판매일 4개입니다. 상품명은 DPS 화면 그대로 옮겨 적으세요.</span></li><li><i>2</i><span>고객명·번호는 <b>동의받은 경우만</b> 넣습니다. 넣으면 온라인·VMS 이력과 한 사람으로 묶입니다.</span></li><li><i>3</i><span>상담 후 구매면 상담번호(SC…)를 적어 두세요. 그 상담이 자동으로 구매완료가 됩니다.</span></li><li><i>4</i><span>담당 프로님는 로그인한 본인으로 자동 채워집니다. 대신 입력할 때만 바꾸세요.</span></li><li><i>5</i><span><b>단계</b>: DPS에 매출만 잡힌 상태면 <b>매출</b>, 배송·설치까지 끝나 확정이면 <b>판매완료</b>. 나중에 아래 "확정 대기" 목록에서 바꿀 수 있습니다.</span></li><li><i>6</i><span>이미 온 적 있는 고객이면 <b>기존 고객 찾기</b>로 이름·번호 뒷자리를 검색해 고르세요. 이력이 한 사람으로 이어집니다.</span></li></ol></details>
     </div>
-    <div class="card">
-      <h2 style="justify-content:flex-start;align-items:center">판매 1건 <span>필수 6개 · 30초</span><button type="button" class="btn sm ghost" id="s_newBtn" style="margin-left:auto" onclick="saleNew()" title="적던 내용을 비우고 새 판매를 입력합니다">＋ 새 판매 입력</button></h2>
-      <div class="seg" id="s_mode" style="margin-bottom:12px">
-        <button type="button" data-v="one" class="on" onclick="sMode('one')">한 건씩</button>
-        <button type="button" data-v="grid" onclick="sMode('grid')">여러 건 · 표로 입력</button>
+    <div class="seg cmode" id="s_mode" style="margin-bottom:12px">
+      <button type="button" data-v="one" class="on" onclick="sMode('one')">한 건씩</button>
+      <button type="button" data-v="grid" onclick="sMode('grid')">여러 건 · 표로 입력</button>
+    </div>
+    <div class="card hidden" id="sGridCard">
+      <h2 style="justify-content:flex-start;align-items:center">판매 여러 건 <span>한 줄이 판매 한 건 · DPS 에서 옮겨 적을 때</span></h2>
+      <div class="grid2">
+        <div class="f"><label>판매일 <span class="req">*</span><span class="hint">모든 줄 공통</span></label><input class="in" type="date" id="sg_date"></div>
+        <div class="f"><label>담당 프로님 <span class="hint">모든 줄 공통</span></label><select class="in" id="sg_handler"></select></div>
       </div>
+      <p class="note-in" style="margin:0 0 8px">한 건씩 넣을 때의 칸이 전부 있고 <b class="reqtxt">빨간 테두리 칸은 필수</b>입니다. 구분·단계는 줄마다 고릅니다. Tab 으로 칸을 옮기고 마지막 칸에서 Enter 를 누르면 줄이 늘어납니다. 저장 전까지 이 브라우저에 남습니다.</p>
+      <div class="gview"><div class="seg sm" id="s_gview"><button type="button" data-v="all" class="on" onclick="gridView('s','all')">모든 칸</button><button type="button" data-v="core" onclick="gridView('s','core')">주요 칸만</button></div><span class="hint">표는 옆으로 밀어서 봅니다</span></div>
+      <div class="gtbl s" id="s_grid">
+        <div class="gh" id="s_gridHead"></div>
+        <div class="gbody" id="s_gridRows"></div>
+      </div>
+      <div class="bt-act"><button type="button" class="btn ghost sm" onclick="gridAdd('s',true)">＋ 줄 추가</button><span class="gsum" id="s_gsum"></span><button type="button" class="btn" id="s_gsave" onclick="gridSave('s')">저장</button></div>
+    </div>
+    <div class="card" id="sLogCard">
+      <h2 style="justify-content:flex-start;align-items:center">판매 1건 <span>필수 6개 · 30초</span><button type="button" class="btn sm ghost" id="s_newBtn" style="margin-left:auto" onclick="saleNew()" title="적던 내용을 비우고 새 판매를 입력합니다">＋ 새 판매 입력</button></h2>
       <div class="linkchip hidden" id="s_link"></div>
       <div class="qpick hidden" id="s_qpick"></div>
       <div class="grid2">
@@ -1315,7 +1334,6 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           </div>
         </div>
       </div>
-      <div id="s_single">
       <div class="f"><label>기존 고객 찾기 <span class="hint">이름 또는 번호 뒷자리 4자리 이상</span></label>
         <div class="csearch"><input class="in" id="s_csq" placeholder="홍길동 / 1234" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();custSearch('s')}"><button type="button" class="go" onclick="custSearch('s')">⌕</button></div>
         <div class="cres hidden" id="s_cres"></div>
@@ -1367,16 +1385,6 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </div>
       -->
       <button class="btn" id="s_btn" onclick="submitSale()">저장</button>
-      </div><!-- /s_single -->
-      <div class="hidden" id="s_gridBox">
-        <p class="note-in" style="margin:0 0 8px">한 줄이 판매 한 건입니다. 한 건씩 넣을 때의 칸이 전부 있고 <b class="reqtxt">빨간 테두리 칸은 필수</b>입니다. 위의 <b>판매일 · 프로님</b>은 모든 줄 공통, 구분·단계는 새 줄의 기본값입니다. Tab 으로 칸을 옮기고 마지막 칸에서 Enter 를 누르면 줄이 늘어납니다. 저장 전까지 이 브라우저에 남습니다.</p>
-        <div class="gview"><div class="seg sm" id="s_gview"><button type="button" data-v="all" class="on" onclick="gridView('s','all')">모든 칸</button><button type="button" data-v="core" onclick="gridView('s','core')">주요 칸만</button></div><span class="hint">표는 옆으로 밀어서 봅니다</span></div>
-        <div class="gtbl s" id="s_grid">
-          <div class="gh" id="s_gridHead"></div>
-          <div class="gbody" id="s_gridRows"></div>
-        </div>
-        <div class="bt-act"><button type="button" class="btn ghost sm" onclick="gridAdd('s',true)">＋ 줄 추가</button><span class="gsum" id="s_gsum"></span><button type="button" class="btn" id="s_gsave" onclick="gridSave('s')">저장</button></div>
-      </div>
     </div>
     <div class="card">
       <h2>오늘 입력한 판매 <span id="todaySum"></span></h2>
@@ -1712,6 +1720,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <select class="in" id="sl_st" onchange="slPage(0)"><option value="">전체 상태</option><option value="ready">바로 가능</option><option value="ambig">확인 필요</option><option value="miss">코드 없음</option></select>
         <select class="in" id="sl_ship" onchange="slPage(0)"><option value="">발송 전체</option><option value="unshipped">미발송</option><option value="shipped">발송됨</option><option value="late">주문 다음 달에 발송</option></select>
       </div>
+      <div class="daterow" id="sl_sortrow"></div>
       <div class="oc-sum"><div><div class="k">가져올 주문</div><div class="v" id="sl_cnt">-</div></div><div><div class="k">바로 가능</div><div class="v" id="sl_ready">-</div></div><div><div class="k">택배비 합계</div><div class="v" id="sl_fee">-</div></div></div>
       <div id="sl_rows"><div class="empty">불러오는 중…</div></div>
       <button class="btn" id="sl_btn" onclick="slMakeStore()" style="margin-top:10px">선택한 건 주문서로</button>
@@ -1961,7 +1970,7 @@ function render(){
   initSuggest(); setTimeout(syncNav,0);
   const s = STATUS;
   const handlers = s.staff || [];
-  ['s_handler','c_handler','cg_handler'].forEach(id=>{ const el=$(id); if(!el) return; const keep=el.value;
+  ['s_handler','c_handler','cg_handler','sg_handler'].forEach(id=>{ const el=$(id); if(!el) return; const keep=el.value;
     el.innerHTML = handlers.map(h=>`<option ${h===(keep||ME)?'selected':''}>${h}</option>`).join(''); });
   ['s_handlerHint','c_handlerHint'].forEach(id=>$(id).textContent='기본 '+ME);
   $('d_byNote').textContent = `입력자 ${ME} 로 기록됩니다`;
@@ -2009,7 +2018,7 @@ function render(){
    다른 담당자에게 줄 일은 [넘기기] 하나뿐이라 이름 고르는 칸은 없앤다.     */
 function lockToMe(){
   const mgr = !!(STATUS && STATUS.is_mgr);
-  ['s_handler','c_handler','cg_handler'].forEach(id=>{ const el=$(id); if(!el) return;
+  ['s_handler','c_handler','cg_handler','sg_handler'].forEach(id=>{ const el=$(id); if(!el) return;
     if(mgr){ el.disabled=false; el.title=''; return; }
     el.innerHTML=`<option selected>${esc(ME)}</option>`; el.value=ME;
     el.disabled=true; el.title='내 이름으로만 기록됩니다. 다른 담당자에게 줄 때는 [넘기기]를 쓰세요'; });
@@ -2576,9 +2585,10 @@ function wizMount(host, cfg){
 
   /* ── ② 선택 ─────────────────────────────────────────────── */
   function rows2(){ const r=(S.data&&S.data.rows)||[];
-    return r.filter(x=> (S.flt2==='all' ? true : S.flt2==='ready' ? (x.ready&&!x.done&&!x.ambig) : S.flt2==='ambig' ? (x.ambig>0&&!x.done) : S.flt2==='miss' ? (!x.ready&&!x.done) : x.done)
+    const out=r.filter(x=> (S.flt2==='all' ? true : S.flt2==='ready' ? (x.ready&&!x.done&&!x.ambig) : S.flt2==='ambig' ? (x.ambig>0&&!x.done) : S.flt2==='miss' ? (!x.ready&&!x.done) : x.done)
                      && (!S.fltKind || x.kind===S.fltKind) && (!S.fltCat || x.category===S.fltCat)
-                     && (!S.fltShip || (S.fltShip==='shipped' ? x.shipped : S.fltShip==='late' ? x.late : !x.shipped))); }
+                     && (!S.fltShip || (S.fltShip==='shipped' ? x.shipped : S.fltShip==='late' ? x.late : !x.shipped)));
+    return (typeof slSortList==='function') ? slSortList(out, r=>r) : out; }
   function selRows(){ return ((S.data&&S.data.rows)||[]).filter(r=>S.sel.has(r.order_no)); }
   const PG2=100;
   function r2(){
@@ -2592,21 +2602,30 @@ function wizMount(host, cfg){
         <select class="in" id="wzKind" style="height:32px;font-size:calc(12px * var(--font-scale))"><option value="">대물·소모품 전체</option>${(S.data.kinds||[]).map(k=>`<option value="${esc(k.k)}" ${S.fltKind===k.k?'selected':''}>${esc(k.k)} (${n(k.n)})</option>`).join('')}</select>
         <select class="in" id="wzCat" style="height:32px;font-size:calc(12px * var(--font-scale))"><option value="">전체 카테고리</option>${(S.data.categories||[]).map(c=>`<option value="${esc(c.c)}" ${S.fltCat===c.c?'selected':''}>${esc(c.c)} (${n(c.n)})</option>`).join('')}</select>
         <select class="in" id="wzShip" style="height:32px;font-size:calc(12px * var(--font-scale))"><option value="">발송 전체</option><option value="unshipped" ${S.fltShip==='unshipped'?'selected':''}>미발송 (${n(S.data.unshipped||0)})</option><option value="shipped" ${S.fltShip==='shipped'?'selected':''}>발송됨 (${n(S.data.shipped||0)})</option><option value="late" ${S.fltShip==='late'?'selected':''}>주문 다음 달에 발송 (${n(S.data.late||0)})</option></select>
+        <span class="wz-sortlbl">정렬</span>${typeof slSortSel==='function'?slSortSel('wzSort').replace('class="in"','class="in" style="height:32px;font-size:calc(12px * var(--font-scale))"'):''}${typeof slSortDirBtn==='function'?slSortDirBtn('wzSortDir'):''}
         <span class="sp"></span><button class="btn ghost sm" id="wzSelReady">보이는 것 중 바로 가능한 것 모두 선택</button></div>
       <div class="wiz-tw"><table><thead><tr>
         <th style="width:30px"><input type="checkbox" id="wzAll" ${allOn?'checked':''} title="보이는 것 전체 선택"></th><th>주문</th><th>품목</th><th style="width:110px">구분</th><th class="num">수량</th><th class="num">금액</th><th>상태</th></tr></thead>
       <tbody>${rows.map(r=>`<tr class="${r.done?'off':''}${S.sel.has(r.order_no)?' sel':''}" data-o="${esc(r.order_no)}">
         <td><input type="checkbox" ${S.sel.has(r.order_no)?'checked':''} ${r.done?'disabled':''} data-c="${esc(r.order_no)}"></td>
         <td><div><b>${esc(r.channel||'')}</b> · ${esc(r.buyer||'')}</div><div class="sub mono">${esc(r.order_no)} · ${esc(r.at)}</div></td>
-        <td style="max-width:460px">${(r.lines||[]).map(l=>`<div class="ell" title="${esc(l.product)}">${l.item_code?`<span class="mono" style="color:${l.n_cand>1?'#C88A0E':'#0F7B6C'};font-size:calc(11px * var(--font-scale))">${esc(l.item_code)}</span>`:'<span class="tg bad">없음</span>'} ${esc(l.item_name||l.product)} <span class="sub" style="display:inline">×${n(l.qty)}</span></div>`).join('')}</td>
+        <td style="max-width:520px">${(r.lines||[]).map(l=>{ const cands=l.cands||[], amb=(l.n_cand||0)>1;
+          const code=c=>`<span class="mono" style="color:${amb?'#C88A0E':'#0F7B6C'};font-size:calc(11px * var(--font-scale))">${esc(c.code||'')}</span> ${esc(c.name||'')}${c.spec?` <span class="sub" style="display:inline">${esc(c.spec)}</span>`:''}`;
+          if(!l.item_code) return `<div class="ell" title="${esc(l.product)}"><span class="tg bad">없음</span> ${esc(l.product)} <span class="sub" style="display:inline">×${n(l.qty)}</span></div>`;
+          /* 확인 필요 = 같은 모델로 등록된 이카운트 품목이 여럿 — ③에서 고를 수 있게 코드·품목명을 전부 보여준다 */
+          if(amb) return `<div class="cand-amb"><div class="sub" style="color:#C88A0E;font-weight:700">확인 필요 · 후보 ${cands.length}개 · 주문: ${esc(l.product)}${l.option?' / '+esc(l.option):''} ×${n(l.qty)}</div>${cands.slice(0,5).map(c=>`<div class="ell">${code(c)}</div>`).join('')}</div>`;
+          return `<div class="ell" title="${esc(l.product)}">${code({code:l.item_code,name:l.item_name||l.product,spec:(cands[0]||{}).spec})} <span class="sub" style="display:inline">×${n(l.qty)}</span>${(l.item_name&&l.item_name!==l.product)?`<div class="sub">주문: ${esc(l.product)}</div>`:''}</div>`; }).join('')}</td>
         <td data-l="구분"><span class="tg n">${esc(r.kind||'')}</span><div class="sub">${esc(r.category||'')}</div></td>
-        <td class="num" data-l="수량">${n(r.qty)}</td><td class="num" data-l="금액">${n(r.amount)}<div class="sub" style="white-space:nowrap">${r.fee_known?(Number(r.ship_fee)?`택배비 ${n(r.ship_fee)}${(r.trk_n||1)>1?` · 운송장 ${r.trk_n}`:''}`:'택배비 없음'):'<span style="color:#C88A0E">택배비 미수집</span>'}</div></td><td data-l="상태">${st(r)}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;padding:30px;color:#98A1B0">해당하는 주문이 없습니다</td></tr>'}</tbody></table></div>
+        <td class="num" data-l="수량">${n(r.qty)}</td><td class="num" data-l="금액">${n(r.amount)}<div class="sub" style="white-space:nowrap">${r.fee_known?(Number(r.ship_fee)?`택배비 ${n(r.ship_fee)}${(r.trk_n||1)>1?` · 운송장 ${r.trk_n}`:''}`:'무료배송'):'<span style="color:#C88A0E">택배비 미수집</span>'}</div></td><td data-l="상태">${st(r)}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;padding:30px;color:#98A1B0">해당하는 주문이 없습니다</td></tr>'}</tbody></table></div>
       <div class="wiz-pager"><span>${n(allRows.length)}건 중 ${allRows.length?n(S.pg2*PG2+1):0}–${n(S.pg2*PG2+rows.length)} 표시</span>${pages>1?`<button class="btn ghost sm" id="wzPgPrev" ${S.pg2<=0?'disabled':''}>‹ 이전</button><span>${S.pg2+1} / ${pages} 쪽</span><button class="btn ghost sm" id="wzPgNext" ${S.pg2>=pages-1?'disabled':''}>다음 ›</button>`:''}</div>`;
     const pp=$('wzPgPrev'), pn=$('wzPgNext'); if(pp) pp.onclick=()=>{ S.pg2--; r2(); host.scrollIntoView({behavior:'smooth',block:'start'}); }; if(pn) pn.onclick=()=>{ S.pg2++; r2(); host.scrollIntoView({behavior:'smooth',block:'start'}); };
     host.querySelectorAll('.wiz-flt button[data-f]').forEach(b=>b.onclick=()=>{ S.flt2=b.dataset.f; S.pg2=0; r2(); });
     $('wzAll').onchange=e=>{ all.forEach(r=>e.target.checked?S.sel.add(r.order_no):S.sel.delete(r.order_no)); r2(); render2ft(); };
     $('wzSelReady').onclick=()=>{ rows2().filter(r=>r.ready&&!r.done&&!r.ambig).forEach(r=>S.sel.add(r.order_no)); r2(); };
     $('wzKind').onchange=e=>{ S.fltKind=e.target.value; S.pg2=0; r2(); }; $('wzCat').onchange=e=>{ S.fltCat=e.target.value; S.pg2=0; r2(); }; $('wzShip').onchange=e=>{ S.fltShip=e.target.value; S.pg2=0; r2(); };
+    const ws=$('wzSort'), wd=$('wzSortDir');
+    if(ws) ws.onchange=e=>{ slSortSet(e.target.value,false); S.pg2=0; r2(); };
+    if(wd) wd.onclick=()=>{ slSortFlip(); r2(); };
     host.querySelectorAll('input[data-c]').forEach(c=>c.onchange=()=>{ c.checked?S.sel.add(c.dataset.c):S.sel.delete(c.dataset.c); c.closest('tr').classList.toggle('sel',c.checked); render2ft(); });
     host.querySelectorAll('tbody tr[data-o]').forEach(tr=>tr.onclick=e=>{ if(e.target.tagName==='INPUT') return; const c=tr.querySelector('input[data-c]'); if(c&&!c.disabled){ c.checked=!c.checked; c.onchange(); } });
     render2ft();
@@ -2942,40 +2961,57 @@ async function loadSlList(){
 /* 택배비 : 운송장 1개 = 1건. 한 주문에 운송장이 둘이면 두 건이 붙는다 */
 function slFeeTag(r){
   if(!r.fee_known) return '<span class="st warn" title="샵링커 수집에 배송비가 아직 안 들어온 주문입니다">택배비 미수집</span>';
-  if(!Number(r.ship_fee)) return `<span class="st ok" title="배송비 0원${r.fee_type?` (${r.fee_type})`:''}">택배비 없음${r.fee_type&&r.fee_type!=='무료'?` · ${esc(r.fee_type)}`:''}</span>`;
+  if(!Number(r.ship_fee)) return `<span class="st ok" title="샵링커가 배송비 0원으로 보낸 주문입니다${r.fee_type?` (배송비 구분 ${r.fee_type})`:''}">무료배송${r.fee_type&&r.fee_type!=='무료'?` · ${esc(r.fee_type)}`:''}</span>`;
   return `<span class="st n" title="운송장 ${r.trk_n||1}건 기준 — 상품 줄마다 붙어 온 값을 운송장 단위로 합쳤습니다${r.fee_type?` (${r.fee_type})`:''}">택배비 ${won(r.ship_fee)}${(r.trk_n||1)>1?` · 운송장 ${r.trk_n}`:''}${r.fee_type?` · ${esc(r.fee_type)}`:''}</span>`;
 }
 let SL_META=null;
-/* 정렬·필터는 이 브라우저에 남는다 — 검색하거나 체크하거나 다시 불러와도 그대로 (2026-09-15 요청) */
+/* 정렬·필터는 이 브라우저에 남는다 — 검색하거나 체크하거나 다시 불러와도 그대로 (2026-09-15 요청).
+   빠른 모드와 [단계별 모드] 2단계가 같은 정렬을 쓴다 */
 let SL_SORT={k:'',dir:'asc'}; try{ const v=JSON.parse(localStorage.getItem('dc_sl_sort')||'null'); if(v&&typeof v==='object') SL_SORT=v; }catch(e){}
+const SL_SORTS=[['','기본 (최근 순)'],['order_no','주문번호 순'],['channel','채널 · 주문번호'],['at','주문 일시'],['amount','금액'],['qty','수량'],['st','상태']];
+/* 고른 열에 맞는 기본 차례 — 번호·채널·상태는 오름, 금액·수량·일시는 내림(큰 것·최근 것 먼저) */
+const SL_SORT_DIR={order_no:'asc',channel:'asc',st:'asc',item:'asc',kind:'asc',at:'desc',amount:'desc',qty:'desc'};
+function slSortSet(k,toggle){ SL_SORT = (toggle && SL_SORT.k===k) ? {k, dir: SL_SORT.dir==='asc'?'desc':'asc'} : {k, dir: SL_SORT_DIR[k]||'asc'};
+  try{ localStorage.setItem('dc_sl_sort', JSON.stringify(SL_SORT)); }catch(e){} }
+function slSortFlip(){ SL_SORT={k:SL_SORT.k, dir:SL_SORT.dir==='asc'?'desc':'asc'}; try{ localStorage.setItem('dc_sl_sort', JSON.stringify(SL_SORT)); }catch(e){} }
+function slSortSel(id){ return `<select class="in" id="${id}" title="정렬 기준 — 다른 작업을 해도 유지됩니다">`
+  + SL_SORTS.map(([k,l])=>`<option value="${k}"${SL_SORT.k===k?' selected':''}>${l}</option>`).join('') + '</select>'; }
+function slSortDirBtn(id){ return `<button type="button" class="mini" id="${id}" title="오름/내림 바꾸기"${SL_SORT.k?'':' disabled'}>${SL_SORT.dir==='asc'?'↑ 오름':'↓ 내림'}</button>`; }
+/* 정렬 적용 — 두 화면 공용. 주문번호가 같은 줄은 원래 순서 유지 */
+function slSortList(list, get){ if(!SL_SORT.k) return list; const d=SL_SORT.dir==='asc'?1:-1;
+  return list.map((v,i)=>({v,i})).sort((a,b)=>{ const x=slSortKey(get(a.v),SL_SORT.k), y=slSortKey(get(b.v),SL_SORT.k);
+    const c=(typeof x==='number'&&typeof y==='number') ? x-y : String(x).localeCompare(String(y),'ko',{numeric:true});
+    return c ? c*d : a.i-b.i; }).map(o=>o.v); }
 const SL_FLT_IDS=['sl_kind','sl_cat','sl_st','sl_ship','sl_ch','sl_basis','sl_q'];
 function slSaveFlt(){ try{ const o={}; SL_FLT_IDS.forEach(id=>{ const el=$(id); if(el) o[id]=el.value; }); localStorage.setItem('dc_sl_flt', JSON.stringify(o)); }catch(e){} }
 let SL_FLT_RESTORED=false;
 function slRestoreFlt(){ if(SL_FLT_RESTORED) return; SL_FLT_RESTORED=true; try{ const o=JSON.parse(localStorage.getItem('dc_sl_flt')||'{}'); SL_FLT_IDS.forEach(id=>{ const el=$(id); if(el && o[id]!=null) el.value=o[id]; }); }catch(e){} }
 document.addEventListener('change', e=>{ if(SL_FLT_IDS.includes((e.target||{}).id)) slSaveFlt(); });
 document.addEventListener('click', e=>{ const th=e.target.closest('.slt th[data-sk]'); if(!th) return; e.stopPropagation();
-  const k=th.dataset.sk; SL_SORT = (SL_SORT.k===k) ? {k, dir: SL_SORT.dir==='asc'?'desc':'asc'} : {k, dir:'asc'};
-  try{ localStorage.setItem('dc_sl_sort', JSON.stringify(SL_SORT)); }catch(e2){} renderSlList(); }, true);
+  slSortSet(th.dataset.sk, true); renderSlList(); }, true);
 function slSortKey(r,k){ switch(k){
+  case 'order_no': return String(r.order_no||''); case 'channel': return (r.channel||'')+' '+String(r.order_no||'');
   case 'at': return r.at||''; case 'item': return ((r.lines||[])[0]||{}).item_code||((r.lines||[])[0]||{}).product||'';
   case 'kind': return (r.kind||'')+'|'+(r.category||''); case 'qty': return Number(r.qty)||0; case 'amount': return Number(r.amount)||0;
   case 'st': return (!r.ready?2:r.ambig?1:0)*10+(r.shipped?0:1); default: return ''; } }
 function slVisible(){ const k=$('sl_kind').value, c=$('sl_cat').value, st=$('sl_st').value, sh=$('sl_ship').value;
   const out=SL_ROWS.map((r,i)=>({r,i})).filter(({r})=> (!k||r.kind===k) && (!c||r.category===c) &&
     (!st || (st==='ready'? (r.ready&&!r.ambig) : st==='ambig'? r.ambig>0 : !r.ready)) && (!sh || (sh==='shipped'? r.shipped : sh==='late'? r.late : !r.shipped)));
-  if(SL_SORT.k){ const d=SL_SORT.dir==='asc'?1:-1; out.sort((a,b)=>{ const x=slSortKey(a.r,SL_SORT.k), y=slSortKey(b.r,SL_SORT.k);
-    const c=(typeof x==='number'&&typeof y==='number') ? x-y : String(x).localeCompare(String(y),'ko',{numeric:true}); return c ? c*d : a.i-b.i; }); }
-  return out; }
+  return slSortList(out, o=>o.r); }
 const SL_PAGE=()=>pgSize('slist'); let SL_PG=0;
 function slPage(k){ SL_PG=Math.max(0,k); renderSlList(); const b=$('sl_rows'); if(b) b.scrollIntoView({behavior:'smooth',block:'start'}); }
 function renderSlList(){
   const box=$('sl_rows'); if(!box||!SL_ROWS) return; const all=slVisible();
+  const sr=$('sl_sortrow');
+  if(sr){ sr.innerHTML=`<span class="hint" style="align-self:center">정렬</span>${slSortSel('sl_sort')}${slSortDirBtn('sl_sortdir')}`;
+    $('sl_sort').onchange=e=>{ slSortSet(e.target.value,false); renderSlList(); };
+    $('sl_sortdir').onclick=()=>{ slSortFlip(); renderSlList(); }; }
   const pages=Math.max(1,Math.ceil(all.length/SL_PAGE())); if(SL_PG>=pages) SL_PG=pages-1; const vis=all.slice(SL_PG*SL_PAGE(),(SL_PG+1)*SL_PAGE());
   const sel=vis.filter(({r})=>r.ready), allOn=sel.length>0 && sel.every(({r})=>SL_PICK.has(r.order_no));
   const st=r=> (!r.ready?'<span class="st bad">코드 없음</span>' : r.ambig?'<span class="st warn">확인 필요</span>':'<span class="st ok">바로 가능</span>') + (r.shipped?`<span class="st ${r.late?'warn':'ok'}" style="margin-top:3px;display:inline-block" title="${esc(r.tracking_no||'')}">발송 ${esc((r.shipped_on||'').slice(5).replace('-','/'))}${r.late?' 다음달':''}</span>`:'<span class="st warn" style="margin-top:3px;display:inline-block">미발송</span>');
   box.innerHTML = vis.length ? `<div class="tw"><table class="slt" data-ownsort="1"><thead><tr>
       <th style="width:30px"><input type="checkbox" id="sl_all" ${allOn?'checked':''} onchange="slAllStore(this.checked)" title="보이는 것 중 바로 가능한 것 전체 선택"></th>
-      ${[['at','주문',''],['item','품목',''],['kind','구분',''],['qty','수량','num'],['amount','금액','num'],['st','상태','']].map(([k,l,c])=>`<th class="${c}${SL_SORT.k===k?' sort-'+SL_SORT.dir:''}" data-sk="${k}" title="누르면 이 열로 정렬 — 다른 작업을 해도 유지됩니다">${l}${SL_SORT.k===k?(SL_SORT.dir==='asc'?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${
+      ${[['order_no','주문',''],['item','품목',''],['kind','구분',''],['qty','수량','num'],['amount','금액','num'],['st','상태','']].map(([k,l,c])=>`<th class="${c}${SL_SORT.k===k?' sort-'+SL_SORT.dir:''}" data-sk="${k}" title="누르면 이 열로 정렬 — 다른 작업을 해도 유지됩니다">${l}${SL_SORT.k===k?(SL_SORT.dir==='asc'?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${
     vis.map(({r,i})=>`<tr class="${r.ready?'':'off'}${SL_PICK.has(r.order_no)?' sel':''}" onclick="slRowStore(${i},event)">
       <td><input type="checkbox" ${SL_PICK.has(r.order_no)?'checked':''} ${r.ready?'':'disabled'} onchange="slPickStore(${i},this.checked)" onclick="event.stopPropagation()"></td>
       <td><b>${esc(r.channel||'')}</b> · ${esc(r.buyer||'')}<small>${esc(r.order_no)} · ${esc(r.at)}</small></td>
@@ -4458,17 +4494,18 @@ function gridOpts(key,row){
   if(key==='RES') return GRES;
   return key||[];
 }
-function gridBlank(pfx){ const r={}; GCOLS[pfx].forEach(([k])=>r[k]=''); if(pfx==='s'){ r.qty=1; r.kind=(($('s_kind').querySelector('.on')||{}).dataset||{}).v||'일시불'; r.stage=(($('s_stage').querySelector('.on')||{}).dataset||{}).v||'매출'; r.consent=false; }
+function gridBlank(pfx){ const r={}; GCOLS[pfx].forEach(([k])=>r[k]=''); if(pfx==='s'){ r.qty=1; r.kind='일시불'; r.stage='매출'; r.consent=false; }
   else { r.ty='product'; r.res='진행전'; r.buy_kind='일시불'; r.consent=false; } return r; }
 function gridRowEmpty(pfx,r){ const skip = pfx==='s' ? ['qty','kind','stage','consent'] : ['ty','res','buy_kind','consent'];
   return !GCOLS[pfx].some(([k])=>!skip.includes(k) && String(r[k]??'').trim()); }
 function gridInit(pfx){ while(GRID[pfx].length<3) GRID[pfx].push(gridBlank(pfx));
   const v=localStorage.getItem('dc_grid_view_'+pfx)||'all'; gridView(pfx,v,true);
-  if(pfx==='c'){ if(!$('cg_date').value) $('cg_date').value=todayStr(); loadInqCodes().then(()=>gridRender('c')); }
+  const d=$(pfx==='s'?'sg_date':'cg_date'); if(d && !d.value) d.value=todayStr();
+  if(pfx==='c') loadInqCodes().then(()=>gridRender('c'));
   gridRender(pfx); }
 function gridView(pfx,v,silent){ $(pfx+'_grid').classList.toggle('compact', v==='core'); $(pfx+'_gview').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); if(!silent){ try{ localStorage.setItem('dc_grid_view_'+pfx,v); }catch(e){} } }
 function sMode(m){ const seg=$('s_mode'); if(!seg) return; seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===m));
-  $('s_single').classList.toggle('hidden', m==='grid'); $('s_gridBox').classList.toggle('hidden', m!=='grid'); if(m==='grid') gridInit('s'); }
+  $('sLogCard').classList.toggle('hidden', m==='grid'); $('sGridCard').classList.toggle('hidden', m!=='grid'); if(m==='grid') gridInit('s'); }
 function gridCell(pfx,col,r){
   const [k,label,w,flags='',type='text',opts]=col; const cls='gc k-'+k+(flags?' '+flags:'')+(type==='chk'?' chk':'');
   const v=r[k]??''; let inp='';
@@ -4518,7 +4555,7 @@ function gridCheck(pfx,r){
 function gridRowP(pfx,r){
   const t=k=>(r[k]||'').trim(); const up=k=>t(k).toUpperCase();
   if(pfx==='s'){ const amt=gnum(r.amt), qty=Number(r.qty)||1;
-    return { sale_date:$('s_date').value, sale_kind:r.kind||'일시불', stage:r.stage||'매출', handler:$('s_handler').value, buyer_key:null,
+    return { sale_date:$('sg_date').value, sale_kind:r.kind||'일시불', stage:r.stage||'매출', handler:$('sg_handler').value, buyer_key:null,
       customer_name:t('name'), customer_phone:t('phone'), product_name:t('prod'), model_code:up('model'), qty, gross_amount:amt,
       items:[{product_name:t('prod'), model_code:up('model'), qty, amount:amt}], payment_method:r.pay||'', consult_id:null, consult_ref:t('consult'),
       consent_marketing:!!r.consent, notes:t('notes'), next_model_code:up('next')||null, next_expected_date:r.next_date||null, next_note:t('next_note')||null,
@@ -4534,7 +4571,7 @@ function gridRowP(pfx,r){
 }
 async function gridSave(pfx){
   const rows=GRID[pfx], btn=$(pfx+'_gsave'); if(btn.disabled) return;
-  const date = pfx==='s' ? $('s_date').value : $('cg_date').value; if(!date) return toast(pfx==='s'?'판매일을 입력하세요':'상담일을 입력하세요','bad');
+  const date = pfx==='s' ? $('sg_date').value : $('cg_date').value; if(!date) return toast(pfx==='s'?'판매일을 입력하세요':'상담일을 입력하세요','bad');
   let any=false, bad=0; rows.forEach(r=>{ r.err=''; if(gridRowEmpty(pfx,r)) return; any=true; const e=gridCheck(pfx,r); if(e){ r.err=e; bad++; } });
   if(!any) return toast('적힌 줄이 없습니다','bad');
   if(bad){ gridRender(pfx); return toast(`${bad}줄에 빠진 것이 있습니다 — 빨간 줄을 채워 주세요`,'bad'); }

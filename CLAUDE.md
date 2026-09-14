@@ -283,8 +283,10 @@ end $outer$;
   고객 찾기는 후보를 먼저 8건으로 줄인 뒤 주문·상담·지난 견적을 세도록 다시 짰다 (전엔 '김' 11,000명 전부에 하위 질의 → 2~7초. 이제 150ms, `ix_cust_name_trgm` gin). 코드가 틀리면 0.7초 쉬고 42501.
   시트 [견적내역]은 **거울**이 됐다 — GAS `pullQuotesFromDatacenter`(시간 트리거 15분)가 `fn_quote_feed(quote_lookup 키)` 로 없는 (번호,판)만 붙인다. 이름 없이 발행하면 서버가 '(미상)' 으로 저장(페이지는 이름·연락처·모델·월 구독료를 먼저 요구).
   테스트는 `ptest/qpage.mjs [mobile]` — 전달본 PHP 를 로컬 http 로 띄우고 supabase RPC 를 가짜로 받아 발행→내역→고객 찾기→보내기 를 돌린다 (GAS 호출 0·오류 0 이어야 함).
-- **여러 건 · 표로 입력 (2026-09-15 · store/test 에 먼저)** — 판매·상담 입력 카드 맨 위 모드 세그(`#s_mode` 한 건씩/여러 건, `#c_mode` 상담 기록/여러 건/문의 접수·넘기기). 표 모드는 공통 칸(판매일·프로·구분·단계 / `cg_date`·`cg_handler`·`cg_method`·`cg_type`)을 한 번 고르고
-  `.gtbl` 표에 한 줄씩(판매: 고객명·휴대폰·상품명·모델·수량·판매가 / 상담: 고객명·휴대폰·채널·관심 품목·상태·내용). `GRID.s/.c` 를 `localStorage dc_grid_{s|c}_{CODE}` 에 두고 `start()` 의 `gridLoad()` 가 복원. 마지막 칸 Enter = 줄 추가.
+- **여러 건 · 표로 입력 (2026-09-15 · store/test 에 먼저)** — 탭 맨 위 모드 세그가 **카드 밖**에 있고 모드마다 카드가 따로다 (상담과 판매가 같은 모양 — 판매 것이 카드 안에 있어 "판매 입력에는 없는데?" 소리를 들었다).
+  판매 `#s_mode`(한 건씩 `#sLogCard` / 여러 건 `#sGridCard`) · 상담 `#c_mode`(상담 기록 `#cLogCard` / 여러 건 `#cGridCard` / 문의 접수·넘기기 `#hoCard`).
+  표 카드는 공통 칸(판매 `sg_date`·`sg_handler` / 상담 `cg_date`·`cg_handler`)을 한 번 고르고
+  `.gtbl` 표에 한 줄씩(구분·단계·문의 유형 같은 나머지는 줄마다 고른다). `GRID.s/.c` 를 `localStorage dc_grid_{s|c}_{CODE}` 에 두고 `start()` 의 `gridLoad()` 가 복원. 마지막 칸 Enter = 줄 추가.
   `gridSave` 가 빈 줄은 건너뛰고 빠진 줄은 `err` 로 빨갛게(저장 안 함), 통과하면 줄마다 `fn_store_sale_submit`/`fn_store_consult_submit` (`gridRowP`). 폰은 헤더를 숨기고 줄을 2열 카드로. 처음 만든 [담아두기] 버튼 방식은 "하단 버튼이 어렵고 표처럼 넣고 싶다"는 말에 걷어냈다.
   `saleCollect()`/`consultCollect()`/`consultSend()` 분리는 남아 있다(submit 이 씀).
 - **받은 문의 접수 · 담당자 넘기기 (mvp_139 · 수기 상담 배정)** — 최지영 프로가 네이버톡 문의를 지용현에게 말로만 넘겨 상담에 없던 건. `#c_mode` [문의 접수 · 넘기기] → `#hoCard`(누구에게 칩 `ho_to`(asgDirs 부서 세그) · 고객명 · 휴대폰 · 어디로 온 문의 `ho_ch`(INQ.channels) · 내용 · 관심 제품) → `fn_store_consult_handoff(p_code, p_data{to,…})`
@@ -294,12 +296,19 @@ end $outer$;
 - **여러 건 표는 한 건씩 폼의 칸을 전부 가진다 (2026-09-15 두 번째 지적)** — `GCOLS.s/.c` 칸 정의([키,라벨,폭,플래그(req 필수·core 주요·wide 폰 두 칸),종류,선택지]) 로 `gridRender` 가 머리글·줄을 만든다. 필수 칸은 머리글 빨강 + 칸 테두리 연빨강.
   표는 `.gtbl{overflow-x:auto}` 안에서 옆으로 스크롤(문서 가로 넘침 0), [모든 칸]/[주요 칸만](`gridView`, localStorage `dc_grid_view_*`). 판매 줄 구분·단계는 위 세그가 새 줄 기본값. 상담 줄은 채널에 따라 유입경로 선택지가 바뀌고, 상태 구매함이면 구매 제품·금액 필수 → `consultSend` 로 판매까지.
   체크박스는 `appearance:none` 40px (터치 타깃). 상담 표 공통 칸은 상담일·상담사만(`cg_date`·`cg_handler`).
-- **주문서 탭 샵링커 목록 (2026-09-15)** — 확인 필요(후보 여럿) 줄은 후보 **코드·품목명·규격을 전부** 보여 담당자가 고를 수 있게(`renderSlList`, `l.cands`). 후보 하나면 코드 + 이카운트 품목명 + "주문: 상품명".
-  머리글 정렬(`SL_SORT`, `data-sk`, localStorage `dc_sl_sort`) 과 필터(`SL_FLT_IDS` → `dc_sl_flt`) 가 다시 그리거나 검색하거나 새로고침해도 유지. 이 표는 `data-ownsort` 라 공용 표 정렬이 건너뛴다. 테스트 `ptest/sl.mjs`.
+- **주문서 탭 목록 — 빠른 모드와 [단계별 모드] 2단계 둘 다 (2026-09-15)** — 두 화면이 같은 규칙을 쓴다.
+  **한 주문 = 한 줄**(서버 `core.f_sl_range` 가 order_no 로 묶고 `lines` 배열을 준다). 제품이 여럿이면 품목 칸에 전부 쌓이고 수량·금액은 주문 합계. 최근 30일 2,571건 중 230건이 여러 제품, 최대 6줄.
+  확인 필요(후보 여럿) 줄은 후보 **코드·품목명·규격을 전부** 보여 ③에서 고를 수 있게(`l.cands`). 후보 하나면 코드 + 이카운트 품목명 + "주문: 상품명".
+  **정렬은 공용** — `SL_SORTS`·`slSortKey`·`slSortList`·`slSortSet`(열마다 기본 차례 `SL_SORT_DIR`: 번호·채널·상태 오름 / 금액·수량·일시 내림) 을 빠른 모드(`slVisible`)와 마법사(`rows2`)가 같이 쓰고 `localStorage dc_sl_sort` 하나에 남는다.
+  필터 줄에 [정렬] select(`sl_sort`/`wzSort`) + 오름/내림 버튼, 빠른 모드는 머리글(`data-sk`) 클릭도 된다(주문 머리글 = **주문번호 순**). 빠른 모드 필터는 `SL_FLT_IDS` → `dc_sl_flt` 로 유지. 이 표는 `data-ownsort` 라 공용 표 정렬이 건너뛴다.
+  **택배비 0원은 '무료배송'** 으로 쓴다 — '택배비 없음' 이 미수집과 헷갈린다는 지적. 최근 30일 샵링커 2,843건 중 2,241건(79%)이 배송비 미수집(주문 수집 시점엔 아직 안 붙는다)이라 '택배비 합계'는 일부만 보여준다.
+  마법사 필터 줄 `.wiz-flt .in` 은 `width:auto` 라 한 줄에 여러 칸(전엔 `.in{width:100%}` 이라 줄마다 하나). 테스트 `ptest/sl.mjs`(빠른 모드) · `ptest/wz.mjs`(마법사 2단계, 가짜 `fn_store_sl_orders` 로 UI 를 실제로 눌러 본다).
 - **이카운트 전표 IO_TYPE (mvp_140)** — "IO_TYPE 거래유형(자릿수)" 실패 = 거래유형에 'SSG' 같은 글자를 보낸 것. `core.f_order_body` 는 이제 거래유형이 숫자 코드일 때만 IO_TYPE 을 보내고, 아니면 빼서 이카운트가 거래처 기본값(오픈마켓 등)으로 채운다. `ec.code` io_type 글자 코드는 active=false. 실패한 3장(SSG·프라자몰·에스몰)은 화면에서 [재전송].
 - **관리자 대시보드 캐시 (mvp_140)** — 느렸던 이유: 관리자 기본 12개월 키가 15분 워밍(`core.f_dash_warm`)에 없어 6시간마다 5~10초 콜드 빌드(8초 제한에 걸리기도). 12개월 키를 워밍에 넣고 `fn_dash_payload` 는 24시간 캐시를 바로 준다. '전체 기간'은 `f_dash_payload` 800일 제한이라 못 넣는다.
   화면: [캐시 지우고 새로고침](= `fn_dash_refresh`, 캐시 삭제 후 재집계) · [전체 화면 ⛶](`dashFullscreen`, `#dashFull` requestFullscreen, Esc). admin.html 과 admin/test 동일.
 - **'오늘' 은 한국 날짜 (mvp_140)** — DB 가 UTC 라 자정~09시엔 `current_date` 가 어제였다 → 오늘 입력한 판매에 어제 것이 남아 보임(01:03 지적). `fn_store_status` 등 fn_store_* 8개의 `current_date` 를 `((now() at time zone 'Asia/Seoul')::date)` 로 치환(`pg_get_functiondef` 통째 치환).
+- **상담 탭 배지 = [할 일] 칩과 같은 수 (mvp_141)** — `fn_store_requests.inbox.mine_open` 이 `진행중·보류` 를 세어 보류 5건이 든 배지 7 과 화면 [할 일] 2 가 달랐다. `진행전·진행중` 으로 맞췄다.
+  같은 함수의 `unassigned`(배정 배지)도 `진행전` 이 빠져 있어 `진행전·진행중·보류` 로 고쳤다 (온라인 문의는 진행전으로 들어온다).
 - **CRM 알림 내역 종류 필터는 체크박스** — `AL_KINDS`(Set, 기본 견적서·콜백) · `localStorage dc_al_kinds`. [전체] 칩은 뺐다. 예시 줄은 견적서를 켰을 때만.
   테스트 `ptest/grid.mjs [mobile]` G1~G9·C1~C3·H1~H5·A1~A3.
 - **판매·상담 입력 [＋ 새 판매 입력]·[＋ 새 상담 입력]** (카드 제목 오른쪽) — `saleClearForm()`·`consultClearForm()` 이 저장 뒤 비우기와 같은 함수. 적던 게 있으면 confirm.

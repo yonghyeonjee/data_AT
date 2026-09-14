@@ -13,3 +13,7 @@
 -- f_dash_warm: 첫 줄에 ((date_trunc('month', d) - interval '11 months')::date, d) 추가
 -- fn_dash_payload: return core.f_dash_payload_cached(p_from, p_to, p_mode, interval '24 hours');
 -- current_date 치환: for r in (7 함수) loop execute replace(pg_get_functiondef(oid), 'current_date', '((now() at time zone ''Asia/Seoul'')::date)'); end loop;
+
+-- mvp_141 (2026-09-15) 상담·배정 탭 배지 수 맞추기 — fn_store_requests 의 inbox
+--   mine_open  : ('진행중','보류')      → ('진행전','진행중')          (화면 [할 일] 칩과 같게, 보류 제외)
+--   unassigned : ('진행중','보류')      → ('진행전','진행중','보류')   (온라인 문의는 진행전으로 들어온다)
