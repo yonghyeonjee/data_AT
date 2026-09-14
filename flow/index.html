@@ -3,7 +3,7 @@
 :root{--teal:#0F766E;--teal-d:#0B5A55;--teal-s:#E3F3F1;--ink:#1F2430;--muted:#646D7C;--line:#D9DEE7;--amber:#8A5A00;--amber-s:#FBF1DC;--red:#B3261E;--red-s:#FDECEC;--navy:#1428A0;--navy-s:#EEF2FF}
 *{box-sizing:border-box}body{margin:0;background:#fff;font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;color:var(--ink);font-size:13px}
 html{background:#EEF1F5}body{background:#EEF1F5}
-.wrap{overflow:hidden}
+.wrap{overflow:hidden}.wrap.full{overflow:auto;-webkit-overflow-scrolling:touch}
 .page{width:2100px;padding:36px 44px 30px;position:relative;background:#fff;transform-origin:top left}
 .bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;background:#0B2E2C;color:#fff;font-size:13px;font-weight:700}
 .bar a{color:#fff;opacity:.85;text-decoration:none;font-weight:600;margin-left:auto;font-size:12px}
@@ -41,17 +41,16 @@ svg.ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;over
 .decide b{color:var(--red)}
 .foot{margin-top:10px;color:var(--muted);font-size:11px}
 /* 폰: 레인을 세로로 쌓고 화살표 대신 단계 구분 */
-@media (max-width:999px){
-  .wrap{overflow:visible}
-  .page{width:auto!important;transform:none!important;padding:18px 16px 24px;height:auto!important}
-  h1{font-size:20px}.sub{font-size:13px}
-  .lanes{grid-template-columns:1fr;gap:26px}
-  .lane{min-height:0}
-  .lane+.lane::before{content:"↓ 다음 단계";position:absolute;top:-24px;left:0;right:0;text-align:center;font-size:12px;font-weight:800;color:var(--teal)}
-  .lane h2{white-space:normal;flex-wrap:wrap}.lane h2 small{margin-left:0;flex:1 1 100%;text-align:left;padding-left:34px}
-  svg.ov{display:none}
-  .bar .z{display:none}
-}
+/* 폰 [화면 맞춤] = body.stack : 레인을 세로로 쌓고 화살표 대신 단계 구분. [100%] 는 도면 그대로 + 가로 스크롤 */
+body.stack .wrap{overflow:visible}
+body.stack .page{width:auto!important;transform:none!important;padding:18px 16px 24px;height:auto!important}
+body.stack h1{font-size:20px}body.stack .sub{font-size:13px}
+body.stack .lanes{grid-template-columns:1fr;gap:26px}
+body.stack .lane{min-height:0}
+body.stack .lane+.lane::before{content:"↓ 다음 단계";position:absolute;top:-24px;left:0;right:0;text-align:center;font-size:12px;font-weight:800;color:var(--teal)}
+body.stack .lane h2{white-space:normal;flex-wrap:wrap}body.stack .lane h2 small{margin-left:0;flex:1 1 100%;text-align:left;padding-left:34px}
+body.stack svg.ov{display:none}
+@media (max-width:999px){.bar{padding:8px 12px}.bar .z button{min-height:40px}.bar a{display:none}}
 @media print{.bar{display:none}html,body{background:#fff}.page{transform:none!important}@page{size:A3 landscape;margin:8mm}}
 </style></head><body><div class="bar">📊 상담 흐름도<span class="z" id="zoom"><button data-z="fit" class="on">화면 맞춤</button><button data-z="1">100%</button></span><a href="/store/guide/">담당자 사용 안내 →</a></div>
 <div class="wrap" id="wrap"><div class="page" id="page">
@@ -130,7 +129,10 @@ ov.innerHTML='<defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerW
 /* 넓은 화면: 2100px 도면을 창 폭에 맞춰 축소 (폰은 CSS 가 세로로 쌓는다) */
 const page=document.getElementById('page'), wrap=document.getElementById('wrap');
 function fit(){
-  if(window.innerWidth<1000){ SC=1; page.style.transform=''; wrap.style.height=''; draw(); return; }
+  const phone=window.innerWidth<1000;
+  document.body.classList.toggle('stack', phone && ZMODE==='fit');   /* 폰 [화면 맞춤] = 세로 쌓기 */
+  wrap.classList.toggle('full', ZMODE!=='fit');                        /* [100%] = 도면 그대로, 가로 스크롤 */
+  if(document.body.classList.contains('stack')){ SC=1; page.style.transform=''; wrap.style.height=''; draw(); return; }
   SC = ZMODE==='fit' ? Math.min(1,(window.innerWidth-2)/2100) : 1;
   page.style.transform = SC<1 ? 'scale('+SC+')' : '';
   wrap.style.height = SC<1 ? Math.ceil(page.offsetHeight*SC)+'px' : '';
