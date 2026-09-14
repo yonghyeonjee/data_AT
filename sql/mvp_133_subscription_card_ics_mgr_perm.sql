@@ -47,7 +47,7 @@ insert into core.api_key (name, key_hash, note) values ('leave_ics', '<SHA-256 o
 on conflict (name) do nothing;
 create or replace function public.fn_leave_ics(p_key text)
 returns text language plpgsql stable security definer set search_path to 'pg_catalog','public' as $$
-declare v text; r record; esc_ics text;
+declare v text; r record; esc_ics text; d date;
 begin
   if not core.f_api_ok('leave_ics', p_key) then raise exception '권한이 없습니다' using errcode='42501'; end if;
   v := E'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//삼성앤텍 데이터센터//휴가//KO\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n'
@@ -55,13 +55,28 @@ begin
   for r in select l.id, l.staff_name, l.from_date, l.to_date, l.kind, l.note, l.created_at
              from core.staff_leave l where l.to_date >= (now() at time zone 'Asia/Seoul')::date - 400 order by l.from_date, l.id loop
     esc_ics := regexp_replace(regexp_replace(coalesce(r.note,''), '\\', '\\\\', 'g'), '([,;])', '\\\1', 'g');
+    if r.kind = '반차' then
+      /* 반차 = 그날 09:00~15:00 KST (UTC 00:00~06:00) — 기간이면 하루씩 */
+      d := r.from_date;
+      while d <= r.to_date loop
+        v := v || E'BEGIN:VEVENT\r\n'
+          || 'UID:leave-' || r.id || '-' || to_char(d,'YYYYMMDD') || E'@db.samsungat.co.kr\r\n'
+          || 'DTSTAMP:' || to_char(coalesce(r.created_at, now()) at time zone 'UTC', 'YYYYMMDD"T"HH24MISS"Z"') || E'\r\n'
+          || 'DTSTART:' || to_char(d,'YYYYMMDD') || E'T000000Z\r\n'
+          || 'DTEND:' || to_char(d,'YYYYMMDD') || E'T060000Z\r\n'
+          || 'SUMMARY:' || regexp_replace(r.staff_name, '([,;])', '\\\1', 'g') || E' · 반차\r\n'
+          || case when esc_ics <> '' then 'DESCRIPTION:' || esc_ics || E'\r\n' else '' end
+          || E'CATEGORIES:반차\r\nTRANSP:TRANSPARENT\r\nEND:VEVENT\r\n';
+        d := d + 1;
+      end loop;
+      continue;
+    end if;
     v := v || E'BEGIN:VEVENT\r\n'
       || 'UID:leave-' || r.id || E'@db.samsungat.co.kr\r\n'
       || 'DTSTAMP:' || to_char(coalesce(r.created_at, now()) at time zone 'UTC', 'YYYYMMDD"T"HH24MISS"Z"') || E'\r\n'
       || 'DTSTART;VALUE=DATE:' || to_char(r.from_date, 'YYYYMMDD') || E'\r\n'
       || 'DTEND;VALUE=DATE:' || to_char(r.to_date + 1, 'YYYYMMDD') || E'\r\n'
-      || 'SUMMARY:' || case when r.kind = '매장휴무' then '매장휴무' else regexp_replace(r.staff_name, '([,;])', '\\\1', 'g') || ' · ' || r.kind end
-      || case when r.kind = '반차' then ' (오후 3시까지)' else '' end || E'\r\n'
+      || 'SUMMARY:' || case when r.kind = '매장휴무' then '매장휴무' else regexp_replace(r.staff_name, '([,;])', '\\\1', 'g') || ' · ' || r.kind end || E'\r\n'
       || case when esc_ics <> '' then 'DESCRIPTION:' || esc_ics || E'\r\n' else '' end
       || 'CATEGORIES:' || r.kind || E'\r\n'
       || E'TRANSP:TRANSPARENT\r\nEND:VEVENT\r\n';

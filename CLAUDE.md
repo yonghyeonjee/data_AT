@@ -263,9 +263,9 @@ end $outer$;
   시트 수정(onMgmtEdit) 은 이제 DB 담당자가 있으면 덮지 않는다(`coalesce(crm.consult.handler, excluded.handler)`). GAS 의 잔디 카드는 여전히 GAS 가 고른 이름으로 나가므로 재배정 카드가 한 장 더 온다.
 - **구독 문의 접수 카드는 데이터센터가 보낸다 (mvp_133, 규칙 `inquiry_subscription` · 기본 꺼짐)** — `fn_submit_inquiry` 가 새 건(xmax=0)일 때 `inquiry.subscription` 으로 홈페이지 문의와 같은 카드(배정 담당자·상담 정보·상담 확인하러가기). 재배정이면 담당자 줄에 "(A 프로님 휴가 → 재배정)". `assign_leave` 규칙은 여기 합쳐서 껐다.
   **켜는 순서**: 구독문의 GAS Code.gs 의 doPost 에서 `sendJandiNotification(...)` 한 줄을 주석 처리하고 재배포 → 관리자(또는 SQL)에서 `inquiry_subscription` enabled=true. 둘 다 켜져 있으면 카드가 두 장 간다.
-- **휴가 달력 → 구글 캘린더 구독 (mvp_133)** — Edge Function `leave-ics`(verify_jwt=false, 소스 `tools/edge/leave-ics.ts`) 가 `?k=토큰` 을 `core.api_key 'leave_ics'` 와 대조해 `public.fn_leave_ics`(service_role 만) 의 ICS 를 준다. 종일 일정, 제목 "이름 · 종류"(반차는 "(오후 3시까지)", 매장휴무는 "매장휴무"), UID `leave-<id>@db.samsungat.co.kr` 라 지우면 구글에서도 사라진다.
+- **휴가 달력 → 구글 캘린더 구독 (mvp_133)** — Edge Function `leave-ics`(verify_jwt=false, 소스 `tools/edge/leave-ics.ts`) 가 `?k=토큰` 을 `core.api_key 'leave_ics'` 와 대조해 `public.fn_leave_ics`(service_role 만) 의 ICS 를 준다. 종일 일정, 제목 "이름 · 종류"(매장휴무는 "매장휴무"). **반차는 그날 09:00~15:00 KST 시간 일정**(하루씩, UID `leave-<id>-<날짜>`), UID `leave-<id>@db.samsungat.co.kr` 라 지우면 구글에서도 사라진다.
   한 방향(우리 → 구글). 구글은 보통 몇 시간~하루에 한 번 가져간다. 주소는 `_secrets.local.md`. 구글 캘린더 › 다른 캘린더 › URL 로 추가.
-  **지정 캘린더에 직접 넣는 쪽은 GAS `tools/gas/leave_calendar.gs`** (CAL_ID = 매장 공유 캘린더, `fn_leave_feed(p_key)` JSON 을 15분마다 읽어 종일 일정 생성·수정·삭제, 태그 `dc_leave_id` 로 식별, 종류별 색). 키는 같은 leave_ics 토큰. 설치는 사용자가 붙여넣고 트리거 1회 실행.
+  **지정 캘린더에 직접 넣는 쪽은 GAS `tools/gas/leave_calendar.gs`** (CAL_ID = 매장 공유 캘린더, `fn_leave_feed(p_key)` JSON 을 15분마다 읽어 종일 일정 생성·수정·삭제, 반차는 09:00~15:00 시간 일정(태그 `id:날짜`), 태그 `dc_leave_id` 로 식별, 종류별 색). 키는 같은 leave_ics 토큰. 설치는 사용자가 붙여넣고 트리거 1회 실행.
 - **점장 권한을 관리자 권한 표에서 준다 (mvp_133)** — `core.perm_def 'mgr'`(기본 꺼짐, 맨 앞 열). `core.f_staff_is_mgr` = 직함(점장·대표·전체)·부서(대표·전체·개발) OR `f_has_perm('mgr')`. `fn_staff_perms` 의 `auto_mgr` 로 직함 자동인 사람은 체크가 잠겨 '직함' 표시. 담당자 화면은 서버 is_mgr 을 그대로 쓰므로 체크만 하면 배정·휴가·담당자별 현황이 열린다.
 - **판매·상담 입력 [＋ 새 판매 입력]·[＋ 새 상담 입력]** (카드 제목 오른쪽) — `saleClearForm()`·`consultClearForm()` 이 저장 뒤 비우기와 같은 함수. 적던 게 있으면 confirm.
 - **일 마감 기본 줄** — 그날 판매 입력이 없으면 일시불·구독 두 줄, 프로 = 로그인한 사람(전체 모드는 빈칸). 프로 빈 줄도 본인으로. 판매완료 입력 칸(`.drow .ds`)은 숨김 — 값은 판매 입력에서 자동, 저장은 그대로.

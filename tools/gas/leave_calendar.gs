@@ -11,6 +11,7 @@
  *  ④ installLeaveSyncTrigger 를 1회 실행 → 15분마다 자동 동기화
  *
  * 캘린더 일정은 태그 dc_leave_id 로 식별한다. 태그 없는 일정(손으로 넣은 것)은 건드리지 않는다.
+ * 반차는 종일이 아니라 그날 09:00~15:00 일정으로 넣는다 (기간이면 하루씩, 태그 "id:YYYY-MM-DD").
  ***********************************************************************/
 var CAL_ID = 'c3e549542f1c7e457d0caaebbfb5d68584c9ea538e3dac7e990f16197c8d44f3@group.calendar.google.com';
 var DC_URL  = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
@@ -34,8 +35,11 @@ function ymd_(s) { var p = String(s).split('-'); return new Date(Number(p[0]), N
 function addDays_(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function titleOf_(r) {
   if (r.kind === '매장휴무') return '매장휴무' + (r.note ? ' · ' + r.note : '');
-  return r.name + ' · ' + r.kind + (r.kind === '반차' ? ' (오후 3시까지)' : '');
+  return r.name + ' · ' + r.kind;
 }
+var HALF_START = 9, HALF_END = 15;   // 반차 = 09:00 ~ 15:00
+function at_(d, h) { var x = new Date(d); x.setHours(h, 0, 0, 0); return x; }
+function ymdStr_(d) { return Utilities.formatDate(d, 'Asia/Seoul', 'yyyy-MM-dd'); }
 function descOf_(r) { return [r.note ? '메모: ' + r.note : '', r.by ? '입력: ' + r.by : '', '데이터센터 휴가 #' + r.id].filter(String).join('\n'); }
 
 function syncLeaveToCalendar() {
@@ -47,8 +51,25 @@ function syncLeaveToCalendar() {
   cal.getEvents(from, to).forEach(function (ev) { var id = ev.getTag('dc_leave_id'); if (id) existing[id] = ev; });
   var made = 0, changed = 0, removed = 0;
   rows.forEach(function (r) {
+    var title = titleOf_(r), desc = descOf_(r);
+    if (r.kind === '반차') {                                    // 하루씩 09:00~15:00
+      for (var d = ymd_(r.from); d <= ymd_(r.to); d = addDays_(d, 1)) {
+        var key = r.id + ':' + ymdStr_(d), s = at_(d, HALF_START), e = at_(d, HALF_END), hv = existing[key];
+        if (hv) {
+          var hsame = hv.getTitle() === title && hv.getDescription() === desc && !hv.isAllDayEvent()
+                   && hv.getStartTime().getTime() === s.getTime() && hv.getEndTime().getTime() === e.getTime();
+          if (!hsame) { hv.setTitle(title); hv.setDescription(desc); hv.setTime(s, e); changed++; }
+          if (hv.getColor() !== KIND_COLOR['반차']) hv.setColor(KIND_COLOR['반차']);
+          delete existing[key];
+        } else {
+          var hn = cal.createEvent(title, s, e, { description: desc });
+          hn.setTag('dc_leave_id', key); hn.setColor(KIND_COLOR['반차']); made++;
+        }
+      }
+      return;
+    }
     var start = ymd_(r.from), end = addDays_(ymd_(r.to), 1);   // 종일 일정: 종료일은 exclusive
-    var title = titleOf_(r), desc = descOf_(r), ev = existing[String(r.id)];
+    var ev = existing[String(r.id)];
     if (ev) {
       var same = ev.getTitle() === title && ev.getDescription() === desc
               && ev.getAllDayStartDate().getTime() === start.getTime() && ev.getAllDayEndDate().getTime() === end.getTime();
