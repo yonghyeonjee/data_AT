@@ -1,0 +1,141 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>삼성앤텍 데이터센터 · 상담 흐름도</title><link rel="icon" href="/favicon.ico">
+<style>
+:root{--teal:#0F766E;--teal-d:#0B5A55;--teal-s:#E3F3F1;--ink:#1F2430;--muted:#646D7C;--line:#D9DEE7;--amber:#8A5A00;--amber-s:#FBF1DC;--red:#B3261E;--red-s:#FDECEC;--navy:#1428A0;--navy-s:#EEF2FF}
+*{box-sizing:border-box}body{margin:0;background:#fff;font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;color:var(--ink);font-size:13px}
+html{background:#EEF1F5}body{background:#EEF1F5}
+.wrap{overflow:hidden}
+.page{width:2100px;padding:36px 44px 30px;position:relative;background:#fff;transform-origin:top left}
+.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;background:#0B2E2C;color:#fff;font-size:13px;font-weight:700}
+.bar a{color:#fff;opacity:.85;text-decoration:none;font-weight:600;margin-left:auto;font-size:12px}
+.bar .z{display:flex;gap:4px}.bar .z button{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;border-radius:8px;min-height:32px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer}.bar .z button.on{background:#fff;color:#0B2E2C}
+h1{margin:0 0 4px;font-size:26px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 20px;font-size:14px}
+.lanes{display:grid;grid-template-columns:1fr 1fr 1.15fr 1fr 1fr;gap:56px;position:relative}
+.lane{background:#F6F7FA;border:1px solid var(--line);border-radius:16px;padding:14px 14px 16px;min-height:640px;position:relative}
+.lane h2{margin:0 0 12px;font-size:16px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.lane h2 i{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--teal);color:#fff;align-items:center;justify-content:center;font-style:normal;font-size:13px;font-weight:800}
+.lane h2 small{margin-left:auto;font-weight:500;color:var(--muted);font-size:11px;white-space:normal;text-align:right;line-height:1.2}
+.box{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px;position:relative;line-height:1.45}
+.box b{display:block;font-size:13.5px;margin-bottom:2px}
+.box .m{color:var(--muted);font-size:12px}
+.box.hub{border-color:var(--teal);background:var(--teal-s)}
+.box.hub b{color:var(--teal-d)}
+.box.todo{border-style:dashed;border-color:#B5A46F;background:var(--amber-s)}
+.box.todo b{color:var(--amber)}
+.box.warn{border-color:#E7B4B0;background:var(--red-s)} .box.warn b{color:var(--red)}
+.box.plan{border-style:dashed;border-color:#9FB0E6;background:var(--navy-s)} .box.plan b{color:var(--navy)}
+.tag{display:inline-block;border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:700;margin-left:4px;vertical-align:1px}
+.tag.auto{background:var(--teal-s);color:var(--teal-d)}.tag.hand{background:#EEF0F4;color:var(--muted)}.tag.gas{background:#FFF4E5;color:#9A5B00}.tag.plan{background:var(--navy-s);color:var(--navy)}.tag.ask{background:var(--red-s);color:var(--red)}
+.grp{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin:6px 0 6px}
+.flow{display:flex;flex-direction:column;gap:4px}
+.step{display:flex;align-items:center;gap:6px}
+.step .s{flex:1;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:7px 8px;font-weight:700;font-size:12px;text-align:center;line-height:1.3}
+.step .s.on{border-color:var(--teal);background:var(--teal-s);color:var(--teal-d)}
+.step .s.buy{border-color:#8FCB9B;background:#EAF6EC;color:#2E7D32}
+.arr{color:var(--teal);font-weight:800;text-align:center;font-size:14px;line-height:1.2;margin:-1px 0 3px}
+.arr small{font-weight:600;color:var(--muted);font-size:11px}
+svg.ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--muted);align-items:center}
+.legend span i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:5px;border:1.5px solid var(--line);background:#fff}
+.decide{margin-top:16px;border:1.5px dashed var(--red);background:var(--red-s);border-radius:12px;padding:10px 14px;font-size:12.5px;line-height:1.5}
+.decide b{color:var(--red)}
+.foot{margin-top:10px;color:var(--muted);font-size:11px}
+/* 폰: 레인을 세로로 쌓고 화살표 대신 단계 구분 */
+@media (max-width:999px){
+  .wrap{overflow:visible}
+  .page{width:auto!important;transform:none!important;padding:18px 16px 24px;height:auto!important}
+  h1{font-size:20px}.sub{font-size:13px}
+  .lanes{grid-template-columns:1fr;gap:26px}
+  .lane{min-height:0}
+  .lane+.lane::before{content:"↓ 다음 단계";position:absolute;top:-24px;left:0;right:0;text-align:center;font-size:12px;font-weight:800;color:var(--teal)}
+  .lane h2{white-space:normal;flex-wrap:wrap}.lane h2 small{margin-left:0;flex:1 1 100%;text-align:left;padding-left:34px}
+  svg.ov{display:none}
+  .bar .z{display:none}
+}
+@media print{.bar{display:none}html,body{background:#fff}.page{transform:none!important}@page{size:A3 landscape;margin:8mm}}
+</style></head><body><div class="bar">📊 상담 흐름도<span class="z" id="zoom"><button data-z="fit" class="on">화면 맞춤</button><button data-z="1">100%</button></span><a href="/store/guide/">담당자 사용 안내 →</a></div>
+<div class="wrap" id="wrap"><div class="page" id="page">
+<h1>삼성앤텍 데이터센터 · 상담 흐름</h1>
+<p class="sub">온라인 / 오프라인 문의 창구 → 통합 데이터센터 → 상담 처리 → 데이터 처리 후 수합 → CRM 발송(개발중) · 2026-09-13 기준 (실선 = 지금 되는 것, 점선 = 예정·결정 대기)</p>
+<div class="lanes" id="lanes">
+  <div class="lane"><h2><i>1</i>문의 창구<small>온라인 · 오프라인</small></h2>
+    <div class="grp">온라인</div>
+    <div class="box" data-id="a1"><b>홈페이지 견적 게시판</b><div class="m">고도몰 게시판 · 개인·사업자 견적 요청</div></div>
+    <div class="box" data-id="a2"><b>구독 문의 폼</b><div class="m">samsungsh.co.kr 구독 신청 (시트에도 기록)</div></div>
+    <div class="box todo" data-id="a3"><b>소모품 렌탈 · VMS 문의 폼 <span class="tag ask">대표님 확인</span></b><div class="m">접수 내역은 데이터센터에 모아 둔다. <b style="display:inline;color:var(--amber)">상담·판매 처리는 이카운트 한 곳</b>, 데이터센터는 이카운트에서 수집(두 군데 입력 안 함) — 안</div></div>
+    <div class="box" data-id="a4"><b>B2B(기업) 문의</b><div class="m">web_b2b · 박은지 프로 고정 · 매장 화면에는 안 보임</div></div>
+    <div class="grp" style="margin-top:14px">오프라인 (매장)</div>
+    <div class="box" data-id="a6"><b>방문 접수 태블릿 /visit/</b><div class="m">고객이 직접 이름·관심 품목 입력</div></div>
+    <div class="box" data-id="a7"><b>대면 · 전화 상담</b><div class="m">매장에서 바로 상담한 고객 — 사려다 만 고객도 남긴다</div></div>
+  </div>
+  <div class="lane"><h2><i>2</i>통합 데이터센터<small>접수 · 한 곳으로</small></h2>
+    <div class="grp">들어오는 길</div>
+    <div class="box" data-id="b0"><b>자동 접수 <span class="tag auto">자동</span></b><div class="m">폼(구독·소모품·VMS·B2B) → <span class="tag gas" style="margin:0">GAS</span> → 데이터센터<br>게시판 → 지메일 알림 → 스크립트가 1분마다 수집 <span class="tag auto">설치 완료</span><br>태블릿 → 바로 접수</div></div>
+    <div class="box" data-id="b0b"><b>손으로 넣기 <span class="tag hand">담당자</span></b><div class="m">대면·전화 → 담당자 화면 [＋ 상담 입력] — 채널 · 유입경로("어디서 보고 오셨는지") · 관심 품목</div></div>
+    <div class="arr">↓</div>
+    <div class="box hub" data-id="a8"><b>접수 = 상담 한 건 (연락 전)</b><div class="m">채널 · 유입경로 · 고객 · 관심 품목이 한 줄로</div></div>
+    <div class="box" data-id="b6"><b>잔디 알림 <span class="tag auto">자동</span></b><div class="m">접수 카드 · 배정 카드 · 미도착이면 다음 날 09:10 알림</div></div>
+    <div class="box" data-id="b7"><b>자동 배정 <span class="tag auto">자동</span></b><div class="m">담당자 순번 · 휴가자 제외 · B2B는 고정</div></div>
+    <div class="box" data-id="b8"><b>고객 묶기 · 정리 <span class="tag auto">자동</span></b><div class="m">이름·번호가 같으면 한 고객으로 · 테스트·중복 접수는 숨김</div></div>
+  </div>
+  <div class="lane"><h2><i>3</i>상담 처리<small>담당자 화면 /store.html</small></h2>
+    <div class="box" data-id="c1"><b>배정 <span class="tag hand">점장님</span></b><div class="m">미배정 → 담당 지정 · 담당 바꾸기 · 넘기기</div></div>
+    <div class="flow" data-id="c2">
+      <div class="step"><div class="s">연락 전 <span style="font-weight:500;color:var(--muted)">— 아직 통화 안 함</span></div></div>
+      <div class="arr">↓ [연락함]</div>
+      <div class="step"><div class="s on">상담중</div></div>
+      <div class="arr">↓</div>
+      <div class="step"><div class="s">📅 콜백 약속</div><div class="s">견적서 만들기·보내기</div></div>
+      <div class="arr">↓ <small>같은 고객의 후속은 [＋ 새 상담]으로 이어짐 · 통계는 한 건</small></div>
+      <div class="step"><div class="s buy">구매 확정</div><div class="s">보류</div><div class="s">완료<br><span style="font-weight:500;font-size:10.5px">구매 없음</span></div><div class="s">거절</div></div>
+    </div>
+    <div class="box" data-id="c3" style="margin-top:10px"><b>판매 입력 → 확정 대기 → 판매완료</b><div class="m">구매 확정이면 판매가 자동으로 들어감. 배송·설치 끝나면 [판매완료]. 일 마감 → 일일 업무 텍스트 → 월 마감</div></div>
+    <div class="box" data-id="c4"><b>고객 견적서 /q/?t=… <span class="tag auto">링크</span></b><div class="m">고객이 열람하면 알림 내역에 남음 · 유효기한(마감일) 7일</div></div>
+    <div class="box warn" data-id="c5"><b>구독문의 시트 상담결과</b><div class="m">지금은 시트에서만 고쳐지고 데이터센터로 안 옴 → 월말 수동 대조(9/13 8월분 맞춤). 담당자가 이 화면에서 상태를 바꾸면 해결</div></div>
+  </div>
+  <div class="lane"><h2><i>4</i>데이터 처리 후 수합<small>Supabase · 통계</small></h2>
+    <div class="box hub" data-id="d1"><b>상담 crm.consult</b><div class="m">채널 · 유입경로 · 담당 · 상태 · 콜백 · 진행 기록 · 이어진 상담 · 테스트 제외</div></div>
+    <div class="box hub" data-id="d2"><b>견적서 crm.quote · 공유 링크</b><div class="m">발행 · 열람 · 마감일</div></div>
+    <div class="box hub" data-id="d3"><b>주문 · 판매 core.orders</b><div class="m">매장 판매 입력 + 온라인몰(샵링커·고도몰·스마트스토어) + <b style="display:inline">이카운트(VMS · 소모품 · 재고)</b> 수집</div></div>
+    <div class="box" data-id="d4"><b>고객 crm.customer</b><div class="m">상담 · 견적 · 구매가 한 사람으로 · 수신 동의</div></div>
+    <div class="box" data-id="d5"><b>현황 · 통계</b><div class="m">담당자 [상담 현황](문의 → 구매, 채널·담당자별, 그래프) · 관리자 통계 · 외부 대시보드 /dash/ · 광고비 보고의 문의당·계약당 비용</div></div>
+    <div class="box" data-id="d6"><b>세는 규칙</b><div class="m">삭제·테스트 제외 · 이어진 상담은 한 건(처음 문의 날짜·채널, 마지막 결과) · 확인완료는 전환에 안 들어감</div></div>
+  </div>
+  <div class="lane"><h2><i>5</i>CRM 발송<small>센드온 API · 개발중</small></h2>
+    <div class="box plan" data-id="e1"><b>자동 알림 <span class="tag plan">개발중</span></b><div class="m">① 견적서 유효기한 안내(마감 하루 전) ② 콜백 당일 아침 안내 ③ 상담 뒤 감사 메시지 ④ 구매 뒤 설치·리뷰 안내</div></div>
+    <div class="box plan" data-id="e2"><b>담당자가 보내기 <span class="tag plan">개발중</span></b><div class="m">[CRM] 탭에서 템플릿 골라 [메시지 보내기] · 견적서 보내기 창의 [문자로 보내기]</div></div>
+    <div class="box" data-id="e3"><b>보낼 수 있는 고객</b><div class="m">마케팅 수신 동의(consent) 있는 고객만 · 번호 있는 고객</div></div>
+    <div class="box plan" data-id="e4"><b>발송 기록 crm.send_log <span class="tag plan">개발중</span></b><div class="m">누구에게 · 언제 · 어떤 템플릿 · 결과 → 알림 내역에 함께 보임 → 응답은 다시 상담으로</div></div>
+    <div class="box" data-id="e5"><b>키 보관</b><div class="m">센드온 키는 서버(Edge Function / DB)에만. 화면·GAS·저장소에는 절대 안 넣음</div></div>
+  </div>
+  <svg class="ov" id="ov"></svg>
+</div>
+<div class="legend"><span><i style="background:#fff"></i>지금 되는 것</span><span><i style="background:var(--teal-s);border-color:var(--teal)"></i>데이터센터 핵심 표</span><span><i style="background:var(--amber-s);border-style:dashed;border-color:#B5A46F"></i>대표님 확인 필요</span><span><i style="background:var(--navy-s);border-style:dashed;border-color:#9FB0E6"></i>개발중(센드온)</span><span><i style="background:var(--red-s);border-color:#E7B4B0"></i>지금 구멍</span><span class="tag gas" style="margin-left:0">GAS</span>= 구글 앱스 스크립트(고도몰 페이지에 키를 둘 수 없어서 거치는 중간 다리)</div>
+<div class="decide"><b>결정이 필요한 것 (대표님)</b> · ① VMS·소모품 렌탈: 문의 접수는 데이터센터에 모으되, 상담·판매 처리는 <b>이카운트 한 곳</b>에서 하고 데이터센터는 이카운트에서 수집 → 두 군데 입력을 없앤다. ② 구독문의 상담결과를 시트에 계속 적을지, 담당자 화면에서 바꾸는 것으로 옮길지(성공률 통계가 여기 달려 있음). ③ 센드온 문자 발송 시작 시점과 템플릿 문구.</div>
+<div class="foot">삼성앤텍 온라인사업부 · db.samsungat.co.kr · 담당자 사용 안내 /store/guide/</div>
+</div></div>
+<script>
+/* 이웃한 레인 사이의 흐름만 화살표로 */
+const L=[['a1','b0'],['a2','b0'],['a3','b0'],['a4','b0'],['a6','b0'],['a7','b0b'],['a8','c1'],['b7','c1'],['c2','d1'],['c4','d2'],['c3','d3'],['d1','e1'],['d2','e1'],['d4','e3']];
+const ov=document.getElementById('ov'), host=document.getElementById('lanes');
+let SC=1, ZMODE='fit';
+function draw(){ const hr=host.getBoundingClientRect(); const k=SC||1;
+ov.innerHTML='<defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5 0 10z" fill="#0F766E"/></marker><marker id="md" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5 0 10z" fill="#9A5B00"/></marker><marker id="mp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5 0 10z" fill="#1428A0"/></marker></defs>'+L.map(([a,b])=>{
+  const A=document.querySelector('[data-id="'+a+'"]').getBoundingClientRect(), B=document.querySelector('[data-id="'+b+'"]').getBoundingClientRect();
+  const x1=(A.right-hr.left)/k, y1=(A.top-hr.top+A.height/2)/k, x2=(B.left-hr.left)/k, y2=(B.top-hr.top+B.height/2)/k; const dx=(x2-x1)/2;
+  const dashed=(a==='a3'); const plan=(b==='e1'||b==='e3');
+  const col=dashed?'#9A5B00':plan?'#1428A0':'#0F766E', mk=dashed?'md':plan?'mp':'m';
+  return `<path d="M${x1} ${y1} C${x1+dx} ${y1} ${x2-dx} ${y2} ${x2} ${y2}" fill="none" stroke="${col}" stroke-width="2" ${(dashed||plan)?'stroke-dasharray="6 5"':''} marker-end="url(#${mk})" opacity=".9"/>`; }).join('');
+}
+/* 넓은 화면: 2100px 도면을 창 폭에 맞춰 축소 (폰은 CSS 가 세로로 쌓는다) */
+const page=document.getElementById('page'), wrap=document.getElementById('wrap');
+function fit(){
+  if(window.innerWidth<1000){ SC=1; page.style.transform=''; wrap.style.height=''; draw(); return; }
+  SC = ZMODE==='fit' ? Math.min(1,(window.innerWidth-2)/2100) : 1;
+  page.style.transform = SC<1 ? 'scale('+SC+')' : '';
+  wrap.style.height = SC<1 ? Math.ceil(page.offsetHeight*SC)+'px' : '';
+  draw(); }
+document.getElementById('zoom').addEventListener('click',e=>{ const b=e.target.closest('button[data-z]'); if(!b) return;
+  ZMODE=b.dataset.z; document.querySelectorAll('#zoom button').forEach(x=>x.classList.toggle('on',x===b)); fit(); });
+window.addEventListener('resize',fit); window.addEventListener('load',fit); fit();
+</script></body></html>

@@ -20,6 +20,7 @@
 | 방문 접수 | `/visit/` | 매장 태블릿 |
 | 재고 조회 | `/stock.html` | 사내 |
 | 담당자 사용 안내 | `/store/guide/` | 매장 프로 (서랍 [사용 안내]) |
+| 상담 흐름도 | `/flow/` | 사내 (대표님·점장님 설명용) |
 
 `/admin/test/`, `/store/test/`, `/visit/test/` 는 같은 파일의 테스트본 (경로에 `/test/` 가 있으면 `DC_ENV='test'`).
 
@@ -33,7 +34,7 @@
 ```
 CNAME  README.md  VERSION.txt  robots.txt  favicon.ico
 index.html  admin.html  store.html  stock.html
-.github/workflows/   admin/  customer/  dash/  q/  sql/  store/  tools/  visit/
+.github/workflows/   admin/  customer/  dash/  flow/  q/  sql/  store/  tools/  visit/
 ```
 
 **루트에 이것 말고 다른 파일이 있으면 잘못 올라간 것이다.**
@@ -253,7 +254,8 @@ end $outer$;
   상담 현황 = 월 칩(`stMonthChips`: 이 달·지난달·최근 5개월·올해·전체, 한 달을 고르면 일별로) + 기간 바 + KPI 4(문의·구매·성공률·진행 중) + 비계약 한 줄 + 그래프 2개(`stBars` 기간별 문의/구매 SVG · `stHBars` 채널별) + 표(기간·채널·**담당자별**(점장님 [전체]) · 채널×기간 · 유입경로).
   `core.f_consult_stats` 에 `handlers` 키 추가 (mvp_130). 원본 시트(구독 상담 성과 대시보드)와 8월 대조 완료 — 구독 문의 26·계약 5·보류 12·거절 2 일치, 홈페이지 문의 20 일치. 시트 상담결과 29건을 DB 에 반영했다(sql/mvp_130).
   **시트의 상담결과는 시트에서만 고쳐지고 DB 로 안 온다** — GAS 는 접수만 넣는다. 담당자가 이 시스템에서 상태를 바꾸기 전까지는 월말에 같은 방식으로 맞춰야 한다 ('판단 대기' 항목).
-- **상담 흐름도** — `scratchpad/flow/flow.html` (5레인: 문의 창구 → 통합 데이터센터 → 상담 처리 → 데이터 처리 후 수합 → CRM 발송(개발중)), `ptest/flow_render.mjs` 로 PNG·PDF. 카카오채널 상담은 흐름도에서 뺐다(대표님 지시).
+- **상담 흐름도 `/flow/`** — 5레인(문의 창구 → 통합 데이터센터 → 상담 처리 → 데이터 처리 후 수합 → CRM 발송(개발중)). 도면은 2100px 고정이고 ≥1000px 에서는 창 폭에 맞춰 `transform:scale` (상단 [화면 맞춤]/[100%]), 화살표는 `draw()` 가 배율로 나눠 다시 그린다. 폰(<1000px)은 레인을 세로로 쌓고 화살표 대신 "↓ 다음 단계". 인쇄는 A3 가로.
+  카카오채널 상담은 흐름도에서 뺐다(대표님 지시). 4레인 초안(문의 수집→상담 처리→데이터센터→CRM)은 폐기. PNG·PDF 는 `ptest/flow_render.mjs`.
 - **관리자 화면도 같은 상품명 규칙 + 수량** — 대시보드 상위 상품 랭크·표·파레토 툴팁·워터폴(상품), 주문 목록, 주문서 요청에서 모델 코드가 이름 앞. `rankHTML` 은 `q`(개) 가 있으면 "N개 · M건" 으로, 상위 상품·카테고리 랭크에 `qty` 를 넘긴다.
 - **대시보드 `/dash/` 상위 상품은 모델 코드가 맨 앞** (`PR[id][0]+'  '+PR[id][1]`, 표 셀도 모델 먼저).
 - **상단 [로그아웃] (2026-09-13)** — 이름 옆 `#btnLogout`(`.pill.btnp`, 폰은 아이콘만·40px) → `logoutStore()` = 확인 → staff_code·st_open 지우고 새로고침 (아래 "담당자 변경"과 같음).
