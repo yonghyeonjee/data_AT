@@ -283,10 +283,16 @@ end $outer$;
   고객 찾기는 후보를 먼저 8건으로 줄인 뒤 주문·상담·지난 견적을 세도록 다시 짰다 (전엔 '김' 11,000명 전부에 하위 질의 → 2~7초. 이제 150ms, `ix_cust_name_trgm` gin). 코드가 틀리면 0.7초 쉬고 42501.
   시트 [견적내역]은 **거울**이 됐다 — GAS `pullQuotesFromDatacenter`(시간 트리거 15분)가 `fn_quote_feed(quote_lookup 키)` 로 없는 (번호,판)만 붙인다. 이름 없이 발행하면 서버가 '(미상)' 으로 저장(페이지는 이름·연락처·모델·월 구독료를 먼저 요구).
   테스트는 `ptest/qpage.mjs [mobile]` — 전달본 PHP 를 로컬 http 로 띄우고 supabase RPC 를 가짜로 받아 발행→내역→고객 찾기→보내기 를 돌린다 (GAS 호출 0·오류 0 이어야 함).
-- **여러 건 담아두기 (2026-09-15 · store/test 에 먼저)** — 판매·상담 입력의 [저장] 옆 [담아두기 →]. `saleCollect()`/`consultCollect()`(폼→데이터+검사, 저장과 담기가 같이 씀) · `consultSend(x)`(상담+구매함이면 판매까지) 로 나눴다.
-  `BATCH.s/.c` 를 `localStorage dc_batch_{s|c}_{CODE}` 에 두고 `start()` 의 `batchLoad()` 가 복원. 담으면 공통 칸(판매일·프로·구분·단계 / 상담일·상담사·방법·채널·유형·경로)은 남기고 고객·상품 칸만 비운다.
-  목록 줄 [수정] = `batchEdit` 이 그 줄을 폼으로 되돌리고 목록에서 뺀다(상담은 채널·유형·경로·품목·구매함 정보까지). [한꺼번에 저장] = `batchSave` 가 순서대로 보내고 실패한 줄은 `err` 와 함께 빨갛게 남긴다(코드 오류면 중단).
-  테스트 `ptest/batch.mjs [mobile]` B1~B11 (빈 폼 거부·유지·새로고침 복원·수정·일괄 저장·실패 줄·상담 구매함→판매). UAT 4조합 통과.
+- **여러 건 · 표로 입력 (2026-09-15 · store/test 에 먼저)** — 판매·상담 입력 카드 맨 위 모드 세그(`#s_mode` 한 건씩/여러 건, `#c_mode` 상담 기록/여러 건/문의 접수·넘기기). 표 모드는 공통 칸(판매일·프로·구분·단계 / `cg_date`·`cg_handler`·`cg_method`·`cg_type`)을 한 번 고르고
+  `.gtbl` 표에 한 줄씩(판매: 고객명·휴대폰·상품명·모델·수량·판매가 / 상담: 고객명·휴대폰·채널·관심 품목·상태·내용). `GRID.s/.c` 를 `localStorage dc_grid_{s|c}_{CODE}` 에 두고 `start()` 의 `gridLoad()` 가 복원. 마지막 칸 Enter = 줄 추가.
+  `gridSave` 가 빈 줄은 건너뛰고 빠진 줄은 `err` 로 빨갛게(저장 안 함), 통과하면 줄마다 `fn_store_sale_submit`/`fn_store_consult_submit` (`gridRowP`). 폰은 헤더를 숨기고 줄을 2열 카드로. 처음 만든 [담아두기] 버튼 방식은 "하단 버튼이 어렵고 표처럼 넣고 싶다"는 말에 걷어냈다.
+  `saleCollect()`/`consultCollect()`/`consultSend()` 분리는 남아 있다(submit 이 씀).
+- **받은 문의 접수 · 담당자 넘기기 (mvp_139 · 수기 상담 배정)** — 최지영 프로가 네이버톡 문의를 지용현에게 말로만 넘겨 상담에 없던 건. `#c_mode` [문의 접수 · 넘기기] → `#hoCard`(누구에게 칩 `ho_to`(asgDirs 부서 세그) · 고객명 · 휴대폰 · 어디로 온 문의 `ho_ch`(INQ.channels) · 내용 · 관심 제품) → `fn_store_consult_handoff(p_code, p_data{to,…})`
+  = `fn_store_consult_submit`(handler=받는 사람, result='진행전', 품목 기본 '알 수 없음', notes '문의 접수 … A → B 넘김') + `crm.consult_assign` 기록 + `core.f_notify('consult.handoff')`(규칙 `consult_handoff`, jandi_crm, 본인이면 안 보냄). 받는 사람 홈 새 문의·[연락 전]·알림 내역 배정에 보인다.
+  채널 `naver` 를 '네이버톡' 으로 켰다. 상담 기록 상태 세그에도 [연락 전] 버튼을 넣었다(`cResSync` 임시 버튼 불필요). `ocToConsult`·`pickMine` 은 `cMode('log')` 로 되돌린다.
+  **주의: 받는 사람이 개발 계정(지용현)이면 `trg_consult_dev_is_test` 가 테스트 숨김을 붙인다** — 실제 건이면 관리자 문의 관리 [삭제됨]에서 복구해야 통계에 들어간다.
+- **CRM 알림 내역 종류 필터는 체크박스** — `AL_KINDS`(Set, 기본 견적서·콜백) · `localStorage dc_al_kinds`. [전체] 칩은 뺐다. 예시 줄은 견적서를 켰을 때만.
+  테스트 `ptest/grid.mjs [mobile]` G1~G9·C1~C3·H1~H5·A1~A3.
 - **판매·상담 입력 [＋ 새 판매 입력]·[＋ 새 상담 입력]** (카드 제목 오른쪽) — `saleClearForm()`·`consultClearForm()` 이 저장 뒤 비우기와 같은 함수. 적던 게 있으면 confirm.
 - **일 마감 기본 줄** — 그날 판매 입력이 없으면 일시불·구독 두 줄, 프로 = 로그인한 사람(전체 모드는 빈칸). 프로 빈 줄도 본인으로. 판매완료 입력 칸(`.drow .ds`)은 숨김 — 값은 판매 입력에서 자동, 저장은 그대로.
 - **관리자 화면도 같은 상품명 규칙 + 수량** — 대시보드 상위 상품 랭크·표·파레토 툴팁·워터폴(상품), 주문 목록, 주문서 요청에서 모델 코드가 이름 앞. `rankHTML` 은 `q`(개) 가 있으면 "N개 · M건" 으로, 상위 상품·카테고리 랭크에 `qty` 를 넘긴다.
