@@ -265,6 +265,7 @@ end $outer$;
   **켜는 순서**: 구독문의 GAS 에 `tools/gas/inquiry_forward.gs` v15 를 붙이고 doPost 3곳(GAS 순번 제거 · `dcAssignInquiry_` 호출 · `sendJandiNotification` 제거) 고쳐 재배포 → `inquiry_subscription` enabled=true, `assign_leave` 끔. 둘 다 켜져 있으면 카드가 두 장 간다.
   **배정은 데이터센터가 한다 (mvp_134)** — GAS 가 assignedStaff 를 비워 보내면 트리거가 `f_assign_next` 로 배정하고, 홈페이지 문의(`fn_inquiry_mail_ingest` 도 `f_assign_next('default')`)와 같은 순번표(`core.assign_pool` default · `assign_state` default)를 번갈아 쓴다. GAS v15 는 응답의 handler 를 시트 H열에 적는다.
   `fn_submit_inquiry` 는 returning 에서 실제 handler 를 받아 응답·카드에 쓰고, 시트 수정(onMgmtEdit)의 담당자는 다시 DB 를 덮는다(시트와 DB 가 같은 값이라 안전). 휴가 재배정은 새 접수에만.
+  **잘못 배정된 건을 바꾸면 순번 커서가 따라간다 (mvp_135)** — 트리거 `trg_consult_assign_cursor`(after update of handler): 이전 담당자 = `assign_state.default.last_staff` 이고 새 담당자가 풀 인원이면 커서를 새 담당자로. 담당자 화면·관리자·시트 수정 어디서 바꿔도 같다. 풀 밖 사람·옛 건은 커서 그대로.
 - **휴가 달력 → 구글 캘린더 구독 (mvp_133)** — Edge Function `leave-ics`(verify_jwt=false, 소스 `tools/edge/leave-ics.ts`) 가 `?k=토큰` 을 `core.api_key 'leave_ics'` 와 대조해 `public.fn_leave_ics`(service_role 만) 의 ICS 를 준다. 종일 일정, 제목 "이름 · 종류"(매장휴무는 "매장휴무"). **반차는 그날 09:00~15:00 KST 시간 일정**(하루씩, UID `leave-<id>-<날짜>`), UID `leave-<id>@db.samsungat.co.kr` 라 지우면 구글에서도 사라진다.
   한 방향(우리 → 구글). 구글은 보통 몇 시간~하루에 한 번 가져간다. 주소는 `_secrets.local.md`. 구글 캘린더 › 다른 캘린더 › URL 로 추가.
   **지정 캘린더에 직접 넣는 쪽은 GAS `tools/gas/leave_calendar.gs`** (CAL_ID = 매장 공유 캘린더, `fn_leave_feed(p_key)` JSON 을 15분마다 읽어 종일 일정 생성·수정·삭제, 반차는 09:00~15:00 시간 일정(태그 `id:날짜`), 태그 `dc_leave_id` 로 식별, 종류별 색). 키는 같은 leave_ics 토큰. 설치는 사용자가 붙여넣고 트리거 1회 실행.
