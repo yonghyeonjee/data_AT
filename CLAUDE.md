@@ -57,6 +57,7 @@ node uat.mjs mobile       # 담당자 · 모바일 390px
 node uat.mjs mgr          # 점장 · 데스크톱
 node uat.mjs mgr mobile   # 점장 · 모바일
 node qview.mjs            # 고객 견적서 (정상/기한지남/링크만료/잘못된주소)
+node qpage.mjs [mobile]   # 고도몰 견적서 페이지 전달본 (데이터센터 직접 호출 · 발행→내역→고객 찾기→보내기)
 ```
 
 **하나라도 실패하면 배포하지 않는다.** 23개 케이스에 터치 타깃 40px·색 대비 4.5:1·가로 넘침 0·
@@ -276,6 +277,12 @@ end $outer$;
 - **네임카드는 데이터센터가 원본 (mvp_137 · 2026-09-14)** — 견적서 페이지가 `fn_quote_nc_list/save/delete`(anon + 페이지 보안 코드 해시 `core.app_setting.quote_page_code_hash`) 로 `core.namecard` 를 읽고 쓴다. GAS `action=namecards/saveNamecard/deleteNamecard` 와 시트 [네임카드] 탭은 더 이상 안 쓴다(그대로 두면 됨). 첫 로드 때 브라우저 캐시에만 있던 카드를 데이터센터로 한 번 옮긴다. 세션 전달본 PHP 에 폰 레이아웃과 같이 들어 있다 — 고도몰에 올려야 동작.
   휴가 입력 창: '누구' → '담당자 선택', 위에 [매장]/[전체] 세그(`#lv_scope`, `lvFillStaff`). `fn_store_leave_list` 가 `staff_dept`(이름·부서, 테스트 계정 제외, 매장 먼저)를 준다.
 - **고객 견적서 전화 버튼은 담당 네임카드 휴대폰 (2026-09-14)** — `fn_quote_public` 은 `quote->opt->namecardId` → 이름 → `core.staff.mobile` → 매장 번호 순. core.namecard 에 카드가 없으면 매장 번호로 떨어진다(지용현 카드가 없어서 031 로 나왔던 건). 지용현 카드(NC1788421248760)를 직접 넣었고, `fn_submit_quote` 가 payload `namecard` 를 받으면 core.namecard 를 upsert 한다 — 견적내역 GAS `dcForwardQuote_` 가 네임카드 탭에서 찾아 실어 보내도록 패치(`tools/gas/quote_forward.gs` 참고).
+- **견적서 페이지가 데이터센터에 직접 저장한다 (mvp_138 · 2026-09-14)** — 발행·발행 내역·지난 견적 열기·기존 고객 찾기·[고객에게 보내기]가 GAS·시트를 거치지 않고
+  anon + 페이지 보안 코드(`core.f_quote_page_ok`)로 `fn_quote_page_save/list/get/customer/share` 를 부른다. 번호(`core.f_quote_next_no`, SH+yyMMdd-NNN · advisory lock)·판(version)·발행 시각은 서버가 정한다.
+  `fn_submit_quote`·`fn_quote_share_key`·`fn_quote_customer_lookup` 은 키 검사만 남기고 본문을 `core.f_quote_store`·`core.f_quote_share`·`core.f_quote_customer_lookup` 로 뺐다(원본 prosrc 에서 키 줄만 지워 생성).
+  고객 찾기는 후보를 먼저 8건으로 줄인 뒤 주문·상담·지난 견적을 세도록 다시 짰다 (전엔 '김' 11,000명 전부에 하위 질의 → 2~7초. 이제 150ms, `ix_cust_name_trgm` gin). 코드가 틀리면 0.7초 쉬고 42501.
+  시트 [견적내역]은 **거울**이 됐다 — GAS `pullQuotesFromDatacenter`(시간 트리거 15분)가 `fn_quote_feed(quote_lookup 키)` 로 없는 (번호,판)만 붙인다. 이름 없이 발행하면 서버가 '(미상)' 으로 저장(페이지는 이름·연락처·모델·월 구독료를 먼저 요구).
+  테스트는 `ptest/qpage.mjs [mobile]` — 전달본 PHP 를 로컬 http 로 띄우고 supabase RPC 를 가짜로 받아 발행→내역→고객 찾기→보내기 를 돌린다 (GAS 호출 0·오류 0 이어야 함).
 - **판매·상담 입력 [＋ 새 판매 입력]·[＋ 새 상담 입력]** (카드 제목 오른쪽) — `saleClearForm()`·`consultClearForm()` 이 저장 뒤 비우기와 같은 함수. 적던 게 있으면 confirm.
 - **일 마감 기본 줄** — 그날 판매 입력이 없으면 일시불·구독 두 줄, 프로 = 로그인한 사람(전체 모드는 빈칸). 프로 빈 줄도 본인으로. 판매완료 입력 칸(`.drow .ds`)은 숨김 — 값은 판매 입력에서 자동, 저장은 그대로.
 - **관리자 화면도 같은 상품명 규칙 + 수량** — 대시보드 상위 상품 랭크·표·파레토 툴팁·워터폴(상품), 주문 목록, 주문서 요청에서 모델 코드가 이름 앞. `rankHTML` 은 `q`(개) 가 있으면 "N개 · M건" 으로, 상위 상품·카테고리 랭크에 `qty` 를 넘긴다.
@@ -291,11 +298,12 @@ end $outer$;
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
 ### 미배포 (올려야 동작)
-- `quote_subscribe.php` (고도몰) — [📨 고객에게 보내기] + **폰 레이아웃 개편 (2026-09-13)**: ≤880px 에서 기본은 견적서만,
+- `quote_subscribe.php` (고도몰) — **데이터센터 직접 호출 (mvp_138 · 2026-09-14, 세션 전달본)** + [📨 고객에게 보내기] + **폰 레이아웃 개편 (2026-09-13)**: ≤880px 에서 기본은 견적서만,
   패널(고객·옵션·표시 항목·네임카드·발행 내역·임시 저장)은 바텀 시트(`#quoteModal.sheet-open`), 아래 탭바 `.q-mtab`
   [설정·메뉴]·[견적서]·[발행]·[보내기], 툴바는 제목+[금액 수정]+[⋯](새 견적·발행 내역·PDF·인쇄). 편집 모드 견적서 머리는 세로로 쌓아 100% 폭.
   데스크톱은 그대로. 파일은 저장소에 두지 않는다(보안 코드 해시·GAS 주소 포함) — 세션 전달본을 고도몰에 올릴 것.
-- `1_quote_Code.gs` (Apps Script) — `action=share`, `syncNamecards()`. 붙여넣고 **재배포** 필요
+- `1_quote_Code.gs` (Apps Script · 견적내역) — 세션 전달본(`견적내역_Code_namecard.gs`)에 `pullQuotesFromDatacenter()` 가 들어 있다. 붙여넣고 DC_KEY 채운 뒤 **트리거 15분** 등록.
+  전환 순서: ① GAS 에 새 키 넣고 재배포 → ② 메뉴 [Datacenter 일괄 적재] 1회(시트에만 있던 SH260914-007~009 등을 DC 로) → ③ PHP 업로드 → ④ 트리거 등록. ②를 건너뛰면 DC 가 매기는 다음 번호가 시트 번호와 겹칠 수 있다.
 - ~~`gmail_inquiry.gs` 1분 트리거~~ — **2026-09-13 설치 완료** (사용자 확인). 게시판 문의가 지메일 → 1분마다 `fn_inquiry_mail_ingest` 로 들어온다.
   멈추면 수집 미도착 감시(09:10 잔디)에 잡힌다.
 
@@ -323,7 +331,7 @@ end $outer$;
    멈추면 다음 날 아침 09:10 에 잔디로 알려준다. 그래서 지금은 GAS 를 그대로 둔다.
 
 → 문의 폼 3개는 고도몰 PHP 한 장이나 Edge Function 으로 옮기면 GAS 를 걷어낼 수 있다.
-   견적(`1_quote_Code.gs`)은 계산기 API 전체이고 시트가 실제 저장소라 그대로 둔다.
+   견적은 2026-09-14 부터 데이터센터가 저장소다(mvp_138). `1_quote_Code.gs` 는 시트 거울(`pullQuotesFromDatacenter`)과 계산기 API 만 남았다.
    **중간 단계(키를 스크립트 속성으로 빼기 등)는 하지 않기로 했다. 옮길 거면 한 번에 옮긴다.**
 
 ### 판단 대기 (사람이 정해야 함)

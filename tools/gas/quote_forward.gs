@@ -23,6 +23,7 @@
 var DC_URL  = typeof DC_URL  !== 'undefined' ? DC_URL  : 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
 var DC_ANON = typeof DC_ANON !== 'undefined' ? DC_ANON : 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 var DC_KEY  = typeof DC_KEY  !== 'undefined' ? DC_KEY  : 'PASTE_DC_KEY_HERE';
+var DC_LOOKUP_KEY = typeof DC_LOOKUP_KEY !== 'undefined' ? DC_LOOKUP_KEY : 'PASTE_QUOTE_LOOKUP_KEY_HERE';   // core.api_key 'quote_lookup' (fn_quote_feed 읽기용)
 
 function dcForwardQuote_(no, version, issuedAt, summary, quote) {
   try {
@@ -68,4 +69,40 @@ function backfillQuotesToDatacenter() {
     if (n % 50 === 0) Utilities.sleep(500);    // 과호출 방지
   }
   Logger.log('견적 ' + n + '건 전송 완료');
+}
+
+
+/* ══════════ 데이터센터 → 시트 [견적내역] 거울 (2026-09-14) ══════════
+   견적서 페이지는 이제 데이터센터(Supabase)에 직접 저장한다 (GAS 왕복 없음).
+   시트를 계속 채우려면 편집기 › 트리거 › pullQuotesFromDatacenter · 시간 기반 · 15분마다.
+   없는 (견적번호, 판) 만 붙이고, 마지막 created_at 을 스크립트 속성에 두어 다음엔 그 뒤만 읽는다. */
+function pullQuotesFromDatacenter(){
+  var props = PropertiesService.getScriptProperties();
+  var since = props.getProperty('DC_QUOTE_SINCE') || null;
+  var res = UrlFetchApp.fetch(DC_URL + 'fn_quote_feed', { method: 'post', contentType: 'application/json',
+    headers: { apikey: DC_ANON, Authorization: 'Bearer ' + DC_ANON },
+    payload: JSON.stringify({ p_key: DC_LOOKUP_KEY, p_since: since, p_limit: 200 }), muteHttpExceptions: true });
+  var r = null; try { r = JSON.parse(res.getContentText()); } catch(e){}
+  if(!r || !r.ok){ Logger.log('데이터센터 피드 실패: ' + res.getResponseCode() + ' ' + res.getContentText().slice(0, 200)); return; }
+  var s = sheet(SH_QUOTE, QUOTE_HEAD);
+  var have = {};
+  rowsOf(s).forEach(function(x){ if(x[1]) have[String(x[1]) + '#' + (parseInt(x[2], 10) || 1)] = true; });
+  var n = 0, last = since;
+  (r.rows || []).forEach(function(q){
+    var k = String(q.no) + '#' + (q.version || 1);
+    if(!have[k]){
+      var sum = q.summary || {};
+      s.appendRow([
+        q.issuedAt || '', q.no, q.version || 1, sum.type||'', sum.date||'', sum.until||'', sum.name||'', sum.phone||'', sum.birth||'', sum.addr||'', sum.carrier||'',
+        sum.wedding||'', sum.movein||'', sum.proof||'', sum.counselor||'', sum.count||0, sum.models||'',
+        Number(sum.total)||0, Number(sum.benefit)||0, Number(sum.finalP)||0, Number(sum.monthly)||0, Number(sum.realM)||0,
+        Number(sum.prepayPct)||0, Number(sum.prepayAmt)||0, sum.card||'', sum.pointMode||'', sum.memo||'', JSON.stringify(q.quote || {})
+      ]);
+      s.getRange(s.getLastRow(), 18, 1, 7).setNumberFormat('#,##0');
+      have[k] = true; n++;
+    }
+    if(q.created_at) last = q.created_at;
+  });
+  if(last) props.setProperty('DC_QUOTE_SINCE', last);
+  Logger.log('데이터센터 → 시트 ' + n + '건 추가' + (last ? ' (since ' + last + ')' : ''));
 }
