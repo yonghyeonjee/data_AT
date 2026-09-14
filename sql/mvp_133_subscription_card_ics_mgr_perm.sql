@@ -83,3 +83,13 @@ language sql stable set search_path to 'pg_catalog','public' as $$
       or core.f_has_perm(p_name, 'mgr');
 $$;
 -- fn_staff_perms: 각 직원에 auto_mgr (직함·부서로 자동인지) 추가 — 관리자 권한 표에서 잠긴 체크로 보임
+
+-- ②-2 구글 캘린더 직접 동기화용 JSON 피드 (GAS tools/gas/leave_calendar.gs 가 15분마다 읽는다) — 키는 leave_ics 와 같은 것
+create or replace function public.fn_leave_feed(p_key text)
+returns jsonb language sql stable security definer set search_path to 'pg_catalog','public' as $$
+  select case when not core.f_api_ok('leave_ics', p_key) then null
+    else coalesce((select jsonb_agg(jsonb_build_object('id', l.id, 'name', l.staff_name, 'from', l.from_date, 'to', l.to_date, 'kind', l.kind,
+                     'note', l.note, 'by', l.created_by, 'updated', greatest(l.created_at, l.created_at)) order by l.from_date, l.id)
+                  from core.staff_leave l where l.to_date >= (now() at time zone 'Asia/Seoul')::date - 60), '[]'::jsonb) end;
+$$;
+grant execute on function public.fn_leave_feed(text) to anon, authenticated, service_role;
