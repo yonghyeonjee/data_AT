@@ -457,7 +457,9 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .trow .lab small{display:block;color:var(--faint);font-weight:400;font-size:calc(11px * var(--font-scale))}
 .trow.head{color:var(--faint);font-size:calc(12px * var(--font-scale));margin-bottom:4px}
 .handler-row{display:grid;grid-template-columns:1fr 1.2fr 1fr 32px;gap:8px;align-items:center;margin-bottom:8px}
-.drow{display:grid;grid-template-columns:.9fr 1fr 1.1fr 1.1fr .9fr 28px;gap:6px;align-items:center;margin-bottom:6px}
+.drow{display:grid;grid-template-columns:.9fr 1fr 1.1fr .9fr 28px;gap:6px;align-items:center;margin-bottom:6px}
+/* 판매완료 칸은 숨긴다 — 값은 판매 입력에서 자동으로 오고 저장은 그대로 된다 (2026-09-14) */
+.drow .ds{display:none}
 .drow.head{color:var(--faint);font-size:calc(11.5px * var(--font-scale));margin-bottom:4px} .drow.head .r{text-align:right} .drow.head small{display:block;font-size:calc(10px * var(--font-scale))}
 .drow .in{height:38px;font-size:calc(13.5px * var(--font-scale));padding:0 8px} .drow select.in{padding-right:4px}
 .drow .x{border:0;background:transparent;color:var(--faint);font-size:calc(18px * var(--font-scale));cursor:pointer;padding:0}
@@ -466,7 +468,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .d-sum{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:calc(12.5px * var(--font-scale));color:var(--muted);margin:0 0 10px;padding:10px 12px;background:var(--surface-2,#F5F7FA);border-radius:10px}
 .d-sum b{color:var(--ink);font-variant-numeric:tabular-nums} .d-sum .warn{color:var(--warn);font-weight:600}
 .seg.sm button{padding:6px 12px;font-size:calc(12.5px * var(--font-scale))}
-@media(max-width:480px){.drow{grid-template-columns:1fr 1fr 1fr 24px} .drow .dk{grid-column:1} .drow .dh{grid-column:2/5}
+@media(max-width:480px){.drow{grid-template-columns:1fr 1fr 1fr 24px} .drow .dk{grid-column:1} .drow .dh{grid-column:2/5} .drow .dp{grid-column:1/3} .drow .dr{grid-column:3} .drow .x{grid-column:4}
   .drow.head>div:nth-child(-n+2){display:none} .drow.head{margin-top:4px}
   .drow:not(.head){padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:8px}}
 .x{border:0;background:transparent;color:var(--faint);font-size:calc(18px * var(--font-scale));cursor:pointer}
@@ -1218,17 +1220,20 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <b id="lvTitle"></b>
         <button type="button" class="btn sm ghost" onclick="lvMove(1)" aria-label="다음 달">›</button>
         <button type="button" class="btn sm ghost" onclick="lvMove(0)">오늘</button>
-        <button type="button" class="btn sm" onclick="lvAddOpen()" style="margin:0">＋ 휴가</button>
+        <button type="button" class="btn sm" onclick="lvAddOpen()" style="margin:0">＋ 입력</button>
       </div>
       <div class="lvcal" id="lvCal" aria-label="휴가 달력"></div>
       <p class="note-in" style="margin:6px 0 0">날짜를 누르면 창이 뜹니다. 종료일과 메모는 창에서 넣습니다. 이름 색은 담당자마다 다릅니다. <b>W37</b> 은 1월 1일이 든 주를 1주로 센 주차입니다.</p>
       <div class="lvmask hidden" id="lvAdd" onclick="if(event.target===this)lvAddClose()">
         <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="lvAddTitle">
-          <h3 id="lvAddTitle">휴가 추가</h3>
+          <h3 id="lvAddTitle">휴가 입력</h3>
           <div class="lvform">
             <div><label for="lv_staff">누구</label><select class="in" id="lv_staff"></select></div>
             <div class="two"><div><label for="lv_from">시작일</label><input class="in" type="date" id="lv_from"></div><div><label for="lv_to">종료일</label><input class="in" type="date" id="lv_to" onchange="if($('lv_from').value&&this.value<$('lv_from').value)this.value=$('lv_from').value"></div></div>
-            <div><label for="lv_note">메모 <small>(선택)</small></label><input class="in" id="lv_note" placeholder="예: 연차 · 오후 반차"></div>
+            <div><label for="lv_kind">종류</label><select class="in" id="lv_kind" onchange="lvKindHint()">
+              <option value="반차">반차 (오후 3시까지)</option><option value="휴무">휴무</option><option value="교육">교육</option><option value="휴가" selected>휴가</option><option value="연차">연차</option><option value="매장휴무">매장휴무</option>
+            </select><small class="note-in" id="lv_kindHint" style="display:block;margin:4px 0 0"></small></div>
+            <div><label for="lv_note">메모 <small>(선택)</small></label><input class="in" id="lv_note" placeholder="예: 오전 병원 · 본사 교육"></div>
             <div class="btns"><button class="btn ghost" onclick="lvAddClose()">닫기</button><button class="btn" onclick="lvSave()">추가</button></div>
           </div>
         </div>
@@ -1247,7 +1252,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <details><summary>사용 방법</summary><ol><li><i>1</i><span>필수 항목은 상품명·판매가·구분·판매일 4개입니다. 상품명은 DPS 화면 그대로 옮겨 적으세요.</span></li><li><i>2</i><span>고객명·번호는 <b>동의받은 경우만</b> 넣습니다. 넣으면 온라인·VMS 이력과 한 사람으로 묶입니다.</span></li><li><i>3</i><span>상담 후 구매면 상담번호(SC…)를 적어 두세요. 그 상담이 자동으로 구매완료가 됩니다.</span></li><li><i>4</i><span>담당 프로님는 로그인한 본인으로 자동 채워집니다. 대신 입력할 때만 바꾸세요.</span></li><li><i>5</i><span><b>단계</b>: DPS에 매출만 잡힌 상태면 <b>매출</b>, 배송·설치까지 끝나 확정이면 <b>판매완료</b>. 나중에 아래 "확정 대기" 목록에서 바꿀 수 있습니다.</span></li><li><i>6</i><span>이미 온 적 있는 고객이면 <b>기존 고객 찾기</b>로 이름·번호 뒷자리를 검색해 고르세요. 이력이 한 사람으로 이어집니다.</span></li></ol></details>
     </div>
     <div class="card">
-      <h2>판매 1건 <span>필수 6개 · 30초</span></h2>
+      <h2 style="justify-content:flex-start;align-items:center">판매 1건 <span>필수 6개 · 30초</span><button type="button" class="btn sm ghost" id="s_newBtn" style="margin-left:auto" onclick="saleNew()" title="적던 내용을 비우고 새 판매를 입력합니다">＋ 새 판매 입력</button></h2>
       <div class="linkchip hidden" id="s_link"></div>
       <div class="qpick hidden" id="s_qpick"></div>
       <div class="grid2">
@@ -1338,7 +1343,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <details><summary>사용 방법</summary><ol><li><i>1</i><span>관심품목·유입경로는 꼭 적어 주세요. 유입경로별 실매출 계산의 키입니다. 품목을 모르면 <b>알 수 없음</b>을 고르고, 고객이 한 말은 <b>상세 관심 품목</b>에 그대로 적으세요.</span></li><li><i>2</i><span><b>상담 상태</b>는 여섯 가지입니다. 상담 완료가 곧 판매는 아닙니다 — 구매까지 갔으면 <b>상담 완료 · 구매함</b>을 고르고 아래 구매 제품·금액을 채우면 <b>판매까지 한 번에</b> 올라갑니다.</span></li><li><i>3</i><span>수신동의는 고객이 구두·서면으로 동의한 경우에만 켭니다. 기본은 꺼짐입니다.</span></li><li><i>4</i><span><b>콜백 예정</b>을 잡아두면 '상담' 탭 맨 위에 시간순으로 뜹니다. 기억하거나 캘린더에 옮겨 적을 필요가 없습니다.</span></li></ol></details>
     </div>
     <div class="card">
-      <h2>상담 · 가망고객 <span>사려다 만 고객도 남기기</span></h2>
+      <h2 style="justify-content:flex-start;align-items:center">상담 · 가망고객 <span>사려다 만 고객도 남기기</span><button type="button" class="btn sm ghost" id="c_newBtn" style="margin-left:auto" onclick="consultNew()" title="적던 내용을 비우고 새 상담을 입력합니다">＋ 새 상담 입력</button></h2>
       <div class="cbar" style="margin-bottom:14px">
         <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim()})">구독 견적서 열기 ↗</button>
         <button class="btn sm ghost" onclick="openCalc()">구독료 계산기 ↗</button>
@@ -1488,7 +1493,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="unclosed" id="d_unclosed"></div>
       </div>
       <div class="d-sum" id="d_sum"></div>
-      <div class="drow head"><div>구분</div><div>프로</div><div class="r">판매완료</div><div class="r">매출<small>미확정</small></div><div class="r">환불</div><div></div></div>
+      <div class="drow head"><div>구분</div><div>프로</div><div class="r ds">판매완료</div><div class="r">매출<small>미확정</small></div><div class="r">환불</div><div></div></div>
       <div id="d_rows"></div>
       <button class="btn ghost sm" onclick="addDailyRow()">+ 줄 추가</button>
       <p class="note-in" id="d_byNote"></p>
@@ -3261,12 +3266,40 @@ async function submitSale(){
   try{ const r = await rpc('fn_store_sale_submit',{p_code:CODE,p_data:p});
     toast(r.request_id?`저장됨 · 주문서 요청 #${r.request_id} 보냄 — 처리 담당자에게 알림`:`저장됨 · ${r.handler} · ${p.product_name}${p.items.length>1?` 외 ${p.items.length-1}건`:''} ${won(p.gross_amount)} · ${r.stage}`,'ok');
     if(r.request_id) setTimeout(loadRequests, 500);
-    ['s_name','s_phone','s_product','s_model','s_amount','s_consult','s_notes','s_gift','s_gift_amt','s_next','s_next_date','s_next_note'].forEach(id=>$(id).value=''); loadGifts(); $('s_qty').value=1; $('s_pay').value=''; $('s_items').innerHTML=''; saleTotal(); custClear('s'); REPORT_LOADED=false;
+    saleClearForm(); REPORT_LOADED=false;
     await loadStatus(); render(); $('s_product').focus();
   }catch(e){ toast(e.message,'bad'); if(/코드/.test(e.message)){ localStorage.removeItem('staff_code'); setTimeout(()=>location.reload(),1500);} }
   b.disabled=false; b.textContent='저장';
 }
 
+/* 판매 입력 비우기 — 저장 뒤와 [＋ 새 판매 입력] 이 같은 함수를 쓴다. 상담 연결(dataset)까지 지운다 */
+function saleClearForm(){
+  ['s_name','s_phone','s_product','s_model','s_amount','s_consult','s_notes','s_gift','s_gift_amt','s_next','s_next_date','s_next_note'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
+  $('s_consult').dataset.cid=''; $('s_consult').dataset.ref='';
+  loadGifts(); $('s_qty').value=1; $('s_pay').value=''; $('s_items').innerHTML=''; saleTotal(); custClear('s');
+  $('s_date').value=todayStr();
+  $('s_stage').querySelectorAll('button').forEach(x=>x.className = x.dataset.v==='매출' ? 'on open' : '');
+}
+function saleNew(){
+  const dirty=['s_name','s_phone','s_product','s_model','s_amount','s_notes'].some(id=>($(id).value||'').trim()) || saleItems().length>1;
+  if(dirty && !confirm('적던 내용을 비우고 새 판매를 입력할까요?')) return;
+  saleClearForm(); toast('새 판매 입력 — 비웠습니다','ok'); $('s_product').focus();
+}
+/* 상담 입력 비우기 — 저장 뒤와 [＋ 새 상담 입력] 이 같은 함수를 쓴다 */
+function consultClearForm(){
+  ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt',
+   'c_purchase','c_buy_amt','c_buy_model','c_next','c_next_date','c_next_note','c_ch_etc','c_cat_etc','c_detail'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
+  loadGifts(); custClear('c');
+  $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+  $('c_cat_etc').classList.add('hidden');
+  cModelsSet([]); $('c_result').value='진행중'; cResultChanged(); $('c_consent').classList.remove('on');
+  $('c_date').value=todayStr();
+}
+function consultNew(){
+  const dirty=['c_name','c_phone','c_content','c_model','c_detail'].some(id=>{ const el=$(id); return el && (el.value||'').trim(); });
+  if(dirty && !confirm('적던 내용을 비우고 새 상담을 입력할까요?')) return;
+  consultClearForm(); toast('새 상담 입력 — 비웠습니다','ok'); $('c_name').focus();
+}
 function quickCb(days,time){ const d=new Date(); d.setDate(d.getDate()+days); $('c_cbDate').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); $('c_cbTime').value=time; }
 function cbISO(){ const d=$('c_cbDate').value, t=$('c_cbTime').value; if(!d) return null; return d+'T'+(t||'10:00')+':00+09:00'; }
 function fmtWhen(iso){ const d=new Date(iso); const t=new Date(); const same=d.toDateString()===t.toDateString();
@@ -3365,7 +3398,7 @@ function lvRender(){
     if(dow(d)===0) html+=`<div class="wk">W${lvWeekNo(d)}</div>`;
     const ds=ymd(d), on=lvOn(ds);
     html+=`<button type="button" class="day${d.getMonth()!==m?' other':''}${ds===today?' today':''}${LV_PICK===ds?' pick':''}${dow(d)>=5?' we':''}" data-d="${ds}" onclick="lvTap('${ds}')" title="${ds}${on.length?' · '+on.map(r=>r.name).join(', '):''}"><i>${d.getDate()}</i>`
-      + on.slice(0,3).map(r=>`<span class="lvchip" style="background:${lvColor(r.name)}">${esc(String(r.name).slice(0,3))}</span>`).join('')
+      + on.slice(0,3).map(r=>`<span class="lvchip" style="background:${r.kind==='매장휴무'?'#8A909E':lvColor(r.name)}" title="${esc(r.kind||'휴가')}">${esc(r.kind==='매장휴무'?'매장휴무':String(r.name).slice(0,3)+(r.kind==='반차'?'·반':''))}</span>`).join('')
       + (on.length>3?`<span class="lvmore">+${on.length-3}</span>`:'') + `</button>`;
   }
   cal.innerHTML=html; lvRenderList();
@@ -3374,8 +3407,11 @@ function lvRender(){
 function lvTap(ds){ LV_PICK=ds; lvAddOpen(ds, ds); lvRender(); }
 function lvAddOpen(f, t){ const box=$('lvAdd'); box.classList.remove('hidden'); if(f) $('lv_from').value=f; if(t) $('lv_to').value=t;
   if(!$('lv_from').value){ $('lv_from').value=todayStr(); $('lv_to').value=todayStr(); }
-  const d=$('lv_from').value; $('lvAddTitle').textContent = d ? `휴가 추가 · ${d.slice(5).replace('-','/')}` : '휴가 추가';
-  $('lv_note').value=''; setTimeout(()=>$('lv_staff').focus(),50); }
+  const d=$('lv_from').value; $('lvAddTitle').textContent = d ? `휴가 입력 · ${d.slice(5).replace('-','/')}` : '휴가 입력';
+  $('lv_note').value=''; $('lv_kind').value='휴가'; lvKindHint(); setTimeout(()=>$('lv_staff').focus(),50); }
+/* 종류별 배정 영향 — 반차는 오후 3시까지만 빠지고, 매장휴무는 배정이 그대로 간다(끝나면 순서대로 처리) */
+const LV_KIND_HINT={ '반차':'오후 3시까지 자동 배정에서 빠집니다. 3시 뒤에는 정상 배정.', '매장휴무':'배정은 그대로 갑니다 — 휴무가 끝나면 순서대로 처리. 표시용입니다.' };
+function lvKindHint(){ const k=$('lv_kind').value; $('lv_kindHint').textContent = LV_KIND_HINT[k] || '그날 자동 배정에서 빠집니다.'; }
 function lvAddClose(){ $('lvAdd').classList.add('hidden'); LV_PICK=null; lvRender(); }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(!$('lvAdd').classList.contains('hidden')) lvAddClose(); if($('cdDlg')&&!$('cdDlg').classList.contains('hidden')) cdClose(); if($('msgDlg')&&!$('msgDlg').classList.contains('hidden')) msgClose(); } });
 function lvRange(b){ $('lv_range').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); lvRenderList(); }
@@ -3385,7 +3421,7 @@ function lvRenderList(){
   const rows=((LV.rows)||[]).filter(r=> mode==='all' ? true : mode==='upcoming' ? r.to>=today : (r.from<=m1 && r.to>=m0))
     .slice().sort((a,b)=>a.from<b.from?1:a.from>b.from?-1:0);
   $('lvCount').textContent = rows.length ? `${rows.length}건` : '';
-  box.innerHTML = rows.length ? rows.map(x=>`<div class="item oc"><div><div class="p"><span class="lvdot" style="background:${lvColor(x.name)}"></span>${esc(x.name)} ${x.now?'<span class="mine">휴가 중</span>':''}</div>
+  box.innerHTML = rows.length ? rows.map(x=>`<div class="item oc"><div><div class="p"><span class="lvdot" style="background:${lvColor(x.name)}"></span>${esc(x.name)} <span class="tag" style="background:var(--surface-2,#EEF0F4);color:var(--muted)">${esc(x.kind||'휴가')}</span> ${x.now?'<span class="mine">휴가 중</span>':''}</div>
       <div class="m">${esc(x.from)}${x.to!==x.from?' ~ '+esc(x.to):''}${x.note?' · '+esc(x.note):''}${x.by?' · '+esc(x.by)+' 입력':''}</div></div>
       <div class="act"><button class="mini bad" onclick="lvDel(${x.id},'${esc(x.name)}')">지우기</button></div></div>`).join('')
     : `<div class="empty">${mode==='month'?'이 달에는 휴가가 없습니다':mode==='upcoming'?'앞으로 잡힌 휴가가 없습니다':'등록된 휴가가 없습니다'}</div>`;
@@ -3400,8 +3436,9 @@ async function loadLeave(){
 async function lvSave(){
   const st=$('lv_staff').value, f=$('lv_from').value, t=$('lv_to').value;
   if(!st) return toast('누구의 휴가인지 고르세요','bad'); if(!f||!t) return toast('기간을 넣으세요','bad'); if(t<f) return toast('종료일이 시작일보다 앞입니다','bad');
-  try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null});
-    toast(`${st} 휴가 ${f}${t!==f?'~'+t:''} 넣었습니다 — 그동안 자동 배정에서 빠집니다`,'ok'); $('lv_note').value=''; LV_PICK=null; $('lvAdd').classList.add('hidden'); loadLeave();
+  const kind=$('lv_kind').value||'휴가';
+  try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null,p_kind:kind});
+    toast(`${st} ${kind} ${f}${t!==f?'~'+t:''} 넣었습니다 — ${kind==='매장휴무'?'배정은 그대로 갑니다':kind==='반차'?'오후 3시까지 자동 배정에서 빠집니다':'그동안 자동 배정에서 빠집니다'}`,'ok'); $('lv_note').value=''; LV_PICK=null; $('lvAdd').classList.add('hidden'); loadLeave();
   }catch(e){ toast(e.message,'bad'); }
 }
 async function lvDel(id,name){ if(!confirm(`${name} 휴가를 지웁니다. 계속할까요?`)) return;
@@ -4177,12 +4214,7 @@ async function submitConsult(){
              :`<br>나중에 구매로 이어지면 '상담' 탭에서 <b>구매 확정</b>을 누르면 됩니다`)
       + (r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '상담' 탭에서 알려드립니다`:'')
       + (closedN?`<br>같은 고객의 이전 진행 중 상담 <b>${r.closed.map(esc).join(', ')}</b> 은 <b>상담완료</b>로 정리됐습니다 (기록은 남아 있고, 상세 보기에서 볼 수 있습니다)`:'');
-    ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt',
-     'c_purchase','c_buy_amt','c_buy_model','c_next','c_next_date','c_next_note','c_ch_etc','c_cat_etc','c_detail'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
-    loadGifts(); custClear('c');
-    $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
-    $('c_cat_etc').classList.add('hidden');
-    cModelsSet([]); $('c_result').value='진행중'; cResultChanged(); $('c_consent').classList.remove('on');
+    consultClearForm();
     await loadStatus(); render(); if(MC_LOADED) loadMyConsults(0);
   }catch(e){ toast(e.message,'bad'); }
   b.disabled=false; b.textContent='저장';
@@ -4220,7 +4252,7 @@ async function loadDailyDay(){
   const d=$('d_date').value; if(!d||!CODE) return;
   $('d_sum').innerHTML='불러오는 중…';
   let p; try{ p=await rpc('fn_store_daily_prefill',{p_code:CODE,p_date:d,p_all:dScopeAll()}); }catch(e){ $('d_sum').innerHTML=`<span class="warn">${esc(e.message)}</span>`; return; }
-  D_PRE=p; $('d_me').textContent = dScopeAll()?'매장 전체':`${p.me}`;
+  D_PRE=p; $('d_me').textContent = dScopeAll()?'매장 전체':`${p.me||ME}`;
   const T=p.total||{};
   const closed=p.closed||[]; const byKey=r=>r.sale_kind+'|'+(r.handler||'');
   const cmap={}; closed.forEach(r=>cmap[byKey(r)]=r);
@@ -4229,7 +4261,7 @@ async function loadDailyDay(){
   $('d_rows').innerHTML='';
   [...keys].sort().forEach(k=>{ const src=(p.rows||[]).find(r=>byKey(r)===k), c=cmap[k];
     const r=c||src; addDailyRow({sale_kind:r.sale_kind,handler:r.handler,sales:c?c.sales:src.sales,pending:c?c.pending:src.pending,refund:c?c.refund:0,n:src?src.n:(c?c.n:0),auto:!!src,saved:!!c}); });
-  if(!keys.size) addDailyRow({sale_kind:'직판',handler:dScopeAll()?'':ME,sales:0,pending:0,refund:0,n:0});
+  if(!keys.size){ ['일시불','구독'].forEach(k=>addDailyRow({sale_kind:k,handler:dScopeAll()?'':ME,sales:0,pending:0,refund:0,n:0})); }
   const closedN=closed.length, savedTot=closed.reduce((a,x)=>a+Number(x.sales||0)-Number(x.refund||0),0);
   $('d_sum').innerHTML=`<span>판매 입력 <b>${Number(T.n||0).toLocaleString('ko-KR')}건</b></span><span>판매완료 <b>${wonS(T.done||0)}</b></span><span>매출(미확정) <b>${wonS(T.open||0)}</b></span>`
     + (closedN?`<span>· 저장된 마감 <b>${wonS(savedTot)}</b>${Math.abs(savedTot-Number(T.done||0))>0?` <span class="warn">판매 입력과 ${wonS(Math.abs(savedTot-Number(T.done||0)))} 차이</span>`:''}</span>`:'<span>· 아직 마감 안 함</span>');
@@ -4247,7 +4279,7 @@ async function loadDailyDay(){
 function addDailyRow(r){ r=r||{}; const handlers=(STATUS&&STATUS.staff)||[];
   const row=document.createElement('div'); row.className='drow'+(r.auto?' auto':''); const fmt=v=>Number(v)?Number(v).toLocaleString('ko-KR'):'';
   row.innerHTML=`<select class="in dk">${['직판','일시불','구독'].map(k=>`<option ${k===(r.sale_kind||'직판')?'selected':''}>${k}</option>`).join('')}</select>
-    <select class="in dh">${handlers.length?'':'<option value="">프로</option>'}${handlers.map(h=>`<option ${h===(r.handler||'')?'selected':''}>${h}</option>`).join('')}</select>
+    <select class="in dh">${handlers.length?'':'<option value="">프로</option>'}${handlers.map(h=>`<option ${h===(r.handler||(dScopeAll()?'':ME))?'selected':''}>${h}</option>`).join('')}</select>
     <input class="in num ds" inputmode="numeric" placeholder="0" value="${fmt(r.sales)}" oninput="comma(this)" title="판매완료(확정)">
     <input class="in num dp" inputmode="numeric" placeholder="0" value="${fmt(r.pending)}" oninput="comma(this)" title="매출(미확정)">
     <input class="in num dr" inputmode="numeric" placeholder="0" value="${fmt(r.refund)}" oninput="comma(this)" title="환불">

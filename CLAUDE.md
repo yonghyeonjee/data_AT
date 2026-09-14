@@ -256,13 +256,13 @@ end $outer$;
   **시트의 상담결과는 시트에서만 고쳐지고 DB 로 안 온다** — GAS 는 접수만 넣는다. 담당자가 이 시스템에서 상태를 바꾸기 전까지는 월말에 같은 방식으로 맞춰야 한다 ('판단 대기' 항목).
 - **상담 흐름도 `/flow/`** — 5레인(문의 창구 → 통합 데이터센터 → 상담 처리 → 데이터 처리 후 수합 → CRM 발송(개발중)). 도면은 2100px 고정이고 ≥1000px 에서는 창 폭에 맞춰 `transform:scale` (상단 [화면 맞춤]/[100%]), 화살표는 `draw()` 가 배율로 나눠 다시 그린다. 폰(<1000px)은 레인을 세로로 쌓고 화살표 대신 "↓ 다음 단계". 인쇄는 A3 가로.
   카카오채널 상담은 흐름도에서 뺐다(대표님 지시). 4레인 초안(문의 수집→상담 처리→데이터센터→CRM)은 폐기. PNG·PDF 는 `ptest/flow_render.mjs`.
-- **휴가 종류 + 휴가자 재배정 (mvp_132 · 2026-09-14, store/test 만)** — `core.staff_leave.kind`(반차·휴무·교육·휴가·연차·매장휴무). `core.f_staff_on_leave` 는 매장휴무를 휴가로 안 보고, 반차는 15:00 KST 전까지만.
+- **휴가 종류 + 휴가자 재배정 (mvp_132 · 2026-09-14, store.html 에 올림 09-14)** — `core.staff_leave.kind`(반차·휴무·교육·휴가·연차·매장휴무). `core.f_staff_on_leave` 는 매장휴무를 휴가로 안 보고, 반차는 15:00 KST 전까지만.
   `fn_store_leave_save` 에 `p_kind`(옛 시그니처 drop), `fn_store_leave_list` 가 `kind` 를 준다. 화면: [＋ 입력] → '휴가 입력' 창에 종류 select(`#lv_kind`) + 힌트, 목록 태그·달력 칩(반차 '·반', 매장휴무 회색).
   **배정 버그의 원인**: 구독 문의 폼 GAS 가 자기 순번으로 담당자를 골라 `assignedStaff` 로 보내고 `fn_submit_inquiry` 가 그대로 받으니 트리거(`core.f_consult_assign_default`)의 휴가 제외가 돌지 않았다 (09/14 권혁찬).
   이제 `fn_submit_inquiry` 가 그 담당자가 휴가면 `core.f_assign_next('구독·렌탈')` 로 다시 배정하고 notes 에 '휴가 재배정 A → B', 잔디(jandi_crm) 규칙 `assign_leave` 로 알린다.
   시트 수정(onMgmtEdit) 은 이제 DB 담당자가 있으면 덮지 않는다(`coalesce(crm.consult.handler, excluded.handler)`). GAS 의 잔디 카드는 여전히 GAS 가 고른 이름으로 나가므로 재배정 카드가 한 장 더 온다.
 - **구독 문의 접수 카드는 데이터센터가 보낸다 (mvp_133, 규칙 `inquiry_subscription` · 기본 꺼짐)** — `fn_submit_inquiry` 가 새 건(xmax=0)일 때 `inquiry.subscription` 으로 홈페이지 문의와 같은 카드(배정 담당자·상담 정보·상담 확인하러가기). 재배정이면 담당자 줄에 "(A 프로님 휴가 → 재배정)". `assign_leave` 규칙은 여기 합쳐서 껐다.
-  **켜는 순서**: 구독문의 GAS 에 `tools/gas/inquiry_forward.gs` v15 를 붙이고 doPost 3곳(GAS 순번 제거 · `dcAssignInquiry_` 호출 · `sendJandiNotification` 제거) 고쳐 재배포 → `inquiry_subscription` enabled=true, `assign_leave` 끔. 둘 다 켜져 있으면 카드가 두 장 간다.
+  **2026-09-14 전환 완료** — 구독문의 GAS v15(전체 Code.gs, 세션에서 전달) 배포 확인 → `inquiry_subscription` 켬, `assign_leave` 끔. 되돌리려면 반대로. v15 는 데이터센터 호출 실패 시에만 옛 순번+직접 잔디로 예비 동작. 휴가 캘린더 GAS(`leave_calendar.gs`)도 설치 완료.
   **배정은 데이터센터가 한다 (mvp_134)** — GAS 가 assignedStaff 를 비워 보내면 트리거가 `f_assign_next` 로 배정하고, 홈페이지 문의(`fn_inquiry_mail_ingest` 도 `f_assign_next('default')`)와 같은 순번표(`core.assign_pool` default · `assign_state` default)를 번갈아 쓴다. GAS v15 는 응답의 handler 를 시트 H열에 적는다.
   `fn_submit_inquiry` 는 returning 에서 실제 handler 를 받아 응답·카드에 쓰고, 시트 수정(onMgmtEdit)의 담당자는 다시 DB 를 덮는다(시트와 DB 가 같은 값이라 안전). 휴가 재배정은 새 접수에만.
   **잘못 배정된 건을 바꾸면 순번 커서가 따라간다 (mvp_135)** — 트리거 `trg_consult_assign_cursor`(after update of handler): 이전 담당자 = `assign_state.default.last_staff` 이고 새 담당자가 풀 인원이면 커서를 새 담당자로. 담당자 화면·관리자·시트 수정 어디서 바꿔도 같다. 풀 밖 사람·옛 건은 커서 그대로.
@@ -270,6 +270,7 @@ end $outer$;
   한 방향(우리 → 구글). 구글은 보통 몇 시간~하루에 한 번 가져간다. 주소는 `_secrets.local.md`. 구글 캘린더 › 다른 캘린더 › URL 로 추가.
   **지정 캘린더에 직접 넣는 쪽은 GAS `tools/gas/leave_calendar.gs`** (CAL_ID = 매장 공유 캘린더, `fn_leave_feed(p_key)` JSON 을 15분마다 읽어 종일 일정 생성·수정·삭제, 반차는 09:00~15:00 시간 일정(태그 `id:날짜`), 태그 `dc_leave_id` 로 식별, 종류별 색). 키는 같은 leave_ics 토큰. 설치는 사용자가 붙여넣고 트리거 1회 실행.
 - **점장 권한을 관리자 권한 표에서 준다 (mvp_133)** — `core.perm_def 'mgr'`(기본 꺼짐, 맨 앞 열). `core.f_staff_is_mgr` = 직함(점장·대표·전체)·부서(대표·전체·개발) OR `f_has_perm('mgr')`. `fn_staff_perms` 의 `auto_mgr` 로 직함 자동인 사람은 체크가 잠겨 '직함' 표시. 담당자 화면은 서버 is_mgr 을 그대로 쓰므로 체크만 하면 배정·휴가·담당자별 현황이 열린다.
+- **고객 견적서 전화 버튼은 담당 네임카드 휴대폰 (2026-09-14)** — `fn_quote_public` 은 `quote->opt->namecardId` → 이름 → `core.staff.mobile` → 매장 번호 순. core.namecard 에 카드가 없으면 매장 번호로 떨어진다(지용현 카드가 없어서 031 로 나왔던 건). 지용현 카드(NC1788421248760)를 직접 넣었고, `fn_submit_quote` 가 payload `namecard` 를 받으면 core.namecard 를 upsert 한다 — 견적내역 GAS `dcForwardQuote_` 가 네임카드 탭에서 찾아 실어 보내도록 패치(`tools/gas/quote_forward.gs` 참고).
 - **판매·상담 입력 [＋ 새 판매 입력]·[＋ 새 상담 입력]** (카드 제목 오른쪽) — `saleClearForm()`·`consultClearForm()` 이 저장 뒤 비우기와 같은 함수. 적던 게 있으면 confirm.
 - **일 마감 기본 줄** — 그날 판매 입력이 없으면 일시불·구독 두 줄, 프로 = 로그인한 사람(전체 모드는 빈칸). 프로 빈 줄도 본인으로. 판매완료 입력 칸(`.drow .ds`)은 숨김 — 값은 판매 입력에서 자동, 저장은 그대로.
 - **관리자 화면도 같은 상품명 규칙 + 수량** — 대시보드 상위 상품 랭크·표·파레토 툴팁·워터폴(상품), 주문 목록, 주문서 요청에서 모델 코드가 이름 앞. `rankHTML` 은 `q`(개) 가 있으면 "N개 · M건" 으로, 상위 상품·카테고리 랭크에 `qty` 를 넘긴다.
