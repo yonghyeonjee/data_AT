@@ -291,6 +291,15 @@ end $outer$;
   = `fn_store_consult_submit`(handler=받는 사람, result='진행전', 품목 기본 '알 수 없음', notes '문의 접수 … A → B 넘김') + `crm.consult_assign` 기록 + `core.f_notify('consult.handoff')`(규칙 `consult_handoff`, jandi_crm, 본인이면 안 보냄). 받는 사람 홈 새 문의·[연락 전]·알림 내역 배정에 보인다.
   채널 `naver` 를 '네이버톡' 으로 켰다. 상담 기록 상태 세그에도 [연락 전] 버튼을 넣었다(`cResSync` 임시 버튼 불필요). `ocToConsult`·`pickMine` 은 `cMode('log')` 로 되돌린다.
   **주의: 받는 사람이 개발 계정(지용현)이면 `trg_consult_dev_is_test` 가 테스트 숨김을 붙인다** — 실제 건이면 관리자 문의 관리 [삭제됨]에서 복구해야 통계에 들어간다.
+- **여러 건 표는 한 건씩 폼의 칸을 전부 가진다 (2026-09-15 두 번째 지적)** — `GCOLS.s/.c` 칸 정의([키,라벨,폭,플래그(req 필수·core 주요·wide 폰 두 칸),종류,선택지]) 로 `gridRender` 가 머리글·줄을 만든다. 필수 칸은 머리글 빨강 + 칸 테두리 연빨강.
+  표는 `.gtbl{overflow-x:auto}` 안에서 옆으로 스크롤(문서 가로 넘침 0), [모든 칸]/[주요 칸만](`gridView`, localStorage `dc_grid_view_*`). 판매 줄 구분·단계는 위 세그가 새 줄 기본값. 상담 줄은 채널에 따라 유입경로 선택지가 바뀌고, 상태 구매함이면 구매 제품·금액 필수 → `consultSend` 로 판매까지.
+  체크박스는 `appearance:none` 40px (터치 타깃). 상담 표 공통 칸은 상담일·상담사만(`cg_date`·`cg_handler`).
+- **주문서 탭 샵링커 목록 (2026-09-15)** — 확인 필요(후보 여럿) 줄은 후보 **코드·품목명·규격을 전부** 보여 담당자가 고를 수 있게(`renderSlList`, `l.cands`). 후보 하나면 코드 + 이카운트 품목명 + "주문: 상품명".
+  머리글 정렬(`SL_SORT`, `data-sk`, localStorage `dc_sl_sort`) 과 필터(`SL_FLT_IDS` → `dc_sl_flt`) 가 다시 그리거나 검색하거나 새로고침해도 유지. 이 표는 `data-ownsort` 라 공용 표 정렬이 건너뛴다. 테스트 `ptest/sl.mjs`.
+- **이카운트 전표 IO_TYPE (mvp_140)** — "IO_TYPE 거래유형(자릿수)" 실패 = 거래유형에 'SSG' 같은 글자를 보낸 것. `core.f_order_body` 는 이제 거래유형이 숫자 코드일 때만 IO_TYPE 을 보내고, 아니면 빼서 이카운트가 거래처 기본값(오픈마켓 등)으로 채운다. `ec.code` io_type 글자 코드는 active=false. 실패한 3장(SSG·프라자몰·에스몰)은 화면에서 [재전송].
+- **관리자 대시보드 캐시 (mvp_140)** — 느렸던 이유: 관리자 기본 12개월 키가 15분 워밍(`core.f_dash_warm`)에 없어 6시간마다 5~10초 콜드 빌드(8초 제한에 걸리기도). 12개월 키를 워밍에 넣고 `fn_dash_payload` 는 24시간 캐시를 바로 준다. '전체 기간'은 `f_dash_payload` 800일 제한이라 못 넣는다.
+  화면: [캐시 지우고 새로고침](= `fn_dash_refresh`, 캐시 삭제 후 재집계) · [전체 화면 ⛶](`dashFullscreen`, `#dashFull` requestFullscreen, Esc). admin.html 과 admin/test 동일.
+- **'오늘' 은 한국 날짜 (mvp_140)** — DB 가 UTC 라 자정~09시엔 `current_date` 가 어제였다 → 오늘 입력한 판매에 어제 것이 남아 보임(01:03 지적). `fn_store_status` 등 fn_store_* 8개의 `current_date` 를 `((now() at time zone 'Asia/Seoul')::date)` 로 치환(`pg_get_functiondef` 통째 치환).
 - **CRM 알림 내역 종류 필터는 체크박스** — `AL_KINDS`(Set, 기본 견적서·콜백) · `localStorage dc_al_kinds`. [전체] 칩은 뺐다. 예시 줄은 견적서를 켰을 때만.
   테스트 `ptest/grid.mjs [mobile]` G1~G9·C1~C3·H1~H5·A1~A3.
 - **판매·상담 입력 [＋ 새 판매 입력]·[＋ 새 상담 입력]** (카드 제목 오른쪽) — `saleClearForm()`·`consultClearForm()` 이 저장 뒤 비우기와 같은 함수. 적던 게 있으면 confirm.

@@ -1042,11 +1042,12 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="seg2" id="segBasis"><button class="on" id="db-manual" onclick="setDashBasis('manual')">수기입력</button><button id="db-ledger" onclick="setDashBasis('ledger')">원장</button></div>
           <span style="flex:1"></span>
           <span class="note" id="dashNote">Datacenter 데이터 · 최근 12개월 · 기간·채널·지표는 아래 대시보드 안에서 고릅니다</span>
-          <button class="btn sm ghost" id="btnDashRefresh" onclick="refreshDash()" title="원천 데이터를 다시 집계합니다 (수집 직후 자동으로도 비워집니다)">데이터 갱신</button>
+          <button class="btn sm ghost" id="btnDashRefresh" onclick="refreshDash()" title="캐시를 지우고 원천 데이터를 다시 집계합니다 (15분마다 자동으로도 미리 만들어 둡니다)">캐시 지우고 새로고침</button>
+          <button class="btn sm ghost" id="btnDashFull" onclick="dashFullscreen()" title="대시보드만 화면 가득 (Esc 로 돌아옴)">전체 화면 ⛶</button>
           <button class="btn sm ghost hidden" id="btnGasUrl" onclick="setGasUrl()">기존 앱 주소</button>
           <a class="btn sm ghost" id="dashShareLink" href="/dash/" target="_blank">외부 공유 화면 ↗</a>
         </div>
-        <div id="dashFull" style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#eef1f5"><iframe id="dashFrame" src="about:blank" style="width:100%;height:calc(100vh - 150px);border:0;display:block"></iframe></div>
+        <div id="dashFull" style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#eef1f5"><iframe id="dashFrame" src="about:blank" allowfullscreen style="width:100%;height:calc(100vh - 150px);border:0;display:block"></iframe></div>
         <div id="dashLite" class="hidden">
         <div class="mast">
           <div class="row1">
@@ -4292,6 +4293,11 @@ async function setGasUrl(){
 let DASH_PAY=null, DASH_READY=false;
 window.addEventListener('message',e=>{ if(e.data&&e.data.type==='dash-ready'){ DASH_READY=true; dashSend(); } });
 function dashSend(){ const fr=$('dashFrame'); if(!DASH_PAY||!DASH_READY||!fr.contentWindow) return; try{ fr.contentWindow.postMessage({type:'dash-payload',data:DASH_PAY},'*'); }catch(e){} }
+/* 대시보드만 전체 화면 — 대표님 보고용. Esc 로 돌아온다 */
+function dashFullscreen(){ const el=$('dashFull'); if(!el) return;
+  if(document.fullscreenElement){ document.exitFullscreen(); return; }
+  (el.requestFullscreen||el.webkitRequestFullscreen||function(){ toast('이 브라우저는 전체 화면을 지원하지 않습니다','bad'); }).call(el); }
+document.addEventListener('fullscreenchange', ()=>{ const fr=$('dashFrame'); if(fr) fr.style.height = document.fullscreenElement ? '100vh' : 'calc(100vh - 150px)'; const b=$('btnDashFull'); if(b) b.textContent = document.fullscreenElement ? '전체 화면 끝 ⛶' : '전체 화면 ⛶'; });
 async function refreshDash(){
   const b=$('btnDashRefresh'); b.disabled=true; const t=b.textContent; b.textContent='집계 중…';
   try{ const r=await rpc('fn_dash_refresh',{p_months:12}); toast(`대시보드 다시 집계 완료 · ${r.ms}ms`); DASH_PAY=null; await loadDash(); loadStamp(); }

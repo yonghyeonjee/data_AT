@@ -1,0 +1,15 @@
+-- mvp_140 (2026-09-15)
+-- 1) 이카운트 전표 IO_TYPE: 거래유형이 숫자 코드일 때만 보낸다 (SSG·오픈마켓 같은 글자는 안 보냄 → 이카운트가 거래처 기본값으로 채움).
+--    "IO_TYPE 거래유형(자릿수)" 실패 원인. core.f_order_body 두 지점(직접 · 필드맵) 치환, ec.code io_type 글자 코드 active=false.
+-- 2) 대시보드 캐시: core.f_dash_warm 에 관리자 기본 12개월 키 추가(15분마다), fn_dash_payload 는 24시간 캐시를 바로 준다.
+--    '전체 기간'은 f_dash_payload 의 800일 제한에 걸려 넣지 않았다.
+-- 3) '오늘' = 한국 날짜: fn_store_status 와 fn_store_sale_submit·channel_save·stock_out·channel_day·daily_submit·handler_load·consults_all 의
+--    current_date → ((now() at time zone 'Asia/Seoul')::date)  (DB 가 UTC 라 자정~09시엔 어제가 '오늘'로 나오던 것)
+-- 적용은 세션에서 부분 치환으로 했다. 아래는 핵심만.
+-- f_order_body:
+--   if not (v_map ? 'deal_type') and coalesce(q.deal_type,'') ~ '^[0-9]+$' then base := base || jsonb_build_object('IO_TYPE', q.deal_type); end if;
+--   when 'deal_type' then case when coalesce(q.deal_type,'') ~ '^[0-9]+$' then q.deal_type end
+-- update ec.code set active = false where kind = 'io_type' and code !~ '^[0-9]+$';
+-- f_dash_warm: 첫 줄에 ((date_trunc('month', d) - interval '11 months')::date, d) 추가
+-- fn_dash_payload: return core.f_dash_payload_cached(p_from, p_to, p_mode, interval '24 hours');
+-- current_date 치환: for r in (7 함수) loop execute replace(pg_get_functiondef(oid), 'current_date', '((now() at time zone ''Asia/Seoul'')::date)'); end loop;

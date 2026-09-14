@@ -896,17 +896,23 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .qrurl{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:calc(12.5px * var(--font-scale));color:var(--ink);word-break:break-all}
 .qrdlg .btns .btn{width:100%}
 
-/* ── 여러 건 · 표로 입력 (판매·상담 공용) ── */
-.gtbl{border:1.5px solid var(--line-2);border-radius:12px;padding:6px 10px 4px;background:#fff;overflow:visible}
-.gtbl .gh,.gtbl .gr{display:grid;gap:6px;align-items:center}
-.gtbl.s .gh,.gtbl.s .gr{grid-template-columns:24px .95fr 1.3fr 1.7fr .85fr .5fr 1fr 36px}
-.gtbl.c .gh,.gtbl.c .gr{grid-template-columns:24px .95fr 1.3fr .9fr 1fr .8fr 1.6fr 36px}
-.gtbl .gh span{font-size:calc(12px * var(--font-scale));font-weight:700;color:var(--muted);padding:6px 2px 4px;white-space:nowrap} .gtbl .gh .req{color:var(--bad,#C62828);font-style:normal}
-.gtbl .gr{padding:5px 0;border-top:1px solid var(--line)} .gtbl .gr.err{background:#FFF4F2;border-radius:8px;margin:0 -6px;padding:5px 6px}
-.gtbl .gr .in{padding:9px 8px;font-size:calc(14px * var(--font-scale));min-height:40px} .gtbl .gr select.in{padding-right:4px}
-.gtbl .gn{color:var(--faint);font-weight:800;font-size:calc(12px * var(--font-scale));text-align:center}
-.gtbl .gx{min-height:40px;min-width:36px;border-radius:9px;border:1.5px solid var(--line-2);background:#fff;color:var(--bad,#C62828);font-weight:800;font-size:calc(16px * var(--font-scale));cursor:pointer}
-.gtbl .gerr{grid-column:1 / -1;color:var(--bad,#C62828);font-size:calc(12px * var(--font-scale));font-weight:700;padding:0 0 2px 30px}
+/* ── 여러 건 · 표로 입력 (판매·상담 공용) — 칸은 한 건씩 폼과 같고, 표는 카드 안에서 옆으로 스크롤 ── */
+.reqtxt{color:var(--bad,#C62828)}
+.gview{display:flex;align-items:center;gap:10px;margin:0 0 8px} .gview .seg{width:auto} .gview .seg button{flex:0 0 auto;padding:8px 12px;min-height:40px} .gview .hint{color:var(--faint);font-size:calc(12px * var(--font-scale))}
+.gtbl{border:1.5px solid var(--line-2);border-radius:12px;padding:6px 10px 4px;background:#fff;overflow-x:auto;overscroll-behavior-x:contain}
+.gtbl .gh,.gtbl .gr{display:flex;gap:6px;align-items:center;min-width:max-content}
+.gtbl .gc{flex:0 0 auto;width:var(--w,120px)} .gtbl .gc small{display:none}
+.gtbl .gh .gc{font-size:calc(12px * var(--font-scale));font-weight:700;color:var(--muted);padding:6px 2px 4px;white-space:nowrap} .gtbl .gh .gc.req{color:var(--bad,#C62828)}
+.gtbl .gr{padding:5px 0;border-top:1px solid var(--line)} .gtbl .gr.err{background:#FFF4F2}
+.gtbl .gr .in{width:100%;padding:9px 8px;font-size:calc(14px * var(--font-scale));min-height:40px;box-sizing:border-box} .gtbl .gr select.in{padding-right:4px}
+.gtbl .gr .gc.req .in{border-color:#E9A3A3;background:#FFF8F8} .gtbl .gr .gc.req .in:focus{border-color:var(--bad,#C62828)}
+.gtbl .gr .gc.chk{display:flex;align-items:center;justify-content:center;min-height:40px}
+.gtbl .gr .gc.chk input{appearance:none;-webkit-appearance:none;width:40px;height:40px;margin:0;border:1.5px solid var(--line-2);border-radius:10px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:calc(18px * var(--font-scale))}
+.gtbl .gr .gc.chk input:checked{background:var(--accent);border-color:var(--accent)} .gtbl .gr .gc.chk input:checked::after{content:'✓'}
+.gtbl .gn{flex:0 0 24px;color:var(--faint);font-weight:800;font-size:calc(12px * var(--font-scale));text-align:center}
+.gtbl .gx{flex:0 0 36px;min-height:40px;border-radius:9px;border:1.5px solid var(--line-2);background:#fff;color:var(--bad,#C62828);font-weight:800;font-size:calc(16px * var(--font-scale));cursor:pointer}
+.gtbl .gerr{flex:1 0 100%;color:var(--bad,#C62828);font-size:calc(12px * var(--font-scale));font-weight:700;padding:2px 0 2px 30px;min-width:0;position:sticky;left:0}
+.gtbl.compact .gc:not(.core){display:none}
 .bt-act{display:flex;gap:10px;align-items:center;margin-top:10px} .bt-act .btn{margin-top:0} .bt-act .btn.ghost.sm{padding:12px 14px;min-height:44px;white-space:nowrap}
 .bt-act .gsum{margin-left:auto;font-weight:700;color:var(--ink-2);font-size:calc(14px * var(--font-scale));white-space:nowrap} .bt-act .btn:not(.ghost){width:auto;padding:13px 22px;min-height:44px}
 
@@ -971,12 +977,14 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 .rep-ctl .row2>*{min-width:0}
 @media (max-width:999px){
   .seg.cres{flex-wrap:wrap} .seg.cres button{flex:1 1 30%}
-  .gtbl{padding:4px 8px} .gtbl .gh{display:none}
-  .gtbl.s .gr,.gtbl.c .gr{grid-template-columns:1fr 1fr;padding:10px 0 8px}
+  .gtbl{padding:4px 8px;overflow-x:hidden} .gtbl .gh{display:none} .gview .hint{display:none}
+  .gtbl .gr{display:grid;grid-template-columns:1fr 1fr;min-width:0;padding:10px 0 8px;gap:8px 6px}
+  .gtbl .gc{width:auto} .gtbl .gc small{display:block;font-size:calc(11.5px * var(--font-scale));color:var(--muted);font-weight:700;margin:0 0 3px 2px} .gtbl .gh .gc.req small,.gtbl .gr .gc.req small{color:var(--bad,#C62828)}
+  .gtbl .gr .gc.chk{justify-content:flex-start;gap:8px} .gtbl .gr .gc.chk small{margin:0}
   .gtbl .gn{order:-2;grid-column:1;text-align:left;padding-left:2px} .gtbl .gn::after{content:'번 줄'}
   .gtbl .gx{order:-1;grid-column:2;justify-self:end;min-width:44px}
-  .gtbl .gr [data-k="prod"],.gtbl .gr [data-k="content"],.gtbl .gr [data-k="amt"]{grid-column:1 / -1}
-  .gtbl .gerr{padding-left:2px}
+  .gtbl .gr .gc.wide{grid-column:1 / -1}
+  .gtbl .gerr{padding-left:2px;position:static}
   .bt-act{flex-wrap:wrap} .bt-act .gsum{margin-left:0;flex:1 1 100%;text-align:right} .bt-act .btn{flex:1 1 45%} .bt-act .btn.ghost.sm{flex:1 1 45%}
 }
 </style>
@@ -1359,9 +1367,10 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <button class="btn" id="s_btn" onclick="submitSale()">저장</button>
       </div><!-- /s_single -->
       <div class="hidden" id="s_gridBox">
-        <p class="note-in" style="margin:0 0 8px">한 줄이 판매 한 건입니다. 위의 <b>판매일 · 프로님 · 구분 · 단계</b>가 모든 줄에 적용됩니다. Tab 으로 칸을 옮기고 마지막 칸에서 Enter 를 누르면 줄이 늘어납니다. 저장 전까지 이 브라우저에 남습니다.</p>
+        <p class="note-in" style="margin:0 0 8px">한 줄이 판매 한 건입니다. 한 건씩 넣을 때의 칸이 전부 있고 <b class="reqtxt">빨간 테두리 칸은 필수</b>입니다. 위의 <b>판매일 · 프로님</b>은 모든 줄 공통, 구분·단계는 새 줄의 기본값입니다. Tab 으로 칸을 옮기고 마지막 칸에서 Enter 를 누르면 줄이 늘어납니다. 저장 전까지 이 브라우저에 남습니다.</p>
+        <div class="gview"><div class="seg sm" id="s_gview"><button type="button" data-v="all" class="on" onclick="gridView('s','all')">모든 칸</button><button type="button" data-v="core" onclick="gridView('s','core')">주요 칸만</button></div><span class="hint">표는 옆으로 밀어서 봅니다</span></div>
         <div class="gtbl s" id="s_grid">
-          <div class="gh"><span></span><span>고객명</span><span>휴대폰</span><span>상품명 <i class="req">*</i></span><span>모델코드</span><span>수량</span><span>판매가 <i class="req">*</i></span><span></span></div>
+          <div class="gh" id="s_gridHead"></div>
           <div class="gbody" id="s_gridRows"></div>
         </div>
         <div class="bt-act"><button type="button" class="btn ghost sm" onclick="gridAdd('s',true)">＋ 줄 추가</button><span class="gsum" id="s_gsum"></span><button type="button" class="btn" id="s_gsave" onclick="gridSave('s')">저장</button></div>
@@ -1394,13 +1403,10 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="f"><label>상담일 <span class="req">*</span></label><input class="in" type="date" id="cg_date"></div>
         <div class="f"><label>상담사</label><select class="in" id="cg_handler"></select></div>
       </div>
-      <div class="grid2">
-        <div class="f"><label>상담 방법 <span class="hint">모든 줄 공통</span></label><select class="in" id="cg_method"><option value="">선택 안 함</option><option>대면</option><option>전화</option><option>메시지</option></select></div>
-        <div class="f"><label>문의 유형 <span class="hint">모든 줄 공통</span></label><select class="in" id="cg_type"></select></div>
-      </div>
-      <p class="note-in" style="margin:0 0 8px">고객명 · 채널 · 관심 품목은 꼭 넣어 주세요. 상태를 <b>연락 전</b>으로 두면 홈 새 문의에 들어갑니다. 구매까지 간 건은 [상담 기록]에서 한 건씩(판매가 함께 올라갑니다).</p>
+      <p class="note-in" style="margin:0 0 8px">한 건씩 넣을 때의 칸이 전부 있고 <b class="reqtxt">빨간 테두리 칸은 필수</b>(고객명 · 채널 · 유형 · 관심 품목)입니다. 상태를 <b>연락 전</b>으로 두면 홈 새 문의에 들어가고, <b>구매함</b>이면 구매 제품 · 금액을 넣어야 하며 판매가 함께 올라갑니다. Tab 으로 칸을 옮기고 마지막 칸에서 Enter 를 누르면 줄이 늘어납니다.</p>
+      <div class="gview"><div class="seg sm" id="c_gview"><button type="button" data-v="all" class="on" onclick="gridView('c','all')">모든 칸</button><button type="button" data-v="core" onclick="gridView('c','core')">주요 칸만</button></div><span class="hint">표는 옆으로 밀어서 봅니다</span></div>
       <div class="gtbl c" id="c_grid">
-        <div class="gh"><span></span><span>고객명 <i class="req">*</i></span><span>휴대폰</span><span>채널 <i class="req">*</i></span><span>관심 품목 <i class="req">*</i></span><span>상태</span><span>내용</span><span></span></div>
+        <div class="gh" id="c_gridHead"></div>
         <div class="gbody" id="c_gridRows"></div>
       </div>
       <div class="bt-act"><button type="button" class="btn ghost sm" onclick="gridAdd('c',true)">＋ 줄 추가</button><span class="gsum" id="c_gsum"></span><button type="button" class="btn" id="c_gsave" onclick="gridSave('c')">저장</button></div>
@@ -2912,7 +2918,7 @@ function slDefaults(){
 }
 async function loadSlList(){
   const box=$('sl_rows'); if(!box) return;
-  slDefaults();
+  slDefaults(); slRestoreFlt();
   if($('sl_from').value > $('sl_to').value){ box.innerHTML='<div class="empty">시작일이 종료일보다 뒤입니다</div>'; return; }
   box.innerHTML='<div class="empty">불러오는 중…</div>';
   let d; try{ d=await rpc('fn_store_sl_list',{p_code:CODE,
@@ -2920,8 +2926,9 @@ async function loadSlList(){
     p_q:$('sl_q').value.trim()||null,p_channel:$('sl_ch').value||null,p_limit:1000}); }
   catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   SL_ROWS=d.rows||[]; SL_META=d; SL_PG=0;
-  if($('sl_ch').options.length<=1) $('sl_ch').innerHTML='<option value="">전체 채널</option>'+(d.channels||[]).map(c=>`<option>${esc(c)}</option>`).join('');
+  if($('sl_ch').options.length<=1){ const keepCh=$('sl_ch').value; $('sl_ch').innerHTML='<option value="">전체 채널</option>'+(d.channels||[]).map(c=>`<option>${esc(c)}</option>`).join(''); if(keepCh) $('sl_ch').value=keepCh; }
   const keep=$('sl_cat').value; $('sl_cat').innerHTML='<option value="">전체 카테고리</option>'+(d.categories||[]).map(x=>`<option value="${esc(x.c)}" ${x.c===keep?'selected':''}>${esc(x.c)} (${x.n})</option>`).join('');
+  if(keep && $('sl_cat').value!==keep){ $('sl_cat').add(new Option(keep+' (0)', keep, true, true)); }
   $('sl_cnt').textContent=(d.total||0)+'건';
   $('sl_ready').textContent=(d.ready||0)+'건'+((d.unmapped||0)?` (코드없음 ${d.unmapped})`:'')+((d.unshipped!=null)?` · 미발송 ${d.unshipped}`:'');
   const fe=$('sl_fee');
@@ -2937,9 +2944,26 @@ function slFeeTag(r){
   return `<span class="st n" title="운송장 ${r.trk_n||1}건 기준 — 상품 줄마다 붙어 온 값을 운송장 단위로 합쳤습니다${r.fee_type?` (${r.fee_type})`:''}">택배비 ${won(r.ship_fee)}${(r.trk_n||1)>1?` · 운송장 ${r.trk_n}`:''}${r.fee_type?` · ${esc(r.fee_type)}`:''}</span>`;
 }
 let SL_META=null;
+/* 정렬·필터는 이 브라우저에 남는다 — 검색하거나 체크하거나 다시 불러와도 그대로 (2026-09-15 요청) */
+let SL_SORT={k:'',dir:'asc'}; try{ const v=JSON.parse(localStorage.getItem('dc_sl_sort')||'null'); if(v&&typeof v==='object') SL_SORT=v; }catch(e){}
+const SL_FLT_IDS=['sl_kind','sl_cat','sl_st','sl_ship','sl_ch','sl_basis','sl_q'];
+function slSaveFlt(){ try{ const o={}; SL_FLT_IDS.forEach(id=>{ const el=$(id); if(el) o[id]=el.value; }); localStorage.setItem('dc_sl_flt', JSON.stringify(o)); }catch(e){} }
+let SL_FLT_RESTORED=false;
+function slRestoreFlt(){ if(SL_FLT_RESTORED) return; SL_FLT_RESTORED=true; try{ const o=JSON.parse(localStorage.getItem('dc_sl_flt')||'{}'); SL_FLT_IDS.forEach(id=>{ const el=$(id); if(el && o[id]!=null) el.value=o[id]; }); }catch(e){} }
+document.addEventListener('change', e=>{ if(SL_FLT_IDS.includes((e.target||{}).id)) slSaveFlt(); });
+document.addEventListener('click', e=>{ const th=e.target.closest('.slt th[data-sk]'); if(!th) return; e.stopPropagation();
+  const k=th.dataset.sk; SL_SORT = (SL_SORT.k===k) ? {k, dir: SL_SORT.dir==='asc'?'desc':'asc'} : {k, dir:'asc'};
+  try{ localStorage.setItem('dc_sl_sort', JSON.stringify(SL_SORT)); }catch(e2){} renderSlList(); }, true);
+function slSortKey(r,k){ switch(k){
+  case 'at': return r.at||''; case 'item': return ((r.lines||[])[0]||{}).item_code||((r.lines||[])[0]||{}).product||'';
+  case 'kind': return (r.kind||'')+'|'+(r.category||''); case 'qty': return Number(r.qty)||0; case 'amount': return Number(r.amount)||0;
+  case 'st': return (!r.ready?2:r.ambig?1:0)*10+(r.shipped?0:1); default: return ''; } }
 function slVisible(){ const k=$('sl_kind').value, c=$('sl_cat').value, st=$('sl_st').value, sh=$('sl_ship').value;
-  return SL_ROWS.map((r,i)=>({r,i})).filter(({r})=> (!k||r.kind===k) && (!c||r.category===c) &&
-    (!st || (st==='ready'? (r.ready&&!r.ambig) : st==='ambig'? r.ambig>0 : !r.ready)) && (!sh || (sh==='shipped'? r.shipped : sh==='late'? r.late : !r.shipped))); }
+  const out=SL_ROWS.map((r,i)=>({r,i})).filter(({r})=> (!k||r.kind===k) && (!c||r.category===c) &&
+    (!st || (st==='ready'? (r.ready&&!r.ambig) : st==='ambig'? r.ambig>0 : !r.ready)) && (!sh || (sh==='shipped'? r.shipped : sh==='late'? r.late : !r.shipped)));
+  if(SL_SORT.k){ const d=SL_SORT.dir==='asc'?1:-1; out.sort((a,b)=>{ const x=slSortKey(a.r,SL_SORT.k), y=slSortKey(b.r,SL_SORT.k);
+    const c=(typeof x==='number'&&typeof y==='number') ? x-y : String(x).localeCompare(String(y),'ko',{numeric:true}); return c ? c*d : a.i-b.i; }); }
+  return out; }
 const SL_PAGE=()=>pgSize('slist'); let SL_PG=0;
 function slPage(k){ SL_PG=Math.max(0,k); renderSlList(); const b=$('sl_rows'); if(b) b.scrollIntoView({behavior:'smooth',block:'start'}); }
 function renderSlList(){
@@ -2947,15 +2971,18 @@ function renderSlList(){
   const pages=Math.max(1,Math.ceil(all.length/SL_PAGE())); if(SL_PG>=pages) SL_PG=pages-1; const vis=all.slice(SL_PG*SL_PAGE(),(SL_PG+1)*SL_PAGE());
   const sel=vis.filter(({r})=>r.ready), allOn=sel.length>0 && sel.every(({r})=>SL_PICK.has(r.order_no));
   const st=r=> (!r.ready?'<span class="st bad">코드 없음</span>' : r.ambig?'<span class="st warn">확인 필요</span>':'<span class="st ok">바로 가능</span>') + (r.shipped?`<span class="st ${r.late?'warn':'ok'}" style="margin-top:3px;display:inline-block" title="${esc(r.tracking_no||'')}">발송 ${esc((r.shipped_on||'').slice(5).replace('-','/'))}${r.late?' 다음달':''}</span>`:'<span class="st warn" style="margin-top:3px;display:inline-block">미발송</span>');
-  box.innerHTML = vis.length ? `<div class="tw"><table class="slt"><thead><tr>
+  box.innerHTML = vis.length ? `<div class="tw"><table class="slt" data-ownsort="1"><thead><tr>
       <th style="width:30px"><input type="checkbox" id="sl_all" ${allOn?'checked':''} onchange="slAllStore(this.checked)" title="보이는 것 중 바로 가능한 것 전체 선택"></th>
-      <th>주문</th><th>품목</th><th>구분</th><th class="num">수량</th><th class="num">금액</th><th>상태</th></tr></thead><tbody>${
+      ${[['at','주문',''],['item','품목',''],['kind','구분',''],['qty','수량','num'],['amount','금액','num'],['st','상태','']].map(([k,l,c])=>`<th class="${c}${SL_SORT.k===k?' sort-'+SL_SORT.dir:''}" data-sk="${k}" title="누르면 이 열로 정렬 — 다른 작업을 해도 유지됩니다">${l}${SL_SORT.k===k?(SL_SORT.dir==='asc'?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${
     vis.map(({r,i})=>`<tr class="${r.ready?'':'off'}${SL_PICK.has(r.order_no)?' sel':''}" onclick="slRowStore(${i},event)">
       <td><input type="checkbox" ${SL_PICK.has(r.order_no)?'checked':''} ${r.ready?'':'disabled'} onchange="slPickStore(${i},this.checked)" onclick="event.stopPropagation()"></td>
       <td><b>${esc(r.channel||'')}</b> · ${esc(r.buyer||'')}<small>${esc(r.order_no)} · ${esc(r.at)}</small></td>
-      <td>${(r.lines||[]).map(l=> l.item_code
-          ? `<div><span class="code" style="color:${l.n_cand>1?'#C88A0E':'#0F7B6C'}">${esc(l.item_code)}</span> ${esc(l.item_name||l.product)} <small style="display:inline">×${Number(l.qty)}</small></div>`
-          : `<div><span class="miss">코드없음</span> ${esc(l.product)}</div>`).join('')}</td>
+      <td>${(r.lines||[]).map(l=>{ const cands=l.cands||[], amb=(l.n_cand||0)>1;
+          const cand=c=>`<span class="code" style="color:${amb?'#C88A0E':'#0F7B6C'}">${esc(c.code||'')}</span> ${esc(c.name||'')}${c.spec?` <small style="display:inline;color:var(--faint)">${esc(c.spec)}</small>`:''}`;
+          if(!l.item_code) return `<div><span class="miss">코드없음</span> ${esc(l.product)}</div>`;
+          /* 확인 필요 = 같은 모델로 등록된 이카운트 품목이 여럿 — 코드·품목명을 전부 보여야 담당자가 고를 수 있다 */
+          if(amb) return `<div class="cand-amb"><small style="display:block;color:#C88A0E;font-weight:700">확인 필요 · 후보 ${cands.length}개 · 주문: ${esc(l.product)}${l.option?' / '+esc(l.option):''} ×${Number(l.qty)}</small>${cands.slice(0,5).map(c=>`<div>${cand(c)}</div>`).join('')}</div>`;
+          return `<div>${cand({code:l.item_code,name:l.item_name||l.product,spec:(cands[0]||{}).spec})} <small style="display:inline">×${Number(l.qty)}</small>${(l.item_name&&l.item_name!==l.product)?`<small style="display:block;color:var(--faint)">주문: ${esc(l.product)}</small>`:''}</div>`; }).join('')}</td>
       <td><small style="display:block">${esc(r.kind||'')}</small>${esc(r.category||'')}</td>
       <td class="num">${Number(r.qty||0)}</td><td class="num">${won(r.amount)}<small style="display:block;white-space:nowrap">${slFeeTag(r)}</small></td><td>${st(r)}</td></tr>`).join('')}</tbody></table></div>
     <div class="note-in" style="margin-top:8px">${all.length}건 중 ${SL_PG*SL_PAGE()+1}–${SL_PG*SL_PAGE()+vis.length} 표시 · 선택 <b id="sl_selN">${SL_PICK.size}</b>건</div>
@@ -4402,33 +4429,60 @@ const GRID={s:[],c:[]}; const GRID_T={};
 const gridKey=pfx=>'dc_grid_'+pfx+'_'+(CODE||'');
 function gridLoad(){ ['s','c'].forEach(pfx=>{ try{ GRID[pfx]=JSON.parse(localStorage.getItem(gridKey(pfx))||'[]'); if(!Array.isArray(GRID[pfx])) GRID[pfx]=[]; }catch(e){ GRID[pfx]=[]; } }); }
 function gridPersist(pfx){ try{ localStorage.setItem(gridKey(pfx), JSON.stringify(GRID[pfx])); }catch(e){} }
-function gridBlank(pfx){ return pfx==='s' ? {name:'',phone:'',prod:'',model:'',qty:1,amt:''} : {name:'',phone:'',ch:'',cat:'',res:'진행전',content:''}; }
-function gridRowEmpty(pfx,r){ return pfx==='s' ? !((r.name||'').trim()||(r.phone||'').trim()||(r.prod||'').trim()||(r.model||'').trim()||String(r.amt||'').replace(/[^0-9]/g,''))
-                                             : !((r.name||'').trim()||(r.phone||'').trim()||(r.content||'').trim()||r.cat||r.ch); }
+/* 칸 정의 : [키, 라벨, 폭px, 표시(req 필수 · core 주요 · wide 폰에서 두 칸), 종류, 선택지] — 한 건씩 폼의 칸을 그대로 옮겼다 */
+const KIND_OPTS=[['일시불','일시불'],['구독','구독'],['직판','직판']];
+const GCOLS={
+  s:[ ['name','고객명',110,'core'],['phone','휴대폰',132,'core'],['prod','상품명',200,'req core wide'],['model','모델코드',110,'core'],['qty','수량',64,'core','number'],['amt','판매가',115,'req core','amt'],
+      ['kind','구분',92,'req core','sel',KIND_OPTS],['stage','단계',100,'req core','sel',[['매출','매출'],['판매완료','판매완료']]],
+      ['pay','결제',112,'','sel',[['','선택 안 함'],['삼성카드','삼성카드'],['타사카드','타사카드'],['현금','현금'],['구독(월납)','구독(월납)'],['기타','기타']]],
+      ['consult','상담번호',140],['next','다음 구매 관심 제품',150],['next_date','다음 구매 예정일',136,'','date'],['next_note','다음 구매 메모',160,'wide'],
+      ['gift','사은품',130],['gift_amt','사은품 금액',100,'','amt'],['consent','마케팅 동의',72,'','chk'],['notes','메모',180,'wide'] ],
+  c:[ ['name','고객명',110,'req core'],['phone','휴대폰',132,'core'],['method','상담 방법',92,'core','sel',[['','-'],['대면','대면'],['전화','전화'],['메시지','메시지']]],
+      ['ch','문의 채널',124,'req core','sel','CH'],['ch_etc','기타 채널',120,'','text'],['ty','문의 유형',110,'req core','sel','TY'],['route','유입경로',150,'core','sel','RT'],
+      ['cat','관심 품목',124,'req core','sel','CAT'],['detail','상세 관심 품목',170,'core wide'],['model','관심 모델',124],['res','상담 상태',100,'core','sel','RES'],
+      ['amount','예상 금액',108,'','amt'],['expect','구매 예정일',136,'','date'],
+      ['buy','구매한 제품',140],['buy_amt','구매 금액',108,'','amt'],['buy_kind','구매 구분',92,'','sel',KIND_OPTS],['buy_model','구매 모델',116],
+      ['next','다음 구매 관심 제품',150],['next_date','다음 구매 예정일',136,'','date'],['next_note','다음 구매 메모',160,'wide'],
+      ['content','상담 내용',220,'core wide'],['cb_date','콜백 날짜',136,'','date'],['cb_time','콜백 시간',100,'','time'],
+      ['gift','사은품',130],['gift_amt','사은품 금액',100,'','amt'],['consent','마케팅 동의',72,'','chk'] ]
+};
+const CATS=['TV','냉장고','세탁·건조','에어컨','청소기','주방가전','휴대폰·태블릿','PC·모니터','입주패키지','기타','알 수 없음'];
+const GRES=[['진행전','연락 전'],['진행중','상담중'],['보류','보류'],['상담완료','완료'],['구매완료','구매함']];
+function gridOpts(key,row){
+  if(key==='CH') return [['','채널']].concat(((INQ&&INQ.channels)||[]).map(c=>[c.code,c.label]));
+  if(key==='TY') return ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]).length ? ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]) : [['product','상품 문의']];
+  if(key==='RT'){ const all=(INQ&&INQ.routes)||[]; const ch=row&&row.ch; return [['','선택']].concat(all.filter(r=>!ch || !r.channel_code || r.channel_code===ch).map(r=>[r.code,r.label])); }
+  if(key==='CAT') return [['','관심 품목']].concat(CATS.map(c=>[c,c]));
+  if(key==='RES') return GRES;
+  return key||[];
+}
+function gridBlank(pfx){ const r={}; GCOLS[pfx].forEach(([k])=>r[k]=''); if(pfx==='s'){ r.qty=1; r.kind=(($('s_kind').querySelector('.on')||{}).dataset||{}).v||'일시불'; r.stage=(($('s_stage').querySelector('.on')||{}).dataset||{}).v||'매출'; r.consent=false; }
+  else { r.ty='product'; r.res='진행전'; r.buy_kind='일시불'; r.consent=false; } return r; }
+function gridRowEmpty(pfx,r){ const skip = pfx==='s' ? ['qty','kind','stage','consent'] : ['ty','res','buy_kind','consent'];
+  return !GCOLS[pfx].some(([k])=>!skip.includes(k) && String(r[k]??'').trim()); }
 function gridInit(pfx){ while(GRID[pfx].length<3) GRID[pfx].push(gridBlank(pfx));
-  if(pfx==='c'){ if(!$('cg_date').value) $('cg_date').value=todayStr(); loadInqCodes().then(()=>{ gridFillType(); gridRender('c'); }); }
+  const v=localStorage.getItem('dc_grid_view_'+pfx)||'all'; gridView(pfx,v,true);
+  if(pfx==='c'){ if(!$('cg_date').value) $('cg_date').value=todayStr(); loadInqCodes().then(()=>gridRender('c')); }
   gridRender(pfx); }
-function gridFillType(){ const sel=$('cg_type'); if(!sel||!INQ||sel.options.length) return;
-  sel.innerHTML=(INQ.types||[]).map(t=>`<option value="${esc(t.code)}"${t.code==='product'?' selected':''}>${esc(t.label)}</option>`).join('')||'<option value="product">상품 문의</option>'; }
+function gridView(pfx,v,silent){ $(pfx+'_grid').classList.toggle('compact', v==='core'); $(pfx+'_gview').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); if(!silent){ try{ localStorage.setItem('dc_grid_view_'+pfx,v); }catch(e){} } }
 function sMode(m){ const seg=$('s_mode'); if(!seg) return; seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===m));
   $('s_single').classList.toggle('hidden', m==='grid'); $('s_gridBox').classList.toggle('hidden', m!=='grid'); if(m==='grid') gridInit('s'); }
-const CATS=['TV','냉장고','세탁·건조','에어컨','청소기','주방가전','휴대폰·태블릿','PC·모니터','입주패키지','기타','알 수 없음'];
-const GRES=[['진행전','연락 전'],['진행중','상담중'],['보류','보류'],['상담완료','완료']];
+function gridCell(pfx,col,r){
+  const [k,label,w,flags='',type='text',opts]=col; const cls='gc k-'+k+(flags?' '+flags:'')+(type==='chk'?' chk':'');
+  const v=r[k]??''; let inp='';
+  if(type==='sel'){ const o=gridOpts(opts,r); inp=`<select class="in" data-k="${k}">${o.map(([c,l])=>`<option value="${esc(c)}"${String(c)===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select>`; }
+  else if(type==='chk') inp=`<input type="checkbox" data-k="${k}"${v?' checked':''}>`;
+  else if(type==='amt') inp=`<input class="in num" data-k="${k}" inputmode="numeric" placeholder="${esc(label)}" oninput="comma(this)" value="${esc(v)}">`;
+  else if(type==='number') inp=`<input class="in num" type="number" data-k="${k}" min="1" value="${Number(v)||1}">`;
+  else if(type==='date'||type==='time') inp=`<input class="in" type="${type}" data-k="${k}" value="${esc(v)}"${type==='time'?' step="600"':''}>`;
+  else { const extra = k==='phone' ? ' type="tel" maxlength="13" oninput="hyphen(this)"' : (k==='model'||k==='buy_model') ? ' style="text-transform:uppercase"' : (k==='prod' ? ' list="productList"' : '');
+         inp=`<input class="in" data-k="${k}" placeholder="${esc(label)}" autocomplete="off"${extra} value="${esc(v)}">`; }
+  return `<div class="${cls}" style="--w:${w}px"><small>${esc(label)}</small>${inp}</div>`;
+}
 function gridRender(pfx){
-  const box=$(pfx+'_gridRows'); if(!box) return; const rows=GRID[pfx];
-  const opt=(list,v,ph)=>`<option value="">${ph}</option>`+list.map(([c,l])=>`<option value="${esc(c)}"${c===v?' selected':''}>${esc(l)}</option>`).join('');
-  box.innerHTML=rows.map((r,i)=>{
-    const cells = pfx==='s'
-      ? `<input class="in" data-k="name" placeholder="고객명" autocomplete="off" value="${esc(r.name||'')}"><input class="in" type="tel" data-k="phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)" value="${esc(r.phone||'')}">`
-        +`<input class="in" data-k="prod" placeholder="상품명 (DPS 그대로)" list="productList" autocomplete="off" value="${esc(r.prod||'')}"><input class="in" data-k="model" placeholder="모델코드" style="text-transform:uppercase" autocomplete="off" value="${esc(r.model||'')}">`
-        +`<input class="in num" type="number" data-k="qty" min="1" value="${Number(r.qty)||1}" title="수량"><input class="in num" data-k="amt" inputmode="numeric" placeholder="판매가" oninput="comma(this)" value="${esc(r.amt||'')}">`
-      : `<input class="in" data-k="name" placeholder="고객명" autocomplete="off" value="${esc(r.name||'')}"><input class="in" type="tel" data-k="phone" placeholder="010-0000-0000" maxlength="13" oninput="hyphen(this)" value="${esc(r.phone||'')}">`
-        +`<select class="in" data-k="ch">${opt(((INQ&&INQ.channels)||[]).map(c=>[c.code,c.label]), r.ch, '채널')}</select>`
-        +`<select class="in" data-k="cat">${opt(CATS.map(c=>[c,c]), r.cat, '관심 품목')}</select>`
-        +`<select class="in" data-k="res">${GRES.map(([c,l])=>`<option value="${c}"${c===(r.res||'진행전')?' selected':''}>${l}</option>`).join('')}</select>`
-        +`<input class="in" data-k="content" placeholder="내용 · 고객이 한 말" autocomplete="off" value="${esc(r.content||'')}">`;
-    return `<div class="gr${r.err?' err':''}" data-i="${i}"><span class="gn">${i+1}</span>${cells}<button type="button" class="gx" title="줄 삭제" onclick="gridDel('${pfx}',${i})">×</button>${r.err?`<div class="gerr">⚠ ${esc(r.err)}</div>`:''}</div>`;
-  }).join('');
+  const box=$(pfx+'_gridRows'), head=$(pfx+'_gridHead'); if(!box) return; const rows=GRID[pfx];
+  head.innerHTML=`<span class="gn"></span>`+GCOLS[pfx].map(([k,l,w,f=''])=>`<div class="gc k-${k}${f?' '+f:''}" style="--w:${w}px">${esc(l)}${/req/.test(f)?' *':''}</div>`).join('')+`<span class="gx" style="visibility:hidden"></span>`;
+  box.innerHTML=rows.map((r,i)=>`<div class="gr${r.err?' err':''}" data-i="${i}"><span class="gn">${i+1}</span>${GCOLS[pfx].map(c=>gridCell(pfx,c,r)).join('')}<button type="button" class="gx" title="줄 삭제" onclick="gridDel('${pfx}',${i})">×</button>${r.err?`<div class="gerr">⚠ ${esc(r.err)}</div>`:''}</div>`).join('');
   gridSum(pfx);
 }
 function gridSum(pfx){ const filled=GRID[pfx].filter(r=>!gridRowEmpty(pfx,r)); const sv=$(pfx+'_gsave'), sm=$(pfx+'_gsum'); if(!sv) return;
@@ -4436,36 +4490,45 @@ function gridSum(pfx){ const filled=GRID[pfx].filter(r=>!gridRowEmpty(pfx,r)); c
   else sm.textContent=filled.length?`${filled.length}건`:'';
   if(!sv.disabled) sv.textContent=filled.length?`${filled.length}건 저장`:'저장'; }
 function gridAdd(pfx,focus){ GRID[pfx].push(gridBlank(pfx)); gridPersist(pfx); gridRender(pfx);
-  if(focus){ const rows=$(pfx+'_gridRows').querySelectorAll('.gr'); const f=rows[rows.length-1]&&rows[rows.length-1].querySelector('input'); if(f) f.focus(); } }
+  if(focus){ const rows=$(pfx+'_gridRows').querySelectorAll('.gr'); const f=rows[rows.length-1]&&rows[rows.length-1].querySelector('input,select'); if(f) f.focus(); } }
 function gridDel(pfx,i){ const r=GRID[pfx][i]; if(r && !gridRowEmpty(pfx,r) && !confirm(`${i+1}번 줄을 지울까요?`)) return;
   GRID[pfx].splice(i,1); if(!GRID[pfx].length) GRID[pfx].push(gridBlank(pfx)); gridPersist(pfx); gridRender(pfx); }
 ['s','c'].forEach(pfx=>{ const box=$(pfx+'_gridRows'); if(!box) return;
   const upd=e=>{ const el=e.target.closest('[data-k]'), row=e.target.closest('.gr'); if(!el||!row) return; const r=GRID[pfx][+row.dataset.i]; if(!r) return;
-    r[el.dataset.k]=el.value; if(r.err){ r.err=''; row.classList.remove('err'); const ge=row.querySelector('.gerr'); if(ge) ge.remove(); }
+    r[el.dataset.k]= el.type==='checkbox' ? el.checked : el.value;
+    if(r.err){ r.err=''; row.classList.remove('err'); const ge=row.querySelector('.gerr'); if(ge) ge.remove(); }
+    if(pfx==='c' && el.dataset.k==='ch'){ const rs=row.querySelector('select[data-k="route"]'); if(rs){ const cur=r.route; rs.innerHTML=gridOpts('RT',r).map(([c,l])=>`<option value="${esc(c)}"${c===cur?' selected':''}>${esc(l)}</option>`).join(''); r.route=rs.value; } }
     clearTimeout(GRID_T[pfx]); GRID_T[pfx]=setTimeout(()=>gridPersist(pfx),300); gridSum(pfx); };
   box.addEventListener('input', upd); box.addEventListener('change', upd);
-  box.addEventListener('keydown', e=>{ if(e.key!=='Enter') return; const el=e.target.closest('[data-k]'); if(!el) return;
-    const last = el.dataset.k === (pfx==='s'?'amt':'content'); if(!last) return; e.preventDefault();
-    const row=e.target.closest('.gr'); const i=+row.dataset.i; if(i===GRID[pfx].length-1) gridAdd(pfx,true); else { const nx=box.querySelectorAll('.gr')[i+1]; const f=nx&&nx.querySelector('input'); if(f) f.focus(); } });
+  box.addEventListener('keydown', e=>{ if(e.key!=='Enter') return; const el=e.target.closest('[data-k]'); if(!el||el.tagName==='SELECT') return;
+    const row=e.target.closest('.gr'); const cells=[...row.querySelectorAll('[data-k]')].filter(x=>x.offsetParent!==null); const last = cells[cells.length-1]===el; if(!last) return; e.preventDefault();
+    const i=+row.dataset.i; if(i===GRID[pfx].length-1) gridAdd(pfx,true); else { const nx=box.querySelectorAll('.gr')[i+1]; const f=nx&&nx.querySelector('input,select'); if(f) f.focus(); } });
 });
+const gnum=v=>Number(String(v??'').replace(/[^0-9]/g,''))||0;
 function gridCheck(pfx,r){
   const ph=(r.phone||'').trim(); if(ph && !/^01\d-\d{3,4}-\d{4}$/.test(ph)) return '휴대폰 번호를 확인하세요';
-  if(pfx==='s'){ if(!(r.prod||'').trim()) return '상품명을 입력하세요'; if(!(Number(String(r.amt||'').replace(/[^0-9]/g,''))>0)) return '판매가를 입력하세요'; return ''; }
-  if(!(r.name||'').trim()) return '고객명을 입력하세요'; if(!r.ch) return '채널을 고르세요'; if(!r.cat) return '관심 품목을 고르세요 — 모르면 "알 수 없음"';
-  const etc=((INQ&&INQ.channels)||[]).find(c=>c.code===r.ch&&c.etc); if(etc && !(r.content||'').trim()) return '기타 채널은 내용에 어디로 들어왔는지 적어 주세요'; return '';
+  if(pfx==='s'){ if(!(r.prod||'').trim()) return '상품명을 입력하세요'; if(!(gnum(r.amt)>0)) return '판매가를 입력하세요'; if(!r.kind) return '구분을 고르세요'; if(!r.stage) return '단계를 고르세요'; return ''; }
+  if(!(r.name||'').trim()) return '고객명을 입력하세요'; if(!r.ch) return '문의 채널을 고르세요'; if(!r.ty) return '문의 유형을 고르세요'; if(!r.cat) return '관심 품목을 고르세요 — 모르면 "알 수 없음"';
+  const etc=((INQ&&INQ.channels)||[]).find(c=>c.code===r.ch&&c.etc); if(etc && !(r.ch_etc||'').trim()) return '기타 채널은 어디로 들어왔는지 [기타 채널] 칸에 적어 주세요';
+  if(r.res==='구매완료'){ if(!(r.buy||'').trim()) return '구매함이면 구매한 제품을 적어 주세요'; if(!(gnum(r.buy_amt)>0)) return '구매함이면 구매 금액을 적어 주세요 — 판매로 올라갑니다'; }
+  return '';
 }
 function gridRowP(pfx,r){
-  if(pfx==='s'){ const amt=Number(String(r.amt||'').replace(/[^0-9]/g,''))||0, prod=(r.prod||'').trim(), model=(r.model||'').trim().toUpperCase(), qty=Number(r.qty)||1;
-    return { sale_date:$('s_date').value, sale_kind:$('s_kind').querySelector('.on').dataset.v, stage:$('s_stage').querySelector('.on').dataset.v, handler:$('s_handler').value, buyer_key:null,
-      customer_name:(r.name||'').trim(), customer_phone:(r.phone||'').trim(), product_name:prod, model_code:model, qty, gross_amount:amt,
-      items:[{product_name:prod, model_code:model, qty, amount:amt}], payment_method:'', consult_id:null, consult_ref:'', consent_marketing:false, notes:'',
-      next_model_code:null, next_expected_date:null, next_note:null, request_order:false, gift_name:null, gift_amount:null }; }
-  const etc=((INQ&&INQ.channels)||[]).find(c=>c.code===r.ch&&c.etc);
-  return { consult_at:$('cg_date').value, handler:$('cg_handler').value, customer_name:(r.name||'').trim(), customer_phone:(r.phone||'').trim(), buyer_key:null,
-    interest_category:r.cat, interest_detail:null, interest_model_code:'', inflow_route:'', result:r.res||'진행전',
-    channel_code:r.ch, channel_etc: etc ? (r.content||'').trim().slice(0,60) : null, type_code:$('cg_type').value||'product', method:$('cg_method').value||null,
-    purchase_item:null, next_model_code:null, next_expected_date:null, next_note:null, expected_amount:null, expected_purchase_date:null,
-    content:(r.content||'').trim(), callback_at:null, consent_marketing:false, gift_name:null, gift_amount:null };
+  const t=k=>(r[k]||'').trim(); const up=k=>t(k).toUpperCase();
+  if(pfx==='s'){ const amt=gnum(r.amt), qty=Number(r.qty)||1;
+    return { sale_date:$('s_date').value, sale_kind:r.kind||'일시불', stage:r.stage||'매출', handler:$('s_handler').value, buyer_key:null,
+      customer_name:t('name'), customer_phone:t('phone'), product_name:t('prod'), model_code:up('model'), qty, gross_amount:amt,
+      items:[{product_name:t('prod'), model_code:up('model'), qty, amount:amt}], payment_method:r.pay||'', consult_id:null, consult_ref:t('consult'),
+      consent_marketing:!!r.consent, notes:t('notes'), next_model_code:up('next')||null, next_expected_date:r.next_date||null, next_note:t('next_note')||null,
+      request_order:false, gift_name:t('gift')||null, gift_amount:gnum(r.gift_amt)||null }; }
+  const cb = r.cb_date ? r.cb_date+'T'+(r.cb_time||'10:00')+':00+09:00' : null;
+  const p={ consult_at:$('cg_date').value, handler:$('cg_handler').value, customer_name:t('name'), customer_phone:t('phone'), buyer_key:null,
+    interest_category:r.cat, interest_detail:t('detail')||null, interest_model_code:up('model'), inflow_route:r.route||'', result:r.res||'진행전',
+    channel_code:r.ch, channel_etc:t('ch_etc')||null, type_code:r.ty||'product', method:r.method||null,
+    purchase_item:t('buy')||null, next_model_code:t('next')||null, next_expected_date:r.next_date||null, next_note:t('next_note')||null,
+    expected_amount:gnum(r.amount)||null, expected_purchase_date:r.expect||null, content:t('content'), callback_at:cb,
+    consent_marketing:!!r.consent, gift_name:t('gift')||null, gift_amount:gnum(r.gift_amt)||null };
+  return { p, buy:r.res==='구매완료', buyName:t('buy'), buyAmt:gnum(r.buy_amt), buyModel:up('buy_model')||null, kind:r.buy_kind||'일시불' };
 }
 async function gridSave(pfx){
   const rows=GRID[pfx], btn=$(pfx+'_gsave'); if(btn.disabled) return;
@@ -4473,15 +4536,18 @@ async function gridSave(pfx){
   let any=false, bad=0; rows.forEach(r=>{ r.err=''; if(gridRowEmpty(pfx,r)) return; any=true; const e=gridCheck(pfx,r); if(e){ r.err=e; bad++; } });
   if(!any) return toast('적힌 줄이 없습니다','bad');
   if(bad){ gridRender(pfx); return toast(`${bad}줄에 빠진 것이 있습니다 — 빨간 줄을 채워 주세요`,'bad'); }
-  btn.disabled=true; let ok=0; const total=rows.filter(r=>!gridRowEmpty(pfx,r)).length;
+  btn.disabled=true; let ok=0, sales=0; const total=rows.filter(r=>!gridRowEmpty(pfx,r)).length;
   for(let i=0;i<rows.length;){ const r=rows[i]; if(gridRowEmpty(pfx,r)){ i++; continue; }
     btn.textContent=`저장 중… ${ok+1} / ${total}`;
-    try{ await rpc(pfx==='s'?'fn_store_sale_submit':'fn_store_consult_submit',{p_code:CODE,p_data:gridRowP(pfx,r)}); rows.splice(i,1); ok++; }
+    try{
+      if(pfx==='s') await rpc('fn_store_sale_submit',{p_code:CODE,p_data:gridRowP('s',r)});
+      else { const {sale,saleErr}=await consultSend(gridRowP('c',r)); if(sale) sales++; if(saleErr) toast(`${r.name}: 상담은 저장됐지만 판매 등록 실패 — ${saleErr}`,'bad'); }
+      rows.splice(i,1); ok++; }
     catch(e){ r.err=e.message||String(e); i++; if(/코드/.test(r.err)) break; }
     gridPersist(pfx); }
   btn.disabled=false; if(!rows.length) rows.push(gridBlank(pfx)); gridPersist(pfx); gridRender(pfx);
   const fail=rows.filter(r=>r.err).length;
-  toast(fail?`${ok}건 저장 · ${fail}건 실패 — 빨간 줄을 고쳐 다시 저장하세요`:`${ok}건 모두 저장됐습니다`, fail?'bad':'ok');
+  toast(fail?`${ok}건 저장 · ${fail}건 실패 — 빨간 줄을 고쳐 다시 저장하세요`:`${ok}건 모두 저장됐습니다${sales?` · 판매 ${sales}건 함께 등록`:''}`, fail?'bad':'ok');
   REPORT_LOADED=false; try{ await loadStatus(); render(); if(pfx==='c' && MC_LOADED) loadMyConsults(0); }catch(e){}
 }
 
@@ -5130,7 +5196,7 @@ try{ const u=Number(localStorage.getItem('dc_pin_until')||0); if(u>Date.now()){ 
   function cellVal(td){ if(td.dataset.sort!==undefined) return td.dataset.sort; const inp=td.querySelector('input,select'); if(inp && !td.textContent.trim()) return inp.value; return td.textContent.trim(); }
   document.addEventListener('click', e=>{
     const th=e.target.closest('th'); if(!th || e.target.closest('input,button,a,select,label')) return;
-    const table=th.closest('table'); if(!table || th.querySelector('input[type=checkbox]')) return;
+    const table=th.closest('table'); if(!table || th.querySelector('input[type=checkbox]') || table.dataset.ownsort) return;
     const label=th.textContent.trim(); if(!label) return;
     const tbody=table.tBodies[0]; if(!tbody) return;
     const rows=[...tbody.rows]; if(rows.length<2) return;
