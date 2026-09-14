@@ -130,6 +130,9 @@ end $outer$;
 - `now()` 는 트랜잭션 시작 시각 — 루프 안 간격은 `clock_timestamp()`
 - STABLE 함수에서 insert 하면 오류 → VOLATILE
 - Supabase API 롤은 `safeupdate` — 조건 없는 DELETE 는 `where true` 필요
+- **세션에 붙여넣은 GAS 원본에는 옛 키가 들어 있을 수 있다 (2026-09-14 사고).** 견적내역·구독문의 GAS 를 전달본으로 갈아끼웠더니 둘 다 2026-09-12 에 교체되기 전 `gas_forward` 키를 담고 있어 `fn_submit_quote`·`fn_submit_inquiry` 가 401(42501 '권한이 없습니다')로 거절 → 견적서는 시트에만 저장되고 [고객에게 보내기]가 "아직 저장되지 않았습니다", 구독 문의는 GAS 예비 경로(옛 순번·GAS 잔디 카드)로 빠진다.
+  전달본의 `DC_KEY` 는 항상 `PASTE_DC_KEY_HERE` 로 비워 보내고, 사용자가 소모품렌탈·VMS 스크립트(손대지 않은 것)의 값을 복사해 넣는다. 현재 키 값은 이 컨테이너에 없다(해시만 DB). 견적내역 GAS `saveQuote` 응답의 `dc:{ok,error}` 와 견적서 페이지 경고가 이 실패를 바로 보여준다.
+  GAS 경유 호출은 DC 쪽 처리시간이 500~900ms 로 찍히지만(미국 GAS → 서울 왕복), 브라우저 직접 호출은 15~90ms — 견적서 페이지가 느린 건 GAS 왕복 탓이다.
 - **이카운트 재고 API 는 몇 분에 3회를 넘기면 412** 로 끊고 몇 분 막는다. 0행 조회도 '연속 오류'로 센다
 - 이카운트 `SaveSaleOrder` 는 `U_MEMO1` 필수, 특수문자 거부, `USER_PRICE_VAT` 는 숫자
 - **잔디 카드(connectInfo)는 `Accept: application/vnd.tosslab.jandi-v2+json` 헤더가 있어야 그려진다.**
