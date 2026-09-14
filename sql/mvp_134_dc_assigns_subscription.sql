@@ -4,7 +4,7 @@
 --     홈페이지 문의(fn_inquiry_mail_ingest)도 f_assign_next('default') 를 쓰므로 두 채널이 한 순번표를 번갈아 쓴다. 휴가자는 f_staff_on_leave 로 건너뜀.
 --   · 새 접수인데 GAS 가 담당자를 보냈고 그 사람이 휴가면 다시 배정 (기존 건의 시트 수정은 그대로 — 순번표를 안 돌린다).
 --   · 시트 수정(onMgmtEdit)으로 온 담당자는 다시 DB 를 덮는다 (mvp_132 의 'DB 우선' 되돌림 — GAS v15 가 시트 H열에 DB 값을 적으므로 어긋나지 않는다).
---   · returning 에서 실제 handler 를 받아 응답 'handler' 와 접수 카드에 쓴다.
+--   · returning 에서 실제 handler 를 받아 응답 'handler' 와 접수 카드에 쓴다. p_data.noNotify=true(GAS 테스트 모드)면 카드 생략.
 -- GAS: tools/gas/inquiry_forward.gs v15 (dcAssignInquiry_). 적용은 위 do 블록 (지점 4곳 치환).
 do $outer$
 declare v_src text; v_args text; v_n int;

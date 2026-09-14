@@ -9,9 +9,10 @@
  * 붙이는 법 (Code.gs 맨 아래에 이 파일 전체를 붙여 넣고, doPost 3곳만 손댄다)
  *
  *  ① doPost 에서 GAS 가 담당자 순번을 고르던 줄(assignedStaff = ...)을 지운다. 값이 필요하면 아래 ②의 반환값을 쓴다.
- *  ② 상담관리 시트에 행을 쓴 뒤(mgmtRow 가 정해진 뒤) 한 줄:
- *        var assignedStaff = dcAssignInquiry_(data, mgmtRow, isTest);
- *     (테스트 접수면 건너뜀 · 데이터센터가 배정한 이름을 H열에 적고 돌려준다 · 실패해도 접수 흐름은 안 끊김)
+ *  ② 상담관리 시트에 행을 쓴 뒤(mgmtRow 가 정해진 뒤):
+ *        var dc = dcAssignInquiry_(data, mgmtRow, isTestMode_());   // 테스트 접수(isTest)는 부르지 않는다
+ *        if (dc.ok) assignedStaff = dc.handler; else { /* 예비: getNextStaff() + sendJandiNotification */ }
+ *     (데이터센터가 배정한 이름을 H열에 적고 돌려준다 · 실패하면 옛 방식으로 — 전체 판은 세션에서 전달한 구독문의_Code_v15.gs)
  *  ③ `sendJandiNotification(...)` 줄을 지운다 (카드는 데이터센터가 보낸다 — 남겨 두면 두 장 간다).
  *
  *  ④ 트리거 → onMgmtEdit · 스프레드시트 · 수정 시 (이미 있으면 그대로)
@@ -38,25 +39,27 @@ function dcRpc_(fn, payload) {
   return body;
 }
 
-/** 접수 직후: 데이터센터에 넣고 배정된 담당자를 받아 시트 H열에 적는다 (doPost 에서 호출) — v15 */
-function dcAssignInquiry_(data, mgmtRow, isTest) {
+/** (v15) 접수 직후: 데이터센터에 넣고, 데이터센터가 배정한 담당자를 상담관리 H열에 적는다.
+ *  반환 { ok, handler, id, error } — 실패면 ok:false (호출부가 예비 배정으로 넘어간다). noNotify=true 면 카드 생략(테스트 모드) */
+function dcAssignInquiry_(data, mgmtRow, noNotify) {
   try {
-    if (isTest) { logToSheet_('5b.Datacenter', '테스트 → 생략'); return ''; }
     const sheet = getOrCreateManagementSheet();
     const ts = mgmtRow ? String(sheet.getRange(mgmtRow, 1).getDisplayValue() || '') : '';
     const payload = Object.assign({}, data, {
       timestamp: ts || Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss'),
-      assignedStaff: '',                                   // 비워 보내면 데이터센터 순번표가 배정한다 (휴가자 제외)
-      mgmtRow: mgmtRow || 0
+      assignedStaff: '',                                   // 비워 보내면 데이터센터 순번표가 배정한다 (휴가자 제외 · 홈페이지 문의와 교차)
+      mgmtRow: mgmtRow || 0,
+      noNotify: !!noNotify
     });
     const res = JSON.parse(dcRpc_('fn_submit_inquiry', payload));
     logToSheet_('5b.Datacenter', JSON.stringify(res));
-    const handler = (res && res.handler) || '';
+    if (!res || res.ok !== true) return { ok: false, error: JSON.stringify(res).slice(0, 200) };
+    const handler = res.handler || '';
     if (handler && mgmtRow) sheet.getRange(mgmtRow, 8).setValue(handler);   // H열 = 담당자 (스크립트가 쓰면 onMgmtEdit 는 안 돈다)
-    return handler;
+    return { ok: true, handler: handler, id: res.id };
   } catch (e) {
-    logToSheet_('X.Datacenter', e);                       // 실패해도 접수 흐름은 그대로
-    return '';
+    logToSheet_('X.Datacenter', e);
+    return { ok: false, error: String(e) };
   }
 }
 
