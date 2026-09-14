@@ -11,7 +11,7 @@
  *  ① doPost 에서 GAS 가 담당자 순번을 고르던 줄(assignedStaff = ...)을 지운다. 값이 필요하면 아래 ②의 반환값을 쓴다.
  *  ② 상담관리 시트에 행을 쓴 뒤(mgmtRow 가 정해진 뒤):
  *        var dc = dcAssignInquiry_(data, mgmtRow, isTestMode_());   // 테스트 접수(isTest)는 부르지 않는다
- *        if (dc.ok) assignedStaff = dc.handler; else { /* 예비: getNextStaff() + sendJandiNotification */ }
+ *        if (dc.ok) assignedStaff = dc.handler; else { ...예비: getNextStaff() + sendJandiNotification... }
  *     (데이터센터가 배정한 이름을 H열에 적고 돌려준다 · 실패하면 옛 방식으로 — 전체 판은 세션에서 전달한 구독문의_Code_v15.gs)
  *  ③ `sendJandiNotification(...)` 줄을 지운다 (카드는 데이터센터가 보낸다 — 남겨 두면 두 장 간다).
  *
