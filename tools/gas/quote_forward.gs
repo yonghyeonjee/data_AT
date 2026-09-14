@@ -26,12 +26,20 @@ var DC_KEY  = typeof DC_KEY  !== 'undefined' ? DC_KEY  : 'PASTE_DC_KEY_HERE';
 
 function dcForwardQuote_(no, version, issuedAt, summary, quote) {
   try {
+    /* 담당 네임카드를 같이 보낸다 — 고객 견적서(/q/) 전화 버튼이 이 휴대폰을 쓴다 (없으면 매장 번호로 떨어짐) */
+    var nc = null;
+    try {
+      var ncId = String((quote && quote.opt && quote.opt.namecardId) || '');
+      var cards = listCards();
+      nc = (ncId && cards.filter(function(c){ return c.id === ncId; })[0])
+        || (summary && summary.counselor && cards.filter(function(c){ return c.name === String(summary.counselor); })[0]) || null;
+    } catch (ncErr) { Logger.log('네임카드 조회 실패: ' + ncErr); }
     const res = UrlFetchApp.fetch(DC_URL + 'fn_submit_quote', {
       method: 'post', contentType: 'application/json',
       headers: { apikey: DC_ANON, Authorization: 'Bearer ' + DC_ANON },
       payload: JSON.stringify({ p_key: DC_KEY, p_data: {
         no: String(no || ''), version: Number(version || 1), issuedAt: String(issuedAt || ''),
-        summary: summary || {}, quote: quote || null } }),
+        summary: summary || {}, quote: quote || null, namecard: nc } }),
       muteHttpExceptions: true
     });
     if (res.getResponseCode() !== 200) Logger.log('Datacenter quote ' + res.getResponseCode() + ': ' + res.getContentText().slice(0, 300));
