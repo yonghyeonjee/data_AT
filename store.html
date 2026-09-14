@@ -157,7 +157,8 @@ section.panel{padding:16px 18px}
 .f:has(> label .req) .in{border-color:#E4B08A;background:#FFFCF9}
 .f:has(> label .req) .in:not(:placeholder-shown):not([type=date]){border-color:var(--line-2);background:#fff}
 .f:has(> label .req) .in:focus{border-color:var(--navy);background:#fff}
-.f label .hint{color:var(--faint);font-weight:400;margin-left:6px;font-size:calc(12px * var(--font-scale))}
+.f label .hint{color:var(--muted);font-weight:400;margin-left:6px;font-size:calc(12px * var(--font-scale))}
+.f label .hint b{color:var(--ink-2);font-weight:700}
 .in{width:100%;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:10px;background:#fff;outline:none;font-size:calc(16px * var(--font-scale));transition:.15s}
 .in:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 .in.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
@@ -189,9 +190,20 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .sh-list button:hover{background:var(--navy-soft,#E3F3F1);border-color:var(--navy)}
 .sh-list button small{margin-left:auto;font-size:calc(12px * var(--font-scale));font-weight:500;color:var(--faint)}
 .sh-list button.me{opacity:.45}
-.tag.src{background:#E3F3F0;color:#0F7B6C} .tag.hd{background:#E3F3F1;color:#0F766E}
-.tag.re{background:#FFF1E6;color:#B45309} .tag.mth-t{background:#F1EEFB;color:#5C3D9E}
+/* 태그 색은 '무엇을 말하는 태그인지'로 나눈다 — 전부 청록이라 구분이 안 된다는 지적 (2026-09-15 폰 사진).
+   관심 품목=청록 · 문의 채널=파랑 · 문의 유형=보라(테두리) · 유입경로=회색 · 상담 방법=슬레이트
+   담당자=진한 채움(사람) · 상태=빨강/노랑 · 회차=주황 · 견적=금색 */
+.tag.src{background:#E7EFFC;color:#1A4FA0}                                   /* 문의 채널 — 어디로 들어왔나 */
+.tag.ty{background:#fff;color:#6B2FB5;box-shadow:inset 0 0 0 1.5px #D9C7F0}  /* 문의 유형 — 무엇을 물었나 */
+.tag.via{background:#F1F3F7;color:#5A6474}                                   /* 유입경로 */
+.tag.hd{background:#0F766E;color:#fff}                                       /* 담당자 — 사람은 진하게 */
+.tag.hd.none{background:#fff;color:#B3261E;box-shadow:inset 0 0 0 1.5px #F0B3AE}  /* 미배정 */
+.tag.re{background:#FFF1E6;color:#B45309} .tag.mth-t{background:#EDF1F6;color:#40546B}
+.tag.qt{background:#FBF1DC;color:#8A5D00}                                    /* 견적서 */
 .tag.new{background:#FDE7E6;color:#B3261E}
+.tag.hold{background:#FBF1DC;color:#8A5A00}
+.taglegend{display:flex;flex-wrap:wrap;gap:4px 0;align-items:center;margin:0 0 10px;opacity:.95}
+.taglegend .tag{margin-right:4px;cursor:default}
 /* 상담 방법 토글 · 견적서 목록 · 휴지통 */
 .mth{display:inline-flex;gap:2px;margin-left:6px;vertical-align:middle}
 .mth button{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:1px 7px;font-size:calc(11px * var(--font-scale));font-weight:700;cursor:pointer;width:auto;margin:0}
@@ -253,7 +265,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .item .a{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
 .item .a small{display:block;font-weight:500;color:var(--muted);font-size:calc(11px * var(--font-scale))}
 .tag{display:inline-block;padding:1px 7px;border-radius:5px;font-size:calc(11px * var(--font-scale));font-weight:700;margin-right:4px}
-.tag.일시불{background:var(--accent-soft);color:var(--accent)}
+.tag.일시불,.tag.itm{background:var(--accent-soft);color:var(--accent)}
 .tag.구독{background:var(--sub-soft);color:var(--sub)}
 .tag.직판{background:var(--warn-soft);color:var(--warn)}
 .tag.매출{background:var(--warn-soft);color:var(--warn)} .tag.판매완료{background:var(--ok-soft);color:var(--ok)}
@@ -332,7 +344,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .lvcal-hd{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap} .lvcal-hd b{flex:1;text-align:center;font-size:calc(15px * var(--font-scale));min-width:90px}
 .lvcal{display:grid;grid-template-columns:32px repeat(7,1fr);gap:2px}
 .lvcal .dow,.lvcal .wk{font-size:calc(10.5px * var(--font-scale));color:var(--muted);font-weight:700;text-align:center;padding:4px 0;align-self:center}
-.lvcal .wk{color:var(--faint)} .lvcal .dow.we{color:var(--bad)}
+.lvcal .wk{color:var(--muted)} .lvcal .dow.we{color:var(--bad)}
 .lvcal .day{min-height:56px;width:100%;box-sizing:border-box;justify-self:stretch;border:1px solid var(--line);border-radius:8px;background:#fff;padding:3px 3px 2px;text-align:left;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
 .lvcal .day i{font-style:normal;font-size:calc(11.5px * var(--font-scale));font-weight:700;color:var(--ink-2)}
 .lvcal .day.we i{color:var(--bad)} .lvcal .day.other{opacity:.45} .lvcal .day.today{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)} .lvcal .day.today i{color:var(--navy)}
@@ -469,7 +481,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .d-sum{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:calc(12.5px * var(--font-scale));color:var(--muted);margin:0 0 10px;padding:10px 12px;background:var(--surface-2,#F5F7FA);border-radius:10px}
 .d-sum b{color:var(--ink);font-variant-numeric:tabular-nums} .d-sum .warn{color:var(--warn);font-weight:600}
 .seg.sm button{padding:6px 12px;font-size:calc(12.5px * var(--font-scale))}
-@media(max-width:480px){.drow{grid-template-columns:1fr 1fr 1fr 24px} .drow .dk{grid-column:1} .drow .dh{grid-column:2/5} .drow .dp{grid-column:1/3} .drow .dr{grid-column:3} .drow .x{grid-column:4}
+@media(max-width:480px){.drow{grid-template-columns:1fr 1fr 1fr 40px} .drow .dk{grid-column:1} .drow .dh{grid-column:2/5} .drow .dp{grid-column:1/3} .drow .dr{grid-column:3} .drow .x{grid-column:4;width:40px;height:40px;display:flex;align-items:center;justify-content:center;justify-self:end}
   .drow.head>div:nth-child(-n+2){display:none} .drow.head{margin-top:4px}
   .drow:not(.head){padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:8px}}
 .x{border:0;background:transparent;color:var(--faint);font-size:calc(18px * var(--font-scale));cursor:pointer}
@@ -594,7 +606,8 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .wiz td.num,.wiz th.num{text-align:right;font-variant-numeric:tabular-nums}
 .wiz .mono{font-family:ui-monospace,Menlo,monospace}
 .wiz .ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.wiz .sub{font-size:calc(11px * var(--font-scale));color:#98A1B0;margin-top:1px}
+.wiz .sub{font-size:calc(11px * var(--font-scale));color:#6B7484;margin-top:1px}
+.wiz .sub b{color:#2E3542;font-weight:700}
 .wiz .tg{display:inline-block;padding:1px 7px;border-radius:6px;font-size:calc(10.5px * var(--font-scale));font-weight:700;white-space:nowrap}
 .wiz .tg.ok{background:#E3F3F0;color:#0F7B6C} .wiz .tg.warn{background:#FBF1DC;color:#8A5D00} .wiz .tg.bad{background:#FBE9E7;color:#B3261E} .wiz .tg.n{background:#EEF0F4;color:#646D7C} .wiz .tg.opt{background:var(--wzs);color:var(--wz)}
 .wiz input[type=checkbox]{width:16px;height:16px;accent-color:var(--wz);cursor:pointer;margin:0}
@@ -999,6 +1012,13 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
   .gtbl .gr .gc.wide{grid-column:1 / -1}
   .gtbl .gerr{padding-left:2px;position:static;background:#FFF4F2;border-radius:0 0 8px 8px}
   .bt-act{flex-wrap:wrap} .bt-act .gsum{margin-left:0;flex:1 1 100%;text-align:right} .bt-act .btn{flex:1 1 45%} .bt-act .btn.ghost.sm{flex:1 1 45%}
+  /* 주문서 마법사 : 폰에서 세그·아래 버튼이 36px 이라 터치 타깃 40px 에 미달했다 */
+  .wiz-seg{display:flex;width:100%} .wiz-seg button{flex:1 1 auto;min-height:40px;padding-left:10px;padding-right:10px}
+  .wiz .btn,.wiz-ft .btn{min-height:40px}
+  /* 주문서 편집 : 품목 줄 도구·[+ 추가] 링크·표의 × 가 17~32px 이었다 */
+  .of .of-bar button{min-height:40px;padding:6px 12px}
+  .of .of-add{min-height:40px;display:inline-flex;align-items:center;padding:0 8px;float:none;margin-left:6px}
+  .of table.of-t td .x{min-width:40px;min-height:40px;padding:0}
 }
 </style>
 </head>
@@ -1120,6 +1140,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="card hidden" id="allCard">
       <h2>전체 상담 · 배정 <span id="allSub"></span></h2>
       <p class="note-in" style="margin-top:0">미배정 건을 담당자에게 배정하거나, 담당을 바꿉니다. 넘긴 기록은 그 상담에 남습니다.</p>
+      <div class="taglegend" aria-label="태그 색 뜻"><span class="tag itm">관심 품목</span><span class="tag src">문의 채널</span><span class="tag ty">문의 유형</span><span class="tag via">유입경로</span><span class="tag hd">담당자</span><span class="tag new">상태</span><span class="tag mth-t">상담 방법</span><span class="tag re">회차</span><span class="tag qt">견적</span></div>
       <div class="daterow">
         <div class="seg sm" id="all_scope"><button type="button" data-v="unassigned">미배정</button><button type="button" class="on" data-v="open">진행중 전체</button><button type="button" data-v="all">전체</button></div>
         <input class="in" id="all_q" placeholder="이름 · 번호 · 모델" onkeydown="if(event.key==='Enter')loadAllConsults()">
@@ -2541,7 +2562,7 @@ function wizMount(host, cfg){
         <div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;margin:0 0 9px;font-weight:500;color:#2E3542;font-size:calc(12.5px * var(--font-scale))"><input type="checkbox" id="wzDone" ${S.incDone?'checked':''}> 이미 만든 주문도 보기</label></div>
         <div style="display:flex;align-items:flex-end"><button class="btn" id="wzLoad" style="width:100%">불러오기</button></div>
       </div>
-      <p class="sub" style="margin:10px 0 0;font-size:calc(12px * var(--font-scale))">취소·교환·반품 건은 자동으로 빠지고, <b>송장이 없는(미발송) 주문은 이카운트에 올리지 않습니다</b> — ②에서 기본으로 발송된 주문만 보입니다. 샵링커 주문은 하루 다섯 번 수집되며 송장 등록분도 함께 들어옵니다.</p>
+      <p class="sub wb" style="margin:10px 0 0;font-size:calc(12px * var(--font-scale))">취소·교환·반품 건은 자동으로 빠지고, <b>송장이 없는(미발송) 주문은 이카운트에 올리지 않습니다</b> — ②에서 기본으로 발송된 주문만 보입니다. 샵링커 주문은 하루 다섯 번 수집되며 송장 등록분도 함께 들어옵니다.</p>
       ${d?`<div class="wiz-chips">
         <div class="wiz-chip"><small>불러온 주문</small><b>${n(d.total)}</b>건 · ${n(d.lines)}줄</div>
         <div class="wiz-chip ok" title="모든 줄에 이카운트 품목이 하나로 정해진 주문입니다"><small>바로 가능</small><b>${n(d.ready)}</b>건</div>
@@ -3967,15 +3988,15 @@ function renderMyConsults(){
           ${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담이 ${x.prior}건 더 있습니다">${Number(x.prior)+1}회째</span>`:''}
           ${qn?`<span class="tag" title="견적서 ${qn}건">견적 ${qn}</span>`:''}
           ${cb}${late}
-          ${x.handler&&x.handler!==ME?`<span class="tag hd">${esc(x.handler)}</span>`:''}
+          ${x.handler&&x.handler!==ME?`<span class="tag hd" title="담당자">${esc(x.handler)}</span>`:''}
           <span class="dt">${String(x.at).slice(5,10).replace('-','/')}</span>
           ${x.tel&&!trash?`<a class="qk" href="tel:${esc(x.tel)}" title="${nm} 님에게 전화" onclick="event.stopPropagation()">📞</a>`:''}
           <span class="caret">▼</span>
         </div>
         <div class="more">
         <div class="ttl" style="margin-bottom:2px">
-          ${x.src?`<span class="tag src">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}
-          ${x.src2?`<span class="tag hd">${esc(x.src2)}</span>`:''}
+          ${x.src?`<span class="tag src" title="문의 채널">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}
+          ${x.src2?`<span class="tag ty" title="문의 유형">${esc(x.src2)}</span>`:''}
           ${x.model&&x.model!==key?`<span class="tag">${esc(x.model)}</span>`:''}
           <span class="note-in" style="margin:0 2px 0 0;font-size:calc(11.5px * var(--font-scale))">상담방법</span>${mth}</div>
         <div class="meta">${meta}</div>${buy}${nxt}${qlist}${delInfo}
@@ -4922,8 +4943,8 @@ function renderAllConsults(){
   const rows=ALL_ROWS.slice(ALL_PG*per,(ALL_PG+1)*per);
   el.innerHTML=(ALL_ROWS.length?rows.map(x=>`
     <div class="item oc"><div>
-      <div class="p">${x.name?`<a href="javascript:void 0" onclick="cdOpen(${x.id})" title="이 상담의 상세 내용 보기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a>`:'<span style="color:var(--muted)">이름 없음</span>'} ${x.interest?`<span class="tag 일시불">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag" style="background:#E3F3F1;color:#0F766E">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag" style="background:#F3F4F7;color:#646D7C">유입 ${esc(x.via)}</span>`:''}
-        <span class="tag hd">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='진행전'?'<span class="tag new">연락 전</span>':x.result==='보류'?'<span class="tag" style="background:#FBF1DC;color:#8A5A00">보류</span>':''}${x.method?`<span class="tag mth-t">${esc(x.method)}</span>`:''}${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담 ${x.prior}건">${Number(x.prior)+1}회째</span>`:''}${Number(x.quote_n)>0?`<span class="tag" title="견적서 ${x.quote_n}건">견적 ${x.quote_n}</span>`:''}</div>
+      <div class="p">${x.name?`<a href="javascript:void 0" onclick="cdOpen(${x.id})" title="이 상담의 상세 내용 보기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a>`:'<span style="color:var(--muted)">이름 없음</span>'} ${x.interest?`<span class="tag itm" title="관심 품목">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag ty" title="문의 유형">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag via" title="유입경로">유입 ${esc(x.via)}</span>`:''}
+        <span class="tag hd${x.handler?'':' none'}" title="담당자">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='진행전'?'<span class="tag new">연락 전</span>':x.result==='보류'?'<span class="tag hold">보류</span>':''}${x.method?`<span class="tag mth-t" title="상담 방법">${esc(x.method)}</span>`:''}${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담 ${x.prior}건">${Number(x.prior)+1}회째</span>`:''}${Number(x.quote_n)>0?`<span class="tag qt" title="견적서 ${x.quote_n}건">견적 ${x.quote_n}</span>`:''}</div>
       <div class="m">${esc(fmtAt(x.at))} · ${esc(x.route||'')}${x.phone?' · '+esc(x.phone):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.content?' · '+esc(x.content):''}</div>
       ${x.last_move?`<div class="mv">${esc(x.last_move.from||'미배정')} → ${esc(x.last_move.to)} · ${esc(x.last_move.by)} 배정 · ${esc(x.last_move.at)}</div>`:''}</div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}
