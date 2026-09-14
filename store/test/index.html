@@ -911,7 +911,9 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .gtbl .gr .gc.chk input:checked{background:var(--accent);border-color:var(--accent)} .gtbl .gr .gc.chk input:checked::after{content:'✓'}
 .gtbl .gn{flex:0 0 24px;color:var(--faint);font-weight:800;font-size:calc(12px * var(--font-scale));text-align:center}
 .gtbl .gx{flex:0 0 36px;min-height:40px;border-radius:9px;border:1.5px solid var(--line-2);background:#fff;color:var(--bad,#C62828);font-weight:800;font-size:calc(16px * var(--font-scale));cursor:pointer}
-.gtbl .gerr{flex:1 0 100%;color:var(--bad,#C62828);font-size:calc(12px * var(--font-scale));font-weight:700;padding:2px 0 2px 30px;min-width:0;position:sticky;left:0}
+.gtbl .gerr{position:sticky;left:0;color:var(--bad,#C62828);font-size:calc(12.5px * var(--font-scale));font-weight:700;padding:2px 0 8px 30px;background:#FFF4F2}
+.gtbl .gerr b{color:var(--bad,#C62828)}
+.gtbl .gr.err{position:relative} .gtbl .gr.err::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bad,#C62828)}
 .gtbl.compact .gc:not(.core){display:none}
 .bt-act{display:flex;gap:10px;align-items:center;margin-top:10px} .bt-act .btn{margin-top:0} .bt-act .btn.ghost.sm{padding:12px 14px;min-height:44px;white-space:nowrap}
 .bt-act .gsum{margin-left:auto;font-weight:700;color:var(--ink-2);font-size:calc(14px * var(--font-scale));white-space:nowrap} .bt-act .btn:not(.ghost){width:auto;padding:13px 22px;min-height:44px}
@@ -984,7 +986,7 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
   .gtbl .gn{order:-2;grid-column:1;text-align:left;padding-left:2px} .gtbl .gn::after{content:'번 줄'}
   .gtbl .gx{order:-1;grid-column:2;justify-self:end;min-width:44px}
   .gtbl .gr .gc.wide{grid-column:1 / -1}
-  .gtbl .gerr{padding-left:2px;position:static}
+  .gtbl .gerr{padding-left:2px;position:static;background:#FFF4F2;border-radius:0 0 8px 8px}
   .bt-act{flex-wrap:wrap} .bt-act .gsum{margin-left:0;flex:1 1 100%;text-align:right} .bt-act .btn{flex:1 1 45%} .bt-act .btn.ghost.sm{flex:1 1 45%}
 }
 </style>
@@ -4482,7 +4484,7 @@ function gridCell(pfx,col,r){
 function gridRender(pfx){
   const box=$(pfx+'_gridRows'), head=$(pfx+'_gridHead'); if(!box) return; const rows=GRID[pfx];
   head.innerHTML=`<span class="gn"></span>`+GCOLS[pfx].map(([k,l,w,f=''])=>`<div class="gc k-${k}${f?' '+f:''}" style="--w:${w}px">${esc(l)}${/req/.test(f)?' *':''}</div>`).join('')+`<span class="gx" style="visibility:hidden"></span>`;
-  box.innerHTML=rows.map((r,i)=>`<div class="gr${r.err?' err':''}" data-i="${i}"><span class="gn">${i+1}</span>${GCOLS[pfx].map(c=>gridCell(pfx,c,r)).join('')}<button type="button" class="gx" title="줄 삭제" onclick="gridDel('${pfx}',${i})">×</button>${r.err?`<div class="gerr">⚠ ${esc(r.err)}</div>`:''}</div>`).join('');
+  box.innerHTML=rows.map((r,i)=>`<div class="gr${r.err?' err':''}" data-i="${i}"><span class="gn">${i+1}</span>${GCOLS[pfx].map(c=>gridCell(pfx,c,r)).join('')}<button type="button" class="gx" title="줄 삭제" onclick="gridDel('${pfx}',${i})">×</button></div>${r.err?`<div class="gerr">⚠ <b>${i+1}번 줄</b> ${esc(r.err)}</div>`:''}`).join('');
   gridSum(pfx);
 }
 function gridSum(pfx){ const filled=GRID[pfx].filter(r=>!gridRowEmpty(pfx,r)); const sv=$(pfx+'_gsave'), sm=$(pfx+'_gsum'); if(!sv) return;
