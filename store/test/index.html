@@ -895,6 +895,22 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .qrurl{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:calc(12.5px * var(--font-scale));color:var(--ink);word-break:break-all}
 .qrdlg .btns .btn{width:100%}
 
+/* ── 여러 건 담아두기 (판매·상담 입력 공용) ── */
+.savebar{display:flex;gap:10px;align-items:stretch}
+.savebar .btn{margin-top:6px} .savebar .btn.ghost{width:auto;flex:0 0 auto;padding:15px 18px;white-space:nowrap}
+.batch{margin-top:12px;border:1.5px dashed var(--accent);border-radius:12px;padding:10px 12px 12px;background:#F3FAF9}
+.bt-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:calc(14px * var(--font-scale));margin-bottom:4px}
+.bt-h b{color:var(--accent)} .bt-h .hint{color:var(--faint);font-size:calc(12px * var(--font-scale))}
+.bt-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:calc(14px * var(--font-scale))}
+.bt-row:last-child{border-bottom:0}
+.bt-row .n{flex:0 0 auto;min-width:22px;height:22px;border-radius:11px;background:var(--accent);color:#fff;font-size:calc(11.5px * var(--font-scale));font-weight:800;display:flex;align-items:center;justify-content:center}
+.bt-row .t{flex:1;min-width:0;line-height:1.35} .bt-row .t small{display:block;color:var(--muted);font-size:calc(12px * var(--font-scale))}
+.bt-row.err{background:#FFF4F2;border-radius:8px;padding:7px 8px} .bt-row.err .n{background:var(--bad,#C62828)} .bt-row.err .t small{color:var(--bad,#C62828);font-weight:700}
+.bt-row .ops{display:flex;gap:6px;flex:0 0 auto}
+.bt-row .ops button{min-height:40px;min-width:44px;padding:0 10px;border-radius:9px;border:1.5px solid var(--line-2);background:#fff;font-size:calc(12.5px * var(--font-scale));font-weight:700;color:var(--ink-2);cursor:pointer}
+.bt-row .ops button.del{color:var(--bad,#C62828)}
+.bt-act{display:flex;gap:10px;align-items:center;margin-top:10px} .bt-act .btn{margin-top:0} .bt-act .btn.ghost.sm{padding:12px 14px;min-height:44px;white-space:nowrap}
+
 /* ═══ 모바일 보정 — 스타일시트 맨 끝: 앞의 규칙과 특이도가 같아도 여기가 이긴다 ═══ */
 @media (max-width:640px){
   .tools-toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 14px;margin:0 0 10px;border:1.5px solid var(--line);border-radius:10px;background:#F7F8FB;color:var(--ink);font:inherit;font-size:calc(13px * var(--font-scale));font-weight:700;cursor:pointer;text-align:left}
@@ -954,6 +970,11 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
   .rep-ctl .row2{grid-template-columns:1fr}
 }
 .rep-ctl .row2>*{min-width:0}
+@media (max-width:999px){
+  .savebar{flex-wrap:wrap} .savebar .btn{flex:1 1 100%} .savebar .btn.ghost{flex:1 1 100%;width:100%}
+  .bt-row{flex-wrap:wrap} .bt-row .t{flex:1 1 60%} .bt-row .ops{margin-left:auto}
+  .bt-act{flex-wrap:wrap} .bt-act .btn{flex:1 1 100%} .bt-act .btn.ghost.sm{flex:1 1 100%;width:100%}
+}
 </style>
 </head>
 <body>
@@ -1326,7 +1347,15 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         </div>
       </div>
       -->
-      <button class="btn" id="s_btn" onclick="submitSale()">저장</button>
+      <div class="savebar">
+        <button class="btn" id="s_btn" onclick="submitSale()">저장</button>
+        <button type="button" class="btn ghost" id="s_addBtn" onclick="batchAdd('s')" title="이 건을 담아두고 다음 건을 이어서 적습니다. 판매일·프로님·구분·단계는 그대로 남습니다">담아두기 →</button>
+      </div>
+      <div class="batch hidden" id="s_batch">
+        <div class="bt-h"><b>담아둔 판매 <span id="s_bt_n">0</span>건</b><span class="hint">여러 건을 이어서 적은 뒤 한꺼번에 저장합니다 · 저장 전까지 이 브라우저에 남아 있습니다</span></div>
+        <div class="bt-list" id="s_bt_list"></div>
+        <div class="bt-act"><button type="button" class="btn" id="s_bt_save" onclick="batchSave('s')">담아둔 판매 한꺼번에 저장</button><button type="button" class="btn ghost sm" onclick="batchClear('s')">모두 비우기</button></div>
+      </div>
     </div>
     <div class="card">
       <h2>오늘 입력한 판매 <span id="todaySum"></span></h2>
@@ -1467,7 +1496,15 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         </div>
       </div>
       </div>
-      <button class="btn" id="c_btn" onclick="submitConsult()">저장</button>
+      <div class="savebar">
+        <button class="btn" id="c_btn" onclick="submitConsult()">저장</button>
+        <button type="button" class="btn ghost" id="c_addBtn" onclick="batchAdd('c')" title="이 건을 담아두고 다음 건을 이어서 적습니다. 상담일·상담사·상담 방법·채널·유형·경로는 그대로 남습니다">담아두기 →</button>
+      </div>
+      <div class="batch hidden" id="c_batch">
+        <div class="bt-h"><b>담아둔 상담 <span id="c_bt_n">0</span>건</b><span class="hint">여러 건을 이어서 적은 뒤 한꺼번에 저장합니다 · 저장 전까지 이 브라우저에 남아 있습니다</span></div>
+        <div class="bt-list" id="c_bt_list"></div>
+        <div class="bt-act"><button type="button" class="btn" id="c_bt_save" onclick="batchSave('c')">담아둔 상담 한꺼번에 저장</button><button type="button" class="btn ghost sm" onclick="batchClear('c')">모두 비우기</button></div>
+      </div>
       <div id="c_ref" class="empty hidden"></div>
     </div>
   </section>
@@ -1845,6 +1882,7 @@ function setFontScale(scale){
 
 /* ═══ 시작 ═══ */
 async function start(){
+  batchLoad();   /* 담아둔 판매·상담(localStorage) 복원 */
   $('pinScreen').classList.add('hidden'); $('app').classList.remove('hidden');
 
   /* ═══ 글자 크기 설정 로드 ═══ */
@@ -3247,7 +3285,8 @@ $('c_kind').addEventListener('click', e=>{ const b=e.target.closest('button'); i
 
 
 /* ═══ 판매 저장 ═══ */
-async function submitSale(){
+/* 폼 → 저장 데이터. 빠진 게 있으면 토스트를 띄우고 null (저장·담아두기가 같이 쓴다) */
+function saleCollect(){
   const kind = $('s_kind').querySelector('.on').dataset.v;
   const stage = $('s_stage').querySelector('.on').dataset.v;
   const p = { sale_date:$('s_date').value, sale_kind:kind, stage, handler:$('s_handler').value, buyer_key: LINK.s||null,
@@ -3264,6 +3303,10 @@ async function submitSale(){
   const badLine=p.items.findIndex(x=>!x.product_name); if(badLine>0) return toast(`${badLine+1}번째 상품의 상품명을 입력하세요`,'bad');
   if(p.gross_amount<=0) return toast('판매가를 입력하세요','bad');
   if(p.customer_phone && !/^01\d-\d{3,4}-\d{4}$/.test(p.customer_phone)) return toast('휴대폰 번호를 확인하세요','bad');
+  return p;
+}
+async function submitSale(){
+  const p=saleCollect(); if(!p) return;
   const b=$('s_btn'); b.disabled=true; b.textContent='저장 중…';
   try{ const r = await rpc('fn_store_sale_submit',{p_code:CODE,p_data:p});
     toast(r.request_id?`저장됨 · 주문서 요청 #${r.request_id} 보냄 — 처리 담당자에게 알림`:`저장됨 · ${r.handler} · ${p.product_name}${p.items.length>1?` 외 ${p.items.length-1}건`:''} ${won(p.gross_amount)} · ${r.stage}`,'ok');
@@ -4173,7 +4216,8 @@ async function shareReport(){ const t=$('r_text').value; if(!t) return toast('�
   if(navigator.share){ try{ await navigator.share({title:'판매현황',text:t}); }catch(e){} } else copyReport(); }
 
 /* ═══ 상담 저장 ═══ */
-async function submitConsult(){
+/* 폼 → 저장 데이터(상담 + 구매함이면 판매 정보). 빠진 게 있으면 토스트 후 null */
+function consultCollect(){
   /* 관심 품목 : '기타' 는 적어 넣은 말로 바꿔 저장한다 */
   const etcTxt=$('c_cat_etc').value.trim();
   const cats = [...$('c_cat').querySelectorAll('.chip.on')].map(x=>x.dataset.v)
@@ -4198,24 +4242,35 @@ async function submitConsult(){
   if(!C_TY) return toast('문의 유형을 고르세요','bad');
   if(buy && !buyName) return toast('구매한 제품을 적어 주세요','bad');
   if(buy && !buyAmt)  return toast('구매 금액을 적어 주세요 — 이 금액이 판매로 올라갑니다','bad');
+  return { p, buy, buyName, buyAmt, buyModel:$('c_buy_model').value.trim().toUpperCase()||null,
+           kind:(($('c_kind').querySelector('button.on')||{}).dataset||{}).v || '일시불' };
+}
+/* 상담 한 건 보내기. 구매까지 갔으면 같은 자리에서 판매로 올린다 — 판매 입력을 따로 하지 않는다 */
+async function consultSend(x){
+  const p=x.p;
+  const r = await rpc('fn_store_consult_submit',{p_code:CODE,p_data:p});
+  let sale=null, saleErr=null;
+  if(x.buy){
+    try{
+      sale = await rpc('fn_store_sale_submit',{p_code:CODE,p_data:{
+        sale_date:p.consult_at, handler:p.handler, sale_kind:x.kind,
+        stage:'매출', consult_ref:r.ref, buyer_key: p.buyer_key||null,
+        customer_name:p.customer_name, customer_phone:p.customer_phone,
+        consent_marketing:p.consent_marketing,
+        items:[{product_name:x.buyName, model_code:x.buyModel, qty:1, amount:String(x.buyAmt)}],
+        gift_name:p.gift_name, gift_amount:p.gift_amount,
+        notes:'상담 '+r.ref+' 에서 바로 등록' }});
+    }catch(e){ saleErr=e.message; }
+  }
+  return { r, sale, saleErr };
+}
+async function submitConsult(){
+  const x=consultCollect(); if(!x) return;
+  const p=x.p, buy=x.buy, buyAmt=x.buyAmt;
   const b=$('c_btn'); b.disabled=true; b.textContent='저장 중…';
   try{
-    const r = await rpc('fn_store_consult_submit',{p_code:CODE,p_data:p});
-    /* 구매까지 갔으면 같은 자리에서 판매로 올린다 — 판매 입력을 따로 하지 않는다 */
-    let sale=null;
-    if(buy){
-      try{
-        sale = await rpc('fn_store_sale_submit',{p_code:CODE,p_data:{
-          sale_date:$('c_date').value, handler:$('c_handler').value,
-          sale_kind:(($('c_kind').querySelector('button.on')||{}).dataset||{}).v || '일시불',
-          stage:'매출', consult_ref:r.ref, buyer_key: LINK.c||null,
-          customer_name:p.customer_name, customer_phone:p.customer_phone,
-          consent_marketing:p.consent_marketing,
-          items:[{product_name:buyName, model_code:$('c_buy_model').value.trim().toUpperCase()||null, qty:1, amount:String(buyAmt)}],
-          gift_name:p.gift_name, gift_amount:p.gift_amount,
-          notes:'상담 '+r.ref+' 에서 바로 등록' }});
-      }catch(e){ toast('상담은 저장됐지만 판매 등록에 실패했습니다: '+e.message,'bad'); }
-    }
+    const { r, sale, saleErr } = await consultSend(x);
+    if(saleErr) toast('상담은 저장됐지만 판매 등록에 실패했습니다: '+saleErr,'bad');
     const closedN=(r.closed||[]).length;
     toast((sale ? `상담 저장 · 판매 ${won(buyAmt)} 함께 등록됨`
                : (r.callback_at?`상담 저장됨 · 콜백 ${fmtWhen(r.callback_at).join(' ')} 예약`:'상담 저장됨'))
@@ -4230,6 +4285,109 @@ async function submitConsult(){
     await loadStatus(); render(); if(MC_LOADED) loadMyConsults(0);
   }catch(e){ toast(e.message,'bad'); }
   b.disabled=false; b.textContent='저장';
+}
+
+/* ═══ 여러 건 담아두기 (판매 's' · 상담 'c') ═══
+   폼을 채우고 [담아두기] → 폼의 고객·상품 칸만 비워지고(공통 칸은 유지) 다음 건을 적는다 → [한꺼번에 저장].
+   저장 전까지 localStorage 에 남아 실수로 새로고침해도 사라지지 않는다. 실패한 줄은 사유와 함께 남는다. */
+const BATCH={s:[],c:[]};
+function batchKey(pfx){ return 'dc_batch_'+pfx+'_'+(CODE||''); }
+function batchLoad(){ ['s','c'].forEach(pfx=>{ try{ BATCH[pfx]=JSON.parse(localStorage.getItem(batchKey(pfx))||'[]'); if(!Array.isArray(BATCH[pfx])) BATCH[pfx]=[]; }catch(e){ BATCH[pfx]=[]; } batchRender(pfx); }); }
+function batchPersist(pfx){ try{ localStorage.setItem(batchKey(pfx), JSON.stringify(BATCH[pfx])); }catch(e){} }
+function batchLabel(pfx,x){
+  if(pfx==='s'){ const p=x.p; return [`${esc(p.customer_name||'고객 없음')} · ${esc(p.product_name)}${p.items.length>1?` 외 ${p.items.length-1}`:''} · <b>${won(p.gross_amount)}</b>`,
+    `${esc(p.sale_date)} · ${esc(p.sale_kind)} · ${esc(p.stage)}${p.handler?' · '+esc(p.handler):''}`]; }
+  const p=x.p; return [`${esc(p.customer_name)}${p.customer_phone?' · '+esc(p.customer_phone):''} · ${esc(p.interest_category)} · <b>${esc((RES_UI[p.result]||[0,p.result])[1])}</b>${x.buy?` · 판매 ${won(x.buyAmt)}`:''}`,
+    `${esc(p.consult_at)}${p.handler?' · '+esc(p.handler):''}${p.method?' · '+esc(p.method):''}${p.content?' · '+esc(p.content.slice(0,40)):''}`];
+}
+function batchRender(pfx){
+  const box=$(pfx+'_batch'), list=$(pfx+'_bt_list'); if(!box||!list) return;
+  const q=BATCH[pfx]; box.classList.toggle('hidden', !q.length); $(pfx+'_bt_n').textContent=q.length;
+  const sv=$(pfx+'_bt_save'); if(sv && !sv.disabled) sv.textContent=`담아둔 ${pfx==='s'?'판매':'상담'} ${q.length}건 한꺼번에 저장`;
+  list.innerHTML=q.map((x,i)=>{ const [a,b]=batchLabel(pfx,x);
+    return `<div class="bt-row${x.err?' err':''}"><span class="n">${i+1}</span><div class="t">${a}<small>${x.err?'⚠ '+esc(x.err)+' — [수정]으로 고쳐 다시 담으세요':b}</small></div>
+      <div class="ops"><button type="button" onclick="batchEdit('${pfx}',${i})" title="이 줄을 폼으로 되돌려 고칩니다">수정</button><button type="button" class="del" onclick="batchDel('${pfx}',${i})">삭제</button></div></div>`; }).join('');
+}
+function batchAdd(pfx){
+  if(pfx==='s'){ const p=saleCollect(); if(!p) return; BATCH.s.push({p});
+    const keep={date:p.sale_date, stage:p.stage};
+    saleClearForm(); $('s_date').value=keep.date;                       /* 판매일·구분·단계·프로님은 다음 건에도 그대로 */
+    $('s_stage').querySelectorAll('button').forEach(x=>x.className = x.dataset.v===keep.stage ? 'on'+(keep.stage==='매출'?' open':'') : '');
+    $('s_product').focus();
+  } else { const x=consultCollect(); if(!x) return; BATCH.c.push(x);
+    const keep={date:x.p.consult_at, method:x.p.method};
+    consultClearForm(); $('c_date').value=keep.date;                    /* 상담일·상담사·방법·채널·유형·경로는 유지 (clearForm 이 안 건드림) */
+    $('c_method').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===keep.method));
+    $('c_name').focus();
+  }
+  batchPersist(pfx); batchRender(pfx);
+  toast(`담아둠 · ${BATCH[pfx].length}건 — 다음 건을 적고 [담아두기], 다 되면 [한꺼번에 저장]`,'ok');
+}
+function batchDel(pfx,i){ BATCH[pfx].splice(i,1); batchPersist(pfx); batchRender(pfx); }
+function batchClear(pfx){ if(!BATCH[pfx].length) return; if(!confirm(`담아둔 ${BATCH[pfx].length}건을 모두 비울까요? (저장되지 않습니다)`)) return; BATCH[pfx]=[]; batchPersist(pfx); batchRender(pfx); }
+/* 줄을 폼으로 되돌린다 — 고쳐서 다시 [담아두기] 하거나 바로 [저장] */
+function batchEdit(pfx,i){
+  const x=BATCH[pfx][i]; if(!x) return;
+  const dirty = pfx==='s' ? ['s_name','s_phone','s_product','s_amount'].some(id=>($(id).value||'').trim()) : ['c_name','c_phone','c_content'].some(id=>($(id).value||'').trim());
+  if(dirty && !confirm('지금 적던 내용을 지우고 이 줄을 폼으로 가져올까요?')) return;
+  BATCH[pfx].splice(i,1); batchPersist(pfx); batchRender(pfx);
+  const p=x.p;
+  if(pfx==='s'){
+    saleClearForm();
+    $('s_date').value=p.sale_date; if(p.handler) $('s_handler').value=p.handler;
+    $('s_kind').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===p.sale_kind));
+    $('s_stage').querySelectorAll('button').forEach(b=>b.className = b.dataset.v===p.stage ? 'on'+(p.stage==='매출'?' open':'') : '');
+    $('s_name').value=p.customer_name||''; $('s_phone').value=p.customer_phone||''; LINK.s=p.buyer_key||null;
+    const it=p.items||[]; const f=it[0]||{};
+    $('s_product').value=f.product_name||p.product_name||''; $('s_model').value=f.model_code||p.model_code||''; $('s_qty').value=f.qty||1;
+    $('s_amount').value=f.amount?Number(f.amount).toLocaleString('ko-KR'):''; it.slice(1).forEach(addSaleItem); saleTotal();
+    $('s_pay').value=p.payment_method||''; $('s_consult').value=p.consult_ref||''; if(p.consult_id){ $('s_consult').dataset.cid=p.consult_id; $('s_consult').dataset.ref=p.consult_ref||''; }
+    $('s_notes').value=p.notes||''; $('s_next').value=p.next_model_code||''; $('s_next_date').value=p.next_expected_date||''; $('s_next_note').value=p.next_note||'';
+    $('s_gift').value=p.gift_name||''; $('s_gift_amt').value=p.gift_amount?Number(p.gift_amount).toLocaleString('ko-KR'):'';
+    $('s_consent').classList.toggle('on', !!p.consent_marketing);
+    $('s_product').focus();
+  } else {
+    consultClearForm();
+    $('c_date').value=p.consult_at; if(p.handler) $('c_handler').value=p.handler;
+    $('c_name').value=p.customer_name||''; $('c_phone').value=p.customer_phone||''; LINK.c=p.buyer_key||null;
+    if(p.channel_code){ C_CH=p.channel_code; } if(p.type_code){ C_TY=p.type_code; } if(INQ) renderInqChips();
+    $('c_ch_etc').value=p.channel_etc||''; if(p.inflow_route){ const r=$('c_route'); if(![...r.options].some(o=>o.value===p.inflow_route)) r.add(new Option(p.inflow_route,p.inflow_route)); r.value=p.inflow_route; }
+    $('c_method').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===p.method));
+    const cats=(p.interest_category||'').split(',').map(v=>v.trim()).filter(Boolean); const known=[...$('c_cat').querySelectorAll('.chip')].map(c=>c.dataset.v);
+    cats.forEach(v=>{ const c=$('c_cat').querySelector(`.chip[data-v="${known.includes(v)?v:'기타'}"]`); if(c) c.classList.add('on'); if(!known.includes(v)){ $('c_cat_etc').classList.remove('hidden'); $('c_cat_etc').value=v; } });
+    $('c_detail').value=p.interest_detail||''; cModelsSet((p.interest_model_code||'').split(',').map(v=>v.trim()).filter(Boolean));
+    $('c_result').value=p.result||'진행중'; cResultChanged();
+    $('c_amount').value=p.expected_amount?Number(p.expected_amount).toLocaleString('ko-KR'):''; $('c_expect').value=p.expected_purchase_date||'';
+    if(x.buy){ $('c_purchase').value=x.buyName||''; $('c_buy_amt').value=x.buyAmt?Number(x.buyAmt).toLocaleString('ko-KR'):''; $('c_buy_model').value=x.buyModel||'';
+      $('c_kind').querySelectorAll('button').forEach(b=>{ b.className = b.dataset.v===x.kind ? 'on '+(x.kind==='구독'?'sub':x.kind==='직판'?'direct':'') : ''; }); }
+    $('c_next').value=p.next_model_code||''; $('c_next_date').value=p.next_expected_date||''; $('c_next_note').value=p.next_note||'';
+    $('c_content').value=p.content||''; if(p.callback_at){ const d=new Date(p.callback_at); $('c_cbDate').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); $('c_cbTime').value=d.toTimeString().slice(0,5); }
+    $('c_gift').value=p.gift_name||''; $('c_gift_amt').value=p.gift_amount?Number(p.gift_amount).toLocaleString('ko-KR'):''; $('c_consent').classList.toggle('on', !!p.consent_marketing);
+    $('c_name').focus();
+  }
+  toast('폼으로 가져왔습니다 — 고친 뒤 [담아두기] 또는 [저장]','ok');
+}
+/* 담아둔 것을 순서대로 보낸다. 성공한 줄은 빠지고 실패한 줄은 사유와 함께 남는다 */
+async function batchSave(pfx){
+  const q=BATCH[pfx]; if(!q.length) return;
+  const sv=$(pfx+'_bt_save'); if(sv.disabled) return; sv.disabled=true;
+  let ok=0, sales=0; const total=q.length;
+  for(let i=0;i<q.length;){
+    sv.textContent=`저장 중… ${ok+1} / ${total}`;
+    const x=q[i];
+    try{
+      if(pfx==='s'){ await rpc('fn_store_sale_submit',{p_code:CODE,p_data:x.p}); }
+      else { const {sale,saleErr}=await consultSend(x); if(sale) sales++; if(saleErr) toast(`${x.p.customer_name}: 상담은 저장됐지만 판매 등록 실패 — ${saleErr}`,'bad'); }
+      q.splice(i,1); ok++;
+    }catch(e){ x.err=e.message||String(e); i++; if(/코드/.test(x.err)){ break; } }
+    batchPersist(pfx); batchRender(pfx);
+  }
+  sv.disabled=false; batchRender(pfx);
+  const fail=q.length;
+  toast(fail ? `${ok}건 저장 · ${fail}건 실패 — 남은 줄을 [수정]으로 고쳐 다시 저장하세요`
+             : `${ok}건 모두 저장됐습니다${sales?` · 판매 ${sales}건 함께 등록`:''}`, fail?'bad':'ok');
+  REPORT_LOADED=false;
+  try{ await loadStatus(); render(); if(pfx==='c' && MC_LOADED) loadMyConsults(0); }catch(e){}
 }
 
 /* ═══ 일 마감 ═══ */
