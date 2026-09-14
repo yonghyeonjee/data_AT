@@ -956,9 +956,15 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 /* 큰 글자 : KPI 는 두 칸씩 */
 html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 @media(max-width:560px){
-  /* 좁은 폰에서 구분 버튼·작은 버튼 글자가 상자 밖으로 잘리지 않게 — 띄어쓰기에서 줄을 바꾸고, 정 안 되면 글자 사이에서 */
-  .seg button,.mini{white-space:normal;word-break:keep-all;overflow-wrap:anywhere;line-height:1.25}
-  .seg button{padding-left:3px;padding-right:3px}
+  /* 좁은 폰에서 버튼 글자가 '연/락/전' 처럼 한 자씩 쪼개지던 것 (2026-09-15 폰 사진).
+     원인은 overflow-wrap:anywhere — 칸이 좁으면 글자 사이에서 끊는다.
+     대신 버튼이 글자 폭만큼 잡고(flex:1 1 auto), 한 줄에 안 들어가면 버튼째로 다음 줄로 접는다. */
+  .seg{flex-wrap:wrap}
+  .seg button,.mini{white-space:normal;word-break:keep-all;overflow-wrap:normal;line-height:1.25}
+  .seg button{flex:1 1 auto;padding-left:8px;padding-right:8px}
+  .seg.cres button{flex:1 1 auto}
+  /* 칸을 반으로 쪼개면 버튼이 들어갈 자리가 없는 것은 한 줄을 다 쓴다 */
+  .grid2>.f.wide-m,.grid3>.f.wide-m{grid-column:1 / -1}
 }
 @media(max-width:560px){
   /* 큰 글자 + 좁은 폰 : 접힌 줄의 ▼ 가 밖으로 삐져나온다 — 줄 전체가 눌리므로 화살표는 감춘다 */
@@ -1502,7 +1508,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </div>
       <div class="fgrp a"><div class="fgrp-t">어디까지 갔나</div>
       <div class="grid3">
-        <div class="f"><label>상담 상태 <span class="hint">연락 전 = 아직 통화 안 함 · 완료 = 안 삼 · 구매함 = 판매까지</span></label>
+        <div class="f wide-m"><label>상담 상태 <span class="hint">연락 전 = 아직 통화 안 함 · 완료 = 안 삼 · 구매함 = 판매까지</span></label>
           <div class="seg sm cres" id="c_res_seg">
             <button type="button" data-v="진행전">연락 전</button>
             <button type="button" data-v="진행중" class="on">상담중</button>
