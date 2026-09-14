@@ -270,6 +270,8 @@ end $outer$;
   한 방향(우리 → 구글). 구글은 보통 몇 시간~하루에 한 번 가져간다. 주소는 `_secrets.local.md`. 구글 캘린더 › 다른 캘린더 › URL 로 추가.
   **지정 캘린더에 직접 넣는 쪽은 GAS `tools/gas/leave_calendar.gs`** (CAL_ID = 매장 공유 캘린더, `fn_leave_feed(p_key)` JSON 을 15분마다 읽어 종일 일정 생성·수정·삭제, 반차는 09:00~15:00 시간 일정(태그 `id:날짜`), 태그 `dc_leave_id` 로 식별, 종류별 색). 키는 같은 leave_ics 토큰. 설치는 사용자가 붙여넣고 트리거 1회 실행.
 - **점장 권한을 관리자 권한 표에서 준다 (mvp_133)** — `core.perm_def 'mgr'`(기본 꺼짐, 맨 앞 열). `core.f_staff_is_mgr` = 직함(점장·대표·전체)·부서(대표·전체·개발) OR `f_has_perm('mgr')`. `fn_staff_perms` 의 `auto_mgr` 로 직함 자동인 사람은 체크가 잠겨 '직함' 표시. 담당자 화면은 서버 is_mgr 을 그대로 쓰므로 체크만 하면 배정·휴가·담당자별 현황이 열린다.
+- **네임카드는 데이터센터가 원본 (mvp_137 · 2026-09-14)** — 견적서 페이지가 `fn_quote_nc_list/save/delete`(anon + 페이지 보안 코드 해시 `core.app_setting.quote_page_code_hash`) 로 `core.namecard` 를 읽고 쓴다. GAS `action=namecards/saveNamecard/deleteNamecard` 와 시트 [네임카드] 탭은 더 이상 안 쓴다(그대로 두면 됨). 첫 로드 때 브라우저 캐시에만 있던 카드를 데이터센터로 한 번 옮긴다. 세션 전달본 PHP 에 폰 레이아웃과 같이 들어 있다 — 고도몰에 올려야 동작.
+  휴가 입력 창: '누구' → '담당자 선택', 위에 [매장]/[전체] 세그(`#lv_scope`, `lvFillStaff`). `fn_store_leave_list` 가 `staff_dept`(이름·부서, 테스트 계정 제외, 매장 먼저)를 준다.
 - **고객 견적서 전화 버튼은 담당 네임카드 휴대폰 (2026-09-14)** — `fn_quote_public` 은 `quote->opt->namecardId` → 이름 → `core.staff.mobile` → 매장 번호 순. core.namecard 에 카드가 없으면 매장 번호로 떨어진다(지용현 카드가 없어서 031 로 나왔던 건). 지용현 카드(NC1788421248760)를 직접 넣었고, `fn_submit_quote` 가 payload `namecard` 를 받으면 core.namecard 를 upsert 한다 — 견적내역 GAS `dcForwardQuote_` 가 네임카드 탭에서 찾아 실어 보내도록 패치(`tools/gas/quote_forward.gs` 참고).
 - **판매·상담 입력 [＋ 새 판매 입력]·[＋ 새 상담 입력]** (카드 제목 오른쪽) — `saleClearForm()`·`consultClearForm()` 이 저장 뒤 비우기와 같은 함수. 적던 게 있으면 confirm.
 - **일 마감 기본 줄** — 그날 판매 입력이 없으면 일시불·구독 두 줄, 프로 = 로그인한 사람(전체 모드는 빈칸). 프로 빈 줄도 본인으로. 판매완료 입력 칸(`.drow .ds`)은 숨김 — 값은 판매 입력에서 자동, 저장은 그대로.

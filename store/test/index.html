@@ -1228,7 +1228,9 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="lvAddTitle">
           <h3 id="lvAddTitle">휴가 입력</h3>
           <div class="lvform">
-            <div><label for="lv_staff">누구</label><select class="in" id="lv_staff"></select></div>
+            <div><label for="lv_staff">담당자 선택</label>
+              <div class="seg sm" id="lv_scope" style="margin:0 0 6px"><button type="button" data-v="매장" class="on" onclick="lvScope(this)">매장</button><button type="button" data-v="전체" onclick="lvScope(this)">전체</button></div>
+              <select class="in" id="lv_staff"></select></div>
             <div class="two"><div><label for="lv_from">시작일</label><input class="in" type="date" id="lv_from"></div><div><label for="lv_to">종료일</label><input class="in" type="date" id="lv_to" onchange="if($('lv_from').value&&this.value<$('lv_from').value)this.value=$('lv_from').value"></div></div>
             <div><label for="lv_kind">종류</label><select class="in" id="lv_kind" onchange="lvKindHint()">
               <option value="반차">반차 (오후 3시까지)</option><option value="휴무">휴무</option><option value="교육">교육</option><option value="휴가" selected>휴가</option><option value="연차">연차</option><option value="매장휴무">매장휴무</option>
@@ -3429,13 +3431,23 @@ function lvRenderList(){
 async function loadLeave(){
   const box=$('lvList'); if(!box) return;
   try{ LV=await rpc('fn_store_leave_list',{p_code:CODE}); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
-  const sel=$('lv_staff'); if(sel && !sel.options.length) sel.innerHTML='<option value="">누구</option>'+(LV.staff||[]).map(n=>`<option>${esc(n)}</option>`).join('');
+  lvFillStaff();
   const today=LV.today||[]; $('lvSub').textContent = today.length ? `오늘 휴가 ${today.join(', ')}` : '오늘 휴가 없음';
   lvRender();
 }
+/* 담당자 목록 — 기본은 매장 사람만, [전체] 를 누르면 온라인·개발까지. 테스트 계정은 서버에서 뺀다 */
+function lvFillStaff(){
+  const sel=$('lv_staff'); if(!sel||!LV) return;
+  const scope=(($('lv_scope')&&$('lv_scope').querySelector('button.on'))||{}).dataset?.v||'매장';
+  const cur=sel.value;
+  const list=(LV.staff_dept&&LV.staff_dept.length) ? LV.staff_dept.filter(x=>scope==='전체'||x.dept==='매장').map(x=>x.name) : (LV.staff||[]);
+  sel.innerHTML='<option value="">담당자 선택</option>'+list.map(n=>`<option>${esc(n)}</option>`).join('');
+  if(cur && list.includes(cur)) sel.value=cur;
+}
+function lvScope(b){ $('lv_scope').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); lvFillStaff(); }
 async function lvSave(){
   const st=$('lv_staff').value, f=$('lv_from').value, t=$('lv_to').value;
-  if(!st) return toast('누구의 휴가인지 고르세요','bad'); if(!f||!t) return toast('기간을 넣으세요','bad'); if(t<f) return toast('종료일이 시작일보다 앞입니다','bad');
+  if(!st) return toast('담당자를 고르세요','bad'); if(!f||!t) return toast('기간을 넣으세요','bad'); if(t<f) return toast('종료일이 시작일보다 앞입니다','bad');
   const kind=$('lv_kind').value||'휴가';
   try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null,p_kind:kind});
     toast(`${st} ${kind} ${f}${t!==f?'~'+t:''} 넣었습니다 — ${kind==='매장휴무'?'배정은 그대로 갑니다':kind==='반차'?'오후 3시까지 자동 배정에서 빠집니다':'그동안 자동 배정에서 빠집니다'}`,'ok'); $('lv_note').value=''; LV_PICK=null; $('lvAdd').classList.add('hidden'); loadLeave();
