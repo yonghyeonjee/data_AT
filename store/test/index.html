@@ -1238,10 +1238,11 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel hidden" id="tab-stats">
     <div class="card" id="stCard">
       <h2>상담 현황 <span id="stSub"></span></h2>
-      <p class="note-in" style="margin-top:0">문의가 얼마나 들어와서 얼마나 구매로 이어졌는지. <b>삭제한 상담은 빠집니다.</b> [＋ 새 상담]으로 이어진 상담은 <b>한 건</b>으로 셉니다 — 문의 날짜·채널은 처음 들어온 건, 결과는 마지막 건 기준.</p>
+      <p class="note-in" style="margin-top:0">문의가 얼마나 들어와서 얼마나 구매로 이어졌는지. <b>매장</b> = 구독 문의 · 매장 직접 방문 · 홈페이지 문의 · 네이버톡 · 카카오채널, <b>매장 외</b> = B2B · 소모품 · 렌탈 · VMS. <b>삭제한 상담은 빠집니다.</b> [＋ 새 상담]으로 이어진 상담은 <b>한 건</b>으로 셉니다 — 문의 날짜·채널은 처음 들어온 건, 결과는 마지막 건 기준.</p>
       <div class="daterow">
         <div class="seg sm" id="st_grain"><button type="button" data-v="day">일</button><button type="button" class="on" data-v="month">월</button><button type="button" data-v="year">연</button></div>
         <div class="seg sm hidden" id="st_who"><button type="button" class="on" data-v="me">내 것</button><button type="button" data-v="">전체</button></div>
+        <div class="seg sm" id="st_scope" title="B2B · 소모품 · 렌탈 · VMS 는 매장 외입니다"><button type="button" class="on" data-v="store">매장</button><button type="button" data-v="out">매장 외</button><button type="button" data-v="">전체</button></div>
         <button class="btn ghost sm" onclick="loadStats()">새로고침</button>
       </div>
       <div class="chips" id="st_months" aria-label="기간 빠른 선택"></div>
@@ -3495,16 +3496,34 @@ function stHBars(C){
   const mx=Math.max(1,...C.map(x=>Number(x.total)||0));
   return `<div class="hb">${C.slice(0,8).map(x=>`<span class="n">${esc(x.ch)}</span><span class="tr" title="문의 ${x.total} · 구매 ${x.bought}"><i style="width:${(100*x.total/mx).toFixed(1)}%"></i><b style="width:${(100*x.bought/mx).toFixed(1)}%"></b></span><span class="q"><b>${x.total}</b> · 구매 ${x.bought}${x.total?` (${x.rate!=null?x.rate:Math.round(100*x.bought/x.total)}%)`:''}</span>`).join('')}</div>`;
 }
+/* 매장 / 매장 외 — 매장 직원(점장님 포함)은 '매장'이 기본, 개발·온라인 계정만 '전체'.
+   무엇이 매장 외인지는 서버가 정한다 (core.inq_channel.scope · 출처 web_b2b·web_supply·vms) */
+let ST_SCOPE=null;
+function stScope(){
+  if(ST_SCOPE===null){
+    try{ const v=localStorage.getItem('dc_st_scope'); if(v!==null) ST_SCOPE=v; }catch(e){}
+    if(ST_SCOPE===null) ST_SCOPE = /개발|온라인/.test((STATUS&&STATUS.dept)||'') ? '' : 'store';
+  }
+  const seg=$('st_scope'); if(seg) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===ST_SCOPE));
+  return ST_SCOPE;
+}
+document.addEventListener('click', e=>{ const b=e.target.closest('#st_scope button'); if(!b) return;
+  ST_SCOPE=b.dataset.v; try{ localStorage.setItem('dc_st_scope', ST_SCOPE); }catch(e2){} loadStats(); });
 async function loadStats(){
   const box=$('stBody'); if(!box) return;
   stMonthChips();
   const grain=(($('st_grain').querySelector('button.on')||{}).dataset||{}).v||'month';
   const who=(STATUS&&STATUS.is_mgr) ? ((($('st_who').querySelector('button.on')||{}).dataset||{}).v) : undefined;
+  const scope=stScope();
   box.innerHTML='<div class="empty">불러오는 중…</div>';
-  let d; try{ d=await rpc('fn_store_consult_stats',{p_code:CODE,p_grain:grain,p_handler: who===''?'':null,p_from:periodOf('st').from,p_to:periodOf('st').to}); }
+  let d; try{ d=await rpc('fn_store_consult_stats',{p_code:CODE,p_grain:grain,p_handler: who===''?'':null,p_from:periodOf('st').from,p_to:periodOf('st').to,p_scope:scope||null}); }
   catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const t=d.total||{}; const P=d.periods||[], C=d.channels||[], HD=d.handlers||[];
-  $('stSub').textContent = `${d.from} ~ ${d.to} · ${who===''?'전체':'내 것'}`;
+  const SN=d.scope_n||{}; const scLbl = scope==='store'?'매장':scope==='out'?'매장 외':'전체';
+  $('stSub').textContent = `${d.from} ~ ${d.to} · ${who===''?'전체':'내 것'} · ${scLbl}`;
+  { const seg=$('st_scope'); if(seg) seg.querySelectorAll('button').forEach(b=>{
+      const k=b.dataset.v, cnt = k==='store' ? (SN.store||0) : k==='out' ? (SN.out||0) : ((SN.store||0)+(SN.out||0));
+      b.textContent = (k==='store'?'매장':k==='out'?'매장 외':'전체') + ' ' + cnt; }); }
   const pl=v=>v==='day'?'일':v==='year'?'연':'월';
   const fmtP=x=> grain==='day'? x.slice(5).replace('-','/') : grain==='month'? x.slice(2).replace('-','.') : x;
   const nonbuy=(Number(t.hold)||0)+(Number(t.done)||0)+(Number(t.reject)||0);

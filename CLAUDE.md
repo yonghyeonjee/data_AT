@@ -307,6 +307,10 @@ end $outer$;
 - **관리자 대시보드 캐시 (mvp_140)** — 느렸던 이유: 관리자 기본 12개월 키가 15분 워밍(`core.f_dash_warm`)에 없어 6시간마다 5~10초 콜드 빌드(8초 제한에 걸리기도). 12개월 키를 워밍에 넣고 `fn_dash_payload` 는 24시간 캐시를 바로 준다. '전체 기간'은 `f_dash_payload` 800일 제한이라 못 넣는다.
   화면: [캐시 지우고 새로고침](= `fn_dash_refresh`, 캐시 삭제 후 재집계) · [전체 화면 ⛶](`dashFullscreen`, `#dashFull` requestFullscreen, Esc). admin.html 과 admin/test 동일.
 - **'오늘' 은 한국 날짜 (mvp_140)** — DB 가 UTC 라 자정~09시엔 `current_date` 가 어제였다 → 오늘 입력한 판매에 어제 것이 남아 보임(01:03 지적). `fn_store_status` 등 fn_store_* 8개의 `current_date` 를 `((now() at time zone 'Asia/Seoul')::date)` 로 치환(`pg_get_functiondef` 통째 치환).
+- **상담 현황을 매장 / 매장 외로 나눈다 (mvp_142 · 2026-09-15)** — `core.inq_channel.scope`('store'|'out'): **매장** = 구독 문의 · 매장 직접 방문 · 홈페이지 문의 · 네이버톡 · 카카오채널 · 기타, **매장 외** = VMS · 렌탈(소모품).
+  `core.f_consult_scope(channel_code, source)` 는 출처가 `web_b2b`·`web_supply`·`vms` 면 채널과 무관하게 매장 외 (B2B 문의는 채널 코드가 없을 때가 있다).
+  `core.f_consult_stats` 에 `p_scope`(빈값=전체) — `c` CTE 에 scope 열, `cs` 로 거르고 나머지 CTE 는 `cs` 를 쓴다. 응답에 `scope`·`scope_n`{store,out}. 5인자 판은 drop(두 판이 있으면 호출이 모호).
+  화면 `#st_scope` 세그 [매장 N][매장 외 N][전체 N] — **매장 직원(점장님 포함)은 매장이 기본**, dept 가 개발·온라인이면 전체. 고른 값은 `localStorage dc_st_scope`. 테스트 `ptest/scope.mjs`.
 - **상담 탭 배지 = [할 일] 칩과 같은 수 (mvp_141)** — `fn_store_requests.inbox.mine_open` 이 `진행중·보류` 를 세어 보류 5건이 든 배지 7 과 화면 [할 일] 2 가 달랐다. `진행전·진행중` 으로 맞췄다.
   같은 함수의 `unassigned`(배정 배지)도 `진행전` 이 빠져 있어 `진행전·진행중·보류` 로 고쳤다 (온라인 문의는 진행전으로 들어온다).
 - **CRM 알림 내역 종류 필터는 체크박스** — `AL_KINDS`(Set, 기본 견적서·콜백) · `localStorage dc_al_kinds`. [전체] 칩은 뺐다. 예시 줄은 견적서를 켰을 때만.

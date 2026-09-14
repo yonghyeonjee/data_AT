@@ -17,3 +17,10 @@
 -- mvp_141 (2026-09-15) 상담·배정 탭 배지 수 맞추기 — fn_store_requests 의 inbox
 --   mine_open  : ('진행중','보류')      → ('진행전','진행중')          (화면 [할 일] 칩과 같게, 보류 제외)
 --   unassigned : ('진행중','보류')      → ('진행전','진행중','보류')   (온라인 문의는 진행전으로 들어온다)
+
+-- mvp_142 (2026-09-15) 상담 현황 : 매장 / 매장 외
+--   core.inq_channel.scope ('store'|'out', 기본 store) — vms·rental 만 out
+--   core.f_consult_scope(ch, source) : 출처 web_b2b·web_supply·vms 면 채널과 무관하게 out
+--   core.f_consult_stats 에 p_scope 추가 (c CTE 에 scope 열 · cs 로 거르고 나머지 CTE 는 cs 사용 · 응답에 scope·scope_n)
+--     5인자 판을 drop 하고 6인자로 새로 만들었다 (기본값 때문에 두 판이 있으면 호출이 모호해진다)
+--   fn_store_consult_stats / fn_consult_stats 도 p_scope 를 그대로 넘긴다 (옛 시그니처 drop → 새로 create → grant)
