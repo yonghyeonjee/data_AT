@@ -307,6 +307,10 @@ end $outer$;
 - **관리자 대시보드 캐시 (mvp_140)** — 느렸던 이유: 관리자 기본 12개월 키가 15분 워밍(`core.f_dash_warm`)에 없어 6시간마다 5~10초 콜드 빌드(8초 제한에 걸리기도). 12개월 키를 워밍에 넣고 `fn_dash_payload` 는 24시간 캐시를 바로 준다. '전체 기간'은 `f_dash_payload` 800일 제한이라 못 넣는다.
   화면: [캐시 지우고 새로고침](= `fn_dash_refresh`, 캐시 삭제 후 재집계) · [전체 화면 ⛶](`dashFullscreen`, `#dashFull` requestFullscreen, Esc). admin.html 과 admin/test 동일.
 - **'오늘' 은 한국 날짜 (mvp_140)** — DB 가 UTC 라 자정~09시엔 `current_date` 가 어제였다 → 오늘 입력한 판매에 어제 것이 남아 보임(01:03 지적). `fn_store_status` 등 fn_store_* 8개의 `current_date` 를 `((now() at time zone 'Asia/Seoul')::date)` 로 치환(`pg_get_functiondef` 통째 치환).
+- **태그 색을 뜻별로 나눴다 (2026-09-15 · store/test 에 먼저)** — 배정·내 상담 줄의 관심 품목·문의 채널·문의 유형·담당자가 전부 청록이라 "구분이 안 된다"는 지적.
+  `.tag.itm` 관심 품목=청록 · `.tag.src` 문의 채널=파랑 · `.tag.ty` 문의 유형=보라 테두리 · `.tag.via` 유입경로=회색 · `.tag.hd` 담당자=**진한 청록 채움**(미배정은 `.none` 빨강 테두리) ·
+  `.tag.new` 연락 전=빨강 · `.tag.hold` 보류=노랑 · `.tag.mth-t` 상담 방법=슬레이트 · `.tag.re` 회차=주황 · `.tag.qt` 견적=금색. 인라인 style 로 박혀 있던 것들을 클래스로 뺐다.
+  배정 카드 머리에 `.taglegend` 한 줄(각 뜻을 그 색 태그로) 을 넣었다. 테스트 `ptest/tagshot.mjs` — 한 줄 안 태그가 서로 다른 색인지 · 종류가 7가지 이상인지 · **글자 대비 4.5:1** 인지를 잰다.
 - **폰에서 세그 버튼 글자가 한 자씩 쪼개지던 것 (2026-09-15 폰 사진)** — '연락 전' 이 연/락/전 으로 세로로 섰다. 범인은 모바일 보정의 `.seg button{overflow-wrap:anywhere}` — 칸이 좁으면 글자 사이에서 끊는다.
   `overflow-wrap:normal` 로 바꾸고 `.seg{flex-wrap:wrap}` + `.seg button{flex:1 1 auto}` 로 **버튼이 글자 폭만큼 잡고, 한 줄에 안 들어가면 버튼째로 다음 줄**. 반쪽 칸으로는 답이 없는 것은 `.f.wide-m` 을 붙여 폰에서 한 줄을 다 쓴다(상담 상태).
   상담 상태 버튼이 5개(연락 전 추가)가 되면서 드러났다. 확인은 `ptest/segshot.mjs` — 360·390·412px × 글자 1·1.3 에서 세그 버튼마다 **실제 줄 수(Range.getClientRects)** 와 44×40px 를 잰다.
