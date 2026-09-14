@@ -3592,7 +3592,9 @@ async function loadOption(){
       <td><b>${esc(x.name)}</b>${x.custom?'':' <span class="tag n" title="기본 묶음을 그대로 씁니다">기본값</span>'}</td>
       <td style="font-size:calc(12.5px * var(--font-scale))">${esc([x.dept,x.role_note].filter(Boolean).join(' · '))}</td>
       <td class="mono" style="font-size:calc(12px * var(--font-scale))">${esc(x.code||'')}</td>
-      ${ps.map(p=>`<td style="text-align:center"><input type="checkbox" data-s="${x.id}" data-p="${p.code}" ${(x.perms||[]).includes(p.code)?'checked':''} onchange="togglePerm(${x.id})" style="width:16px;height:16px;cursor:pointer"></td>`).join('')}
+      ${ps.map(p=> (p.code==='mgr' && x.auto_mgr)
+          ? `<td style="text-align:center" title="직함(점장·대표)·부서로 자동 — 직원 관리에서 직함을 바꾸면 풀립니다"><input type="checkbox" checked disabled style="width:16px;height:16px"><div style="font-size:calc(10px * var(--font-scale));color:var(--muted)">직함</div></td>`
+          : `<td style="text-align:center"><input type="checkbox" data-s="${x.id}" data-p="${p.code}" ${(x.perms||[]).includes(p.code)?'checked':''} onchange="togglePerm(${x.id})" style="width:16px;height:16px;cursor:pointer"></td>`).join('')}
       <td style="white-space:nowrap"><button class="btn sm ghost" onclick='openStaffModal(${JSON.stringify(x).replace(/'/g,"&#39;")})'>수정</button>${x.custom?`<button class="btn sm ghost" onclick="resetPerm(${x.id})">기본값</button>`:''}</td></tr>`).join('');
   loadEcConfig(); loadPinAttempts(); loadGiftLinks(); loadQuickLinks();
 }
