@@ -1393,6 +1393,12 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         </div>
         <div class="card">
           <h3>발송 대상 추출 <span>수신동의 + 연락처 있는 고객만 · 추출과 내보내기는 감사로그에 남습니다</span></h3>
+          <div class="filters" style="margin-bottom:10px">
+            <span class="note" style="font-weight:700">대상 기준</span>
+            <button class="btn sm" id="tbBasisC" onclick="setBasis('consent')">수신동의 고객</button>
+            <button class="btn sm ghost" id="tbBasisR" onclick="setBasis('repeat')">거래 재구매 주기</button>
+            <span class="note" id="basisNote">광고성 메시지를 보내도 된다고 동의한 고객만 나옵니다.</span>
+          </div>
           <div id="segBar" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px">
             <span class="note" style="font-weight:700">자주 쓰는 조건</span>
             <span id="segChips" style="display:flex;flex-wrap:wrap;gap:6px"></span>
@@ -4109,7 +4115,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadWebInq(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:loadCrmFunnel,upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify};
+const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadWebInq(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();},upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
@@ -4883,6 +4889,7 @@ function tgParams(){
     p_region:v('crmRegion')||null, p_kind:v('crmKind')||null, p_from:v('crmFrom')||null, p_to:v('crmTo')||null,
     p_min_cnt:v('crmMinCnt')?Number(v('crmMinCnt')):null, p_min_net:v('crmMinNet')?Number(v('crmMinNet')):null,
     p_dormant_days:v('crmDormant')?Number(v('crmDormant')):null, p_no_send_days:v('crmNoSend')?Number(v('crmNoSend')):null,
+    p_basis:TG_BASIS,
     p_next_only:$('crmNext').classList.contains('on'), p_sort:v('crmSort'),
     p_unmask:$('crmUnmask').classList.contains('on') };
 }
@@ -4988,6 +4995,20 @@ async function saveSegment(){
   catch(e){ toast(e.message,'bad'); }
 }
 
+/* 대상 기준
+   consent — 수신동의를 받은 고객 (지금까지 쓰던 기준)
+   repeat  — 산 지 오래된 거래처. 주기 = (마지막 - 처음) / (산 날 수 - 1) 를 넘겼고 주기의 3배 안,
+             마지막 거래가 2년 안인 사람. 동의 여부를 안 보므로 보낼 수 있는지는 사람이 판단한다. */
+let TG_BASIS = localStorage.getItem('dc_tg_basis') || 'consent';
+function setBasis(b){
+  TG_BASIS = b; try{ localStorage.setItem('dc_tg_basis', b); }catch(e){}
+  $('tbBasisC').className = 'btn sm' + (b==='consent' ? '' : ' ghost');
+  $('tbBasisR').className = 'btn sm' + (b==='repeat'  ? '' : ' ghost');
+  $('basisNote').innerHTML = b==='repeat'
+    ? '산 지 <b>재구매 주기를 넘긴</b> 거래처입니다 (VMS·렌탈 포함). <b>수신동의와 무관하게</b> 나오므로, 광고성 메시지를 보내도 되는지는 보내기 전에 확인하세요.'
+    : '광고성 메시지를 보내도 된다고 동의한 고객만 나옵니다.';
+  if(TG) loadTargets(0);
+}
 function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value='');
   $('crmNext').classList.remove('on'); $('crmSort').value='recent'; if($('crmReason').value.trim().length>=3) loadTargets(0); }
 async function exportTargets(kind){
@@ -5178,13 +5199,14 @@ function pickMall(k){
    [발송 대상 추출] 에서 캠페인별로 빼거나 전체를 뺄 수 있고, 같은 캠페인을 다시 올려도 중복되지 않는다 */
 function renderSendOpts(){
   const dates=UP.data.map(r=>excelDate(H(r,'발송일','발송일시','일자'))).filter(Boolean).sort();
+  const fail=mapRows(UP).filter(x=>x.status==='failed').length;
   $('upOpts').innerHTML=`<div style="grid-column:1/-1">
     <label>캠페인명 <span style="color:var(--bad)">필수</span> — 언제 무엇을 보냈는지 (예: 2026-08 정수기필터 안내)</label>
     <input class="in" id="upCamp" placeholder="2026-08 정수기필터 안내" oninput="sendOptsChanged()">
     <label style="margin-top:8px">발송일 <span class="note">줄마다 발송일이 없을 때 쓸 날짜</span></label>
     <input class="in" type="date" id="upSentAt" value="${dates[0]||''}">
     <p class="note" style="margin-top:6px">${dates.length?`파일 안 발송일 ${esc(dates[0])} ~ ${esc(dates[dates.length-1])}`:'파일에 발송일 열이 없습니다 — 위 날짜로 들어갑니다'} ·
-      휴대폰 뒤 8자리로 고객 마스터와 맞춥니다. 마스터에 없는 번호는 건너뜁니다.</p></div>`;
+      휴대폰 뒤 8자리로 고객 마스터와 맞춥니다. 마스터에 없는 번호는 건너뜁니다.${fail?`<br><b style="color:var(--bad)">발송 실패 ${n(fail)}건</b>은 고객이 못 받았으므로 제외 대상에서 빠집니다.`:''}</p></div>`;
   sendOptsChanged();
 }
 function sendOptsChanged(){
@@ -5216,8 +5238,12 @@ function mapRows(u){
       term:str(H(r,'계약 기간','계약기간')), name:str(H(r,'상품명')), cycle:str(H(r,'서비스 주기','서비스주기')),
       item_code:str(H(r,'모델코드')), total_fee:str(H(r,'총 구독료(V+)','총 구독료','총구독료(V+)')),
       monthly_fee:str(H(r,'월구독료(v+)','월 구독료(V+)','월구독료','월 구독료')), care_case:str(H(r,'케어구분')) })); }
-  if(u.kind==='send_log'){ return d.map(r=>({ phone:str(H(r,'수신번호','휴대폰','휴대폰번호','연락처','전화번호')),
-      name:str(H(r,'이름','고객명','수신자')), sent_at:excelDate(H(r,'발송일','발송일시','일자'))||null }))
+  if(u.kind==='send_log'){ return d.map(r=>{ const st=str(H(r,'상태'))+' '+str(H(r,'비고'));
+      return { phone:str(H(r,'수신번호','휴대폰','휴대폰번호','연락처','전화번호')),
+        name:str(H(r,'이름','고객명','수신자')),
+        sent_at:excelDate(H(r,'실 발송 일시','발송일','발송일시','발송 일시','일자'))||null,
+        /* 실패한 건은 고객이 못 받았으니 '보낸 사람' 에서 빼야 한다 */
+        status:/실패|반송|expired|거부/i.test(st)?'failed':'sent' }; })
       .filter(x=>x.phone.replace(/\D/g,'').length>=8); }
   if(u.kind==='store_manual'){ const out=[]; d.forEach(r=>{ const date=excelDate(H(r,'날짜')); if(!date) return; const rows=[]; Object.keys(r).forEach(k=>{ const v=Number(r[k]); if(!v||/_환불$/.test(k)) return; const refund=Number(r[k+'_환불'])||0; if(k==='매장-일시불') rows.push({sale_kind:'일시불',sales:v,refund}); else if(k==='매장-구독') rows.push({sale_kind:'구독',sales:v,refund}); else if(/-직판$/.test(k)) rows.push({sale_kind:'직판',handler:k.replace(/프로?-직판$/,''),sales:v,refund}); }); if(rows.length) out.push({date,rows}); }); return out.map(x=>({date:x.date,rows:JSON.stringify(x.rows)})); }
   return [];
@@ -5337,7 +5363,7 @@ const PAGE_INFO={
     s:['결과·상담사·유입경로·검색어로 좁힙니다. 활성 조건은 칩으로 표시됩니다.','결과 드롭다운을 바꾸면 바로 저장됩니다. 구매완료로 바꾸면 판매 입력 시 상담번호로 연결됩니다.','CSV 내보내기는 현재 페이지 기준입니다.','콜백 열은 담당 프로가 매장 화면에서 잡은 재연락 약속입니다. 지남/예정/완료로 표시되며, 담당 프로의 "내 고객" 탭에 같은 약속이 뜹니다.']},
   customers:{d:'여러 채널에 흩어진 구매 이력을 한 사람 단위로 묶어 보는 고객 통합 페이지입니다. 이름+휴대폰 뒤 8자리로 같은 사람을 식별합니다.',
     s:['위 통계는 전체 기준, 아래 목록은 검색·필터 기준입니다.','구매 횟수·수신동의·유입으로 좁혀 재구매·휴면 고객을 찾습니다.','실명·실번호는 관리자만 볼 수 있고 열람이 기록됩니다.']},
-  crm:{d:'광고성 메시지를 보낼 수 있는 고객만 골라내는 페이지입니다. 수신동의와 연락처가 있는 고객만 나옵니다.',
+  crm:{d:'메시지를 보낼 대상을 골라내는 페이지입니다. [대상 기준] 으로 수신동의 고객과 거래 재구매 주기 고객을 나눠 봅니다.',
     s:['캠페인명을 먼저 적습니다. 모든 추출·내보내기가 이 이름으로 감사로그에 남습니다.','조건을 걸고 추출하면 오른쪽 위 카드에 그 조건의 구성이 채워집니다.','"최근 발송 제외"로 같은 사람에게 연달아 보내는 것을 막습니다.','엑셀로 내려받아 문자·알림톡 도구에 넣고, 보낸 결과는 API(fn_send_log_add)로 되돌립니다.'],
     t:'발송 가능 인원이 적으면 고도몰 회원 파일(수신동의 포함)이 들어왔는지 데이터 가져오기에서 먼저 확인하세요.'},
   upload:{d:'외부 시스템의 데이터를 이 서비스에 넣는 페이지입니다. 소스를 고르고 파일을 올리거나 엑셀에서 붙여넣으면, 같은 검증·매핑을 거쳐 중복 없이 적재됩니다.',
