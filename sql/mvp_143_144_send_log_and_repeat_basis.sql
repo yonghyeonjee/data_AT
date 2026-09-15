@@ -285,3 +285,76 @@ begin
     'when ''unpaid_order''  then (select max(uploaded_at) from crm.unpaid_order)
     else null end;');
 end $outer$;
+
+/* ─────────────────────────────────────────────────────────────
+   mvp_146 — 재구매 주기를 2026-08-14 콜랩 방식으로 맞춘다 (2026-09-15)
+
+   사용자가 8/14 발송의 원본(sale_search_raw_0814.csv 20,757행 · 거래처 7,739)과
+   콜랩 노트북을 보여줬다. 거기서 쓴 방식이 우리 것보다 낫다:
+
+   - 주문 = **거래처 × 날짜 합산** (같은 날 여러 전표 = 주문 1건)   ← 우리 buy_days 와 같다
+   - 주기 = 간격의 **중앙값**. 평균은 한 번의 긴 공백에 끌려간다     ← 우리는 평균이었다
+   - **이탈(마지막 구매 365일 초과) 제외**                          ← 우리는 2년이었다
+   - 예상재구매일 = 마지막 구매 + 주기 · 대상 = **D-30 ~ D+14**     ← 우리는 '주기~주기×3'
+   (콜랩은 거래처×모델 3회+ 의 모델 주기를 1순위로 쓰는 3단 폴백까지 했다.
+    우리는 아직 주문 주기만 — 모델 주기는 품목명 파싱이 붙은 뒤에 넣는다.)
+
+   8/14 콜랩 결과: 발송 타겟 266건 / 문자 가능 263건.
+   2026-09-15 우리 DB 로 같은 규칙: 383명 (동의 기준은 그대로 3,741명).
+   ───────────────────────────────────────────────────────────── */
+
+alter table crm.customer_roll add column if not exists cycle_days numeric;
+comment on column crm.customer_roll.cycle_days is '주문 간격 중앙값(일) — 주문 = 고객×날짜 합산. 평균이 아니라 중앙값이다 (2026-08-14 콜랩 방식)';
+
+-- core.f_customer_roll 이 cycle_days 를 채우게 한다
+do $outer$
+declare v_src text; v_old text; v_new text;
+begin
+  select p.prosrc into v_src from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='core' and p.proname='f_customer_roll';
+  if position('cycle_days' in v_src) > 0 then return; end if;
+  v_old := '  select count(*) into v_n from crm.customer_roll;';
+  if position(v_old in v_src) = 0 then raise exception '지점 없음'; end if;
+  v_new := '  with d as (
+      select buyer_key, (order_at at time zone ''Asia/Seoul'')::date dt
+        from core.orders where buyer_key is not null and not coalesce(is_test,false)
+       group by 1,2),
+    g as (select buyer_key, dt - lag(dt) over (partition by buyer_key order by dt) gap from d),
+    m as (select buyer_key, percentile_cont(0.5) within group (order by gap) med
+            from g where gap is not null group by 1)
+  update crm.customer_roll r set cycle_days = m.med from m where m.buyer_key = r.buyer_key;
+
+' || v_old;
+  execute format('create or replace function core.f_customer_roll() returns integer
+                  language plpgsql volatile security definer
+                  set search_path to ''pg_catalog'',''public'' as %L',
+                 replace(v_src, v_old, v_new));
+end $outer$;
+select core.f_customer_roll();
+
+-- fn_crm_targets_v2 의 p_basis='repeat' 조건을 콜랩 방식으로
+do $outer$
+declare v_src text; v_args text; v_old text; v_new text; v_i int;
+begin
+  select p.prosrc, pg_get_function_arguments(p.oid) into v_src, v_args
+    from pg_proc p join pg_namespace n on n.oid=p.pronamespace and n.nspname='public'
+   where p.proname='fn_crm_targets_v2';
+  if position('o.cycle_days is not null' in v_src) > 0 then return; end if;
+  v_i := position('where (case when p_basis = ''repeat'' then' in v_src);
+  if v_i = 0 then raise exception '지점 없음 (repeat 조건)'; end if;
+  v_old := substring(v_src from v_i for
+            position('    and c.phone is not null and length(c.phone) >= 10' in v_src) - v_i);
+  v_new := 'where (case when p_basis = ''repeat'' then
+             o.buy_days >= 2 and o.cycle_days is not null
+             and ((now() at time zone ''Asia/Seoul'')::date
+                  - (o.last_at at time zone ''Asia/Seoul'')::date) <= 365
+             and ((((o.last_at at time zone ''Asia/Seoul'')::date
+                    + (o.cycle_days || '' days'')::interval)::date)
+                  - (now() at time zone ''Asia/Seoul'')::date) between -30 and 14
+           else c.consent_marketing end)
+';
+  execute format('create or replace function public.fn_crm_targets_v2(%s) returns jsonb
+                  language plpgsql volatile security definer
+                  set search_path to ''pg_catalog'',''public'' as %L',
+                 v_args, replace(v_src, v_old, v_new));
+end $outer$;

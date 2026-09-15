@@ -5032,15 +5032,17 @@ async function saveSegment(){
 
 /* 대상 기준
    consent — 수신동의를 받은 고객 (지금까지 쓰던 기준)
-   repeat  — 산 지 오래된 거래처. 주기 = (마지막 - 처음) / (산 날 수 - 1) 를 넘겼고 주기의 3배 안,
-             마지막 거래가 2년 안인 사람. 동의 여부를 안 보므로 보낼 수 있는지는 사람이 판단한다. */
+   repeat  — 재구매 주기가 돌아온 거래처. 2026-08-14 콜랩에서 쓴 방식 그대로:
+             주문 = 고객×날짜 합산 · 주기 = 간격의 **중앙값**(평균은 한 번의 긴 공백에 끌려간다)
+             · 이탈(마지막 구매 365일 초과) 제외 · 예상재구매일(마지막 구매 + 주기) 기준 D-30 ~ D+14.
+             동의 여부를 안 보므로 보낼 수 있는지는 사람이 판단한다. */
 let TG_BASIS = localStorage.getItem('dc_tg_basis') || 'consent';
 function setBasis(b){
   TG_BASIS = b; try{ localStorage.setItem('dc_tg_basis', b); }catch(e){}
   $('tbBasisC').className = 'btn sm' + (b==='consent' ? '' : ' ghost');
   $('tbBasisR').className = 'btn sm' + (b==='repeat'  ? '' : ' ghost');
   $('basisNote').innerHTML = b==='repeat'
-    ? '산 지 <b>재구매 주기를 넘긴</b> 거래처입니다 (VMS·렌탈 포함). <b>수신동의와 무관하게</b> 나오므로, 광고성 메시지를 보내도 되는지는 보내기 전에 확인하세요.'
+    ? '<b>재구매 주기가 돌아온</b> 거래처입니다 — 주기(간격 중앙값)로 예상재구매일을 잡아 <b>D-30 ~ D+14</b> 인 사람, 1년 넘게 안 산 고객은 뺐습니다. <b>수신동의와 무관하게</b> 나오므로 광고성 메시지를 보내도 되는지는 보내기 전에 확인하세요.'
     : '광고성 메시지를 보내도 된다고 동의한 고객만 나옵니다.';
   if(TG) loadTargets(0);
 }
