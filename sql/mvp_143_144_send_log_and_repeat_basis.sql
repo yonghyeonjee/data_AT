@@ -222,3 +222,66 @@ end $g$;
    동의 기준 3,741 · 재구매 주기 1,267 (그중 채널 VMS 1,231)
    8/14 발송분(259명) 을 올려 빼면 1,123명이 남는다.
    그 1,123명의 마지막 거래는 6개월 이내 130 · 6개월 초과 993 (평균 경과 390일, 평균 주기 243일). */
+
+/* ─────────────────────────────────────────────────────────────
+   mvp_145 — 미입금 주문 (고도몰) · 결제 안 한 고객 (2026-09-15)
+
+   샵링커는 **결제가 끝난 주문만** 준다. 고도몰 관리자의 '가/미'(가상계좌·무통장 미입금)
+   주문은 우리 DB 에 안 들어온다 (9/14 KMR85RH 710만원 · 9/12 KQ85QNH80 352만원 확인).
+   그래서 고도몰에서 입금 대기 목록을 받아 따로 쌓는다.
+
+   crm.unpaid_order 는 **스냅샷**이다 — 올릴 때마다 목록에 없는 열린 건은
+   결제됐거나 취소된 것으로 보고 resolved_at 을 찍어 목록에서 내린다.
+   그래서 "입금 대기 전부"를 받아 올려야 한다 (일부만 올리면 나머지가 사라진다).
+   ───────────────────────────────────────────────────────────── */
+
+create table if not exists crm.unpaid_order (
+  order_no    text primary key,
+  mall        text,
+  ordered_at  timestamptz,
+  name        text,
+  phone       text,
+  buyer_key   char(16),
+  product     text,
+  qty         int,
+  amount      numeric,
+  pay_method  text,
+  status      text,
+  memo        text,
+  file_name   text,
+  uploaded_at timestamptz not null default now(),
+  resolved_at timestamptz,
+  updated_at  timestamptz not null default now()
+);
+create index if not exists ix_unpaid_open on crm.unpaid_order (ordered_at desc) where resolved_at is null;
+create index if not exists ix_unpaid_key  on crm.unpaid_order (buyer_key);
+comment on table crm.unpaid_order is '고도몰 미입금(입금 대기) 주문 스냅샷 — 샵링커는 결제 끝난 주문만 주므로 여기로 따로 받는다';
+
+/* fn_unpaid_upsert(p_rows, p_file) · fn_unpaid_list(p_reason, …)
+   본문은 서버에 이미 올라가 있다 (pg_proc 참고). 요점만:
+   - 주문일시에 표준시가 안 붙어 있으면 **KST 로 읽는다** (core.f_ts 는 UTC 로 읽어
+     14:51 주문이 23:51 로 찍혔다)
+   - temp table 이름을 _uw / _ur 로 나누고 drop if exists 를 앞에 둔다
+     (한 트랜잭션에서 upsert 와 list 를 같이 부르면 _u 가 겹쳐 터진다)
+   - fn_unpaid_list 는 p_reason 이 필수고 첫 페이지·내보내기 때 crm.access_log 에 남는다
+   - 이름·번호는 기본 마스킹, admin + p_unmask 일 때만 원문 */
+
+insert into core.data_source (key, label, owner, expect_days, how, sort_no, active, auto_plan)
+values ('unpaid_order', '미입금 주문 (고도몰)', '온라인사업부', 7,
+        '고도몰 관리자 › 주문 목록에서 입금 대기(가상계좌·무통장) 주문을 내려받아 올림 · 올릴 때마다 목록에 없는 건은 결제·취소로 보고 정리됩니다',
+        67, true,
+        '샵링커는 결제가 끝난 주문만 준다. 고도몰 OpenAPI 를 붙이면 자동으로 받을 수 있다')
+on conflict (key) do update
+  set label=excluded.label, owner=excluded.owner, expect_days=excluded.expect_days,
+      how=excluded.how, sort_no=excluded.sort_no, active=true, auto_plan=excluded.auto_plan;
+
+do $outer$
+declare v_def text;
+begin
+  select pg_get_functiondef(p.oid) into v_def from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='core' and p.proname='f_source_last';
+  if position('when ''unpaid_order''' in v_def) > 0 then return; end if;
+  execute replace(v_def, 'else null end;',
+    'when ''unpaid_order''  then (select max(uploaded_at) from crm.unpaid_order)
+    else null end;');
+end $outer$;
