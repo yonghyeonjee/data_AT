@@ -1394,7 +1394,12 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           </div>
         </div>
         <div class="card">
-          <h3>발송 대상 추출 <span>수신동의 + 연락처 있는 고객만 · 추출과 내보내기는 감사로그에 남습니다</span></h3>
+          <h3>발송 대상 추출 <span>연락처 있는 고객만 · 오픈마켓 고객 제외 · 추출과 내보내기는 감사로그에 남습니다</span></h3>
+          <div class="callout warn">
+            <b>오픈마켓(스마트스토어·쿠팡·11번가·지마켓·옥션·SSG·롯데온 등) 고객은 어떤 기준으로도 나오지 않습니다.</b>
+            오픈마켓에서 받은 주문자 정보는 그 주문을 처리하는 데만 쓸 수 있고, 우리 이름으로 광고·안내 메시지를 보내는 데 쓰면 안 됩니다.
+            <b>자사몰(P·S·AT·시흥몰)에서 직접 동의를 받았거나, 자사몰·VMS·렌탈·매장에서 직접 거래한 고객</b>만 남습니다.
+          </div>
           <div class="filters" style="margin-bottom:10px">
             <span class="note" style="font-weight:700">대상 기준</span>
             <button class="btn sm" id="tbBasisC" onclick="setBasis('consent')">수신동의 고객</button>
@@ -1417,16 +1422,31 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             </div>
             <p class="note" style="margin:8px 0 0">아래 <b>최근 구매일 시작·끝</b>이 “<b>그 제품을 산 기간</b>”으로 바뀝니다.
               예) 3~6개월 전에 필터를 산 사람 → 시작·끝을 그 기간으로 잡으세요.</p>
+            <p class="note" style="margin:6px 0 0"><b>오픈마켓에서 산 기록은 세지 않습니다.</b> 같은 제품이라도 스마트스토어·쿠팡 주문으로 알게 된 것은
+              우리가 마케팅에 쓸 수 있는 정보가 아닙니다. 그래서 정수기 필터처럼 오픈마켓 판매가 대부분인 제품은 대상이 매우 적게 나옵니다.</p>
+          </div>
+          <div id="asofBox" class="hidden" style="margin:-4px 0 12px;padding:12px 14px;background:var(--bg2);border-radius:8px">
+            <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:0">
+              <div><label>기준일
+                <span class="note">이 날짜로 예상재구매일을 계산합니다 — <b>보내는 날</b>로 맞추세요</span></label>
+                <input class="in" type="date" id="crmAsof" onchange="if(TG)loadTargets(0)"></div>
+            </div>
+            <p class="note" style="margin:8px 0 0">기준일을 적어 두면 <b>누가 언제 뽑아도 같은 사람이 나옵니다.</b>
+              비워 두면 뽑는 날(오늘)을 쓰므로 하루만 지나도 대상이 달라집니다.</p>
           </div>
           <div id="segBar" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px">
             <span class="note" style="font-weight:700">자주 쓰는 조건</span>
             <span id="segChips" style="display:flex;flex-wrap:wrap;gap:6px"></span>
             <span style="flex:1"></span>
             <button class="btn sm ghost" onclick="saveSegment()">지금 조건을 이름 붙여 저장</button>
+            <button class="btn sm ghost" onclick="pasteCond()">조건 붙여넣기</button>
           </div>
           <div id="segNote" class="note hidden" style="margin:-6px 0 10px;padding:8px 10px;background:var(--bg2);border-radius:8px"></div>
           <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
-            <div style="grid-column:span 2"><label>캠페인명 <span style="color:var(--bad)">필수</span></label><input class="in" id="crmReason" placeholder="예: 9월 정수기필터 재구매 안내"></div>
+            <div style="grid-column:span 2"><label>캠페인명 <span style="color:var(--bad)">필수</span>
+              <span class="note">감사로그·발송 이력·UTM 에 같은 이름이 쓰입니다</span></label>
+              <div style="display:flex;gap:6px"><input class="in" id="crmReason" placeholder="예: 9월 정수기필터 재구매 안내">
+              <button class="btn sm ghost" style="white-space:nowrap" onclick="utmBuild()" title="문자에 넣을 링크에 UTM 을 붙입니다">링크 만들기</button></div></div>
             <div><label>키워드</label><input class="in" id="crmQ" placeholder="이름 · 최근상품 · 관심상품" onkeydown="if(event.key==='Enter')loadTargets(0)"></div>
             <div><label>유입·구매 채널</label><select class="in" id="crmCh"><option value="">전체</option></select></div>
             <div><label>구매 카테고리</label><select class="in" id="crmCat"><option value="">전체</option></select></div>
@@ -4943,6 +4963,7 @@ function tgParams(){
     p_dormant_days:v('crmDormant')?Number(v('crmDormant')):null, p_no_send_days:v('crmNoSend')?Number(v('crmNoSend')):null,
     p_basis:TG_BASIS, p_product:(TG_BASIS==='product' ? ($('crmProd').value.trim()||null) : null),
     p_next_only:$('crmNext').classList.contains('on'), p_sort:v('crmSort'),
+    p_asof:(TG_BASIS==='repeat' ? (v('crmAsof')||null) : null),
     p_unmask:$('crmUnmask').classList.contains('on') };
 }
 function tgFillOptions(o){
@@ -4964,17 +4985,24 @@ async function loadTargets(page){
   const tgPer=pgSize('targets');
   $('tgCount').textContent=`대상 ${n(d.total)}명 · 누적 구매 ${wonK(s.net_sum)} · ${d.total?tgPage*tgPer+1:0}–${tgPage*tgPer+d.rows.length}`;
   $('tgPg').innerHTML=pgBar('targets',tgPage,d.total||0,'loadTargets');
-  $('tgHint').textContent=`${n(d.total)}명 · 1인 평균 ${wonK(s.avg_net)} · 평균 ${s.avg_cnt}회 · 관심상품 ${n(s.with_next)} · 미발송 ${n(s.never_sent)}`;
+  $('tgHint').textContent=`${n(d.total)}명 · 1인 평균 ${wonK(s.avg_net)} · 평균 ${s.avg_cnt}회 · 관심상품 ${n(s.with_next)} · 미발송 ${n(s.never_sent)}`
+    + (Number(s.blocked_open)>0 ? ` · 오픈마켓 고객이라 제외 ${n(s.blocked_open)}명` : '')
+    + (TG_BASIS==='repeat' && s.asof ? ` · 기준일 ${s.asof}` : '');
   $('tgByCh').innerHTML=simpleBars((s.by_channel||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--navy)'})));
   $('tgByCat').innerHTML=simpleBars((s.by_category||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--teal)'})));
-  const chips=[['키워드',p.p_q],['채널',p.p_channel],['카테고리',p.p_category],['지역',p.p_region],
+  const BASIS_NM={consent:'수신동의 고객',repeat:'거래 재구매 주기',product:'제품 재구매'};
+  const chips=[['기준',BASIS_NM[TG_BASIS]||TG_BASIS],
+    ['제품',TG_BASIS==='product'?p.p_product:null],
+    ['기준일',TG_BASIS==='repeat'?(s.asof||null):null],
+    ['키워드',p.p_q],['채널',p.p_channel],['카테고리',p.p_category],['지역',p.p_region],
     ['구분',p.p_kind==='business'?'사업자':p.p_kind==='personal'?'개인':null],
     ['최근구매',p.p_from||p.p_to?`${p.p_from||'…'}~${p.p_to||'…'}`:null],
     ['구매횟수',p.p_min_cnt?`${p.p_min_cnt}회+`:null],['누적',p.p_min_net?wonK(p.p_min_net)+'+':null],
     ['휴면',p.p_dormant_days?`${p.p_dormant_days}일+`:null],['발송제외',p.p_no_send_days?(p.p_no_send_days>=36500?'보낸 적 있으면 전부':`${p.p_no_send_days}일 내`):null],
     ['관심상품',p.p_next_only?'있음':null]].filter(x=>x[1]);
-  $('crmChips').innerHTML=chips.length?chips.map(x=>`<span class="dchip fl">${x[0]} · ${esc(x[1])}</span>`).join('')
-    :'<span style="color:var(--faint)">조건 없음 — 수신동의 + 연락처 있는 전체</span>';
+  $('crmChips').innerHTML=(chips.map(x=>`<span class="dchip fl">${x[0]} · ${esc(x[1])}</span>`).join('')
+    || '<span style="color:var(--faint)">조건 없음</span>')
+    + `<button class="btn sm ghost" style="margin-left:6px" onclick="copyCond()" title="이 조건을 그대로 복사해 다른 사람에게 주면 같은 수가 나옵니다">조건 복사</button>`;
   $('tbTargets').innerHTML=d.rows.map(r=>`<tr>
     <td><b>${esc(r.name||'-')}</b>${r.biz?' <span class="tag n">사업자</span>':''}</td>
     <td class="mono">${esc(r.phone||'')}</td><td style="font-size:calc(12px * var(--font-scale));color:var(--muted)">${esc(r.region||'')}</td>
@@ -4997,6 +5025,10 @@ async function loadSegments(){
 }
 function segToForm(pm){
   const set=(id,v)=>{ $(id).value = (v===null||v===undefined)?'':String(v); };
+  /* 대상 기준·제품·기준일을 먼저 맞춘다 — 이게 빠지면 같은 조건 버튼을 눌러도 사람마다 다른 수가 나온다 */
+  set('crmProd', pm.product); set('crmAsof', pm.asof);
+  if(pm.basis && pm.basis!==TG_BASIS) setBasisQuiet(pm.basis);
+  else setBasisQuiet(pm.basis || TG_BASIS);
   set('crmQ',pm.q); set('crmCh',pm.channel); set('crmCat',pm.category); set('crmRegion',pm.region); set('crmKind',pm.kind);
   set('crmMinCnt',pm.min_cnt); set('crmMinNet',pm.min_net);
   set('crmDormant',pm.dormant_days); set('crmNoSend',pm.no_send_days); set('crmSort',pm.sort||'recent');
@@ -5025,9 +5057,13 @@ async function saveSegment(){
   if(v('crmDormant')) pm.dormant_days=Number(v('crmDormant')); if(v('crmNoSend')) pm.no_send_days=Number(v('crmNoSend'));
   if($('crmNext').classList.contains('on')) pm.next_only=true;
   pm.sort=v('crmSort')||'recent';
+  pm.basis=TG_BASIS;
+  if(TG_BASIS==='product' && v('crmProd')) pm.product=v('crmProd');
+  if(TG_BASIS==='repeat'  && v('crmAsof')) pm.asof=v('crmAsof');
   const days=d=>d?Math.max(0,Math.round((Date.now()-new Date(d).getTime())/86400000)):null;
   const data=await modal({title:'조건을 이름 붙여 저장', ok:'저장', wide:true,
-    html:`<p class="note" style="margin:0 0 10px">지금 걸어 둔 조건을 그대로 저장합니다. 다음부터는 버튼 한 번으로 같은 대상을 뽑습니다.</p>
+    html:`<p class="note" style="margin:0 0 10px">지금 걸어 둔 조건을 그대로 저장합니다. 다음부터는 버튼 한 번으로 같은 대상을 뽑습니다.
+        <b>대상 기준·제품·기준일까지 같이 저장</b>되므로 누가 눌러도 같은 수가 나옵니다.</p>
       <div class="fgrid" style="grid-template-columns:1fr 1fr">
         <div><label>이름</label><input class="in" id="sg_label" placeholder="예: 갤럭시 S27 사전예약 대상"></div>
         <div><label>설명</label><input class="in" id="sg_note" placeholder="누구를, 왜 뽑는지"></div>
@@ -5064,18 +5100,94 @@ function setBasis(b){
   if(b!=='consent' && !$('crmNoSend').value) $('crmNoSend').value='36500';
   $('tbBasisP').className = 'btn sm' + (b==='product' ? '' : ' ghost');
   $('prodBox').classList.toggle('hidden', b!=='product');
+  $('asofBox').classList.toggle('hidden', b!=='repeat');
+  if(b==='repeat' && !$('crmAsof').value) $('crmAsof').value = iso(new Date());
   $('crmFromL').textContent = b==='product' ? '이 제품을 산 기간 · 시작' : '최근 구매일 시작';
   $('crmToL').textContent   = b==='product' ? '이 제품을 산 기간 · 끝'  : '최근 구매일 끝';
   $('basisNote').innerHTML =
-    b==='repeat'  ? '<b>재구매 주기가 돌아온</b> 거래처입니다 — 주기(간격 중앙값)로 예상재구매일을 잡아 <b>D-30 ~ D+14</b> 인 사람, 1년 넘게 안 산 고객은 뺐습니다. <b>수신동의와 무관하게</b> 나오므로 광고성 메시지를 보내도 되는지는 보내기 전에 확인하세요.' :
-    b==='product' ? '<b>고른 제품을 산 적 있는</b> 고객입니다. 소모품 교체 안내·연결 판매에 씁니다. <b>수신동의와 무관하게</b> 나오므로 보내도 되는지는 보내기 전에 확인하세요.' :
+    b==='repeat'  ? '<b>재구매 주기가 돌아온</b> 거래처입니다 — 주기(간격 중앙값)로 예상재구매일을 잡아 <b>D-30 ~ D+14</b> 인 사람, 1년 넘게 안 산 고객은 뺐습니다. 대부분 VMS·렌탈 거래처입니다. <b>수신동의와 무관하게</b> 나오므로 광고성 메시지를 보내도 되는지는 보내기 전에 확인하세요.' :
+    b==='product' ? '<b>고른 제품을 우리에게서 직접 산</b> 고객입니다 — 오픈마켓에서 산 기록은 근거로 쓰지 않으므로 자사몰·VMS·렌탈·매장 주문만 셉니다. <b>수신동의와 무관하게</b> 나오므로 보내도 되는지는 보내기 전에 확인하세요.' :
                     '광고성 메시지를 보내도 된다고 동의한 고객만 나옵니다.';
   if(TG) loadTargets(0);
+}
+/* 화면만 기준에 맞추고 추출은 하지 않는다 (저장 조건을 불러올 때 씀) */
+function setBasisQuiet(b){
+  const keep=TG; TG=null; try{ setBasis(b); } finally { TG=keep; }
 }
 function pickProd(re, label){
   $('crmProd').value = re;
   if(!$('crmReason').value.trim()) $('crmReason').value = label + ' 교체 안내';
   loadTargets(0);
+}
+/* 조건을 글로 복사한다. 받은 사람이 [조건 붙여넣기] 하면 같은 대상이 나온다 */
+function condOf(){ const p=tgParams(); delete p.p_unmask; delete p.p_reason;
+  const o={}; Object.keys(p).sort().forEach(k=>{ if(p[k]!==null&&p[k]!==''&&p[k]!==false) o[k]=p[k]; }); return o; }
+function copyCond(){
+  const t=JSON.stringify(condOf());
+  navigator.clipboard.writeText(t).then(()=>toast('조건을 복사했습니다 — 받은 사람이 [조건 붙여넣기] 하면 같은 수가 나옵니다','ok'),
+    ()=>toast('복사하지 못했습니다','bad'));
+}
+async function pasteCond(){
+  const d=await modal({title:'조건 붙여넣기', ok:'적용', wide:true,
+    html:`<p class="note" style="margin:0 0 10px">[조건 복사] 로 받은 글을 그대로 붙여 넣으세요. 같은 조건이면 <b>같은 대상 수</b>가 나옵니다.</p>
+      <textarea class="in mono" id="pc_t" rows="4" placeholder='{"p_basis":"repeat","p_asof":"2026-09-21", …}'></textarea>`,
+    collect:()=>{ try{ const o=JSON.parse($('pc_t').value.trim()); if(!o||typeof o!=='object') throw 0; return o; }
+                  catch(e){ throw new Error('조건 글이 올바르지 않습니다'); } }});
+  if(!d) return;
+  const set=(id,v)=>{ $(id).value=(v===null||v===undefined)?'':String(v); };
+  setBasisQuiet(d.p_basis||'consent');
+  set('crmProd',d.p_product); set('crmAsof',d.p_asof); set('crmQ',d.p_q); set('crmCh',d.p_channel);
+  set('crmCat',d.p_category); set('crmRegion',d.p_region); set('crmKind',d.p_kind);
+  set('crmFrom',d.p_from); set('crmTo',d.p_to); set('crmMinCnt',d.p_min_cnt); set('crmMinNet',d.p_min_net);
+  set('crmDormant',d.p_dormant_days); set('crmNoSend',d.p_no_send_days); set('crmSort',d.p_sort||'recent');
+  $('crmNext').classList.toggle('on', !!d.p_next_only);
+  if($('crmReason').value.trim().length>=3) loadTargets(0);
+  else toast('조건을 넣었습니다 — 캠페인명을 적고 [추출] 하세요','ok');
+}
+/* ═══ 문자에 넣을 링크 (UTM) ═══
+   손으로 붙이면 사람마다 달라져 GA4 에서 한 캠페인으로 안 묶인다. 캠페인명에서 규칙대로 만든다.
+   utm_source=sendon(보낸 도구) · utm_medium=lms|mms(문자 종류) · utm_campaign=캠페인명 슬러그 · utm_content=대상 기준 */
+function utmSlug(t){
+  const raw=String(t||'').trim();
+  /* 캠페인명 안에 영문 코드가 있으면 그걸 쓴다 — 예: '추석 구독 할인 (chuseok2026)' → chuseok2026.
+     한글을 그대로 쓰면 %EC%B6%94… 로 길게 인코딩돼 문자 글자 수를 잡아먹는다.
+     규칙이 캠페인명 하나에서만 나오므로 누가 만들어도 같은 링크가 된다. */
+  const m=raw.match(/[A-Za-z][A-Za-z0-9_-]{2,}/g);
+  if(m && m.length) return m[m.length-1].toLowerCase().slice(0,60);
+  return raw.toLowerCase().replace(/[^0-9a-z가-힣]+/g,'_').replace(/^_+|_+$/g,'').slice(0,60) || 'campaign';
+}
+function utmLink(url, medium){
+  let u; try{ u=new URL(String(url||'').trim()); }catch(e){ return ''; }
+  u.searchParams.set('utm_source','sendon');
+  u.searchParams.set('utm_medium', medium||'lms');
+  u.searchParams.set('utm_campaign', utmSlug($('crmReason').value));
+  u.searchParams.set('utm_content', TG_BASIS);
+  return u.toString();
+}
+async function utmBuild(){
+  if($('crmReason').value.trim().length<3) return toast('캠페인명을 먼저 적어주세요 — 링크에 그대로 들어갑니다','bad');
+  await modal({title:'문자에 넣을 링크 만들기', ok:'닫기', cancel:null, wide:true,
+    html:`<p class="note" style="margin:0 0 10px">문자에 넣을 주소를 그대로 붙여 넣으세요. 캠페인명으로 UTM 을 붙여 드립니다 —
+        <b>같은 캠페인은 누가 만들어도 같은 링크</b>가 되어야 GA4 에서 한 덩어리로 보입니다.</p>
+      <div class="fgrid" style="grid-template-columns:1fr 160px">
+        <div><label>원본 주소</label><input class="in" id="ut_u" placeholder="https://www.samsungsh.co.kr/board/view.php?bdId=blog&sno=90"></div>
+        <div><label>문자 종류</label><select class="in" id="ut_m"><option value="lms">LMS (글자만)</option><option value="mms">MMS (이미지 포함)</option></select></div>
+      </div>
+      <label style="margin-top:10px">만들어진 링크</label>
+      <textarea class="in mono" id="ut_o" rows="3" readonly placeholder="위에 주소를 넣으면 여기에 나옵니다"></textarea>
+      <div style="margin-top:8px"><button class="btn sm" onclick="utmCopy()">링크 복사</button></div>
+      <p class="note" style="margin:10px 0 0">utm_campaign 은 캠페인명에서 자동으로 만듭니다 —
+        <b class="mono">${esc(utmSlug($('crmReason').value))}</b>
+        ${/^[a-z0-9_-]+$/.test(utmSlug($('crmReason').value)) ? ''
+          : `<br><b style="color:var(--amber)">캠페인명에 영문 코드를 넣으면 링크가 짧아집니다</b> —
+             예) <b class="mono">${esc($('crmReason').value.trim())} (chuseok2026)</b>`}</p>`,
+    init:()=>{ const go=()=>{ $('ut_o').value=utmLink($('ut_u').value,$('ut_m').value); };
+      $('ut_u').oninput=go; $('ut_m').onchange=go; setTimeout(()=>$('ut_u').focus(),30); }});
+}
+function utmCopy(){
+  const v=$('ut_o').value.trim();
+  if(!v) return toast('원본 주소를 먼저 넣어주세요','bad');
+  navigator.clipboard.writeText(v).then(()=>toast('링크를 복사했습니다','ok'),()=>toast('복사하지 못했습니다','bad'));
 }
 function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value='');
   $('crmNext').classList.remove('on'); $('crmSort').value='recent'; if($('crmReason').value.trim().length>=3) loadTargets(0); }
