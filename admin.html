@@ -1399,7 +1399,24 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <span class="note" style="font-weight:700">대상 기준</span>
             <button class="btn sm" id="tbBasisC" onclick="setBasis('consent')">수신동의 고객</button>
             <button class="btn sm ghost" id="tbBasisR" onclick="setBasis('repeat')">거래 재구매 주기</button>
+            <button class="btn sm ghost" id="tbBasisP" onclick="setBasis('product')">제품 재구매</button>
             <span class="note" id="basisNote">광고성 메시지를 보내도 된다고 동의한 고객만 나옵니다.</span>
+          </div>
+          <div id="prodBox" class="hidden" style="margin:-4px 0 12px;padding:12px 14px;background:var(--bg2);border-radius:8px">
+            <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:0">
+              <div style="grid-column:span 2"><label>제품 <span style="color:var(--bad)">필수</span>
+                <span class="note">품목명·모델코드에 들어가는 말 (여러 개는 <b>|</b> 로)</span></label>
+                <input class="in" id="crmProd" placeholder="HAF-" onkeydown="if(event.key==='Enter')loadTargets(0)"></div>
+            </div>
+            <div class="filters" style="margin-top:8px">
+              <span class="note" style="font-weight:700">자주 쓰는 제품</span>
+              <button class="btn sm ghost" onclick="pickProd('HAF-','정수기 필터')">정수기 필터</button>
+              <button class="btn sm ghost" onclick="pickProd('WD-?FLTR','건조기 필터')">건조기 필터</button>
+              <button class="btn sm ghost" onclick="pickProd('콤보|WD9[0-9]H','AI 콤보')">AI 콤보</button>
+              <button class="btn sm ghost" onclick="pickProd('MLT-|CLT-|INK-','토너·잉크')">토너·잉크</button>
+            </div>
+            <p class="note" style="margin:8px 0 0">아래 <b>최근 구매일 시작·끝</b>이 “<b>그 제품을 산 기간</b>”으로 바뀝니다.
+              예) 3~6개월 전에 필터를 산 사람 → 시작·끝을 그 기간으로 잡으세요.</p>
           </div>
           <div id="segBar" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px">
             <span class="note" style="font-weight:700">자주 쓰는 조건</span>
@@ -1415,8 +1432,8 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <div><label>구매 카테고리</label><select class="in" id="crmCat"><option value="">전체</option></select></div>
             <div><label>지역</label><select class="in" id="crmRegion"><option value="">전체</option></select></div>
             <div><label>고객 구분</label><select class="in" id="crmKind"><option value="">전체</option><option value="personal">개인</option><option value="business">사업자</option></select></div>
-            <div><label>최근 구매일 시작</label><input class="in" type="date" id="crmFrom"></div>
-            <div><label>최근 구매일 끝</label><input class="in" type="date" id="crmTo"></div>
+            <div><label id="crmFromL">최근 구매일 시작</label><input class="in" type="date" id="crmFrom"></div>
+            <div><label id="crmToL">최근 구매일 끝</label><input class="in" type="date" id="crmTo"></div>
             <div><label>구매 횟수 이상</label><input class="in num" type="number" id="crmMinCnt" placeholder="예: 2" min="0"></div>
             <div><label>누적 구매액 이상 (원)</label><input class="in num" type="number" id="crmMinNet" placeholder="예: 500000" step="10000"></div>
             <div><label>휴면 (마지막 구매 N일 경과)</label><select class="in" id="crmDormant"><option value="">상관없음</option><option value="90">90일 이상</option><option value="180">180일 이상</option><option value="365">1년 이상</option></select></div>
@@ -4924,7 +4941,7 @@ function tgParams(){
     p_region:v('crmRegion')||null, p_kind:v('crmKind')||null, p_from:v('crmFrom')||null, p_to:v('crmTo')||null,
     p_min_cnt:v('crmMinCnt')?Number(v('crmMinCnt')):null, p_min_net:v('crmMinNet')?Number(v('crmMinNet')):null,
     p_dormant_days:v('crmDormant')?Number(v('crmDormant')):null, p_no_send_days:v('crmNoSend')?Number(v('crmNoSend')):null,
-    p_basis:TG_BASIS,
+    p_basis:TG_BASIS, p_product:(TG_BASIS==='product' ? ($('crmProd').value.trim()||null) : null),
     p_next_only:$('crmNext').classList.contains('on'), p_sort:v('crmSort'),
     p_unmask:$('crmUnmask').classList.contains('on') };
 }
@@ -4938,6 +4955,7 @@ function tgFillOptions(o){
 async function loadTargets(page){
   const p=tgParams();
   if(p.p_reason.length<3) return toast('캠페인명을 3자 이상 적어주세요 — 감사로그에 남습니다','bad');
+  if(TG_BASIS==='product' && !p.p_product) return toast('어떤 제품인지 먼저 적어주세요 (예: HAF-)','bad');
   tgPage=Math.max(0,page||0);
   let d; try{ d=await rpc('fn_crm_targets_v2',{...p,p_limit:pgSize('targets'),p_offset:tgPage*pgSize('targets'),p_export:false}); }
   catch(e){ return toast(e.message,'bad'); }
@@ -5043,11 +5061,21 @@ function setBasis(b){
   $('tbBasisR').className = 'btn sm' + (b==='repeat'  ? '' : ' ghost');
   /* 재구매 주기 알림은 같은 사람에게 두 번 가면 안 된다. 이 기준을 고르면
      '이미 보낸 사람 제외' 를 '전부 제외' 로 미리 놓는다 — 8/14 발송분은 '30일 내' 로는 안 빠진다 */
-  if(b==='repeat' && !$('crmNoSend').value) $('crmNoSend').value='36500';
-  $('basisNote').innerHTML = b==='repeat'
-    ? '<b>재구매 주기가 돌아온</b> 거래처입니다 — 주기(간격 중앙값)로 예상재구매일을 잡아 <b>D-30 ~ D+14</b> 인 사람, 1년 넘게 안 산 고객은 뺐습니다. <b>수신동의와 무관하게</b> 나오므로 광고성 메시지를 보내도 되는지는 보내기 전에 확인하세요.'
-    : '광고성 메시지를 보내도 된다고 동의한 고객만 나옵니다.';
+  if(b!=='consent' && !$('crmNoSend').value) $('crmNoSend').value='36500';
+  $('tbBasisP').className = 'btn sm' + (b==='product' ? '' : ' ghost');
+  $('prodBox').classList.toggle('hidden', b!=='product');
+  $('crmFromL').textContent = b==='product' ? '이 제품을 산 기간 · 시작' : '최근 구매일 시작';
+  $('crmToL').textContent   = b==='product' ? '이 제품을 산 기간 · 끝'  : '최근 구매일 끝';
+  $('basisNote').innerHTML =
+    b==='repeat'  ? '<b>재구매 주기가 돌아온</b> 거래처입니다 — 주기(간격 중앙값)로 예상재구매일을 잡아 <b>D-30 ~ D+14</b> 인 사람, 1년 넘게 안 산 고객은 뺐습니다. <b>수신동의와 무관하게</b> 나오므로 광고성 메시지를 보내도 되는지는 보내기 전에 확인하세요.' :
+    b==='product' ? '<b>고른 제품을 산 적 있는</b> 고객입니다. 소모품 교체 안내·연결 판매에 씁니다. <b>수신동의와 무관하게</b> 나오므로 보내도 되는지는 보내기 전에 확인하세요.' :
+                    '광고성 메시지를 보내도 된다고 동의한 고객만 나옵니다.';
   if(TG) loadTargets(0);
+}
+function pickProd(re, label){
+  $('crmProd').value = re;
+  if(!$('crmReason').value.trim()) $('crmReason').value = label + ' 교체 안내';
+  loadTargets(0);
 }
 function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value='');
   $('crmNext').classList.remove('on'); $('crmSort').value='recent'; if($('crmReason').value.trim().length>=3) loadTargets(0); }
@@ -5109,6 +5137,7 @@ async function exportTargets(kind){
   if(kind!=='csv'){ try{ await needXLSX(); }catch(e){ return toast(e.message,'bad'); } }
   const p=tgParams();
   if(p.p_reason.length<3) return toast('캠페인명을 먼저 적어주세요','bad');
+  if(TG_BASIS==='product' && !p.p_product) return toast('어떤 제품인지 먼저 적어주세요 (예: HAF-)','bad');
   let d; try{ d=await rpc('fn_crm_targets_v2',{...p,p_limit:5000,p_offset:0,p_export:true}); }catch(e){ return toast(e.message,'bad'); }
   const cols=['고객','연락처','지역','채널','구매횟수','누적구매액','최근구매일','최근상품','카테고리','관심상품','담당','최근발송','고객키'];
   const rows=d.rows.map(r=>[r.name,r.phone,r.region,(r.chans||[]).join('/'),r.cnt,r.net,r.last_at,r.last_product,r.category,r.next_product,r.handler,r.last_sent,r.key]);
