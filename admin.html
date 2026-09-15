@@ -1412,7 +1412,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <div><label>구매 횟수 이상</label><input class="in num" type="number" id="crmMinCnt" placeholder="예: 2" min="0"></div>
             <div><label>누적 구매액 이상 (원)</label><input class="in num" type="number" id="crmMinNet" placeholder="예: 500000" step="10000"></div>
             <div><label>휴면 (마지막 구매 N일 경과)</label><select class="in" id="crmDormant"><option value="">상관없음</option><option value="90">90일 이상</option><option value="180">180일 이상</option><option value="365">1년 이상</option></select></div>
-            <div><label>최근 발송 제외</label><select class="in" id="crmNoSend"><option value="">상관없음</option><option value="7">7일 내 발송분 제외</option><option value="30">30일 내 발송분 제외</option><option value="90">90일 내 발송분 제외</option></select></div>
+            <div><label>이미 보낸 사람 제외 <span class="note" title="데이터 가져오기 › [이미 보낸 고객] 에 올린 발송 이력을 뺍니다">?</span></label><select class="in" id="crmNoSend"><option value="">상관없음 — 보낸 적 있어도 포함</option><option value="7">최근 7일 내 보낸 사람 제외</option><option value="30">최근 30일 내 보낸 사람 제외</option><option value="90">최근 90일 내 보낸 사람 제외</option><option value="36500">한 번이라도 보낸 사람 전부 제외</option></select></div>
             <div><label>정렬</label><select class="in" id="crmSort" onchange="loadTargets(0)"><option value="recent">최근 구매순</option><option value="net_desc">구매액 높은순</option><option value="cnt_desc">구매 잦은순</option><option value="oldest">오래된 구매순</option></select></div>
           </div>
           <div class="filters">
@@ -1466,6 +1466,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
                 <option value="store_manual">매장 일별(Manual)</option>
                 <option value="web_inquiry">홈페이지 문의 (고도몰 견적 게시판)</option>
                 <option value="sub_plan">구독 상품 · 요금</option>
+                <option value="send_log">이미 보낸 고객 (발송 이력)</option>
               </select>
               <div id="pasteCols" class="note hidden" style="margin-top:8px"></div></div></div>
             <div class="step"><div class="no dim" id="pasteNo2">2</div><div class="body"><b>엑셀에서 머리글 행까지 선택해 복사한 뒤 붙여넣기</b>
@@ -4910,7 +4911,7 @@ async function loadTargets(page){
     ['구분',p.p_kind==='business'?'사업자':p.p_kind==='personal'?'개인':null],
     ['최근구매',p.p_from||p.p_to?`${p.p_from||'…'}~${p.p_to||'…'}`:null],
     ['구매횟수',p.p_min_cnt?`${p.p_min_cnt}회+`:null],['누적',p.p_min_net?wonK(p.p_min_net)+'+':null],
-    ['휴면',p.p_dormant_days?`${p.p_dormant_days}일+`:null],['발송제외',p.p_no_send_days?`${p.p_no_send_days}일`:null],
+    ['휴면',p.p_dormant_days?`${p.p_dormant_days}일+`:null],['발송제외',p.p_no_send_days?(p.p_no_send_days>=36500?'보낸 적 있으면 전부':`${p.p_no_send_days}일 내`):null],
     ['관심상품',p.p_next_only?'있음':null]].filter(x=>x[1]);
   $('crmChips').innerHTML=chips.length?chips.map(x=>`<span class="dchip fl">${x[0]} · ${esc(x[1])}</span>`).join('')
     :'<span style="color:var(--faint)">조건 없음 — 수신동의 + 연락처 있는 전체</span>';
@@ -5028,9 +5029,12 @@ function detect(cols){
   if(has('날짜','매장-일시불')) return 'store_manual';
   if(has('상담상태','견적결과','등록일')) return 'web_inquiry';
   if(has('계약 기간','서비스 주기','모델코드')) return 'sub_plan';
+  /* 이미 보낸 고객 : 회원번호가 없고 발송일(또는 수신번호)이 있는 목록 */
+  if(has('수신번호')) return 'send_log';
+  if(has('발송일') && ['휴대폰','휴대폰번호','연락처','전화번호'].some(c=>cols.some(x=>x.replace(/\s/g,'')===c))) return 'send_log';
   return null;
 }
-const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)',web_inquiry:'홈페이지 문의 → 문의 관리 (연락처+등록일+이름 기준 갱신)',sub_plan:'구독 상품 · 요금 → 요금표 · 상담 참고 (요금이 바뀌면 이전 가격은 이력으로)'};
+const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)',web_inquiry:'홈페이지 문의 → 문의 관리 (연락처+등록일+이름 기준 갱신)',sub_plan:'구독 상품 · 요금 → 요금표 · 상담 참고 (요금이 바뀌면 이전 가격은 이력으로)',send_log:'이미 보낸 고객 → 발송 이력 (발송 대상 추출에서 제외)'};
 // 파일 안의 모든 시트를 훑어 인식 가능한 것을 찾는다. 여러 개면 사용자가 고른다.
 let SHEETS=[];
 const CH_NAMES=['P몰','S몰','AT몰','시흥','E스토어','B2B','가전시장','쿠팡','11번가','지마켓','옥션','SSG','현대홈쇼핑','쿠팡이츠','SK스토아','토스쇼핑','롯데온','카카오-관악','카카오-시흥','한퓨어','삼성AT스토어','프라자몰','에스몰','시흥몰'];
@@ -5130,11 +5134,11 @@ function useSheet(i, keepPicker){
   if(!keepPicker){ $('upDetect').className='callout ok';
     $('upDetect').innerHTML=`<b>${DETECT_LABEL[sh.kind]}</b> · ${n(sh.data.length)}행 · ${esc(UPFILE)}${SHEETS.length>1?` <b>[${esc(sh.sheet)}]</b>`:''}`; }
   else { document.querySelectorAll('#upDetect .btn').forEach((b,j)=>b.className='btn sm '+(j===i?'':'ghost')); }
-  if(sh.kind==='godo_member') renderMallPicker(); else $('upOpts').innerHTML='';
+  if(sh.kind==='godo_member') renderMallPicker(); else if(sh.kind==='send_log') renderSendOpts(); else $('upOpts').innerHTML='';
   const mapped=mapRows(UP).slice(0,5); const keys=mapped.length?Object.keys(mapped[0]):[];
   $('upHead').innerHTML='<tr>'+keys.map(k=>`<th>${esc(k)}</th>`).join('')+'</tr>';
   $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
-  $('upBtn').disabled = (sh.kind==='godo_member');   // 몰을 고르기 전에는 적재 못 함
+  $('upBtn').disabled = (sh.kind==='godo_member' || sh.kind==='send_log');   // 몰·캠페인명을 넣기 전에는 적재 못 함
   $('upMsg').textContent='';
 }
 
@@ -5170,6 +5174,25 @@ function pickMall(k){
   $('upMsg').innerHTML=`<b>${k}</b> 로 적재합니다${st?` · 현재 ${n(st.cnt)}명`:''}`;
 }
 
+/* 이미 보낸 고객 : 어느 캠페인으로 보낸 것인지를 적어야 한다.
+   [발송 대상 추출] 에서 캠페인별로 빼거나 전체를 뺄 수 있고, 같은 캠페인을 다시 올려도 중복되지 않는다 */
+function renderSendOpts(){
+  const dates=UP.data.map(r=>excelDate(H(r,'발송일','발송일시','일자'))).filter(Boolean).sort();
+  $('upOpts').innerHTML=`<div style="grid-column:1/-1">
+    <label>캠페인명 <span style="color:var(--bad)">필수</span> — 언제 무엇을 보냈는지 (예: 2026-08 정수기필터 안내)</label>
+    <input class="in" id="upCamp" placeholder="2026-08 정수기필터 안내" oninput="sendOptsChanged()">
+    <label style="margin-top:8px">발송일 <span class="note">줄마다 발송일이 없을 때 쓸 날짜</span></label>
+    <input class="in" type="date" id="upSentAt" value="${dates[0]||''}">
+    <p class="note" style="margin-top:6px">${dates.length?`파일 안 발송일 ${esc(dates[0])} ~ ${esc(dates[dates.length-1])}`:'파일에 발송일 열이 없습니다 — 위 날짜로 들어갑니다'} ·
+      휴대폰 뒤 8자리로 고객 마스터와 맞춥니다. 마스터에 없는 번호는 건너뜁니다.</p></div>`;
+  sendOptsChanged();
+}
+function sendOptsChanged(){
+  const ok=!!($('upCamp')?.value||'').trim();
+  $('upBtn').disabled=!ok;
+  $('upMsg').textContent = ok ? '' : '캠페인명을 적어야 적재할 수 있습니다';
+}
+
 function mapRows(u){
   const d=u.data;
   if(['channel_daily','settlement','listing_request','inv_items'].includes(u.kind)) return d;
@@ -5193,6 +5216,9 @@ function mapRows(u){
       term:str(H(r,'계약 기간','계약기간')), name:str(H(r,'상품명')), cycle:str(H(r,'서비스 주기','서비스주기')),
       item_code:str(H(r,'모델코드')), total_fee:str(H(r,'총 구독료(V+)','총 구독료','총구독료(V+)')),
       monthly_fee:str(H(r,'월구독료(v+)','월 구독료(V+)','월구독료','월 구독료')), care_case:str(H(r,'케어구분')) })); }
+  if(u.kind==='send_log'){ return d.map(r=>({ phone:str(H(r,'수신번호','휴대폰','휴대폰번호','연락처','전화번호')),
+      name:str(H(r,'이름','고객명','수신자')), sent_at:excelDate(H(r,'발송일','발송일시','일자'))||null }))
+      .filter(x=>x.phone.replace(/\D/g,'').length>=8); }
   if(u.kind==='store_manual'){ const out=[]; d.forEach(r=>{ const date=excelDate(H(r,'날짜')); if(!date) return; const rows=[]; Object.keys(r).forEach(k=>{ const v=Number(r[k]); if(!v||/_환불$/.test(k)) return; const refund=Number(r[k+'_환불'])||0; if(k==='매장-일시불') rows.push({sale_kind:'일시불',sales:v,refund}); else if(k==='매장-구독') rows.push({sale_kind:'구독',sales:v,refund}); else if(/-직판$/.test(k)) rows.push({sale_kind:'직판',handler:k.replace(/프로?-직판$/,''),sales:v,refund}); }); if(rows.length) out.push({date,rows}); }); return out.map(x=>({date:x.date,rows:JSON.stringify(x.rows)})); }
   return [];
 }
@@ -5210,6 +5236,16 @@ async function runUpload(){
       for(let i=0;i<rows.length;i+=CH){ const r=await rpc(fn,{p_rows:rows.slice(i,i+CH)});
         Object.keys(r).forEach(k=>{ if(typeof r[k]==='number'&&k!=='total'&&k!=='total_plans') res[k]=(res[k]||0)+r[k]; });
         done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; } }
+    else if(UP.kind==='send_log'){
+      const camp=($('upCamp')?.value||'').trim(); if(!camp) throw new Error('캠페인명을 적어 주세요');
+      const at=$('upSentAt')?.value||null; const CH=500; let sample=[];
+      for(let i=0;i<rows.length;i+=CH){
+        const r=await rpc('fn_send_log_import',{p_rows:rows.slice(i,i+CH),p_campaign:camp,p_channel:'sms',p_sent_at:at,p_file:UP.file});
+        ['rows','matched','unmatched','dup'].forEach(k=>res[k]=(res[k]||0)+(r[k]||0));
+        if(!sample.length && (r.sample||[]).length) sample=r.sample;
+        done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; $('upMsg').textContent=`${n(done)} / ${n(rows.length)}`; }
+      res={'읽은 줄':res.rows||0,'고객 찾음':res.matched||0,'마스터에 없음':res.unmatched||0,'이미 올린 건':res.dup||0};
+      if(sample.length) setTimeout(()=>{ $('upMsg').innerHTML+=`<br><span class="note">고객 마스터에 없는 번호 예: ${sample.map(x=>esc((x.name||'')+' '+x.phone)).join(' · ')} — 이 사람들은 발송 대상에도 없으므로 제외할 것이 없습니다</span>`; },50); }
     else if(['channel_daily','settlement','listing_request','inv_items','ecount_customer','ecount_slip'].includes(UP.kind)){
       const fn={channel_daily:'fn_channel_daily_upsert',settlement:'fn_settlement_upsert',listing_request:'fn_listing_request_upsert',inv_items:'fn_inv_items_upsert',ecount_customer:'fn_ec_customers_upsert',ecount_slip:'fn_ec_slips_upsert'}[UP.kind];
       const CH=400; for(let i=0;i<rows.length;i+=CH){ const r=await rpc(fn,{p_rows:rows.slice(i,i+CH),p_source:'sheet',p_file:UP.file}); Object.keys(r).forEach(k=>{ if(typeof r[k]==='number') res[k]=(res[k]||0)+r[k]; }); done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; $('upMsg').textContent=`${n(done)} / ${n(rows.length)}`; } }
@@ -5346,9 +5382,9 @@ async function loadStamp(){
 }
 
 /* ═══════════════ 데이터 소스 카드 · 선택 ═══════════════ */
-const SRC_KIND={web_inquiry:'web_inquiry',sub_plan:'sub_plan',shoplinker:'shoplinker',store_manual:'store_manual',ecount_sales:'ecount_sales',rental:'rental',ecount_prospect:'ecount_prospect',godo_member:'godo_member'};
-const SRC_TPL ={web_inquiry:'홈페이지_문의',sub_plan:'구독_상품',shoplinker:'샵링커_주문',store_manual:'매장_일별',ecount_sales:'이카운트_판매현황',rental:'렌탈',ecount_prospect:'이카운트_가망고객',godo_member:'고도몰_회원'};
-const SRC_FEED={sub_plan:'구독 요금표 · 상담 참고 · 가격 이력',web_inquiry:'홈페이지 문의 (문의 관리)',shoplinker:'매출 원장 · 고객',store:'매출 원장 · 고객',store_manual:'매장 일마감',ecount_sales:'매출 원장(VMS) · 고객',rental:'매출 원장(렌탈) · 거래처',ecount_prospect:'상담 · 가망고객',godo_member:'고객 마스터 · 수신동의'};
+const SRC_KIND={web_inquiry:'web_inquiry',sub_plan:'sub_plan',shoplinker:'shoplinker',store_manual:'store_manual',ecount_sales:'ecount_sales',rental:'rental',ecount_prospect:'ecount_prospect',godo_member:'godo_member',send_log:'send_log'};
+const SRC_TPL ={web_inquiry:'홈페이지_문의',sub_plan:'구독_상품',shoplinker:'샵링커_주문',store_manual:'매장_일별',ecount_sales:'이카운트_판매현황',rental:'렌탈',ecount_prospect:'이카운트_가망고객',godo_member:'고도몰_회원',send_log:'이미_보낸_고객'};
+const SRC_FEED={sub_plan:'구독 요금표 · 상담 참고 · 가격 이력',web_inquiry:'홈페이지 문의 (문의 관리)',shoplinker:'매출 원장 · 고객',store:'매출 원장 · 고객',store_manual:'매장 일마감',ecount_sales:'매출 원장(VMS) · 고객',rental:'매출 원장(렌탈) · 거래처',ecount_prospect:'상담 · 가망고객',godo_member:'고객 마스터 · 수신동의',send_log:'발송 이력 (발송 대상에서 제외)'};
 const SRC_ICON={shoplinker:'<svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M6 6 5 3H2"/></svg>',
   store:'<svg viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6"/></svg>',
   store_manual:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h4"/></svg>',
@@ -5357,7 +5393,8 @@ const SRC_ICON={shoplinker:'<svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12
   ecount_prospect:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0M19 8l2 2 4-4"/></svg>',
   godo_member:'<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>',
   sub_plan:'<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>',
-  web_inquiry:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'};
+  web_inquiry:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  send_log:'<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>'};
 const DS_TAG={정상:'y',지연:'보류',없음:'n','준비 중':''};   /* 준비 중 = 카드만 만들어 둔 원천, 알림에서 제외 */
 let DSD=null, SEL_SRC=null;
 async function loadDataStatus(){
@@ -5382,6 +5419,7 @@ async function loadDataStatus(){
         ? `<button class="btn sm" onclick="selectSource('${x.key}','file')">파일 올리기</button><button class="btn sm ghost" onclick="selectSource('${x.key}','paste')">붙여넣기</button><button class="btn sm ghost" onclick="downloadTemplate('${SRC_TPL[x.key]}')" title="이 소스의 양식만">양식</button>`
         + (x.key==='sub_plan' ? `<button class="btn sm ghost" onclick="show('items');setTimeout(()=>document.getElementById('subCard')?.scrollIntoView({behavior:'smooth'}),400)">요금표 보기</button>` : '')
         + (x.key==='web_inquiry' ? `<button class="btn sm ghost" onclick="show('inbox');setTimeout(()=>document.getElementById('wiCard')?.scrollIntoView({behavior:'smooth'}),400)">문의 관리에서 보기</button>` : '')
+        + (x.key==='send_log' ? `<button class="btn sm ghost" onclick="show('crm');setTimeout(()=>document.getElementById('crmNoSend')?.scrollIntoView({behavior:'smooth',block:'center'}),400)">발송 대상에서 제외하기</button>` : '')
         : x.key==='store' ? `<a class="btn sm ghost" href="/store.html" target="_blank" style="text-decoration:none">매장 화면 열기 ↗</a>`
 
         : `<button class="btn sm ghost" onclick="impTab('sl')">자동 수집 현황</button>`}</div>
@@ -5460,9 +5498,9 @@ function impTab(t){
   if(t==='sl') loadSl();
 }
 const PASTE_TPL={shoplinker:'샵링커_주문',ecount_sales:'이카운트_판매현황',ecount_prospect:'이카운트_가망고객',
-  rental:'렌탈',godo_member:'고도몰_회원',store_manual:'매장_일별',web_inquiry:'홈페이지_문의',sub_plan:'구독_상품'};
+  rental:'렌탈',godo_member:'고도몰_회원',store_manual:'매장_일별',web_inquiry:'홈페이지_문의',sub_plan:'구독_상품',send_log:'이미_보낸_고객'};
 const PASTE_LABEL={shoplinker:'샵링커 주문',ecount_sales:'이카운트 판매현황(VMS)',ecount_prospect:'이카운트 가망고객',
-  rental:'렌탈',godo_member:'고도몰 회원',store_manual:'매장 일별(Manual)',web_inquiry:'홈페이지 문의 (고도몰 견적 게시판)',sub_plan:'구독 상품 · 요금'};
+  rental:'렌탈',godo_member:'고도몰 회원',store_manual:'매장 일별(Manual)',web_inquiry:'홈페이지 문의 (고도몰 견적 게시판)',sub_plan:'구독 상품 · 요금',send_log:'이미 보낸 고객 (발송 이력)'};
 function pasteKindChanged(){
   const k=$('pasteKind').value;
   if(SEL_SRC && k && SRC_KIND[SEL_SRC]!==k){ toast('선택한 데이터 소스와 다른 종류입니다. 오른쪽 위 "선택 해제" 후 고르세요','bad'); $('pasteKind').value=SRC_KIND[SEL_SRC]; return; }
@@ -5509,8 +5547,9 @@ function pasteParse(){
   const mapped=mapRows(UP).slice(0,5); const keys=mapped.length?Object.keys(mapped[0]):[];
   $('upHead').innerHTML='<tr>'+keys.map(k=>`<th>${esc(k)}</th>`).join('')+'</tr>';
   $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
-  $('upBtn').disabled = (kind==='godo_member') || (guess!==kind);   // 몰 미선택 또는 열 이름 불일치면 잠금
+  $('upBtn').disabled = (kind==='godo_member') || (kind==='send_log') || (guess!==kind);   // 몰·캠페인명 미입력 또는 열 이름 불일치면 잠금
   if(kind==='godo_member' && guess===kind) renderMallPicker();
+  if(kind==='send_log' && guess===kind) renderSendOpts();
   if(!enforceSource(kind)) return;
 }
 
@@ -5735,6 +5774,10 @@ async function maSave(){
 
 /* ═══════════════ 업로드 양식 엑셀 ═══════════════ */
 const TEMPLATES={
+ '이미_보낸_고객':{note:'지난 캠페인에서 실제로 보낸 사람 목록입니다. 휴대폰 뒤 8자리로 고객 마스터와 맞추므로 이름은 없어도 됩니다. 캠페인명은 올릴 때 화면에서 적습니다.',
+  cols:['수신번호','이름','발송일'],
+  rows:[['010-7202-0910','염승엽','2026-08-12'],
+        ['01038411928','','2026-08-12']]},
  '홈페이지_문의':{note:'홈페이지(samsungat.co.kr) 관리자 → 개인/사업자 가전 견적 문의 목록을 그대로 내려받거나 복사해 붙여 넣으세요. 같은 연락처+등록일+이름이면 갱신됩니다.',
   cols:['번호','제목','견적결과','상담상태','담당자','연락처','이메일','등록일','유형'],
   rows:[[188,'손규원','미입력','진행','이수혁프로','010-8972-5794','','2026-09-07','개인'],
