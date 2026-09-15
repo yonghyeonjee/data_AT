@@ -40,9 +40,10 @@ insert into crm.segment (code, label, note, params, builtin, active, sort) value
 on conflict (code) do update
   set label=excluded.label, note=excluded.note, params=excluded.params, sort=excluded.sort;
 
--- ④ 배포를 확인한 뒤 이 한 줄을 실행해 켠다
--- update crm.segment set active = true
---  where code in ('toner_repeat_v2','camp_chuseok_0918','camp_toner_0921','camp_filter_0923');
+-- ④ 배포를 확인한 뒤 켠다 — 2026-09-15 실행 완료
+--    (main 이 cf2bbf5/v108 로 머지되고 'pages build and deployment' 가 성공한 것을 확인한 뒤)
+update crm.segment set active = true
+ where code in ('toner_repeat_v2','camp_chuseok_0918','camp_toner_0921','camp_filter_0923');
 
 -- ───────── 확인한 깔때기 (2026-09-15) ─────────
 -- 추석 (수신동의)   전체 62,699 → 수신동의 6,907 → 휴대폰 있음 3,742

@@ -414,7 +414,8 @@ end $outer$;
   같은 병이 `b2b_repeat` 에도 있었다 — `kind` 값이 `'사업자'` 인데 select 의 값은 `'business'` 라 **select 가 조용히 '전체' 로 떨어져** 사업자 조건이 통째로 빠졌다.
   `toner_repeat` 은 `active=false` 로 내리고, `b2b_repeat` 은 값을 고쳤다. 화면에는 `SEG_KEYS`(조건이 쓸 수 있는 키 전부) 를 두고 `segToForm` 이 **모르는 키·select 에 없는 값이면 토스트로 알린다** (테스트 N1~N3).
   **새 프리셋 4개는 `active=false` 로 넣어 뒀다** (`toner_repeat_v2` · `camp_chuseok_0918` · `camp_toner_0921` · `camp_filter_0923`) — **옛 화면은 `basis`·`product`·`asof` 를 못 읽어 엉뚱한 명단이 나오므로 새 admin.html 배포를 확인한 뒤 켤 것** (`sql/mvp_149` 마지막 줄).
-  **배포 주의**: `origin/main` 에는 v103~v107(대상 기준·오픈마켓 차단·기준일)이 아직 없다. `db.samsungat.co.kr` 은 main 을 서비스하므로, **머지 전까지 관리자 화면에는 오픈마켓 차단이 걸리지 않는다.**
+  **2026-09-15 배포 완료** — `main` 을 v108(`cf2bbf5`)로 fast-forward 하고 `pages build and deployment` 성공을 확인한 뒤 프리셋 4개를 `active=true` 로 켰다.
+  `db.samsungat.co.kr` 은 **main 을 서비스한다** — 관리자 화면 기능은 main 에 머지되기 전까지 실제로는 안 걸린다는 것을 이때 처음 겪었다(브랜치에만 올려 두고 며칠 썼다).
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
