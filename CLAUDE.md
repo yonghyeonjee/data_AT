@@ -409,6 +409,12 @@ end $outer$;
   캠페인명 옆 [링크 만들기](`utmBuild`) → `utm_source=sendon` · `utm_medium=lms|mms` · `utm_campaign=utmSlug(캠페인명)` · `utm_content=대상 기준`. 원래 쿼리(`bdId`·`sno`)는 그대로 둔다.
   **`utmSlug` 는 캠페인명 안의 영문 토큰을 쓴다** — '2026 추석 구독 할인 (chuseok2026)' → `chuseok2026`. 한글만이면 한글 슬러그가 되는데 `%EC%B6%94…` 로 길어져 문자 글자 수를 잡아먹으므로 창에서 영문 코드를 권한다.
   규칙이 캠페인명 하나에서만 나오므로 누가 만들어도 같은 링크다. 테스트 `ptest/sendlog.mjs` O1~O8 · T1~T5 (전체 39개).
+- **저장 조건이 조용히 어긋나던 것 (mvp_149 · 2026-09-15)** — [토너·잉크 재구매 주기] 를 누르니 95명이 나왔는데 목록에 냉장고·갤럭시 워치·식기세척기 구매자가 있었다. 토너가 한 명도 없었다.
+  `crm.segment.params` 의 `kind_goods` 를 **화면이 읽지 않는다** (admin.html 어디에도 그런 키가 없다) → 실제로는 '최근 60~180일 전에 아무거나 산 수신동의 고객' 을 뽑고 있었다.
+  같은 병이 `b2b_repeat` 에도 있었다 — `kind` 값이 `'사업자'` 인데 select 의 값은 `'business'` 라 **select 가 조용히 '전체' 로 떨어져** 사업자 조건이 통째로 빠졌다.
+  `toner_repeat` 은 `active=false` 로 내리고, `b2b_repeat` 은 값을 고쳤다. 화면에는 `SEG_KEYS`(조건이 쓸 수 있는 키 전부) 를 두고 `segToForm` 이 **모르는 키·select 에 없는 값이면 토스트로 알린다** (테스트 N1~N3).
+  **새 프리셋 4개는 `active=false` 로 넣어 뒀다** (`toner_repeat_v2` · `camp_chuseok_0918` · `camp_toner_0921` · `camp_filter_0923`) — **옛 화면은 `basis`·`product`·`asof` 를 못 읽어 엉뚱한 명단이 나오므로 새 admin.html 배포를 확인한 뒤 켤 것** (`sql/mvp_149` 마지막 줄).
+  **배포 주의**: `origin/main` 에는 v103~v107(대상 기준·오픈마켓 차단·기준일)이 아직 없다. `db.samsungat.co.kr` 은 main 을 서비스하므로, **머지 전까지 관리자 화면에는 오픈마켓 차단이 걸리지 않는다.**
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 

@@ -5023,13 +5023,24 @@ async function loadSegments(){
     `<button class="btn sm ${SEG_CUR===g.code?'':'ghost'}" onclick="applySegment('${esc(g.code)}')" title="${esc(g.note||'')}">${esc(g.label)}</button>`).join('')
     || '<span class="note">저장된 조건이 없습니다</span>';
 }
+/* 저장 조건이 쓸 수 있는 키 전부. 여기 없는 키는 화면이 조용히 무시하므로
+   조건 이름과 실제 조건이 어긋난다 (예전 '토너·잉크 재구매 주기' 가 kind_goods 를 담아
+   토너가 아닌 사람까지 뽑던 사고). 모르는 키가 있으면 알려 준다. */
+const SEG_KEYS=['q','channel','category','region','kind','min_cnt','min_net','dormant_days',
+  'no_send_days','sort','next_only','from','to','last_days_max','last_days_min','basis','product','asof'];
 function segToForm(pm){
   const set=(id,v)=>{ $(id).value = (v===null||v===undefined)?'':String(v); };
+  const bad=Object.keys(pm||{}).filter(k=>SEG_KEYS.indexOf(k)<0);
+  if(bad.length) toast('이 조건에 화면이 모르는 항목이 있어 그 부분은 걸리지 않습니다: '+bad.join(', '),'bad');
   /* 대상 기준·제품·기준일을 먼저 맞춘다 — 이게 빠지면 같은 조건 버튼을 눌러도 사람마다 다른 수가 나온다 */
   set('crmProd', pm.product); set('crmAsof', pm.asof);
   if(pm.basis && pm.basis!==TG_BASIS) setBasisQuiet(pm.basis);
   else setBasisQuiet(pm.basis || TG_BASIS);
   set('crmQ',pm.q); set('crmCh',pm.channel); set('crmCat',pm.category); set('crmRegion',pm.region); set('crmKind',pm.kind);
+  /* select 는 목록에 없는 값을 넣으면 조용히 '전체' 가 된다 — 조건이 사라진 줄 모르게 된다 */
+  [['crmKind',pm.kind],['crmCh',pm.channel],['crmCat',pm.category],['crmRegion',pm.region],['crmSort',pm.sort]]
+    .forEach(([id,v])=>{ if(v && String($(id).value)!==String(v))
+      toast(`조건의 "${v}" 는 이 목록에 없어 걸리지 않았습니다`,'bad'); });
   set('crmMinCnt',pm.min_cnt); set('crmMinNet',pm.min_net);
   set('crmDormant',pm.dormant_days); set('crmNoSend',pm.no_send_days); set('crmSort',pm.sort||'recent');
   $('crmNext').classList.toggle('on', !!pm.next_only);
