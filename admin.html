@@ -5041,6 +5041,9 @@ function setBasis(b){
   TG_BASIS = b; try{ localStorage.setItem('dc_tg_basis', b); }catch(e){}
   $('tbBasisC').className = 'btn sm' + (b==='consent' ? '' : ' ghost');
   $('tbBasisR').className = 'btn sm' + (b==='repeat'  ? '' : ' ghost');
+  /* 재구매 주기 알림은 같은 사람에게 두 번 가면 안 된다. 이 기준을 고르면
+     '이미 보낸 사람 제외' 를 '전부 제외' 로 미리 놓는다 — 8/14 발송분은 '30일 내' 로는 안 빠진다 */
+  if(b==='repeat' && !$('crmNoSend').value) $('crmNoSend').value='36500';
   $('basisNote').innerHTML = b==='repeat'
     ? '<b>재구매 주기가 돌아온</b> 거래처입니다 — 주기(간격 중앙값)로 예상재구매일을 잡아 <b>D-30 ~ D+14</b> 인 사람, 1년 넘게 안 산 고객은 뺐습니다. <b>수신동의와 무관하게</b> 나오므로 광고성 메시지를 보내도 되는지는 보내기 전에 확인하세요.'
     : '광고성 메시지를 보내도 된다고 동의한 고객만 나옵니다.';
