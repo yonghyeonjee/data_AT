@@ -12,3 +12,8 @@
 update core.app_setting set value = ((value::jsonb) || '{"order_ref":"DOC_NO"}'::jsonb)::text where key='ec_field_map';
 -- 확인: core.f_order_body(31) → DOC_NO 1327974289 · U_MEMO3 없음 · CUST AT0000074077 · CUST_DES '시흥몰 (시흥몰)'.
 -- DOC_NO 가 이카운트 화면의 '주문No.' 인지는 다음 전표에서 눈으로 확인 (9/7 필드 확인 전표(api_log 117)의 'DOCNO' 표식이 어느 칸에 보였는지로도 알 수 있다).
+
+-- ═══ mvp_155 (2026-09-17) — 거래처는 코드만 보낸다. 거래처명(CUST_DES)은 이카운트가 코드로 채운다
+-- 이카운트 거래처검색: AT0000069573 = '스마트스토어 B2B' 인데 우리는 'B2B (P몰 (B2B몰))' 를 CUST_DES 로 보내 이름이 어긋났다.
+-- core.f_order_body 에서 'CUST_DES', … 를 뺐다 (prosrc 치환). 매핑 규칙은 mvp_153 그대로: 샵링커 계정(KEY2/KEY3)이 있으면 계정으로, 없으면 스토어명으로 → 이카운트 코드.
+-- 이카운트 OpenAPI 거래처 조회는 GetBasicCustomersList·GetBasicCust 둘 다 404 (2026-09-17 재확인) — ec.customer 이름은 거래처 엑셀 업로드로만 맞출 수 있다. AT0000069573 이름은 '스마트스토어 B2B' 로 손봤다.
