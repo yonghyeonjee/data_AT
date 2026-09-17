@@ -1,0 +1,14 @@
+-- mvp_153 (2026-09-17) — 이카운트 전표: 거래처는 이카운트 코드로만 · 샵링커 주문번호는 주문No.(DOC_NO)
+-- 고창재 프로님 지적 ① "스마트스토어·고도몰 아이디 매핑 거래처는 이카운트에 등록된 코드 기준으로" ② "주소2 에 샵링커 주문번호가 들어가 있는데 주문No. 로"
+--
+-- 사실 확인: 거래처 코드표(ec.channel_cust 15곳)는 전달받은 엑셀(기준코드 · KEY1|:|KEY2|:|KEY3)과 15/15 같다.
+--   최근 큐 6건 전부 이카운트 코드(AT0000069508 …)로 나갔다. 문제는 ② 와 '코드가 없을 때 구매자 이름으로 새 거래처가 생기는 길' 이 열려 있던 것.
+--
+-- ① core.f_sl_to_order : cust_code = coalesce(샵링커 쇼핑몰 계정(channel_account) = channel_cust.account, 채널명 = channel_cust.channel).
+--    둘 다 없으면 주문서를 만들지 않고 skipped 사유 '이카운트 거래처 코드 없음 — 채널 X · 계정 Y' 로 돌려준다. (prosrc 치환)
+-- ② core.f_order_body : cust_code 가 null · 'N:' 임시 · ec.customer/channel_cust 에 없는 값이면 raise → 이카운트로 절대 안 나간다.
+-- ③ core.f_order_send : f_order_body 를 begin 블록 안으로 → 본문 오류는 그 장의 실패(ec_message)로 남고 다음 장으로.
+-- ④ ec_field_map : order_ref(샵링커 주문번호) U_MEMO3(=이카운트 화면 '주소2') → DOC_NO(주문No.). 쇼핑몰 주문번호는 그대로 줄 적요(REMARKS).
+update core.app_setting set value = ((value::jsonb) || '{"order_ref":"DOC_NO"}'::jsonb)::text where key='ec_field_map';
+-- 확인: core.f_order_body(31) → DOC_NO 1327974289 · U_MEMO3 없음 · CUST AT0000074077 · CUST_DES '시흥몰 (시흥몰)'.
+-- DOC_NO 가 이카운트 화면의 '주문No.' 인지는 다음 전표에서 눈으로 확인 (9/7 필드 확인 전표(api_log 117)의 'DOCNO' 표식이 어느 칸에 보였는지로도 알 수 있다).

@@ -451,6 +451,13 @@ end $outer$;
 - **utm_source 는 crm_manual 기본 · 고정하지 않는다 (mvp_152c · 2026-09-17)** — "나중에 센드온 안 쓰면 어쩌게". 단축 링크 창에 `utm_source`(`#ul_source`, 기본 `crm_manual`, datalist sendon·kakao·naver)와 `utm_campaign`(`#ul_campaign`, 캠페인 코드로 미리 채움) 칸이 있고 둘 다 고칠 수 있다.
   `fn_utm_link_save` 는 `p.source`(없으면 crm_manual)·`p.utm_campaign`(없으면 코드)을 받고, `core.f_utm_url`·`crm.link.utm_source` 기본값도 crm_manual. **값은 `core.f_utm_tok` 이 전부 소문자로 정리한다**(GA4 는 대소문자를 다른 값으로 세므로 `CRM_manual` 도 `crm_manual`).
   발송·클릭·구매 통계는 `crm.link.campaign`(fk) 에 붙으므로 utm_campaign 을 바꿔도 표는 그대로다. `fn_utm_campaigns` links 에 `utm_source`·`utm_campaign` 추가, 링크 줄에 utm_source 태그.
+- **이카운트 전표 — 거래처는 이카운트 코드로만 · 샵링커 주문번호는 주문No. (mvp_153 · 2026-09-17)** — 고창재 프로님 지적 2건. 거래처 코드표(`ec.channel_cust` 15곳)는 전달받은 엑셀(기준코드·KEY1|:|KEY2|:|KEY3)과 15/15 같고 최근 큐 6건 전부 이카운트 코드로 나갔다.
+  고친 것: ① `f_sl_to_order` 가 샵링커 쇼핑몰 계정(`channel_account` = 코드표 KEY3/KEY2)을 먼저, 채널명을 다음으로 맞추고 **둘 다 없으면 주문서를 안 만들고 skipped 사유**로 돌려준다 ② `f_order_body` 는 코드가 없거나 임시(`N:`)거나 우리 표에 없으면 raise — 이카운트가 구매자 이름으로 새 거래처를 만드는 길을 막았다
+  ③ `f_order_send` 는 본문 오류를 그 장의 실패로 기록 ④ `ec_field_map` `order_ref`(샵링커 주문번호) `U_MEMO3`(이카운트 화면 '주소2') → **`DOC_NO`(주문No.)**. 쇼핑몰 주문번호는 줄 적요(REMARKS) 그대로.
+  `ec.customer` 의 `N:이름` 43건은 이카운트 주문서 현황 업로드가 만든 임시 줄(거래처 엑셀을 올리면 같은 이름은 지워진다) — 전표에는 절대 안 나간다.
+  **DOC_NO = '주문No.' 는 다음 전표에서 눈으로 확인할 것.** 9/7 필드 확인 전표(`ec.api_log` 117, 시흥몰(필드 확인 테스트))의 표식(M1~M5·T1·AT1~5·DOCNO·TTL·REFDES·RWIN·PR1~3·LT1)이 어느 칸에 보였는지가 매핑의 정답표다. 매핑은 관리자 이카운트 카드에서 바꿀 수 있다.
+- **대시보드가 9/4 까지만 보이던 것 (2026-09-17)** — 대시보드 [수기입력] 모드는 `core.channel_daily`(온라인 채널 일매출 수기 대사표)를 읽는데 마지막 줄이 9/3 이다(9/4 이후 안 올림). 원장(`core.orders` 샵링커)은 9/16 까지 들어와 있다 — [원장] 모드로 보면 보인다.
+  이카운트 판매현황(VMS)·렌탈도 업로드 원천이라 9/4 이 마지막이다. 자동 수집은 샵링커·매장 입력뿐. 헤더 '기간 …–2026.09.04' 는 수기 대사표의 마지막 날.
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
