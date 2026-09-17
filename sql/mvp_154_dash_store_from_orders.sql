@@ -1,0 +1,9 @@
+-- mvp_154 (2026-09-17) — 대시보드 원장 모드의 매장(오프라인) 금액은 판매 입력(core.orders source='store')에서
+-- 증상: [원장]·[오프라인만] 9/14~9/17 → 순매출 0 · 주문 건수 12. 주문 수는 orders 에서 세는데 금액은 일 마감 snapshot(core.store_daily.sales)만 봤다.
+--   9/14·9/15 일 마감 줄은 sales=0 · pending_sales 만 있다 — 저장 당시 판매가 전부 '매출'(확정 대기)이라 '판매완료' 합계가 0 이었고, 그 뒤 확정돼도 snapshot 은 안 바뀐다.
+-- 고침 (core.f_dash_payload prosrc 치환):
+--   ① 채널 목록: p_mode='ledger' 면 판매 입력이 있는 기간에도 매장(시흥)·매장구독(시흥)을 켠다
+--   ② 셀: ledger 모드의 매장 일시불·구독 = orders(store, 취소·환불·테스트 제외, 매출+판매완료 둘 다) gross/refund.
+--        그날 그 구분의 판매 입력이 없을 때만 store_daily.sales 로 (8월처럼 시트로만 올린 달). 직판은 두 모드 다 store_daily.
+--   수기입력(manual) 모드는 전과 같이 store_daily 만 본다.
+-- 확인: f_dash_payload('2026-09-14','2026-09-17','ledger') 매장 셀 = 9/14 809만+1,343만 · 9/15 570만+780만 · 9/16 1,488만+860만 · 9/17 104만. 캐시 비우고 f_dash_warm 실행(44초·14건).
