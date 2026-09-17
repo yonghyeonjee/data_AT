@@ -442,9 +442,10 @@ end $outer$;
   8/14 발송 이력 257줄의 campaign 을 `2608_toner` 로 맞췄다. 테스트 `ptest/utm.mjs` U1~U10(관리자)·R1~R4(/r/ 착지). **Playwright 라이브러리는 동작 타임아웃 기본이 무한** — 테스트에 `setDefaultTimeout` 을 걸고, 모달을 여는 함수(`utmNew` 등)는 `evaluate` 안에서 **return 하지 말 것**(닫힐 때까지 안 끝나 교착).
 - **단축 링크 앞부분은 고도몰 주소로 (mvp_152b · 2026-09-17)** — "db.samsungat.co.kr 이 문자에 노출되는 게 싫다" 는 지적. 앞부분은 `core.app_setting 'short_base'` 하나이고 `fn_utm_campaigns` 가 읽을 때 붙이므로
   바꾸면 **이미 만든 링크(2juqy8 등)도 전부 새 앞부분으로** 보인다(슬러그·긴 주소는 그대로). UTM 관리 '단축 링크 주소' 카드 [바꾸기] → `utmBaseEdit()` → `fn_utm_setting_save(p_base)`(관리자만, `^https://…\?(c=)?$` 검사).
-  **착지 파일이 그 주소에 먼저 올라가 있어야 한다** — 고도몰용 `tools/godo/r.php` 를 `www.samsungsh.co.kr/r/index.php` 로 올린다(진짜 302: 슬러그 검사 → curl 로 `fn_link_go` → `Location:`, 실패면 홈페이지, `Cache-Control: no-store`).
-  publishable 키만 들어 있어 노출돼도 된다. 컨테이너는 Supabase 로 나가는 HTTP 가 막혀 있어 `php -S` + 가짜 RPC 로만 검증했다(302·대소문자·`?c=`·잘못된 슬러그·빈 값).
-  GitHub Pages 의 `r/index.html` 은 그대로 둔다(db.samsungat.co.kr 앞부분일 때의 착지). 올린 뒤 앞부분을 `https://www.samsungsh.co.kr/r/?` 로 바꾸면 추석 링크는 `https://www.samsungsh.co.kr/r/?2juqy8`.
+  **착지 파일이 그 주소에 먼저 올라가 있어야 한다.** 고도몰은 `/r/index.php` 같은 경로에 파일을 못 올린다("그렇게는 못올려") — 가능한 곳은 `samsungsh.com/data/` 아래뿐이라 **결정: `tools/godo/r.html`(정적, `r/index.html` 과 같은 JS 착지)을 `/data/r.html` 로 올린다** → 앞부분 `https://www.samsungsh.com/data/r.html?`.
+  파일 이름·폴더는 아무거나 된다(쿼리만 읽는다) — 올린 실제 주소 그대로 [바꾸기]에 넣으면 된다. `samsungsh.com`(103.142.103.237)과 `www.samsungsh.co.kr`(103.87.116.108)은 서버가 다르니 **올린 호스트와 앞부분 호스트를 똑같이** 맞출 것.
+  다른 후보(보관만): `tools/godo/r.php`(진짜 302, 고도몰이 PHP 를 받을 때) · `tools/go/`(GitHub Pages 별도 저장소 + DNS `go.samsungat.co.kr`, README 참고) · buly.kr 같은 공용 단축기는 통신사 스팸 필터·수명 문제로 비추천.
+  GitHub Pages 의 `r/index.html` 은 그대로 둔다(db.samsungat.co.kr 앞부분일 때의 착지). 컨테이너는 Supabase 로 나가는 HTTP 가 막혀 있어 착지 페이지는 가짜 RPC 로만 검증했다(`ptest/utm.mjs` R1~R4 · `ptest/go_chk.mjs`).
   **캠페인명에서 미리 채운 코드는 고칠 수 있다** — `utmForm(c, lock)` 의 readonly 는 [수정](`utmEdit`) 창에서만(발송 이력·UTM 이 그 이름으로 남아 있으므로). 새 캠페인·[링크 만들기] 등록 창은 열려 있다. 테스트 U11·U12.
 - **utm_source 는 crm_manual 기본 · 고정하지 않는다 (mvp_152c · 2026-09-17)** — "나중에 센드온 안 쓰면 어쩌게". 단축 링크 창에 `utm_source`(`#ul_source`, 기본 `crm_manual`, datalist sendon·kakao·naver)와 `utm_campaign`(`#ul_campaign`, 캠페인 코드로 미리 채움) 칸이 있고 둘 다 고칠 수 있다.
   `fn_utm_link_save` 는 `p.source`(없으면 crm_manual)·`p.utm_campaign`(없으면 코드)을 받고, `core.f_utm_url`·`crm.link.utm_source` 기본값도 crm_manual. **값은 `core.f_utm_tok` 이 전부 소문자로 정리한다**(GA4 는 대소문자를 다른 값으로 세므로 `CRM_manual` 도 `crm_manual`).
