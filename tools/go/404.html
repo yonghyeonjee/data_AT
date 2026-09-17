@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>이동 중 · 삼성스토어 시흥</title>
+<style>
+/* 단축 링크 착지 페이지 — 클릭을 적고 원래 주소로 보낸다. 글꼴·이미지 없이 가볍게 */
+html,body{margin:0;padding:0;background:#EEF1F6;color:#151A23;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+.w{max-width:420px;margin:0 auto;padding:56px 20px;text-align:center}
+.b{color:#1B2A5B;font-weight:800;letter-spacing:-.02em;font-size:15px;margin-bottom:28px}
+p{font-size:15px;line-height:1.7;margin:0 0 14px}
+.btn{display:block;min-height:50px;line-height:50px;border-radius:12px;background:#1B2A5B;color:#fff;font-weight:700;font-size:16px;text-decoration:none}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#1B2A5B;margin:0 3px;animation:d 1s infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes d{0%,100%{opacity:.25}50%{opacity:1}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="w">
+  <div class="b">SAMSUNG&amp;TECH · 시흥점</div>
+  <div id="m"><span class="dot"></span><span class="dot"></span><span class="dot"></span><p style="margin-top:14px">페이지로 이동합니다…</p></div>
+  <div id="f" hidden>
+    <p>링크가 만료됐거나 주소가 잘못됐습니다.</p>
+    <a class="btn" href="https://www.samsungsh.co.kr">삼성스토어 시흥 홈페이지로</a>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL="https://wdahskrcpjooqhwwxjiu.supabase.co";
+const SB_KEY="sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
+/* 주소 모양: go.samsungat.co.kr/?ab3k9x (또는 ?c=ab3k9x · 404.html 경유면 /ab3k9x) */
+const q=location.search.replace(/^\?/,'') || location.pathname.replace(/^\/+|\/+$/g,'');
+const slug=(q.replace(/^c=/,'').split('&')[0]||'').trim().toLowerCase();
+function fail(){ document.getElementById('m').hidden=true; document.getElementById('f').hidden=false; }
+(async()=>{
+  if(!/^[a-z0-9]{3,12}$/.test(slug)) return fail();
+  try{
+    const sb=window.supabase.createClient(SB_URL,SB_KEY);
+    const call=sb.rpc('fn_link_go',{p_slug:slug, p_ref:document.referrer||null, p_ua:(navigator.userAgent||'').slice(0,200)});
+    const wait=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000));
+    const {data,error}=await Promise.race([call,wait]);
+    if(error||!data||!data.url) return fail();
+    location.replace(data.url);
+  }catch(e){ fail(); }
+})();
+</script>
+</body>
+</html>
