@@ -1117,10 +1117,10 @@ function drawWf(){
   const chLocked=focus!==null;
   if(chLocked&&wfTab==='ch')wfTab='pr';          // 몰을 고르면 상품 분해가 기본
   if((wfTab==='pr'||chLocked)&&NP){
-    const c1=prodSum(selMonths()),c0=prodSum(selMonths(cmp.lo,cmp.hi));
+    const c1=prodSum(selMonths()),c0=prodSum(selMonths(cmp.lo,cmp.hi)),q1=prodSum(selMonths(),true),q0=prodSum(selMonths(cmp.lo,cmp.hi),true);
     const ids=new Set([...Object.keys(c1),...Object.keys(c0)]);
     ids.forEach(id=>{const diff=(c1[id]||0)-(c0[id]||0);
-      if(Math.abs(diff)>0)d.push({n:PR[id][0],d:diff,pid:+id});});
+      if(Math.abs(diff)>0)d.push({n:PR[id][0],d:diff,pid:+id,q:(q1[id]||0)-(q0[id]||0)});});
     curT=Object.values(c1).reduce((s,x)=>s+x,0);prvT=Object.values(c0).reduce((s,x)=>s+x,0);
   }else{
     CH.forEach((c,i)=>{const diff=cur.byCh[i][key]-prv.byCh[i][key];
@@ -1132,7 +1132,7 @@ function drawWf(){
   const keep=d.slice(0,6),rest=d.slice(6).reduce((s,x)=>s+x.d,0);
   keep.sort((x,y)=>y.d-x.d);
   const steps=[{n:'전기',v:prvT,t:'base'}]
-    .concat(keep.map(x=>({n:x.n,v:x.d,t:'d',ci:x.ci,pid:x.pid})))
+    .concat(keep.map(x=>({n:x.n,v:x.d,t:'d',ci:x.ci,pid:x.pid,q:x.q})))
     .concat(Math.abs(rest)>0?[{n:'기타 '+(d.length-6)+'개',v:rest,t:'d'}]:[])
     .concat([{n:'당기',v:curT,t:'base'}]);
   const W=520,H=300,L=8,R=8,T=26,B=68,iw=W-L-R,ih=H-T-B;
@@ -1148,7 +1148,7 @@ function drawWf(){
     const attr=s.ci!==undefined?' style="cursor:pointer" data-ci="'+s.ci+'"'
       :(s.pid!==undefined?' style="cursor:pointer" data-pid="'+s.pid+'"':'');
     g+='<rect x="'+x+'" y="'+y1+'" width="'+bw+'" height="'+Math.max(2,y2-y1)+'" rx="2" fill="'+col+'"'+attr
-      +'><title>'+esc(s.n)+' '+(s.t==='d'&&s.v>0?'+':'')+wonS(s.v)+'</title></rect>';
+      +'><title>'+esc(s.n)+' '+(s.t==='d'&&s.v>0?'+':'')+wonS(s.v)+(s.q!==undefined?' · '+(s.q>0?'+':'')+s.q.toLocaleString()+'개':'')+'</title></rect>';
     g+='<text x="'+(x+bw/2)+'" y="'+(y1-7)+'" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="600" fill="'+col+'">'
       +(s.t==='d'&&s.v>0?'+':'')+wonS(s.v)+'</text>';
     if(i<steps.length-1)g+='<line x1="'+x+'" y1="'+y(p.y1)+'" x2="'+(x+slot)+'" y2="'+y(p.y1)+'" stroke="#C9CDD3" stroke-dasharray="2 2"/>';
@@ -1165,12 +1165,12 @@ function drawWf(){
   $('#wftabs').style.display=chLocked?'none':'';
 }
 $('#wftabs').querySelectorAll('button').forEach(el=>el.onclick=()=>{wfTab=el.dataset.w;drawWf();});
-function prodSum(mset){
+function prodSum(mset,qty){
   const o={};
   for(const c of PC){
     if(!mset.has(c[0])||!inScope(c[1]))continue;
     if(focus!==null&&c[1]!==focus)continue;      // 채널이 걸려 있으면 그 채널 안에서만
-    o[c[2]]=(o[c[2]]||0)+pval(c);}
+    o[c[2]]=(o[c[2]]||0)+(qty?(c[3]||0):pval(c));}
   return o;}
 
 /* ===== 추이 (이벤트 밴드 포함) ===== */
@@ -1335,7 +1335,7 @@ function prodAgg(useFilters){
 function drawPareto(){
   if(!NP){$('#pareto').innerHTML='<text x="310" y="140" text-anchor="middle" '+AX+'>상품 데이터 없음</text>';$('#pa-note').textContent='';return;}
   const key=mkey(),pa=prodAgg(false);
-  const items=Object.keys(pa.byP).map(id=>({id:+id,v:pa.byP[id][key]})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
+  const items=Object.keys(pa.byP).map(id=>({id:+id,v:pa.byP[id][key],q:pa.byP[id].q||0})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
   const tot=items.reduce((s,x)=>s+x.v,0)||1;
   const show=items.slice(0,20);
   const W=620,H=280,L=52,R=44,T=16,B=54,iw=W-L-R,ih=H-T-B;
@@ -1349,7 +1349,7 @@ function drawPareto(){
     cum+=x.v;
     const px=L+slot*i+(slot-bw)/2,h=x.v/mx*ih;
     g+='<rect x="'+px+'" y="'+(T+ih-h)+'" width="'+bw+'" height="'+h+'" rx="2" fill="'+(i<3?'#1428A0':i<10?'#3E5BC9':'#7A8CE8')+'"'
-      +' style="cursor:pointer" data-p="'+x.id+'"><title>'+esc(PR[x.id][0])+' '+wonS(x.v)+' · 누적 '+pct(cum,tot).toFixed(1)+'%</title></rect>';
+      +' style="cursor:pointer" data-p="'+x.id+'"><title>'+esc(PR[x.id][0])+' '+wonS(x.v)+' · '+x.q.toLocaleString()+'개 · 누적 '+pct(cum,tot).toFixed(1)+'%</title></rect>';
     pts.push((px+bw/2).toFixed(1)+','+(T+ih-cum/tot*ih).toFixed(1));});
   g+='<line x1="'+L+'" y1="'+(T+ih-0.8*ih)+'" x2="'+(W-R)+'" y2="'+(T+ih-0.8*ih)+'" stroke="#8A5D00" stroke-dasharray="4 3"/>'
     +'<text x="'+(L+5)+'" y="'+(T+ih-0.8*ih-6)+'" font-family="IBM Plex Mono,monospace" font-size="11.5" fill="#8A5D00">80%</text>';
@@ -1396,14 +1396,14 @@ function openDrawer(name,sub,html){
   $('#mask').style.display='block';$('#drawer').classList.add('open');$('#dw-x').focus();}
 function closeDrawer(){$('#mask').style.display='none';$('#drawer').classList.remove('open');}
 $('#dw-x').onclick=closeDrawer;$('#mask').onclick=closeDrawer;
-function miniBars(labels,vals,color,h2){
+function miniBars(labels,vals,color,h2,tips){
   const W=490,H=h2||155,L=6,T=18,B=26,iw=W-L*2,ih=H-T-B;
   const mx=Math.max(...vals,1),slot=iw/Math.max(vals.length,1),bw=Math.min(46,Math.max(2,slot*0.62));
   const lbl=vals.length<=16;
   let g='';
   vals.forEach((v,i)=>{
     const x=L+slot*i+(slot-bw)/2,h=Math.max(1,v/mx*ih),y=T+ih-h;
-    g+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+h+'" rx="2" fill="'+color+'"><title>'+labels[i]+' '+wonS(v)+'</title></rect>';
+    g+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+h+'" rx="2" fill="'+color+'"><title>'+labels[i]+' '+wonS(v)+(tips&&tips[i]?' · '+tips[i]:'')+'</title></rect>';
     if(lbl&&v>0)g+='<text x="'+(x+bw/2)+'" y="'+(y-6)+'" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11.5" fill="#3C434D">'+wonS(v)+'</text>';
     if(lbl||i%Math.ceil(vals.length/10)===0)
       g+='<text x="'+(x+bw/2)+'" y="'+(H-7)+'" text-anchor="middle" '+AX+'>'+labels[i]+'</text>';});
@@ -1515,12 +1515,12 @@ function openCh(ci){
 }
 function openPr(pid){
   const m=PR[pid],mset=selMonths();
-  let q=0,g=0,r=0;const byM={},byCh={};
+  let q=0,g=0,r=0;const byM={},byCh={},byMQ={},byChQ={};
   for(const c of PC){
     if(c[2]!==pid||!mset.has(c[0])||!inScope(c[1]))continue;
     q+=c[3];g+=c[4];r+=c[5];
-    byM[PM[c[0]]]=(byM[PM[c[0]]]||0)+(c[4]-c[5]);
-    byCh[c[1]]=(byCh[c[1]]||0)+(c[4]-c[5]);}
+    byM[PM[c[0]]]=(byM[PM[c[0]]]||0)+(c[4]-c[5]);byMQ[PM[c[0]]]=(byMQ[PM[c[0]]]||0)+(c[3]||0);
+    byCh[c[1]]=(byCh[c[1]]||0)+(c[4]-c[5]);byChQ[c[1]]=(byChQ[c[1]]||0)+(c[3]||0);}
   const ms=months.filter(x=>x>=DAYS[a].slice(0,7)&&x<=DAYS[b].slice(0,7));
   let h='<div class="dw-k">'
     +'<div><span class="k">순매출</span><span class="v">'+wonS(g-r)+'</span></div>'
@@ -1529,10 +1529,10 @@ function openPr(pid){
     +'<div><span class="k">수량</span><span class="v">'+q.toLocaleString()+'개</span></div>'
     +'<div><span class="k">환불율</span><span class="v">'+(g?pct(r,g).toFixed(1)+'%':'–')+'</span></div>'
     +'<div><span class="k">평균 단가</span><span class="v">'+(q?wonS(g/q):'–')+'</span></div></div>';
-  h+='<div class="dw-s">월별 순매출</div>'+miniBars(ms.map(x=>parseInt(x.slice(5),10)+'월'),ms.map(x=>byM[x]||0),'#1428A0');
-  const chs=Object.keys(byCh).map(ci=>({ci:+ci,v:byCh[ci]})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
+  h+='<div class="dw-s">월별 순매출 <span class="note">· 막대에 마우스를 올리면 개수</span></div>'+miniBars(ms.map(x=>parseInt(x.slice(5),10)+'월'),ms.map(x=>byM[x]||0),'#1428A0',null,ms.map(x=>(byMQ[x]||0).toLocaleString()+'개'));
+  const chs=Object.keys(byCh).map(ci=>({ci:+ci,v:byCh[ci],q:byChQ[ci]||0})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
   const ctot=chs.reduce((s,x)=>s+x.v,0)||1;
-  h+='<div class="dw-s">판매 채널</div>'+hbars(chs.map(x=>({l:CH[x.ci].name,v:x.v,q:pct(x.v,ctot).toFixed(0)+'%'})),
+  h+='<div class="dw-s">판매 채널</div>'+hbars(chs.map(x=>({l:CH[x.ci].name,v:x.v,q:x.q.toLocaleString()+'개',note:'비중 '+pct(x.v,ctot).toFixed(0)+'%'})),
     i=>i<PAL.length?PAL[i]:GREY);
   h+='<div class="note" style="margin-top:16px">샵링커 주문 · 상품 데이터는 <b>월 단위</b>라 기간을 월 중간으로 잘라도 해당 월 전체가 집계됩니다.</div>';
   openDrawer(m[1],m[0]+' · '+m[2],h);}
@@ -1655,11 +1655,11 @@ function drawFinds(){
       +(RT&&RT.custs?' · 거래처 <span class="stat">'+RT.custs.length+'곳</span>':'')
       +' · 월 발생 청구 기준이라 환불 개념이 없습니다.']);
   if(NP){
-    const byP={};PC.forEach(c=>{byP[c[2]]=(byP[c[2]]||0)+(c[4]-c[5]);});
+    const byP={},byQ={};PC.forEach(c=>{byP[c[2]]=(byP[c[2]]||0)+(c[4]-c[5]);byQ[c[2]]=(byQ[c[2]]||0)+(c[3]||0);});
     const ids=Object.keys(byP).sort((x,y)=>byP[y]-byP[x]);
     const totP=ids.reduce((s,id)=>s+byP[id],0);
     if(ids.length)items.push(['good','상위 10종이 상품 매출의 '+pct(ids.slice(0,10).reduce((s,id)=>s+byP[id],0),totP).toFixed(0)+'%',
-      '1위 <span class="stat">'+esc(PR[ids[0]][0])+'</span> '+wonS(byP[ids[0]])+' · 전체 <span class="stat">'+ids.length+'종</span>.']);}
+      '1위 <span class="stat">'+esc(PR[ids[0]][0])+'</span> '+wonS(byP[ids[0]])+' · '+(byQ[ids[0]]||0).toLocaleString()+'개 · 전체 <span class="stat">'+ids.length+'종</span>.']);}
   items.push(['warn','소스가 셋입니다',
     '채널 매출은 원장(공식), 상품은 샵링커 <span class="stat">월 단위</span>, 렌탈은 청구 시트입니다. 원장에만 있는 채널은 상품 분해가 없어 합계가 다릅니다.']);
   $('#finds').innerHTML=items.map(it=>'<div class="find '+it[0]+'"><h3>'+it[1]+'</h3><p>'+it[2]+'</p></div>').join('');}
@@ -1795,14 +1795,16 @@ function renderCV(){
   if(ci===RENT_CH){pbox.innerHTML=rentalBlocks();document.getElementById('cvp-note').textContent='렌탈 청구 상세';}
   else if(NP){
     const mset=selMonths(),byP={};
-    for(const c of PC){if(c[1]!==ci||!mset.has(c[0]))continue;byP[c[2]]=(byP[c[2]]||0)+pval(c);}
-    const it=Object.keys(byP).map(id=>({id:+id,v:byP[id]})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
-    const ptot=it.reduce((s,x)=>s+x.v,0)||1;
+    const byQ={};
+    for(const c of PC){if(c[1]!==ci||!mset.has(c[0]))continue;byP[c[2]]=(byP[c[2]]||0)+pval(c);byQ[c[2]]=(byQ[c[2]]||0)+(c[3]||0);}
+    const it=Object.keys(byP).map(id=>({id:+id,v:byP[id],q:byQ[id]||0})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
+    const ptot=it.reduce((s,x)=>s+x.v,0)||1, qtot=it.reduce((s,x)=>s+x.q,0);
+    /* 금액은 그 상품 전체 판매액(개수 포함) · 왼쪽 N개 · 오른쪽 비중 (2026-09-17) */
     pbox.innerHTML=it.length?hbars(it.slice(0,12).map(x=>({l:PR[x.id][0]+'  '+PR[x.id][1],sub:PR[x.id][2],
-      v:x.v,q:pct(x.v,ptot).toFixed(1)+'%',id:x.id})),i=>i<3?'#1428A0':'#3E5BC9')
+      v:x.v,q:x.q.toLocaleString()+'개',note:'비중 '+pct(x.v,ptot).toFixed(1)+'%',id:x.id})),i=>i<3?'#1428A0':'#3E5BC9')
       :'<div class="empty">샵링커 상품 데이터가 없는 채널입니다</div>';
     pbox.querySelectorAll('.rk').forEach(el=>el.onclick=()=>openPr(+el.dataset.id));
-    document.getElementById('cvp-note').textContent=it.length?it.length+'종 · 샵링커 월 단위':'';
+    document.getElementById('cvp-note').textContent=it.length?it.length+'종 · '+qtot.toLocaleString()+'개 · 샵링커 월 단위':'';
   }else pbox.innerHTML='<div class="empty">상품 데이터 없음</div>';
   dirtyC=false;
 }
