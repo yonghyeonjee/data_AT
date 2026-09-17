@@ -466,8 +466,8 @@ body{background:
       <button id="s-gas" aria-pressed="false">대시보드 v4 (기존 app)</button>
     </div>
     <div class="seg" role="group" aria-label="집계 기준" id="basisseg" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커 등)에서 집계한 값">
-      <button id="m-manual" aria-pressed="true">수기입력</button>
-      <button id="m-ledger" aria-pressed="false">원장</button>
+      <button id="m-manual" aria-pressed="false">수기입력</button>
+      <button id="m-ledger" aria-pressed="true">원장</button>
     </div>
     <button class="ghost" id="b-refresh" title="원본을 다시 읽어 대시보드를 새로 만듭니다">데이터 갱신</button>
       <button class="ghost" id="b-pres">발표 모드</button>
@@ -676,7 +676,7 @@ const SHARE_URL = '__PASTE_ANYONE_DEPLOY_EXEC_URL__';
 const DC_URL = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_dash_payload_pub';
 const DC_ANON = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 const DC_MONTHS = 12;   // 자체 모드로 불러올 기간(개월)
-function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='ledger'?'ledger':'manual'; }
+function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='manual'?'manual':'ledger'; }   /* 기본 = 원장(주문 원천, 자동 수집). 수기입력은 대사표를 올렸을 때만 (2026-09-17) */
 const GAS_READY = SHARE_URL.indexOf('http')===0;   // 기존 app(GAS) 공유 주소가 실제로 설정돼 있는가
 function dashSrc(){ if(!GAS_READY){ try{ if(sessionStorage.getItem('dash_src')==='gas') sessionStorage.removeItem('dash_src'); }catch(e){} return 'dc'; }
   let v=''; try{ v=new URLSearchParams(location.search).get('src')||sessionStorage.getItem('dash_src')||''; }catch(e){} return v==='gas'?'gas':'dc'; }
