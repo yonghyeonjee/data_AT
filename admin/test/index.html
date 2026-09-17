@@ -2715,8 +2715,11 @@ function showOqLines(id){ const r=OQ_ROWS.find(x=>x.id===id); if(!r) return;
       (r.lines||[]).map(l=>`<tr><td class="mono">${esc(l.code)}</td><td>${esc(l.name||'')}</td><td class="num">${n(l.qty)}</td><td class="num">${l.price?n(l.price):''}</td></tr>`).join('')}</tbody></table></div>`}); }
 async function sendOq(ids){
   let list=ids;
-  if(!list){ try{ const d=await rpc('fn_order_queue',{p_status:null,p_limit:1,p_offset:0},{fresh:true}); const sm=d.summary||{}; const cnt=(sm.ready||0)+(sm.failed||0);
-      if(!cnt) return toast('전송 대기 건이 없습니다','bad'); list=null; ecSend({count:cnt, ids:null, run:()=>rpc('fn_order_send',{p_ids:null}), onDone:()=>{ rpcClear(); loadOq(oqPage); }}); return; }
+  if(!list){ try{ /* 대기·실패 전표의 id 를 먼저 받는다 — ecSend 가 한 장씩 보낸다 (mvp_151) */
+      const [a,b]=await Promise.all([rpc('fn_order_queue',{p_status:'ready',p_limit:100,p_offset:0},{fresh:true}),
+                                     rpc('fn_order_queue',{p_status:'failed',p_limit:100,p_offset:0},{fresh:true})]);
+      list=[...(a.rows||[]),...(b.rows||[])].map(r=>r.id).filter(Boolean);
+      if(!list.length) return toast('전송 대기 건이 없습니다','bad'); }
     catch(e){ return toast(e.message,'bad'); } }
   ecSend({count:list.length, ids:list, run:x=>rpc('fn_order_send',{p_ids:x}), onDone:()=>{ rpcClear(); loadOq(oqPage); }});
 }
@@ -3324,7 +3327,26 @@ function ecSend(o){
     dlg.innerHTML=`<div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg></div>
       <div><h4>전송 중…</h4><p>이카운트가 답할 때까지 이 창을 닫지 마세요. 전표 한 장에 1~2초쯤 걸립니다.</p></div></div>
       <div class="bd"><div class="prog"><i></i></div><div style="font-size:calc(12px * var(--font-scale));color:#646D7C" id="ecProgTx">${n(o.count)}장 보내는 중</div></div><div class="ft"></div>`;
-    let r; try{ r=await o.run(o.ids); }catch(e){ r={sent:0,failed:o.count,error:e.message,detail:[]}; }
+    /* 한 장씩 보낸다 (mvp_151). 이카운트 호출은 한 장에 1.2초 간격 + 왕복이라 여러 장을 한 문장에 넣으면
+       statement timeout(담당자 3초·관리자 8초)으로 롤백되는데, 이미 나간 HTTP 는 돌아오지 않아 이카운트에만
+       전표가 남고 우리 쪽엔 기록이 없는 상태(중복)가 된다. 장 사이 간격은 화면이 두어 서버가 다시 재지 않게 한다. */
+    const ids=Array.isArray(o.ids)?o.ids.slice():[]; const gap=(window.EC_SEND_GAP??1300); const readded=new Set();
+    const bar=dlg.querySelector('.prog i'), tx=dlg.querySelector('#ecProgTx');
+    let r={sent:0,failed:0,detail:[]};
+    if(!ids.length) r.error='전송할 주문서 목록이 없습니다';
+    for(let i=0;i<ids.length;i++){
+      if(tx) tx.textContent=`${i+1} / ${n(ids.length)}장 보내는 중`; if(bar) bar.style.width=Math.round(100*i/ids.length)+'%';
+      let one; try{ one=await o.run([ids[i]]); }
+      catch(e){ const m=e.message||'';
+        /* 권한·설정 오류는 다음 장도 똑같이 실패한다 — 바로 멈춘다. 그 밖(시간 초과 등)은 그 장만 실패로 적고 계속 */
+        if(/권한|고르세요|꺼져 있습니다/.test(m)){ r.error=m; r.failed+=ids.length-i; break; }
+        one={sent:0,failed:1,detail:[{id:ids[i],ok:false,message:m}]}; }
+      r.sent+=one.sent||0; r.failed+=one.failed||0; r.detail=r.detail.concat(one.detail||[]);
+      /* 서버가 시간 예산 때문에 손대지 않은 건(remaining)은 뒤에 한 번만 다시 넣는다 */
+      (one.remaining||[]).forEach(id=>{ if(!readded.has(id)&&!ids.includes(id,i+1)){ readded.add(id); ids.push(id); } });
+      if(i<ids.length-1) await new Promise(res=>setTimeout(res,gap));
+    }
+    if(bar) bar.style.width='100%';
     delete mask.dataset.busy;
     const ok=(r.failed||0)===0 && !r.error;
     const det=r.detail||[];
@@ -3370,7 +3392,26 @@ function ecSend(o){
     dlg.innerHTML=`<div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg></div>
       <div><h4>전송 중…</h4><p>이카운트가 답할 때까지 이 창을 닫지 마세요. 전표 한 장에 1~2초쯤 걸립니다.</p></div></div>
       <div class="bd"><div class="prog"><i></i></div><div style="font-size:calc(12px * var(--font-scale));color:#646D7C" id="ecProgTx">${n(o.count)}장 보내는 중</div></div><div class="ft"></div>`;
-    let r; try{ r=await o.run(o.ids); }catch(e){ r={sent:0,failed:o.count,error:e.message,detail:[]}; }
+    /* 한 장씩 보낸다 (mvp_151). 이카운트 호출은 한 장에 1.2초 간격 + 왕복이라 여러 장을 한 문장에 넣으면
+       statement timeout(담당자 3초·관리자 8초)으로 롤백되는데, 이미 나간 HTTP 는 돌아오지 않아 이카운트에만
+       전표가 남고 우리 쪽엔 기록이 없는 상태(중복)가 된다. 장 사이 간격은 화면이 두어 서버가 다시 재지 않게 한다. */
+    const ids=Array.isArray(o.ids)?o.ids.slice():[]; const gap=(window.EC_SEND_GAP??1300); const readded=new Set();
+    const bar=dlg.querySelector('.prog i'), tx=dlg.querySelector('#ecProgTx');
+    let r={sent:0,failed:0,detail:[]};
+    if(!ids.length) r.error='전송할 주문서 목록이 없습니다';
+    for(let i=0;i<ids.length;i++){
+      if(tx) tx.textContent=`${i+1} / ${n(ids.length)}장 보내는 중`; if(bar) bar.style.width=Math.round(100*i/ids.length)+'%';
+      let one; try{ one=await o.run([ids[i]]); }
+      catch(e){ const m=e.message||'';
+        /* 권한·설정 오류는 다음 장도 똑같이 실패한다 — 바로 멈춘다. 그 밖(시간 초과 등)은 그 장만 실패로 적고 계속 */
+        if(/권한|고르세요|꺼져 있습니다/.test(m)){ r.error=m; r.failed+=ids.length-i; break; }
+        one={sent:0,failed:1,detail:[{id:ids[i],ok:false,message:m}]}; }
+      r.sent+=one.sent||0; r.failed+=one.failed||0; r.detail=r.detail.concat(one.detail||[]);
+      /* 서버가 시간 예산 때문에 손대지 않은 건(remaining)은 뒤에 한 번만 다시 넣는다 */
+      (one.remaining||[]).forEach(id=>{ if(!readded.has(id)&&!ids.includes(id,i+1)){ readded.add(id); ids.push(id); } });
+      if(i<ids.length-1) await new Promise(res=>setTimeout(res,gap));
+    }
+    if(bar) bar.style.width='100%';
     delete mask.dataset.busy;
     const ok=(r.failed||0)===0 && !r.error;
     const det=r.detail||[];
