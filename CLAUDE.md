@@ -471,6 +471,10 @@ end $outer$;
   원장 모드의 매장 일시불·구독은 이제 **판매 입력(`core.orders` store, 취소·환불·테스트 제외, 매출+판매완료)** 에서, 그날 그 구분의 판매 입력이 없을 때만 store_daily 로(8월 시트 자료). 직판은 두 모드 다 store_daily. 수기입력 모드는 그대로.
   **일 마감의 '판매완료 합계'는 저장 시점 snapshot 이라 대시보드 원천으로 쓰면 안 된다.**
   **기본 모드를 원장으로 바꿨다 (v114)** — `/dash/` `dashBasis()` 는 `?mode=manual` 이나 sessionStorage 가 manual 일 때만 수기입력, 관리자 `DASH_BASIS` 기본 'ledger'(localStorage `dash_basis` 로 바꾼 사람은 그대로). 테스트 `ptest/dashmode.mjs` D1~D3.
+- **관리자 [상담 대시보드] (mvp_158 · v117 · 2026-09-17)** — "문의 처리현황도 대시보드처럼". crm 그룹 메뉴 `cdash`(`core.menu_item` sort 15, 문의 관리 다음). 화면 `#v-cdash`·`loadCdash`: 상단 기간 바(P) 그대로, 범위 세그(매장/매장 외/전체 · `localStorage dc_cd_scope`), 묶음(자동=45일 이하 일별·800일 이하 월별·그 위 연별 / 일 / 월), 상담사, 삭제 포함.
+  KPI 6장(문의·구매(성공률)·구매 금액(건당)·진행 중(연락 전·상담중·보류)·완료(비구매)·거절) → 그래프 6개(`cdBars` 기간 막대: 연한 문의 위 진한 구매 + 초록 금액 / `cdHBars` 채널·관심 제품·구매 제품(금액순)·담당자·유입경로) → 채널×기간 표(문의 / 구매).
+  **제품·금액은 `core.f_consult_stats` 에 넣었다** — `interests`(관심 카테고리, 쉼표 여러 개는 쪼개고 괄호 설명 제거) · `purchases`(구매 제품명 = 연결 주문 품목명 → purchase_item → 관심 모델 → 카테고리 → '(제품 미기록)', 금액 = 연결 주문 같은 주문번호 합계 → 예상 금액) · `total/periods/channels/handlers` 에 `amount`. 시그니처 그대로라 담당자 화면 상담 현황도 같은 함수를 쓴다.
+  '(제품 미기록)' 이 많으면(7~9월 49건 중 18건 7,854만) 구매완료를 [구매 확정] 없이 상태만 바꾼 것 — 판매 입력과 연결돼야 제품·금액이 찍힌다. 테스트 `ptest/cdash.mjs` C1~C5 (가짜 fn_consult_stats · 화면 `reveal('app')` 뒤 스크린샷).
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
@@ -491,7 +495,7 @@ end $outer$;
    저장소 안 `tools/` 의 값은 `PASTE_DC_KEY_HERE` 자리표시자다. **실제 값을 다시 넣지 않는다.**
    `gmail_inquiry` 는 아직 미설치라 값만 발급해 둔 상태. `_secrets.local.md` 참고
 3. 담당 프로 휴대폰 — Apps Script 에서 `syncNamecards` 1회 실행하면 네임카드에서 자동으로 채워진다
-4. GitHub Secrets `GA_PROPERTY_ID` · `GA_SA_JSON` · `GA_INGEST_KEY` — 없으면 GA4 수집이 건너뛴다
+4. GitHub Secrets `GA_PROPERTY_ID` · `GA_SA_JSON` · `GA_INGEST_KEY` — 없으면 GA4 수집이 건너뛴다. **2026-09-17 확인: 셋 다 비어 있어 `ga-traffic.yml` 이 매일 12:10 '건너뜁니다' 로 0초에 끝난다(성공으로 보임).** 값을 넣으면 다음 날부터 `core.web_traffic` 이 찬다. `GA_INGEST_KEY` 는 `core.api_key 'ga_traffic'` 의 값(`_secrets.local.md`).
 
 ### 알아둘 것 — GAS 를 왜 쓰고 있나
 

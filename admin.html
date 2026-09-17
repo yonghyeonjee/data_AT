@@ -750,6 +750,20 @@ tr.utm-link td{background:var(--bg2);border-top:0}tr.off>td{opacity:.55}
 .mx td.l{text-align:left;font-weight:600;background:var(--surface-2)}
 
 .dgrid{display:grid;gap:14px;margin-bottom:14px}
+/* 상담 대시보드 (mvp_158) — 가로 막대: 문의(연한) 위에 구매(진한) */
+.cdg{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;margin-bottom:14px}
+.cdhb{display:grid;grid-template-columns:minmax(80px,auto) 1fr auto;gap:5px 10px;align-items:center;font-size:calc(12.5px * var(--font-scale))}
+.cdhb .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;color:var(--ink);font-weight:600}
+.cdhb .tr{height:14px;border-radius:4px;background:#EEF0F4;position:relative;overflow:hidden}
+.cdhb .tr i{position:absolute;left:0;top:0;bottom:0;background:#C9D2F2;border-radius:4px}
+.cdhb .tr b{position:absolute;left:0;top:0;bottom:0;background:var(--navy);border-radius:4px}
+.cdhb .q{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.cdhb .q b{color:var(--ink)}
+.cdsvg{width:100%;height:auto;display:block}
+.cdsvg text{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;fill:var(--muted)}
+.cdsvg text.v{fill:var(--ink);font-weight:600}
+.cdsvg text.a{fill:#2E7D32;font-weight:600;font-size:10.5px}
+.mk.cd-ok{border-top-color:#2E7D32} .mk.cd-warn{border-top-color:#B45309} .mk.cd-bad{border-top-color:#B3261E}
 .d21{grid-template-columns:2fr 1fr} .d11{grid-template-columns:1fr 1fr} .d12{grid-template-columns:1fr 2fr}
 @media(max-width:1080px){.d21,.d11,.d12{grid-template-columns:1fr}}
 .dnote{font-size:calc(11.5px * var(--font-scale));color:var(--faint);margin-top:10px;line-height:1.6}
@@ -1505,6 +1519,39 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="tw"><table><thead><tr><th>주문일시</th><th class="num">경과</th><th>주문자</th><th>연락처</th><th>몰</th><th>주문상품</th><th class="num">금액</th><th>결제방법</th><th>주문번호</th><th>최근 발송</th></tr></thead><tbody id="tbUnpaid"></tbody></table></div>
           <div class="pager"><span id="upCount">아직 추출하지 않았습니다</span><div class="btns" id="upPg"></div></div>
           <textarea class="copybox hidden" id="unpaidCsv"></textarea>
+        </div>
+      </div>
+
+      <!-- ═══ 상담 대시보드 — 문의 → 구매 · 채널 · 담당자 · 관심 제품 · 구매 제품·금액 (mvp_158) ═══ -->
+      <div class="view hidden" id="v-cdash">
+        <div class="card" style="padding:12px 16px">
+          <div class="filters" style="align-items:center;gap:10px">
+            <span class="note">범위</span>
+            <div class="seg sm" id="cd_scope"><button type="button" data-v="store">매장</button><button type="button" data-v="out">매장 외</button><button type="button" data-v="">전체</button></div>
+            <span class="note">묶음</span>
+            <div class="seg sm" id="cd_grain"><button type="button" class="on" data-v="auto">자동</button><button type="button" data-v="day">일</button><button type="button" data-v="month">월</button></div>
+            <select class="in" id="cd_hd" onchange="loadCdash()" style="padding:4px 8px"><option value="">전체 상담사</option></select>
+            <label class="switch" id="cd_del" onclick="this.classList.toggle('on');loadCdash()"><span class="sw"></span>삭제 건 포함</label>
+            <span class="note" id="cdSub"></span>
+            <span style="flex:1"></span>
+            <button class="btn sm ghost" onclick="show('consults')">상담 목록</button>
+            <button class="btn sm ghost" onclick="loadCdash()">새로고침</button>
+          </div>
+        </div>
+        <div class="mkpis" id="cdKpi"></div>
+        <div class="cdg">
+          <div class="card"><h3>기간별 문의 → 구매 <span class="sub" id="cdTrendSub"></span></h3><div id="cdTrend"></div>
+            <p class="note" style="margin:8px 0 0">연한 막대 = 문의 · 진한 막대 = 구매 · 초록 숫자 = 구매 금액. 이어진 상담은 한 건으로 셉니다.</p></div>
+          <div class="card"><h3>채널별 <span class="sub">문의 · 구매 · 성공률</span></h3><div id="cdChan"></div></div>
+          <div class="card"><h3>관심 제품 <span class="sub">문의 때 적은 카테고리 · 여러 개면 각각</span></h3><div id="cdInt"></div></div>
+          <div class="card"><h3>구매 제품 · 금액 <span class="sub" id="cdPurSub"></span></h3><div id="cdPur"></div>
+            <p class="note" style="margin:8px 0 0">금액은 연결된 판매 입력(같은 주문번호 합계)이 있으면 그 값, 없으면 상담에 적은 예상 금액입니다. '(제품 미기록)' 은 구매완료인데 제품을 안 적은 건.</p></div>
+          <div class="card"><h3>담당자별 <span class="sub">문의 · 구매 · 금액</span></h3><div id="cdHd"></div></div>
+          <div class="card"><h3>유입경로 <span class="sub">채널 안에서 어디서 왔나</span></h3><div id="cdRoute"></div></div>
+        </div>
+        <div class="card">
+          <h3>표로 보기 <span class="sub">채널 × 기간</span></h3>
+          <div id="cdTable"></div>
         </div>
       </div>
 
@@ -4038,7 +4085,7 @@ document.querySelectorAll('.preset button').forEach(b=>b.addEventListener('click
 function applyPeriod(){ if(!$('pFrom').value||!$('pTo').value) return toast('시작일과 종료일을 넣어주세요','bad'); P={from:$('pFrom').value,to:$('pTo').value}; PRESET='custom'; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); periodLabel(); refreshView(); }
 
 /* ═══════════════ 네비 ═══════════════ */
-const NAV_ICON={utm:`<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>`,home:`<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,dash:`<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,orders:`<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,flow:`<svg viewBox="0 0 24 24"><path d="M3 6h5l3 6-3 6H3M10 6h5l3 6-3 6h-5M17 6h4v12h-4"/></svg>`,online:`<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg>`,daily:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,inbox:`<svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg>`,consults:`<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>`,customers:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>`,crm:`<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>`,stock:`<svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>`,moves:`<svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg>`,items:`<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>`,wiz:`<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/><path d="M18 10l3 2-3 2"/></svg>`,oq:`<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,upload:`<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>`,log:`<svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,option:`<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>`,notify:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`};
+const NAV_ICON={cdash:`<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 6-7"/><circle cx="20" cy="6" r="1.5"/></svg>`,utm:`<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>`,home:`<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,dash:`<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,orders:`<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,flow:`<svg viewBox="0 0 24 24"><path d="M3 6h5l3 6-3 6H3M10 6h5l3 6-3 6h-5M17 6h4v12h-4"/></svg>`,online:`<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg>`,daily:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,inbox:`<svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg>`,consults:`<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>`,customers:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>`,crm:`<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>`,stock:`<svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>`,moves:`<svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg>`,items:`<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>`,wiz:`<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/><path d="M18 10l3 2-3 2"/></svg>`,oq:`<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,upload:`<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>`,log:`<svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,option:`<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>`,notify:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`};
 /* 메뉴는 DB(core.menu_group / core.menu_item)에서 그린다.
    state: on 정상 · dev 개발 중(눌러도 공사중 안내) · off 숨김 */
 let MENU=[], MENU_STATE={};
@@ -4091,7 +4138,7 @@ function renderUnderConstruction(v){
       <div class="uc-tape"></div>
     </div>`;
 }
-const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'UTM 관리'};
+const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'UTM 관리',cdash:'상담 대시보드'};
 let VIEW='home';
 function toggleNav(force){ const on = force===undefined ? !document.body.classList.contains('nav-open') : !!force; document.body.classList.toggle('nav-open', on); }
 /* 뒤로가기 = 이전 화면. 화면을 바꿀 때마다 히스토리에 한 칸 쌓고, popstate 로 되돌아온다.
@@ -4261,7 +4308,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadWebInq(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList);},upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm};
+const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadWebInq(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>loadCustomers(0),crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList);},upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
@@ -5231,6 +5278,74 @@ async function pasteCond(){
   if($('crmReason').value.trim().length>=3) loadTargets(0);
   else toast('조건을 넣었습니다 — 캠페인명을 적고 [추출] 하세요','ok');
 }
+/* ═══════════════ 상담 대시보드 (mvp_158) — fn_consult_stats 하나로 그린다 ═══════════════
+   기간은 상단 기간 바(P), 범위(매장/매장 외/전체)는 localStorage dc_cd_scope. 상품·금액은 f_consult_stats 의 interests/purchases/amount. */
+let CD_SCOPE=(()=>{ try{ const v=localStorage.getItem('dc_cd_scope'); return v===null?'':v; }catch(e){ return ''; } })();
+function cdGrain(){ const g=(($('cd_grain').querySelector('button.on')||{}).dataset||{}).v||'auto'; if(g!=='auto') return g;
+  const days=P.from&&P.to?(new Date(P.to)-new Date(P.from))/86400000:30; return days<=45?'day':days<=800?'month':'year'; }
+function cdFmtP(grain){ return x=> grain==='day'? x.slice(5).replace('-','/') : grain==='month'? x.slice(2).replace('-','.') : x; }
+/* 기간별 막대 : 문의(연한) 위에 구매(진한) + 구매 금액 */
+function cdBars(Pd, fmtP){
+  if(!Pd.length) return '<div class="note" style="padding:24px;text-align:center">기간 안에 문의가 없습니다</div>';
+  const n=Pd.length, W=Math.max(360, Math.min(760, n*48)), H=190, L=8, R=8, T=26, B=26, iw=W-L-R, ih=H-T-B;
+  const mx=Math.max(1,...Pd.map(x=>Number(x.total)||0)); const slot=iw/n, bw=Math.min(36, slot*0.62);
+  const show=n<=14, step=show?1:Math.ceil(n/12);
+  const bars=Pd.map((x,i)=>{ const cx=L+slot*i+slot/2, ht=(Number(x.total)||0)/mx*ih, hb=(Number(x.bought)||0)/mx*ih;
+    return `<g><title>${esc(fmtP(x.p))} · 문의 ${x.total} · 구매 ${x.bought}${x.amount?' · '+wonK(x.amount):''}</title>
+      <rect x="${(cx-bw/2).toFixed(1)}" y="${(T+ih-ht).toFixed(1)}" width="${bw.toFixed(1)}" height="${ht.toFixed(1)}" rx="3" fill="#C9D2F2"/>
+      <rect x="${(cx-bw/2).toFixed(1)}" y="${(T+ih-hb).toFixed(1)}" width="${bw.toFixed(1)}" height="${hb.toFixed(1)}" rx="3" fill="#1428A0"/>
+      ${x.total&&show?`<text class="v" x="${cx.toFixed(1)}" y="${(T+ih-ht-4).toFixed(1)}" text-anchor="middle">${x.total}</text>`:''}
+      ${x.amount&&show?`<text class="a" x="${cx.toFixed(1)}" y="${(T+ih-ht-15).toFixed(1)}" text-anchor="middle">${esc(wonK(x.amount))}</text>`:''}
+      ${i%step===0?`<text x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle">${esc(fmtP(x.p))}</text>`:''}</g>`; }).join('');
+  return `<svg class="cdsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="기간별 문의와 구매"><line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}" stroke="#E4E7EC"/>${bars}</svg>`;
+}
+/* 가로 막대 : rows=[{l,total,bought,amount?,sub?}] · 막대 길이는 total(문의), 위에 bought(구매) */
+function cdHBars(rows, opt){ opt=opt||{}; const lim=opt.limit||10;
+  if(!rows.length) return '<div class="note" style="padding:18px;text-align:center">없음</div>';
+  const key=opt.by||'total'; rows=rows.slice().sort((a,b)=>(Number(b[key])||0)-(Number(a[key])||0)); const mx=Math.max(1,...rows.map(x=>Number(x[key])||0));
+  return `<div class="cdhb">${rows.slice(0,lim).map(x=>{ const t=Number(x.total)||0, b=Number(x.bought)||0, v=Number(x[key])||0;
+    const rate=t?Math.round(100*b/t):0;
+    const q=opt.q?opt.q(x):`<b>${n(t)}</b> · 구매 ${n(b)}${t?` (${rate}%)`:''}${x.amount?` · <span style="color:#2E7D32">${esc(wonK(x.amount))}</span>`:''}`;
+    return `<span class="n" title="${esc(x.l)}">${esc(x.l)}${x.sub?` <small class="note">${esc(x.sub)}</small>`:''}</span><span class="tr" title="${esc(x.l)} · ${q.replace(/<[^>]+>/g,'')}"><i style="width:${(100*v/mx).toFixed(1)}%"></i>${key==='total'?`<b style="width:${(100*b/mx).toFixed(1)}%"></b>`:''}</span><span class="q">${q}</span>`; }).join('')}</div>`
+    + (rows.length>lim?`<p class="note" style="margin:6px 0 0">외 ${rows.length-lim}개</p>`:''); }
+async function loadCdash(){
+  const sel=$('cd_hd'); if(sel && sel.options.length<=1 && (STAFF||[]).length) sel.innerHTML='<option value="">전체 상담사</option>'+STAFF.map(h=>`<option>${esc(h.name)}</option>`).join('');
+  $('cd_scope').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===CD_SCOPE));
+  const grain=cdGrain(), fmtP=cdFmtP(grain);
+  let d; try{ d=await rpc('fn_consult_stats',{p_grain:grain,p_from:P.from,p_to:P.to,p_handler:sel.value||null,p_include_deleted:$('cd_del').classList.contains('on'),p_scope:CD_SCOPE||null},{fresh:true}); }
+  catch(e){ toast(e.message,'bad'); return; }
+  const t=d.total||{}, Pd=d.periods||[], C=d.channels||[], H=d.handlers||[], R=d.routes||[], I=d.interests||[], PU=d.purchases||[], CP=d.channel_periods||[];
+  const sn=d.scope_n||{}; $('cd_scope').querySelectorAll('button').forEach(b=>{ const v=b.dataset.v; const cnt=v===''?((sn.store||0)+(sn.out||0)):(sn[v]||0); b.textContent=(v===''?'전체':v==='store'?'매장':'매장 외')+' '+n(cnt); });
+  $('cdSub').textContent=`${d.from} ~ ${d.to} · ${grain==='day'?'일별':grain==='year'?'연별':'월별'}${d.handler?' · '+d.handler:''}${d.include_deleted?' · 삭제 포함':''}${d.deleted_n?` · 삭제 ${n(d.deleted_n)}건 제외 중`:''}`;
+  const rate=t.total?Math.round(100*(t.bought||0)/t.total*10)/10:0;
+  const inprog=(t.open||0)+(t.hold||0);
+  $('cdKpi').innerHTML=[
+    ['문의', n(t.total||0), '건', `기간 안 ${n(Pd.length)}${grain==='day'?'일':grain==='year'?'년':'개월'}`, ''],
+    ['구매', n(t.bought||0), '건', `성공률 ${rate}%`, 'cd-ok'],
+    ['구매 금액', wonK(t.amount||0), '', t.bought?`건당 ${wonK((t.amount||0)/t.bought)}`:'', 'cd-ok'],
+    ['진행 중', n(inprog), '건', `연락 전·상담중 ${n(t.open||0)} · 보류 ${n(t.hold||0)}`, inprog?'cd-warn':''],
+    ['완료(비구매)', n(t.done||0), '건', '상담완료·확인완료', ''],
+    ['거절', n(t.reject||0), '건', t.total?`${Math.round(100*(t.reject||0)/t.total)}%`:'', (t.reject||0)?'cd-bad':''],
+  ].map(([k,v,u,sub,cls])=>`<div class="mk ${cls}"><div class="t">${k}</div><div class="v">${v}${u?`<small>${u}</small>`:''}</div>${sub?`<div class="s">${esc(sub)}</div>`:''}</div>`).join('');
+  $('cdTrendSub').textContent=`${grain==='day'?'일별':grain==='year'?'연별':'월별'} · 문의 ${n(t.total||0)} · 구매 ${n(t.bought||0)}`;
+  $('cdTrend').innerHTML=cdBars(Pd, fmtP);
+  $('cdChan').innerHTML=cdHBars(C.map(x=>({l:x.ch,total:x.total,bought:x.bought,amount:x.amount})));
+  $('cdInt').innerHTML=cdHBars(I.map(x=>({l:x.i,total:x.total,bought:x.bought})),{limit:12});
+  const puTot=PU.reduce((s,x)=>s+(Number(x.amount)||0),0), puN=PU.reduce((s,x)=>s+(Number(x.n)||0),0);
+  $('cdPurSub').textContent=puN?`${n(puN)}건 · ${wonK(puTot)}`:'';
+  $('cdPur').innerHTML=cdHBars(PU.map(x=>({l:x.pn,total:x.n,bought:0,amount:x.amount})),{limit:12,by:'amount',q:x=>`<b>${n(x.total)}건</b>${x.amount?` · <span style="color:#2E7D32">${esc(wonK(x.amount))}</span>`:' · 금액 없음'}`});
+  $('cdHd').innerHTML=cdHBars(H.map(x=>({l:x.h,total:x.total,bought:x.bought,amount:x.amount})),{limit:12});
+  $('cdRoute').innerHTML=cdHBars(R.map(x=>({l:x.r,sub:x.ch,total:x.total,bought:x.bought})),{limit:12});
+  const ps=Pd.map(x=>x.p), chs=[...new Set(CP.map(x=>x.ch))];
+  const cell=(ch,p)=>{ const x=CP.find(y=>y.ch===ch&&y.p===p); return x?`${n(x.total)}${x.bought?` <b style="color:#1428A0">/ ${n(x.bought)}</b>`:''}`:'<span class="note">·</span>'; };
+  $('cdTable').innerHTML=chs.length?`<div class="tw"><table><thead><tr><th>채널</th>${ps.map(x=>`<th class="num">${esc(fmtP(x))}</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>${chs.map(ch=>{ const c=C.find(y=>y.ch===ch)||{}; return `<tr><td>${esc(ch)}</td>${ps.map(p=>`<td class="num">${cell(ch,p)}</td>`).join('')}<td class="num"><b>${n(c.total||0)}</b>${c.bought?` / ${n(c.bought)}`:''}</td></tr>`; }).join('')}</tbody></table></div><p class="note" style="margin:8px 0 0">칸 = 문의 <b style="color:#1428A0">/ 구매</b></p>`
+    :'<div class="note">없음</div>';
+}
+document.addEventListener('click', e=>{ const b=e.target.closest('#cd_scope button, #cd_grain button'); if(!b) return;
+  b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  if(b.parentNode.id==='cd_scope'){ CD_SCOPE=b.dataset.v; try{ localStorage.setItem('dc_cd_scope', CD_SCOPE); }catch(e2){} }
+  loadCdash(); });
+
 /* ═══════════════ UTM 관리 — 캠페인 · 단축 링크 · 클릭 (mvp_152) ═══════════════
    캠페인 코드 하나가 utm_campaign · 발송 이력(send_log.campaign) · 접근 기록(access_log.reason) 의 이름을 겸한다.
    단축 링크 {short_base}슬러그 (앞부분은 core.app_setting short_base · fn_utm_setting_save 로 바꿈) 는 착지 페이지(/r/)가 fn_link_go 로 클릭을 적고 원래 주소로 보낸다. */
@@ -5789,6 +5904,9 @@ const PAGE_INFO={
   crm:{d:'메시지를 보낼 대상을 골라내는 페이지입니다. [대상 기준] 으로 수신동의 고객과 거래 재구매 주기 고객을 나눠 봅니다.',
     s:['캠페인명을 먼저 적습니다. 모든 추출·내보내기가 이 이름으로 감사로그에 남습니다.','조건을 걸고 추출하면 오른쪽 위 카드에 그 조건의 구성이 채워집니다.','"최근 발송 제외"로 같은 사람에게 연달아 보내는 것을 막습니다.','엑셀로 내려받아 문자·알림톡 도구에 넣고, 보낸 결과는 API(fn_send_log_add)로 되돌립니다.'],
     t:'발송 가능 인원이 적으면 고도몰 회원 파일(수신동의 포함)이 들어왔는지 데이터 가져오기에서 먼저 확인하세요.'},
+  cdash:{d:'문의가 어떻게 들어와서 어디까지 갔는지를 한눈에 보는 페이지입니다. 위 기간 바의 기간을 그대로 따르고, 매장·매장 외를 나눠 봅니다.',
+    s:['왼쪽 위 KPI 로 문의 → 구매 → 구매 금액 흐름을 보고, 채널·담당자·관심 제품·구매 제품으로 내려갑니다.','한 달 이내 기간은 일별, 그보다 길면 월별로 자동 묶입니다.','이어진 상담(＋ 새 상담)은 한 건으로 셉니다 — 문의 날짜·채널은 처음 것, 결과는 마지막 것.'],
+    t:'구매 금액이 0 인 구매완료 건은 판매 입력과 연결되지 않은 것입니다. 담당자 화면 [구매 확정] 으로 넣으면 금액이 채워집니다.'},
   utm:{d:'문자 캠페인을 등록하고 단축 링크를 만드는 페이지입니다. 캠페인 코드 하나가 utm_campaign · 발송 이력 · 접근 기록의 이름을 겸해서, 추출 → 발송 → 클릭 → 구매가 한 줄로 이어집니다.',
     s:['[+ 새 캠페인] 으로 코드(yymm_주제)·이름·발송일·대상 조건을 등록합니다.','[+ 링크] 로 단축 링크를 만들고 문자에는 짧은 주소만 넣습니다.','[이미 보낸 고객] 을 올릴 때 같은 코드를 적어야 발송·구매 열이 채워집니다.']},
   upload:{d:'외부 시스템의 데이터를 이 서비스에 넣는 페이지입니다. 소스를 고르고 파일을 올리거나 엑셀에서 붙여넣으면, 같은 검증·매핑을 거쳐 중복 없이 적재됩니다.',
