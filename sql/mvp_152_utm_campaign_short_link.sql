@@ -56,3 +56,20 @@ on conflict (code) do nothing;
 update crm.send_log set campaign='2608_toner' where campaign='2026-08-14 토너·잉크 교체 안내 (LMS)';
 
 -- 남은 숙제: GA4 쪽에서도 보려면 tools/ga/collect.mjs 에 sessionCampaignName 차원 리포트를 추가해야 한다 (지금은 pagePath 만).
+
+-- ═══ mvp_152b (2026-09-17) — 단축 링크 앞부분(short_base)을 화면에서 바꾼다. 관리자만. 기존 링크의 short 는 읽을 때 붙이므로 같이 바뀐다.
+create or replace function public.fn_utm_setting_save(p_base text) returns jsonb
+language plpgsql volatile security definer set search_path to 'pg_catalog','public' as $$
+declare v text := btrim(coalesce(p_base,''));
+begin
+  if core.f_role() <> 'admin' then raise exception '관리자만 바꿀 수 있습니다' using errcode='42501'; end if;
+  if v !~ '^https://[a-z0-9.-]+(/[A-Za-z0-9._/-]*)?\?(c=)?$' then
+    raise exception '주소는 https:// 로 시작하고 ? 로 끝나야 합니다 (예: https://www.samsungsh.co.kr/r/?)';
+  end if;
+  insert into core.app_setting (key, value) values ('short_base', v)
+  on conflict (key) do update set value = excluded.value, updated_at = now();
+  return jsonb_build_object('ok', true, 'short_base', v);
+end $$;
+revoke all on function public.fn_utm_setting_save(text) from public, anon;
+grant execute on function public.fn_utm_setting_save(text) to authenticated, service_role;
+-- 착지: 고도몰 www.samsungsh.co.kr/r/index.php ← tools/godo/r.php (publishable 키만, 302). 올린 뒤 UTM 관리 [바꾸기] 로 https://www.samsungsh.co.kr/r/? 

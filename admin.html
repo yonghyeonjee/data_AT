@@ -1520,9 +1520,18 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <tbody id="utmRows"></tbody></table></div>
         </div>
         <div class="card">
+          <h3>단축 링크 주소 <span>문자에 찍히는 앞부분</span></h3>
+          <div class="filters" style="align-items:center;gap:10px">
+            <b class="mono" id="utmBase" style="font-size:15px">-</b><span class="mono note" id="utmBaseEx"></span>
+            <button class="btn sm ghost" onclick="utmBaseEdit()">바꾸기</button>
+          </div>
+          <p class="note" style="margin:8px 0 0" id="utmBaseNote">고객에게 보이는 주소입니다. 바꾸면 <b>이미 만든 링크의 짧은 주소도 전부 새 앞부분으로</b> 보입니다 (슬러그는 그대로).
+            새 주소의 <span class="mono">/r/</span> 에 착지 파일이 올라가 있어야 합니다 — 고도몰은 <span class="mono">tools/godo/r.php</span>, GitHub Pages 는 <span class="mono">r/index.html</span>.</p>
+        </div>
+        <div class="card">
           <h3>단축 링크는 이렇게 돕니다 <span>문자에는 짧은 주소만 넣습니다</span></h3>
           <div class="callout">
-            <b class="mono">db.samsungat.co.kr/r/?ab3k9x</b> 를 누르면 → 클릭이 이 시스템에 기록되고 → UTM 이 붙은 긴 주소로 넘어갑니다.<br>
+            <b class="mono utm-base-ex">…/r/?ab3k9x</b> 를 누르면 → 클릭이 이 시스템에 기록되고 → UTM 이 붙은 긴 주소로 넘어갑니다.<br>
             그래서 <b>클릭 수는 GA4 없이도 여기서 바로</b> 보이고, 구매 열은 그 캠페인으로 문자를 받은 분이 발송 뒤에 산 주문을 셉니다.<br>
             링크를 지우면 이미 나간 문자의 주소가 죽으므로 <b>[끄기]</b> 만 있습니다. 발송 이력이 있는 캠페인도 지우지 않고 <b>[접기]</b> 합니다.
           </div>
@@ -5224,14 +5233,27 @@ async function pasteCond(){
 }
 /* ═══════════════ UTM 관리 — 캠페인 · 단축 링크 · 클릭 (mvp_152) ═══════════════
    캠페인 코드 하나가 utm_campaign · 발송 이력(send_log.campaign) · 접근 기록(access_log.reason) 의 이름을 겸한다.
-   단축 링크 db.samsungat.co.kr/r/?슬러그 는 /r/ 페이지가 fn_link_go 로 클릭을 적고 원래 주소로 보낸다. */
+   단축 링크 {short_base}슬러그 (앞부분은 core.app_setting short_base · fn_utm_setting_save 로 바꿈) 는 착지 페이지(/r/)가 fn_link_go 로 클릭을 적고 원래 주소로 보낸다. */
 let UTM=null, UTM_CAMPS=null, PENDING_SEG=null;
 const UTM_MED={sms:'SMS',lms:'LMS',mms:'MMS',kakao:'카카오',web:'웹'};
 async function loadUtm(){ const d=await rpc('fn_utm_campaigns',{},{fresh:true}); UTM=d||{}; UTM_CAMPS=(d&&d.campaigns)||[]; utmRender(); }
 async function utmCampsEnsure(){ if(UTM_CAMPS) return UTM_CAMPS; try{ const d=await rpc('fn_utm_campaigns',{}); UTM=d||{}; UTM_CAMPS=(d&&d.campaigns)||[]; }catch(e){ UTM_CAMPS=[]; } return UTM_CAMPS; }
 function utmCampListHtml(){ return `<datalist id="campList">${(UTM_CAMPS||[]).filter(c=>c.active!==false).map(c=>`<option value="${esc(c.code)}">${esc(c.name)}</option>`).join('')}</datalist>`; }
 function utmSegLabel(code){ const s=((UTM&&UTM.segments)||[]).find(x=>x.code===code); return s?s.label:(code||''); }
+function utmBaseShow(){ const b=(UTM&&UTM.short_base)||''; const host=b.replace(/^https?:\/\//,'').replace(/\?(c=)?$/,'');
+  if($('utmBase')) $('utmBase').textContent=b||'-'; if($('utmBaseEx')) $('utmBaseEx').textContent=b?`→ 예: ${host}?ab3k9x`:'';
+  document.querySelectorAll('.utm-base-ex').forEach(el=>el.textContent=(host||'…/r/')+'?ab3k9x'); }
+async function utmBaseEdit(){ const cur=(UTM&&UTM.short_base)||'';
+  const d=await modal({title:'단축 링크 주소 바꾸기', ok:'바꾸기', wide:true,
+    html:`<label>앞부분 <span class="note">https:// 로 시작하고 ? 로 끝납니다</span></label><input class="in mono" id="ub_base" value="${esc(cur)}" placeholder="https://www.samsungsh.co.kr/r/?">
+      <p class="note" style="margin-top:8px">예: <span class="mono">https://www.samsungsh.co.kr/r/?</span> → 문자에는 <span class="mono">www.samsungsh.co.kr/r/?ab3k9x</span> 로 찍힙니다.<br>
+      그 주소에 착지 파일(고도몰 <span class="mono">r/index.php</span>)이 먼저 올라가 있어야 합니다. 없으면 고객이 404 를 봅니다.</p>`,
+    collect:()=>{ const v=$('ub_base').value.trim(); if(!/^https:\/\/[a-z0-9.-]+(\/[A-Za-z0-9._\/-]*)?\?(c=)?$/.test(v)) throw new Error('주소는 https:// 로 시작하고 ? 로 끝나야 합니다 (예: https://www.samsungsh.co.kr/r/?)'); return v; },
+    init:()=>setTimeout(()=>$('ub_base').focus(),30)});
+  if(!d) return;
+  try{ await rpc('fn_utm_setting_save',{p_base:d}); toast('단축 링크 주소를 바꿨습니다 — 모든 링크가 새 앞부분으로 보입니다','ok'); rpcClear(); await loadUtm(); }catch(e){ toast(e.message,'bad'); } }
 function utmRender(){
+  utmBaseShow();
   const rows=UTM_CAMPS||[];
   $('utmRows').innerHTML = rows.map(c=>{
     const head=`<tr class="${c.active===false?'off':''}">
@@ -5254,9 +5276,9 @@ function utmRender(){
         <td><button class="btn sm ghost" data-slug="${esc(k.slug)}" onclick="utmLinkToggle(this.dataset.slug)">${k.active?'끄기':'켜기'}</button></td></tr>`).join('');
     return head+sub; }).join('') || `<tr><td colspan="10" class="note" style="text-align:center;padding:24px">캠페인이 없습니다 — [+ 새 캠페인] 으로 시작하세요</td></tr>`;
 }
-function utmForm(c){ c=c||{}; const segs=(UTM&&UTM.segments)||[]; const base=c.send_on||iso(new Date()); const ym=base.slice(2,4)+base.slice(5,7);
+function utmForm(c, lock){ c=c||{}; const segs=(UTM&&UTM.segments)||[]; const base=c.send_on||iso(new Date()); const ym=base.slice(2,4)+base.slice(5,7);
   return `<div class="fgrid" style="grid-template-columns:1fr 1fr">
-    <div><label>코드 <span style="color:var(--bad)">필수</span> <span class="note">yymm_주제 · 영문 소문자·숫자·_ (utm_campaign 그대로)</span></label><input class="in mono" id="uc_code" value="${esc(c.code||'')}" placeholder="${ym}_chuseok" ${c.code?'readonly':''}></div>
+    <div><label>코드 <span style="color:var(--bad)">필수</span> <span class="note">${lock?'한 번 정한 코드는 바꾸지 않습니다 (발송 이력·UTM 이 이 이름으로 남아 있음)':'yymm_주제 · 영문 소문자·숫자·_ (utm_campaign 그대로) · 자동으로 채워졌어도 고칠 수 있습니다'}</span></label><input class="in mono" id="uc_code" value="${esc(c.code||'')}" placeholder="${ym}_chuseok" ${lock?'readonly':''}></div>
     <div><label>이름 <span style="color:var(--bad)">필수</span></label><input class="in" id="uc_name" value="${esc(c.name||'')}" placeholder="추석 구독 할인 대축제"></div>
     <div><label>문자 종류</label><select class="in" id="uc_medium">${Object.entries(UTM_MED).map(([k,v])=>`<option value="${k}" ${k===(c.medium||'lms')?'selected':''}>${v}</option>`).join('')}</select></div>
     <div><label>발송 예정일</label><input class="in" type="date" id="uc_send" value="${esc(c.send_on||'')}"></div>
@@ -5271,7 +5293,7 @@ function utmCollect(){ const v=id=>$(id).value.trim(); const code=v('uc_code').t
 async function utmNew(){ const d=await modal({title:'새 캠페인', ok:'저장', wide:true, html:utmForm(), collect:utmCollect, init:()=>setTimeout(()=>$('uc_code').focus(),30)}); if(!d) return;
   try{ await rpc('fn_utm_campaign_save',{p:d}); toast('캠페인을 만들었습니다 — [+ 링크] 로 단축 링크를 만드세요','ok'); rpcClear(); await loadUtm(); }catch(e){ toast(e.message,'bad'); } }
 async function utmEdit(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code); if(!c) return;
-  const d=await modal({title:'캠페인 수정 · '+code, ok:'저장', wide:true, html:utmForm(c), collect:utmCollect}); if(!d) return;
+  const d=await modal({title:'캠페인 수정 · '+code, ok:'저장', wide:true, html:utmForm(c,true), collect:utmCollect}); if(!d) return;
   try{ await rpc('fn_utm_campaign_save',{p:d}); toast('저장했습니다','ok'); rpcClear(); await loadUtm(); }catch(e){ toast(e.message,'bad'); } }
 async function utmDel(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code); if(!c) return;
   const ok=await modal({title:c.sent?'캠페인 접기':'캠페인 삭제', ok:c.sent?'접기':'삭제', danger:true, requireText:c.sent?null:code,

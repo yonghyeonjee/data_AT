@@ -440,6 +440,12 @@ end $outer$;
   **발송 대상 추출 [링크 만들기](`utmQuick`)** — 캠페인명의 코드로 그 캠페인의 링크 창(`utmLinkNew`)을 열고, 없으면 그 자리에서 등록(코드·이름·지금 걸린 저장 조건 미리 채움) 뒤 이어서 링크. 캠페인명 칸은 `#crmCampList` datalist. 옛 `utmBuild`(클라이언트에서 UTM 만들던 창)는 걷어냈다 — UTM 값은 서버 `core.f_utm_tok/f_utm_url` 이 만든다([a-z0-9_.-] 만, 인코딩 없음).
   [대상 조건] 버튼 → `utmExtract(code, seg)` = 캠페인명에 코드 넣고 `PENDING_SEG` 로 넘어가 `loadSegments` 끝에서 `applySegment`. [이미 보낸 고객] 캠페인 칸도 코드 목록(`utmCampListHtml`).
   8/14 발송 이력 257줄의 campaign 을 `2608_toner` 로 맞췄다. 테스트 `ptest/utm.mjs` U1~U10(관리자)·R1~R4(/r/ 착지). **Playwright 라이브러리는 동작 타임아웃 기본이 무한** — 테스트에 `setDefaultTimeout` 을 걸고, 모달을 여는 함수(`utmNew` 등)는 `evaluate` 안에서 **return 하지 말 것**(닫힐 때까지 안 끝나 교착).
+- **단축 링크 앞부분은 고도몰 주소로 (mvp_152b · 2026-09-17)** — "db.samsungat.co.kr 이 문자에 노출되는 게 싫다" 는 지적. 앞부분은 `core.app_setting 'short_base'` 하나이고 `fn_utm_campaigns` 가 읽을 때 붙이므로
+  바꾸면 **이미 만든 링크(2juqy8 등)도 전부 새 앞부분으로** 보인다(슬러그·긴 주소는 그대로). UTM 관리 '단축 링크 주소' 카드 [바꾸기] → `utmBaseEdit()` → `fn_utm_setting_save(p_base)`(관리자만, `^https://…\?(c=)?$` 검사).
+  **착지 파일이 그 주소에 먼저 올라가 있어야 한다** — 고도몰용 `tools/godo/r.php` 를 `www.samsungsh.co.kr/r/index.php` 로 올린다(진짜 302: 슬러그 검사 → curl 로 `fn_link_go` → `Location:`, 실패면 홈페이지, `Cache-Control: no-store`).
+  publishable 키만 들어 있어 노출돼도 된다. 컨테이너는 Supabase 로 나가는 HTTP 가 막혀 있어 `php -S` + 가짜 RPC 로만 검증했다(302·대소문자·`?c=`·잘못된 슬러그·빈 값).
+  GitHub Pages 의 `r/index.html` 은 그대로 둔다(db.samsungat.co.kr 앞부분일 때의 착지). 올린 뒤 앞부분을 `https://www.samsungsh.co.kr/r/?` 로 바꾸면 추석 링크는 `https://www.samsungsh.co.kr/r/?2juqy8`.
+  **캠페인명에서 미리 채운 코드는 고칠 수 있다** — `utmForm(c, lock)` 의 readonly 는 [수정](`utmEdit`) 창에서만(발송 이력·UTM 이 그 이름으로 남아 있으므로). 새 캠페인·[링크 만들기] 등록 창은 열려 있다. 테스트 U11·U12.
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
