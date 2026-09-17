@@ -21,6 +21,7 @@
 | 재고 조회 | `/stock.html` | 사내 |
 | 담당자 사용 안내 | `/store/guide/` | 매장 프로 (서랍 [사용 안내]) |
 | 상담 흐름도 | `/flow/` | 사내 (대표님·점장님 설명용) |
+| 단축 링크 착지 | `/r/?슬러그` | 문자 받은 고객 (클릭 기록 → 원래 주소로) |
 
 `/admin/test/`, `/store/test/`, `/visit/test/` 는 같은 파일의 테스트본 (경로에 `/test/` 가 있으면 `DC_ENV='test'`).
 
@@ -34,7 +35,7 @@
 ```
 CNAME  README.md  VERSION.txt  robots.txt  favicon.ico
 index.html  admin.html  store.html  stock.html
-.github/workflows/   admin/  customer/  dash/  flow/  q/  sql/  store/  tools/  visit/
+.github/workflows/   admin/  customer/  dash/  flow/  q/  r/  sql/  store/  tools/  visit/
 ```
 
 **루트에 이것 말고 다른 파일이 있으면 잘못 올라간 것이다.**
@@ -432,6 +433,13 @@ end $outer$;
   서버: `f_order_send` 에 **1.0초 시간 예산** — 넘기면 새 장을 시작하지 않고 `remaining` 으로 반환. 화면: `ecSend` 가 **한 장씩 호출**(장 사이 `EC_SEND_GAP` 1.3초, 테스트는 짧게), 결과 합산·진행 표시, `remaining` 은 한 번만 뒤에 붙임, 권한 오류는 즉시 중단.
   `rpc()` 에 `RPC_NO_RETRY=/order_send/` — 바깥으로 나가는 호출은 절대 자동 재시도 안 함. 관리자 [전체 전송]은 `fn_order_queue`(ready·failed) 로 id 를 먼저 받아 한 장씩. `ecSend` 는 두 파일에 **같은 블록이 2번씩** 들어 있다(WIZ:SEND) — 고칠 때 둘 다.
   테스트 `ptest/ecsend.mjs` E1~E7(담당자)·A1~A2(관리자). 화면에 보이는 '· 김형주' 는 우리 기록(`cust_name`)이고 이카운트 거래처명은 mvp_150 대로 코드 기준('S몰 (에스몰)')으로 나간다 — 큐 25번으로 확인.
+- **UTM 관리 — 캠페인 · 단축 링크 · 클릭 (mvp_152 · 2026-09-17)** — 관리자 메뉴 [UTM 관리](`core.menu_item 'utm'`, crm 그룹, 화면 `#v-utm`·`loadUtm`).
+  **캠페인 코드(`crm.campaign.code`, `yymm_주제`, 예 `2609_chuseok`) 하나가 `utm_campaign` · `send_log.campaign` · `access_log.reason` 의 이름을 겸한다** — 같은 코드여야 추출→발송→클릭→구매가 한 줄로 이어진다.
+  단축 링크 `https://db.samsungat.co.kr/r/?슬러그`(`crm.link`, 6자 `core.f_slug`) → `/r/index.html` 이 `fn_link_go`(anon) 로 `crm.link_hit` 에 클릭을 적고 `location.replace` 로 UTM 붙은 긴 주소로. **클릭은 GA4 없이 우리 DB 에서 센다**(GA4 수집은 여전히 pagePath 만 — `collect.mjs` 에 `sessionCampaignName` 을 붙여야 GA4 쪽도 보인다).
+  캠페인 표 열: 발송(`send_log` 수신자) · 클릭(`link_hit`) · 구매(수신자 중 발송 뒤 주문) · 매출. 발송 이력이 있으면 [삭제] 대신 [접기], 링크는 지우지 않고 [끄기](이미 나간 문자의 주소가 죽으므로).
+  **발송 대상 추출 [링크 만들기](`utmQuick`)** — 캠페인명의 코드로 그 캠페인의 링크 창(`utmLinkNew`)을 열고, 없으면 그 자리에서 등록(코드·이름·지금 걸린 저장 조건 미리 채움) 뒤 이어서 링크. 캠페인명 칸은 `#crmCampList` datalist. 옛 `utmBuild`(클라이언트에서 UTM 만들던 창)는 걷어냈다 — UTM 값은 서버 `core.f_utm_tok/f_utm_url` 이 만든다([a-z0-9_.-] 만, 인코딩 없음).
+  [대상 조건] 버튼 → `utmExtract(code, seg)` = 캠페인명에 코드 넣고 `PENDING_SEG` 로 넘어가 `loadSegments` 끝에서 `applySegment`. [이미 보낸 고객] 캠페인 칸도 코드 목록(`utmCampListHtml`).
+  8/14 발송 이력 257줄의 campaign 을 `2608_toner` 로 맞췄다. 테스트 `ptest/utm.mjs` U1~U10(관리자)·R1~R4(/r/ 착지). **Playwright 라이브러리는 동작 타임아웃 기본이 무한** — 테스트에 `setDefaultTimeout` 을 걸고, 모달을 여는 함수(`utmNew` 등)는 `evaluate` 안에서 **return 하지 말 것**(닫힐 때까지 안 끝나 교착).
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
