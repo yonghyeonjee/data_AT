@@ -73,3 +73,13 @@ end $$;
 revoke all on function public.fn_utm_setting_save(text) from public, anon;
 grant execute on function public.fn_utm_setting_save(text) to authenticated, service_role;
 -- 착지: 고도몰 www.samsungsh.co.kr/r/index.php ← tools/godo/r.php (publishable 키만, 302). 올린 뒤 UTM 관리 [바꾸기] 로 https://www.samsungsh.co.kr/r/? 
+
+-- ═══ mvp_152c (2026-09-17) — utm_source 를 sendon 으로 고정하지 않는다. 기본 crm_manual, 링크 창에서 utm_source·utm_campaign 을 고칠 수 있다.
+-- fn_utm_link_save (prosrc 치환):
+--   coalesce(nullif(p->>'source',''),'sendon')  →  core.f_utm_tok(coalesce(nullif(p->>'source',''),'crm_manual'))   (2곳)
+--   f_utm_url(..., c.code, p->>'content', ...)  →  f_utm_url(..., coalesce(nullif(p->>'utm_campaign',''), c.code), p->>'content', ...)
+--   insert utm_campaign 값 c.code  →  core.f_utm_tok(coalesce(nullif(p->>'utm_campaign',''), c.code))
+-- core.f_utm_url: coalesce(p_source,'sendon') → coalesce(p_source,'crm_manual')
+alter table crm.link alter column utm_source set default 'crm_manual';
+-- fn_utm_campaigns links[] 에 'utm_source',k.utm_source,'utm_campaign',k.utm_campaign 추가.
+-- 통계(발송·클릭·구매)는 crm.link.campaign fk 기준이라 utm_campaign 을 바꿔도 표는 그대로.

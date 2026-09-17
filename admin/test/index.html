@@ -5270,7 +5270,7 @@ function utmRender(){
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmEdit(this.dataset.code)">수정</button>
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmDel(this.dataset.code)">${c.sent?'접기':'삭제'}</button></td></tr>`;
     const sub=(c.links||[]).map(k=>`<tr class="utm-link ${k.active?'':'off'}"><td></td><td colspan="4">
-        <div class="utm-short"><span class="mono">${esc(k.short)}</span> <button class="btn sm ghost" data-cp="${esc(k.short)}" onclick="utmCp(this.dataset.cp)">복사</button>${k.label?` <span class="tag n">${esc(k.label)}</span>`:''}${k.active?'':' <span class="tag n">꺼짐</span>'}</div>
+        <div class="utm-short"><span class="mono">${esc(k.short)}</span> <button class="btn sm ghost" data-cp="${esc(k.short)}" onclick="utmCp(this.dataset.cp)">복사</button>${k.label?` <span class="tag n">${esc(k.label)}</span>`:''}${k.utm_source?` <span class="tag n mono" title="utm_source">${esc(k.utm_source)}</span>`:''}${k.active?'':' <span class="tag n">꺼짐</span>'}</div>
         <div class="note mono" style="word-break:break-all">${esc(k.url)} <button class="btn sm ghost" data-cp="${esc(k.url)}" onclick="utmCp(this.dataset.cp)">긴 주소 복사</button></div></td>
         <td></td><td class="num">${n(k.hits)}${k.hits_today?`<div class="note">오늘 ${n(k.hits_today)}</div>`:''}</td><td colspan="2" class="note">${esc(k.created_at||'')}</td>
         <td><button class="btn sm ghost" data-slug="${esc(k.slug)}" onclick="utmLinkToggle(this.dataset.slug)">${k.active?'끄기':'켜기'}</button></td></tr>`).join('');
@@ -5308,10 +5308,13 @@ async function utmLinkNew(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code);
       <div><label>문자 종류 (utm_medium)</label><select class="in" id="ul_medium">${Object.entries(UTM_MED).map(([k,v])=>`<option value="${k}" ${k===c.medium?'selected':''}>${v}</option>`).join('')}</select></div>
       <div><label>구분 (utm_content) <span class="note">같은 캠페인 안에서 링크를 나눌 때 · 예: consent, a, b</span></label><input class="in mono" id="ul_content" placeholder="비워도 됩니다"></div>
       <div><label>표시 이름</label><input class="in" id="ul_label" placeholder="예: 본문 링크"></div>
-      <div><label>검색어 (utm_term)</label><input class="in mono" id="ul_term" placeholder="비워도 됩니다"></div></div>
-      <p class="note" style="margin-top:8px">utm_source 는 <b>sendon</b>, utm_campaign 은 <b class="mono">${esc(code)}</b> 로 고정됩니다.</p>`,
+      <div><label>검색어 (utm_term)</label><input class="in mono" id="ul_term" placeholder="비워도 됩니다"></div>
+      <div><label>보낸 곳 (utm_source) <span class="note">기본 crm_manual · 발송 도구가 바뀌면 여기만</span></label><input class="in mono" id="ul_source" value="crm_manual" list="utmSrcList"><datalist id="utmSrcList"><option value="crm_manual"><option value="sendon"><option value="kakao"><option value="naver"></datalist></div>
+      <div><label>캠페인 (utm_campaign) <span class="note">캠페인 코드가 자동으로 · 바꾸면 GA4 에서만 다른 이름</span></label><input class="in mono" id="ul_campaign" value="${esc(code)}"></div></div>
+      <p class="note" style="margin-top:8px">값은 전부 소문자·영문·숫자·<span class="mono">_ . -</span> 로 정리됩니다 (GA4 는 대소문자를 다른 값으로 셉니다). 발송·클릭·구매 통계는 utm_campaign 이 아니라 이 캠페인(<b class="mono">${esc(code)}</b>)에 붙습니다.</p>`,
     collect:()=>{ const v=id=>$(id).value.trim(); if(!/^https?:\/\//.test(v('ul_landing'))) throw new Error('랜딩 주소는 https:// 로 시작해야 합니다');
-      return {campaign:code, landing:v('ul_landing'), medium:v('ul_medium'), content:v('ul_content')||null, label:v('ul_label')||null, term:v('ul_term')||null}; }});
+      if(!v('ul_source')) throw new Error('utm_source 를 적어 주세요 (예: crm_manual)'); if(!v('ul_campaign')) throw new Error('utm_campaign 을 적어 주세요');
+      return {campaign:code, landing:v('ul_landing'), medium:v('ul_medium'), content:v('ul_content')||null, label:v('ul_label')||null, term:v('ul_term')||null, source:v('ul_source'), utm_campaign:v('ul_campaign')}; }});
   if(!d) return;
   let r; try{ r=await rpc('fn_utm_link_save',{p:d}); }catch(e){ return toast(e.message,'bad'); }
   rpcClear(); await loadUtm();

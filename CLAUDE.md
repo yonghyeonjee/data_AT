@@ -446,6 +446,9 @@ end $outer$;
   publishable 키만 들어 있어 노출돼도 된다. 컨테이너는 Supabase 로 나가는 HTTP 가 막혀 있어 `php -S` + 가짜 RPC 로만 검증했다(302·대소문자·`?c=`·잘못된 슬러그·빈 값).
   GitHub Pages 의 `r/index.html` 은 그대로 둔다(db.samsungat.co.kr 앞부분일 때의 착지). 올린 뒤 앞부분을 `https://www.samsungsh.co.kr/r/?` 로 바꾸면 추석 링크는 `https://www.samsungsh.co.kr/r/?2juqy8`.
   **캠페인명에서 미리 채운 코드는 고칠 수 있다** — `utmForm(c, lock)` 의 readonly 는 [수정](`utmEdit`) 창에서만(발송 이력·UTM 이 그 이름으로 남아 있으므로). 새 캠페인·[링크 만들기] 등록 창은 열려 있다. 테스트 U11·U12.
+- **utm_source 는 crm_manual 기본 · 고정하지 않는다 (mvp_152c · 2026-09-17)** — "나중에 센드온 안 쓰면 어쩌게". 단축 링크 창에 `utm_source`(`#ul_source`, 기본 `crm_manual`, datalist sendon·kakao·naver)와 `utm_campaign`(`#ul_campaign`, 캠페인 코드로 미리 채움) 칸이 있고 둘 다 고칠 수 있다.
+  `fn_utm_link_save` 는 `p.source`(없으면 crm_manual)·`p.utm_campaign`(없으면 코드)을 받고, `core.f_utm_url`·`crm.link.utm_source` 기본값도 crm_manual. **값은 `core.f_utm_tok` 이 전부 소문자로 정리한다**(GA4 는 대소문자를 다른 값으로 세므로 `CRM_manual` 도 `crm_manual`).
+  발송·클릭·구매 통계는 `crm.link.campaign`(fk) 에 붙으므로 utm_campaign 을 바꿔도 표는 그대로다. `fn_utm_campaigns` links 에 `utm_source`·`utm_campaign` 추가, 링크 줄에 utm_source 태그.
 - **담당자 사용 안내 `/store/guide/`** — 17장: 시작 · 화면 구성 · 상황 4개(온라인 문의/매장 방문/콜백→견적서→구매/지난 상담 찾기) · 화면별(홈·상담·상담 입력·견적서·내 고객·알림 내역·판매 입력/일 마감/월 마감·현황) · 점장이 하는 일 · 찾는 법 · 문제 시.
   화면을 고치면 여기도 같이 고친다. PDF 는 `ptest/guide_pdf.mjs` 로 뽑는다.
 
