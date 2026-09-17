@@ -1160,7 +1160,7 @@ function drawWf(){
   $('#wf').querySelectorAll('[data-pid]').forEach(el=>el.onclick=()=>openPr(+el.dataset.pid));
   const diff=curT-prvT;
   $('#wf-note').textContent=(chLocked?CH[focus].name+' · ':'')+cmp.label+' 대비 '
-    +(diff>=0?'+':'−')+wonS(Math.abs(diff))+(wfTab==='pr'?' · 상품 월 단위':'');
+    +(diff>=0?'+':'−')+wonS(Math.abs(diff))+(wfTab==='pr'?(PDAY?' · 상품 기간 집계':' · 상품 월 단위'):'');
   $('#wf-title').textContent=chLocked?'증감 원인 · 상품':'증감 원인';
   $('#wftabs').style.display=chLocked?'none':'';
 }
@@ -1312,8 +1312,13 @@ function drawHm(){
 }
 
 /* ===== 상품 ===== */
+/* 상품 셀 c[0] 은 pgran='d' 면 일 인덱스(DAYS), 아니면 월 인덱스(PM). 선택 기간 안의 셀만 통과시킨다 (2026-09-17 일 단위로) */
+const PDAY=(DATA.pgran==='d');
+function pmOf(i){ return PDAY?DAYS[i].slice(0,7):PM[i]; }
 function selMonths(lo,hi){
-  const l=DAYS[lo===undefined?a:lo].slice(0,7),h=DAYS[hi===undefined?b:hi].slice(0,7),s=new Set();
+  const l0=lo===undefined?a:lo,h0=hi===undefined?b:hi;
+  if(PDAY) return {has:i=>i>=l0&&i<=h0};
+  const l=DAYS[l0].slice(0,7),h=DAYS[h0].slice(0,7),s=new Set();
   PM.forEach((m,i)=>{if(m>=l&&m<=h)s.add(i);});
   return s;}
 function prodAgg(useFilters){
@@ -1519,7 +1524,7 @@ function openPr(pid){
   for(const c of PC){
     if(c[2]!==pid||!mset.has(c[0])||!inScope(c[1]))continue;
     q+=c[3];g+=c[4];r+=c[5];
-    byM[PM[c[0]]]=(byM[PM[c[0]]]||0)+(c[4]-c[5]);byMQ[PM[c[0]]]=(byMQ[PM[c[0]]]||0)+(c[3]||0);
+    byM[pmOf(c[0])]=(byM[pmOf(c[0])]||0)+(c[4]-c[5]);byMQ[pmOf(c[0])]=(byMQ[pmOf(c[0])]||0)+(c[3]||0);
     byCh[c[1]]=(byCh[c[1]]||0)+(c[4]-c[5]);byChQ[c[1]]=(byChQ[c[1]]||0)+(c[3]||0);}
   const ms=months.filter(x=>x>=DAYS[a].slice(0,7)&&x<=DAYS[b].slice(0,7));
   let h='<div class="dw-k">'
@@ -1534,7 +1539,7 @@ function openPr(pid){
   const ctot=chs.reduce((s,x)=>s+x.v,0)||1;
   h+='<div class="dw-s">판매 채널</div>'+hbars(chs.map(x=>({l:CH[x.ci].name,v:x.v,q:x.q.toLocaleString()+'개',note:'비중 '+pct(x.v,ctot).toFixed(0)+'%'})),
     i=>i<PAL.length?PAL[i]:GREY);
-  h+='<div class="note" style="margin-top:16px">샵링커 주문 · 상품 데이터는 <b>월 단위</b>라 기간을 월 중간으로 잘라도 해당 월 전체가 집계됩니다.</div>';
+  h+='<div class="note" style="margin-top:16px">'+(PDAY?'샵링커 주문 · 선택한 기간 안의 주문만 집계합니다.':'샵링커 주문 · 상품 데이터는 <b>월 단위</b>라 기간을 월 중간으로 잘라도 해당 월 전체가 집계됩니다.')+'</div>';
   openDrawer(m[1],m[0]+' · '+m[2],h);}
 
 /* ===== 상세 뷰 (지연 렌더) ===== */
@@ -1607,7 +1612,7 @@ function drawPList(){
   $('#pmore').style.display=items.length>pLimit?'':'none';
   $('#pmore').textContent='더 보기 ('+Math.min(pLimit,items.length)+' / '+items.length+')';
   $('#pl-note').textContent=[pMall>=0?CH[pMall].name:'전체 몰',pCat,pQ?'"'+pQ+'"':null].filter(Boolean).join(' · ')
-    +' · '+items.length+'종 · 월 단위 집계';}
+    +' · '+items.length+'종 · '+(PDAY?'기간 집계':'월 단위 집계');}
 $('#psearch').addEventListener('input',function(){pQ=this.value.trim();pLimit=30;drawPList();drawAbar();});
 $('#pmore').onclick=()=>{pLimit+=50;drawPList();};
 function drawMx(){
@@ -1661,7 +1666,7 @@ function drawFinds(){
     if(ids.length)items.push(['good','상위 10종이 상품 매출의 '+pct(ids.slice(0,10).reduce((s,id)=>s+byP[id],0),totP).toFixed(0)+'%',
       '1위 <span class="stat">'+esc(PR[ids[0]][0])+'</span> '+wonS(byP[ids[0]])+' · '+(byQ[ids[0]]||0).toLocaleString()+'개 · 전체 <span class="stat">'+ids.length+'종</span>.']);}
   items.push(['warn','소스가 셋입니다',
-    '채널 매출은 원장(공식), 상품은 샵링커 <span class="stat">월 단위</span>, 렌탈은 청구 시트입니다. 원장에만 있는 채널은 상품 분해가 없어 합계가 다릅니다.']);
+    '채널 매출은 원장(공식), 상품은 샵링커 <span class="stat">'+(PDAY?'일 단위':'월 단위')+'</span>, 렌탈은 청구 시트입니다. 원장에만 있는 채널은 상품 분해가 없어 합계가 다릅니다.']);
   $('#finds').innerHTML=items.map(it=>'<div class="find '+it[0]+'"><h3>'+it[1]+'</h3><p>'+it[2]+'</p></div>').join('');}
 
 /* ===== 채널(몰) 전용 뷰 ===== */
@@ -1804,7 +1809,7 @@ function renderCV(){
       v:x.v,q:x.q.toLocaleString()+'개',note:'비중 '+pct(x.v,ptot).toFixed(1)+'%',id:x.id})),i=>i<3?'#1428A0':'#3E5BC9')
       :'<div class="empty">샵링커 상품 데이터가 없는 채널입니다</div>';
     pbox.querySelectorAll('.rk').forEach(el=>el.onclick=()=>openPr(+el.dataset.id));
-    document.getElementById('cvp-note').textContent=it.length?it.length+'종 · '+qtot.toLocaleString()+'개 · 샵링커 월 단위':'';
+    document.getElementById('cvp-note').textContent=it.length?it.length+'종 · '+qtot.toLocaleString()+'개 · 샵링커 '+(PDAY?'기간 집계':'월 단위'):'';
   }else pbox.innerHTML='<div class="empty">상품 데이터 없음</div>';
   dirtyC=false;
 }
@@ -1854,7 +1859,7 @@ $('#foot').innerHTML='<b>주문 건수</b> · 샵링커 주문번호와 VMS 전�
   +'<b>선택 해제</b> · 채널을 다시 누르거나, 상단 필터 칩의 ✕, 추이 카드의 “전체 채널 보기”, 또는 Esc.<br>'
   +'<b>비교 기간</b> · 어제→전주 동요일, 이번 주→전주 동기간, 지난 주→전전주, 월→전월 전체, 이번 달→전월 같은 일자까지, 그 외→직전 동일 일수.<br>'
   +'<b>렌탈</b> · 월 발생 청구 기준(청구시작일 귀속). 환불 개념이 없어 환불율과 미기록 경고에서 제외합니다.<br>'
-  +'<b>상품</b> · 샵링커 월 단위 집계. 기간을 월 중간으로 잘라도 해당 월 전체가 잡힙니다.<br>'
+  +'<b>상품</b> · 샵링커 주문 기준, 선택한 기간 안의 주문만 집계합니다 (2026-09-17 부터 일 단위).<br>'
   +'<b>순매출</b> = 총매출 − 환불. <b>미포함</b> · 광고비·수수료·매입원가.';
 
 /* ===== 데이터 갱신 ===== */

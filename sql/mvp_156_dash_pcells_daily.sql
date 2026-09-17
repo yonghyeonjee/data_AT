@@ -1,0 +1,5 @@
+-- mvp_156 (2026-09-17) — 대시보드 상품 셀을 월 → 일 단위로
+-- "몰별로 기간에 맞게 나와야지 왜 월전체가 나오니" — pcells 가 [월, 채널, 상품, 수량, 총매출, 환불] 이라 9/14~9/17 을 골라도 9월 전체가 잡혔다.
+-- core.f_dash_payload (prosrc 치환): pcells 의 첫 값을 월 인덱스(_pm) → 일 인덱스((order_at KST)::date - p_from) 로. 응답에 'pgran':'d'. pmonths 는 남겨 둠.
+-- 화면(dash/index.html): PDAY=(DATA.pgran==='d') 면 selMonths(lo,hi) 가 {has:i=>lo<=i<=hi} 로 날짜 범위 통과, pmOf(i) 로 월 라벨. 옛 payload(월 단위)도 그대로 읽는다.
+-- 크기: 12개월 payload 250KB → 656KB (pcells 15,043). 캐시 비우고 f_dash_warm (37초·14건).
