@@ -4046,7 +4046,7 @@ function renderMyConsults(){
         <div class="acts">${A2.join('')}${DZ.length?`<div class="danger-wrap">${DZ.join('')}</div>`:''}</div>
         <div class="ocpick hidden" id="ocpick_${x.id}">
           <div class="q"><button onclick="ocQuick(${x.id},0,'14:00')">오늘 2시</button><button onclick="ocQuick(${x.id},1,'10:00')">내일 10시</button><button onclick="ocQuick(${x.id},1,'14:00')">내일 2시</button><button onclick="ocQuick(${x.id},7,'10:00')">일주일 뒤</button></div>
-          <div class="r"><input class="in" type="date" id="ocd_${x.id}"><select class="in" id="oct_${x.id}">${['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'].map(t=>`<option${t==='14:00'?' selected':''}>${t}</option>`).join('')}</select><button class="mini ok" onclick="ocSave(${x.id})">저장</button><button class="mini" onclick="$('ocpick_${x.id}').classList.add('hidden')">취소</button></div>
+          <div class="r"><input class="in" type="date" id="ocd_${x.id}"><select class="in" id="oct_${x.id}">${['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'].map(t=>`<option${t==='14:00'?' selected':''}>${t}</option>`).join('')}</select><button class="mini ok" onclick="ocSave(${x.id})">저장</button><button class="mini" onclick="$('ocpick_${x.id}').classList.add('hidden')">취소</button>${x.callback_at?`<button class="mini warn" onclick="ocClear(${x.id})">콜백 지우기</button>`:''}</div>
         </div>
         </div>
       </div></div>`;
@@ -4067,7 +4067,7 @@ function mcSelSync(){
 }
 /* ═══ 상태 바 : 시스템이 가진 상태 그대로 한 줄에 — 지금 상태가 켜져 있고, 다른 걸 누르면 그 상태로 바뀐다 ═══ */
 const STATE_STEPS=[
-  {v:'진행전',  l:'연락 전', act:'pre',    msg:'연락 전으로 되돌림', hint:'아직 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요. 콜백을 잡아도 통화 전이면 이 상태 그대로입니다.'},
+  {v:'진행전',  l:'연락 전', act:'pre',    msg:'연락 전으로 되돌림', hint:'아직 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요. 연락 전으로 되돌리면 잡아 둔 콜백 약속도 지워집니다.'},
   {v:'진행중',  l:'상담중',  act:'resume', hint:'통화한 뒤 진행 중입니다. 다음 연락은 [콜백]으로 잡으세요. 잘못 눌렀으면 [연락 전]으로 되돌립니다.'},
   {v:'보류',    l:'보류',    act:'hold',   hint:'고객 사정으로 잠시 멈춤. 목록에는 남습니다.'},
   {v:'상담완료',l:'완료',    act:'done',   hint:'상담이 끝났고 사지 않았습니다. 샀으면 [구매 확정]을 누르세요.'},
@@ -5034,10 +5034,11 @@ function giftAcct(){ const L=(GIFTS&&GIFTS.links)||{};
 async function ocAct(id, action, at, memo){ /* 재연락·보류 등 — 목록도 같이 새로 그린다 */
   if(action==='close' && !confirm('이 상담을 종료할까요? (목록에서 빠집니다)')) return;
   try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:action,p_at:at||null,p_memo:memo||null});
-    toast({hold:'보류로 바꿨습니다',resume:'다시 진행합니다',close:'종료했습니다',callback:'콜백 일정을 잡았습니다 — 콜백 약속에 뜹니다'}[action]||'저장됨','ok');
+    toast({hold:'보류로 바꿨습니다',resume:'다시 진행합니다',close:'종료했습니다',callback:'콜백 일정을 잡았습니다 — 콜백 약속에 뜹니다',callback_clear:'콜백 약속을 지웠습니다'}[action]||'저장됨','ok');
     await loadStatus(); render(); }catch(e){ toast(e.message,'bad'); } }
 function ocPick(id){ const el=$('ocpick_'+id); if(!el) return; document.querySelectorAll('.ocpick').forEach(x=>{ if(x!==el) x.classList.add('hidden'); });
   el.classList.toggle('hidden'); if(!el.classList.contains('hidden')){ const d=$('ocd_'+id); if(!d.value) d.value=todayStr(1); } }
+function ocClear(id){ if(!confirm('잡아 둔 콜백 약속을 지울까요? (상태는 그대로)')) return; ocAct(id,'callback_clear'); }
 function ocQuick(id, days, time){ ocAct(id,'callback', todayStr(days)+'T'+time+':00+09:00'); }
 function ocSave(id){ const d=$('ocd_'+id).value, t=$('oct_'+id).value; if(!d) return toast('날짜를 고르세요','bad'); ocAct(id,'callback', d+'T'+t+':00+09:00'); }
 
