@@ -1526,6 +1526,8 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       <div class="view hidden" id="v-cdash">
         <div class="card" style="padding:12px 16px">
           <div class="filters" style="align-items:center;gap:10px">
+            <span class="note">기간</span>
+            <div class="seg sm" id="cd_span"><button type="button" data-m="3">3개월</button><button type="button" data-m="6">6개월</button><button type="button" data-m="12">12개월</button></div>
             <span class="note">범위</span>
             <div class="seg sm" id="cd_scope"><button type="button" data-v="store">매장</button><button type="button" data-v="out">매장 외</button><button type="button" data-v="">전체</button></div>
             <span class="note">묶음</span>
@@ -4072,12 +4074,13 @@ function setPreset(p, quiet){
   else if(p==='tm'){ f=new Date(t.getFullYear(),t.getMonth(),1); }
   else if(p==='lm'){ f=new Date(t.getFullYear(),t.getMonth()-1,1); to=new Date(t.getFullYear(),t.getMonth(),0); }
   else if(p==='y'){ f=new Date(t.getFullYear(),0,1); }
+  else if(/^m\d+$/.test(p)){ f=new Date(t.getFullYear(), t.getMonth()-(Number(p.slice(1))-1), 1); }   /* 최근 N개월 — 그 달 1일부터 (상담 대시보드) */
   else { f=new Date(t); f.setDate(f.getDate()-Number(p)); }
   PRESET=p; P={from:iso(f),to:iso(to)}; $('pFrom').value=P.from; $('pTo').value=P.to;
   document.querySelectorAll('.preset button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
   periodLabel(); if(!quiet) refreshView();
 }
-const PRESET_NM={yd:'어제',tw:'이번 주',lw:'지난 주',tm:'이번 달',lm:'지난 달','30':'최근 30일','90':'최근 90일',y:'올해',custom:'직접 지정'};
+const PRESET_NM={yd:'어제',tw:'이번 주',lw:'지난 주',tm:'이번 달',lm:'지난 달','30':'최근 30일','90':'최근 90일',y:'올해',m3:'최근 3개월',m6:'최근 6개월',m12:'최근 12개월',custom:'직접 지정'};
 function periodLabel(){ if(!P.from||!P.to) return; const d=Math.round((new Date(P.to)-new Date(P.from))/864e5)+1;
   const f=(x)=>{const [y,m,dd]=x.split('-'); return `${y}.${m}.${dd}`;};
   $('pRangeLbl').innerHTML=`${f(P.from)} ~ ${f(P.to)}<span>${d}일 · ${PRESET_NM[PRESET]||''}</span>`; }
@@ -4177,7 +4180,7 @@ function show(v, opt){ if(!TITLES[v]) v='home';
   if(dev){ $('periodBar').classList.add('hidden'); $('pageIntro').classList.add('hidden'); renderUnderConstruction(v); return; }
   placePeriodBar(v); placeCbar(v); renderIntro(v); { const b=$('subTabs'); if(b){ b.classList.add('hidden'); b.innerHTML=''; } } refreshView(); }
 /* 기간 바는 그 페이지의 첫 카드 맨 위(필터 바로 위)로 옮겨 붙인다 */
-const PERIOD_VIEWS=['orders','daily','consults','log','moves','inbox','flow'];
+const PERIOD_VIEWS=['orders','daily','consults','log','moves','inbox','flow','cdash'];
 
 /* ═══════════════ 공통 검색·필터 바 ═══════════════
    모든 목록 화면 맨 위에 같은 바 : [기간] [검색유형] [검색어] [채널] [상품유형] [조회] [초기화]
@@ -5311,6 +5314,7 @@ function cdHBars(rows, opt){ opt=opt||{}; const lim=opt.limit||10;
 async function loadCdash(){
   const sel=$('cd_hd'); if(sel && sel.options.length<=1 && (STAFF||[]).length) sel.innerHTML='<option value="">전체 상담사</option>'+STAFF.map(h=>`<option>${esc(h.name)}</option>`).join('');
   $('cd_scope').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===CD_SCOPE));
+  $('cd_span').querySelectorAll('button').forEach(b=>b.classList.toggle('on', PRESET==='m'+b.dataset.m));
   const grain=cdGrain(), fmtP=cdFmtP(grain);
   let d; try{ d=await rpc('fn_consult_stats',{p_grain:grain,p_from:P.from,p_to:P.to,p_handler:sel.value||null,p_include_deleted:$('cd_del').classList.contains('on'),p_scope:CD_SCOPE||null},{fresh:true}); }
   catch(e){ toast(e.message,'bad'); return; }
@@ -5341,7 +5345,9 @@ async function loadCdash(){
   $('cdTable').innerHTML=chs.length?`<div class="tw"><table><thead><tr><th>채널</th>${ps.map(x=>`<th class="num">${esc(fmtP(x))}</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>${chs.map(ch=>{ const c=C.find(y=>y.ch===ch)||{}; return `<tr><td>${esc(ch)}</td>${ps.map(p=>`<td class="num">${cell(ch,p)}</td>`).join('')}<td class="num"><b>${n(c.total||0)}</b>${c.bought?` / ${n(c.bought)}`:''}</td></tr>`; }).join('')}</tbody></table></div><p class="note" style="margin:8px 0 0">칸 = 문의 <b style="color:#1428A0">/ 구매</b></p>`
     :'<div class="note">없음</div>';
 }
-document.addEventListener('click', e=>{ const b=e.target.closest('#cd_scope button, #cd_grain button'); if(!b) return;
+document.addEventListener('click', e=>{ const sp=e.target.closest('#cd_span button');
+  if(sp){ setPreset('m'+sp.dataset.m); return; }   /* 기간 바의 P 를 바꾸고 refreshView → loadCdash */
+  const b=e.target.closest('#cd_scope button, #cd_grain button'); if(!b) return;
   b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
   if(b.parentNode.id==='cd_scope'){ CD_SCOPE=b.dataset.v; try{ localStorage.setItem('dc_cd_scope', CD_SCOPE); }catch(e2){} }
   loadCdash(); });
