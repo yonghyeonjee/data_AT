@@ -188,6 +188,13 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .rk-q{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:500;margin:0 6px 0 4px}
 .rk-s.warn{color:var(--red);font-weight:600}
 .rk-s.na{color:var(--amber);font-weight:700}
+/* 카테고리 줄 펼침 — 그 카테고리의 상위 상품 10종 (2026-09-18) */
+.rk.cat[aria-expanded="true"]{background:var(--navy-soft)}
+.rk-x{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:8px;font-weight:500}
+.rk-sub{margin:0 0 8px 40px;padding:4px 0 2px 10px;border-left:2px solid #C9D1EE}
+.rk-sub .rk{padding:5px 7px;gap:9px} .rk-sub .rk-n{width:16px} .rk-sub .rk-nm{font-size:13.5px} .rk-sub .rk-v{font-size:13px}
+.rk-sub .rk-tr{height:9px} .rk-sub .rk-m{width:96px}
+.tbl th.sortable{cursor:pointer;user-select:none} .tbl th.sortable:hover{color:var(--ink)} .tbl th.sorted{color:var(--navy)}
 .dchip{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:5px;margin-left:8px}
 .dchip.up{background:#E1F3EF;color:var(--teal)}.dchip.down{background:#FBE9E7;color:var(--red)}
 .dchip.flat{background:#F0F2F5;color:var(--muted)}
@@ -612,13 +619,14 @@ body{background:
     </div>
     <div class="card sp12">
       <div class="card-h"><h2>상품 목록</h2><span class="note" id="pl-note"></span>
-        <input class="psearch" id="psearch" type="search" placeholder="상품명·모델 검색" style="margin-left:auto"></div>
+        <div class="tabs" id="psort"><button data-s="n" aria-pressed="true">금액순</button><button data-s="q" aria-pressed="false">수량순</button></div>
+        <input class="psearch" id="psearch" type="search" placeholder="상품명·모델 검색"></div>
       <div class="card-b">
         <div class="chips tight" id="mallchips" style="margin-bottom:12px"></div>
         <div class="chips tight" id="catchips" style="margin-bottom:14px"></div>
         <table class="tbl"><thead><tr>
           <th class="l" style="width:34px">#</th><th class="l">상품</th>
-          <th class="hide-s">카테고리</th><th class="hide-s">수량</th><th>금액</th>
+          <th class="hide-s">카테고리</th><th class="hide-s sortable" data-s="q" title="수량순 정렬">수량</th><th class="sortable" data-s="n" title="금액순 정렬">금액</th>
         </tr></thead><tbody id="prows"></tbody></table>
         <div class="moreline"><button id="pmore">더 보기</button></div>
       </div>
@@ -712,6 +720,7 @@ const PAL=['#1428A0','#3E5BC9','#7A8CE8','#0F7B6C','#5AAFA4','#8A5D00','#8E6FD8'
 const GREY='#AEB5BF';
 let metric='n', focus=null, a=0, b=ND-1, preset='all', view='o', scope='all';
 let pMall=-1, pCat=null, pQ='', pLimit=30, pTab='p', wfTab='ch';
+let pSort='n'; try{ if(sessionStorage.getItem('dash_psort')==='q') pSort='q'; }catch(e){}   /* 상품 목록 정렬: n 금액 · q 수량 */
 let dirtyDetail=true;
 
 /* ===== 포맷 ===== */
@@ -1370,6 +1379,14 @@ function drawPareto(){
   let n80=0,c2=0;for(const x of items){c2+=x.v;n80++;if(c2/tot>=0.8)break;}
   $('#pa-note').textContent='상위 '+n80+'종이 80% · 전체 '+items.length+'종';
 }
+const CAT_OPEN=new Set();   /* 개요 카테고리 줄에서 펼쳐 둔 카테고리 */
+function catSubHtml(pa, cat, key){
+  const items=Object.keys(pa.byP).map(id=>({id:+id,o:pa.byP[id]})).filter(x=>PR[x.id][2]===cat&&x.o[key]>0).sort((x,y)=>y.o[key]-x.o[key]);
+  const tot=items.reduce((s,x)=>s+x.o[key],0)||1, top=items.slice(0,10);
+  if(!top.length) return '<div class="rk-sub"><div class="empty">상품 없음</div></div>';
+  return '<div class="rk-sub" data-cat="'+esc(cat)+'">'+hbars(top.map(x=>({l:PR[x.id][0]+'  '+PR[x.id][1],v:x.o[key],q:x.o.q.toLocaleString()+'개',
+    note:'카테고리 내 '+pct(x.o[key],tot).toFixed(1)+'%',id:x.id})), i=>i<3?'#1428A0':'#3E5BC9')
+    +(items.length>10?'<div class="note" style="padding:4px 9px">외 '+(items.length-10)+'종 — 상세의 상품 목록에서 카테고리 칩으로 전부 봅니다</div>':'')+'</div>';}
 function drawTopPr(){
   $('#ptabs').querySelectorAll('button').forEach(el=>el.setAttribute('aria-pressed',el.dataset.t===pTab));
   if(!NP){$('#toppr').innerHTML='<div class="empty">상품 데이터 없음</div>';$('#tp-note').textContent='';return;}
@@ -1379,9 +1396,20 @@ function drawTopPr(){
     const cats=Object.keys(pa.byCat).map(c=>({c:c,v:pa.byCat[c][key],n:pa.byCat[c].cnt.size,q:pa.byCat[c].q}))
       .filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
     const tot=cats.reduce((s,x)=>s+x.v,0)||1;
-    $('#toppr').innerHTML=hbars(cats.map(x=>({l:x.c,sub:x.n+'종',v:x.v,q:pct(x.v,tot).toFixed(1)+'%',note:x.q.toLocaleString()+'개'})),
+    $('#toppr').innerHTML=hbars(cats.map((x,i)=>({l:x.c,sub:x.n+'종',v:x.v,q:pct(x.v,tot).toFixed(1)+'%',note:x.q.toLocaleString()+'개',id:i})),
       i=>i<PAL.length?PAL[i]:GREY);
-    $('#tp-note').textContent=cats.length+'개 카테고리 · '+scopeName();
+    /* 카테고리 줄을 누르면 바로 아래에 그 카테고리 상위 상품 10종 — 상세로 안 들어가고 개요에서 본다 */
+    $('#toppr').querySelectorAll('.rk').forEach(el=>{
+      const cat=cats[+el.dataset.id].c; el.classList.add('cat'); el.dataset.cat=cat;
+      el.setAttribute('aria-expanded', CAT_OPEN.has(cat)?'true':'false');
+      el.querySelector('.rk-nm').insertAdjacentHTML('beforeend','<span class="rk-x">'+(CAT_OPEN.has(cat)?'▾ 접기':'▸ 상위 상품')+'</span>');
+      const go=()=>{ CAT_OPEN.has(cat)?CAT_OPEN.delete(cat):CAT_OPEN.add(cat); drawTopPr(); };
+      el.onclick=go; el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};
+      if(CAT_OPEN.has(cat)) el.insertAdjacentHTML('afterend', catSubHtml(pa, cat, key));});
+    $('#toppr').querySelectorAll('.rk-sub .rk').forEach(el=>{
+      el.onclick=e=>{e.stopPropagation();openPr(+el.dataset.id);};
+      el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();openPr(+el.dataset.id);}};});
+    $('#tp-note').textContent=cats.length+'개 카테고리 · '+scopeName()+' · 누르면 상위 상품 10종';
     return;}
   $('#pv-title').textContent='상위 상품';
   const items=Object.keys(pa.byP).map(id=>({id:+id,o:pa.byP[id]})).filter(x=>x.o[key]>0).sort((x,y)=>y.o[key]-x.o[key]).slice(0,10);
@@ -1599,8 +1627,12 @@ function drawPList(){
     +cats.map(x=>'<button data-c="'+esc(x.c)+'"'+(pCat===x.c?' aria-pressed="true"':'')+'>'+esc(x.c)+' '+pct(x.v,cTot).toFixed(0)+'%</button>').join('');
   $('#catchips').querySelectorAll('button').forEach(el=>el.onclick=()=>{
     const c=el.dataset.c||null;pCat=(pCat===c)?null:c;pLimit=30;drawPList();drawAbar();});
-  const items=Object.keys(pa.byP).map(id=>({id:+id,o:pa.byP[id]})).filter(x=>x.o[key]!==0).sort((x,y)=>y.o[key]-x.o[key]);
+  const items=Object.keys(pa.byP).map(id=>({id:+id,o:pa.byP[id]})).filter(x=>x.o[key]!==0)
+    .sort((x,y)=>pSort==='q'?((y.o.q-x.o.q)||(y.o[key]-x.o[key])):((y.o[key]-x.o[key])||(y.o.q-x.o.q)));
   const tot=items.reduce((s,x)=>s+x.o[key],0)||1;
+  $('#psort').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===pSort?'true':'false'));
+  document.querySelectorAll('#prows').forEach(tb=>tb.closest('table').querySelectorAll('th.sortable').forEach(th=>{
+    const on=th.dataset.s===pSort; th.classList.toggle('sorted',on); th.textContent=(th.dataset.s==='q'?'수량':'금액')+(on?' ▼':'');}));
   $('#prows').innerHTML=items.slice(0,pLimit).map((x,i)=>{
     const m=PR[x.id];
     return '<tr data-p="'+x.id+'"><td class="c-num" style="text-align:left;color:#6B727C">'+(i+1)+'</td>'
@@ -1612,7 +1644,10 @@ function drawPList(){
   $('#pmore').style.display=items.length>pLimit?'':'none';
   $('#pmore').textContent='더 보기 ('+Math.min(pLimit,items.length)+' / '+items.length+')';
   $('#pl-note').textContent=[pMall>=0?CH[pMall].name:'전체 몰',pCat,pQ?'"'+pQ+'"':null].filter(Boolean).join(' · ')
-    +' · '+items.length+'종 · '+(PDAY?'기간 집계':'월 단위 집계');}
+    +' · '+items.length+'종 · '+(pSort==='q'?'수량순':'금액순')+' · '+(PDAY?'기간 집계':'월 단위 집계');}
+function setPSort(sv){ pSort=sv==='q'?'q':'n'; try{ sessionStorage.setItem('dash_psort',pSort); }catch(e){} pLimit=30; drawPList(); }
+$('#psort').querySelectorAll('button').forEach(el=>el.onclick=()=>setPSort(el.dataset.s));
+document.querySelectorAll('#prows').forEach(tb=>tb.closest('table').querySelectorAll('th.sortable').forEach(th=>th.onclick=()=>setPSort(th.dataset.s)));
 $('#psearch').addEventListener('input',function(){pQ=this.value.trim();pLimit=30;drawPList();drawAbar();});
 $('#pmore').onclick=()=>{pLimit+=50;drawPList();};
 function drawMx(){
