@@ -4067,8 +4067,8 @@ function mcSelSync(){
 }
 /* ═══ 상태 바 : 시스템이 가진 상태 그대로 한 줄에 — 지금 상태가 켜져 있고, 다른 걸 누르면 그 상태로 바뀐다 ═══ */
 const STATE_STEPS=[
-  {v:'진행전',  l:'연락 전', act:null,     hint:'아직 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요.'},
-  {v:'진행중',  l:'상담중',  act:'resume', hint:'통화한 뒤 진행 중입니다. 다음 연락은 [콜백]으로 잡으세요.'},
+  {v:'진행전',  l:'연락 전', act:'pre',    msg:'연락 전으로 되돌림', hint:'아직 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요. 콜백을 잡아도 통화 전이면 이 상태 그대로입니다.'},
+  {v:'진행중',  l:'상담중',  act:'resume', hint:'통화한 뒤 진행 중입니다. 다음 연락은 [콜백]으로 잡으세요. 잘못 눌렀으면 [연락 전]으로 되돌립니다.'},
   {v:'보류',    l:'보류',    act:'hold',   hint:'고객 사정으로 잠시 멈춤. 목록에는 남습니다.'},
   {v:'상담완료',l:'완료',    act:'done',   hint:'상담이 끝났고 사지 않았습니다. 샀으면 [구매 확정]을 누르세요.'},
   {v:'거절',    l:'거절',    act:'reject', hint:'고객이 거절했습니다.'},
@@ -4079,7 +4079,7 @@ function stateBar(x){
   const step = STATE_STEPS.find(t=>t.v===cur) || STATE_STEPS[1];
   const btns = STATE_STEPS.filter(t=>t.v!=='구매완료' || cur==='구매완료').map(t=>{
     const on = t.v===cur; const act = on ? null : (t.v==='진행중' && cur==='진행전' ? 'start' : t.act);
-    return `<button type="button" class="${on?'on':''}${act?'':' off'}${t.v==='거절'?' rej':''}" ${act?`onclick="mcAct(${x.id},'${act}','${t.l}')"`:'disabled'} title="${esc(t.hint)}">${t.l}</button>`; }).join('');
+    return `<button type="button" class="${on?'on':''}${act?'':' off'}${t.v==='거절'?' rej':''}" ${act?`onclick="mcAct(${x.id},'${act}','${t.msg||t.l}')"`:'disabled'} title="${esc(t.hint)}">${t.l}</button>`; }).join('');
   return `<div class="statebar"><span class="lb">상태</span><span class="seg sm">${btns}</span><small class="hint">${esc(step.hint)}</small></div>`;
 }
 async function mcAct(id, action, what){
