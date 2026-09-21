@@ -30,6 +30,10 @@ on:
         description: "응답 필드 이름 훑기 (배송비 필드 확인용 · 적재하지 않음)"
         type: boolean
         default: false
+      flags:
+        description: "상태 코드 탐색 — order_flag 코드별 건수·분포 (취소·반품 코드 확인용 · 적재하지 않음)"
+        type: boolean
+        default: false
 
 concurrency:
   group: shoplinker
@@ -56,6 +60,10 @@ jobs:
           fi
           if [ "${{ inputs.fields }}" = "true" ]; then
             node tools/shoplinker/collect.mjs --fields
+            exit $?
+          fi
+          if [ "${{ inputs.flags }}" = "true" ]; then
+            node tools/shoplinker/collect.mjs --flags
             exit $?
           fi
           ARGS=""

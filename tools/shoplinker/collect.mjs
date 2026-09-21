@@ -367,6 +367,35 @@ async function runRange(label, st, ed, jobs) {
   return tot;
 }
 
+// ── 상태 코드 탐색 (--flags · 적재 안 함) ───────────────────────
+// 9월 주문의 취소·반품이 한 건도 안 잡혀(2026-09-21) 샵링커가 어떤 order_flag 를 돌려주는지 직접 본다.
+// 코드 후보마다 최근 N일(주문일 기준) 1페이지를 받아 건수 · 응답 안 order_flag 분포 · 상태처럼 보이는 필드를 찍는다.
+async function flagsProbe() {
+  const days = Number(arg("days") ?? 21);
+  const st = ymd(kstShift(-days)), ed = ymd(kstNow());
+  const cands = (arg("codes") ?? "001,002,003,004,005,006,007,008,009,010,011,012,013,014,015,016,017,018,019,020,999").split(",");
+  console.log(`상태 코드 탐색 — 주문일 ${st}~${ed} · 코드 ${cands.length}개 · 페이지당 100건`);
+  const STATUSISH = /status|flag|cancel|claim|return|refund|exchange|state|gubun|type/i;
+  for (const code of cands) {
+    let res;
+    try {
+      res = await fetchPage({ st_date: st, ed_date: ed, date_type: "001", order_flag: code, page_no: "1", total_standard_count: "100" });
+    } catch (e) { console.log(`  ${code}  ✕ ${e.message}`); await sleep(SLEEP_MS); continue; }
+    if (res.error) { console.log(`  ${code}  (${res.error})`); await sleep(SLEEP_MS); continue; }
+    const hist = {};
+    for (const o of res.orders) { const f = S(o.order_flag) || "(빈값)"; hist[f] = (hist[f] ?? 0) + 1; }
+    console.log(`  ${code}  총 ${res.totalCount ?? "?"}건 · 받은 ${res.orders.length}건 · order_flag 분포 ${JSON.stringify(hist)}`);
+    const o = res.orders[0];
+    if (o) {
+      const keys = Object.keys(o).filter((k) => STATUSISH.test(k));
+      console.log(`        상태성 필드: ${keys.map((k) => `${k}=${S(o[k]).slice(0, 24)}`).join(" | ")}`);
+      console.log(`        예시: ${S(o.mall_name)} ${S(o.mall_order_id)} 주문 ${S(o.custom_order_date) || S(o.order_reg_date)} · 발주 ${S(o.order_confirm_date)} · 송장 ${S(o.delivery_trans_date)} · 금액 ${S(o.order_price)}`);
+    }
+    await sleep(SLEEP_MS);
+  }
+  console.log("\n탐색 끝 — 적재하지 않았습니다.");
+}
+
 // ── 진입점 ──────────────────────────────────────────────────────
 function arg(name) {
   const i = process.argv.indexOf(`--${name}`);
@@ -433,6 +462,7 @@ async function main() {
   if (DRY) console.log("*** DRY RUN — 적재하지 않습니다 ***");
 
   const back = arg("back");
+  if (process.argv.includes("--flags")) { await flagsProbe(); return; }
   const from = arg("from"), to = arg("to");
   const today = ymd(kstNow());
   let grand = { fetched: 0, ins: 0, upd: 0 };
