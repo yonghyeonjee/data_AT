@@ -66,8 +66,16 @@ function parseResp(text) {
   return { code: String(h.code ?? ""), msg: h.msg, orders: asList(root.return?.order_data) };
 }
 
+// Secrets 에 붙여넣을 때 따옴표·공백·줄바꿈이 섞이는 사고가 잦다 — 키 글자([A-Za-z0-9+/=]) 만 남긴다
+const cleanKey = v => String(v || "").replace(/[^A-Za-z0-9+/=]/g, "");
+const KEYS = { partner: cleanKey(process.env.GODO_PARTNER_KEY), key: cleanKey(process.env.GODO_KEY) };
+function keyDiag() {   // 값은 안 찍고 길이·앞뒤 4자만 — 콜랩 원본과 대조용 (시흥몰 원본: partner 32자 TiU5…Qw== · key 144자 USVF…JUM0)
+  const f = v => v ? `${v.length}자 ${v.slice(0, 4)}…${v.slice(-4)}` : "(없음)";
+  console.log(`   키 확인 · partner_key ${f(KEYS.partner)} · key ${f(KEYS.key)}`);
+}
 async function callApi(extra) {
-  const body = new URLSearchParams({ partner_key: env("GODO_PARTNER_KEY"), key: env("GODO_KEY"), sort: "orderNo desc", ...extra });
+  if (!KEYS.partner || !KEYS.key) throw new Error("환경변수 GODO_PARTNER_KEY / GODO_KEY 가 없습니다");
+  const body = new URLSearchParams({ partner_key: KEYS.partner, key: KEYS.key, sort: "orderNo desc", ...extra });
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const r = await fetch(API_URL, { method: "POST", body, headers: { "content-type": "application/x-www-form-urlencoded" } });
@@ -124,6 +132,7 @@ async function main() {
   }
   if (!FROM || !TO) throw new Error("--from YYYY-MM-DD --to YYYY-MM-DD 가 필요합니다");
   console.log(`>> ${MALL} ${FROM}~${TO} 수집${DRY ? " (dry)" : ""}`);
+  keyDiag();
   let grand = { orders: 0, rows: 0, new: 0, dup: 0 };
   for (const [s, e] of chunks(FROM, TO)) {
     const seen = new Set(); let cursor = null, page = 0, orders = [];
