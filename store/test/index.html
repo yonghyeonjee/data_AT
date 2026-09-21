@@ -4952,7 +4952,7 @@ async function asgTo(name){
   if(!ASG_IDS.length) return;
   const note=ASG_IDS.length===1?null:null;
   try{ const r=await rpc('fn_store_consult_assign',{p_code:CODE,p_ids:ASG_IDS,p_to:name,p_note:note});
-    toast(r.moved?`${n2(r.moved)}건을 ${name} 프로에게 넘겼습니다`:'넘길 수 있는 건이 없습니다', r.moved?'ok':'bad');
+    toast(r.moved?`${n2(r.moved)}건을 ${name} 프로에게 넘겼습니다${r.notified?' · 잔디 알림 보냄':''}`:'넘길 수 있는 건이 없습니다', r.moved?'ok':'bad');
     asgClose(); MC_SEL.clear(); await loadStatus(); render(); if(MC_LOADED) loadMyConsults(MC_OFF);
     if(!$('allCard').classList.contains('hidden')) loadAllConsults();
   }catch(e){ toast(e.message,'bad'); }
