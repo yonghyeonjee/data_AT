@@ -133,14 +133,14 @@ async function main() {
   if (!FROM || !TO) throw new Error("--from YYYY-MM-DD --to YYYY-MM-DD 가 필요합니다");
   console.log(`>> ${MALL} ${FROM}~${TO} 수집${DRY ? " (dry)" : ""}`);
   keyDiag();
-  let grand = { orders: 0, rows: 0, new: 0, dup: 0 };
+  let grand = { orders: 0, rows: 0, new: 0, dup: 0 }; let fails = 0;
   for (const [s, e] of chunks(FROM, TO)) {
     const seen = new Set(); let cursor = null, page = 0, orders = [];
     while (true) {
       const q = { dateType: "order", startDate: s, endDate: e, size: String(PAGE) };
       if (cursor) q.lastOrder = cursor;
       const r = await callApi(q);
-      if (!["000", "0"].includes(r.code)) { console.log(`   [${s}~${e}] 실패 ${r.code}: ${r.msg}`); break; }
+      if (!["000", "0"].includes(r.code)) { console.log(`   [${s}~${e}] 실패 ${r.code}: ${r.msg}`); fails++; break; }
       const batch = r.orders.filter(o => !seen.has(o.orderNo));
       if (!batch.length) break;
       batch.forEach(o => seen.add(o.orderNo)); orders.push(...batch); page++;
@@ -158,6 +158,7 @@ async function main() {
     }
     await sleep(500);
   }
-  console.log(`>> 끝 · 주문 ${grand.orders} · 행 ${grand.rows} · 새 ${grand.new} · 중복 ${grand.dup}`);
+  console.log(`>> 끝 · 주문 ${grand.orders} · 행 ${grand.rows} · 새 ${grand.new} · 중복 ${grand.dup}${fails ? ` · 실패 구간 ${fails}` : ""}`);
+  if (fails && grand.orders === 0) { console.error("✗ 모든 구간이 실패했습니다 — 키·허용 IP 를 확인하세요"); process.exit(1); }   // 초록 체크로 속지 않게
 }
 main().catch(e => { console.error("✗", e.message); process.exit(1); });
