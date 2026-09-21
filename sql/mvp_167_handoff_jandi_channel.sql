@@ -55,3 +55,16 @@ end $outer$;
 
 -- 테스트 카드 1장 (core.f_notify 직접 호출) → notify_log ok · 200 확인 (2026-09-21 06:17 UTC)
 -- 확인 뒤 CRM 방으로:  update core.notify_rule set channel_code='jandi_crm' where code='consult_handoff';
+
+-- v131 (2026-09-21): 문의 접수 카드에 관심 품목 칩·상세·관심 모델 — 카드 '상담 정보' 에 관심 모델도 싣는다 (지점 1개 치환)
+do $outer$
+declare v_def text; v_old text; v_new text; v_n int;
+begin
+  select pg_get_functiondef(p.oid) into v_def from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='fn_store_consult_handoff';
+  v_old := $q$nullif(p_data->>'interest_category',''), nullif(p_data->>'interest_detail',''), left(nullif(p_data->>'content',''), 140));$q$;
+  v_new := $q$nullif(p_data->>'interest_category',''), nullif(p_data->>'interest_detail',''), nullif(p_data->>'interest_model_code',''), left(nullif(p_data->>'content',''), 140));$q$;
+  v_n := (length(v_def) - length(replace(v_def, v_old, ''))) / length(v_old);
+  if v_n <> 1 then raise exception '지점 %개', v_n; end if;
+  execute replace(v_def, v_old, v_new);
+end $outer$;

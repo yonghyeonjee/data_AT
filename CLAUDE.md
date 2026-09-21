@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-21 · v130)
+## 지금 상태 (2026-09-21 · v131)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -479,6 +479,8 @@ end $outer$;
   `fn_store_consult_handoff` 가 이제 **본인 배정도** `core.f_notify('consult.handoff')` 를 부른다(전엔 넘길 때만). 변수 `channel`(inq_channel 라벨 · 기타 글), `phone`, `self`(' (본인 접수)'), `detail`(이름·번호·관심·내용).
   규칙 `consult_handoff` 본문 "📨 문의 접수 · {channel} → {handler} 프로님 배정 · {name} ({phone})" + 카드 줄 배정 담당자("{handler} 프로님 · 수동입력(생성자:{by})") / 문의 채널 / 상담 정보 / 상담 확인하러가기.
   **지금은 테스트 방 `core.notify_channel 'jandi_test'`** 로 간다(웹훅 주소는 DB·`_secrets.local.md` 에만). 확인되면 `update core.notify_rule set channel_code='jandi_crm' where code='consult_handoff'`. 테스트 카드 1장 200 확인.
+  **문의 접수 카드에도 관심 품목 (v131)** — "이 페이지도 관심품목을 상세히 넣을 수 있도록". `#hoCard` 의 '관심 제품' 한 칸 → 상담 기록과 같은 세 칸: 관심 품목 칩 `#ho_cat`(`CATS` 11개, `hoRenderCat`, '알 수 없음' 단독·'기타' → `#ho_cat_etc` 글로 저장) · 상세 `#ho_detail` · 관심 모델 `#ho_model`+`#ho_models` 칩(`hoModelAdd/Flush`, Enter·쉼표).
+  필수는 아니다 — 비우면 서버가 '알 수 없음'. `hoSubmit` 이 `interest_category`·`interest_model_code` 를 실어 보내고 접수 뒤 `hoClearInterest()`. 잔디 카드 '상담 정보' 에 모델도 붙는다. 테스트 `ptest/grid.mjs` H6·H6b·H7·H7b, UAT 4조합·tour 폰 13탭 ✓.
 - **센드온 결과 파일 = 성공은 발송 이력 · 실패는 발송 불가 목록 (v129 · mvp_166 · 2026-09-21)** — "발송 목록은 한번에 넣어서 성공 실패는 분류하고 실패는 다음에도 못낼꺼니까 … 제외되게".
   파일을 통째로 [CRM 발송 고객] 에 올리면 '상태' 열로 서버가 나눈다. **실패(`status='failed'`)는 사유와 무관하게 `fn_crm_targets_v2` 가 항상 뺀다**(전엔 번호 오류·미지원 단말 같은 사유만 항상 제외, 나머지 실패는 [이미 보낸 사람 제외] 옵션에만 걸렸다).
   `fn_send_log_import` 응답에 `sent`·`failed`, 화면 결과 '발송 성공 (발송 이력) N · 발송 실패 (발송 불가 목록) N', 붙여넣기 안내도 성공/실패를 갈라 보여준다. 요약 줄 "발송 실패 이력이 있어 제외 N명 (발송 불가 목록)".
