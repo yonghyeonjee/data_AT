@@ -883,6 +883,27 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .bulkbar .acts :disabled{opacity:.45;cursor:default}
 table tbody tr.sel{background:var(--accent-soft,#EEF2FF)}
 table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:16px;accent-color:var(--navy);cursor:pointer}
+/* 저장 조건 목록 (mvp_166) — 칩이 줄줄이 늘어나던 것을 검색되는 목록으로 */
+.segpanel{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:-6px 0 12px;overflow:hidden}
+.segpanel .seghead{display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--surface-2);flex-wrap:wrap}
+.segpanel .seghead .in{flex:1 1 200px;min-width:160px}
+.segpanel #segList{max-height:440px;overflow:auto}
+.seggrp .segh{font-size:calc(11.5px * var(--font-scale));font-weight:700;color:var(--muted);padding:10px 12px 2px;letter-spacing:.02em}
+.seggrp .segh .note{font-weight:600}
+.segrow{display:flex;align-items:center;gap:6px;padding:2px 8px 2px 6px;border-top:1px solid var(--line)}
+.segrow.on{background:var(--navy-soft)}
+.segrow .segmain{flex:1 1 260px;min-width:0;text-align:left;background:none;border:0;padding:8px 6px;cursor:pointer;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font:inherit;color:var(--ink);min-height:40px;border-radius:8px}
+.segrow .segmain:hover{background:var(--surface-2)}
+.segrow .segmain b{font-size:calc(13px * var(--font-scale))}
+.segrow .segmain .tag{background:var(--surface-3);color:var(--ink-2);font-weight:600}
+.segrow .segmain .tag.b-repeat{background:var(--amber-soft);color:var(--amber)} .segrow .segmain .tag.b-product{background:var(--teal-soft);color:var(--teal)}
+.segrow .segmain .note{flex-basis:100%;font-size:calc(12px * var(--font-scale));color:var(--muted);white-space:normal;line-height:1.35}
+.segrow .segmeta{flex:0 0 auto;font-size:calc(11.5px * var(--font-scale));color:var(--faint);white-space:nowrap;min-width:92px;text-align:right}
+.segrow .segact{display:flex;gap:4px;flex:0 0 auto}
+.segrow .segact .btn{min-width:40px;min-height:40px;padding:6px 10px}
+.segrow .segact .pin{color:var(--faint);font-size:15px} .segrow .segact .pin.on{color:var(--amber)}
+@media(max-width:720px){ .segrow{flex-wrap:wrap} .segrow .segmeta{order:3;text-align:left;flex:1} .segrow .segact{order:4}
+  #segBar .btn,.segpanel .seghead .btn,.segpanel .seghead .chk{min-height:40px} }
 </style>
 </head>
 <body>
@@ -1436,11 +1457,19 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
               비워 두면 뽑는 날(오늘)을 쓰므로 하루만 지나도 대상이 달라집니다.</p>
           </div>
           <div id="segBar" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px">
-            <span class="note" style="font-weight:700">자주 쓰는 조건</span>
-            <span id="segChips" style="display:flex;flex-wrap:wrap;gap:6px"></span>
+            <button class="btn sm ghost" id="segBtn" onclick="segToggle()" aria-expanded="false" title="이름 붙여 둔 조건 목록 — 고정·최근 사용·반복 조건·캠페인 조건으로 나뉘고 검색이 됩니다">저장 조건 <span id="segCnt"></span> ▾</button>
+            <span id="segCurTag" class="note"></span>
             <span style="flex:1"></span>
             <button class="btn sm ghost" onclick="saveSegment()">지금 조건을 이름 붙여 저장</button>
             <button class="btn sm ghost" onclick="pasteCond()">조건 붙여넣기</button>
+          </div>
+          <div id="segPanel" class="segpanel hidden">
+            <div class="seghead">
+              <input class="in" id="segQ" placeholder="이름 · 설명 · 제품으로 찾기" oninput="segRender()" autocomplete="off">
+              <label class="chk"><input type="checkbox" id="segArch" onchange="segRender()"> 보관함 <span id="segArchN"></span></label>
+              <button class="btn sm ghost" onclick="segToggle(false)">닫기</button>
+            </div>
+            <div id="segList"></div>
           </div>
           <div id="segNote" class="note hidden" style="margin:-6px 0 10px;padding:8px 10px;background:var(--bg2);border-radius:8px"></div>
           <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
@@ -1459,7 +1488,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <div><label>구매 횟수 이상</label><input class="in num" type="number" id="crmMinCnt" placeholder="예: 2" min="0"></div>
             <div><label>누적 구매액 이상 (원)</label><input class="in num" type="number" id="crmMinNet" placeholder="예: 500000" step="10000"></div>
             <div><label>휴면 (마지막 구매 N일 경과)</label><select class="in" id="crmDormant"><option value="">상관없음</option><option value="90">90일 이상</option><option value="180">180일 이상</option><option value="365">1년 이상</option></select></div>
-            <div><label>이미 보낸 사람 제외 <span class="note" title="데이터 가져오기 › [CRM 발송 고객] 에 올린 발송 이력을 뺍니다. 실패한 발송도 보낸 것으로 칩니다(다시 보내도 또 실패). 번호 오류·미지원 단말·수신거부로 실패한 사람은 이 옵션과 무관하게 항상 빠집니다">?</span></label><select class="in" id="crmNoSend"><option value="">상관없음 — 보낸 적 있어도 포함</option><option value="7">최근 7일 내 보낸 사람 제외</option><option value="30">최근 30일 내 보낸 사람 제외</option><option value="90">최근 90일 내 보낸 사람 제외</option><option value="36500">한 번이라도 보낸 사람 전부 제외</option></select></div>
+            <div><label>이미 보낸 사람 제외 <span class="note" title="데이터 가져오기 › [CRM 발송 고객] 에 올린 발송 이력 중 성공한 사람을 뺍니다. 실패한 사람(발송 불가 목록)은 이 옵션과 무관하게 항상 빠집니다 — 다시 보내도 또 실패합니다">?</span></label><select class="in" id="crmNoSend"><option value="">상관없음 — 보낸 적 있어도 포함</option><option value="7">최근 7일 내 보낸 사람 제외</option><option value="30">최근 30일 내 보낸 사람 제외</option><option value="90">최근 90일 내 보낸 사람 제외</option><option value="36500">한 번이라도 보낸 사람 전부 제외</option></select></div>
             <div><label>정렬</label><select class="in" id="crmSort" onchange="loadTargets(0)"><option value="recent">최근 구매순</option><option value="net_desc">구매액 높은순</option><option value="cnt_desc">구매 잦은순</option><option value="oldest">오래된 구매순</option></select></div>
           </div>
           <div class="filters">
@@ -5020,7 +5049,7 @@ async function loadTargets(page){
   $('tgPg').innerHTML=pgBar('targets',tgPage,d.total||0,'loadTargets');
   $('tgHint').textContent=`${n(d.total)}명 · 1인 평균 ${wonK(s.avg_net)} · 평균 ${s.avg_cnt}회 · 관심상품 ${n(s.with_next)} · 미발송 ${n(s.never_sent)}`
     + (Number(s.blocked_open)>0 ? ` · 오픈마켓 고객이라 제외 ${n(s.blocked_open)}명` : '')
-    + (Number(s.blocked_bad)>0 ? ` · 발송 불가(번호 오류·미지원 단말) 제외 ${n(s.blocked_bad)}명` : '')
+    + (Number(s.blocked_bad)>0 ? ` · 발송 실패 이력이 있어 제외 ${n(s.blocked_bad)}명 (발송 불가 목록)` : '')
     + (TG_BASIS==='repeat' && s.asof ? ` · 기준일 ${s.asof}` : '');
   $('tgByCh').innerHTML=simpleBars((s.by_channel||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--navy)'})));
   $('tgByCat').innerHTML=simpleBars((s.by_category||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--teal)'})));
@@ -5049,15 +5078,91 @@ async function loadTargets(page){
     <td class="mono" style="font-size:calc(12px * var(--font-scale));color:${r.last_sent?'var(--amber)':'var(--faint)'}">${esc(r.last_sent||'없음')}</td></tr>`).join('')
     ||'<tr><td colspan="11" class="note" style="text-align:center;padding:24px">조건에 맞는 발송 가능 고객이 없습니다</td></tr>';
 }
-/* ── 저장 세그먼트 : 조건을 이름 붙여 두고 한 번에 불러오기 ── */
-let SEGS=[], SEG_CUR=null;
+/* ── 저장 세그먼트 : 조건을 이름 붙여 두고 한 번에 불러오기 ──
+   칩 줄은 조건이 열 개를 넘으면 읽을 수 없어 목록으로 바꿨다 (mvp_166):
+   [저장 조건 ▾] → 검색 칸 + 고정(★) / 최근 사용 / 반복 조건 / 캠페인 조건(날짜 고정) / 보관함. */
+let SEGS=[], SEG_CUR=null, SEG_OPEN=false;
+const SEG_BASIS_NM={consent:'수신동의',repeat:'재구매 주기',product:'제품 재구매'};
+function segKind(g){ const pm=g.params||{}; return (pm.asof||pm.from||pm.to||/^\[/.test(g.label||''))?'camp':'rule'; }
+function segMatch(g,q){ if(!q) return true; q=q.toLowerCase(); return [g.label,g.note,(g.params||{}).product,g.code].some(x=>String(x||'').toLowerCase().includes(q)); }
+function segMD(x){ const d=new Date(x); return isNaN(d)?'':`${d.getMonth()+1}/${d.getDate()}`; }
 async function loadSegments(){
   try{ SEGS=await rpc('fn_crm_segments'); }catch(e){ SEGS=[]; }
-  $('segChips').innerHTML=(SEGS||[]).map(g=>
-    `<button class="btn sm ${SEG_CUR===g.code?'':'ghost'}" onclick="applySegment('${esc(g.code)}')" title="${esc(g.note||'')}">${esc(g.label)}</button>`).join('')
-    || '<span class="note">저장된 조건이 없습니다</span>';
+  if(!Array.isArray(SEGS)) SEGS=[];
+  segRender();
   /* UTM 관리 [대상 조건] 에서 넘어온 경우 — 목록이 채워진 뒤에 그 조건을 건다 */
-  if(PENDING_SEG){ const c=PENDING_SEG; PENDING_SEG=null; if((SEGS||[]).some(g=>g.code===c)) applySegment(c); }
+  if(PENDING_SEG){ const c=PENDING_SEG; PENDING_SEG=null; if(SEGS.some(g=>g.code===c)) applySegment(c); }
+}
+function segToggle(open){
+  SEG_OPEN = (open===undefined) ? !SEG_OPEN : !!open;
+  $('segPanel').classList.toggle('hidden', !SEG_OPEN);
+  $('segBtn').setAttribute('aria-expanded', SEG_OPEN?'true':'false');
+  $('segBtn').classList.toggle('ghost', !SEG_OPEN);
+  if(SEG_OPEN){ segRender(); setTimeout(()=>$('segQ').focus(),30); }
+}
+function segRender(){
+  const q=($('segQ')?.value||'').trim(); const arch=!!$('segArch')?.checked;
+  const act=SEGS.filter(g=>g.active!==false), inact=SEGS.filter(g=>g.active===false);
+  $('segCnt').textContent=act.length?`${act.length}`:'';
+  $('segArchN').textContent=inact.length?`(${inact.length})`:'';
+  const cur=SEGS.find(g=>g.code===SEG_CUR);
+  $('segCurTag').innerHTML = cur ? `지금 걸린 조건: <b style="color:var(--ink)">${esc(cur.label)}</b>` : '';
+  const list=(arch?inact:act).filter(g=>segMatch(g,q));
+  const row=g=>{ const pm=g.params||{}; const b=pm.basis||'consent';
+    const basis=(SEG_BASIS_NM[b]||b)+(pm.product?` · ${pm.product}`:'')+(pm.asof?` · 기준일 ${pm.asof}`:'');
+    const used=g.last_used_at?`${segMD(g.last_used_at)} · ${n(g.use_count||0)}회`:'아직 안 씀';
+    const c=JSON.stringify(g.code);
+    return `<div class="segrow${SEG_CUR===g.code?' on':''}" data-code="${esc(g.code)}">
+      <button class="segmain" onclick='applySegment(${esc(c)})' title="${esc(g.note||'')}"><b>${esc(g.label)}</b><span class="tag b-${esc(b)}">${esc(basis)}</span>${g.note?`<span class="note">${esc(g.note)}</span>`:''}</button>
+      <span class="segmeta" title="마지막으로 쓴 날 · 쓴 횟수">${esc(used)}</span>
+      <span class="segact">${g.active===false
+        ? `<button class="btn sm ghost" onclick='segSet(${esc(c)},{active:true})'>복구</button>`
+        : `<button class="btn sm ghost pin${g.pinned?' on':''}" title="${g.pinned?'고정 풀기':'맨 위에 고정'}" onclick='segSet(${esc(c)},{pinned:${g.pinned?'false':'true'}})'>★</button>
+           <button class="btn sm ghost" onclick='segEdit(${esc(c)})'>수정</button>
+           <button class="btn sm ghost" title="목록에서 치웁니다 · 보관함에서 복구할 수 있습니다" onclick='segArchive(${esc(c)})'>보관</button>`}</span></div>`; };
+  const groups=[];
+  if(arch) groups.push(['보관함 — 쓰지 않는 조건 · [복구] 하면 다시 목록에 옵니다', list]);
+  else {
+    const pinned=list.filter(g=>g.pinned);
+    const recent=list.filter(g=>!g.pinned && g.last_used_at).sort((a,b)=>String(b.last_used_at).localeCompare(String(a.last_used_at))).slice(0,5);
+    const rest=list.filter(g=>!g.pinned && !recent.includes(g));
+    if(pinned.length) groups.push(['고정', pinned]);
+    if(recent.length) groups.push(['최근 사용', recent]);
+    const rule=rest.filter(g=>segKind(g)==='rule'), camp=rest.filter(g=>segKind(g)==='camp');
+    if(rule.length) groups.push(['반복 조건 — 언제 눌러도 오늘 기준으로 뽑힙니다', rule]);
+    if(camp.length) groups.push(['캠페인 조건 — 날짜가 고정된 한 번짜리 · 끝난 것은 [보관]', camp]);
+  }
+  $('segList').innerHTML = groups.map(([h,arr])=>`<div class="seggrp"><div class="segh">${esc(h)} <span class="note">${arr.length}</span></div>${arr.map(row).join('')}</div>`).join('')
+    || `<p class="note" style="padding:14px 12px;margin:0">${q?'찾는 조건이 없습니다':(arch?'보관한 조건이 없습니다':'저장된 조건이 없습니다 — 조건을 걸고 [지금 조건을 이름 붙여 저장]')}</p>`;
+}
+async function segSet(code,data){
+  try{ await rpc('fn_crm_segment_update',{p_code:code,p_data:data}); }catch(e){ toast(e.message,'bad'); return; }
+  const g=SEGS.find(x=>x.code===code); if(g) Object.assign(g,data);
+  if(data.active===false && SEG_CUR===code) clearSegment();
+  segRender();
+  if(data.pinned===true) toast('맨 위에 고정했습니다','ok');
+  if(data.active===false) toast('보관함으로 옮겼습니다','ok');
+  if(data.active===true) toast('복구했습니다','ok');
+}
+async function segArchive(code){
+  const g=SEGS.find(x=>x.code===code); if(!g) return;
+  if(!confirm(`"${g.label}" 을(를) 보관함으로 옮길까요?\n목록에서 사라지고, 보관함에서 [복구] 할 수 있습니다.`)) return;
+  segSet(code,{active:false});
+}
+async function segEdit(code){
+  const g=SEGS.find(x=>x.code===code); if(!g) return;
+  const data=await modal({title:'저장 조건 수정', ok:'저장',
+    html:`<p class="note" style="margin:0 0 10px">이름·설명만 바뀝니다. 조건 자체를 바꾸려면 새 조건을 걸고 <b>같은 이름으로 저장</b>하세요(덮어씀).</p>
+      <div class="fgrid" style="grid-template-columns:1fr">
+        <div><label>이름</label><input class="in" id="se_label" value="${esc(g.label)}"></div>
+        <div><label>설명</label><input class="in" id="se_note" value="${esc(g.note||'')}" placeholder="누구를, 왜 뽑는지"></div>
+      </div>
+      <label class="switch${g.pinned?' on':''}" id="se_pin" onclick="this.classList.toggle('on')" style="margin-top:12px"><span class="sw"></span>맨 위에 고정</label>`,
+    init:()=>setTimeout(()=>$('se_label').focus(),30),
+    collect:()=>{ const label=$('se_label').value.trim(); if(!label) throw new Error('이름을 넣으세요');
+      return {label, note:$('se_note').value.trim(), pinned:$('se_pin').classList.contains('on')}; }});
+  if(!data) return;
+  segSet(code,data);
 }
 /* 저장 조건이 쓸 수 있는 키 전부. 여기 없는 키는 화면이 조용히 무시하므로
    조건 이름과 실제 조건이 어긋난다 (예전 '토너·잉크 재구매 주기' 가 kind_goods 를 담아
@@ -5092,10 +5197,13 @@ async function applySegment(code){
   const nt=$('segNote'); nt.classList.remove('hidden');
   nt.innerHTML=`<b style="color:var(--ink)">${esc(g.label)}</b> — ${esc(g.note||'')}
     <button class="btn sm ghost" style="margin-left:8px" onclick="clearSegment()">조건 풀기</button>`;
-  loadSegments();
+  /* 최근 사용 순서를 위해 쓴 시각을 남긴다 (실패해도 화면은 그대로) */
+  g.last_used_at=new Date().toISOString(); g.use_count=(g.use_count||0)+1;
+  rpc('fn_crm_segment_touch',{p_code:code}).catch(()=>{});
+  segToggle(false); segRender();
   if($('crmReason').value.trim().length>=3) loadTargets(0);
 }
-function clearSegment(){ SEG_CUR=null; $('segNote').classList.add('hidden'); loadSegments(); resetTargets(); }
+function clearSegment(){ SEG_CUR=null; $('segNote').classList.add('hidden'); segRender(); resetTargets(); }
 async function saveSegment(){
   const pm={}; const v=id=>$(id).value.trim();
   if(v('crmQ')) pm.q=v('crmQ'); if(v('crmCh')) pm.channel=v('crmCh'); if(v('crmCat')) pm.category=v('crmCat');
@@ -5483,7 +5591,7 @@ function detect(cols){
   if(has('발송일') && ['휴대폰','휴대폰번호','연락처','전화번호'].some(c=>cols.some(x=>x.replace(/\s/g,'')===c))) return 'send_log';
   return null;
 }
-const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)',web_inquiry:'홈페이지 문의 (예비 붙여넣기) → 문의 관리 (연락처+등록일+이름 기준 갱신 · 평소엔 지메일 자동 적재)',sub_plan:'구독 상품 · 요금 → 요금표 · 상담 참고 (요금이 바뀌면 이전 가격은 이력으로)',send_log:'CRM 발송 고객 → 발송 이력 · 발송완료/실패 (발송 대상 추출에서 제외)',unpaid_order:'미입금 주문 → 결제 안 한 고객 목록 (발송 대상 추출)'};
+const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)',web_inquiry:'홈페이지 문의 (예비 붙여넣기) → 문의 관리 (연락처+등록일+이름 기준 갱신 · 평소엔 지메일 자동 적재)',sub_plan:'구독 상품 · 요금 → 요금표 · 상담 참고 (요금이 바뀌면 이전 가격은 이력으로)',send_log:'CRM 발송 고객 (센드온 결과 파일 통째로) → 성공은 발송 이력 · 실패는 발송 불가 목록 (둘 다 다음 추출에서 제외)',unpaid_order:'미입금 주문 → 결제 안 한 고객 목록 (발송 대상 추출)'};
 // 파일 안의 모든 시트를 훑어 인식 가능한 것을 찾는다. 여러 개면 사용자가 고른다.
 let SHEETS=[];
 const CH_NAMES=['P몰','S몰','AT몰','시흥','E스토어','B2B','가전시장','쿠팡','11번가','지마켓','옥션','SSG','현대홈쇼핑','쿠팡이츠','SK스토아','토스쇼핑','롯데온','카카오-관악','카카오-시흥','한퓨어','삼성AT스토어','프라자몰','에스몰','시흥몰'];
@@ -5628,14 +5736,16 @@ function pickMall(k){
 function renderSendOpts(){
   if(!UTM_CAMPS) utmCampsEnsure().then(()=>{ const dl=$('campList'); if(dl) dl.outerHTML=utmCampListHtml(); });
   const dates=UP.data.map(r=>excelDate(H(r,'발송일','발송일시','일자'))).filter(Boolean).sort();
-  const fail=mapRows(UP).filter(x=>x.status==='failed').length;
+  const rows=mapRows(UP); const fail=rows.filter(x=>x.status==='failed').length;
   $('upOpts').innerHTML=`<div style="grid-column:1/-1">
     <label>캠페인 코드 <span style="color:var(--bad)">필수</span> — <b>UTM 관리의 코드 그대로</b> (예: 2609_toner) · 같은 코드여야 발송·클릭·구매가 한 줄로 이어집니다</label>
     <input class="in mono" id="upCamp" list="campList" placeholder="2609_toner" oninput="sendOptsChanged()">${utmCampListHtml()}
     <label style="margin-top:8px">발송일 <span class="note">줄마다 발송일이 없을 때 쓸 날짜</span></label>
     <input class="in" type="date" id="upSentAt" value="${dates[0]||''}">
     <p class="note" style="margin-top:6px">${dates.length?`파일 안 발송일 ${esc(dates[0])} ~ ${esc(dates[dates.length-1])}`:'파일에 발송일 열이 없습니다 — 위 날짜로 들어갑니다'} ·
-      휴대폰 뒤 8자리로 고객 마스터와 맞춥니다. 마스터에 없는 번호는 건너뜁니다.${fail?`<br><b style="color:var(--bad)">발송 실패 ${n(fail)}건</b>도 '보낸 사람' 으로 기록됩니다 — 사유(비고)가 남고, 번호 오류·미지원 단말·수신거부·결번은 다음 추출에서 <b>항상</b> 빠집니다.`:''}</p></div>`;
+      휴대폰 뒤 8자리로 고객 마스터와 맞춥니다. 마스터에 없는 번호는 건너뜁니다.<br><b>센드온 결과 파일을 통째로</b> 올리면 됩니다 — 성공·실패는 '상태' 열로 서버가 나눕니다:
+      <b style="color:var(--ok)">발송 성공 ${n(rows.length-fail)}건</b> → 발송 이력([이미 보낸 사람 제외] 옵션에 걸림) ·
+      <b style="color:var(--bad)">발송 실패 ${n(fail)}건</b> → <b>발송 불가 목록</b>(사유가 남고, 다음 추출에서 옵션과 무관하게 <b>항상</b> 빠집니다).</p></div>`;
   sendOptsChanged();
 }
 /* 샵링커 파일 — 기본은 [취소·환불만 대조] (mvp_163).
@@ -5738,10 +5848,10 @@ async function runUpload(){
       const at=$('upSentAt')?.value||null; const CH=500; let sample=[];
       for(let i=0;i<rows.length;i+=CH){
         const r=await rpc('fn_send_log_import',{p_rows:rows.slice(i,i+CH),p_campaign:camp,p_channel:'sms',p_sent_at:at,p_file:UP.file});
-        ['rows','matched','unmatched','dup'].forEach(k=>res[k]=(res[k]||0)+(r[k]||0));
+        ['rows','matched','unmatched','dup','sent','failed'].forEach(k=>res[k]=(res[k]||0)+(r[k]||0));
         if(!sample.length && (r.sample||[]).length) sample=r.sample;
         done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; $('upMsg').textContent=`${n(done)} / ${n(rows.length)}`; }
-      res={'읽은 줄':res.rows||0,'고객 찾음':res.matched||0,'마스터에 없음':res.unmatched||0,'이미 올린 건':res.dup||0};
+      res={'읽은 줄':res.rows||0,'고객 찾음':res.matched||0,'발송 성공 (발송 이력)':res.sent||0,'발송 실패 (발송 불가 목록)':res.failed||0,'마스터에 없음':res.unmatched||0,'이미 올린 건':res.dup||0};
       if(sample.length) setTimeout(()=>{ $('upMsg').innerHTML+=`<br><span class="note">고객 마스터에 없는 번호 예: ${sample.map(x=>esc((x.name||'')+' '+x.phone)).join(' · ')} — 이 사람들은 발송 대상에도 없으므로 제외할 것이 없습니다</span>`; },50); }
     else if(UP.kind==='shoplinker' && SL_REFUND_ONLY){
       const rr=rows.map(r=>({order_no:r.order_no,alt_order_no:r.alt_order_no,status:r.status,model_code:r.model_code,product_name:r.product_name,cancelled_at:r.cancelled_at||null}));
