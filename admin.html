@@ -1474,7 +1474,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <div><label>구매 횟수 이상</label><input class="in num" type="number" id="crmMinCnt" placeholder="예: 2" min="0"></div>
             <div><label>누적 구매액 이상 (원)</label><input class="in num" type="number" id="crmMinNet" placeholder="예: 500000" step="10000"></div>
             <div><label>휴면 (마지막 구매 N일 경과)</label><select class="in" id="crmDormant"><option value="">상관없음</option><option value="90">90일 이상</option><option value="180">180일 이상</option><option value="365">1년 이상</option></select></div>
-            <div><label>이미 보낸 사람 제외 <span class="note" title="데이터 가져오기 › [이미 보낸 고객] 에 올린 발송 이력을 뺍니다">?</span></label><select class="in" id="crmNoSend"><option value="">상관없음 — 보낸 적 있어도 포함</option><option value="7">최근 7일 내 보낸 사람 제외</option><option value="30">최근 30일 내 보낸 사람 제외</option><option value="90">최근 90일 내 보낸 사람 제외</option><option value="36500">한 번이라도 보낸 사람 전부 제외</option></select></div>
+            <div><label>이미 보낸 사람 제외 <span class="note" title="데이터 가져오기 › [이미 보낸 고객] 에 올린 발송 이력을 뺍니다. 실패한 발송도 보낸 것으로 칩니다(다시 보내도 또 실패). 번호 오류·미지원 단말·수신거부로 실패한 사람은 이 옵션과 무관하게 항상 빠집니다">?</span></label><select class="in" id="crmNoSend"><option value="">상관없음 — 보낸 적 있어도 포함</option><option value="7">최근 7일 내 보낸 사람 제외</option><option value="30">최근 30일 내 보낸 사람 제외</option><option value="90">최근 90일 내 보낸 사람 제외</option><option value="36500">한 번이라도 보낸 사람 전부 제외</option></select></div>
             <div><label>정렬</label><select class="in" id="crmSort" onchange="loadTargets(0)"><option value="recent">최근 구매순</option><option value="net_desc">구매액 높은순</option><option value="cnt_desc">구매 잦은순</option><option value="oldest">오래된 구매순</option></select></div>
           </div>
           <div class="filters">
@@ -5111,6 +5111,7 @@ async function loadTargets(page){
   $('tgPg').innerHTML=pgBar('targets',tgPage,d.total||0,'loadTargets');
   $('tgHint').textContent=`${n(d.total)}명 · 1인 평균 ${wonK(s.avg_net)} · 평균 ${s.avg_cnt}회 · 관심상품 ${n(s.with_next)} · 미발송 ${n(s.never_sent)}`
     + (Number(s.blocked_open)>0 ? ` · 오픈마켓 고객이라 제외 ${n(s.blocked_open)}명` : '')
+    + (Number(s.blocked_bad)>0 ? ` · 발송 불가(번호 오류·미지원 단말) 제외 ${n(s.blocked_bad)}명` : '')
     + (TG_BASIS==='repeat' && s.asof ? ` · 기준일 ${s.asof}` : '');
   $('tgByCh').innerHTML=simpleBars((s.by_channel||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--navy)'})));
   $('tgByCat').innerHTML=simpleBars((s.by_category||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--teal)'})));
@@ -5778,8 +5779,9 @@ function mapRows(u){
       return { phone:str(H(r,'수신번호','휴대폰','휴대폰번호','연락처','전화번호')),
         name:str(H(r,'이름','고객명','수신자')),
         sent_at:excelDate(H(r,'실 발송 일시','발송일','발송일시','발송 일시','일자'))||null,
-        /* 실패한 건은 고객이 못 받았으니 '보낸 사람' 에서 빼야 한다 */
-        status:/실패|반송|expired|거부/i.test(st)?'failed':'sent' }; })
+        /* 실패도 '보낸 사람' 으로 센다(다시 보내도 또 실패). 사유(비고)는 서버가 error_msg 로 두고 번호 오류·미지원 단말은 항상 제외 (2026-09-21) */
+        status:/실패|반송|expired|거부/i.test(st)?'failed':'sent',
+        error:str(H(r,'비고','실패 사유','사유','메시지'))||null }; })
       .filter(x=>x.phone.replace(/\D/g,'').length>=8); }
   if(u.kind==='store_manual'){ const out=[]; d.forEach(r=>{ const date=excelDate(H(r,'날짜')); if(!date) return; const rows=[]; Object.keys(r).forEach(k=>{ const v=Number(r[k]); if(!v||/_환불$/.test(k)) return; const refund=Number(r[k+'_환불'])||0; if(k==='매장-일시불') rows.push({sale_kind:'일시불',sales:v,refund}); else if(k==='매장-구독') rows.push({sale_kind:'구독',sales:v,refund}); else if(/-직판$/.test(k)) rows.push({sale_kind:'직판',handler:k.replace(/프로?-직판$/,''),sales:v,refund}); }); if(rows.length) out.push({date,rows}); }); return out.map(x=>({date:x.date,rows:JSON.stringify(x.rows)})); }
   return [];
