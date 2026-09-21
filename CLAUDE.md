@@ -478,12 +478,12 @@ end $outer$;
 - **배정·담당 변경도 잔디 카드 · 상담 카드마다 번호 (v132 · mvp_168 · 2026-09-21)** — "배정이나 넘기기 하면 잔디로 알림 · 이미 온 문의를 넘길 때 앞의 것과 헷갈리지 않게 번호를".
   카드 4종이 머리말·색으로 갈린다: 🌐 홈페이지 문의 #id(초록) · 📋 구독 문의 #id(청록) = 새로 들어온 문의 / 📨 수동 접수 #id · 채널 → 담당(청록) = 담당자가 직접 만든 건 / **📌 배정 #id · 미배정 → 담당** · **🔁 담당 변경 #id · 이전 담당 → 새 담당**(황토 #8A5D00, 규칙 `consult_assign`) = 이미 있던 건을 옮긴 것.
   번호는 `crm.consult.id`(`#392`). `fn_inquiry_mail_ingest`·`fn_submit_inquiry`·`fn_store_consult_handoff` 가 `id` 변수를 넣고, `fn_store_consult_assign`(배정 탭 [배정]/[담당 바꾸기] · 내 상담 [넘기기]) 이 건마다 `consult.assign` 카드를 보낸다 — 담당 줄 "이전 → 새 담당 · 바꾼 사람 · 사유", 문의 줄 "채널 · 처음 접수 MM-DD HH:MI · 상태(연락 전/상담중…)", 상담 정보(관심 품목·상세·모델·내용).
-  **6건 넘게 한 번에 옮기면 요약 카드 한 장**(no='N건', 상담 정보에 줄마다 '#id 이름 · 채널 · 이전 담당'). 반환 `notified`, 화면 토스트 '· 잔디 알림 보냄'. `consult_assign`·`consult_handoff` 는 테스트 방(jandi_test), 홈페이지·구독 카드는 CRM 방 그대로(번호만 붙음).
+  **6건 넘게 한 번에 옮기면 요약 카드 한 장**(no='N건', 상담 정보에 줄마다 '#id 이름 · 채널 · 이전 담당'). 반환 `notified`, 화면 토스트 '· 잔디 알림 보냄'. **2026-09-21 CRM 방(jandi_crm)으로 전환 완료** — `consult_assign`·`consult_handoff` 모두. `jandi_test` 채널은 꺼 뒀다(필요하면 enabled=true 로).
   **execute_sql 한 호출 = 한 트랜잭션** — 함수 패치 do 블록과 롤백 테스트를 같은 호출에 넣었더니 패치까지 롤백됐다. 나눠서 보낼 것. loop alias `c` 가 record 변수 `c` 와 충돌(55000)해 `k` 로 바꿨다.
 - **문의 접수·넘기기 → 잔디 카드에 채널·담당자 (v130 · mvp_167 · 2026-09-21)** — "여기서 문의 만들어 담당자 배정하면 JANDI 에 어떤 채널에서 어떤 담당자에게 배정되었는지 알림".
   `fn_store_consult_handoff` 가 이제 **본인 배정도** `core.f_notify('consult.handoff')` 를 부른다(전엔 넘길 때만). 변수 `channel`(inq_channel 라벨 · 기타 글), `phone`, `self`(' (본인 접수)'), `detail`(이름·번호·관심·내용).
   규칙 `consult_handoff` 본문 "📨 문의 접수 · {channel} → {handler} 프로님 배정 · {name} ({phone})" + 카드 줄 배정 담당자("{handler} 프로님 · 수동입력(생성자:{by})") / 문의 채널 / 상담 정보 / 상담 확인하러가기.
-  **지금은 테스트 방 `core.notify_channel 'jandi_test'`** 로 간다(웹훅 주소는 DB·`_secrets.local.md` 에만). 확인되면 `update core.notify_rule set channel_code='jandi_crm' where code='consult_handoff'`. 테스트 카드 1장 200 확인.
+  테스트 방(`core.notify_channel 'jandi_test'`, 웹훅 주소는 DB 에만)에서 확인한 뒤 **2026-09-21 CRM 방(jandi_crm)으로 전환**. 테스트 채널은 꺼 둠.
   **문의 접수 카드에도 관심 품목 (v131)** — "이 페이지도 관심품목을 상세히 넣을 수 있도록". `#hoCard` 의 '관심 제품' 한 칸 → 상담 기록과 같은 세 칸: 관심 품목 칩 `#ho_cat`(`CATS` 11개, `hoRenderCat`, '알 수 없음' 단독·'기타' → `#ho_cat_etc` 글로 저장) · 상세 `#ho_detail` · 관심 모델 `#ho_model`+`#ho_models` 칩(`hoModelAdd/Flush`, Enter·쉼표).
   필수는 아니다 — 비우면 서버가 '알 수 없음'. `hoSubmit` 이 `interest_category`·`interest_model_code` 를 실어 보내고 접수 뒤 `hoClearInterest()`. 잔디 카드 '상담 정보' 에 모델도 붙는다. 테스트 `ptest/grid.mjs` H6·H6b·H7·H7b, UAT 4조합·tour 폰 13탭 ✓.
 - **센드온 결과 파일 = 성공은 발송 이력 · 실패는 발송 불가 목록 (v129 · mvp_166 · 2026-09-21)** — "발송 목록은 한번에 넣어서 성공 실패는 분류하고 실패는 다음에도 못낼꺼니까 … 제외되게".

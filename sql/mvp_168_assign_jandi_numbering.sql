@@ -28,3 +28,5 @@ update core.notify_rule set template = '📨 수동 접수 #{id} · {channel} �
 -- 확인: 롤백 트랜잭션 안에서 테스트 상담(#392 홍길동)을 담당 변경·미배정→배정·7건 일괄로 옮겨 카드 3장 200 (DB 는 롤백, HTTP 는 나감).
 -- 주의: execute_sql 한 번의 호출은 한 트랜잭션 — 끝에 rollback 을 쓰면 앞의 do 블록(함수 패치)까지 같이 되돌아간다. 패치와 롤백 테스트는 호출을 나눌 것.
 -- 확인 뒤 CRM 방으로:  update core.notify_rule set channel_code='jandi_crm' where code in ('consult_assign','consult_handoff');
+
+-- 2026-09-21 전환 완료: update core.notify_rule set channel_code='jandi_crm' where code in ('consult_assign','consult_handoff'); update core.notify_channel set enabled=false where code='jandi_test';

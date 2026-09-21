@@ -68,3 +68,5 @@ begin
   if v_n <> 1 then raise exception '지점 %개', v_n; end if;
   execute replace(v_def, v_old, v_new);
 end $outer$;
+
+-- 2026-09-21 전환 완료: update core.notify_rule set channel_code='jandi_crm' where code in ('consult_assign','consult_handoff'); update core.notify_channel set enabled=false where code='jandi_test';
