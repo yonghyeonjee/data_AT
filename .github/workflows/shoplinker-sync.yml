@@ -34,6 +34,9 @@ on:
         description: "상태 코드 탐색 — order_flag 코드별 건수·분포 (취소·반품 코드 확인용 · 적재하지 않음)"
         type: boolean
         default: false
+      probe_args:
+        description: "탐색 옵션 (flags 일 때) 예: --codes 999 --dtypes 001,002,003,004 --days 60"
+        required: false
 
 concurrency:
   group: shoplinker
@@ -63,7 +66,7 @@ jobs:
             exit $?
           fi
           if [ "${{ inputs.flags }}" = "true" ]; then
-            node tools/shoplinker/collect.mjs --flags
+            node tools/shoplinker/collect.mjs --flags ${{ inputs.probe_args }}
             exit $?
           fi
           ARGS=""

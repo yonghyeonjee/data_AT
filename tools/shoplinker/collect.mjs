@@ -373,18 +373,19 @@ async function runRange(label, st, ed, jobs) {
 async function flagsProbe() {
   const days = Number(arg("days") ?? 21);
   const st = ymd(kstShift(-days)), ed = ymd(kstNow());
-  const cands = (arg("codes") ?? "001,002,003,004,005,006,007,008,009,010,011,012,013,014,015,016,017,018,019,020,999").split(",");
-  console.log(`상태 코드 탐색 — 주문일 ${st}~${ed} · 코드 ${cands.length}개 · 페이지당 100건`);
+  const cands = (arg("codes") ?? "002,003,015,999").split(",");   // 2026-09-21 탐색 결과: 샵링커가 받는 코드는 이 넷뿐 (001·004~014·016~020 은 거부)
+  const dtypes = (arg("dtypes") ?? "001").split(",");
+  console.log(`상태 코드 탐색 — ${st}~${ed} · 코드 ${cands.length}개 × 날짜기준 ${dtypes.join("/")} · 페이지당 100건`);
   const STATUSISH = /status|flag|cancel|claim|return|refund|exchange|state|gubun|type/i;
-  for (const code of cands) {
+  for (const code of cands) for (const dt of dtypes) {
     let res;
     try {
-      res = await fetchPage({ st_date: st, ed_date: ed, date_type: "001", order_flag: code, page_no: "1", total_standard_count: "100" });
-    } catch (e) { console.log(`  ${code}  ✕ ${e.message}`); await sleep(SLEEP_MS); continue; }
-    if (res.error) { console.log(`  ${code}  (${res.error})`); await sleep(SLEEP_MS); continue; }
+      res = await fetchPage({ st_date: st, ed_date: ed, date_type: dt, order_flag: code, page_no: "1", total_standard_count: "100" });
+    } catch (e) { console.log(`  ${code}/dt${dt}  ✕ ${e.message}`); await sleep(SLEEP_MS); continue; }
+    if (res.error) { console.log(`  ${code}/dt${dt}  (${res.error})`); await sleep(SLEEP_MS); continue; }
     const hist = {};
     for (const o of res.orders) { const f = S(o.order_flag) || "(빈값)"; hist[f] = (hist[f] ?? 0) + 1; }
-    console.log(`  ${code}  총 ${res.totalCount ?? "?"}건 · 받은 ${res.orders.length}건 · order_flag 분포 ${JSON.stringify(hist)}`);
+    console.log(`  ${code}/dt${dt}  총 ${res.totalCount ?? "?"}건 · 받은 ${res.orders.length}건 · order_flag 분포 ${JSON.stringify(hist)}`);
     const o = res.orders[0];
     if (o) {
       const keys = Object.keys(o).filter((k) => STATUSISH.test(k));
