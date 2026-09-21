@@ -1519,12 +1519,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </div>
       <div class="fgrp b"><div class="fgrp-t">무엇에 관심이 있나</div>
       <div class="f"><label>관심 품목 <span class="req">*</span></label>
-        <div class="chips" id="c_cat">
-          <span class="chip" data-v="TV">TV</span><span class="chip" data-v="냉장고">냉장고</span><span class="chip" data-v="세탁·건조">세탁·건조</span>
-          <span class="chip" data-v="에어컨">에어컨</span><span class="chip" data-v="청소기">청소기</span><span class="chip" data-v="주방가전">주방가전</span>
-          <span class="chip" data-v="휴대폰·태블릿">휴대폰·태블릿</span><span class="chip" data-v="PC·모니터">PC·모니터</span><span class="chip" data-v="입주패키지">입주패키지</span>
-          <span class="chip" data-v="기타">기타</span><span class="chip" data-v="알 수 없음">알 수 없음</span>
-        </div>
+        <div class="chips" id="c_cat"></div>
         <input class="in hidden" id="c_cat_etc" placeholder="기타 — 어떤 품목인지 적어 주세요" autocomplete="off" style="margin-top:8px">
       </div>
       <div class="f"><label>상세 관심 품목 <span class="hint">고객이 말한 그대로 — 나중에 이 말로 찾습니다</span></label>
@@ -4517,7 +4512,7 @@ function hoTeamSet(t){ HO_TEAM=t; hoRenderTo(); }
 /* 관심 품목·모델 — 상담 기록 폼과 같은 선택지(CATS)·같은 규칙('알 수 없음' 은 단독, '기타' 는 적은 말로) */
 function hoRenderCat(){
   const box=$('ho_cat'); if(!box || box.children.length) return;
-  box.innerHTML=CATS.map(c=>`<span class="chip" data-v="${esc(c)}">${esc(c)}</span>`).join('');
+  box.innerHTML=catChipsHtml();
   box.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
     const v=c.dataset.v;
     if(v==='알 수 없음'){ const on=!c.classList.contains('on'); box.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); c.classList.toggle('on',on); }
@@ -4598,13 +4593,17 @@ const GCOLS={
       ['content','상담 내용',220,'core wide'],['cb_date','콜백 날짜',136,'','date'],['cb_time','콜백 시간',100,'','time'],
       ['gift','사은품',130],['gift_amt','사은품 금액',100,'','amt'],['consent','마케팅 동의',72,'','chk'] ]
 };
-const CATS=['TV','냉장고','세탁·건조','에어컨','청소기','주방가전','휴대폰·태블릿','PC·모니터','입주패키지','기타','알 수 없음'];
+/* 관심 품목 (2026-09-21 · 견적서 품목표와 같은 24개) — 값은 그대로 저장되고 '기타' 는 적은 말로, '알 수 없음' 은 단독 */
+const CATS=['TV','사운드바','벽걸이','후드','냉동고','냉장고','김치냉장고','페어킷','세탁기','건조기','에어드레서','슈드레서','에어컨','식기세척기','인덕션','오븐(큐커)','공기청정기','로봇청소기(구독)','무선청소기 제트','무빙스타일','정수기(구독)','밥솥','제습기','기타','알 수 없음'];
+const catLabel=c=> c==='기타' ? '기타 (직접 입력)' : c;
+const catChipsHtml=()=>CATS.map(c=>`<span class="chip" data-v="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
+if($('c_cat')) $('c_cat').innerHTML=catChipsHtml();
 const GRES=[['진행전','연락 전'],['진행중','상담중'],['보류','보류'],['상담완료','완료'],['구매완료','구매함']];
 function gridOpts(key,row){
   if(key==='CH') return [['','채널']].concat(((INQ&&INQ.channels)||[]).map(c=>[c.code,c.label]));
   if(key==='TY') return ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]).length ? ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]) : [['product','상품 문의']];
   if(key==='RT'){ const all=(INQ&&INQ.routes)||[]; const ch=row&&row.ch; return [['','선택']].concat(all.filter(r=>!ch || !r.channel_code || r.channel_code===ch).map(r=>[r.code,r.label])); }
-  if(key==='CAT') return [['','관심 품목']].concat(CATS.map(c=>[c,c]));
+  if(key==='CAT') return [['','관심 품목']].concat(CATS.map(c=>[c,catLabel(c)]));
   if(key==='RES') return GRES;
   return key||[];
 }
