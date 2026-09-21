@@ -579,7 +579,7 @@ textarea.in{height:auto}
 .callout{padding:11px 14px;border-radius:var(--r);background:var(--navy-soft);color:var(--navy-ink);font-size:calc(12.5px * var(--font-scale));line-height:1.6;margin-bottom:12px;border:1px solid transparent}
 .callout.warn{background:var(--amber-soft);color:var(--amber);border-color:#F1E2BF}
 .utm-short{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.utm-short.big .mono{font-size:15px;font-weight:700}
-tr.utm-link td{background:var(--bg2);border-top:0}tr.off>td{opacity:.55}
+tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}   /* 긴 주소가 td nowrap 을 물려받아 표를 옆으로 늘리던 것 (2026-09-21) */tr.off>td{opacity:.55}
 .callout.ok{background:var(--teal-soft);color:var(--teal);border-color:#CDE8E2}
 
 /* ── 차트 공통 ── */
@@ -679,10 +679,19 @@ tr.utm-link td{background:var(--bg2);border-top:0}tr.off>td{opacity:.55}
 .src .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .src .meta{font-size:calc(12px * var(--font-scale));color:var(--muted);line-height:1.6}
 .src .meta b{color:var(--ink);font-weight:600}
-.src .nums{display:flex;gap:14px;font-size:calc(12px * var(--font-scale));color:var(--muted);padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.src .nums{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:calc(12px * var(--font-scale));color:var(--muted);padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.src .nums>div{white-space:nowrap}   /* '경과'·'30일' 이 경/과 로 세로로 쪼개지던 것 — 칸이 좁으면 칸째로 다음 줄 (2026-09-21) */
 .src .nums b{display:block;font-size:calc(15px * var(--font-scale));color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-.src .cols{font-size:calc(11px * var(--font-scale));color:var(--faint);line-height:1.5;max-height:34px;overflow:hidden}
-.src .acts{display:flex;gap:6px;margin-top:auto;padding-top:4px}
+.src .cols{font-size:calc(11px * var(--font-scale));color:var(--faint);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}   /* 2줄 넘으면 … (전엔 34px 에서 뚝 잘렸다) · 전체는 title */
+.src .acts{display:flex;gap:6px;margin-top:auto;padding-top:4px;flex-wrap:wrap}   /* 버튼 4개면 좁은 카드에서 줄바꿈 (넘침 방지) */
+.src .hd b,.src .meta{overflow-wrap:anywhere}
+.src .dsdet{border-top:1px dashed var(--line);padding-top:6px}
+.src .dsdet .dslist{margin-top:4px;display:flex;flex-direction:column;gap:2px}
+.src .dsdet .dslist>div{display:flex;gap:8px;align-items:baseline;justify-content:space-between}
+.src .dsdet .dslist .l{min-width:0;overflow-wrap:anywhere}
+.src .dsdet .dslist .r{white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums}
+.src .dsdet .dslist .r i{font-style:normal;color:var(--bad)}
+.src .dsdet .dim{color:var(--faint)}
 .src .acts .btn{flex:1;justify-content:center}
 .src .req{position:absolute;top:12px;right:14px}
 
@@ -1474,7 +1483,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <div><label>구매 횟수 이상</label><input class="in num" type="number" id="crmMinCnt" placeholder="예: 2" min="0"></div>
             <div><label>누적 구매액 이상 (원)</label><input class="in num" type="number" id="crmMinNet" placeholder="예: 500000" step="10000"></div>
             <div><label>휴면 (마지막 구매 N일 경과)</label><select class="in" id="crmDormant"><option value="">상관없음</option><option value="90">90일 이상</option><option value="180">180일 이상</option><option value="365">1년 이상</option></select></div>
-            <div><label>이미 보낸 사람 제외 <span class="note" title="데이터 가져오기 › [이미 보낸 고객] 에 올린 발송 이력을 뺍니다. 실패한 발송도 보낸 것으로 칩니다(다시 보내도 또 실패). 번호 오류·미지원 단말·수신거부로 실패한 사람은 이 옵션과 무관하게 항상 빠집니다">?</span></label><select class="in" id="crmNoSend"><option value="">상관없음 — 보낸 적 있어도 포함</option><option value="7">최근 7일 내 보낸 사람 제외</option><option value="30">최근 30일 내 보낸 사람 제외</option><option value="90">최근 90일 내 보낸 사람 제외</option><option value="36500">한 번이라도 보낸 사람 전부 제외</option></select></div>
+            <div><label>이미 보낸 사람 제외 <span class="note" title="데이터 가져오기 › [CRM 발송 고객] 에 올린 발송 이력을 뺍니다. 실패한 발송도 보낸 것으로 칩니다(다시 보내도 또 실패). 번호 오류·미지원 단말·수신거부로 실패한 사람은 이 옵션과 무관하게 항상 빠집니다">?</span></label><select class="in" id="crmNoSend"><option value="">상관없음 — 보낸 적 있어도 포함</option><option value="7">최근 7일 내 보낸 사람 제외</option><option value="30">최근 30일 내 보낸 사람 제외</option><option value="90">최근 90일 내 보낸 사람 제외</option><option value="36500">한 번이라도 보낸 사람 전부 제외</option></select></div>
             <div><label>정렬</label><select class="in" id="crmSort" onchange="loadTargets(0)"><option value="recent">최근 구매순</option><option value="net_desc">구매액 높은순</option><option value="cnt_desc">구매 잦은순</option><option value="oldest">오래된 구매순</option></select></div>
           </div>
           <div class="filters">
@@ -1621,9 +1630,9 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
                 <option value="rental">렌탈</option>
                 <option value="godo_member">고도몰 회원</option>
                 <option value="store_manual">매장 일별(Manual)</option>
-                <option value="web_inquiry">홈페이지 문의 (고도몰 견적 게시판)</option>
+                <option value="web_inquiry">홈페이지 문의 (자동 적재 · 붙여넣기는 예비)</option>
                 <option value="sub_plan">구독 상품 · 요금</option>
-                <option value="send_log">이미 보낸 고객 (발송 이력)</option>
+                <option value="send_log">CRM 발송 고객 (발송 이력)</option>
                 <option value="unpaid_order">미입금 주문 (고도몰)</option>
               </select>
               <div id="pasteCols" class="note hidden" style="margin-top:8px"></div></div></div>
@@ -1656,13 +1665,13 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
               매출 원장에는 정상 적재되며, 샵링커의 마스킹된 번호가 대부분입니다.</div></div>
           <div class="card"><details><summary style="cursor:pointer;font-weight:800;font-size:calc(14px * var(--font-scale))">형식별 매핑 규칙 <span class="note" style="font-weight:400">— 어떤 열이 어디로 들어가는지</span></summary>
             <div class="note" style="line-height:1.9;margin-top:10px">
-              <b>샵링커</b> 주문번호+자사주문번호 → 원장 라인 · 쇼핑몰×아이디 → 채널 · 취소/반품 완료면 환불<br>
+              <b>샵링커</b> [취소·환불만 대조](기본) 주문번호·자사주문번호로 원장을 찾아 취소/반품 완료 줄만 환불 표시 · 전체 적재는 주문번호+줄 순번 → 원장 라인 · 쇼핑몰×아이디 → 채널<br>
               <b>이카운트 판매현황</b> 일자-No.+순번 → 라인 · 합계(VAT포함)=매출 · 채널 VMS<br>
               <b>이카운트 가망고객</b> 일자-No. → 상담번호 · 관심 품목명 → 관심 분류<br>
               <b>렌탈</b> 계약번호 → 주문번호 · 거래처 → 고객 · 금액 → 매출<br>
               <b>고도몰 회원</b> 이름+휴대폰 → 고객 키 · SMS수신여부 y → 수신동의 · 휴대폰 없으면 건너뜀<br>
               <b>매장 일별(Manual)</b> 날짜 × 매장-일시불/구독/프로-직판 → 일마감<br>
-              <b>이미 보낸 고객</b> 수신번호 뒤 8자리 → 고객 키 · 실패 건은 '보낸 사람' 에서 뺌<br>
+              <b>CRM 발송 고객</b> 수신번호 뒤 8자리 → 고객 키 · 상태·비고 → 발송완료 / 실패(사유) · 실패도 '보낸 사람' 으로 봄<br>
               <b>미입금 주문</b> 주문번호 → 한 줄 · 올릴 때마다 목록에 없는 건은 결제·취소로 정리
             </div></details>
           </div>
@@ -2511,7 +2520,7 @@ async function flowTestMark(on){ const ids=flowSel(); if(!ids.length) return toa
 async function flowTestAuto(){ if(!confirm('규칙(담당 test · 고객명/상품명 "테스트" · 10원 이하)에 걸리는 주문을 모두 테스트로 표시할까요?\n표시된 건은 집계에서 빠집니다. 개별로 해제할 수 있습니다.')) return;
   try{ const r=await rpc('fn_order_test_auto',{p_from:null}); toast(`${r.marked}줄 테스트로 표시`,'ok'); loadFlow(); }catch(e){ toast(e.message,'bad'); } }
 
-/* ═══════════════ 홈페이지 문의 (고도몰 견적 게시판) ═══════════════ */
+/* ═══════════════ 홈페이지 문의 (별도 서비스 → 지메일 → 자동 적재 · 이 목록은 예비) ═══════════════ */
 let wiPage=0, WI_ROWS=[];
 const WI_PAGE=()=>pgSize('webinq');
 async function loadWebInq(page){
@@ -4241,7 +4250,9 @@ function placeCbar(v){
   try{ segify(); }catch(e){}
   const el=cbarEl(); const cfg=CB_VIEWS[v];
   cbarRestore();
-  if(!cfg){ el.remove(); return; }
+  /* 공통 바가 없는 화면(데이터 가져오기 등)으로 갈 때 기간 바가 공통 바 안에 든 채로 같이 지워지던 것 (2026-09-21)
+     → 주문 목록 → 데이터 가져오기 → 주문 목록 에서 $('periodBar') 가 null 이라 화면이 안 그려졌다. 기간 바를 제자리로 돌려놓고 지운다 */
+  if(!cfg){ const pb=$('periodBar'); if(pb && el.contains(pb) && PB_HOME){ pb.classList.add('hidden'); PB_HOME.appendChild(pb); } el.remove(); return; }
   if(CB_VIEW!==v){ CB_VIEW=v; CB.q=''; CB.field=''; CB.channel=''; CB.category=''; }   /* 화면이 바뀌면 조건은 새로 */
   [cfg.q, cfg.channel].forEach(id=>{ if(id && $(id)) $(id).classList.add('hidden'); });   /* 화면 자체 검색칸·채널은 공통 바로 대신 (중복 제거) */
   const view=$('v-'+v); const first=view.querySelector('.card'); if(!first) return;
@@ -4291,13 +4302,28 @@ let CB_OBS=null;
 function cbarWatch(view){ if(CB_OBS) CB_OBS.disconnect(); CB_OBS=new MutationObserver(()=>{ clearTimeout(cbarWatch.t); cbarWatch.t=setTimeout(()=>cbarApply(view),30); });
   view.querySelectorAll('table').forEach(t=>CB_OBS.observe(t,{childList:true,subtree:true})); }
 
+const PB_HOME=$('periodBar')?.parentNode;   /* 기간 바의 원래 자리 — 공통 바를 지울 때 여기로 돌려놓는다 */
 function placePeriodBar(v){
-  const pb=$('periodBar'); if(!PERIOD_VIEWS.includes(v)){ pb.classList.add('hidden'); return; }
+  const pb=$('periodBar'); if(!pb) return; if(!PERIOD_VIEWS.includes(v)){ pb.classList.add('hidden'); return; }
   if(CB_VIEWS[v]) return;   /* 공통 바가 있는 화면은 placeCbar 가 기간 바를 안에 넣는다 */
   const card=document.querySelector('#v-'+v+' .card'); if(card && pb.parentNode!==card){ card.insertBefore(pb, card.firstChild); }
   pb.classList.remove('hidden');
 }
 $('navBox').addEventListener('click',e=>{ const n=e.target.closest('.nav[data-v]'); if(n) show(n.dataset.v); });
+
+/* 표 칸 자동 줄바꿈 (2026-09-21 "테이블 텍스트가 넘어가는 현상") — td 는 기본 nowrap 이라 주소·상품명·긴 이름이
+   표를 옆으로 늘려 가로 스크롤이 생기고, 그 줄의 다른 칸(.wrap)은 좁아져 세로로 길어졌다.
+   글자가 26자를 넘고 띄어쓰기·구분점이 있는 칸에 .wrap(줄바꿈 · max-width 320px) 을 붙인다. 숫자·mono·버튼 칸은 제외.
+   표가 다시 그려질 때마다(MutationObserver) 한 번씩. */
+const AUTO_WRAP_MIN=26;
+function autoWrap(root){
+  (root||document).querySelectorAll('.tw td:not(.wrap):not(.num):not(.mono):not(.acts):not([data-nowrap])').forEach(td=>{
+    if(td.children.length && td.querySelector('button,input,select,textarea,.btn,.mini')) return;
+    const t=td.textContent.trim(); if(t.length>AUTO_WRAP_MIN && /[\s·,/(]/.test(t)) td.classList.add('wrap');
+  });
+}
+new MutationObserver(ms=>{ if(ms.some(m=>m.addedNodes.length)){ clearTimeout(autoWrap._t); autoWrap._t=setTimeout(()=>autoWrap(),40); } })
+  .observe(document.body,{childList:true,subtree:true});
 
 /* 눌렀는데 화면이 그대로면 "먹통인가?" 싶으므로, 누른 티와 끝난 티를 반드시 낸다 */
 const REFRESH_RE=/새로고침|다시\s?불러|갱신|조회|불러오기/;
@@ -5568,14 +5594,14 @@ function detect(cols){
   if(has('날짜','매장-일시불')) return 'store_manual';
   if(has('상담상태','견적결과','등록일')) return 'web_inquiry';
   if(has('계약 기간','서비스 주기','모델코드')) return 'sub_plan';
-  /* 이미 보낸 고객 : 회원번호가 없고 발송일(또는 수신번호)이 있는 목록 */
+  /* CRM 발송 고객 : 회원번호가 없고 발송일(또는 수신번호)이 있는 목록 */
   if(has('수신번호')) return 'send_log';
   /* 고도몰 미입금 주문 : 주문번호 + 주문일시 가 있고 샵링커 열(쇼핑몰아이디)은 없다 */
   if(has('주문번호','주문일시') && !cols.some(c=>c.replace(/\s/g,'')==='쇼핑몰아이디')) return 'unpaid_order';
   if(has('발송일') && ['휴대폰','휴대폰번호','연락처','전화번호'].some(c=>cols.some(x=>x.replace(/\s/g,'')===c))) return 'send_log';
   return null;
 }
-const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)',web_inquiry:'홈페이지 문의 → 문의 관리 (연락처+등록일+이름 기준 갱신)',sub_plan:'구독 상품 · 요금 → 요금표 · 상담 참고 (요금이 바뀌면 이전 가격은 이력으로)',send_log:'이미 보낸 고객 → 발송 이력 (발송 대상 추출에서 제외)',unpaid_order:'미입금 주문 → 결제 안 한 고객 목록 (발송 대상 추출)'};
+const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)',web_inquiry:'홈페이지 문의 (예비 붙여넣기) → 문의 관리 (연락처+등록일+이름 기준 갱신 · 평소엔 지메일 자동 적재)',sub_plan:'구독 상품 · 요금 → 요금표 · 상담 참고 (요금이 바뀌면 이전 가격은 이력으로)',send_log:'CRM 발송 고객 → 발송 이력 · 발송완료/실패 (발송 대상 추출에서 제외)',unpaid_order:'미입금 주문 → 결제 안 한 고객 목록 (발송 대상 추출)'};
 // 파일 안의 모든 시트를 훑어 인식 가능한 것을 찾는다. 여러 개면 사용자가 고른다.
 let SHEETS=[];
 const CH_NAMES=['P몰','S몰','AT몰','시흥','E스토어','B2B','가전시장','쿠팡','11번가','지마켓','옥션','SSG','현대홈쇼핑','쿠팡이츠','SK스토아','토스쇼핑','롯데온','카카오-관악','카카오-시흥','한퓨어','삼성AT스토어','프라자몰','에스몰','시흥몰'];
@@ -5675,7 +5701,7 @@ function useSheet(i, keepPicker){
   if(!keepPicker){ $('upDetect').className='callout ok';
     $('upDetect').innerHTML=`<b>${DETECT_LABEL[sh.kind]}</b> · ${n(sh.data.length)}행 · ${esc(UPFILE)}${SHEETS.length>1?` <b>[${esc(sh.sheet)}]</b>`:''}`; }
   else { document.querySelectorAll('#upDetect .btn').forEach((b,j)=>b.className='btn sm '+(j===i?'':'ghost')); }
-  if(sh.kind==='godo_member') renderMallPicker(); else if(sh.kind==='send_log') renderSendOpts(); else $('upOpts').innerHTML='';
+  if(sh.kind==='godo_member') renderMallPicker(); else if(sh.kind==='send_log') renderSendOpts(); else if(sh.kind==='shoplinker') renderSlOpts(); else $('upOpts').innerHTML='';
   const mapped=mapRows(UP).slice(0,5); const keys=mapped.length?Object.keys(mapped[0]):[];
   $('upHead').innerHTML='<tr>'+keys.map(k=>`<th>${esc(k)}</th>`).join('')+'</tr>';
   $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
@@ -5715,7 +5741,7 @@ function pickMall(k){
   $('upMsg').innerHTML=`<b>${k}</b> 로 적재합니다${st?` · 현재 ${n(st.cnt)}명`:''}`;
 }
 
-/* 이미 보낸 고객 : 어느 캠페인으로 보낸 것인지를 적어야 한다.
+/* CRM 발송 고객 : 어느 캠페인으로 보낸 것인지를 적어야 한다.
    [발송 대상 추출] 에서 캠페인별로 빼거나 전체를 뺄 수 있고, 같은 캠페인을 다시 올려도 중복되지 않는다 */
 function renderSendOpts(){
   if(!UTM_CAMPS) utmCampsEnsure().then(()=>{ const dl=$('campList'); if(dl) dl.outerHTML=utmCampListHtml(); });
@@ -5730,6 +5756,23 @@ function renderSendOpts(){
       휴대폰 뒤 8자리로 고객 마스터와 맞춥니다. 마스터에 없는 번호는 건너뜁니다.${fail?`<br><b style="color:var(--bad)">발송 실패 ${n(fail)}건</b>은 고객이 못 받았으므로 제외 대상에서 빠집니다.`:''}</p></div>`;
   sendOptsChanged();
 }
+/* 샵링커 파일 — 기본은 [취소·환불만 대조] (mvp_163).
+   API 가 주문을 자동 수집하므로 파일은 취소·반품 상태를 맞추는 용도. 전체 적재는 주문번호+줄 순번 키라
+   API 로 들어온 여러 줄 주문과 순번이 어긋나면 중복 줄이 생길 수 있어 기본을 끈다. */
+let SL_REFUND_ONLY = (()=>{ try{ return localStorage.getItem('dc_sl_refund_only')!=='0'; }catch(e){ return true; } })();
+function renderSlOpts(){
+  $('upOpts').innerHTML=`<div style="grid-column:1/-1">
+    <label class="chk" style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="slRefundOnly" ${SL_REFUND_ONLY?'checked':''} onchange="SL_REFUND_ONLY=this.checked;try{localStorage.setItem('dc_sl_refund_only',this.checked?'1':'0')}catch(e){};slOptsHint()" style="margin-top:3px">
+      <span><b>취소·환불만 대조</b> — 주문번호(또는 자사주문번호)로 원장을 찾아 <b>취소·반품 완료</b> 줄만 환불로 표시합니다. 새 주문은 넣지 않습니다 (주문은 샵링커 API 가 하루 5번 자동 수집).</span></label>
+    <p class="note" id="slOptsHint" style="margin-top:6px"></p></div>`;
+  slOptsHint();
+}
+function slOptsHint(){
+  const rows=mapRows(UP); const ref=rows.filter(r=>r.refund_amount>0).length; const req=rows.filter(r=>/요청|교환|A\/S/.test(r.status||'')).length;
+  $('slOptsHint').innerHTML = SL_REFUND_ONLY
+    ? `파일 ${n(rows.length)}줄 중 <b>취소·반품 완료 ${n(ref)}줄</b> → 환불 반영${req?` · 취소·반품 <b>요청 ${n(req)}줄</b> → 상태만 갱신(환불은 완료돼야)`:''} · 나머지는 건너뜀. 반영되면 대시보드 캐시를 비워 바로 보입니다.`
+    : `<b>전체 적재</b> — 주문번호+줄 순번으로 원장에 넣거나 덮어씁니다. API 로 이미 들어온 여러 줄 주문과 순번이 어긋나면 중복 줄이 생길 수 있으니 API 이전 기간(2026-08 이전)에만 쓰세요.`;
+}
 function sendOptsChanged(){
   const ok=!!($('upCamp')?.value||'').trim();
   $('upBtn').disabled=!ok;
@@ -5740,7 +5783,7 @@ function mapRows(u){
   const d=u.data;
   if(['channel_daily','settlement','listing_request','inv_items'].includes(u.kind)) return d;
   if(u.kind==='shoplinker'){ const seq={}; return d.map(r=>{ const no=str(H(r,'주문번호')); seq[no]=(seq[no]||0)+1; const ch=SHOP_MAP[`${str(H(r,'쇼핑몰'))}|${str(H(r,'쇼핑몰아이디'))}`]||SHOP_MAP[`${str(H(r,'쇼핑몰'))}|*`]||`${str(H(r,'쇼핑몰'))}|오픈마켓`; const [cn,ct]=ch.split('|'); const st=str(H(r,'배송상태')); const gross=Number(H(r,'주문금액'))||0; const refund=REFUND_STATES.some(s=>st.includes(s))?gross:0;
-    return {order_no:no,line_no:seq[no],order_at:excelDate(H(r,'주문일자')),channel_type:ct,channel_name:cn,channel_account:str(H(r,'쇼핑몰아이디')),status:st,product_code:str(H(r,'상품코드')),model_code:str(H(r,'모델명')).toUpperCase()||null,product_name:str(H(r,'주문 상품명','자사 상품명')),option_text:str(H(r,'옵션')),qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'쇼핑몰 판매가'))||null,gross_amount:gross,refund_amount:refund,payment_method:str(H(r,'결제')),customer_name:str(H(r,'주문자명')),customer_phone:str(H(r,'주문자연락처2'))||str(H(r,'주문자연락처1')),email:str(H(r,'주문자이메일주소')),address:str(H(r,'수취인 주소')),notes:str(H(r,'클레임여부')).replace(/\n/g,' ').slice(0,80)||null,alt_order_no:str(H(r,'자사주문번호'))||null,tracking_no:str(H(r,'송장번호','운송장번호','택배송장번호','배송번호'))||null,shipped_at:excelDate(H(r,'발송완료일','_송장등록일','송장등록일','발송일'))||null}; }); }
+    return {order_no:no,line_no:seq[no],order_at:excelDate(H(r,'주문일자')),channel_type:ct,channel_name:cn,channel_account:str(H(r,'쇼핑몰아이디')),status:st,product_code:str(H(r,'상품코드')),model_code:str(H(r,'모델명')).toUpperCase()||null,product_name:str(H(r,'주문 상품명','자사 상품명')),option_text:str(H(r,'옵션')),qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'쇼핑몰 판매가'))||null,gross_amount:gross,refund_amount:refund,payment_method:str(H(r,'결제')),customer_name:str(H(r,'주문자명')),customer_phone:str(H(r,'주문자연락처2'))||str(H(r,'주문자연락처1')),email:str(H(r,'주문자이메일주소')),address:str(H(r,'수취인 주소')),notes:str(H(r,'클레임여부')).replace(/\n/g,' ').slice(0,80)||null,alt_order_no:str(H(r,'자사주문번호'))||null,tracking_no:str(H(r,'송장번호','운송장번호','택배송장번호','배송번호'))||null,shipped_at:excelDate(H(r,'발송완료일','_송장등록일','송장등록일','발송일'))||null,cancelled_at:excelDate(H(r,'취소완료일','취소일','취소일자','반품완료일','클레임일','클레임일자'))||null}; }); }
   if(u.kind==='ecount_sales'){ const seq={}; return d.filter(r=>/^\d{8}-\d+/.test(str(H(r,'일자-No.')))).map(r=>{ const no=str(H(r,'일자-No.')); seq[no]=(seq[no]||0)+1; const biz=str(H(r,'거래처명')); const rep=str(H(r,'대표자명')).replace(/ /g,'');
     return {order_no:no,line_no:seq[no],order_at:excelDate(no.slice(0,8)),channel_type:'VMS',channel_name:'VMS',status:'결제완료',product_name:str(H(r,'품목명(규격)')),qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'단가'))||null,supply_amount:Number(H(r,'공급가액'))||null,vat_amount:Number(H(r,'부가세'))||null,gross_amount:Number(H(r,'합계'))||((Number(H(r,'공급가액'))||0)+(Number(H(r,'부가세'))||0)),customer_name:biz,customer_phone:str(H(r,'모바일')).replace(/ /g,'')||str(H(r,'일반전화')).replace(/ /g,''),address:str(H(r,'주소2')).replace(/ /g,''),account_type:rep&&rep!==biz?'business':'personal',handler:str(H(r,'판매담당자','판매담당')).replace(/ /g,'')||null,device_model:str(H(r,'사용기종')).replace(/^\.$/,'')||null,notes:str(H(r,'영업담당명'))?'영업:'+str(H(r,'영업담당명')):null}; }); }
   if(u.kind==='ecount_prospect'){ return d.filter(r=>str(H(r,'일자-No.'))).map(r=>{ const ref=str(H(r,'일자-No.')); return {source_ref:ref,consult_at:excelDate(ref.split(' ')[0]),customer_name:str(H(r,'고객명')),phone:str(H(r,'연락처')),handler:str(H(r,'상담사명')),inflow_route:str(H(r,'유입경로명')),interest_category:str(H(r,'관심 품목명')),interest_model_code:str(H(r,'관심 품목코드'))||null,purchase_item:str(H(r,'구매 품목명')),result:str(H(r,'결과명')),membership_status:str(H(r,'멤버쉽명')),expected_amount:Number(H(r,'예상금액'))||null,expected_purchase_date:excelDate(H(r,'구매예정일')),content:str(H(r,'상담내용')),notes:[str(H(r,'구분명')),str(H(r,'비고'))].filter(Boolean).join(' / ')||null}; }); }
@@ -5818,6 +5861,16 @@ async function runUpload(){
         done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; $('upMsg').textContent=`${n(done)} / ${n(rows.length)}`; }
       res={'읽은 줄':res.rows||0,'고객 찾음':res.matched||0,'마스터에 없음':res.unmatched||0,'이미 올린 건':res.dup||0};
       if(sample.length) setTimeout(()=>{ $('upMsg').innerHTML+=`<br><span class="note">고객 마스터에 없는 번호 예: ${sample.map(x=>esc((x.name||'')+' '+x.phone)).join(' · ')} — 이 사람들은 발송 대상에도 없으므로 제외할 것이 없습니다</span>`; },50); }
+    else if(UP.kind==='shoplinker' && SL_REFUND_ONLY){
+      const rr=rows.map(r=>({order_no:r.order_no,alt_order_no:r.alt_order_no,status:r.status,model_code:r.model_code,product_name:r.product_name,cancelled_at:r.cancelled_at||null}));
+      const CH=500; let nf=[];
+      for(let i=0;i<rr.length;i+=CH){
+        const r=await rpc('fn_sl_refund_apply',{p_rows:rr.slice(i,i+CH),p_file:UP.file});
+        ['rows','refund_rows','found','updated','already','status_only','notfound'].forEach(k=>res[k]=(res[k]||0)+(r[k]||0));
+        if(nf.length<5) nf=nf.concat(r.notfound_sample||[]).slice(0,5);
+        done=Math.min(rr.length,i+CH); $('upBar').style.width=(100*done/rr.length)+'%'; $('upMsg').textContent=`${n(done)} / ${n(rr.length)}`; }
+      res={'읽은 줄':res.rows||0,'취소·환불 줄':res.refund_rows||0,'주문 찾음':res.found||0,'환불 반영':res.updated||0,'이미 환불':res.already||0,'상태만 갱신':res.status_only||0,'원장에 없음':res.notfound||0};
+      if(nf.length) setTimeout(()=>{ $('upMsg').innerHTML+=`<br><span class="note">원장에 없는 주문번호 예: ${nf.map(esc).join(' · ')} — API 가 아직 안 가져온 주문(주말 등)이거나 API 이전 주문입니다. 하루 뒤 같은 파일을 다시 올리면 됩니다</span>`; },50); }
     else if(['channel_daily','settlement','listing_request','inv_items','ecount_customer','ecount_slip'].includes(UP.kind)){
       const fn={channel_daily:'fn_channel_daily_upsert',settlement:'fn_settlement_upsert',listing_request:'fn_listing_request_upsert',inv_items:'fn_inv_items_upsert',ecount_customer:'fn_ec_customers_upsert',ecount_slip:'fn_ec_slips_upsert'}[UP.kind];
       const CH=400; for(let i=0;i<rows.length;i+=CH){ const r=await rpc(fn,{p_rows:rows.slice(i,i+CH),p_source:'sheet',p_file:UP.file}); Object.keys(r).forEach(k=>{ if(typeof r[k]==='number') res[k]=(res[k]||0)+r[k]; }); done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; $('upMsg').textContent=`${n(done)} / ${n(rows.length)}`; } }
@@ -5916,7 +5969,7 @@ const PAGE_INFO={
     s:['왼쪽 위 KPI 로 문의 → 구매 → 구매 금액 흐름을 보고, 채널·담당자·관심 제품·구매 제품으로 내려갑니다.','한 달 이내 기간은 일별, 그보다 길면 월별로 자동 묶입니다.','이어진 상담(＋ 새 상담)은 한 건으로 셉니다 — 문의 날짜·채널은 처음 것, 결과는 마지막 것.'],
     t:'구매 금액이 0 인 구매완료 건은 판매 입력과 연결되지 않은 것입니다. 담당자 화면 [구매 확정] 으로 넣으면 금액이 채워집니다.'},
   utm:{d:'문자 캠페인을 등록하고 단축 링크를 만드는 페이지입니다. 캠페인 코드 하나가 utm_campaign · 발송 이력 · 접근 기록의 이름을 겸해서, 추출 → 발송 → 클릭 → 구매가 한 줄로 이어집니다.',
-    s:['[+ 새 캠페인] 으로 코드(yymm_주제)·이름·발송일·대상 조건을 등록합니다.','[+ 링크] 로 단축 링크를 만들고 문자에는 짧은 주소만 넣습니다.','[이미 보낸 고객] 을 올릴 때 같은 코드를 적어야 발송·구매 열이 채워집니다.']},
+    s:['[+ 새 캠페인] 으로 코드(yymm_주제)·이름·발송일·대상 조건을 등록합니다.','[+ 링크] 로 단축 링크를 만들고 문자에는 짧은 주소만 넣습니다.','[CRM 발송 고객] 을 올릴 때 같은 코드를 적어야 발송·구매 열이 채워집니다.']},
   upload:{d:'외부 시스템의 데이터를 이 서비스에 넣는 페이지입니다. 소스를 고르고 파일을 올리거나 엑셀에서 붙여넣으면, 같은 검증·매핑을 거쳐 중복 없이 적재됩니다.',
     s:['카드에서 넣을 데이터를 고릅니다. 상태·기간·필요한 열이 카드에 있습니다.','파일 업로드 또는 붙여넣기 탭에서 넣습니다. 고른 소스와 열 이름이 다르면 적재가 막힙니다.','미리보기에서 값이 제대로 읽혔는지 5행을 확인하고 적재 실행을 누릅니다.','같은 파일을 다시 넣어도 중복되지 않습니다(자사주문번호·전표번호 기준 갱신).'],
     t:'샵링커는 자동 수집입니다. 멈추면 서비스 로그의 "샵링커 수집"을 보세요.'},
@@ -5961,7 +6014,7 @@ async function loadStamp(){
 /* ═══════════════ 데이터 소스 카드 · 선택 ═══════════════ */
 const SRC_KIND={web_inquiry:'web_inquiry',sub_plan:'sub_plan',shoplinker:'shoplinker',store_manual:'store_manual',ecount_sales:'ecount_sales',rental:'rental',ecount_prospect:'ecount_prospect',godo_member:'godo_member',send_log:'send_log',unpaid_order:'unpaid_order'};
 const SRC_TPL ={web_inquiry:'홈페이지_문의',sub_plan:'구독_상품',shoplinker:'샵링커_주문',store_manual:'매장_일별',ecount_sales:'이카운트_판매현황',rental:'렌탈',ecount_prospect:'이카운트_가망고객',godo_member:'고도몰_회원',send_log:'이미_보낸_고객',unpaid_order:'미입금_주문'};
-const SRC_FEED={sub_plan:'구독 요금표 · 상담 참고 · 가격 이력',web_inquiry:'홈페이지 문의 (문의 관리)',shoplinker:'매출 원장 · 고객',store:'매출 원장 · 고객',store_manual:'매장 일마감',ecount_sales:'매출 원장(VMS) · 고객',rental:'매출 원장(렌탈) · 거래처',ecount_prospect:'상담 · 가망고객',godo_member:'고객 마스터 · 수신동의',send_log:'발송 이력 (발송 대상에서 제외)',unpaid_order:'결제 안 한 고객 (발송 대상 추출)'};
+const SRC_FEED={sub_plan:'구독 요금표 · 상담 참고 · 가격 이력',web_inquiry:'상담 · 문의 관리 (지메일 자동 적재)',shoplinker:'매출 원장 · 고객',store:'매출 원장 · 고객',store_manual:'매장 일마감',ecount_sales:'매출 원장(VMS) · 고객',rental:'매출 원장(렌탈) · 거래처',ecount_prospect:'상담 · 가망고객',godo_member:'고객 마스터 · 수신동의',send_log:'발송 이력 · 발송완료/실패 (발송 대상에서 제외)',unpaid_order:'결제 안 한 고객 (발송 대상 추출)'};
 const SRC_ICON={shoplinker:'<svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M6 6 5 3H2"/></svg>',
   store:'<svg viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6"/></svg>',
   store_manual:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h4"/></svg>',
@@ -5975,6 +6028,21 @@ const SRC_ICON={shoplinker:'<svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12
   unpaid_order:'<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>'};
 const DS_TAG={정상:'y',지연:'보류',없음:'n','준비 중':''};   /* 준비 중 = 카드만 만들어 둔 원천, 알림에서 제외 */
 let DSD=null, SEL_SRC=null;
+/* 마지막 적재 = 파일 업로드와 자동 적재 중 최근 것 (자동 원천은 업로드가 없다) */
+const dsLast = x => [x.last_upload, x.last_load].filter(Boolean).sort().pop() || '없음';
+/* 원천별 덧붙임 — CRM 발송 고객: 발송완료·실패를 캠페인별로 한 번에 · 샵링커: 최근 30일 환불 (mvp_163) */
+function dsDetail(x){
+  const d=x.detail; if(!d) return '';
+  if(x.key==='send_log'){
+    const camps=(d.campaigns||[]).slice(0,6), reasons=(d.reasons||[]);
+    return `<div class="meta dsdet"><b>발송완료 ${n(d.sent||0)}</b> · <b style="color:${d.failed?'var(--bad)':'var(--ink)'}">실패 ${n(d.failed||0)}</b>${camps.length?`<div class="dslist">${camps.map(c=>`<div><span class="l"><span class="mono">${esc(c.code||'')}</span> ${esc(c.name||'')}</span><span class="r"><span class="dim">${esc((c.last||'').slice(5))}</span> · <b>${n(c.sent||0)}</b>${c.failed?` · <i>실패 ${n(c.failed)}</i>`:''}</span></div>`).join('')}${(d.campaigns||[]).length>6?`<div class="dim">외 ${(d.campaigns||[]).length-6}개 캠페인</div>`:''}</div>`:''}${reasons.length?`<div class="dim" style="margin-top:4px">실패 사유 — ${reasons.slice(0,6).map(r=>`${esc(r.reason)} ${n(r.n)}`).join(' · ')}</div>`:''}</div>`;
+  }
+  if(x.key==='shoplinker'){
+    const z=!(d.refund_rows_30>0);
+    return `<div class="meta dsdet">최근 30일 취소·환불 <b style="color:${z?'var(--bad)':'var(--ink)'}">${n(d.refund_rows_30||0)}줄 · ${won(d.refund_sum_30||0)}</b> · 마지막 대조 <b>${esc(d.last_refund_upload||'없음')}</b>${z?`<div class="dim">API 는 취소완료·반품완료만 주므로 0이면 못 잡은 것 — 샵링커 웹 주문목록(취소/반품 상태)을 [취소·환불 대조] 로 올리면 대시보드 환불에 반영됩니다</div>`:''}</div>`;
+  }
+  return '';
+}
 async function loadDataStatus(){
   let d; try{ d=await rpc('fn_data_status'); }
   catch(e){ $('dsBody').innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
@@ -5995,16 +6063,18 @@ async function loadDataStatus(){
       <div class="hd"><div style="display:flex;align-items:center;gap:10px"><span class="ic">${SRC_ICON[x.key]||''}</span><div><b>${esc(x.label)}</b>
         <div style="font-size:calc(11px * var(--font-scale));color:var(--faint)">→ ${esc(SRC_FEED[x.key]||'')}</div></div></div>
         <span class="tag ${DS_TAG[x.state]||'n'}">${x.state}</span></div>
-      <div class="nums"><div>행<b>${n(x.rows||0)}</b></div><div>데이터 기간<b style="font-size:calc(12.5px * var(--font-scale))">${x.from?esc(x.from)+' ~ '+esc(x.to):'—'}</b></div><div>경과<b style="color:${x.age_days>x.expect_days?'var(--bad)':'inherit'}">${x.age_days==null?'—':x.age_days+'일'}</b></div></div>
-      <div class="meta">담당 <b>${esc(x.owner||'-')}</b> · 주기 <b>${x.expect_days}일</b> · 마지막 적재 <b>${esc(x.last_upload||'없음')}</b><br>${esc(x.how||'')}</div>
+      <div class="nums"><div>행<b>${n(x.rows||0)}</b></div><div>데이터 기간<b style="font-size:calc(12.5px * var(--font-scale))">${x.from?esc(x.from)+' ~ '+esc(x.to):'—'}</b></div>${x.n30!=null&&x.rows>0?`<div title="최근 30일 동안 들어온 건수">30일<b>${n(x.n30)}</b></div>`:''}<div>경과<b style="color:${x.age_days>x.expect_days?'var(--bad)':'inherit'}">${x.age_days==null?'—':x.age_days+'일'}</b></div></div>
+      <div class="meta">담당 <b>${esc(x.owner||'-')}</b> · 주기 <b>${x.expect_days}일</b> · 마지막 적재 <b>${esc(dsLast(x))}</b><br>${esc(x.how||'')}</div>
+      ${dsDetail(x)}
       ${extra}
-      ${cols?`<div class="cols">필요한 열 — ${esc(cols)}</div>`:''}
+      ${cols?`<div class="cols" title="필요한 열 — ${esc(tpl.cols.join(' · '))}">필요한 열 — ${esc(cols)}</div>`:''}
       <div class="acts">${kind
-        ? `<button class="btn sm" onclick="selectSource('${x.key}','file')">파일 올리기</button><button class="btn sm ghost" onclick="selectSource('${x.key}','paste')">붙여넣기</button><button class="btn sm ghost" onclick="downloadTemplate('${SRC_TPL[x.key]}')" title="이 소스의 양식만">양식</button>`
+        ? `<button class="btn sm" onclick="${x.key==='shoplinker'?"SL_REFUND_ONLY=true;":""}selectSource('${x.key}','file')">파일 올리기</button><button class="btn sm ghost" onclick="selectSource('${x.key}','paste')">붙여넣기</button><button class="btn sm ghost" onclick="downloadTemplate('${SRC_TPL[x.key]}')" title="이 소스의 양식만">양식</button>`
         + (x.key==='sub_plan' ? `<button class="btn sm ghost" onclick="show('items');setTimeout(()=>document.getElementById('subCard')?.scrollIntoView({behavior:'smooth'}),400)">요금표 보기</button>` : '')
         + (x.key==='web_inquiry' ? `<button class="btn sm ghost" onclick="show('inbox');setTimeout(()=>document.getElementById('wiCard')?.scrollIntoView({behavior:'smooth'}),400)">문의 관리에서 보기</button>` : '')
         + (x.key==='unpaid_order' ? `<button class="btn sm ghost" onclick="show('crm');setTimeout(()=>document.getElementById('upCard')?.scrollIntoView({behavior:'smooth'}),400)">미입금 목록 보기</button>` : '')
-        + (x.key==='send_log' ? `<button class="btn sm ghost" onclick="show('crm');setTimeout(()=>document.getElementById('crmNoSend')?.scrollIntoView({behavior:'smooth',block:'center'}),400)">발송 대상에서 제외하기</button>` : '')
+        + (x.key==='send_log' ? `<button class="btn sm ghost" onclick="show('crm');setTimeout(()=>document.getElementById('crmNoSend')?.scrollIntoView({behavior:'smooth',block:'center'}),400)">발송 대상에서 제외</button>` : '')
+        + (x.key==='shoplinker' ? `<button class="btn sm ghost" onclick="SL_REFUND_ONLY=true;try{localStorage.setItem('dc_sl_refund_only','1')}catch(e){};selectSource('shoplinker','file')" title="샵링커 웹 주문목록(취소/반품 상태)을 올려 주문번호로 대조 — 환불만 반영">취소·환불 대조</button>` : '')
         : x.key==='store' ? `<a class="btn sm ghost" href="/store.html" target="_blank" style="text-decoration:none">매장 화면 열기 ↗</a>`
 
         : `<button class="btn sm ghost" onclick="impTab('sl')">자동 수집 현황</button>`}</div>
@@ -6092,7 +6162,7 @@ function impTab(t){
 const PASTE_TPL={shoplinker:'샵링커_주문',ecount_sales:'이카운트_판매현황',ecount_prospect:'이카운트_가망고객',
   rental:'렌탈',godo_member:'고도몰_회원',store_manual:'매장_일별',web_inquiry:'홈페이지_문의',sub_plan:'구독_상품',send_log:'이미_보낸_고객',unpaid_order:'미입금_주문'};
 const PASTE_LABEL={shoplinker:'샵링커 주문',ecount_sales:'이카운트 판매현황(VMS)',ecount_prospect:'이카운트 가망고객',
-  rental:'렌탈',godo_member:'고도몰 회원',store_manual:'매장 일별(Manual)',web_inquiry:'홈페이지 문의 (고도몰 견적 게시판)',sub_plan:'구독 상품 · 요금',send_log:'이미 보낸 고객 (발송 이력)',unpaid_order:'미입금 주문 (고도몰)'};
+  rental:'렌탈',godo_member:'고도몰 회원',store_manual:'매장 일별(Manual)',web_inquiry:'홈페이지 문의 (자동 적재 · 예비)',sub_plan:'구독 상품 · 요금',send_log:'CRM 발송 고객 (발송 이력)',unpaid_order:'미입금 주문 (고도몰)'};
 function pasteKindChanged(){
   const k=$('pasteKind').value;
   if(SEL_SRC && k && SRC_KIND[SEL_SRC]!==k){ toast('선택한 데이터 소스와 다른 종류입니다. 오른쪽 위 "선택 해제" 후 고르세요','bad'); $('pasteKind').value=SRC_KIND[SEL_SRC]; return; }
@@ -6142,6 +6212,7 @@ function pasteParse(){
   $('upBtn').disabled = (kind==='godo_member') || (kind==='send_log') || (guess!==kind);   // 몰·캠페인명 미입력 또는 열 이름 불일치면 잠금
   if(kind==='godo_member' && guess===kind) renderMallPicker();
   if(kind==='send_log' && guess===kind) renderSendOpts();
+  if(kind==='shoplinker' && guess===kind) renderSlOpts();
   if(!enforceSource(kind)) return;
 }
 
