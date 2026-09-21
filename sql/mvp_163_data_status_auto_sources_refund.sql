@@ -280,3 +280,7 @@ grant execute on function public.fn_sl_refund_apply(jsonb, text) to authenticate
 
 -- 적용 확인(2026-09-21): 9/18 한가위 LMS 실패 6건을 fn_send_log_import(…, '2609_chuseok', 'sms', '2026-09-18') 로 적재 (6/6 매칭).
 -- fn_sl_refund_apply 롤백 테스트: 4줄(배송전취소·없는 번호·반품요청(2줄 주문)·자사주문번호) → found 2 · updated 1 · status_only 2 · notfound 1 · dash_cache 비움.
+
+-- v126 (2026-09-21): 문의 관리 별도 홈페이지 문의 카드 제거에 맞춰
+--   fn_inquiry_list 폼 라벨 ('quote','견적 문의',1) → ('quote','홈페이지 문의',1)  (prosrc 부분 치환)
+--   core.data_source web_inquiry 는 active=true 그대로 (자동 적재 감시), 화면에서 올리기 버튼만 뺐다

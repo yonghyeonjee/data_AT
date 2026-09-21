@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-21 · v125)
+## 지금 상태 (2026-09-21 · v126)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -475,6 +475,10 @@ end $outer$;
   KPI 6장(문의·구매(성공률)·구매 금액(건당)·진행 중(연락 전·상담중·보류)·완료(비구매)·거절) → 그래프 6개(`cdBars` 기간 막대: 연한 문의 위 진한 구매 + 초록 금액 / `cdHBars` 채널·관심 제품·구매 제품(금액순)·담당자·유입경로) → 채널×기간 표(문의 / 구매).
   **제품·금액은 `core.f_consult_stats` 에 넣었다** — `interests`(관심 카테고리, 쉼표 여러 개는 쪼개고 괄호 설명 제거) · `purchases`(구매 제품명 = 연결 주문 품목명 → purchase_item → 관심 모델 → 카테고리 → '(제품 미기록)', 금액 = 연결 주문 같은 주문번호 합계 → 예상 금액) · `total/periods/channels/handlers` 에 `amount`. 시그니처 그대로라 담당자 화면 상담 현황도 같은 함수를 쓴다.
   '(제품 미기록)' 이 많으면(7~9월 49건 중 18건 7,854만) 구매완료를 [구매 확정] 없이 상태만 바꾼 것 — 판매 입력과 연결돼야 제품·금액이 찍힌다. 테스트 `ptest/cdash.mjs` C1~C5 (가짜 fn_consult_stats · 화면 `reveal('app')` 뒤 스크린샷).
+- **문의 관리의 별도 [홈페이지 문의] 카드를 없앴다 (v126 · 2026-09-21)** — "홈페이지 문의는 별도 관리할 이유가 없는데?". 홈페이지 문의는 지메일 자동 적재로 `crm.consult`(channel homepage) 에 들어와 문의 관리 [홈페이지](옛 [견적], `fn_inquiry_list` 폼 라벨 '견적 문의'→'홈페이지 문의') 칩으로 보이므로
+  `crm.web_inquiry` 목록 카드(`#wiCard`·붙여넣기 모달·`loadWebInq`·`fn_web_inquiries` 호출)는 걷어냈다. 데이터 소스 `web_inquiry` 카드는 자동 적재 감시용으로 남기되 올리기·붙여넣기 버튼은 없다(`SRC_KIND` 에서 제외, 붙여넣기 종류·감지 제거).
+  `crm.web_inquiry` 표와 `fn_inquiry_mail_ingest` 의 `f_web_inq_upsert` 거울 쓰기는 그대로(해 없음). 그 카드의 '번호' 칸에 해시가 겹쳐 보이던 것도 같이 사라졌다.
+  **9월 환불이 0 인 것은 파일이 아직 안 올라와서다** — `raw.upload(shoplinker_refund)` 0건. API 999 는 9월 주문 취소를 하나도 안 줬다(60일 21건 전부 8월 주문). 샵링커 웹 주문목록(취소/반품 상태 포함)을 [샵링커 주문]→[취소·환불만 대조] 로 올려야 대시보드에 환불이 생긴다.
 - **데이터 상태 카드가 자동 적재 원천을 제대로 센다 · CRM 발송 고객 · 샵링커 취소·환불 대조 (mvp_163 · v125 · 2026-09-21)** — 사용자 지적 5건.
   ① **홈페이지 문의는 고도몰 견적 게시판이 아니라 별도 서비스** — 문의 메일 → `gmail_inquiry.gs`(1분) → `fn_inquiry_mail_ingest` → `crm.consult(source='gmail_homepage', channel_code='homepage')` 로 이미 자동 적재되고 잔디 「웹 문의 수신」 카드가 그것. 데이터 소스 라벨 '홈페이지 문의 (자동 적재)', `f_source_last('web_inquiry')` 는 gmail_homepage 도 본다. 붙여넣기(`crm.web_inquiry`)는 예비.
   ② **구독·소모품·VMS/B2B 문의 카드가 '없음'이던 이유** — `fn_data_status` 의 stat CTE 에 이 원천들이 아예 없어 행 0 이었다(감시용 `f_source_last` 만 있었음). 이제 `crm.consult` 의 source 로 행·기간·**최근 30일(`n30`)** 을 센다. 라벨은 전부 '(자동 적재)'. `web_supply`·`web_b2b` 는 드문 폼이라 expect_days 30.
