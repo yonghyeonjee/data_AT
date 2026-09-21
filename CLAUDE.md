@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-21 · v126)
+## 지금 상태 (2026-09-21 · v127)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -475,6 +475,9 @@ end $outer$;
   KPI 6장(문의·구매(성공률)·구매 금액(건당)·진행 중(연락 전·상담중·보류)·완료(비구매)·거절) → 그래프 6개(`cdBars` 기간 막대: 연한 문의 위 진한 구매 + 초록 금액 / `cdHBars` 채널·관심 제품·구매 제품(금액순)·담당자·유입경로) → 채널×기간 표(문의 / 구매).
   **제품·금액은 `core.f_consult_stats` 에 넣었다** — `interests`(관심 카테고리, 쉼표 여러 개는 쪼개고 괄호 설명 제거) · `purchases`(구매 제품명 = 연결 주문 품목명 → purchase_item → 관심 모델 → 카테고리 → '(제품 미기록)', 금액 = 연결 주문 같은 주문번호 합계 → 예상 금액) · `total/periods/channels/handlers` 에 `amount`. 시그니처 그대로라 담당자 화면 상담 현황도 같은 함수를 쓴다.
   '(제품 미기록)' 이 많으면(7~9월 49건 중 18건 7,854만) 구매완료를 [구매 확정] 없이 상태만 바꾼 것 — 판매 입력과 연결돼야 제품·금액이 찍힌다. 테스트 `ptest/cdash.mjs` C1~C5 (가짜 fn_consult_stats · 화면 `reveal('app')` 뒤 스크린샷).
+- **업로드 전용 계정 `dbuploader` (v127 · mvp_164 · 2026-09-21)** — `public.profiles.role` 에 **`uploader`** 추가(check 제약). 허용 = 데이터 가져오기 적재 함수 13개(`fn_orders/consults/customers_bulk_upsert` · `fn_sl_refund_apply` · `fn_ec_customers_upsert` · `fn_channel_daily/settlement/listing_request/inv_items_upsert` · `fn_send_log_import` · `fn_unpaid_upsert` · `fn_sub_plan_upsert` · 캠페인 목록 `fn_utm_campaigns`) — 각 함수의 `f_role()` 검사 줄만 `pg_get_functiondef` 치환.
+  **되돌리기(`fn_upload_rollback`)·설정·주문·CRM 추출은 그대로 admin 만.** 메뉴는 `core.menu_access` 에 home·upload 빼고 전부 숨김(20/22). 계정은 `auth.users`+`auth.identities` 에 SQL 로 직접 만들었다(`extensions.crypt(bf)`, 이메일 `dbuploader@samsungat.local`, 로그인 아이디 `dbuploader`, 비밀번호는 사용자 지정 — 이 문서엔 안 적는다). 관리자 계정·권한 카드 select 에 `uploader` 추가.
+  **9월 샵링커 환불은 API 에 없다** — `core.sl_log` 취소/교환/반품(8/22~9/21) fetched 0. 웹 주문목록을 올리기 전엔 그대로 둔다.
 - **문의 관리의 별도 [홈페이지 문의] 카드를 없앴다 (v126 · 2026-09-21)** — "홈페이지 문의는 별도 관리할 이유가 없는데?". 홈페이지 문의는 지메일 자동 적재로 `crm.consult`(channel homepage) 에 들어와 문의 관리 [홈페이지](옛 [견적], `fn_inquiry_list` 폼 라벨 '견적 문의'→'홈페이지 문의') 칩으로 보이므로
   `crm.web_inquiry` 목록 카드(`#wiCard`·붙여넣기 모달·`loadWebInq`·`fn_web_inquiries` 호출)는 걷어냈다. 데이터 소스 `web_inquiry` 카드는 자동 적재 감시용으로 남기되 올리기·붙여넣기 버튼은 없다(`SRC_KIND` 에서 제외, 붙여넣기 종류·감지 제거).
   `crm.web_inquiry` 표와 `fn_inquiry_mail_ingest` 의 `f_web_inq_upsert` 거울 쓰기는 그대로(해 없음). 그 카드의 '번호' 칸에 해시가 겹쳐 보이던 것도 같이 사라졌다.

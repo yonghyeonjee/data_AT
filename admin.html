@@ -1841,7 +1841,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           </div>
           <div class="card"><h3>계정 · 권한 <span>아이디 로그인 가능</span></h3>
             <div class="tw"><table><thead><tr><th>아이디 / 이메일</th><th>권한</th><th>담당명</th><th>활성</th><th></th></tr></thead><tbody id="tbProfiles"></tbody></table></div>
-            <p class="note" style="margin-top:10px"><b>admin</b> 삭제·일괄 적재·설정 · <b>user</b> 조회·입력·승인. 실번호 표시는 권한이 아니라 화면 토글이며 켤 때마다 감사로그에 남습니다.<br>
+            <p class="note" style="margin-top:10px"><b>admin</b> 삭제·일괄 적재·설정 · <b>user</b> 조회·입력·승인 · <b>uploader</b> 데이터 가져오기 전용(적재·CRM 발송 고객·취소·환불 대조만, 되돌리기·설정 불가 — [메뉴]로 데이터 가져오기만 보이게). 실번호 표시는 권한이 아니라 화면 토글이며 켤 때마다 감사로그에 남습니다.<br>
             계정 추가는 Supabase → Authentication → Users → Add user. 이메일을 <code>아이디@samsungat.local</code> 로 만들면 로그인 화면에서 아이디만 입력하면 됩니다.<br>
             <b>[메뉴]</b> 는 그 계정에게 <b>왼쪽 메뉴 중 무엇을 보여줄지</b>를 정합니다. 권한(admin/user)과는 별개이며, 손대지 않은 계정은 전부 보입니다.</p>
           </div>
@@ -6239,7 +6239,7 @@ async function loadSettings(){
   try{ const ps=await rpc('fn_profile_list');
     $('tbProfiles').innerHTML=ps.map(p=>`<tr>
       <td><b>${esc(p.email.replace(ID_DOMAIN,''))}</b>${p.email.includes(ID_DOMAIN)?' <span class="tag n">아이디</span>':''}</td>
-      <td><select class="in" style="padding:3px 6px" id="pr_${p.id}">${['admin','user','analyst','send'].map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}</select></td>
+      <td><select class="in" style="padding:3px 6px" id="pr_${p.id}">${['admin','user','uploader','analyst','send'].map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}</select></td>
       <td><select class="in" style="padding:3px 6px;min-width:110px" id="ph_${p.id}" onchange="if(this.value==='__custom'){ const v=prompt('담당명 직접 입력', ''); if(v){ const o=document.createElement('option'); o.value=v; o.textContent=v; this.insertBefore(o, this.lastElementChild); this.value=v; } else this.value=''; }">
         <option value="">(없음)</option>${[...new Set([p.handler_name].concat(STAFF.filter(x=>x.active).map(x=>x.name)).filter(Boolean))].map(nm=>`<option ${nm===p.handler_name?'selected':''}>${esc(nm)}</option>`).join('')}<option value="__custom">직접 입력…</option></select></td>
       <td><input type="checkbox" id="pa_${p.id}" ${p.active?'checked':''}></td>
