@@ -5635,7 +5635,7 @@ function renderSendOpts(){
     <label style="margin-top:8px">발송일 <span class="note">줄마다 발송일이 없을 때 쓸 날짜</span></label>
     <input class="in" type="date" id="upSentAt" value="${dates[0]||''}">
     <p class="note" style="margin-top:6px">${dates.length?`파일 안 발송일 ${esc(dates[0])} ~ ${esc(dates[dates.length-1])}`:'파일에 발송일 열이 없습니다 — 위 날짜로 들어갑니다'} ·
-      휴대폰 뒤 8자리로 고객 마스터와 맞춥니다. 마스터에 없는 번호는 건너뜁니다.${fail?`<br><b style="color:var(--bad)">발송 실패 ${n(fail)}건</b>은 고객이 못 받았으므로 제외 대상에서 빠집니다.`:''}</p></div>`;
+      휴대폰 뒤 8자리로 고객 마스터와 맞춥니다. 마스터에 없는 번호는 건너뜁니다.${fail?`<br><b style="color:var(--bad)">발송 실패 ${n(fail)}건</b>도 '보낸 사람' 으로 기록됩니다 — 사유(비고)가 남고, 번호 오류·미지원 단말·수신거부·결번은 다음 추출에서 <b>항상</b> 빠집니다.`:''}</p></div>`;
   sendOptsChanged();
 }
 /* 샵링커 파일 — 기본은 [취소·환불만 대조] (mvp_163).
@@ -5706,7 +5706,7 @@ function mapRows(u){
         sent_at:excelDate(H(r,'실 발송 일시','발송일','발송일시','발송 일시','일자'))||null,
         /* 실패도 '보낸 사람' 으로 센다(다시 보내도 또 실패). 사유(비고)는 서버가 error_msg 로 두고 번호 오류·미지원 단말은 항상 제외 (2026-09-21) */
         status:/실패|반송|expired|거부/i.test(st)?'failed':'sent',
-        error:str(H(r,'비고','실패 사유','사유','메시지'))||null }; })
+        error:(/실패|반송|expired|거부/i.test(st)?str(H(r,'비고','실패 사유','사유','메시지'))||null:null) }; })
       .filter(x=>x.phone.replace(/\D/g,'').length>=8); }
   if(u.kind==='store_manual'){ const out=[]; d.forEach(r=>{ const date=excelDate(H(r,'날짜')); if(!date) return; const rows=[]; Object.keys(r).forEach(k=>{ const v=Number(r[k]); if(!v||/_환불$/.test(k)) return; const refund=Number(r[k+'_환불'])||0; if(k==='매장-일시불') rows.push({sale_kind:'일시불',sales:v,refund}); else if(k==='매장-구독') rows.push({sale_kind:'구독',sales:v,refund}); else if(/-직판$/.test(k)) rows.push({sale_kind:'직판',handler:k.replace(/프로?-직판$/,''),sales:v,refund}); }); if(rows.length) out.push({date,rows}); }); return out.map(x=>({date:x.date,rows:JSON.stringify(x.rows)})); }
   return [];

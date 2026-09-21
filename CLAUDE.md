@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-21 · v127)
+## 지금 상태 (2026-09-21 · v128)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -475,6 +475,11 @@ end $outer$;
   KPI 6장(문의·구매(성공률)·구매 금액(건당)·진행 중(연락 전·상담중·보류)·완료(비구매)·거절) → 그래프 6개(`cdBars` 기간 막대: 연한 문의 위 진한 구매 + 초록 금액 / `cdHBars` 채널·관심 제품·구매 제품(금액순)·담당자·유입경로) → 채널×기간 표(문의 / 구매).
   **제품·금액은 `core.f_consult_stats` 에 넣었다** — `interests`(관심 카테고리, 쉼표 여러 개는 쪼개고 괄호 설명 제거) · `purchases`(구매 제품명 = 연결 주문 품목명 → purchase_item → 관심 모델 → 카테고리 → '(제품 미기록)', 금액 = 연결 주문 같은 주문번호 합계 → 예상 금액) · `total/periods/channels/handlers` 에 `amount`. 시그니처 그대로라 담당자 화면 상담 현황도 같은 함수를 쓴다.
   '(제품 미기록)' 이 많으면(7~9월 49건 중 18건 7,854만) 구매완료를 [구매 확정] 없이 상태만 바꾼 것 — 판매 입력과 연결돼야 제품·금액이 찍힌다. 테스트 `ptest/cdash.mjs` C1~C5 (가짜 fn_consult_stats · 화면 `reveal('app')` 뒤 스크린샷).
+- **온라인 채널 일매출은 구글 시트에서 자동으로 (v128 · mvp_165 · 2026-09-21)** — "여기는 시트에서 가져와야지". 원본 = 「삼성앤텍_상품/주문관리 파일」(gid 1654024467) 의 **`온라인 매출_YYYY년` 탭**: 월별 블록(`N월` 줄에 날짜가 3칸마다 · 아래 줄 매출/환불/합계 · 채널 줄 P몰…한퓨어 · 매장 줄 3개 · 전체).
+  `_raw` 탭(날짜·채널·매출·환불 세로 표)은 8/17 까지만 있는 파생물이라 안 쓴다. Drive MCP 로 xlsx 를 받아(`download_file_content` → base64 → openpyxl) 9월 1~17일 147줄을 `fn_channel_daily_upsert` 로 넣었다(1~8월은 시트 합계와 DB 가 원 단위까지 같아 그대로). 9월 매출 5.65억 · 환불 1.25억.
+  자동화: `core.api_key 'channel_daily'`(값은 `_secrets.local.md` 에 적을 것 — 세션에서 한 번 보여줌) + **`fn_channel_daily_ingest(p_key, p_rows, p_file)`**(anon 허용, 키 검사, source `sheet_gas`, **값이 같으면 updated_at 도 안 건드린다**) + **`tools/gas/channel_daily_sync.gs`**(시트에 바인딩, 매시간 최근 45일을 다시 보냄 · `setupTrigger()` 1회). 설치 전까지는 붙여넣기.
+  매장 줄(시흥점-매장매출·구독매출·프로-직판)은 안 보낸다 — 매장은 담당자 화면 일 마감이 원본.
+  **CRM 발송 고객 업로드 안내문 정정** — "실패는 제외 대상에서 빠집니다" 라고 옛 문구가 남아 있었다(mvp_161 뒤 실제 동작은 반대). 이제 "실패도 보낸 사람으로 기록 · 번호 오류·미지원 단말·수신거부·결번은 항상 제외" 로. 미리보기 ERROR 열은 실패 줄에만 비고를 보인다.
 - **업로드 전용 계정 `dbuploader` (v127 · mvp_164 · 2026-09-21)** — `public.profiles.role` 에 **`uploader`** 추가(check 제약). 허용 = 데이터 가져오기 적재 함수 13개(`fn_orders/consults/customers_bulk_upsert` · `fn_sl_refund_apply` · `fn_ec_customers_upsert` · `fn_channel_daily/settlement/listing_request/inv_items_upsert` · `fn_send_log_import` · `fn_unpaid_upsert` · `fn_sub_plan_upsert` · 캠페인 목록 `fn_utm_campaigns`) — 각 함수의 `f_role()` 검사 줄만 `pg_get_functiondef` 치환.
   **되돌리기(`fn_upload_rollback`)·설정·주문·CRM 추출은 그대로 admin 만.** 메뉴는 `core.menu_access` 에 home·upload 빼고 전부 숨김(20/22). 계정은 `auth.users`+`auth.identities` 에 SQL 로 직접 만들었다(`extensions.crypt(bf)`, 이메일 `dbuploader@samsungat.local`, 로그인 아이디 `dbuploader`, 비밀번호는 사용자 지정 — 이 문서엔 안 적는다). 관리자 계정·권한 카드 select 에 `uploader` 추가.
   **9월 샵링커 환불은 API 에 없다** — `core.sl_log` 취소/교환/반품(8/22~9/21) fetched 0. 웹 주문목록을 올리기 전엔 그대로 둔다.
