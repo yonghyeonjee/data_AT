@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-21 · v133)
+## 지금 상태 (2026-09-21 · v134)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -475,6 +475,13 @@ end $outer$;
   KPI 6장(문의·구매(성공률)·구매 금액(건당)·진행 중(연락 전·상담중·보류)·완료(비구매)·거절) → 그래프 6개(`cdBars` 기간 막대: 연한 문의 위 진한 구매 + 초록 금액 / `cdHBars` 채널·관심 제품·구매 제품(금액순)·담당자·유입경로) → 채널×기간 표(문의 / 구매).
   **제품·금액은 `core.f_consult_stats` 에 넣었다** — `interests`(관심 카테고리, 쉼표 여러 개는 쪼개고 괄호 설명 제거) · `purchases`(구매 제품명 = 연결 주문 품목명 → purchase_item → 관심 모델 → 카테고리 → '(제품 미기록)', 금액 = 연결 주문 같은 주문번호 합계 → 예상 금액) · `total/periods/channels/handlers` 에 `amount`. 시그니처 그대로라 담당자 화면 상담 현황도 같은 함수를 쓴다.
   '(제품 미기록)' 이 많으면(7~9월 49건 중 18건 7,854만) 구매완료를 [구매 확정] 없이 상태만 바꾼 것 — 판매 입력과 연결돼야 제품·금액이 찍힌다. 테스트 `ptest/cdash.mjs` C1~C5 (가짜 fn_consult_stats · 화면 `reveal('app')` 뒤 스크린샷).
+- **고도몰 과거 주문(2021~2025.07) 적재 자리 (v134 · mvp_170 · 2026-09-21)** — 요청서 "윈도우 수집기(GodomallCollector.exe)가 받아 오는데 받을 자리가 없다". **9/4~9/7 에 올린 P·S·AT·시흥몰 파일은 회원 명부(member_list)** 였고 자사몰 주문은 샵링커 2025-06-20 이후분만 있다(고도몰 회원 20,158 중 주문이 붙은 사람 982).
+  `raw.godo_order_hist`(row_hash pk · mall · order_no · ordered_at · data jsonb 원본 · source excel|api · source_file · upload_id, RLS on·정책 없음) — **원장·고객에는 안 쓴다**(⑥ 판단 대기: 채널 매핑·2026 샵링커와의 경계·휴대폰 단독 키 합치기).
+  두 입구: ① **`fn_godo_order_hist_upsert(p_mall,p_file,p_rows)`** = exe 용(P몰·AT몰·S몰, `dbuploader` 로그인, f_role admin|uploader). 이름·인자·응답 `{rows,new,dup}` 은 exe 와의 약속 — 바꾸지 말 것. 계정은 `dbuploader` 뿐(`uploader` 없음).
+  ② **`fn_godo_order_hist_ingest(p_key,…)`** = 시흥몰 OpenAPI 용, `core.api_key 'godo_order_hist'`(값은 `_secrets.local.md`·GitHub Secrets `GODO_INGEST_KEY`). `tools/godo/collect.mjs`(29일 조각 · 커서 페이징 · 주문×상품줄 평탄화, 콜랩 스크립트와 같은 열 이름 · 해시 `sha1(몰|주문번호|상품번호|줄번호)`) + `.github/workflows/godo-orders.yml`(workflow_dispatch from/to/mall/dry, Secrets `GODO_PARTNER_KEY`·`GODO_KEY`). 컨테이너는 openhub 로 못 나가 `--selftest`(가짜 XML 파싱·해시)만 돌렸다 — 실제 호출은 Actions 에서.
+  둘 다 `core.f_godo_order_hist_put` 이 본체: 호출마다 `raw.upload(source 'godo_order_hist')` 한 줄, `on conflict do nothing`. 롤백 확인: dbuploader new 2 → dup 2 · 잘못된 몰 오류 · anon/user 42501 · 키 맞음/틀림.
+  **업로드 화면 오인식 방지(④)** — 주문통합리스트도 '주문번호·주문일시' 라 미입금으로 잡혀 `fn_unpaid_upsert` 가 미입금 목록을 통째로 내릴 수 있었다. `unpaidGuard(UP)`: 입금대기가 아닌 상태(배송완료 등)가 섞이면 빨간 안내 + [적재] 잠금 + runUpload 도 거부. 테스트 `sendlog.mjs` U1b·U1c (43/43).
+  exe 쪽에 줄 확정본: `tools/godo/GodomallCollector_spec.md`(3몰만 · dbuploader · 규격 그대로 · 하지 말 것).
 - **개발 계정이 맡은 건은 삭제·테스트로 가 안 되던 것 (v133 · mvp_169 · 2026-09-21)** — 구독 폼으로 넣은 "지용현" 건(#440)이 이수혁 → 지용현으로 넘어오며 트리거가 테스트 숨김을 붙였고, 목록엔 보이는데 [삭제]·[테스트로]·상태 버튼이 전부 400 '상담을 찾을 수 없습니다'.
   `fn_store_consult_update` 가 `hidden_at is null` 만 찾았기 때문 — 이제 `hidden_reason like '테스트%' and core.f_staff_is_dev(v_me)` 도 통과(목록과 같은 규칙). 같이 잡은 것: `fn_store_handler_load`(우선 순위 표)가 `role_note` 로만 점장을 판정해 개발 계정에 403 → `core.f_staff_is_mgr`.
   **구독 폼에 이름 `test`·`테스트`를 넣으면 `fn_submit_inquiry` 가 저장 없이 `skipped:'test'`** — 잔디도 안 간다. 폼→카드까지 보려면 테스트 글자 없는 이름으로 넣고 나중에 [테스트로].

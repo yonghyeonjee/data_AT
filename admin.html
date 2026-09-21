@@ -5684,6 +5684,19 @@ function handleFile(file){
   rd.readAsArrayBuffer(file);
 }
 let UPFILE='';
+/* 미입금 목록은 결제상태가 전부 '입금대기' 여야 한다. 고도몰 주문통합리스트(5년치 결제완료 주문)도 열 이름이 같아
+   미입금으로 오인식되면 fn_unpaid_upsert 가 기존 미입금 목록을 통째로 내려 버린다 (mvp_170) → 입금대기 아닌 상태가 섞이면 막는다 */
+function unpaidGuard(u){
+  if(!u || u.kind!=='unpaid_order') return null;
+  const rows=mapRows(u); const bad=rows.filter(x=>x.status && !/입금\s*대기|미입금|입금\s*전|결제\s*대기|무통장/.test(x.status));
+  if(!bad.length) return null;
+  const ex=[...new Set(bad.map(x=>x.status))].slice(0,4).join(' · ');
+  $('upDetect').className='callout bad';
+  $('upDetect').innerHTML=`<b>미입금 목록이 아닙니다 — 주문통합리스트 같습니다.</b> 입금대기가 아닌 상태 <b>${n(bad.length)}건</b> (예: ${esc(ex)}).
+    미입금 목록은 결제상태가 전부 입금대기여야 합니다. 고도몰 과거 주문은 <b>GodomallCollector 수집기</b>로 올리세요 — 이 화면에서는 적재하지 않습니다.`;
+  $('upBtn').disabled=true;
+  return bad.length;
+}
 function useSheet(i, keepPicker){
   const sh=SHEETS[i]; if(!sh) return;
   if(!enforceSource(sh.kind)){ $('upPreview').classList.remove('hidden'); $('upOpts').innerHTML=''; $('upHead').innerHTML=''; $('upBody').innerHTML=''; return; }
@@ -5697,6 +5710,7 @@ function useSheet(i, keepPicker){
   $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
   $('upBtn').disabled = (sh.kind==='godo_member' || sh.kind==='send_log');   // 몰·캠페인명을 넣기 전에는 적재 못 함
   $('upMsg').textContent='';
+  unpaidGuard(UP);
 }
 
 /* 고도몰 회원은 몰을 잘못 고르면 회원번호가 엉뚱한 몰에 박히고 되돌리기 어렵다.
@@ -5836,6 +5850,7 @@ async function runUpload(){
         Object.keys(r).forEach(k=>{ if(typeof r[k]==='number'&&k!=='total'&&k!=='total_plans') res[k]=(res[k]||0)+r[k]; });
         done=Math.min(rows.length,i+CH); $('upBar').style.width=(100*done/rows.length)+'%'; } }
     else if(UP.kind==='unpaid_order'){
+      if(unpaidGuard(UP)) throw new Error('입금대기가 아닌 주문이 섞여 있어 미입금 목록으로 올리지 않습니다');
       const okU=await modal({title:'미입금 주문 목록 적재', ok:'이 목록으로 바꾸기',
         html:`<b>${n(rows.length)}건</b>을 올립니다.<div class="warn">이 목록에 <b>없는</b> 기존 미입금 건은 <b>결제됐거나 취소된 것</b>으로 보고 목록에서 내립니다.
           고도몰에서 <b>입금 대기 주문 전부</b>를 내려받아 올리세요 — 일부만 올리면 나머지가 사라집니다.</div>`});
@@ -6201,6 +6216,7 @@ function pasteParse(){
   $('upHead').innerHTML='<tr>'+keys.map(k=>`<th>${esc(k)}</th>`).join('')+'</tr>';
   $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
   $('upBtn').disabled = (kind==='godo_member') || (kind==='send_log') || (guess!==kind);   // 몰·캠페인명 미입력 또는 열 이름 불일치면 잠금
+  unpaidGuard(UP);
   if(kind==='godo_member' && guess===kind) renderMallPicker();
   if(kind==='send_log' && guess===kind) renderSendOpts();
   if(kind==='shoplinker' && guess===kind) renderSlOpts();

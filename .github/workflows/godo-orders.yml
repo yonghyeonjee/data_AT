@@ -1,0 +1,50 @@
+name: 고도몰 과거 주문 수집 (시흥몰 OpenAPI)
+
+# 시흥몰 OpenAPI 로 기간의 주문을 받아 raw.godo_order_hist 에 원본 행으로 쌓는다 (mvp_170).
+# 원장·고객에는 쓰지 않는다. P몰·AT몰·S몰은 GodomallCollector.exe 가 같은 표에 넣는다.
+# Secrets: GODO_PARTNER_KEY · GODO_KEY · GODO_INGEST_KEY · SUPABASE_URL
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "시작일 YYYY-MM-DD"
+        required: true
+        default: "2021-01-01"
+      to:
+        description: "종료일 YYYY-MM-DD (4개월 이하로 나눠 돌리는 것을 권장)"
+        required: true
+        default: "2021-04-30"
+      mall:
+        description: "몰 이름 (OpenAPI 키가 있는 몰만)"
+        required: false
+        default: "시흥몰"
+      dry:
+        description: "적재하지 않고 건수만 보기"
+        type: boolean
+        default: false
+
+concurrency:
+  group: godo-orders
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm i fast-xml-parser@4 --no-save
+      - name: 파싱 자가 점검
+        run: node tools/godo/collect.mjs --selftest
+      - name: 수집
+        env:
+          GODO_PARTNER_KEY: ${{ secrets.GODO_PARTNER_KEY }}
+          GODO_KEY: ${{ secrets.GODO_KEY }}
+          GODO_INGEST_KEY: ${{ secrets.GODO_INGEST_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          ARGS="--from ${{ inputs.from }} --to ${{ inputs.to }} --mall ${{ inputs.mall }}"
+          [ "${{ inputs.dry }}" = "true" ] && ARGS="$ARGS --dry"
+          node tools/godo/collect.mjs $ARGS
