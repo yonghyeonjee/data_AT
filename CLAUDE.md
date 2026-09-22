@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-22 · v142)
+## 지금 상태 (2026-09-22 · v143)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -471,6 +471,10 @@ end $outer$;
   원장 모드의 매장 일시불·구독은 이제 **판매 입력(`core.orders` store, 취소·환불·테스트 제외, 매출+판매완료)** 에서, 그날 그 구분의 판매 입력이 없을 때만 store_daily 로(8월 시트 자료). 직판은 두 모드 다 store_daily. 수기입력 모드는 그대로.
   **일 마감의 '판매완료 합계'는 저장 시점 snapshot 이라 대시보드 원천으로 쓰면 안 된다.**
   **기본 모드를 원장으로 바꿨다 (v114)** — `/dash/` `dashBasis()` 는 `?mode=manual` 이나 sessionStorage 가 manual 일 때만 수기입력, 관리자 `DASH_BASIS` 기본 'ledger'(localStorage `dash_basis` 로 바꾼 사람은 그대로). 테스트 `ptest/dashmode.mjs` D1~D3.
+- **유입경로 '홈페이지-…' → '구독 폼…' (mvp_175 · v143 · 2026-09-22)** — "sh.co.kr 은 구독 form 이라고 하라니까. samsungat.co.kr > 메일 > 만 홈페이지, 다른 도메인은 쇼핑몰이지 홈페이지도 아니야".
+  `fn_submit_inquiry` 가 유입경로를 `'홈페이지-'||inquiryType||' (referrer)'` 로 만들어 구독 폼 문의가 '홈페이지-구독 (www.samsungsh.co.kr)' 로 보였다. 이제 **`구독 폼`**(inquiryType 이 구독이 아니면 `구독 폼-혼수·입주·이사`) + ` (referrer)`.
+  `core.form_def` route 도 `소모품 폼`·`B2B 폼`, `core.f_consult_src('web')` 는 '자체 폼'. 옛 줄 73건(web_subscription 65·supply 4·b2b 4)의 앞머리를 regexp 로 정정(뒤 referrer 그대로). 관리자 상담 목록 SRC 라벨도 같이.
+  **홈페이지 = `samsungat.co.kr` 문의 메일(gmail_homepage · homepage_csv) 하나뿐.** 구독·견적서·VMS/B2B·소모품 4개는 쇼핑몰 도메인(시흥몰·P몰·S몰)에 있어도 '자체 폼' 이다. 문서·화면에 '홈페이지 폼' 이라 쓰지 말 것.
 - **상담 대시보드 → 문의 관리 드릴다운 · 문의 유형 축 (mvp_174 · v142 · 2026-09-22)** — "클릭하면 검색조건이 그에 맞게 변해서 문의를 검색하는 페이지로". 상담 대시보드의 채널·**문의 유형**(새 카드)·관심 제품·담당자·유입경로 막대, 기간 막대, 채널×기간 표 칸에 `data-drill`(JSON) 이 붙고
   `#v-cdash [data-drill]` 클릭 → `iqGo({form,channel,category,route,purpose,handler,status,from,to})` → 문의 관리(`show('inbox')`). 넘어온 조건은 `IQ_DRILL` → `#iqDrill` 칩(✕ 로 하나씩, [← 상담 대시보드]), `fn_inquiry_list` 에 `p_channel·p_category·p_route·p_purpose`(쉼표 목록, 옛 시그니처 drop → grant authenticated,service_role · revoke public,anon). 상담사 select 가 걸려 있으면 handler 도 같이 간다. 범위(매장/매장 외)는 못 넘긴다.
   **문의 유형(구매 목적) = `core.f_consult_purpose(source,type_code,raw_payload,content)`** — 구독 폼 `purchasePurpose`(신규구독·이사·입주·가전교체·혼수·신혼·사업자·B2B·사전예약·자급제구매·기타) → 내용 '목적: ' → 홈페이지 문의 `raw_payload.kind='사업자'` → 폼(web_b2b 사업자·B2B / web_supply 소모품·렌탈) → 문의 유형 코드(구독·일시불·렌탈·소모품·일반 제품) → '(미기록)'.
