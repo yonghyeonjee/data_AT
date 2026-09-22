@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-22 · v143)
+## 지금 상태 (2026-09-22 · v144)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -471,6 +471,10 @@ end $outer$;
   원장 모드의 매장 일시불·구독은 이제 **판매 입력(`core.orders` store, 취소·환불·테스트 제외, 매출+판매완료)** 에서, 그날 그 구분의 판매 입력이 없을 때만 store_daily 로(8월 시트 자료). 직판은 두 모드 다 store_daily. 수기입력 모드는 그대로.
   **일 마감의 '판매완료 합계'는 저장 시점 snapshot 이라 대시보드 원천으로 쓰면 안 된다.**
   **기본 모드를 원장으로 바꿨다 (v114)** — `/dash/` `dashBasis()` 는 `?mode=manual` 이나 sessionStorage 가 manual 일 때만 수기입력, 관리자 `DASH_BASIS` 기본 'ledger'(localStorage `dash_basis` 로 바꾼 사람은 그대로). 테스트 `ptest/dashmode.mjs` D1~D3.
+- **원장 중복 — 샵링커 파일 줄과 API 줄이 같은 주문을 두 번 (mvp_176 · v144 · 2026-09-22)** — "동일 주문번호는 중복으로 빼버려". 캠페인 드릴다운에서 같은 사람·같은 상품 두 줄이 보여 대조했다.
+  이상혁 9/21 두 줄은 주문번호(…8600 11:13 / …5745 16:05)·품목번호가 다른 **별개 주문**. 그런데 원장 전체를 (주문번호, 품목, 수량, 금액) 으로 묶어 보니 **파일 적재 줄(품목번호 없음 · line 1 · 9/3 업로드) + API 수집 줄(품목번호 있음 · line 2) 26쌍 · 1,324만원** 이 진짜 중복이었다.
+  원인: 파일은 `(source, order_no, line_no)`, API 는 `(source, source_ref)` 로 겹침을 보는데 API 가 line_no 를 max+1 로 매겨 파일 줄과 못 만났다. **샵링커는 같은 상품 N개를 N줄(품목번호 다름)로 준다** — 파일끼리 69묶음·API 끼리 29묶음은 정상이라 안 건드렸다.
+  정리: 26줄을 `core.orders_dup_backup_20260922` 에 두고 삭제(API 줄을 남김 — 상태·환불이 최신), `core.dash_cache` 비움. 재발 방지: `fn_sl_upsert` 는 새 품목번호라도 같은 주문·품목·수량·금액의 품목번호 없는 줄이 있으면 그 줄에 `source_ref` 를 붙이고(새 줄 안 만듦), `core.f_orders_bulk_upsert` 는 샵링커 파일 줄이 API 로 이미 있으면 건너뛴다(응답 `중복건너뜀`). 롤백 테스트로 확인.
 - **유입경로 '홈페이지-…' → '구독 폼…' (mvp_175 · v143 · 2026-09-22)** — "sh.co.kr 은 구독 form 이라고 하라니까. samsungat.co.kr > 메일 > 만 홈페이지, 다른 도메인은 쇼핑몰이지 홈페이지도 아니야".
   `fn_submit_inquiry` 가 유입경로를 `'홈페이지-'||inquiryType||' (referrer)'` 로 만들어 구독 폼 문의가 '홈페이지-구독 (www.samsungsh.co.kr)' 로 보였다. 이제 **`구독 폼`**(inquiryType 이 구독이 아니면 `구독 폼-혼수·입주·이사`) + ` (referrer)`.
   `core.form_def` route 도 `소모품 폼`·`B2B 폼`, `core.f_consult_src('web')` 는 '자체 폼'. 옛 줄 73건(web_subscription 65·supply 4·b2b 4)의 앞머리를 regexp 로 정정(뒤 referrer 그대로). 관리자 상담 목록 SRC 라벨도 같이.
