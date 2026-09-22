@@ -366,6 +366,10 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .fsec{margin-top:12px} .fsec>b{display:block;font-size:calc(12.5px * var(--font-scale));color:var(--muted);margin:0 0 6px;font-weight:700} .fsec>b small{font-weight:500}
 /* 필터 칩 : 한 줄에 하나만 고른다 — 고른 것은 채우고 ✓, 나머지는 테두리만 */
 .chips.filter{align-items:center;gap:6px}
+.tyx{margin-top:10px;padding:12px 14px;border:1.5px dashed var(--line-2);border-radius:12px;background:#fff}
+.tyx .row{display:flex;gap:12px;flex-wrap:wrap} .tyx .row .f{flex:1 1 200px;margin:0} .tyx>.f{margin-bottom:12px}
+.xd{margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px} .xd .hint{color:var(--muted);font-size:calc(12px * var(--font-scale))}
+.xd #c_xd_rows{flex-basis:100%;display:flex;flex-direction:column;gap:6px} .xdr{display:flex;gap:8px;align-items:center} .xdr .in{flex:1 1 120px;min-width:0} .xdr .x{width:40px;height:40px;padding:0;flex:0 0 40px}
 .chips.filter .lbl{font-size:calc(11.5px * var(--font-scale));font-weight:700;color:var(--muted);letter-spacing:.04em;margin-right:2px;flex:0 0 auto}
 .chips.filter .chip{background:#fff;border:1.5px solid var(--line-2);color:var(--ink-2);font-weight:600}
 .chips.filter .chip:hover{border-color:var(--navy);color:var(--navy)}
@@ -1512,8 +1516,10 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="f"><label>문의 채널 <span class="req">*</span> <span class="hint">어디로 들어온 문의인지 — <b>혹시 어디서 보고 오셨는지 물어봐주시면 좋습니다</b></span></label>
         <div class="chips" id="c_ch"></div>
         <input class="in hidden" id="c_ch_etc" placeholder="기타 — 어디로 들어왔는지 적어 주세요" style="margin-top:6px"></div>
-      <div class="f"><label>문의 유형 <span class="req">*</span> <span class="hint">무엇을 물어봤는지</span></label>
-        <div class="chips" id="c_ty"></div></div>
+      <div class="f"><label>문의 유형 <span class="req">*</span> <span class="hint">무엇을 물어봤는지 — <b>여러 개 고를 수 있습니다</b> (예: 구독 + 혼수)</span></label>
+        <div class="chips" id="c_ty"></div>
+        <div class="tyx hidden" id="c_tyx"></div>
+        <div class="xd" id="c_xd"><div id="c_xd_rows"></div><button type="button" class="mini" id="c_xd_add" onclick="xdAdd()">＋ 날짜 추가</button> <span class="hint">필요한 날짜가 더 있으면 (예: 예식장 계약일) — 진행 기록에 글로 남습니다</span></div></div>
       <div class="f"><label>유입경로 <span class="req">*</span> <span class="hint">고른 문의 채널의 경로가 위에 옵니다</span></label>
           <select class="in" id="c_route"><option value="">선택</option></select></div>
       </div>
@@ -3515,6 +3521,7 @@ function consultClearForm(){
   $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
   $('c_cat_etc').classList.add('hidden');
   cModelsSet([]); $('c_result').value='진행중'; cResultChanged(); $('c_consent').classList.remove('on');
+  C_TYS=['product']; C_EV={}; C_PROOF=''; if($('c_xd_rows')) $('c_xd_rows').innerHTML=''; if(INQ) renderInqChips();
   $('c_date').value=todayStr();
 }
 function consultNew(){
@@ -4283,7 +4290,10 @@ function cdHTML(d){
     ['완료일',d.done_at?at(d.done_at):(d.bucket==='open'||d.bucket==='hold'?'<span style="color:var(--muted)">아직 진행 중</span>':''),d.done_at?'done':''],
     ['콜백',d.callback_at?at(d.callback_at)+(d.callback_done_at?' (완료)':' (예정)'):''],['담당',d.handler?esc(d.handler)+(d.mine?' (나)':''):'미배정'],
     ['이어진 상담',d.superseded_by?`<button type="button" class="mini" onclick="cdOpen(${d.superseded_by})">${esc(d.superseded_ref||'다음 상담')} 으로 이어짐 ↗</button> <small style="color:var(--muted)">통계에서는 한 건으로 셉니다</small>`:'']]);
-  const how=kv([['채널',d.channel?esc(d.channel)+(d.ch_etc?` (${esc(d.ch_etc)})`:''):''],['유입경로',esc(d.route||'')],['문의 유형',esc(d.type||'')],['상담 방법',esc(d.method||'')],['출처 번호',esc(d.ref||'')]]);
+  const how=kv([['채널',d.channel?esc(d.channel)+(d.ch_etc?` (${esc(d.ch_etc)})`:''):''],['유입경로',esc(d.route||'')],['문의 유형',esc(d.type||'')],
+    ...(d.events||[]).map(e=>[esc(e.date_label||e.label||''), e.date?csDt(e.date):'']),
+    ['희망 배송일',d.delivery_at?csDt(d.delivery_at):''],['증빙',esc(proofText(d.proof_status,d.proof_at))],
+    ['상담 방법',esc(d.method||'')],['출처 번호',esc(d.ref||'')]]);
   const what=kv([['관심 품목',esc(d.interest||'')],['모델',esc(d.model||'')],['상세',esc(d.detail||'')],['예상 금액',d.expected?won(d.expected):''],['구매 예정',d.expect_date?csDt(d.expect_date):''],['멤버십',esc(d.membership||'')],['수신 동의',d.consent?'동의':''],['사은품',d.gift?esc(d.gift)+(d.gift_amount?` (${won(d.gift_amount)})`:''):'']]);
   const next=(d.next_cat||d.next_model||d.next_date||d.next_note)?kv([['다음 관심',esc([d.next_cat,d.next_model].filter(Boolean).join(' '))],['예정',d.next_date?csDt(d.next_date):''],['메모',esc(d.next_note||'')]]):'';
   const buy=(d.bought||d.order)?kv([['구매 품목',esc(d.bought||(d.order&&d.order.product)||'')],['주문',d.order?`${esc(d.order.no||'')} · ${csDt(d.order.at)} · ${won(d.order.amount)}${d.order.status?' · '+esc(d.order.status):''}`:'']]):'';
@@ -4417,6 +4427,7 @@ async function shareReport(){ const t=$('r_text').value; if(!t) return toast('�
 /* ═══ 상담 저장 ═══ */
 /* 폼 → 저장 데이터(상담 + 구매함이면 판매 정보). 빠진 게 있으면 토스트 후 null */
 function consultCollect(){
+  const tyx=$('c_tyx'); if(tyx) tyx.querySelectorAll('[data-ev]').forEach(el=>{ C_EV[el.dataset.ev]=el.value; });
   /* 관심 품목 : '기타' 는 적어 넣은 말로 바꿔 저장한다 */
   const etcTxt=$('c_cat_etc').value.trim();
   const cats = [...$('c_cat').querySelectorAll('.chip.on')].map(x=>x.dataset.v)
@@ -4429,7 +4440,9 @@ function consultCollect(){
     interest_category: cats.join(', '), interest_detail:$('c_detail').value.trim()||null,
     interest_model_code:[...cModels(), ...$('c_model').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean)].filter((v,i,a)=>a.indexOf(v)===i).join(', '),
     inflow_route:$('c_route').value, result:res,
-    channel_code:C_CH, channel_etc:($('c_ch_etc').value.trim()||null), type_code:C_TY,
+    channel_code:C_CH, channel_etc:($('c_ch_etc').value.trim()||null), type_code:C_TYS[0]||'product', type_codes:C_TYS.slice(),
+    event_dates:Object.fromEntries(tyDated().map(t=>[t.code, C_EV[t.code]||''])), delivery_at:C_EV.deliv||null,
+    proof_status: tyProof() ? (C_PROOF||null) : null, proof_at: (tyProof()&&C_PROOF==='추후') ? (C_EV.proof_at||null) : null, extra_dates:xdList(),
     method: (($('c_method').querySelector('button.on')||{}).dataset||{}).v || null,
     purchase_item: buyName||null, next_model_code:$('c_next').value.trim()||null, next_expected_date:$('c_next_date').value||null, next_note:$('c_next_note').value.trim()||null,
     expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(), callback_at: cbISO(),
@@ -4438,7 +4451,12 @@ function consultCollect(){
   if(!p.interest_category) return toast('관심 품목을 고르세요 — 모르면 "알 수 없음"','bad');
   if(!C_CH) return toast('문의 채널을 고르세요','bad');
   if((INQ&&(INQ.channels||[]).find(c=>c.code===C_CH&&c.etc)) && !p.channel_etc) return toast('기타 채널은 어디로 들어왔는지 적어 주세요','bad');
-  if(!C_TY) return toast('문의 유형을 고르세요','bad');
+  if(!C_TYS.length) return toast('문의 유형을 고르세요 — 여러 개도 됩니다','bad');
+  for(const t of tyDated()){ if(!C_EV[t.code]) return toast(`${t.date_label}을 입력하세요 (${t.label})`,'bad'); }
+  if(tyProof()){ if(!C_PROOF) return toast('증빙 여부를 고르세요 — 가능 · 불가능 · 추후 가능','bad');
+    if(C_PROOF==='추후' && !C_EV.proof_at) return toast('추후 가능이면 증빙 가능 날짜를 입력하세요','bad');
+    if(C_TYS.includes('wedding') && !C_EV.deliv) return toast('혼수는 희망 배송일이 필수입니다','bad'); }
+  if(p.extra_dates.some(x=>!x.label||!x.date)) return toast('추가 날짜는 이름과 날짜를 둘 다 적어 주세요','bad');
   if(buy && !buyName) return toast('구매한 제품을 적어 주세요','bad');
   if(buy && !buyAmt)  return toast('구매 금액을 적어 주세요 — 이 금액이 판매로 올라갑니다','bad');
   return { p, buy, buyName, buyAmt, buyModel:$('c_buy_model').value.trim().toUpperCase()||null,
@@ -4585,7 +4603,8 @@ const GCOLS={
       ['consult','상담번호',140],['next','다음 구매 관심 제품',150],['next_date','다음 구매 예정일',136,'','date'],['next_note','다음 구매 메모',160,'wide'],
       ['gift','사은품',130],['gift_amt','사은품 금액',100,'','amt'],['consent','마케팅 동의',72,'','chk'],['notes','메모',180,'wide'] ],
   c:[ ['name','고객명',110,'req core'],['phone','휴대폰',132,'core'],['method','상담 방법',92,'core','sel',[['','-'],['대면','대면'],['전화','전화'],['메시지','메시지']]],
-      ['ch','문의 채널',124,'req core','sel','CH'],['ch_etc','기타 채널',120,'','text'],['ty','문의 유형',110,'req core','sel','TY'],['route','유입경로',150,'core','sel','RT'],
+      ['ch','문의 채널',124,'req core','sel','CH'],['ch_etc','기타 채널',120,'','text'],['ty','문의 유형',110,'req core','sel','TY'],['ev','행사일 (결혼·입주·이사)',150,'','date'],['deliv','희망 배송일',136,'','date'],
+      ['proof','증빙 여부',112,'','sel',[['','-'],['가능','가능'],['불가능','불가능'],['추후','추후 가능']]],['proof_at','증빙 가능일',136,'','date'],['route','유입경로',150,'core','sel','RT'],
       ['cat','관심 품목',124,'req core','sel','CAT'],['detail','상세 관심 품목',170,'core wide'],['model','관심 모델',124],['res','상담 상태',100,'core','sel','RES'],
       ['amount','예상 금액',108,'','amt'],['expect','구매 예정일',136,'','date'],
       ['buy','구매한 제품',140],['buy_amt','구매 금액',108,'','amt'],['buy_kind','구매 구분',92,'','sel',KIND_OPTS],['buy_model','구매 모델',116],
@@ -4662,6 +4681,8 @@ function gridCheck(pfx,r){
   if(pfx==='s'){ if(!(r.prod||'').trim()) return '상품명을 입력하세요'; if(!(gnum(r.amt)>0)) return '판매가를 입력하세요'; if(!r.kind) return '구분을 고르세요'; if(!r.stage) return '단계를 고르세요'; return ''; }
   if(!(r.name||'').trim()) return '고객명을 입력하세요'; if(!r.ch) return '문의 채널을 고르세요'; if(!r.ty) return '문의 유형을 고르세요'; if(!r.cat) return '관심 품목을 고르세요 — 모르면 "알 수 없음"';
   const etc=((INQ&&INQ.channels)||[]).find(c=>c.code===r.ch&&c.etc); if(etc && !(r.ch_etc||'').trim()) return '기타 채널은 어디로 들어왔는지 [기타 채널] 칸에 적어 주세요';
+  const tm=tyMeta(r.ty); if(tm.date_label && !r.ev) return `${tm.date_label}을 [행사일] 칸에 넣어 주세요 (${tm.label})`;
+  if(tm.proof){ if(!r.proof) return '혼수·입주·이사는 [증빙 여부]를 골라 주세요'; if(r.proof==='추후' && !r.proof_at) return '추후 가능이면 [증빙 가능일]을 넣어 주세요'; if(r.ty==='wedding' && !r.deliv) return '혼수는 [희망 배송일]이 필수입니다'; }
   if(r.res==='구매완료'){ if(!(r.buy||'').trim()) return '구매함이면 구매한 제품을 적어 주세요'; if(!(gnum(r.buy_amt)>0)) return '구매함이면 구매 금액을 적어 주세요 — 판매로 올라갑니다'; }
   return '';
 }
@@ -4676,7 +4697,9 @@ function gridRowP(pfx,r){
   const cb = r.cb_date ? r.cb_date+'T'+(r.cb_time||'10:00')+':00+09:00' : null;
   const p={ consult_at:$('cg_date').value, handler:$('cg_handler').value, customer_name:t('name'), customer_phone:t('phone'), buyer_key:null,
     interest_category:r.cat, interest_detail:t('detail')||null, interest_model_code:up('model'), inflow_route:r.route||'', result:r.res||'진행전',
-    channel_code:r.ch, channel_etc:t('ch_etc')||null, type_code:r.ty||'product', method:r.method||null,
+    channel_code:r.ch, channel_etc:t('ch_etc')||null, type_code:r.ty||'product', type_codes:[r.ty||'product'], method:r.method||null,
+    event_dates: tyMeta(r.ty).date_label ? {[r.ty]: r.ev||''} : {}, delivery_at:r.deliv||null,
+    proof_status: tyMeta(r.ty).proof ? (r.proof||null) : null, proof_at: (tyMeta(r.ty).proof && r.proof==='추후') ? (r.proof_at||null) : null,
     purchase_item:t('buy')||null, next_model_code:t('next')||null, next_expected_date:r.next_date||null, next_note:t('next_note')||null,
     expected_amount:gnum(r.amount)||null, expected_purchase_date:r.expect||null, content:t('content'), callback_at:cb,
     consent_marketing:!!r.consent, gift_name:t('gift')||null, gift_amount:gnum(r.gift_amt)||null };
@@ -4880,7 +4903,36 @@ async function saveOnlineDay(){
   b.disabled=false;
 }
 /* ═══ 문의 채널 · 유형 (고정 목록) ═══ */
-let INQ=null, C_CH='store_visit', C_TY='product';
+let INQ=null, C_CH='store_visit', C_TYS=['product'], C_EV={}, C_PROOF='';   /* 문의 유형 여러 개 (mvp_178) · 유형별 날짜 · 증빙 */
+const tyMeta=c=>((INQ&&INQ.types)||[]).find(t=>t.code===c)||{code:c};
+const tyDated=()=>C_TYS.map(tyMeta).filter(t=>t.date_label);
+const tyProof=()=>C_TYS.some(c=>!!tyMeta(c).proof);
+const PROOF_OPTS=[['가능','가능'],['불가능','불가능'],['추후','추후 가능 (날짜)']];
+const proofText=(st,at)=> st==='추후' ? '추후 가능'+(at?' · '+csDt(at):'') : (st||'');
+/* 고른 유형에 따라 캘린더가 늘고 줄어든다: 증빙 여부(혼수·입주·이사) → 결혼 예정일·입주일·이사일 → 희망 배송일(혼수는 필수) */
+function renderTypeExtra(){
+  const box=$('c_tyx'); if(!box) return;
+  box.querySelectorAll('[data-ev]').forEach(el=>{ C_EV[el.dataset.ev]=el.value; });   /* 다시 그리기 전에 적어 둔 값 보존 */
+  const dated=tyDated(), proof=tyProof(), wed=C_TYS.includes('wedding');
+  if(!dated.length && !proof){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  box.classList.remove('hidden');
+  let h='';
+  if(proof) h+=`<div class="f"><label>증빙 여부 <span class="req">*</span> <span class="hint">혼수·입주·이사 혜택 — 청첩장·계약서 등을 낼 수 있는지</span></label>
+    <div class="seg sm" id="c_proof">${PROOF_OPTS.map(([v,l])=>`<button type="button" data-v="${v}"${C_PROOF===v?' class="on"':''}>${l}</button>`).join('')}</div>
+    <input type="date" class="in${C_PROOF==='추후'?'':' hidden'}" id="c_proof_at" data-ev="proof_at" value="${esc(C_EV.proof_at||'')}" style="margin-top:6px" aria-label="증빙 가능 날짜"></div>`;
+  h+='<div class="row">'+dated.map(t=>`<div class="f"><label>${esc(t.date_label)} <span class="req">*</span> <span class="hint">${esc(t.label)}</span></label><input type="date" class="in" id="c_ev_${esc(t.code)}" data-ev="${esc(t.code)}" value="${esc(C_EV[t.code]||'')}"></div>`).join('')
+    +`<div class="f"><label>희망 배송일 ${wed?'<span class="req">*</span>':''}<span class="hint">${wed?'혼수는 필수':'정해졌으면'}</span></label><input type="date" class="in" id="c_deliv" data-ev="deliv" value="${esc(C_EV.deliv||'')}"></div></div>`;
+  box.innerHTML=h;
+  box.querySelectorAll('[data-ev]').forEach(el=>el.onchange=()=>{ C_EV[el.dataset.ev]=el.value; });
+  const ps=$('c_proof'); if(ps) ps.onclick=e=>{ const b=e.target.closest('button'); if(!b) return;
+    C_PROOF=(C_PROOF===b.dataset.v)?'':b.dataset.v; ps.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.v===C_PROOF));
+    const pa=$('c_proof_at'); pa.classList.toggle('hidden',C_PROOF!=='추후'); if(C_PROOF==='추후') pa.focus(); };
+}
+/* 추가 날짜 — 이름 + 날짜 줄. DB 에는 notes(진행 기록)에 글로 들어간다 */
+function xdAdd(label,date){ const r=document.createElement('div'); r.className='xdr';
+  r.innerHTML=`<input class="in" placeholder="무슨 날짜인지 (예: 예식장 계약일)" value="${esc(label||'')}" aria-label="추가 날짜 이름"><input type="date" class="in" value="${esc(date||'')}" aria-label="추가 날짜"><button type="button" class="mini x" aria-label="이 날짜 지우기" onclick="this.parentNode.remove()">×</button>`;
+  $('c_xd_rows').appendChild(r); if(!label) r.querySelector('input').focus(); }
+const xdList=()=>[...$('c_xd_rows').querySelectorAll('.xdr')].map(r=>{ const [l,d]=r.querySelectorAll('input'); return {label:l.value.trim(), date:d.value}; }).filter(x=>x.label||x.date);
 async function loadInqCodes(){
   if(INQ) return INQ;
   try{ INQ=await rpc('fn_inq_codes',{}); }catch(e){ INQ={channels:[],types:[]}; }
@@ -4903,11 +4955,12 @@ function renderInqChips(){
   if(!INQ) return;
   const ch=$('c_ch'), ty=$('c_ty'); if(!ch||!ty) return;
   ch.innerHTML=(INQ.channels||[]).map(c=>`<span class="chip${C_CH===c.code?' on':''}" data-c="${esc(c.code)}">${esc(c.label)}</span>`).join('');
-  ty.innerHTML=(INQ.types||[]).map(t=>`<span class="chip${C_TY===t.code?' on':''}" data-t="${esc(t.code)}">${esc(t.label)}</span>`).join('');
+  ty.innerHTML=(INQ.types||[]).map(t=>`<span class="chip${C_TYS.includes(t.code)?' on':''}" data-t="${esc(t.code)}" role="checkbox" aria-checked="${C_TYS.includes(t.code)}">${esc(t.label)}</span>`).join('');
   ch.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ C_CH=el.dataset.c; renderInqChips();
     const etc=(INQ.channels||[]).find(c=>c.code===C_CH&&c.etc); $('c_ch_etc').classList.toggle('hidden',!etc); if(etc) $('c_ch_etc').focus(); });
   renderRoutes();
-  ty.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ C_TY=el.dataset.t; renderInqChips(); });
+  ty.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ const c=el.dataset.t; C_TYS = C_TYS.includes(c) ? C_TYS.filter(x=>x!==c) : [...C_TYS, c]; renderInqChips(); });
+  renderTypeExtra();
   const etc=(INQ.channels||[]).find(c=>c.code===C_CH&&c.etc);
   $('c_ch_etc').classList.toggle('hidden',!etc);
 }
