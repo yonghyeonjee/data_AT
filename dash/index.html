@@ -269,9 +269,11 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .stat{font-family:var(--mono);font-weight:600;color:var(--ink)}
 
 #mask{position:fixed;inset:0;background:rgba(14,17,22,.45);backdrop-filter:blur(2px);z-index:80;display:none}
-#drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,96vw);background:#fff;z-index:81;
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(880px,96vw);background:#fff;z-index:81;
   box-shadow:-14px 0 44px rgba(0,0,0,.22);display:none;overflow-y:auto}
 #drawer.open{display:block}
+.dw-fullbtn{display:block;width:100%;margin:0 0 16px;padding:13px 16px;font-size:15px;text-align:center;background:var(--navy);color:#fff;border-color:var(--navy);border-radius:9px}
+.dw-fullbtn:hover{filter:brightness(1.08)}
 .dw-h{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--rule-soft);padding:20px 22px 14px;
   display:flex;align-items:flex-start;gap:12px;z-index:2}
 .dw-h h3{margin:0;font-size:19px;font-weight:780;letter-spacing:-.025em;line-height:1.32;flex:1}
@@ -336,7 +338,14 @@ body.pres .stepbar{display:flex}
 .rf-g:hover{background:#0F1F80}
 .rf-g:disabled{opacity:.55;cursor:default}
 .cvsticky{position:sticky;top:0;z-index:20;background:var(--ground);padding-top:4px}
-.cvhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.cvhead{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+/* 몰 머리 바 — 채널·상세 화면 공용 (v147) : 발표 때 손이 닿는 조작이 전부 여기 */
+.mseg{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.mseg button{font-family:var(--sans);font-size:13.5px;font-weight:700;height:40px;padding:0 16px;border:0;border-right:1px solid var(--rule);background:#fff;color:var(--muted);cursor:pointer}
+.mseg button:last-child{border-right:0} .mseg button:hover{color:var(--navy)} .mseg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.mclr{font-family:var(--sans);font-size:12.5px;height:40px;padding:0 12px;border:1px solid var(--rule);border-radius:8px;background:#fff;color:var(--muted);font-weight:700;cursor:pointer;white-space:nowrap}
+.mclr:hover{color:var(--red);border-color:var(--red)}
+.cvhead .delta{font-family:var(--mono);font-size:13px;font-weight:700;margin-left:auto}
 .cvhead .big{font-size:clamp(24px,3vw,34px);font-weight:800;letter-spacing:-.04em}
 .mrow{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--rule-soft);font-size:13.5px}
 /* 접는 카드 — 카드 머리를 누르면 본문이 접힌다. 다 펼쳐 놓으면 발표 때 스크롤만 길다 (2026-09-22) */
@@ -612,7 +621,7 @@ body{background:
 </div>
 
 <div id="view-c" style="display:none">
-  <div class="grid cvsticky"><div class="card sp12">
+  <div class="grid"><div class="card sp12">
     <div class="card-h"><h2>몰 · 채널 선택</h2><span class="note" id="cv-note"></span></div>
     <div class="card-b"><div class="chips tight" id="cvchips"></div></div>
   </div></div>
@@ -620,6 +629,7 @@ body{background:
 </div>
 
 <div id="view-d" style="display:none">
+  <div id="dv-head" style="display:none"></div>
   <div class="grid">
     <div class="card sp12">
       <div class="card-h"><h2>기간 팩트</h2><span class="note" id="ft-note"></span></div>
@@ -907,7 +917,8 @@ $('#d1').onchange=$('#d2').onchange=function(){
   setRange(idxOf($('#d1').value||firstD,1),idxOf($('#d2').value||lastD,-1),'custom');};
 
 /* ===== 필터 해제 ===== */
-function clearFocus(){focus=null;cvCatOpen=null;wfTab='ch';dirtyC=true;render();if(view==='c')renderCV();}
+/* 채널 화면에서 채널을 지우면 빈 화면("위에서 몰·채널을 선택하세요") 대신 개요로 돌아간다 */
+function clearFocus(){focus=null;cvCatOpen=null;wfTab='ch';dirtyC=true;render();if(view==='c')setView('o');}
 function setScope(v){
   if(v==='pick'){openChPick();return;}
   SEL=new Set(CH.map((c,i)=>i).filter(i=>v==='all'?true:v==='off'?isOff(i):!isOff(i)));
@@ -1022,7 +1033,7 @@ function drawAbar(){
     $('#clr-all').onclick=()=>{
       focus=null;pMall=-1;pCat=null;pQ='';pLimit=30;$('#psearch').value='';
       SEL=new Set(CH.map((c,i)=>i));scope='all';selSave();syncScopeBtns();
-      render(); if($('#cpop'))drawChPick();};
+      render(); if($('#cpop'))drawChPick(); if(view==='c')setView('o');};
   }
   $('#tr-clear').style.display=focus!==null?'':'none';
 }
@@ -1566,7 +1577,6 @@ function openCh(ci){
     +'<div><span class="k">환불율</span><span class="v">'+(exempt?'–':miss?'미기록':rr.toFixed(1)+'%')+'</span></div>'
     +(o.o>0?'<div><span class="k">주문 건수</span><span class="v">'+o.o.toLocaleString()+'건</span></div>'
       +'<div><span class="k">객단가</span><span class="v">'+wonS(o[key]/o.o)+'</span></div>':'')+'</div>';
-  if(miss)h+='<div class="find warn"><h3>환불 데이터가 없습니다</h3><p>매출은 있는데 환불이 0입니다. 실제로 없었던 게 아니라 <span class="stat">원장에 입력되지 않았을</span> 가능성이 큽니다. 이 채널의 순매출은 실제보다 높게 잡혀 있습니다.</p></div>';
   h+='<div class="dw-s">'+mname()+' 추이<div class="dwtabs" id="dw-gran">'
     +'<button data-g="m">월별</button><button data-g="d">일별</button></div></div>'
     +'<div id="dw-series"></div>';
@@ -1589,13 +1599,13 @@ function openCh(ci){
     +evs.map(e=>'<span class="evtag">'+esc(e[2])+' · '+dot(e[0]).slice(5)+'~'+dot(e[1]).slice(5)+'</span>').join('')+'</div>';
   h+='<div class="note" style="margin-top:16px">선택 '+dot(DAYS[a])+' ~ '+dot(DAYS[b])
     +(cmp?' · 비교 '+cmp.label+' '+dot(DAYS[cmp.lo])+' ~ '+dot(DAYS[cmp.hi]):'')+'</div>';
-  h='<button class="clearbtn" id="dw-full" style="margin:0 0 14px">이 채널 전체 화면으로 보기 →</button>'+h;
+  h='<button class="clearbtn dw-fullbtn" id="dw-full">이 채널 전체 화면으로 보기 →</button>'+h;
   openDrawer(CH[ci].name,CH[ci].group+' 채널',h);
   document.getElementById('dw-full').onclick=()=>{closeDrawer();dirtyC=true;setView('c');};
   renderChSeries();
   document.querySelectorAll('#dw-gran button').forEach(bt=>bt.onclick=()=>{dwGran=bt.dataset.g;renderChSeries();});
   $('#dw-b').querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>openPr(+el.dataset.id));
-  focus=ci;drawTrend();drawRank();drawAbar();dirtyDetail=true;if(view==='d')renderDetail();
+  focus=ci;drawTrend();drawRank();drawAbar();drawMallSel();dirtyDetail=true;if(view==='d')renderDetail();
 }
 function openPr(pid){
   const m=PR[pid],mset=selMonths();
@@ -1792,16 +1802,13 @@ function drawMx(){
 
 function renderDetail(){
   if(!dirtyDetail)return;
-  drawFacts();drawStrip();drawPList();drawMx();bindFolds($('#view-d'));
+  drawDvHead();drawFacts();drawStrip();drawPList();drawMx();bindFolds($('#view-d'));
   dirtyDetail=false;}
 
 /* ===== 인사이트 ===== */
 function drawFinds(){
   const all=agg(firstA,lastA,true),items=[];
   const miss=CH.map((c,i)=>({n:c.name,i:i,o:all.byCh[i]})).filter(x=>!noRefundBiz(x.i)&&x.o.r===0&&x.o.g>3e6);
-  if(miss.length)items.push(['flag','환불 미기록 채널 '+miss.length+'개',
-    miss.slice(0,4).map(x=>esc(x.n)).join(' · ')+(miss.length>4?' 외':'')
-    +' — 매출은 있는데 환불이 0입니다. 이 채널들의 순매출은 <span class="stat">실제보다 높게</span> 잡혀 있습니다.']);
   let G=0,R=0,N=0;CH.forEach((c,i)=>{G+=all.byCh[i].g;R+=all.byCh[i].r;N+=all.byCh[i].n;});
   items.push(['flag','환불율 '+pct(R,G).toFixed(1)+'%',
     '총매출 <span class="stat">'+wonS(G)+'</span> 중 <span class="stat">'+wonS(R)+'</span>이 환불로 빠졌습니다.']);
@@ -1879,6 +1886,7 @@ function drawMallSel(){
     focus=v===''?null:+v;
     dirtyC=true;
     if(focus!==null&&view!=='c')setView('c');
+    else if(focus===null&&view==='c'){render();setView('o');}   /* 채널 화면에서 '전체 채널 보기' 로 돌리면 개요로 */
     else{drawTrend();drawRank();drawAbar();drawMallSel();if(view==='c')renderCV();}
   };
 }
@@ -1889,7 +1897,7 @@ function drawCVChips(){
   $('#cvchips').innerHTML=list.map(x=>'<button data-i="'+x.i+'"'+(focus===x.i?' aria-pressed="true"':'')+'>'
     +esc(CH[x.i].name)+' <span style="opacity:.65">'+wonS(x.v)+'</span></button>').join('');
   $('#cvchips').querySelectorAll('button').forEach(el=>el.onclick=()=>{
-    const i=+el.dataset.i;focus=(focus===i)?null:i;dirtyC=true;
+    const i=+el.dataset.i;if(focus===i){clearFocus();return;}focus=i;dirtyC=true;
     renderCV();drawTrend();drawRank();drawAbar();drawMallSel();});
   $('#cv-note').textContent=list.length+'개 · 기간과 지표는 위 컨트롤을 그대로 따릅니다';
 }
@@ -1931,22 +1939,15 @@ function renderCV(){
     ['일평균',won(o[key]/cur.days),''],['기간',cur.days+'<small>일</small>','']];
   /* 몰 이동 — 발표 때 몰을 차례로 넘긴다 (← → 키도 된다) */
   const nav=cvList(), ni=nav.indexOf(ci);
-  let h='<div class="grid"><div class="card sp12"><div class="card-b">'
-    +'<div class="cvhead"><span class="big">'+esc(CH[ci].name)+'</span>'
-    +'<span class="mnav"><button id="cv-prev" title="이전 몰 (←)"'+(ni<=0?' disabled':'')+'>◀</button><span class="pos">'+(ni+1)+'/'+nav.length+'</span>'
-    +'<button id="cv-next" title="다음 몰 (→)"'+(ni<0||ni>=nav.length-1?' disabled':'')+'>▶</button></span>'
-    +'<span class="note">'+esc(CH[ci].group)+' · '+dot(DAYS[a])+'–'+dot(DAYS[b])+' · '+cur.days+'일</span>'
-    +'<span class="d '+dCls+'" style="font-family:var(--mono);font-size:13px;font-weight:700;margin-left:auto;color:'
-    +(dCls==='up'?'var(--teal)':dCls==='down'?'var(--red)':'var(--muted)')+'">'+dTxt+'</span></div></div>'
-    +'<div class="kpis" style="border-top:1px solid var(--rule-soft)">'
+  let h='<div class="grid cvsticky"><div class="card sp12"><div class="card-b" style="padding:12px 18px">'+mallHead(ci,'c')+'</div></div></div>'
+    +'<div class="grid"><div class="card sp12">'
+    +'<div class="kpis">'
     +K.map(k=>'<div class="kpi"><span class="k">'+k[0]+'</span><span class="v '+k[2]+'">'+k[1]+'</span></div>').join('')
     +'</div></div></div>'
     +'<div class="grid"><div class="card sp12 fold" data-fk="cv_kpi2" data-open="0"><div class="card-h"><h2>세부 지표</h2><span class="note">총매출 · 환불 · 일평균</span></div>'
     +'<div class="card-b" style="padding:0"><div class="kpis">'
     +K2.map(k=>'<div class="kpi"><span class="k">'+k[0]+'</span><span class="v '+k[2]+'">'+k[1]+'</span></div>').join('')
     +'</div></div></div></div>';
-  if(miss)h+='<div class="grid"><div class="sp12"><div class="find warn"><h3>환불 데이터가 없습니다</h3>'
-    +'<p>매출은 있는데 환불이 0입니다. 실제로 없었던 게 아니라 <span class="stat">원장에 입력되지 않았을</span> 가능성이 큽니다. 이 채널의 순매출은 실제보다 높게 잡혀 있습니다.</p></div></div></div>';
   h+='<div class="grid"><div class="card sp12">'
     +'<div class="card-h"><h2>'+mname()+' 추이</h2><span class="note">'
     +({d:'일별',w:'주별',m:'월별'})[gran]+' · '+rows.length+'구간</span>'
@@ -1981,8 +1982,7 @@ function renderCV(){
   box.innerHTML=h;
   bindFolds(box);
   document.querySelectorAll('#cvgran button').forEach(bt=>bt.onclick=()=>{cvGran=bt.dataset.g;dirtyC=true;renderCV();});
-  { const pv=document.getElementById('cv-prev'), nx=document.getElementById('cv-next');
-    if(pv)pv.onclick=()=>cvStep(-1); if(nx)nx.onclick=()=>cvStep(1); }
+  bindMallHead(box,'c');
   // 상품
   const pbox=document.getElementById('cvprod');
   if(ci===RENT_CH){pbox.innerHTML=rentalBlocks();document.getElementById('cvp-note').textContent='렌탈 청구 상세';}
@@ -2003,9 +2003,28 @@ function renderCV(){
   dirtyC=false;
 }
 /* 채널 화면 몰 이동 — 순서는 위 칩과 같다(범위 안 · 매출순) */
+/* 몰 머리 바 (v147) — 채널·상세 화면이 같은 줄을 쓴다 : 이름 · ◀ n/N ▶ · [요약|상세] · 기간 · 전기 대비 · [✕ 몰 해제].
+   발표자가 상단 헤더까지 올라가지 않고 같은 몰의 요약↔상세를 오가고 다음 몰로 넘긴다. sticky 라 스크롤해도 남는다 */
+function mallDelta(ci){ const key=mkey(),o=cur.byCh[ci],p=prv?prv.byCh[ci][key]:null; let dTxt='비교 기간 없음',dCls='flat';
+  if(p!==null&&p!==0){const pp=(o[key]-p)/Math.abs(p)*100; dTxt=(pp>=0?'▲ +':'▼ ')+pp.toFixed(1)+'% (전기 '+wonS(p)+')';dCls=Math.abs(pp)<0.5?'flat':pp>0?'up':'down';}
+  return {dTxt:dTxt,dCls:dCls}; }
+function mallHead(ci,mode){ const nav=cvList(), ni=nav.indexOf(ci), pf=mode==='d'?'dv':'cv', d=mallDelta(ci);
+  return '<div class="cvhead"><span class="big">'+esc(CH[ci].name)+'</span>'
+    +'<span class="mnav"><button id="'+pf+'-prev" title="이전 몰 (←)"'+(ni<=0?' disabled':'')+'>◀</button><span class="pos">'+(ni+1)+'/'+nav.length+'</span>'
+    +'<button id="'+pf+'-next" title="다음 몰 (→)"'+(ni<0||ni>=nav.length-1?' disabled':'')+'>▶</button></span>'
+    +'<span class="mseg" role="group" aria-label="이 몰 보기"><button data-mv="c" aria-pressed="'+(mode!=='d')+'">요약</button><button data-mv="d" aria-pressed="'+(mode==='d')+'">상세</button></span>'
+    +'<span class="note">'+esc(CH[ci].group)+' · '+dot(DAYS[a])+'–'+dot(DAYS[b])+' · '+cur.days+'일</span>'
+    +'<span class="delta d '+d.dCls+'" style="color:'+(d.dCls==='up'?'var(--teal)':d.dCls==='down'?'var(--red)':'var(--muted)')+'">'+d.dTxt+'</span>'
+    +'<button class="mclr" data-mclr="1" title="몰 선택 해제 (Esc)">✕ 몰 해제</button></div>'; }
+function bindMallHead(root,mode){ const pf=mode==='d'?'dv':'cv';
+  const pv=root.querySelector('#'+pf+'-prev'), nx=root.querySelector('#'+pf+'-next'); if(pv)pv.onclick=()=>cvStep(-1); if(nx)nx.onclick=()=>cvStep(1);
+  root.querySelectorAll('[data-mv]').forEach(bt=>bt.onclick=()=>{ if(bt.dataset.mv!==view)setView(bt.dataset.mv); });
+  const c=root.querySelector('[data-mclr]'); if(c)c.onclick=()=>clearFocus(); }
+function drawDvHead(){ const el=$('#dv-head'); if(!el)return; if(focus===null){el.innerHTML='';el.style.display='none';return;}
+  el.style.display=''; el.innerHTML='<div class="grid cvsticky"><div class="card sp12"><div class="card-b" style="padding:12px 18px">'+mallHead(focus,'d')+'</div></div></div>'; bindMallHead(el,'d'); }
 function cvList(){ const key=mkey(); return CH.map((c,i)=>({i:i,v:cur.byCh[i][key]})).filter(x=>inScope(x.i)&&cur.byCh[x.i].g!==0).sort((x,y)=>y.v-x.v).map(x=>x.i); }
 function cvStep(d){ const L=cvList(), i=L.indexOf(focus), j=i+d; if(i<0||j<0||j>=L.length)return;
-  focus=L[j]; cvCatOpen=null; dirtyC=true; renderCV(); drawTrend(); drawRank(); drawAbar(); drawMallSel(); window.scrollTo(0,0); }
+  focus=L[j]; cvCatOpen=null; dirtyC=true; dirtyDetail=true; if(view==='d')renderDetail(); else renderCV(); drawTrend(); drawRank(); drawAbar(); drawMallSel(); window.scrollTo(0,0); }
 /* 접는 카드 — data-fk 로 상태를 기억한다 (세션 안에서만) */
 let FOLD={}; try{ FOLD=JSON.parse(sessionStorage.getItem('dash_fold')||'{}')||{}; }catch(e){ FOLD={}; }
 function bindFolds(root){
@@ -2105,7 +2124,7 @@ $('#tr-clear').onclick=()=>clearFocus();
 $('#foot').innerHTML='<b>주문 건수</b> · 샵링커 주문번호와 VMS 전표번호로 셉니다. 원장에만 있는 채널(매장·구독)은 건수가 없어 객단가도 나오지 않습니다.<br>'
   +'<b>VMS</b> · 합계(J열)가 음수인 행은 할인·반품으로 보고 환불로 집계합니다.<br>'
   +'<b>직판</b> · 담당자별로 나뉘어 있던 행을 하나의 채널로 합쳤습니다. 담당자 구분은 채널 상세의 [담당자별]에서 봅니다.<br>'
-  +'<b>채널 화면</b> · 상단 [채널] 탭에서 몰을 고르면 그 채널만 기간·지표를 바꿔가며 볼 수 있습니다.<br>'
+  +'<b>채널 화면</b> · 상단 [채널] 탭에서 몰을 고르면 그 채널만 기간·지표를 바꿔가며 볼 수 있습니다. 몰 이름 줄의 <b>[요약 | 상세]</b> 로 같은 몰의 상세로 바로 넘어가고, <b>◀ ▶</b>(← → 키)로 다음 몰. 이 줄은 스크롤해도 위에 남습니다.<br>'
   +'<b>선택 해제</b> · 채널을 다시 누르거나, 상단 필터 칩의 ✕, 추이 카드의 “전체 채널 보기”, 또는 Esc.<br>'
   +'<b>비교 기간</b> · 어제→전주 동요일, 이번 주→전주 동기간, 지난 주→전전주, 월→전월 전체, 이번 달→전월 같은 일자까지, 올해→전년 같은 기간, 작년→전전년, 그 외→직전 동일 일수.<br>'
   +'<b>렌탈</b> · 월 발생 청구 기준(청구시작일 귀속). 환불 개념이 없어 환불율과 미기록 경고에서 제외합니다.<br>'
@@ -2181,7 +2200,7 @@ document.addEventListener('keydown',e=>{
     if(pres)setPres(false);
     return;}
   if(e.target.tagName==='INPUT')return;
-  if(!pres&&view==='c'&&focus!==null&&!$('#drawer').classList.contains('open')&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();cvStep(e.key==='ArrowRight'?1:-1);return;}
+  if(!pres&&(view==='c'||view==='d')&&focus!==null&&!$('#drawer').classList.contains('open')&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();cvStep(e.key==='ArrowRight'?1:-1);return;}
   if(!pres){if(e.key==='p'||e.key==='P')setPres(true);return;}
   if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(si<steps.length-1){si++;pren();}}
   if(e.key==='ArrowLeft'){e.preventDefault();if(si>0){si--;pren();}}});
