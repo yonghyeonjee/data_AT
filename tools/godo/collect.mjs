@@ -17,6 +17,7 @@
  *   · 응답 XML: data.header.code('000' 성공) · data.return.order_data[] (orderInfoData[] · orderGoodsData[])
  *   · 헤더 ratelimit-available-level 이 EXHAUSTED 면 3초 쉼, 429 면 5초 쉬고 재시도
  *   · 조회 구간은 29일씩 — 한 번에 길게 잡으면 커서 페이징이 어긋난다
+ *   · **한 페이지가 size(100) 보다 적게 와도 끝이 아니다** — 빈 페이지가 나올 때까지 lastOrder 커서를 민다
  */
 import crypto from "node:crypto";
 import { XMLParser } from "fast-xml-parser";
@@ -31,7 +32,7 @@ const FROM = opt("--from"), TO = opt("--to");
 
 const env = (k, d) => { const v = process.env[k]; if (v === undefined || v === "") { if (d !== undefined) return d; throw new Error(`환경변수 ${k} 가 없습니다`); } return v; };
 const API_URL = "https://openhub.godo.co.kr/godomall5/order/Order_Search.php";
-const PAGE = 100, CHUNK_DAYS = 29, BATCH = 500;
+const PAGE = 100, CHUNK_DAYS = 29, BATCH = 500, MAX_PAGES = 60;
 const SB_ANON = "sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";   // 공개 키 (anon) — 실제 권한은 GODO_INGEST_KEY 가 결정
 
 const xml = new XMLParser({ ignoreAttributes: true, parseTagValue: false, trimValues: true });
@@ -145,7 +146,10 @@ async function main() {
       if (!batch.length) break;
       batch.forEach(o => seen.add(o.orderNo)); orders.push(...batch); page++;
       console.log(`   [${s}~${e}] p${page} +${batch.length} 누적 ${orders.length}`);
-      if (batch.length < PAGE) break;
+      // 한 페이지가 size 보다 적게 와도 끝이 아니다 — 고도몰은 size 를 채워 주지 않는다
+      // (2026-09-21: 3/1~3/30 첫 페이지가 81건이라 여기서 끊겨 3/1~3/20 이 통째로 빠졌다).
+      // 콜랩 원본과 같이 **빈 페이지가 나올 때까지** 커서를 밀고, 상한으로만 막는다.
+      if (page >= MAX_PAGES) { console.log(`   [${s}~${e}] ! 페이지 상한 ${MAX_PAGES} — 구간을 더 잘게 나누세요`); break; }
       cursor = batch[batch.length - 1].orderNo;
       await sleep(r.exhausted ? 3000 : 300);
     }
