@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-22 · v144)
+## 지금 상태 (2026-09-22 · v145)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -487,7 +487,8 @@ end $outer$;
   form `homepage`(홈페이지 문의) · `subscribe` · `quote`(견적서) · `supply` · `b2b` · `store`(방문 접수 전부 — 매장방문 아닌 5건도 subscribe 에서 store 로, 플래그도 옮김) · `consult`(매장 상담) · `prospect`(가망고객). 새 열 `channel`(대시보드 채널 규칙 그대로) · `route` · `hidden`(상담 화면에서 숨김·삭제한 건 → [삭제됨]) · `auto_test` 에 hidden_reason '테스트%' 포함. 폼 칩 9개, 줄 목적 칸 아래 채널·경로 한 줄. `fn_inquiry_flag` 는 consult 폼 6개 전부 crm.consult hidden_* 을 같이 바꾸고 복구는 deleted_at 도 푼다.
   **홈페이지 1 · 자체 폼 4** — "문의폼은 다 고도몰에서 하는데 굳이 고도몰이라고 할 건 없고 자체 form". CRM 유입 표(`CRM_SRC`) 묶음을 홈페이지(homepage=문의 메일 자동 적재 고객 193) / 자체 폼(구독·견적서·VMS/B2B·소모품) / 내부 운영(+`store_consult`=담당자 화면 상담 입력 16) 으로. '기타' 는 표에 이름 없는 키가 떨어지는 자리였다.
   **UTM 관리 [구매]·[매출] 숫자 → 통합 원장** — "구매 숫자 누르면 구매를 확인할 수 있는 페이지로". `utmBought(code)` 가 `O_CAMP` 를 걸고 기간을 첫 발송일~오늘로 바꿔 `show('orders')`. `fn_order_list`·`fn_order_summary` 에 `p_campaign`(수신자의 발송 뒤 주문 · 발송 실패·테스트 제외 = `fn_utm_campaigns.bought` 규칙, 옛 시그니처 drop · ACL 그대로 anon 포함). 원장 필터 아래 `#oCamp` 칩(✕), [초기화] 도 푼다.
-  테스트 `ptest/cdash.mjs` C9~C15 (15/15) · utm 16 · ovf_admin · sendlog 43 · cdnav · segpick 24. 문의 관리는 이어진 상담을 따로 세고 견적서·방문 접수도 들어 있어 대시보드 숫자와 조금 다를 수 있다(표 아래 안내).
+  **담당자 막대 → 담당 조건이 안 걸리던 것 (v145)** — "이거 조건에 안 나와"(박은지 3건). 담당 체크박스는 `core.staff` 활성 담당자만 그려서 비활성(박은지)은 칸이 없었고 `iqGo` 가 체크할 칸을 못 찾았다. 이제 목록에 없는 이름이면 칸을 만들어 체크하고, `iqFillHandlers` 가 다시 그릴 때도 체크된 비활성 이름은 남긴다 (`input:last-of-type` 은 label 마다 참이라 첫 칸을 잡는다 — `lastElementChild.querySelector` 로).
+  테스트 `ptest/cdash.mjs` C9~C15·C13b·C13c (17/17) · utm 16 · ovf_admin · sendlog 43 · cdnav · segpick 24. 문의 관리는 이어진 상담을 따로 세고 견적서·방문 접수도 들어 있어 대시보드 숫자와 조금 다를 수 있다(표 아래 안내).
 - **관리자 [상담 대시보드] (mvp_158 · v117 · 2026-09-17)** — "문의 처리현황도 대시보드처럼". crm 그룹 메뉴 `cdash`(`core.menu_item` sort 15, 문의 관리 다음). 화면 `#v-cdash`·`loadCdash`: 상단 기간 바(P) 그대로, 범위 세그(매장/매장 외/전체 · `localStorage dc_cd_scope`), 묶음(자동=45일 이하 일별·800일 이하 월별·그 위 연별 / 일 / 월), 상담사, 삭제 포함.
   KPI 6장(문의·구매(성공률)·구매 금액(건당)·진행 중(연락 전·상담중·보류)·완료(비구매)·거절) → 그래프 6개(`cdBars` 기간 막대: 연한 문의 위 진한 구매 + 초록 금액 / `cdHBars` 채널·관심 제품·구매 제품(금액순)·담당자·유입경로) → 채널×기간 표(문의 / 구매).
   **제품·금액은 `core.f_consult_stats` 에 넣었다** — `interests`(관심 카테고리, 쉼표 여러 개는 쪼개고 괄호 설명 제거) · `purchases`(구매 제품명 = 연결 주문 품목명 → purchase_item → 관심 모델 → 카테고리 → '(제품 미기록)', 금액 = 연결 주문 같은 주문번호 합계 → 예상 금액) · `total/periods/channels/handlers` 에 `amount`. 시그니처 그대로라 담당자 화면 상담 현황도 같은 함수를 쓴다.

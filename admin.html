@@ -2544,7 +2544,10 @@ function iqGo(f){ f=f||{};
   IQ_FORM=f.form||''; $('iqForm').querySelectorAll('button').forEach(x=>x.classList.toggle('on',(x.dataset.f||'')===IQ_FORM));
   IQ_DRILL={}; ['channel','category','route','purpose'].forEach(k=>{ if(f[k]) IQ_DRILL[k]=f[k]; });
   document.querySelectorAll('#iqCond input:checked').forEach(x=>x.checked=false);
-  if(f.handler){ iqFillHandlers(); const v=f.handler==='미배정'?'(미배정)':f.handler; const c=[...document.querySelectorAll('#iqHandler input')].find(x=>x.value===v); if(c) c.checked=true; }
+  if(f.handler){ iqFillHandlers(); const v=f.handler==='미배정'?'(미배정)':f.handler; let c=[...document.querySelectorAll('#iqHandler input')].find(x=>x.value===v);
+    /* 비활성 담당자(박은지 등)는 목록에 없다 — 대시보드에서 넘어온 이름이면 칸을 만들어 체크한다 */
+    if(!c){ const el=$('iqHandler'); if(el){ el.insertAdjacentHTML('beforeend', `<label class="chk"><input type="checkbox" value="${esc(v)}">${esc(v)}</label>`); c=el.lastElementChild.querySelector('input'); } }
+    if(c) c.checked=true; }
   if(f.status){ const c=[...document.querySelectorAll('#iqStatus input')].find(x=>x.value===f.status); if(c) c.checked=true; }
   if(f.from&&f.to){ P={from:f.from,to:f.to}; PRESET='custom'; $('pFrom').value=P.from; $('pTo').value=P.to; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); periodLabel(); }
   IQ_SHOW='real'; $('iqShow').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.s==='real'));
@@ -2622,8 +2625,9 @@ function iqChecked(id){ const v=[...document.querySelectorAll('#'+id+' input:che
 function iqCondSync(){ const on=!!(iqChecked('iqStatus')||iqChecked('iqHandler')||Object.keys(IQ_DRILL).some(k=>IQ_DRILL[k])); const b=$('iqCondClear'); if(b) b.hidden=!on; }
 function iqCondClear(){ document.querySelectorAll('#iqCond input:checked').forEach(x=>x.checked=false); IQ_DRILL={}; iqDrillRender(); iqCondSync(); loadInquiry(0); }
 function iqFillHandlers(){ const el=$('iqHandler'); if(!el) return; const keep=new Set([...el.querySelectorAll('input:checked')].map(x=>x.value));
-  el.innerHTML=[['(미배정)','미배정']].concat((STAFF||[]).filter(x=>x.active).map(x=>[x.name,x.name]))
-    .map(([v,l])=>`<label class="chk"><input type="checkbox" value="${esc(v)}"${keep.has(v)?' checked':''}>${esc(l)}</label>`).join(''); }
+  const list=[['(미배정)','미배정']].concat((STAFF||[]).filter(x=>x.active).map(x=>[x.name,x.name]));
+  keep.forEach(v=>{ if(!list.some(x=>x[0]===v)) list.push([v,v]); });   /* 체크돼 있던 비활성 담당자는 남긴다 */
+  el.innerHTML=list.map(([v,l])=>`<label class="chk"><input type="checkbox" value="${esc(v)}"${keep.has(v)?' checked':''}>${esc(l)}</label>`).join(''); }
 /* 행을 누르면 전체 내용을 펼쳐 본다 (표는 한 줄로 잘려 있으므로) */
 async function openInquiry(i){
   const r=IQ_ROWS[i]; if(!r) return;
