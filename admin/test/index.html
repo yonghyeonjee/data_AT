@@ -5656,7 +5656,7 @@ function detect(cols){
   if(has('발송일') && ['휴대폰','휴대폰번호','연락처','전화번호'].some(c=>cols.some(x=>x.replace(/\s/g,'')===c))) return 'send_log';
   return null;
 }
-const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)',web_inquiry:'홈페이지 문의 (예비 붙여넣기) → 문의 관리 (연락처+등록일+이름 기준 갱신 · 평소엔 지메일 자동 적재)',sub_plan:'구독 상품 · 요금 → 요금표 · 상담 참고 (요금이 바뀌면 이전 가격은 이력으로)',send_log:'CRM 발송 고객 (센드온 결과 파일 통째로) → 성공은 발송 이력 · 실패는 발송 불가 목록 (둘 다 다음 추출에서 제외)',unpaid_order:'미입금 주문 → 결제 안 한 고객 목록 (발송 대상 추출)',godo_order:'고도몰 주문 원본 (P·AT·S·시흥몰) → 과거 주문 보관함 (CRM 에 필요한 칸만 · 원장에는 아직 안 씀)'};
+const DETECT_LABEL={inv_items:'이카운트 품목 → 재고 품목 마스터',channel_daily:'채널별 일별 매출 → 온라인 채널 (수기 대사표)',settlement:'오픈마켓 정산내역 → 온라인 채널',listing_request:'상품 등록·가격 요청 → 온라인 채널',shoplinker:'샵링커 주문 → 원장 (source=shoplinker)',ecount_sales:'이카운트 판매현황 → 원장 (source=ecount · 채널 VMS · 영업담당 오픈마켓 전표는 제외)',ecount_prospect:'이카운트 가망고객 → 상담',rental:'렌탈 → 원장 (source=rental)',godo_member:'고도몰 회원 → 고객 마스터',store_manual:'매장 일별(Manual) → 일마감',ecount_customer:'이카운트 거래처 → 주문서 거래처 목록',ecount_slip:'이카운트 주문서 현황 → 이미 등록된 주문 표시 (주문No. 기준)',web_inquiry:'홈페이지 문의 (예비 붙여넣기) → 문의 관리 (연락처+등록일+이름 기준 갱신 · 평소엔 지메일 자동 적재)',sub_plan:'구독 상품 · 요금 → 요금표 · 상담 참고 (요금이 바뀌면 이전 가격은 이력으로)',send_log:'CRM 발송 고객 (센드온 결과 파일 통째로) → 성공은 발송 이력 · 실패는 발송 불가 목록 (둘 다 다음 추출에서 제외)',unpaid_order:'미입금 주문 → 결제 안 한 고객 목록 (발송 대상 추출)',godo_order:'고도몰 주문 원본 (P·AT·S·시흥몰) → 과거 주문 보관함 (CRM 에 필요한 칸만 · 원장에는 아직 안 씀)'};
 // 파일 안의 모든 시트를 훑어 인식 가능한 것을 찾는다. 여러 개면 사용자가 고른다.
 let SHEETS=[];
 const CH_NAMES=['P몰','S몰','AT몰','시흥','E스토어','B2B','가전시장','쿠팡','11번가','지마켓','옥션','SSG','현대홈쇼핑','쿠팡이츠','SK스토아','토스쇼핑','롯데온','카카오-관악','카카오-시흥','한퓨어','삼성AT스토어','프라자몰','에스몰','시흥몰'];
@@ -5751,6 +5751,10 @@ function handleFile(file){
 let UPFILE='';
 /* 미입금 목록은 결제상태가 전부 '입금대기' 여야 한다. 고도몰 주문통합리스트(5년치 결제완료 주문)도 열 이름이 같아
    미입금으로 오인식되면 fn_unpaid_upsert 가 기존 미입금 목록을 통째로 내려 버린다 (mvp_170) → 입금대기 아닌 상태가 섞이면 막는다 */
+let EC_OPEN_SKIP=0;
+/* 이카운트 판매현황에 오픈마켓 전표가 섞여 있으면 미리보기에서 알려 준다 (제외하고 올린다) */
+function ecountGuard(u){ if(!u || u.kind!=='ecount_sales' || !EC_OPEN_SKIP) return;
+  $('upDetect').innerHTML += `<div style="margin-top:6px"><b>오픈마켓 전표 ${n(EC_OPEN_SKIP)}줄은 제외</b>하고 올립니다 — 영업담당 '오픈마켓' 전표는 온라인 몰 매출(월 마감)이라 샵링커 원장에 이미 있습니다. VMS 는 나머지 줄만.</div>`; }
 function unpaidGuard(u){
   if(!u || u.kind!=='unpaid_order') return null;
   const rows=mapRows(u); const bad=rows.filter(x=>x.status && !/입금\s*대기|미입금|입금\s*전|결제\s*대기|무통장/.test(x.status));
@@ -5776,7 +5780,7 @@ function useSheet(i, keepPicker){
   $('upBody').innerHTML=mapped.map(r=>'<tr>'+keys.map(k=>`<td>${esc(String(r[k]??'')).slice(0,30)}</td>`).join('')+'</tr>').join('');
   $('upBtn').disabled = (sh.kind==='godo_member' || sh.kind==='godo_order' || sh.kind==='send_log');   // 몰·캠페인명을 넣기 전에는 적재 못 함
   $('upMsg').textContent='';
-  unpaidGuard(UP);
+  unpaidGuard(UP); ecountGuard(UP);
 }
 
 /* 고도몰 회원은 몰을 잘못 고르면 회원번호가 엉뚱한 몰에 박히고 되돌리기 어렵다.
@@ -5860,7 +5864,10 @@ function mapRows(u){
   if(['channel_daily','settlement','listing_request','inv_items'].includes(u.kind)) return d;
   if(u.kind==='shoplinker'){ const seq={}; return d.map(r=>{ const no=str(H(r,'주문번호')); seq[no]=(seq[no]||0)+1; const ch=SHOP_MAP[`${str(H(r,'쇼핑몰'))}|${str(H(r,'쇼핑몰아이디'))}`]||SHOP_MAP[`${str(H(r,'쇼핑몰'))}|*`]||`${str(H(r,'쇼핑몰'))}|오픈마켓`; const [cn,ct]=ch.split('|'); const st=str(H(r,'배송상태')); const gross=Number(H(r,'주문금액'))||0; const refund=REFUND_STATES.some(s=>st.includes(s))?gross:0;
     return {order_no:no,line_no:seq[no],order_at:excelDate(H(r,'주문일자')),channel_type:ct,channel_name:cn,channel_account:str(H(r,'쇼핑몰아이디')),status:st,product_code:str(H(r,'상품코드')),model_code:str(H(r,'모델명')).toUpperCase()||null,product_name:str(H(r,'주문 상품명','자사 상품명')),option_text:str(H(r,'옵션')),qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'쇼핑몰 판매가'))||null,gross_amount:gross,refund_amount:refund,payment_method:str(H(r,'결제')),customer_name:str(H(r,'주문자명')),customer_phone:str(H(r,'주문자연락처2'))||str(H(r,'주문자연락처1')),email:str(H(r,'주문자이메일주소')),address:str(H(r,'수취인 주소')),notes:str(H(r,'클레임여부')).replace(/\n/g,' ').slice(0,80)||null,alt_order_no:str(H(r,'자사주문번호'))||null,tracking_no:str(H(r,'송장번호','운송장번호','택배송장번호','배송번호'))||null,shipped_at:excelDate(H(r,'발송완료일','_송장등록일','송장등록일','발송일'))||null,cancelled_at:excelDate(H(r,'취소완료일','취소일','취소일자','반품완료일','클레임일','클레임일자'))||null}; }); }
-  if(u.kind==='ecount_sales'){ const seq={}; return d.filter(r=>/^\d{8}-\d+/.test(str(H(r,'일자-No.')))).map(r=>{ const no=str(H(r,'일자-No.')); seq[no]=(seq[no]||0)+1; const biz=str(H(r,'거래처명')); const rep=str(H(r,'대표자명')).replace(/ /g,'');
+  if(u.kind==='ecount_sales'){ const seq={};
+    /* 영업담당 '오픈마켓' 전표 = 온라인 몰 매출의 월 마감 전표 — 샵링커 원장에 이미 있으므로 VMS 로 넣지 않는다 (mvp_177). 서버(f_orders_bulk_upsert)도 같은 규칙으로 막는다 */
+    EC_OPEN_SKIP = d.filter(r=>/^\d{8}-\d+/.test(str(H(r,'일자-No.'))) && /^오픈마켓/.test(str(H(r,'영업담당명')))).length;
+    return d.filter(r=>/^\d{8}-\d+/.test(str(H(r,'일자-No.'))) && !/^오픈마켓/.test(str(H(r,'영업담당명')))).map(r=>{ const no=str(H(r,'일자-No.')); seq[no]=(seq[no]||0)+1; const biz=str(H(r,'거래처명')); const rep=str(H(r,'대표자명')).replace(/ /g,'');
     return {order_no:no,line_no:seq[no],order_at:excelDate(no.slice(0,8)),channel_type:'VMS',channel_name:'VMS',status:'결제완료',product_name:str(H(r,'품목명(규격)')),qty:Number(H(r,'수량'))||1,unit_price:Number(H(r,'단가'))||null,supply_amount:Number(H(r,'공급가액'))||null,vat_amount:Number(H(r,'부가세'))||null,gross_amount:Number(H(r,'합계'))||((Number(H(r,'공급가액'))||0)+(Number(H(r,'부가세'))||0)),customer_name:biz,customer_phone:str(H(r,'모바일')).replace(/ /g,'')||str(H(r,'일반전화')).replace(/ /g,''),address:str(H(r,'주소2')).replace(/ /g,''),account_type:rep&&rep!==biz?'business':'personal',handler:str(H(r,'판매담당자','판매담당')).replace(/ /g,'')||null,device_model:str(H(r,'사용기종')).replace(/^\.$/,'')||null,notes:str(H(r,'영업담당명'))?'영업:'+str(H(r,'영업담당명')):null}; }); }
   if(u.kind==='ecount_prospect'){ return d.filter(r=>str(H(r,'일자-No.'))).map(r=>{ const ref=str(H(r,'일자-No.')); return {source_ref:ref,consult_at:excelDate(ref.split(' ')[0]),customer_name:str(H(r,'고객명')),phone:str(H(r,'연락처')),handler:str(H(r,'상담사명')),inflow_route:str(H(r,'유입경로명')),interest_category:str(H(r,'관심 품목명')),interest_model_code:str(H(r,'관심 품목코드'))||null,purchase_item:str(H(r,'구매 품목명')),result:str(H(r,'결과명')),membership_status:str(H(r,'멤버쉽명')),expected_amount:Number(H(r,'예상금액'))||null,expected_purchase_date:excelDate(H(r,'구매예정일')),content:str(H(r,'상담내용')),notes:[str(H(r,'구분명')),str(H(r,'비고'))].filter(Boolean).join(' / ')||null}; }); }
   if(u.kind==='rental'){ return d.filter(r=>str(H(r,'계약번호'))).map(r=>({order_no:str(H(r,'계약번호')),line_no:1,order_at:excelDate(H(r,'청구시작일')),channel_type:'렌탈',channel_name:'렌탈',status:'결제완료',product_name:str(H(r,'항목','계약명')),qty:1,gross_amount:Number(H(r,'금액'))||0,payment_method:str(H(r,'유형')),customer_name:str(H(r,'거래처')),customer_phone:str(H(r,'모바일','휴대폰','연락처')).replace(/\D/g,'')||null,account_type:'business',notes:str(H(r,'청구종료일'))?'청구 ~'+excelDate(H(r,'청구종료일')):null})); }
