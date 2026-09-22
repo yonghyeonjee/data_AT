@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-22 · v148)
+## 지금 상태 (2026-09-22 · v149)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -471,6 +471,11 @@ end $outer$;
   원장 모드의 매장 일시불·구독은 이제 **판매 입력(`core.orders` store, 취소·환불·테스트 제외, 매출+판매완료)** 에서, 그날 그 구분의 판매 입력이 없을 때만 store_daily 로(8월 시트 자료). 직판은 두 모드 다 store_daily. 수기입력 모드는 그대로.
   **일 마감의 '판매완료 합계'는 저장 시점 snapshot 이라 대시보드 원천으로 쓰면 안 된다.**
   **기본 모드를 원장으로 바꿨다 (v114)** — `/dash/` `dashBasis()` 는 `?mode=manual` 이나 sessionStorage 가 manual 일 때만 수기입력, 관리자 `DASH_BASIS` 기본 'ledger'(localStorage `dash_basis` 로 바꾼 사람은 그대로). 테스트 `ptest/dashmode.mjs` D1~D3.
+- **문의가 들어올 때 고객이 고른 것으로 문의 유형 자동 선택 (mvp_179 · v149 · 2026-09-22)** — "문의 들어올때, 고객이 선택했던 내용을 기반으로 자동 선택되게". 구독 폼 `raw_payload.purchasePurpose`(신규구독·이사·입주·가전교체·혼수·신혼·기타·사전예약·사업자·B2B·자급제구매) → `core.f_inq_types_from_form(raw_payload)`:
+  늘 `subscribe` + **혼수·신혼 → wedding** + **이사·입주 → moving**(폼이 이사와 입주를 안 가르므로 `pageUrl` 에 `evt=movein|newhome` 가 있을 때만 movein). 대표 `type_code` 는 `core.f_inq_type_main`(혼수 > 입주 > 이사 > 첫째).
+  `fn_submit_inquiry` 가 새 접수에 넣고, **시트 수정 재전송(on conflict)은 이미 있는 `type_codes` 를 덮지 않는다**(담당자가 화면에서 바꾼 것 보존). 옛 web_subscription 65건 backfill: 구독 43 · 구독+이사 17 · 구독+혼수 5. 구매 목적(`f_consult_purpose`)은 폼 값이 우선이라 통계는 그대로(이사·입주 17 · 혼수·신혼 5).
+  폼에는 날짜 칸이 없어 결혼 예정일·희망 배송일·증빙은 비어 들어온다 — 담당자가 [＋ 새 상담] 으로 이어 적을 때 `csLoadFromConsult` 가 `fn_store_consult_detail` 의 `type_codes`·`events`·`delivery_at`·`proof_*` 를 폼에 미리 채우고 토스트로 알린다(이전 상담에서 이어 갈 때도 같음).
+  방문 접수(`crm.submission.visit_purpose` = 구경·이벤트·휴대폰)·홈페이지 문의 메일에는 혼수·입주·이사 항목이 없어 손대지 않았다. 롤백 테스트는 트랜잭션 안에서 `gas_forward` 해시를 임시로 바꿔 호출(raise 로 되돌림 — 해시·테스트 줄 안 남음). 테스트 `ptest/tyx.mjs` T7 (16/16), UAT 4조합, grid.
 - **상담 입력 문의 유형 — 여러 개 · 혼수/입주/이사 (mvp_178 · v148 · 2026-09-22)** — "실제 담당자들은 일반 상품(일시불), 구독, 혼수, 입주, 이사에 따라 다르게 상담을 진행함". `core.inq_type` 에서 **일시불 문의(onetime) 끔**(상품 문의로 충분), **혼수(wedding)·입주(movein)·이사(moving)** 추가 — 표에 `date_label`(결혼 예정일·입주일·이사일)·`needs_proof` 열이 있어 화면은 `fn_inq_codes` 의 `types[].date_label/proof` 만 보고 칸을 만든다(유형을 더 넣을 때도 이 표 한 줄).
   **칩은 여러 개 고른다**(`C_TYS[]`, 기본 상품 문의; 예: 구독 + 혼수, 혼수 + 입주). 저장은 `type_codes text[]` 전부 + `type_code` 는 대표 하나(**혼수 > 입주 > 이사 > 첫째** — 통계·문의 관리의 구매 목적이 여기서 나온다: `f_consult_purpose` wedding→'혼수·신혼', movein/moving→'이사·입주' = 구독 폼 값과 같은 묶음). 목록의 문의 유형 태그는 `core.f_inq_type_label(type_codes, type_code)` = '상품 문의 · 혼수 · 입주'.
   **고른 유형에 따라 칸이 늘고 준다** (`#c_tyx`, `renderTypeExtra`) — 혼수·입주·이사 중 하나라도 있으면 문의 유형 바로 아래 **증빙 여부** 세그(가능 · 불가능 · 추후 가능→날짜 `proof_at`) → 유형별 날짜(결혼 예정일 `event_dates.wedding` · 입주일 `movein` · 이사일 `moving`, 각각 필수) → **희망 배송일** `delivery_at`(혼수는 필수, 나머지는 선택). 적어 둔 값은 칩을 바꿔 다시 그려도 남는다(`C_EV`). 서버(`fn_store_consult_submit`)가 같은 규칙으로 다시 검사하고 고르지 않은 유형의 날짜는 버린다.
