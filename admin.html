@@ -1179,7 +1179,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       <div class="view hidden" id="v-orders">
         <div class="card">
           <div class="filters">
-            <select class="in" id="oSrc" onchange="loadOrders(0)" title="데이터 출처"><option value="">전체 출처</option><option value="shoplinker" title="샵링커로 들어온 온라인 몰 주문">온라인</option><option value="ecount">이카운트(VMS)</option><option value="rental">렌탈</option><option value="store">매장 입력</option></select>
+            <select class="in" id="oSrc" onchange="loadOrders(0)" title="데이터 출처"><option value="">전체 출처</option><option value="shoplinker" title="샵링커로 들어온 온라인 몰 주문">온라인</option><option value="godo_hist" title="고도몰 4몰 과거 주문 (2021 ~ 2025-08 · 샵링커 이전)">고도몰 과거</option><option value="ecount">이카운트(VMS)</option><option value="rental">렌탈</option><option value="store">매장 입력</option></select>
             <select class="in" id="oCh" onchange="loadOrders(0)"><option value="">전체 구분</option><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select>
             <select class="in" id="oChName" onchange="loadOrders(0)" title="채널"><option value="">전체 채널</option></select>
             <select class="in" id="oSt" onchange="loadOrders(0)" title="상태"><option value="">전체 상태</option><option value="normal">정상</option><option value="refund">환불 있음</option></select>
@@ -1189,7 +1189,17 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <button class="btn ghost" onclick="resetOrders()">초기화</button>
             <select class="in" id="oSort" onchange="loadOrders(0)" title="정렬">
               <option value="date_desc">최신순</option><option value="date_asc">오래된순</option>
-              <option value="amt_desc">금액 높은순</option><option value="amt_asc">금액 낮은순</option></select>
+              <option value="amt_desc">순매출 높은순</option><option value="amt_asc">순매출 낮은순</option>
+              <optgroup label="머리글을 눌러도 됩니다 (검색된 전체를 정렬 · 1쪽부터)">
+              <option value="gross_desc">매출 높은순</option><option value="gross_asc">매출 낮은순</option>
+              <option value="refund_desc">환불 큰순</option><option value="refund_asc">환불 작은순</option>
+              <option value="qty_desc">수량 많은순</option><option value="qty_asc">수량 적은순</option>
+              <option value="channel_asc">채널 ㄱ→ㅎ</option><option value="channel_desc">채널 ㅎ→ㄱ</option>
+              <option value="kind_asc">구분 ㄱ→ㅎ</option><option value="kind_desc">구분 ㅎ→ㄱ</option>
+              <option value="customer_asc">고객 ㄱ→ㅎ</option><option value="customer_desc">고객 ㅎ→ㄱ</option>
+              <option value="product_asc">상품 ㄱ→ㅎ</option><option value="product_desc">상품 ㅎ→ㄱ</option>
+              <option value="status_asc">상태 ㄱ→ㅎ</option><option value="status_desc">상태 ㅎ→ㄱ</option>
+              <option value="handler_asc">담당 ㄱ→ㅎ</option><option value="handler_desc">담당 ㅎ→ㄱ</option></optgroup></select>
             <label class="switch" id="oUnmask" onclick="this.classList.toggle('on');loadOrders(0)"><span class="sw"></span>실번호 표시</label>
             <span style="flex:1"></span>
             <button class="btn ghost" onclick="openOrderModal()">+ 수동 등록</button>
@@ -6661,8 +6671,10 @@ boot();
    · 서버가 쪽 단위로 잘라 주는 표(주문서 등)는 머리글을 누르면 서버 정렬을 바꾸고 1쪽부터 다시 불러온다
    · 그 밖의 표는 지금 화면에 보이는 행만 오름/내림차순으로 정렬한다                                   */
 const SRV_SORT={
-  tbOrders:{ sel:'oSort', reload:()=>loadOrders(0),
-             cols:{0:['date_asc','date_desc'], 7:['amt_asc','amt_desc'], 9:['amt_asc','amt_desc']} }
+  tbOrders:{ sel:'oSort', reload:()=>loadOrders(0), firstDesc:[0,6,7,8,9],   /* 날짜·숫자 열은 첫 클릭이 내림차순 */
+             cols:{0:['date_asc','date_desc'], 1:['kind_asc','kind_desc'], 2:['channel_asc','channel_desc'], 3:['customer_asc','customer_desc'],
+                   5:['product_asc','product_desc'], 6:['qty_asc','qty_desc'], 7:['gross_asc','gross_desc'], 8:['refund_asc','refund_desc'],
+                   9:['amt_asc','amt_desc'], 10:['handler_asc','handler_desc'], 11:['status_asc','status_desc']} }
 };
 (function(){
   const num=t=>{ const s=String(t).replace(/[,\s원%개건명]/g,''); if(s==='' || s==='-' || s==='—') return null; const v=Number(s); return isNaN(v)?null:v; };
@@ -6673,10 +6685,11 @@ const SRV_SORT={
     const label=th.textContent.trim(); if(!label) return;
     const tbody=table.tBodies[0]; if(!tbody) return;
     const idx=[...th.parentNode.children].indexOf(th);
-    const dir = th.classList.contains('sort-asc') ? 'desc' : 'asc';
+    const srv=SRV_SORT[tbody.id];
+    const first = (srv && (srv.firstDesc||[]).includes(idx)) ? 'desc' : 'asc';
+    const dir = th.classList.contains('sort-asc') ? 'desc' : th.classList.contains('sort-desc') ? 'asc' : first;
     const mark=()=>{ table.querySelectorAll('th').forEach(x=>x.classList.remove('sort-asc','sort-desc')); th.classList.add('sort-'+dir); };
     /* 서버가 쪽을 나눠 주는 표 : 보이는 50행만 뒤집으면 뜻이 없으므로 서버 정렬을 바꾸고 1쪽부터 다시 부른다 */
-    const srv=SRV_SORT[tbody.id];
     if(srv){
       const pair=srv.cols[idx]; if(!pair) return;
       mark();
