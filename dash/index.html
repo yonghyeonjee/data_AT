@@ -339,6 +339,21 @@ body.pres .stepbar{display:flex}
 .cvhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .cvhead .big{font-size:clamp(24px,3vw,34px);font-weight:800;letter-spacing:-.04em}
 .mrow{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--rule-soft);font-size:13.5px}
+/* 접는 카드 — 카드 머리를 누르면 본문이 접힌다. 다 펼쳐 놓으면 발표 때 스크롤만 길다 (2026-09-22) */
+.card.fold>.card-h{cursor:pointer;user-select:none;min-height:40px;align-items:center;padding-bottom:6px}
+.card.fold>.card-h::after{content:'▾ 접기';margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+.card.fold.folded>.card-h::after{content:'▸ 펼치기'}
+.card.fold.folded>.card-h{padding-bottom:14px}
+.card.fold.folded>.card-b{display:none}
+.card.fold.folded{align-self:start}   /* 접힌 카드는 옆 카드 높이만큼 늘어나지 않는다 */
+.kpi .sub{display:block;font-family:var(--mono);font-size:11.5px;margin-top:5px;color:var(--muted)}
+.kpi .sub.up{color:var(--teal)}.kpi .sub.down{color:var(--red)}
+.mnav{display:inline-flex;align-items:center;gap:6px;margin-left:8px}
+.mnav button{font-family:var(--sans);min-width:40px;height:40px;padding:0 12px;border:1px solid var(--rule);background:#fff;border-radius:8px;font-weight:700;cursor:pointer;color:var(--ink)}
+.mnav button:hover{border-color:var(--navy);color:var(--navy)}.mnav button:disabled{opacity:.3;cursor:default}
+.mnav .pos{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#cvr-sub .rk-sub{margin-left:0;border-left:0;padding-left:0}
+.rk.cat.on{background:var(--navy-soft)}
 .mrow:last-child{border-bottom:0}
 .mrow .m{font-family:var(--mono);font-size:12.5px;color:var(--muted);width:52px;flex-shrink:0}
 .mrow .t{flex:1;height:11px;background:var(--rule-soft);border-radius:3px;overflow:hidden}
@@ -611,9 +626,9 @@ body{background:
       <div class="card-b"><div class="facts" id="facts"></div></div>
     </div>
     <div class="card sp12">
-      <div class="card-h"><h2>채널별 성적표</h2><span class="note">행을 누르면 채널 상세 · 다시 누르면 해제</span></div>
+      <div class="card-h"><h2 id="strip-title">채널별 성적표</h2><span class="note" id="strip-note">행을 누르면 채널 상세 · 다시 누르면 해제</span></div>
       <div class="card-b">
-        <table class="tbl"><thead><tr>
+        <table class="tbl"><thead id="strip-head"><tr>
           <th class="l">채널</th><th>선택 기간</th><th class="hide-s">전기 대비</th>
           <th class="hide-s">비중</th><th class="hide-s">환불율</th>
         </tr></thead><tbody id="strip"></tbody></table>
@@ -633,8 +648,8 @@ body{background:
         <div class="moreline"><button id="pmore">더 보기</button></div>
       </div>
     </div>
-    <div class="card sp12">
-      <div class="card-h"><h2>월 × 채널 매트릭스</h2><span class="note">단위 백만원 · 채널명을 누르면 상세</span></div>
+    <div class="card sp12 fold" data-fk="d_mx" data-open="0">
+      <div class="card-h"><h2 id="mx-title">월 × 채널 매트릭스</h2><span class="note" id="mx-note">단위 백만원 · 채널명을 누르면 상세</span></div>
       <div class="card-b"><div class="mx-scroll"><table class="mx"><thead id="mxhead"></thead><tbody id="mxbody"></tbody></table></div></div>
     </div>
   </div>
@@ -841,6 +856,12 @@ function cmpRange(){
     const lo=idxOf(s1,1),hi=idxOf(e1,-1);
     if(hi<lo||DAYS[lo]>e1)return null;
     return {lo:lo,hi:hi,label:'전년 동기'};}
+  if(preset==='ty'||preset==='ly'){   /* 올해 → 전년 같은 기간(1/1~오늘) · 작년 → 전전년 */
+    const s1=shiftYear(s,-1),e1=shiftYear(e,-1);
+    if(e1<firstD)return null;
+    const lo=idxOf(s1,1),hi=idxOf(e1,-1);
+    if(hi<lo||DAYS[lo]>e1)return null;
+    return {lo:lo,hi:hi,label:preset==='ty'?'전년 같은 기간':'전전년'};}
   if(preset==='yd'){const i=exactIdx(shift(s,-7));if(i>=0)return {lo:i,hi:i,label:'전주 동요일'};}
   if(preset==='tw'||preset==='lw'){
     const ps=shift(weekStart(s),-7),pe=shift(ps,len);
@@ -870,9 +891,13 @@ function buildControls(){
     ['d90','최근 90일',()=>setRange(idxOf(shift(lastD,-89),1),lastA,'d90')],
     ['tm','이번 달',()=>{const m=lastD.slice(0,7);if(mB[m])setRange(mB[m].lo,lastA,'tm');}],
     ['lm','지난 달',()=>{const i=months.indexOf(lastD.slice(0,7))-1;if(i>=0)setMonth(months[i],'lm');}],
+    ['ty','올해',()=>{const y=lastD.slice(0,4);setRange(idxOf(y+'-01-01',1),lastA,'ty');}],
+    ['ly','작년',()=>{const y=String(+lastD.slice(0,4)-1);setRange(idxOf(y+'-01-01',1),idxOf(y+'-12-31',-1),'ly');}],
   ];
   $('#presets').innerHTML=P.map(p=>'<button data-k="'+p[0]+'">'+p[1]+'</button>').join('');
   $('#presets').querySelectorAll('button').forEach((el,i)=>el.onclick=P[i][2]);
+  { const ly=String(+lastD.slice(0,4)-1), bt=$('#presets button[data-k="ly"]');   /* 작년 자료가 아예 없으면 잠근다 */
+    if(firstD.slice(0,4)>ly){ bt.disabled=true; bt.title='작년 자료가 없습니다 ('+dot(firstD)+' 부터)'; } }
   $('#monthchips').innerHTML=months.slice(-13).map(m=>'<button data-k="m'+m+'">'+m.slice(2,4)+'.'+m.slice(5)+'</button>').join('');
   $('#monthchips').querySelectorAll('button').forEach(el=>el.onclick=()=>setMonth(el.dataset.k.slice(1),el.dataset.k));
   $('#scope').querySelectorAll('button').forEach(el=>el.onclick=()=>setScope(el.dataset.s));
@@ -882,7 +907,7 @@ $('#d1').onchange=$('#d2').onchange=function(){
   setRange(idxOf($('#d1').value||firstD,1),idxOf($('#d2').value||lastD,-1),'custom');};
 
 /* ===== 필터 해제 ===== */
-function clearFocus(){focus=null;wfTab='ch';dirtyC=true;render();if(view==='c')renderCV();}
+function clearFocus(){focus=null;cvCatOpen=null;wfTab='ch';dirtyC=true;render();if(view==='c')renderCV();}
 function setScope(v){
   if(v==='pick'){openChPick();return;}
   SEL=new Set(CH.map((c,i)=>i).filter(i=>v==='all'?true:v==='off'?isOff(i):!isOff(i)));
@@ -1600,6 +1625,26 @@ function openPr(pid){
 function drawFacts(){
   const key=mkey(),F=[],nm=new Set();
   for(let i=a;i<=b;i++)nm.add(DAYS[i].slice(0,7));
+  if(focus!==null){   /* 몰 필터 → 그 몰의 팩트 (1위 채널·집중도 대신 카테고리·상품) */
+    const ci=focus, o=cur.byCh[ci], po=prv?prv.byCh[ci]:null, mc=mallCats(ci);
+    const byDay=new Array(b-a+1).fill(0); for(const c of CELLS){ if(c[1]!==ci||c[0]<a||c[0]>b)continue; byDay[c[0]-a]+=val(c); }
+    const bestI=byDay.reduce((bi,v,i)=>v>byDay[bi]?i:bi,0);
+    F.push([mname()+' ('+esc(CH[ci].name)+')','<span class="v">'+won(o[key])+'</span>',cur.days+'일 · '+nm.size+'개월']);
+    F.push(['월평균','<span class="v">'+won(o[key]/nm.size)+'</span>',nm.size+'개월 기준']);
+    if(po)F.push(['전기 대비','<span class="v '+(o[key]>=po[key]?'up':'down')+'">'+(o[key]>=po[key]?'+':'')+((o[key]-po[key])/Math.abs(po[key]||1)*100).toFixed(1)+'<small>%</small></span>',cmp.label+' '+wonS(po[key])]);
+    F.push(['총매출 · 환불','<span class="v sm">'+wonS(o.g)+' <span style="color:#B3261E">−'+wonS(o.r)+'</span></span>','환불율 '+pct(o.r,o.g).toFixed(1)+'%']);
+    if(o.o>0)F.push(['주문 · 객단가','<span class="v sm">'+o.o.toLocaleString()+'건</span>',wonS(o[key]/o.o)]);
+    if(o.b>0&&CH[ci].group!=='오픈마켓')F.push(['구매 고객','<span class="v sm">'+o.b.toLocaleString()+'명·일</span>','신규 '+o.nb.toLocaleString()+' · 재구매 '+pct(o.b-o.nb,o.b).toFixed(0)+'%']);
+    if(mc.rows[0])F.push(['1위 카테고리','<span class="v sm">'+esc(mc.rows[0].c)+'</span>',wonS(mc.rows[0].v)+' · '+pct(mc.rows[0].v,mc.tot).toFixed(0)+'%']);
+    if(mc.rows.length)F.push(['상위 3개 집중도','<span class="v">'+pct(mc.rows.slice(0,3).reduce((s,x)=>s+x.v,0),mc.tot).toFixed(0)+'<small>%</small></span>',mc.rows.slice(0,3).map(x=>esc(x.c)).join(' · ')]);
+    F.push(['최고 매출일','<span class="v sm">'+DAYS[a+bestI].slice(5).replace('-','/')+'</span>',wonS(byDay[bestI])]);
+    if(mc.pp){ const dd=Object.keys(mc.pa.byP).map(id=>({id:+id,d:mc.pa.byP[id][key]-((mc.pp.byP[id]||{})[key]||0)}))
+        .concat(Object.keys(mc.pp.byP).filter(id=>!mc.pa.byP[id]).map(id=>({id:+id,d:-mc.pp.byP[id][key]}))).sort((x,y)=>y.d-x.d);
+      if(dd.length){ F.push(['최대 증가 상품','<span class="v sm up">'+esc(PR[dd[0].id][0])+'</span>','+'+wonS(dd[0].d)+' · '+esc(PR[dd[0].id][1]).slice(0,28)]);
+        const w=dd[dd.length-1]; F.push(['최대 감소 상품','<span class="v sm down">'+esc(PR[w.id][0])+'</span>','−'+wonS(Math.abs(w.d))+' · '+esc(PR[w.id][1]).slice(0,28)]); } }
+    $('#facts').innerHTML=F.map(f=>'<div class="fact"><span class="k">'+f[0]+'</span>'+f[1]+'<span class="d">'+f[2]+'</span></div>').join('');
+    $('#ft-note').textContent=(cmp?'비교 '+cmp.label+' ('+dot(DAYS[cmp.lo])+'–'+dot(DAYS[cmp.hi])+')':'비교 기간 없음')+' · '+CH[ci].name+'만';
+    return; }
   const ranked=CH.map((c,i)=>({n:c.name,v:cur.byCh[i][key],i:i})).filter(x=>inScope(x.i)&&x.v!==0).sort((x,y)=>y.v-x.v);
   const top3=ranked.slice(0,3).reduce((s,x)=>s+x.v,0);
   const bestI=cur.byDay.reduce((bi,d,i)=>d[key]>cur.byDay[bi][key]?i:bi,0);
@@ -1618,8 +1663,35 @@ function drawFacts(){
       F.push(['최대 감소','<span class="v sm down">'+esc(dd[dd.length-1].n)+'</span>','−'+wonS(Math.abs(dd[dd.length-1].d))]);}}
   $('#facts').innerHTML=F.map(f=>'<div class="fact"><span class="k">'+f[0]+'</span>'+f[1]+'<span class="d">'+f[2]+'</span></div>').join('');
   $('#ft-note').textContent=cmp?'비교 '+cmp.label+' ('+dot(DAYS[cmp.lo])+'–'+dot(DAYS[cmp.hi])+')':'비교 기간 없음';}
+/* 몰 하나의 카테고리 집계 (지금 기간 · 비교 기간) — prodAgg 는 a,b 를 보므로 비교 기간은 잠시 바꿔 잰다 */
+function mallCats(ci){
+  const key=mkey(), pa=prodAgg(false,ci); let pp=null;
+  if(prv){ const sa=a,sb=b; a=cmp.lo; b=cmp.hi; pp=prodAgg(false,ci); a=sa; b=sb; }
+  const rows=Object.keys(pa.byCat).map(c=>({c:c,v:pa.byCat[c][key],q:pa.byCat[c].q,n:pa.byCat[c].cnt.size,
+    p:(pp&&pp.byCat[c])?pp.byCat[c][key]:(pp?0:null)})).filter(x=>x.v!==0).sort((x,y)=>y.v-x.v);
+  return {rows:rows, tot:rows.reduce((s,x)=>s+Math.max(0,x.v),0)||1, pa:pa, pp:pp};
+}
 function drawStrip(){
   const key=mkey();
+  if(focus!==null){   /* 몰 필터 → 카테고리별 성적표 */
+    const mc=mallCats(focus), nm=CH[focus].name;
+    $('#strip-title').textContent=nm+' · 카테고리별 성적표';
+    $('#strip-note').textContent='카테고리를 누르면 아래 상품 목록이 그 카테고리로 걸러집니다';
+    $('#strip-head').innerHTML='<tr><th class="l">카테고리</th><th>선택 기간</th><th class="hide-s">전기 대비</th><th class="hide-s">비중</th><th class="hide-s">판매 개수</th></tr>';
+    if(!mc.rows.length){ $('#strip').innerHTML='<tr><td colspan="5"><div class="empty">샵링커 상품 데이터가 없는 채널입니다</div></td></tr>'; return; }
+    $('#strip').innerHTML=mc.rows.map(x=>{
+      let d='<span class="c-d flat">–</span>';
+      if(x.p!==null&&x.p!==0){const pp=(x.v-x.p)/Math.abs(x.p)*100; d='<span class="c-d '+(Math.abs(pp)<0.5?'flat':pp>0?'up':'down')+'">'+(pp>=0?'+':'')+pp.toFixed(0)+'%</span>';}
+      else if(x.p===0&&x.v>0)d='<span class="c-d up">신규</span>';
+      return '<tr data-cat="'+esc(x.c)+'"'+(pCat===x.c?' class="on"':'')+'><td><span class="c-name">'+esc(x.c)+'</span><span class="c-grp">'+x.n+'종</span></td>'
+        +'<td class="c-num">'+wonS(x.v)+'</td><td class="hide-s" style="text-align:right">'+d+'</td>'
+        +'<td class="hide-s"><div class="sharebar"><i style="width:'+Math.min(100,Math.max(0,pct(x.v,mc.tot)))+'%"></i></div><span class="pct">'+pct(x.v,mc.tot).toFixed(1)+'%</span></td>'
+        +'<td class="hide-s c-num">'+x.q.toLocaleString()+'개</td></tr>';}).join('');
+    $('#strip').querySelectorAll('tr').forEach(tr=>tr.onclick=()=>{ const c=tr.dataset.cat; pCat=(pCat===c)?null:c; pMall=focus; pLimit=30; drawPList(); drawAbar(); drawStrip(); });
+    return; }
+  $('#strip-title').textContent='채널별 성적표';
+  $('#strip-note').textContent='행을 누르면 채널 상세 · 다시 누르면 해제';
+  $('#strip-head').innerHTML='<tr><th class="l">채널</th><th>선택 기간</th><th class="hide-s">전기 대비</th><th class="hide-s">비중</th><th class="hide-s">환불율</th></tr>';
   const tot=CH.reduce((s,c,i)=>s+(inScope(i)?cur.byCh[i][key]:0),0);
   const idx=CH.map((c,i)=>i).filter(inScope).sort((x,y)=>cur.byCh[y][key]-cur.byCh[x][key]);
   $('#strip').innerHTML=idx.map(i=>{
@@ -1677,6 +1749,27 @@ document.querySelectorAll('#prows').forEach(tb=>tb.closest('table').querySelecto
 $('#psearch').addEventListener('input',function(){pQ=this.value.trim();pLimit=30;drawPList();drawAbar();});
 $('#pmore').onclick=()=>{pLimit+=50;drawPList();};
 function drawMx(){
+  if(focus!==null){   /* 몰 필터 → 월 × 카테고리 (그 몰 안에서만) */
+    const nm=CH[focus].name, key=mkey();
+    $('#mx-title').textContent='월 × 카테고리 · '+nm; $('#mx-note').textContent='단위 백만원 · '+nm+' 안에서만';
+    if(!NP){ $('#mxhead').innerHTML=''; $('#mxbody').innerHTML='<tr><td><div class="empty">상품 데이터 없음</div></td></tr>'; return; }
+    const ms=months, mi={}; ms.forEach((m,i)=>mi[m]=i);
+    const per={}, tot={};
+    for(const c of PC){ if(c[1]!==focus)continue; const j=mi[pmOf(c[0])]; if(j===undefined)continue;
+      const cat=PR[c[2]][2]; if(!per[cat])per[cat]=ms.map(()=>0); const v=metric==='g'?c[4]:metric==='r'?c[5]:(c[4]-c[5]);
+      per[cat][j]+=v; tot[cat]=(tot[cat]||0)+v; }
+    const ord=Object.keys(per).sort((x,y)=>tot[y]-tot[x]);
+    const mx=Math.max(1,...ord.flatMap(c=>per[c]));
+    $('#mxhead').innerHTML='<tr><th class="l">카테고리</th>'+ms.map(m=>'<th>'+parseInt(m.slice(5),10)+'월</th>').join('')+'<th>누적</th></tr>';
+    $('#mxbody').innerHTML=ord.map(c=>'<tr><td class="l">'+esc(c)+'</td>'
+      +per[c].map(v=>{const t=Math.pow(Math.max(v,0)/mx,.45);
+        const bg=metric==='r'?'rgba(179,38,30,'+(t*.78).toFixed(3)+')':'rgba(20,40,160,'+(t*.8).toFixed(3)+')';
+        return '<td><span class="cell" style="background:'+bg+';color:'+(t>.48?'#fff':'#0E1116')+'">'+(mil(v)||'<span style="color:#C2C8D2">·</span>')+'</span></td>';}).join('')
+      +'<td><span class="cell" style="font-weight:700;background:#EEF1F6">'+mil(tot[c])+'</span></td></tr>').join('')
+      +'<tr class="tot"><td class="l">'+esc(nm)+'</td>'+ms.map((m,j)=>'<td><span class="cell">'+mil(ord.reduce((s,c)=>s+per[c][j],0))+'</span></td>').join('')
+      +'<td><span class="cell">'+mil(ord.reduce((s,c)=>s+tot[c],0))+'</span></td></tr>';
+    return; }
+  $('#mx-title').textContent='월 × 채널 매트릭스'; $('#mx-note').textContent='단위 백만원 · 채널명을 누르면 상세';
   const ms=months,per=CH.map(()=>ms.map(()=>({g:0,r:0,n:0})));
   const mi={};ms.forEach((m,i)=>mi[m]=i);
   for(const c of CELLS){const j=mi[DAYS[c[0]].slice(0,7)];if(j===undefined)continue;
@@ -1699,7 +1792,7 @@ function drawMx(){
 
 function renderDetail(){
   if(!dirtyDetail)return;
-  drawFacts();drawStrip();drawPList();drawMx();
+  drawFacts();drawStrip();drawPList();drawMx();bindFolds($('#view-d'));
   dirtyDetail=false;}
 
 /* ===== 인사이트 ===== */
@@ -1815,25 +1908,43 @@ function renderCV(){
   let dTxt='비교 기간 없음',dCls='flat';
   if(p!==null&&p!==0){const pp=(o[key]-p)/Math.abs(p)*100;
     dTxt=(pp>=0?'▲ +':'▼ ')+pp.toFixed(1)+'% (전기 '+wonS(p)+')';dCls=Math.abs(pp)<0.5?'flat':pp>0?'up':'down';}
-  const K=[['순매출',won(o.n),'accent'],['총매출',won(o.g),''],['환불',(exempt?'—':'−'+won(o.r)),exempt?'dim':'neg'],
-    ['환불율',exempt?'—':(miss?'미기록':rr.toFixed(1)+'<small>%</small>'),miss?'dim':''],
-    ['일평균',won(o[key]/cur.days),''],['전체 비중',pct(o[key],tot).toFixed(1)+'<small>%</small>','']];
-  if(o.o>0){K.push(['주문 건수',o.o.toLocaleString()+'<small>건</small>','']);
-            K.push(['객단가',won(o[key]/o.o),'']);}
-  /* 신규 vs 재구매 (2026-09-19) — 고객×구매일 단위. 오픈마켓은 안심번호라 식별 불가 */
+  /* 몰 발표용 KPI (2026-09-22) — 매출·주문·개수·고객이 한 줄, 전기 대비는 칸마다 작은 글씨. 총매출·환불·일평균은 '세부'로 접는다 */
+  const po=prv?prv.byCh[ci]:null;
+  const dl=(now,bef)=>{ if(!prv||bef==null||bef===0) return ''; const pp=(now-bef)/Math.abs(bef)*100;
+    return '<span class="sub '+(Math.abs(pp)<0.5?'':pp>0?'up':'down')+'">'+cmp.label+' '+(pp>=0?'+':'')+pp.toFixed(0)+'%</span>'; };
+  let qty=0,qtyP=0,kinds=new Set();
+  if(NP){ const ms=selMonths(); for(const c of PC){ if(c[1]!==ci||!ms.has(c[0]))continue; qty+=c[3]||0; kinds.add(c[2]); }
+    if(prv){ const mp=selMonths(cmp.lo,cmp.hi); for(const c of PC){ if(c[1]!==ci||!mp.has(c[0]))continue; qtyP+=c[3]||0; } } }
   const openMkt=CH[ci].group==='오픈마켓';
+  const K=[['순매출',won(o.n)+dl(o.n,po?po.n:null),'accent']];
+  if(o.o>0)K.push(['주문 건수',o.o.toLocaleString()+'<small>건</small>'+dl(o.o,po?po.o:null),'']);
+  if(qty>0)K.push(['판매 개수',qty.toLocaleString()+'<small>개 · '+kinds.size+'종</small>'+dl(qty,qtyP),'']);
   if(o.b>0&&!openMkt){const rb=o.b-o.nb;
-    K.push(['구매 고객',o.b.toLocaleString()+'<small>명·일</small>','']);
+    K.push(['구매 고객',o.b.toLocaleString()+'<small>명·일</small>'+dl(o.b,po?po.b:null),'']);
+    K.push(['신규 고객',o.nb.toLocaleString()+'<small>명 · '+pct(o.nb,o.b).toFixed(0)+'%</small>'+dl(o.nb,po?po.nb:null),'']);
     K.push(['재구매',rb.toLocaleString()+'<small>명 · '+pct(rb,o.b).toFixed(0)+'%</small>',rb?'accent':'']);}
   else if(openMkt)K.push(['재구매','식별 불가<small>안심번호</small>','dim']);
+  if(o.o>0)K.push(['객단가',won(o[key]/o.o)+dl(o.o?o[key]/o.o:0,(po&&po.o)?po[key]/po.o:null),'']);
+  K.push(['전체 비중',pct(o[key],tot).toFixed(1)+'<small>%</small>','']);
+  const K2=[['총매출',won(o.g),''],['환불',(exempt?'—':'−'+won(o.r)),exempt?'dim':'neg'],
+    ['환불율',exempt?'—':(miss?'미기록':rr.toFixed(1)+'<small>%</small>'),miss?'dim':''],
+    ['일평균',won(o[key]/cur.days),''],['기간',cur.days+'<small>일</small>','']];
+  /* 몰 이동 — 발표 때 몰을 차례로 넘긴다 (← → 키도 된다) */
+  const nav=cvList(), ni=nav.indexOf(ci);
   let h='<div class="grid"><div class="card sp12"><div class="card-b">'
     +'<div class="cvhead"><span class="big">'+esc(CH[ci].name)+'</span>'
+    +'<span class="mnav"><button id="cv-prev" title="이전 몰 (←)"'+(ni<=0?' disabled':'')+'>◀</button><span class="pos">'+(ni+1)+'/'+nav.length+'</span>'
+    +'<button id="cv-next" title="다음 몰 (→)"'+(ni<0||ni>=nav.length-1?' disabled':'')+'>▶</button></span>'
     +'<span class="note">'+esc(CH[ci].group)+' · '+dot(DAYS[a])+'–'+dot(DAYS[b])+' · '+cur.days+'일</span>'
     +'<span class="d '+dCls+'" style="font-family:var(--mono);font-size:13px;font-weight:700;margin-left:auto;color:'
     +(dCls==='up'?'var(--teal)':dCls==='down'?'var(--red)':'var(--muted)')+'">'+dTxt+'</span></div></div>'
     +'<div class="kpis" style="border-top:1px solid var(--rule-soft)">'
     +K.map(k=>'<div class="kpi"><span class="k">'+k[0]+'</span><span class="v '+k[2]+'">'+k[1]+'</span></div>').join('')
-    +'</div></div></div>';
+    +'</div></div></div>'
+    +'<div class="grid"><div class="card sp12 fold" data-fk="cv_kpi2" data-open="0"><div class="card-h"><h2>세부 지표</h2><span class="note">총매출 · 환불 · 일평균</span></div>'
+    +'<div class="card-b" style="padding:0"><div class="kpis">'
+    +K2.map(k=>'<div class="kpi"><span class="k">'+k[0]+'</span><span class="v '+k[2]+'">'+k[1]+'</span></div>').join('')
+    +'</div></div></div></div>';
   if(miss)h+='<div class="grid"><div class="sp12"><div class="find warn"><h3>환불 데이터가 없습니다</h3>'
     +'<p>매출은 있는데 환불이 0입니다. 실제로 없었던 게 아니라 <span class="stat">원장에 입력되지 않았을</span> 가능성이 큽니다. 이 채널의 순매출은 실제보다 높게 잡혀 있습니다.</p></div></div></div>';
   h+='<div class="grid"><div class="card sp12">'
@@ -1843,31 +1954,35 @@ function renderCV(){
     +['auto','d','w','m'].map(g=>'<button data-g="'+g+'"'+(cvGran===g?' aria-pressed="true"':'')+'>'
       +({auto:'자동',d:'일별',w:'주별',m:'월별'})[g]+'</button>').join('')+'</div></div>'
     +'<div class="card-b">'+barChart(rows,metric==='r'?'#B3261E':'#1428A0')+'</div></div></div>';
-  // 월별 표 + 상위 상품
-  const mrows=chBuckets(ci,'m');
-  let pm=null;
-  if(prv){const sa=a,sb=b;a=cmp.lo;b=cmp.hi;pm=chBuckets(ci,'m');a=sa;b=sb;}
+  /* 표 단위는 선택 기간의 한 단계 아래 — 한 달을 골랐는데 '월별' 한 줄이면 의미가 없다 (2026-09-22): 7일 이하 일별 · 45일 이하 주별 · 그 위 월별 */
+  const sg=cur.days<=7?'d':cur.days<=45?'w':'m', sgNm={d:'일별',w:'주별',m:'월별'}[sg];
+  const mrows=chBuckets(ci,sg);
   const mmx=Math.max(...mrows.map(r=>r.v),1);
-  h+='<div class="grid"><div class="card sp5"><div class="card-h"><h2>월별</h2>'
-    +'<span class="note">'+mname()+'</span></div><div class="card-b">'
+  h+='<div class="grid"><div class="card sp5 fold" data-fk="cv_tbl" data-open="0"><div class="card-h"><h2>'+sgNm+'</h2>'
+    +'<span class="note">'+mname()+' · '+mrows.length+'구간</span></div><div class="card-b">'
     +mrows.map(r=>'<div class="mrow"><span class="m">'+r.l+'</span>'
       +'<span class="t"><i style="width:'+Math.max(0,r.v/mmx*100)+'%"></i></span>'
       +'<span class="v">'+wonS(r.v)+'</span>'
       +'<span class="d">'+(r.g?pct(r.r,r.g).toFixed(0)+'%':'–')+'</span></div>').join('')
     +'<div class="note" style="margin-top:8px">오른쪽 = 환불율</div></div></div>';
-  h+='<div class="card sp7"><div class="card-h"><h2>이 채널 상위 상품</h2>'
+  h+='<div class="card sp7 fold" data-fk="cv_prod" data-open="0"><div class="card-h"><h2>이 채널 상위 상품</h2>'
     +'<span class="note" id="cvp-note"></span></div><div class="card-b"><div id="cvprod"></div></div></div></div>';
-  /* 카테고리 구성 + 증감 원인(상품) — 발표에서 "뭐가 늘고 줄었나" (2026-09-19) */
+  /* 카테고리 구성(왼쪽) + 오른쪽 패널 — 기본은 증감 원인(상품), 카테고리를 누르면 그 카테고리 상위 상품이 오른쪽에 뜬다 (아래로 밀지 않는다 · 2026-09-22) */
   h+='<div class="grid"><div class="card sp5"><div class="card-h"><h2>카테고리 구성</h2>'
     +'<span class="note" id="cvcat-note"></span></div><div class="card-b"><div id="cvcat"></div></div></div>'
-    +'<div class="card sp7"><div class="card-h"><h2>증감 원인 · 상품</h2><span class="note" id="cvwf-note"></span></div>'
-    +'<div class="card-b"><svg class="chart" id="cvwf" viewBox="0 0 520 300" preserveAspectRatio="xMidYMid meet" role="img"></svg>'
-    +'<p class="note" style="margin:8px 0 0">'+(prv?'비교 기간 대비 이 채널 안에서 상품별로 얼마나 늘고 줄었는지. 막대를 누르면 상품 상세.':'비교 기간이 없어 증감을 나눌 수 없습니다 — 기간을 고르거나 [전년 동기]를 켜세요.')+'</p></div></div></div>';
+    +'<div class="card sp7" id="cvright"><div class="card-h"><h2 id="cvr-title">증감 원인 · 상품</h2><span class="note" id="cvwf-note"></span>'
+    +'<button class="clearbtn" id="cvr-back" style="display:none">✕ 증감 원인으로</button></div>'
+    +'<div class="card-b"><div id="cvr-sub" style="display:none"></div><div id="cvr-wf">'
+    +'<svg class="chart" id="cvwf" viewBox="0 0 520 300" preserveAspectRatio="xMidYMid meet" role="img"></svg>'
+    +'<p class="note" style="margin:8px 0 0">'+(prv?'비교 기간 대비 이 채널 안에서 상품별로 얼마나 늘고 줄었는지. 막대를 누르면 상품 상세.':'비교 기간이 없어 증감을 나눌 수 없습니다 — 기간을 고르거나 [전년 동기]를 켜세요.')+'</p></div></div></div></div>';
   const evs=EV.filter(e=>e[1]>=DAYS[a]&&e[0]<=DAYS[b]&&(!e[3]||e[3]===CH[ci].name));
-  if(evs.length)h+='<div class="grid"><div class="card sp12"><div class="card-h"><h2>기간 내 이벤트</h2></div>'
+  if(evs.length)h+='<div class="grid"><div class="card sp12 fold" data-fk="cv_ev" data-open="0"><div class="card-h"><h2>기간 내 이벤트</h2><span class="note">'+evs.length+'건</span></div>'
     +'<div class="card-b">'+evs.map(e=>'<span class="evtag">'+esc(e[2])+' · '+dot(e[0]).slice(5)+'~'+dot(e[1]).slice(5)+'</span>').join('')+'</div></div></div>';
   box.innerHTML=h;
+  bindFolds(box);
   document.querySelectorAll('#cvgran button').forEach(bt=>bt.onclick=()=>{cvGran=bt.dataset.g;dirtyC=true;renderCV();});
+  { const pv=document.getElementById('cv-prev'), nx=document.getElementById('cv-next');
+    if(pv)pv.onclick=()=>cvStep(-1); if(nx)nx.onclick=()=>cvStep(1); }
   // 상품
   const pbox=document.getElementById('cvprod');
   if(ci===RENT_CH){pbox.innerHTML=rentalBlocks();document.getElementById('cvp-note').textContent='렌탈 청구 상세';}
@@ -1885,33 +2000,66 @@ function renderCV(){
     document.getElementById('cvp-note').textContent=it.length?it.length+'종 · '+qtot.toLocaleString()+'개 · 샵링커 '+(PDAY?'기간 집계':'월 단위'):'';
   }else pbox.innerHTML='<div class="empty">상품 데이터 없음</div>';
   drawCvCat(ci);
-  { const svg=document.getElementById('cvwf'), nt=document.getElementById('cvwf-note');
-    if(!prv){svg.innerHTML='<text x="260" y="150" text-anchor="middle" '+AX+'>비교 기간이 없습니다</text>';nt.textContent='';}
-    else if(!NP){svg.innerHTML='<text x="260" y="150" text-anchor="middle" '+AX+'>상품 데이터 없음</text>';nt.textContent='';}
-    else{ const {d,curT,prvT}=wfSteps(true); svg.innerHTML=wfSvg(d,curT,prvT); wfBind(svg);
-      const diff=curT-prvT; nt.textContent=cmp.label+' 대비 '+(diff>=0?'+':'−')+wonS(Math.abs(diff))+' · 상품 '+d.length+'종 변동'; } }
   dirtyC=false;
 }
-const CV_CAT_OPEN=new Set();
+/* 채널 화면 몰 이동 — 순서는 위 칩과 같다(범위 안 · 매출순) */
+function cvList(){ const key=mkey(); return CH.map((c,i)=>({i:i,v:cur.byCh[i][key]})).filter(x=>inScope(x.i)&&cur.byCh[x.i].g!==0).sort((x,y)=>y.v-x.v).map(x=>x.i); }
+function cvStep(d){ const L=cvList(), i=L.indexOf(focus), j=i+d; if(i<0||j<0||j>=L.length)return;
+  focus=L[j]; cvCatOpen=null; dirtyC=true; renderCV(); drawTrend(); drawRank(); drawAbar(); drawMallSel(); window.scrollTo(0,0); }
+/* 접는 카드 — data-fk 로 상태를 기억한다 (세션 안에서만) */
+let FOLD={}; try{ FOLD=JSON.parse(sessionStorage.getItem('dash_fold')||'{}')||{}; }catch(e){ FOLD={}; }
+function bindFolds(root){
+  (root||document).querySelectorAll('.card.fold[data-fk]').forEach(cd=>{
+    const k=cd.dataset.fk, def=cd.dataset.open!=='0';
+    const open=(k in FOLD)?!!FOLD[k]:def;
+    cd.classList.toggle('folded',!open);
+    const hd=cd.querySelector(':scope>.card-h'); if(!hd||hd.dataset.bound)return; hd.dataset.bound='1';
+    hd.setAttribute('role','button'); hd.tabIndex=0; hd.setAttribute('aria-expanded',open?'true':'false');
+    const go=e=>{ if(e&&e.target.closest('button,input,select,a,.tabs'))return;
+      const now=!cd.classList.contains('folded'); cd.classList.toggle('folded',now); hd.setAttribute('aria-expanded',now?'false':'true');
+      FOLD[k]=!now; try{ sessionStorage.setItem('dash_fold',JSON.stringify(FOLD)); }catch(x){} };
+    hd.onclick=go; hd.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(e); } };
+  });
+}
+/* 오른쪽 패널 — 카테고리를 골랐으면 그 카테고리 상위 상품, 아니면 증감 원인(상품) */
+let cvCatOpen=null;
+function drawCvRight(ci,pa){
+  const sub=document.getElementById('cvr-sub'), wf=document.getElementById('cvr-wf'), tt=document.getElementById('cvr-title');
+  const back=document.getElementById('cvr-back'), nt=document.getElementById('cvwf-note'); if(!sub||!wf)return;
+  if(cvCatOpen&&pa){
+    const key=mkey();
+    sub.innerHTML=catSubHtml(pa,cvCatOpen,key); sub.style.display=''; wf.style.display='none';
+    tt.textContent=cvCatOpen+' · 상위 상품'; back.style.display='';
+    const n=Object.keys(pa.byP).filter(id=>PR[id][2]===cvCatOpen&&pa.byP[id][key]>0).length;
+    nt.textContent=n+'종 · 누르면 상품 상세';
+    sub.querySelectorAll('.rk').forEach(el=>{ el.onclick=e=>{e.stopPropagation();openPr(+el.dataset.id);};
+      el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openPr(+el.dataset.id);}}; });
+    back.onclick=()=>{ cvCatOpen=null; drawCvCat(ci); };
+    return; }
+  sub.style.display='none'; wf.style.display=''; tt.textContent='증감 원인 · 상품'; back.style.display='none';
+  const svg=document.getElementById('cvwf');
+  if(!prv){svg.innerHTML='<text x="260" y="150" text-anchor="middle" '+AX+'>비교 기간이 없습니다</text>';nt.textContent='';}
+  else if(!NP){svg.innerHTML='<text x="260" y="150" text-anchor="middle" '+AX+'>상품 데이터 없음</text>';nt.textContent='';}
+  else{ const {d,curT,prvT}=wfSteps(true); svg.innerHTML=wfSvg(d,curT,prvT); wfBind(svg);
+    const diff=curT-prvT; nt.textContent=cmp.label+' 대비 '+(diff>=0?'+':'−')+wonS(Math.abs(diff))+' · 상품 '+d.length+'종 변동'; }
+}
 function drawCvCat(ci){
   const box=document.getElementById('cvcat'), nt=document.getElementById('cvcat-note'); if(!box)return;
-  if(!NP||ci===RENT_CH){box.innerHTML='<div class="empty">상품 데이터 없음</div>';nt.textContent='';return;}
+  if(!NP||ci===RENT_CH){box.innerHTML='<div class="empty">상품 데이터 없음</div>';nt.textContent='';cvCatOpen=null;drawCvRight(ci,null);return;}
   const key=mkey(),pa=prodAgg(false,ci);
   const cats=Object.keys(pa.byCat).map(c=>({c:c,v:pa.byCat[c][key],n:pa.byCat[c].cnt.size,q:pa.byCat[c].q})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
-  if(!cats.length){box.innerHTML='<div class="empty">샵링커 상품 데이터가 없는 채널입니다</div>';nt.textContent='';return;}
+  if(!cats.length){box.innerHTML='<div class="empty">샵링커 상품 데이터가 없는 채널입니다</div>';nt.textContent='';cvCatOpen=null;drawCvRight(ci,null);return;}
+  if(cvCatOpen&&!cats.some(x=>x.c===cvCatOpen))cvCatOpen=null;
   const tot=cats.reduce((s,x)=>s+x.v,0)||1;
   box.innerHTML=hbars(cats.map((x,i)=>({l:x.c,sub:x.n+'종',v:x.v,q:pct(x.v,tot).toFixed(1)+'%',note:x.q.toLocaleString()+'개',id:i})),i=>i<PAL.length?PAL[i]:GREY);
   box.querySelectorAll('.rk').forEach(el=>{
-    const cat=cats[+el.dataset.id].c; el.classList.add('cat'); el.dataset.cat=cat;
-    el.setAttribute('aria-expanded', CV_CAT_OPEN.has(cat)?'true':'false');
-    el.querySelector('.rk-nm').insertAdjacentHTML('beforeend','<span class="rk-x">'+(CV_CAT_OPEN.has(cat)?'▾ 접기':'▸ 상위 상품')+'</span>');
-    const go=()=>{ CV_CAT_OPEN.has(cat)?CV_CAT_OPEN.delete(cat):CV_CAT_OPEN.add(cat); drawCvCat(ci); };
-    el.onclick=go; el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};
-    if(CV_CAT_OPEN.has(cat)) el.insertAdjacentHTML('afterend', catSubHtml(pa, cat, key));});
-  box.querySelectorAll('.rk-sub .rk').forEach(el=>{
-    el.onclick=e=>{e.stopPropagation();openPr(+el.dataset.id);};
-    el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();openPr(+el.dataset.id);}};});
-  nt.textContent=cats.length+'개 카테고리 · 누르면 상위 상품 10종';
+    const cat=cats[+el.dataset.id].c, on=cvCatOpen===cat; el.classList.add('cat'); el.classList.toggle('on',on); el.dataset.cat=cat;
+    el.setAttribute('aria-expanded', on?'true':'false');
+    el.querySelector('.rk-nm').insertAdjacentHTML('beforeend','<span class="rk-x">'+(on?'◂ 오른쪽에 보는 중':'▸ 상위 상품')+'</span>');
+    const go=()=>{ cvCatOpen=(cvCatOpen===cat)?null:cat; drawCvCat(ci); };
+    el.onclick=go; el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};});
+  nt.textContent=cats.length+'개 카테고리 · 누르면 오른쪽에 상위 상품 10종';
+  drawCvRight(ci,pa);
 }
 
 /* ===== 렌더 ===== */
@@ -1959,7 +2107,7 @@ $('#foot').innerHTML='<b>주문 건수</b> · 샵링커 주문번호와 VMS 전�
   +'<b>직판</b> · 담당자별로 나뉘어 있던 행을 하나의 채널로 합쳤습니다. 담당자 구분은 채널 상세의 [담당자별]에서 봅니다.<br>'
   +'<b>채널 화면</b> · 상단 [채널] 탭에서 몰을 고르면 그 채널만 기간·지표를 바꿔가며 볼 수 있습니다.<br>'
   +'<b>선택 해제</b> · 채널을 다시 누르거나, 상단 필터 칩의 ✕, 추이 카드의 “전체 채널 보기”, 또는 Esc.<br>'
-  +'<b>비교 기간</b> · 어제→전주 동요일, 이번 주→전주 동기간, 지난 주→전전주, 월→전월 전체, 이번 달→전월 같은 일자까지, 그 외→직전 동일 일수.<br>'
+  +'<b>비교 기간</b> · 어제→전주 동요일, 이번 주→전주 동기간, 지난 주→전전주, 월→전월 전체, 이번 달→전월 같은 일자까지, 올해→전년 같은 기간, 작년→전전년, 그 외→직전 동일 일수.<br>'
   +'<b>렌탈</b> · 월 발생 청구 기준(청구시작일 귀속). 환불 개념이 없어 환불율과 미기록 경고에서 제외합니다.<br>'
   +'<b>상품</b> · 샵링커 주문 기준, 선택한 기간 안의 주문만 집계합니다 (2026-09-17 부터 일 단위).<br>'
   +'<b>순매출</b> = 총매출 − 환불. <b>미포함</b> · 광고비·수수료·매입원가.';
@@ -2033,6 +2181,7 @@ document.addEventListener('keydown',e=>{
     if(pres)setPres(false);
     return;}
   if(e.target.tagName==='INPUT')return;
+  if(!pres&&view==='c'&&focus!==null&&!$('#drawer').classList.contains('open')&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();cvStep(e.key==='ArrowRight'?1:-1);return;}
   if(!pres){if(e.key==='p'||e.key==='P')setPres(true);return;}
   if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(si<steps.length-1){si++;pren();}}
   if(e.key==='ArrowLeft'){e.preventDefault();if(si>0){si--;pren();}}});

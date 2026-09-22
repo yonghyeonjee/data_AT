@@ -999,7 +999,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       </div>
       <div class="period">
         <div class="preset">
-          <button data-p="yd">어제</button><button data-p="tw">이번 주</button><button data-p="lw">지난 주</button><button data-p="tm">이번 달</button><button data-p="lm">지난 달</button><button data-p="30" class="on">30일</button><button data-p="90">90일</button><button data-p="y">올해</button>
+          <button data-p="yd">어제</button><button data-p="tw">이번 주</button><button data-p="lw">지난 주</button><button data-p="tm">이번 달</button><button data-p="lm">지난 달</button><button data-p="30" class="on">30일</button><button data-p="90">90일</button><button data-p="y">올해</button><button data-p="ly">작년</button>
         </div>
         <input type="date" id="pFrom"><span style="color:var(--faint)">~</span><input type="date" id="pTo">
         <button class="btn sm" onclick="applyPeriod()">적용</button>
@@ -1173,7 +1173,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       <div class="view hidden" id="v-orders">
         <div class="card">
           <div class="filters">
-            <select class="in" id="oSrc" onchange="loadOrders(0)" title="데이터 출처"><option value="">전체 출처</option><option value="shoplinker">샵링커(온라인)</option><option value="ecount">이카운트(VMS)</option><option value="rental">렌탈</option><option value="store">매장 입력</option></select>
+            <select class="in" id="oSrc" onchange="loadOrders(0)" title="데이터 출처"><option value="">전체 출처</option><option value="shoplinker" title="샵링커로 들어온 온라인 몰 주문">온라인</option><option value="ecount">이카운트(VMS)</option><option value="rental">렌탈</option><option value="store">매장 입력</option></select>
             <select class="in" id="oCh" onchange="loadOrders(0)"><option value="">전체 구분</option><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select>
             <select class="in" id="oChName" onchange="loadOrders(0)" title="채널"><option value="">전체 채널</option></select>
             <select class="in" id="oSt" onchange="loadOrders(0)" title="상태"><option value="">전체 상태</option><option value="normal">정상</option><option value="refund">환불 있음</option></select>
@@ -2023,7 +2023,10 @@ const wonK = v => { v=Number(v)||0; const a=Math.abs(v); return a>=1e8 ? (v/1e8)
 const n = v => Math.round(Number(v)||0).toLocaleString('ko-KR');
 const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const iso = d => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-const dfmt = s => s ? String(s).slice(0,10) : '-';
+const dfmt = s => { if(!s) return '-'; s=String(s);
+  /* timestamptz(…T…+00:00 / Z) 는 한국 날짜로 바꿔 보인다 — 서버 필터도 KST 라 화면과 같아야 한다 (2026-09-22: 올해를 골랐는데 12/31 이 보이던 것) */
+  if(/T.*(Z|[+-]\d\d:?\d\d)$/.test(s)){ const d=new Date(s); if(!isNaN(d)) return d.toLocaleDateString('sv-SE',{timeZone:'Asia/Seoul'}); }
+  return s.slice(0,10); };
 const dtfmt = s => { if(!s) return '-'; const d=new Date(s); if(isNaN(d)) return String(s).slice(0,16); const k=new Date(d.getTime()+9*3600e3); return k.toISOString().slice(0,16).replace('T',' '); };   // KST 표시
 /* 오버레이 확인창 — 브라우저 confirm() 대신 사용. requireText 를 주면 그 글자를 똑같이 입력해야 확인 버튼이 열린다 */
 function modal({title, html, ok='확인', cancel='취소', danger=false, requireText=null, collect=null, init=null, wide=false, xwide=false}){
@@ -4001,13 +4004,14 @@ function setPreset(p, quiet){
   else if(p==='tm'){ f=new Date(t.getFullYear(),t.getMonth(),1); }
   else if(p==='lm'){ f=new Date(t.getFullYear(),t.getMonth()-1,1); to=new Date(t.getFullYear(),t.getMonth(),0); }
   else if(p==='y'){ f=new Date(t.getFullYear(),0,1); }
+  else if(p==='ly'){ f=new Date(t.getFullYear()-1,0,1); to=new Date(t.getFullYear()-1,11,31); }   /* 작년 1/1 ~ 12/31 */
   else if(/^m\d+$/.test(p)){ f=new Date(t.getFullYear(), t.getMonth()-(Number(p.slice(1))-1), 1); }   /* 최근 N개월 — 그 달 1일부터 (상담 대시보드) */
   else { f=new Date(t); f.setDate(f.getDate()-Number(p)); }
   PRESET=p; P={from:iso(f),to:iso(to)}; $('pFrom').value=P.from; $('pTo').value=P.to;
   document.querySelectorAll('.preset button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
   periodLabel(); if(!quiet) refreshView();
 }
-const PRESET_NM={yd:'어제',tw:'이번 주',lw:'지난 주',tm:'이번 달',lm:'지난 달','30':'최근 30일','90':'최근 90일',y:'올해',m3:'최근 3개월',m6:'최근 6개월',m12:'최근 12개월',custom:'직접 지정'};
+const PRESET_NM={yd:'어제',tw:'이번 주',lw:'지난 주',tm:'이번 달',lm:'지난 달','30':'최근 30일','90':'최근 90일',y:'올해',ly:'작년',m3:'최근 3개월',m6:'최근 6개월',m12:'최근 12개월',custom:'직접 지정'};
 function periodLabel(){ if(!P.from||!P.to) return; const d=Math.round((new Date(P.to)-new Date(P.from))/864e5)+1;
   const f=(x)=>{const [y,m,dd]=x.split('-'); return `${y}.${m}.${dd}`;};
   $('pRangeLbl').innerHTML=`${f(P.from)} ~ ${f(P.to)}<span>${d}일 · ${PRESET_NM[PRESET]||''}</span>`; }
@@ -4407,6 +4411,7 @@ function cmpRange(from,to,preset){
                      return [iso(a),iso(b)]; }              // 이번 달 → 전월 동일 일수
   if(preset==='lm'){ const a=new Date(f.getFullYear(),f.getMonth()-1,1), b=new Date(f.getFullYear(),f.getMonth(),0); return [iso(a),iso(b)]; }
   if(preset==='y'){  const a=new Date(f.getFullYear()-1,0,1), b=new Date(t.getFullYear()-1,t.getMonth(),t.getDate()); return [iso(a),iso(b)]; }
+  if(preset==='ly'){ const a=new Date(f.getFullYear()-1,0,1), b=new Date(f.getFullYear()-1,11,31); return [iso(a),iso(b)]; }   // 작년 → 전전년 전체
   return shift(span);                                       // 그 외 → 직전 동일 일수
 }
 
