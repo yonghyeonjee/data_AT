@@ -775,6 +775,12 @@ tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}   /* 긴 �
 .cdhb .q{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
 .cdhb .q b{color:var(--ink)}
 .cdsvg{width:100%;height:auto;display:block}
+/* 상담 대시보드 → 문의 관리 드릴다운 (mvp_174) : data-drill 이 붙은 것은 누를 수 있다 */
+.cdhb [data-drill]{cursor:pointer} .cdhb .n[data-drill]:hover{color:var(--navy);text-decoration:underline}
+.cdsvg g[data-drill]{cursor:pointer} .cdsvg g[data-drill]:hover rect{opacity:.8}
+#cdTable td[data-drill]{cursor:pointer} #cdTable td[data-drill]:hover{background:var(--navy-soft)}
+.iqdrill .tag{display:inline-flex;align-items:center;gap:6px;padding-right:4px} .iqdrill .tag button{border:0;background:transparent;color:inherit;cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;min-width:24px;min-height:24px;border-radius:4px} .iqdrill .tag button:hover{background:rgba(0,0,0,.08)}
+.ocamp{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:var(--navy-soft);color:var(--navy);font-size:calc(12.5px * var(--font-scale));font-weight:600} .ocamp button{border:0;background:transparent;color:inherit;cursor:pointer;font-size:14px;min-width:28px;min-height:28px;border-radius:6px} .ocamp button:hover{background:rgba(0,0,0,.08)}
 .cdsvg text{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;fill:var(--muted)}
 .cdsvg text.v{fill:var(--ink);font-weight:600}
 .cdsvg text.a{fill:#2E7D32;font-weight:600;font-size:10.5px}
@@ -1189,6 +1195,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <button class="btn ghost" onclick="openOrderModal()">+ 수동 등록</button>
             <button class="btn ghost" onclick="exportOrders()">엑셀 내보내기</button>
           </div>
+          <div class="ocamp" id="oCamp" hidden style="margin:0 0 10px"></div>
           <div class="qsum" id="oSum"></div>
           <div class="qmeta" id="oMeta"></div>
           <div class="tw"><table><thead><tr><th>주문일</th><th>구분</th><th>채널</th><th>고객</th><th>연락처</th><th>상품</th><th class="num">수량</th><th class="num">매출</th><th class="num">환불</th><th class="num">순매출</th><th>담당</th><th>상태</th><th></th></tr></thead><tbody id="tbOrders"></tbody></table></div>
@@ -1240,17 +1247,20 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       <!-- ═══ 접수함 ═══ -->
       <div class="view hidden" id="v-inbox">
         <div class="card">
-          <h3>문의 관리 <span>우리 폼(견적·구독·소모품/렌탈·VMS·B2B)과 매장 접수 — <b>홈페이지 문의</b>는 지메일로 자동 적재돼 [견적] 에 함께 들어옵니다</span>
+          <h3>문의 관리 <span><b>홈페이지 문의</b>(문의 메일 자동 적재) · <b>자체 폼</b> 4개(구독 · 견적서 · 소모품/렌탈 · VMS/B2B) · 매장 접수 · 매장 상담 · 가망고객이 한 목록 — 상담 대시보드의 막대를 누르면 그 조건으로 여기로 옵니다</span>
             <span style="margin-left:auto"><button class="btn sm ghost" onclick="loadInquiry(0)">새로고침</button></span></h3>
           <div class="qsum" id="iqSum"></div>
           <div class="filters">
             <div class="seg2" id="iqForm">
               <button type="button" class="on" data-f="">전체</button>
-              <button type="button" data-f="quote">홈페이지</button>
+              <button type="button" data-f="homepage">홈페이지</button>
               <button type="button" data-f="subscribe">구독</button>
+              <button type="button" data-f="quote">견적서</button>
               <button type="button" data-f="supply">소모품·렌탈</button>
               <button type="button" data-f="b2b">VMS·B2B</button>
-              <button type="button" data-f="store">매장</button>
+              <button type="button" data-f="store">매장 접수</button>
+              <button type="button" data-f="consult">매장 상담</button>
+              <button type="button" data-f="prospect">가망고객</button>
             </div>
             <input class="in" id="iqQ" placeholder="고객명 · 전화 · 내용 · 담당 · 접수번호" style="min-width:260px" onkeydown="if(event.key==='Enter')loadInquiry(0)">
             <button class="btn" onclick="loadInquiry(0)">조회</button>
@@ -1278,6 +1288,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <div class="grp"><span class="lb">담당</span>
             <div class="chks" id="iqHandler"><label class="chk"><input type="checkbox" value="(미배정)">미배정</label></div>
             <button class="btn sm ghost" id="iqCondClear" onclick="iqCondClear()" hidden>조건 지우기</button></div>
+            <div class="grp iqdrill" id="iqDrill" hidden></div>
           </div>
           <div class="qmeta" id="iqMeta"></div>
           <div class="bulk" id="iqBulk" hidden>
@@ -1564,7 +1575,9 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         <div class="cdg">
           <div class="card"><h3>기간별 문의 → 구매 <span class="sub" id="cdTrendSub"></span></h3><div id="cdTrend"></div>
             <p class="note" style="margin:8px 0 0">연한 막대 = 문의 · 진한 막대 = 구매 · 초록 숫자 = 구매 금액. 이어진 상담은 한 건으로 셉니다.</p></div>
-          <div class="card"><h3>채널별 <span class="sub">문의 · 구매 · 성공률</span></h3><div id="cdChan"></div></div>
+          <div class="card"><h3>채널별 <span class="sub">문의 · 구매 · 성공률 · 누르면 그 채널의 문의 목록</span></h3><div id="cdChan"></div></div>
+          <div class="card"><h3>문의 유형 <span class="sub">구매 목적 — 혼수·입주·이사 · 구독 · 소모품 · 사업자 · 일반 제품</span></h3><div id="cdPurpose"></div>
+            <p class="note" style="margin:8px 0 0">구독 폼의 구매 목적(신규구독·이사·입주·가전교체·혼수·신혼…) · 홈페이지 문의의 개인/사업자 · 폼 종류(소모품·렌탈, VMS·B2B) · 매장 상담의 문의 유형(구독·일시불) 순으로 읽습니다.</p></div>
           <div class="card"><h3>관심 제품 <span class="sub">문의 때 적은 카테고리 · 여러 개면 각각</span></h3><div id="cdInt"></div></div>
           <div class="card"><h3>구매 제품 · 금액 <span class="sub" id="cdPurSub"></span></h3><div id="cdPur"></div>
             <p class="note" style="margin:8px 0 0">금액은 연결된 판매 입력(같은 주문번호 합계)이 있으면 그 값, 없으면 상담에 적은 예상 금액입니다. '(제품 미기록)' 은 구매완료인데 제품을 안 적은 건.</p></div>
@@ -1572,7 +1585,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="card"><h3>유입경로 <span class="sub">채널 안에서 어디서 왔나</span></h3><div id="cdRoute"></div></div>
         </div>
         <div class="card">
-          <h3>표로 보기 <span class="sub">채널 × 기간</span></h3>
+          <h3>표로 보기 <span class="sub">채널 × 기간 · 칸을 누르면 그 채널·기간의 문의 목록</span></h3>
           <div id="cdTable"></div>
         </div>
       </div>
@@ -2518,19 +2531,36 @@ async function flowTestMark(on){ const ids=flowSel(); if(!ids.length) return toa
 async function flowTestAuto(){ if(!confirm('규칙(담당 test · 고객명/상품명 "테스트" · 10원 이하)에 걸리는 주문을 모두 테스트로 표시할까요?\n표시된 건은 집계에서 빠집니다. 개별로 해제할 수 있습니다.')) return;
   try{ const r=await rpc('fn_order_test_auto',{p_from:null}); toast(`${r.marked}줄 테스트로 표시`,'ok'); loadFlow(); }catch(e){ toast(e.message,'bad'); } }
 
-/* ═══════════════ 문의 관리 (홈페이지 폼 통합) ═══════════════ */
-let iqPage=0, IQ_FORM='', IQ_SHOW='real', IQ_ROWS=[];
+/* ═══════════════ 문의 관리 (홈페이지 문의 · 자체 폼 4개 · 매장 접수 · 매장 상담 · 가망고객) ═══════════════
+   IQ_DRILL = 상담 대시보드에서 넘어온 조건(채널·관심 제품·유입경로·문의 유형). 칩으로 보이고 ✕ 로 하나씩 뺀다. 값은 fn_consult_stats 와 v_inquiry 가 같은 함수로 만들어 글자까지 같다 (mvp_174) */
+let iqPage=0, IQ_FORM='', IQ_SHOW='real', IQ_ROWS=[], IQ_DRILL={};
+const IQ_DRILL_NM={channel:'채널',category:'관심 제품',route:'유입경로',purpose:'문의 유형'};
+function iqDrillRender(){ const el=$('iqDrill'); if(!el) return; const ks=Object.keys(IQ_DRILL).filter(k=>IQ_DRILL[k]);
+  el.hidden=!ks.length; el.innerHTML=ks.length?`<span class="lb">조건</span>`+ks.map(k=>`<span class="tag a">${IQ_DRILL_NM[k]||k} · ${esc(IQ_DRILL[k])}<button type="button" title="이 조건 빼기" onclick="iqDrillClear('${k}')">✕</button></span>`).join('')
+    +`<button class="btn sm ghost" onclick="show('cdash')">← 상담 대시보드</button>`:''; }
+function iqDrillClear(k){ if(k) delete IQ_DRILL[k]; else IQ_DRILL={}; iqDrillRender(); iqCondSync(); loadInquiry(0); }
+/* 상담 대시보드 → 문의 관리. f = {form, channel, category, route, purpose, handler, from, to}. 기간은 상단 기간 바(P)를 그대로 쓰고, from/to 가 오면 그 기간으로 바꾼다 */
+function iqGo(f){ f=f||{};
+  IQ_FORM=f.form||''; $('iqForm').querySelectorAll('button').forEach(x=>x.classList.toggle('on',(x.dataset.f||'')===IQ_FORM));
+  IQ_DRILL={}; ['channel','category','route','purpose'].forEach(k=>{ if(f[k]) IQ_DRILL[k]=f[k]; });
+  document.querySelectorAll('#iqCond input:checked').forEach(x=>x.checked=false);
+  if(f.handler){ iqFillHandlers(); const v=f.handler==='미배정'?'(미배정)':f.handler; const c=[...document.querySelectorAll('#iqHandler input')].find(x=>x.value===v); if(c) c.checked=true; }
+  if(f.status){ const c=[...document.querySelectorAll('#iqStatus input')].find(x=>x.value===f.status); if(c) c.checked=true; }
+  if(f.from&&f.to){ P={from:f.from,to:f.to}; PRESET='custom'; $('pFrom').value=P.from; $('pTo').value=P.to; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); periodLabel(); }
+  IQ_SHOW='real'; $('iqShow').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.s==='real'));
+  iqDrillRender(); iqCondSync(); show('inbox'); }
 document.addEventListener('click', e=>{
   const b=e.target.closest('#iqForm button'); if(b){ $('iqForm').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); IQ_FORM=b.dataset.f||''; loadInquiry(0); return; }
   const c=e.target.closest('#iqShow button'); if(c){ $('iqShow').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===c)); IQ_SHOW=c.dataset.s; loadInquiry(0); }
   const k=e.target.closest('#iqCond input[type=checkbox]'); if(k){ iqCondSync(); loadInquiry(0); }
 });
-const IQ_TONE={quote:'a',subscribe:'b',supply:'c',b2b:'d',store:'n'};
+const IQ_TONE={homepage:'a',subscribe:'b',quote:'c',supply:'d',b2b:'d',store:'n',consult:'y',prospect:'n'};
 async function loadInquiry(page){
   iqPage=Math.max(0,page||0);
   const usePeriod=true;
   const args={p_form:IQ_FORM||null,p_q:$('iqQ').value.trim()||null,p_limit:pgSize('inquiry'),p_offset:iqPage*pgSize('inquiry'),
               p_status:iqChecked('iqStatus'),p_handler:iqChecked('iqHandler'),
+              p_channel:IQ_DRILL.channel||null,p_category:IQ_DRILL.category||null,p_route:IQ_DRILL.route||null,p_purpose:IQ_DRILL.purpose||null,
               p_unmask:$('iqUnmask').classList.contains('on'), p_show:IQ_SHOW,
               p_from:usePeriod?P.from:null,p_to:usePeriod?P.to:null};
   let d; try{ d=await rpc('fn_inquiry_list',args); }catch(e){ return toast(e.message,'bad'); }
@@ -2552,7 +2582,7 @@ async function loadInquiry(page){
       <td><span class="mono" style="font-size:calc(11.5px * var(--font-scale))">${esc(r.at)}</span></td>
       <td><span class="tag ${IQ_TONE[r.form]||''}">${esc((r.form_label||'').replace(' 문의','').replace(' 접수',''))}</span>${r.is_test?'<span class="tag n" style="margin-left:3px">T</span>':''}${r.hidden?'<span class="tag bad" style="margin-left:3px">삭제</span>':''}</td>
       <td><b class="ell">${esc(r.name||'—')}</b>${r.tel?`<a class="sub" href="tel:${esc(r.tel)}" onclick="event.stopPropagation()">${esc(r.phone)}</a>`:''}</td>
-      ${cell(r.kind)}${cell(r.purpose)}${cell(r.region)}${cell(r.memo)}
+      ${cell(r.kind)}<td><span class="ell" title="${esc(r.purpose||'')}">${esc(r.purpose||'')||'<span class="note">—</span>'}</span>${(()=>{ const sub=[r.channel&&r.channel!==(r.form_label||'')?r.channel:'', r.route||''].filter(Boolean).join(' · '); return sub?`<div class="note ell" style="font-size:calc(11px * var(--font-scale))" title="${esc(sub)}">${esc(sub)}</div>`:''; })()}</td>${cell(r.region)}${cell(r.memo)}
       <td><span class="ell">${esc(r.handler||'')||'<span class="note">—</span>'}</span></td>
       <td>${r.status?`<span class="tag">${esc(r.status)}</span>`:'<span class="note">—</span>'}</td>
       <td class="acts">
@@ -2589,8 +2619,8 @@ async function iqBulk(action){
 }
 /* 상태·담당 체크박스 — 여러 개 고를 수 있고, 고른 게 없으면 전체. 값은 쉼표로 묶어 서버로 간다 */
 function iqChecked(id){ const v=[...document.querySelectorAll('#'+id+' input:checked')].map(x=>x.value); return v.length?v.join(','):null; }
-function iqCondSync(){ const on=!!(iqChecked('iqStatus')||iqChecked('iqHandler')); const b=$('iqCondClear'); if(b) b.hidden=!on; }
-function iqCondClear(){ document.querySelectorAll('#iqCond input:checked').forEach(x=>x.checked=false); iqCondSync(); loadInquiry(0); }
+function iqCondSync(){ const on=!!(iqChecked('iqStatus')||iqChecked('iqHandler')||Object.keys(IQ_DRILL).some(k=>IQ_DRILL[k])); const b=$('iqCondClear'); if(b) b.hidden=!on; }
+function iqCondClear(){ document.querySelectorAll('#iqCond input:checked').forEach(x=>x.checked=false); IQ_DRILL={}; iqDrillRender(); iqCondSync(); loadInquiry(0); }
 function iqFillHandlers(){ const el=$('iqHandler'); if(!el) return; const keep=new Set([...el.querySelectorAll('input:checked')].map(x=>x.value));
   el.innerHTML=[['(미배정)','미배정']].concat((STAFF||[]).filter(x=>x.active).map(x=>[x.name,x.name]))
     .map(([v,l])=>`<label class="chk"><input type="checkbox" value="${esc(v)}"${keep.has(v)?' checked':''}>${esc(l)}</label>`).join(''); }
@@ -4759,10 +4789,14 @@ function empty(){ return '<div class="note" style="padding:36px 0;text-align:cen
 let oPage=0, oLast=0, oRows=[];
 const O_CH_NAMES=['P몰','S몰','AT몰','시흥','B2B','E스토어','가전시장','쿠팡','11번가','지마켓','옥션','SSG','현대홈쇼핑','쿠팡이츠','SK스토아','토스쇼핑','롯데온','카카오-관악','카카오-시흥','한퓨어','통신판매(VMS)','매장(시흥)','매장구독(시흥)','직판','렌탈'];
 let O_CH_FILLED=false;
+let O_CAMP=null;   /* UTM 관리 [구매] 에서 넘어온 캠페인 — 수신자의 발송 뒤 주문만 (mvp_174) */
+function oCampRender(){ const el=$('oCamp'); if(!el) return; el.hidden=!O_CAMP;
+  el.innerHTML=O_CAMP?`캠페인 <span class="mono">${esc(O_CAMP.code)}</span> ${esc(O_CAMP.name||'')} 수신자의 발송 뒤 주문<button type="button" title="캠페인 조건 빼기" onclick="oCampClear()">✕</button>`:''; }
+function oCampClear(){ O_CAMP=null; oCampRender(); loadOrders(0); }
 function orderArgs(){ return {p_from:P.from,p_to:P.to,p_channel:$('oCh').value||null,p_handler:$('oHd').value||null,p_q:$('oQ').value||null,
   p_source:$('oSrc').value||null,p_channel_name:$('oChName').value||null,p_status:$('oSt').value||null,
-  p_category:CB.category||null,p_q_field:CB.field||null}; }
-function resetOrders(){ ['oSrc','oCh','oChName','oSt','oHd','oQ'].forEach(id=>$(id).value=''); $('oSort').value='date_desc'; loadOrders(0); }
+  p_category:CB.category||null,p_q_field:CB.field||null,p_campaign:O_CAMP?O_CAMP.code:null}; }
+function resetOrders(){ ['oSrc','oCh','oChName','oSt','oHd','oQ'].forEach(id=>$(id).value=''); $('oSort').value='date_desc'; O_CAMP=null; oCampRender(); loadOrders(0); }
 function qcard(label,val,unit,cls,sub){ return `<div class="q ${cls||''}"><small>${label}</small><b>${val}${unit?`<i>${unit}</i>`:''}</b>${sub?`<div class="sub">${sub}</div>`:''}</div>`; }
 function renderOrderSummary(m){
   if(!m){ $('oSum').innerHTML=''; $('oMeta').innerHTML=''; return; }
@@ -5323,7 +5357,7 @@ function cdBars(Pd, fmtP){
   const mx=Math.max(1,...Pd.map(x=>Number(x.total)||0)); const slot=iw/n, bw=Math.min(36, slot*0.62);
   const show=n<=14, step=show?1:Math.ceil(n/12);
   const bars=Pd.map((x,i)=>{ const cx=L+slot*i+slot/2, ht=(Number(x.total)||0)/mx*ih, hb=(Number(x.bought)||0)/mx*ih;
-    return `<g><title>${esc(fmtP(x.p))} · 문의 ${x.total} · 구매 ${x.bought}${x.amount?' · '+wonK(x.amount):''}</title>
+    return `<g data-drill="${esc(JSON.stringify(cdPeriodRange(x.p)))}"><title>${esc(fmtP(x.p))} · 문의 ${x.total} · 구매 ${x.bought}${x.amount?' · '+wonK(x.amount):''}</title>
       <rect x="${(cx-bw/2).toFixed(1)}" y="${(T+ih-ht).toFixed(1)}" width="${bw.toFixed(1)}" height="${ht.toFixed(1)}" rx="3" fill="#C9D2F2"/>
       <rect x="${(cx-bw/2).toFixed(1)}" y="${(T+ih-hb).toFixed(1)}" width="${bw.toFixed(1)}" height="${hb.toFixed(1)}" rx="3" fill="#1428A0"/>
       ${x.total&&show?`<text class="v" x="${cx.toFixed(1)}" y="${(T+ih-ht-4).toFixed(1)}" text-anchor="middle">${x.total}</text>`:''}
@@ -5332,13 +5366,18 @@ function cdBars(Pd, fmtP){
   return `<svg class="cdsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="기간별 문의와 구매"><line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}" stroke="#E4E7EC"/>${bars}</svg>`;
 }
 /* 가로 막대 : rows=[{l,total,bought,amount?,sub?}] · 막대 길이는 total(문의), 위에 bought(구매) */
+/* 기간 글자('2026-09-14' · '2026-09' · '2026') → 문의 관리에 넘길 from/to */
+function cdPeriodRange(p){ p=String(p||''); if(/^\d{4}-\d{2}-\d{2}$/.test(p)) return {from:p,to:p};
+  if(/^\d{4}-\d{2}$/.test(p)){ const [y,m]=p.split('-').map(Number); const last=new Date(y,m,0).getDate(); return {from:`${p}-01`,to:`${p}-${String(last).padStart(2,'0')}`}; }
+  if(/^\d{4}$/.test(p)) return {from:`${p}-01-01`,to:`${p}-12-31`}; return {}; }
 function cdHBars(rows, opt){ opt=opt||{}; const lim=opt.limit||10;
   if(!rows.length) return '<div class="note" style="padding:18px;text-align:center">없음</div>';
+  const dr=x=>opt.drill?` data-drill="${esc(JSON.stringify(opt.drill(x)))}"`:'';
   const key=opt.by||'total'; rows=rows.slice().sort((a,b)=>(Number(b[key])||0)-(Number(a[key])||0)); const mx=Math.max(1,...rows.map(x=>Number(x[key])||0));
   return `<div class="cdhb">${rows.slice(0,lim).map(x=>{ const t=Number(x.total)||0, b=Number(x.bought)||0, v=Number(x[key])||0;
     const rate=t?Math.round(100*b/t):0;
     const q=opt.q?opt.q(x):`<b>${n(t)}</b> · 구매 ${n(b)}${t?` (${rate}%)`:''}${x.amount?` · <span style="color:#2E7D32">${esc(wonK(x.amount))}</span>`:''}`;
-    return `<span class="n" title="${esc(x.l)}">${esc(x.l)}${x.sub?` <small class="note">${esc(x.sub)}</small>`:''}</span><span class="tr" title="${esc(x.l)} · ${q.replace(/<[^>]+>/g,'')}"><i style="width:${(100*v/mx).toFixed(1)}%"></i>${key==='total'?`<b style="width:${(100*b/mx).toFixed(1)}%"></b>`:''}</span><span class="q">${q}</span>`; }).join('')}</div>`
+    return `<span class="n" title="${esc(x.l)}"${dr(x)}>${esc(x.l)}${x.sub?` <small class="note">${esc(x.sub)}</small>`:''}</span><span class="tr" title="${esc(x.l)} · ${q.replace(/<[^>]+>/g,'')}"${dr(x)}><i style="width:${(100*v/mx).toFixed(1)}%"></i>${key==='total'?`<b style="width:${(100*b/mx).toFixed(1)}%"></b>`:''}</span><span class="q"${dr(x)}>${q}</span>`; }).join('')}</div>`
     + (rows.length>lim?`<p class="note" style="margin:6px 0 0">외 ${rows.length-lim}개</p>`:''); }
 async function loadCdash(){
   const sel=$('cd_hd'); if(sel && sel.options.length<=1 && (STAFF||[]).length) sel.innerHTML='<option value="">전체 상담사</option>'+STAFF.map(h=>`<option>${esc(h.name)}</option>`).join('');
@@ -5347,7 +5386,8 @@ async function loadCdash(){
   const grain=cdGrain(), fmtP=cdFmtP(grain);
   let d; try{ d=await rpc('fn_consult_stats',{p_grain:grain,p_from:P.from,p_to:P.to,p_handler:sel.value||null,p_include_deleted:$('cd_del').classList.contains('on'),p_scope:CD_SCOPE||null},{fresh:true}); }
   catch(e){ toast(e.message,'bad'); return; }
-  const t=d.total||{}, Pd=d.periods||[], C=d.channels||[], H=d.handlers||[], R=d.routes||[], I=d.interests||[], PU=d.purchases||[], CP=d.channel_periods||[];
+  const t=d.total||{}, Pd=d.periods||[], C=d.channels||[], H=d.handlers||[], R=d.routes||[], I=d.interests||[], PU=d.purchases||[], CP=d.channel_periods||[], PP=d.purposes||[];
+  const hd=sel.value||null;   /* 상담사가 걸려 있으면 드릴다운에도 같이 넘긴다 */
   const sn=d.scope_n||{}; $('cd_scope').querySelectorAll('button').forEach(b=>{ const v=b.dataset.v; const cnt=v===''?((sn.store||0)+(sn.out||0)):(sn[v]||0); b.textContent=(v===''?'전체':v==='store'?'매장':'매장 외')+' '+n(cnt); });
   $('cdSub').textContent=`${d.from} ~ ${d.to} · ${grain==='day'?'일별':grain==='year'?'연별':'월별'}${d.handler?' · '+d.handler:''}${d.include_deleted?' · 삭제 포함':''}${d.deleted_n?` · 삭제 ${n(d.deleted_n)}건 제외 중`:''}`;
   const rate=t.total?Math.round(100*(t.bought||0)/t.total*10)/10:0;
@@ -5362,20 +5402,23 @@ async function loadCdash(){
   ].map(([k,v,u,sub,cls])=>`<div class="mk ${cls}"><div class="t">${k}</div><div class="v">${v}${u?`<small>${u}</small>`:''}</div>${sub?`<div class="s">${esc(sub)}</div>`:''}</div>`).join('');
   $('cdTrendSub').textContent=`${grain==='day'?'일별':grain==='year'?'연별':'월별'} · 문의 ${n(t.total||0)} · 구매 ${n(t.bought||0)}`;
   $('cdTrend').innerHTML=cdBars(Pd, fmtP);
-  $('cdChan').innerHTML=cdHBars(C.map(x=>({l:x.ch,total:x.total,bought:x.bought,amount:x.amount})));
-  $('cdInt').innerHTML=cdHBars(I.map(x=>({l:x.i,total:x.total,bought:x.bought})),{limit:12});
+  $('cdChan').innerHTML=cdHBars(C.map(x=>({l:x.ch,total:x.total,bought:x.bought,amount:x.amount})),{drill:x=>({channel:x.l,handler:hd})});
+  $('cdPurpose').innerHTML=cdHBars(PP.map(x=>({l:x.pp,total:x.total,bought:x.bought,amount:x.amount})),{limit:12,drill:x=>({purpose:x.l,handler:hd})});
+  $('cdInt').innerHTML=cdHBars(I.map(x=>({l:x.i,total:x.total,bought:x.bought})),{limit:12,drill:x=>({category:x.l,handler:hd})});
   const puTot=PU.reduce((s,x)=>s+(Number(x.amount)||0),0), puN=PU.reduce((s,x)=>s+(Number(x.n)||0),0);
   $('cdPurSub').textContent=puN?`${n(puN)}건 · ${wonK(puTot)}`:'';
   $('cdPur').innerHTML=cdHBars(PU.map(x=>({l:x.pn,total:x.n,bought:0,amount:x.amount})),{limit:12,by:'amount',q:x=>`<b>${n(x.total)}건</b>${x.amount?` · <span style="color:#2E7D32">${esc(wonK(x.amount))}</span>`:' · 금액 없음'}`});
-  $('cdHd').innerHTML=cdHBars(H.map(x=>({l:x.h,total:x.total,bought:x.bought,amount:x.amount})),{limit:12});
-  $('cdRoute').innerHTML=cdHBars(R.map(x=>({l:x.r,sub:x.ch,total:x.total,bought:x.bought})),{limit:12});
+  $('cdHd').innerHTML=cdHBars(H.map(x=>({l:x.h,total:x.total,bought:x.bought,amount:x.amount})),{limit:12,drill:x=>({handler:x.l})});
+  $('cdRoute').innerHTML=cdHBars(R.map(x=>({l:x.r,sub:x.ch,total:x.total,bought:x.bought})),{limit:12,drill:x=>({route:x.l,channel:x.sub,handler:hd})});
   const ps=Pd.map(x=>x.p), chs=[...new Set(CP.map(x=>x.ch))];
   const cell=(ch,p)=>{ const x=CP.find(y=>y.ch===ch&&y.p===p); return x?`${n(x.total)}${x.bought?` <b style="color:#1428A0">/ ${n(x.bought)}</b>`:''}`:'<span class="note">·</span>'; };
-  $('cdTable').innerHTML=chs.length?`<div class="tw"><table><thead><tr><th>채널</th>${ps.map(x=>`<th class="num">${esc(fmtP(x))}</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>${chs.map(ch=>{ const c=C.find(y=>y.ch===ch)||{}; return `<tr><td>${esc(ch)}</td>${ps.map(p=>`<td class="num">${cell(ch,p)}</td>`).join('')}<td class="num"><b>${n(c.total||0)}</b>${c.bought?` / ${n(c.bought)}`:''}</td></tr>`; }).join('')}</tbody></table></div><p class="note" style="margin:8px 0 0">칸 = 문의 <b style="color:#1428A0">/ 구매</b></p>`
+  const dcell=(ch,p)=>` data-drill="${esc(JSON.stringify(Object.assign({channel:ch,handler:hd},p?cdPeriodRange(p):{})))}"`;
+  $('cdTable').innerHTML=chs.length?`<div class="tw"><table><thead><tr><th>채널</th>${ps.map(x=>`<th class="num">${esc(fmtP(x))}</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>${chs.map(ch=>{ const c=C.find(y=>y.ch===ch)||{}; return `<tr><td${dcell(ch)}>${esc(ch)}</td>${ps.map(p=>`<td class="num"${dcell(ch,p)}>${cell(ch,p)}</td>`).join('')}<td class="num"${dcell(ch)}><b>${n(c.total||0)}</b>${c.bought?` / ${n(c.bought)}`:''}</td></tr>`; }).join('')}</tbody></table></div><p class="note" style="margin:8px 0 0">칸 = 문의 <b style="color:#1428A0">/ 구매</b> · 누르면 그 채널·기간의 문의 목록 (문의 관리는 이어진 상담을 따로 세므로 숫자가 조금 다를 수 있습니다)</p>`
     :'<div class="note">없음</div>';
 }
 document.addEventListener('click', e=>{ const sp=e.target.closest('#cd_span button');
   if(sp){ setPreset('m'+sp.dataset.m); return; }   /* 기간 바의 P 를 바꾸고 refreshView → loadCdash */
+  const dl=e.target.closest('#v-cdash [data-drill]'); if(dl){ let f={}; try{ f=JSON.parse(dl.dataset.drill||'{}'); }catch(e2){} iqGo(f); return; }
   const b=e.target.closest('#cd_scope button, #cd_grain button'); if(!b) return;
   b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
   if(b.parentNode.id==='cd_scope'){ CD_SCOPE=b.dataset.v; try{ localStorage.setItem('dc_cd_scope', CD_SCOPE); }catch(e2){} }
@@ -5414,8 +5457,8 @@ function utmRender(){
       <td>${c.segment_code?`<button class="btn sm ghost" data-code="${esc(c.code)}" data-seg="${esc(c.segment_code)}" onclick="utmExtract(this.dataset.code,this.dataset.seg)" title="이 조건으로 발송 대상 추출로 갑니다">${esc(utmSegLabel(c.segment_code))}</button>`:'<span class="note">-</span>'}</td>
       <td class="num">${c.sent?n(c.sent):'<span class="note">-</span>'}</td>
       <td class="num">${c.clicks?n(c.clicks):'<span class="note">-</span>'}</td>
-      <td class="num">${c.bought?n(c.bought):'<span class="note">-</span>'}</td>
-      <td class="num">${c.bought_amt?wonK(c.bought_amt):'<span class="note">-</span>'}</td>
+      <td class="num">${c.bought?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmBought(this.dataset.code)" title="이 캠페인 수신자의 발송 뒤 주문을 통합 원장에서 봅니다">${n(c.bought)}</button>`:'<span class="note">-</span>'}</td>
+      <td class="num">${c.bought_amt?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmBought(this.dataset.code)" title="이 캠페인 수신자의 발송 뒤 주문을 통합 원장에서 봅니다">${wonK(c.bought_amt)}</button>`:'<span class="note">-</span>'}</td>
       <td style="white-space:nowrap"><button class="btn sm" data-code="${esc(c.code)}" onclick="utmLinkNew(this.dataset.code)">+ 링크</button>
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmEdit(this.dataset.code)">수정</button>
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmDel(this.dataset.code)">${c.sent?'접기':'삭제'}</button></td></tr>`;
@@ -5426,6 +5469,11 @@ function utmRender(){
         <td><button class="btn sm ghost" data-slug="${esc(k.slug)}" onclick="utmLinkToggle(this.dataset.slug)">${k.active?'끄기':'켜기'}</button></td></tr>`).join('');
     return head+sub; }).join('') || `<tr><td colspan="10" class="note" style="text-align:center;padding:24px">캠페인이 없습니다 — [+ 새 캠페인] 으로 시작하세요</td></tr>`;
 }
+/* [구매]·[매출] 숫자 → 통합 원장 : 캠페인 수신자(발송 실패 제외)의 발송 뒤 주문만 (fn_order_list p_campaign · fn_utm_campaigns 의 bought 와 같은 규칙). 기간은 첫 발송일 ~ 오늘 */
+function utmBought(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code); if(!c) return;
+  O_CAMP={code:c.code,name:c.name}; const from=c.first_sent||c.send_on||iso(new Date(Date.now()-90*864e5));
+  P={from,to:iso(new Date())}; PRESET='custom'; $('pFrom').value=P.from; $('pTo').value=P.to; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); periodLabel();
+  ['oSrc','oCh','oChName','oSt','oHd','oQ'].forEach(id=>{ if($(id)) $(id).value=''; }); oCampRender(); show('orders'); }
 function utmForm(c, lock){ c=c||{}; const segs=(UTM&&UTM.segments)||[]; const base=c.send_on||iso(new Date()); const ym=base.slice(2,4)+base.slice(5,7);
   return `<div class="fgrid" style="grid-template-columns:1fr 1fr">
     <div><label>코드 <span style="color:var(--bad)">필수</span> <span class="note">${lock?'한 번 정한 코드는 바꾸지 않습니다 (발송 이력·UTM 이 이 이름으로 남아 있음)':'yymm_주제 · 영문 소문자·숫자·_ (utm_campaign 그대로) · 자동으로 채워졌어도 고칠 수 있습니다'}</span></label><input class="in mono" id="uc_code" value="${esc(c.code||'')}" placeholder="${ym}_chuseok" ${lock?'readonly':''}></div>
@@ -6061,8 +6109,8 @@ const PAGE_INFO={
     s:['표에서 체크를 켜고 끄면 그 담당자의 /store 메뉴가 바로 바뀝니다.','「기본값」인 담당자는 기본 묶음(판매·상담·콜백·고객·실적·재고)을 씁니다. 하나라도 손대면 그 사람만의 설정이 됩니다.','재고는 사실상 전 직원이 쓰므로 기본으로 켜져 있습니다. 주문서·렌탈·채널 입력은 맡은 사람만 켜세요.','이카운트 연동은 [연동 진단]으로 어디서 막히는지 한 단계씩 확인합니다.']},
   notify:{d:'잔디·카카오로 나가는 알림을 켜고 끄는 페이지입니다. 보내는 곳(채널)과 보낼 일(규칙)이 나뉘어 있습니다.',
     s:['먼저 [보내는 곳]에 잔디 웹훅 주소를 넣고 켭니다.','[보낼 일]에서 규칙을 켜면 그 일이 생길 때 자동으로 나갑니다.','문구의 {name} {phone} {summary} 자리는 실제 값으로 바뀝니다.','[테스트]로 실제 방에 한 번 보내보고 확인하세요.']},
-  inbox:{d:'홈페이지 4개 폼(견적·구독·소모품/렌탈·VMS·B2B)과 매장 접수가 한 화면에 모입니다. 원래 견적은 견적표, 구독·매장은 접수함, 소모품/VMS는 상담에 흩어져 있던 것을 합친 목록입니다.',
-    s:['위 [전체/견적/구독/소모품·렌탈/VMS·B2B/매장] 버튼으로 폼별로 봅니다.','상태·담당 체크박스는 여러 개 고를 수 있습니다. 고른 게 없으면 전체이고, 검색어·기간과 함께 걸립니다.','줄 앞 체크박스로 여러 건을 골라 한 번에 숨기기·테스트 표시·복구합니다. 맨 위 체크박스는 이 페이지 전체입니다.','연락처는 기본 가림입니다. [연락처 보기]를 켜면 감사로그에 남습니다.','아래 [고객 접수함]은 승인·반려 같은 처리를 하는 기존 화면입니다.']},
+  inbox:{d:'홈페이지 문의(문의 메일 자동 적재) · 자체 폼 4개(구독·견적서·소모품/렌탈·VMS/B2B) · 매장 접수 · 매장 상담 · 가망고객이 한 화면에 모입니다. 상담 대시보드의 채널·문의 유형·관심 제품·유입경로·담당자 막대나 표의 칸을 누르면 그 조건이 걸린 채 이 화면으로 옵니다.',
+    s:['위 [전체/홈페이지/구독/견적서/소모품·렌탈/VMS·B2B/매장 접수/매장 상담/가망고객] 버튼으로 폼별로 봅니다.','대시보드에서 넘어온 조건은 [조건] 칩으로 보이고 ✕ 로 하나씩 뺍니다.','상태·담당 체크박스는 여러 개 고를 수 있습니다. 고른 게 없으면 전체이고, 검색어·기간과 함께 걸립니다.','줄 앞 체크박스로 여러 건을 골라 한 번에 숨기기·테스트 표시·복구합니다. 맨 위 체크박스는 이 페이지 전체입니다.','연락처는 기본 가림입니다. [연락처 보기]를 켜면 감사로그에 남습니다.','아래 [고객 접수함]은 승인·반려 같은 처리를 하는 기존 화면입니다.']},
 };
 let DATA_STAMP='';
 function renderIntro(v){
@@ -6413,7 +6461,8 @@ async function loadCrmFunnel(){
       ${crmSourceRows(f.by_source||[])}
     </tbody></table></div>`;
 }
-/* 유입 경로를 사람이 읽는 이름·묶음으로. 아직 안 들어온 원천(S몰·AT몰 등)도 0 으로 보여 준다 */
+/* 유입 경로를 사람이 읽는 이름·묶음으로. 아직 안 들어온 원천(S몰·AT몰 등)도 0 으로 보여 준다.
+   홈페이지(문의 메일 1개) 와 자체 폼(구독·견적서·VMS/B2B·소모품 4개 — 고도몰에 있지만 우리 폼) 을 나눈다. 여기 없는 키는 '기타' 로 떨어진다 */
 const CRM_SRC=[
   ['고도몰',   'P몰',              'P몰',               'B2B몰 회원'],
   ['고도몰',   'S몰',              'S몰',               '회원 파일 미적재'],
@@ -6423,11 +6472,13 @@ const CRM_SRC=[
   ['외부 ERP·수집','shoplinker',   '샵링커 주문',       '오픈마켓·고도몰 구매자'],
   ['내부 운영','store',            '매장 판매 입력',    ''],
   ['내부 운영','consult',          '상담 입력',         ''],
+  ['내부 운영','store_consult',    '상담 입력 (담당자 화면)', ''],
   ['내부 운영','rental',           '렌탈 방문 교체',    ''],
-  ['홈페이지 폼','web_subscription','구독 문의',        ''],
-  ['홈페이지 폼','quote',          '견적서',            ''],
-  ['홈페이지 폼','web_b2b',        'VMS · B2B 문의',    ''],
-  ['홈페이지 폼','web_supply',     '소모품 · 렌탈 문의',''],
+  ['홈페이지', 'homepage',         '홈페이지 문의',     '문의 메일 자동 적재'],
+  ['자체 폼',  'web_subscription', '구독 문의',         ''],
+  ['자체 폼',  'quote',            '견적서',            ''],
+  ['자체 폼',  'web_b2b',          'VMS · B2B 문의',    ''],
+  ['자체 폼',  'web_supply',       '소모품 · 렌탈 문의',''],
 ];
 function crmSourceRows(rows){
   const pct=(a,b)=>b?(a/b*100).toFixed(1)+'%':'-';

@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-22 · v141)
+## 지금 상태 (2026-09-22 · v142)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -471,6 +471,15 @@ end $outer$;
   원장 모드의 매장 일시불·구독은 이제 **판매 입력(`core.orders` store, 취소·환불·테스트 제외, 매출+판매완료)** 에서, 그날 그 구분의 판매 입력이 없을 때만 store_daily 로(8월 시트 자료). 직판은 두 모드 다 store_daily. 수기입력 모드는 그대로.
   **일 마감의 '판매완료 합계'는 저장 시점 snapshot 이라 대시보드 원천으로 쓰면 안 된다.**
   **기본 모드를 원장으로 바꿨다 (v114)** — `/dash/` `dashBasis()` 는 `?mode=manual` 이나 sessionStorage 가 manual 일 때만 수기입력, 관리자 `DASH_BASIS` 기본 'ledger'(localStorage `dash_basis` 로 바꾼 사람은 그대로). 테스트 `ptest/dashmode.mjs` D1~D3.
+- **상담 대시보드 → 문의 관리 드릴다운 · 문의 유형 축 (mvp_174 · v142 · 2026-09-22)** — "클릭하면 검색조건이 그에 맞게 변해서 문의를 검색하는 페이지로". 상담 대시보드의 채널·**문의 유형**(새 카드)·관심 제품·담당자·유입경로 막대, 기간 막대, 채널×기간 표 칸에 `data-drill`(JSON) 이 붙고
+  `#v-cdash [data-drill]` 클릭 → `iqGo({form,channel,category,route,purpose,handler,status,from,to})` → 문의 관리(`show('inbox')`). 넘어온 조건은 `IQ_DRILL` → `#iqDrill` 칩(✕ 로 하나씩, [← 상담 대시보드]), `fn_inquiry_list` 에 `p_channel·p_category·p_route·p_purpose`(쉼표 목록, 옛 시그니처 drop → grant authenticated,service_role · revoke public,anon). 상담사 select 가 걸려 있으면 handler 도 같이 간다. 범위(매장/매장 외)는 못 넘긴다.
+  **문의 유형(구매 목적) = `core.f_consult_purpose(source,type_code,raw_payload,content)`** — 구독 폼 `purchasePurpose`(신규구독·이사·입주·가전교체·혼수·신혼·사업자·B2B·사전예약·자급제구매·기타) → 내용 '목적: ' → 홈페이지 문의 `raw_payload.kind='사업자'` → 폼(web_b2b 사업자·B2B / web_supply 소모품·렌탈) → 문의 유형 코드(구독·일시불·렌탈·소모품·일반 제품) → '(미기록)'.
+  `crm.v_inquiry` 와 `core.f_consult_stats`(c CTE `purpose` · 응답 `purposes`) 가 같은 함수를 쓰므로 대시보드에서 누른 글자가 문의 관리 조건과 같다. 7~9월: 일반 제품 101 · 신규구독 22 · 이사·입주 15 · 가전교체 12 · 혼수·신혼 5 · 사업자·B2B 4.
+  **문의 관리가 진짜 전부를 본다** — 전엔 [홈페이지] 칩이 `crm.quote`(견적서)였고 진짜 홈페이지 문의(homepage_csv·gmail_homepage 198건)·매장 상담(store)·가망고객(ecount_prospect)은 `crm.v_inquiry` 에 없었다. 이제 consult 가지가 모든 source 를 덮는다:
+  form `homepage`(홈페이지 문의) · `subscribe` · `quote`(견적서) · `supply` · `b2b` · `store`(방문 접수 전부 — 매장방문 아닌 5건도 subscribe 에서 store 로, 플래그도 옮김) · `consult`(매장 상담) · `prospect`(가망고객). 새 열 `channel`(대시보드 채널 규칙 그대로) · `route` · `hidden`(상담 화면에서 숨김·삭제한 건 → [삭제됨]) · `auto_test` 에 hidden_reason '테스트%' 포함. 폼 칩 9개, 줄 목적 칸 아래 채널·경로 한 줄. `fn_inquiry_flag` 는 consult 폼 6개 전부 crm.consult hidden_* 을 같이 바꾸고 복구는 deleted_at 도 푼다.
+  **홈페이지 1 · 자체 폼 4** — "문의폼은 다 고도몰에서 하는데 굳이 고도몰이라고 할 건 없고 자체 form". CRM 유입 표(`CRM_SRC`) 묶음을 홈페이지(homepage=문의 메일 자동 적재 고객 193) / 자체 폼(구독·견적서·VMS/B2B·소모품) / 내부 운영(+`store_consult`=담당자 화면 상담 입력 16) 으로. '기타' 는 표에 이름 없는 키가 떨어지는 자리였다.
+  **UTM 관리 [구매]·[매출] 숫자 → 통합 원장** — "구매 숫자 누르면 구매를 확인할 수 있는 페이지로". `utmBought(code)` 가 `O_CAMP` 를 걸고 기간을 첫 발송일~오늘로 바꿔 `show('orders')`. `fn_order_list`·`fn_order_summary` 에 `p_campaign`(수신자의 발송 뒤 주문 · 발송 실패·테스트 제외 = `fn_utm_campaigns.bought` 규칙, 옛 시그니처 drop · ACL 그대로 anon 포함). 원장 필터 아래 `#oCamp` 칩(✕), [초기화] 도 푼다.
+  테스트 `ptest/cdash.mjs` C9~C15 (15/15) · utm 16 · ovf_admin · sendlog 43 · cdnav · segpick 24. 문의 관리는 이어진 상담을 따로 세고 견적서·방문 접수도 들어 있어 대시보드 숫자와 조금 다를 수 있다(표 아래 안내).
 - **관리자 [상담 대시보드] (mvp_158 · v117 · 2026-09-17)** — "문의 처리현황도 대시보드처럼". crm 그룹 메뉴 `cdash`(`core.menu_item` sort 15, 문의 관리 다음). 화면 `#v-cdash`·`loadCdash`: 상단 기간 바(P) 그대로, 범위 세그(매장/매장 외/전체 · `localStorage dc_cd_scope`), 묶음(자동=45일 이하 일별·800일 이하 월별·그 위 연별 / 일 / 월), 상담사, 삭제 포함.
   KPI 6장(문의·구매(성공률)·구매 금액(건당)·진행 중(연락 전·상담중·보류)·완료(비구매)·거절) → 그래프 6개(`cdBars` 기간 막대: 연한 문의 위 진한 구매 + 초록 금액 / `cdHBars` 채널·관심 제품·구매 제품(금액순)·담당자·유입경로) → 채널×기간 표(문의 / 구매).
   **제품·금액은 `core.f_consult_stats` 에 넣었다** — `interests`(관심 카테고리, 쉼표 여러 개는 쪼개고 괄호 설명 제거) · `purchases`(구매 제품명 = 연결 주문 품목명 → purchase_item → 관심 모델 → 카테고리 → '(제품 미기록)', 금액 = 연결 주문 같은 주문번호 합계 → 예상 금액) · `total/periods/channels/handlers` 에 `amount`. 시그니처 그대로라 담당자 화면 상담 현황도 같은 함수를 쓴다.
