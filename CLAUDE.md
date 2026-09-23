@@ -165,7 +165,7 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-09-22 · v151)
+## 지금 상태 (2026-09-23 · v152)
 
 ### 되는 것
 - **담당자 화면이 탭으로 나뉜다 (v99 · store.html 에 올림)** — 홈(흐름 띠·챙길 것·찾기·콜백·우선 순위 상담) · 상담(내 상담·배정) ·
@@ -471,6 +471,12 @@ end $outer$;
   원장 모드의 매장 일시불·구독은 이제 **판매 입력(`core.orders` store, 취소·환불·테스트 제외, 매출+판매완료)** 에서, 그날 그 구분의 판매 입력이 없을 때만 store_daily 로(8월 시트 자료). 직판은 두 모드 다 store_daily. 수기입력 모드는 그대로.
   **일 마감의 '판매완료 합계'는 저장 시점 snapshot 이라 대시보드 원천으로 쓰면 안 된다.**
   **기본 모드를 원장으로 바꿨다 (v114)** — `/dash/` `dashBasis()` 는 `?mode=manual` 이나 sessionStorage 가 manual 일 때만 수기입력, 관리자 `DASH_BASIS` 기본 'ledger'(localStorage `dash_basis` 로 바꾼 사람은 그대로). 테스트 `ptest/dashmode.mjs` D1~D3.
+- **샵링커 수집 '24h 오류 3' 의 정체 (v152 · 2026-09-23)** — 데이터 상태 빨간 점. `core.sl_log` 를 보니 **09-23 03:03~03:04 한 번의 실행에서 3개 작업**(송장등록·송장전송완료·취소/교환/반품)이 전부 같은 글로 실패했다: `could not open XML input13`.
+  **이건 샵링커가 내는 말이다** — 샵링커 서버가 `iteminfo_url` 로 준 **우리 조건 XML(GAS /exec)을 못 읽었다**는 뜻(collect.mjs 머리말 13행에 원래 적혀 있던 그 오류). 그 실행은 121초(평소 17~28초)가 걸렸고 실패한 작업마다 ~30초씩 먹었다 = 샵링커가 GAS 를 기다리다 포기한 것. 같은 실행에서 발주확인·신규수집분은 성공했다(일시적·간헐적).
+  **진짜 버그는 재시도가 아예 안 됐다는 것** — `fetchPage` 의 3회 재시도 그물은 HTTP 오류·TLS·비XML 응답만 잡는데, 이 오류는 **정상 XML 안의 `<ResultMessage>`** 로 와서 `parseResponse` 가 그대로 반환 → `runJob` 이 바로 throw → ERROR 기록. 30일간 ERROR 5건이 전부 이 글(09-04·09-17·09-23×3)인데 한 번도 다시 시도하지 않았다.
+  고친 것: ① `TRANSIENT` 에 걸리는 응답은 throw 해서 **3회 재시도(4초·12초 대기 — 샵링커가 30초쯤 기다렸다 포기하므로 바로 다시 부르면 또 걸린다)** ② `runRange` 는 1차 실패를 기록하지 않고 모아 두었다가 **20초 뒤 한 번 더**. 그때 되면 OK(note '1차 실패 뒤 재시도 성공'), 그래도 안 되면 ERROR ③ `core.f_home_build` 의 `sync_fail_24h` 는 **뒤에 같은 작업이 OK 로 성공했으면 안 센다** (일시 오류로 빨간 점이 다음 날까지 켜져 있었다).
+  **자료 손실은 없다** — 각 작업이 최근 3일(취소/교환/반품은 90일)을 매번 다시 조회하므로 다음 수집이 메운다. 03:04 실행의 신규 0·갱신 0 도 그래서 문제가 아니고, 09-23 주문 0줄은 **샵링커 API 에 '신규주문' 코드가 없어 몰에서 아침에 가져온 뒤에야 보이는** 원래 성질이다(mvp_162).
+  GAS 를 걷어내면 근본 해결이지만 조건 XML 은 쿼리를 되돌려주는 동적 응답이라 정적 호스팅으로 못 옮긴다(샵링커는 `*.supabase.co` 를 못 읽고 `script.google.com`·`raw.githubusercontent.com` 만 읽는다 — 머리말 참고).
 - **고도몰 과거 주문 → 통합 원장 (mvp_180 · v151 · 2026-09-22)** — 요청서 "raw.godo_order_hist 의 2021~2025 4몰 주문을 core.orders 로, 샵링커와 안 겹치게". `core.f_godo_hist_apply(p_dry, p_include_unmatched_after, p_by)` · 관리자 래퍼 `fn_godo_hist_apply`. **source = `godo_hist`**(check 제약에 추가), channel_type 자사몰, channel_name P몰·S몰·AT몰·시흥몰, channel_account pcnik35-P/S/AT·samsungsh(샵링커 행과 같은 값).
   **idempotent = 전부 지우고 다시 넣기**(raw.upload 한 줄, upload_id 로 `fn_upload_rollback` 가능 — 이전 upload 줄엔 note '재적재로 대체'). dry-run 은 fate(load·matched·hold·excluded)·제외 상태별·겹침 몰별·보류 몰×상태·적재 몰×연도·주문번호 충돌·배분 메모만 돌려준다.
   **제외** = 엑셀 결제실패·고객결제중단·자동취소 / API f1·f2·f3·o1(·o2) — 4,440줄. **겹침** = 같은 몰·같은 주문번호가 샵링커 원장에 있으면 안 넣음(1,076건, 전부 2025-06-20 이후). **보류(hold)** = 몰의 샵링커 시작일 이후인데 주문번호가 원장에 없는 109건(구매확정·배송중 43건 순매출 4,800만, 나머지 환불·취소) — 샵링커가 의도적으로 뺀 건인지 몰라 기본은 안 넣는다. 넣으려면 `p_include_unmatched_after=true`.
