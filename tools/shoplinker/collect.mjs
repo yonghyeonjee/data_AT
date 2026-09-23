@@ -51,6 +51,11 @@ const MAX_PAGE  = 200;
 const SLEEP_MS  = Number(process.env.SL_SLEEP_MS ?? 500);
 const CHUNK     = 300;
 const RETRY     = 3;
+const RETRY_WAIT = [4_000, 12_000];   // 샵링커는 우리 조건 XML 을 30초쯤 기다렸다 포기한다 — 바로 다시 부르면 또 걸린다
+/* 샵링커가 iteminfo_url(GAS /exec)을 못 읽었을 때 <ResultMessage> 로 돌려주는 일시 오류.
+   정상 XML 안에 담겨 오므로 예전 재시도 그물(HTTP·TLS·비XML)에 안 걸려 그대로 실패로 기록됐다
+   — 09-04·09-17·09-23 의 '오류'가 전부 이것이다 (2026-09-23). */
+const TRANSIENT = /could not open XML input|failed to load external entity|Document is empty|Start tag expected|timeout|다시 시도/i;
 
 // ── 조회 작업 정의 (GAS SL_JOBS 와 동일) ──────────────────────────
 // 상태별 "이벤트 날짜"로 조회해야 최근 N일 사이에 변한 건이 잡힌다.
@@ -242,10 +247,15 @@ async function fetchPage(params) {
       if (r.status !== 200) throw new Error(`HTTP ${r.status}`);
       if (!r.text.includes("<Shoplinker") && !r.text.includes("<ResultMessage"))
         throw new Error(`XML 아님: ${r.text.slice(0, 160)}`);
-      return parseResponse(r.text);
+      const res = parseResponse(r.text);
+      if (res.error && TRANSIENT.test(res.error)) throw new Error(res.error);   // 일시 오류도 재시도 대상으로
+      return res;
     } catch (e) {
       lastErr = e;
-      if (i < RETRY - 1) await sleep(1500 * (i + 1));
+      if (i < RETRY - 1) {
+        console.log(`    ↻ ${e.message.slice(0, 60)} — ${RETRY_WAIT[i] / 1000}초 뒤 다시 (${i + 2}/${RETRY})`);
+        await sleep(RETRY_WAIT[i] ?? 12_000);
+      }
     }
   }
   throw lastErr;
@@ -346,27 +356,40 @@ async function runJob(job, st, ed) {
 
 async function runRange(label, st, ed, jobs) {
   let tot = { fetched: 0, ins: 0, upd: 0, nokey: 0 };
-  for (const job of jobs) {
+  const failed = [];
+  /* pass 1 = 정규 순서, pass 2 = 1차에 실패한 것만 다시. 1차 실패는 아직 ERROR 로 기록하지 않는다 */
+  const once = async (job, pass) => {
     const jst = job.days ? ymd(kstShift(-job.days)) : st;
     const jed = ed;
     let r;
     try {
       r = await runJob(job, jst, jed);
     } catch (e) {
-      console.log(`  ✕ ${job.name} ${jst}~${jed} — ${e.message}`);
+      console.log(`  ✕ ${job.name} ${jst}~${jed} — ${e.message}${pass > 1 ? "  (재시도도 실패)" : ""}`);
+      if (pass === 1) { failed.push(job); return; }
       if (!DRY) await rpc("fn_sl_log", {
         p_status: "ERROR", p_job: job.name, p_period: `${jst}~${jed}`,
-        p_pages: 0, p_fetched: 0, p_ins: 0, p_upd: 0, p_note: String(e.message).slice(0, 400), p_mark_ymd: null,
+        p_pages: 0, p_fetched: 0, p_ins: 0, p_upd: 0,
+        p_note: `재시도 뒤에도 실패 — ${String(e.message)}`.slice(0, 400), p_mark_ymd: null,
       });
-      continue;
+      return;
     }
     tot.fetched += r.fetched; tot.ins += r.ins; tot.upd += r.upd; tot.nokey += r.nokey;
-    console.log(`  · ${job.name.padEnd(12)} ${jst}~${jed}  ${String(r.pages).padStart(2)}p  수신 ${String(r.fetched).padStart(5)}  신규 ${String(r.ins).padStart(5)}  갱신 ${String(r.upd).padStart(5)}`);
+    console.log(`  · ${job.name.padEnd(12)} ${jst}~${jed}  ${String(r.pages).padStart(2)}p  수신 ${String(r.fetched).padStart(5)}  신규 ${String(r.ins).padStart(5)}  갱신 ${String(r.upd).padStart(5)}${pass > 1 ? "  (재시도 성공)" : ""}`);
     if (!DRY) await rpc("fn_sl_log", {
       p_status: "OK", p_job: job.name, p_period: `${jst}~${jed}`,
       p_pages: r.pages, p_fetched: r.fetched, p_ins: r.ins, p_upd: r.upd,
-      p_note: r.nokey ? `고객키없음 ${r.nokey}` : "", p_mark_ymd: null,
+      p_note: [pass > 1 ? "1차 실패 뒤 재시도 성공" : "", r.nokey ? `고객키없음 ${r.nokey}` : ""].filter(Boolean).join(" · "),
+      p_mark_ymd: null,
     });
+  };
+
+  for (const job of jobs) await once(job, 1);
+  /* 1차 실패는 대개 샵링커가 GAS 를 못 읽은 일시 오류라 조금 쉬었다 다시 부르면 들어온다 */
+  if (failed.length) {
+    console.log(`  ↻ 1차 실패 ${failed.length}건 (${failed.map((j) => j.name).join(", ")}) — 20초 뒤 다시`);
+    await sleep(20_000);
+    for (const job of failed) await once(job, 2);
   }
   console.log(`${label} → 수신 ${tot.fetched} · 신규 ${tot.ins} · 갱신 ${tot.upd}`);
   return tot;

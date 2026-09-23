@@ -181,3 +181,7 @@ end $o$;
 -- fn_order_list : 머리글 정렬을 서버에서 (검색된 전체 정렬 · 화면은 1페이지로). p_sort = date|amt|gross|refund|qty|channel|kind|customer|product|status|handler _ asc|desc (pg_get_functiondef 통째 치환 — OUT 열이 있어 create or replace 로는 못 바꾼다).
 -- 실행 기록 2026-09-22: dry → fate {load 21295, matched 1116, hold 111, excluded 4440} · 적용 upload 533 → 재적재(모델명 정리) upload 534 · 19,909 주문 전부 sum(gross)=총 품목 금액 · 2026 자료 변화 없음 · 최대 order_at 2025-06-24.
 -- 보류(hold) 109건 = 샵링커 시작일 이후인데 주문번호가 원장에 없는 것 (구매확정·배송중 43건 순매출 4,800만 · 나머지 환불·취소). 넣으려면 core.f_godo_hist_apply(false, true).
+
+-- 2026-09-23 · 데이터 상태의 '24h 오류 N' 규칙 (mvp_181 과 같이 봄)
+-- core.f_home_build 의 sync_fail_24h = 24시간 안 ERROR 전부 → **뒤에 같은 작업이 OK 로 성공하지 않은 것만**.
+-- 일시 오류(샵링커가 GAS 조건 XML 을 못 읽음)로 빨간 점이 다음 날까지 켜져 있던 것을 고쳤다.
