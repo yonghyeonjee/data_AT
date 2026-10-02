@@ -489,13 +489,23 @@ table.iqt tr:hover .acts,table.iqt tr:focus-within .acts{opacity:1}
 #loadbar{position:fixed;left:0;top:0;height:3px;width:0;background:linear-gradient(90deg,var(--navy),#6C7FE8);z-index:1200;opacity:0;transition:width .25s ease,opacity .3s;box-shadow:0 0 8px rgba(20,40,160,.5)}
 #loadbar.on{opacity:1}
 /* 불러오는 중 알약 — 눌렀는데 화면이 그대로일 때 이게 뜬다 */
-#loadpill{position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-14px);z-index:1201;
-  display:flex;align-items:center;gap:9px;padding:8px 16px 8px 13px;border-radius:999px;
-  background:var(--ink);color:#fff;font-size:calc(12.5px * var(--font-scale));font-weight:600;letter-spacing:-.01em;
-  box-shadow:0 6px 22px rgba(16,20,32,.28);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+/* 진행 카드 (2026-10-03) — 모든 조회가 거치는 rpcRaw 가 지금 하는 일을 단계·퍼센트·받은 KB·경과 초로 보여 준다 (대시보드 진행 카드와 같은 모양) */
+#loadpill{position:fixed;left:50%;top:12px;transform:translateX(-50%) translateY(-12px);z-index:1201;width:min(440px,calc(100vw - 32px));box-sizing:border-box;
+  background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(16,20,32,.16);padding:14px 16px 12px;
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
 #loadpill.on{opacity:1;transform:translateX(-50%)}
-#loadpill i{width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;flex:none}
-#loadpill b{font-weight:600;color:#AEB6CC}
+#loadpill .lp-t{display:flex;align-items:center;gap:9px;font-size:calc(14px * var(--font-scale));font-weight:700}
+#loadpill .lp-t span{flex:1;min-width:0}
+#loadpill .lp-t i{width:14px;height:14px;border:2.5px solid #D5DBEA;border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;flex:none}
+#loadpill .lp-t b{font-variant-numeric:tabular-nums;color:var(--navy);font-weight:800}
+#loadpill .lp-bar{height:7px;border-radius:99px;background:#E6EAF2;overflow:hidden;margin:10px 0}
+#loadpill .lp-bar s{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--navy),#6C7FE8);transition:width .3s ease}
+#loadpill .lp-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#loadpill .lp-steps li{text-align:center;padding:6px 4px;border-radius:8px;background:#F3F5F9;color:var(--muted);font-size:calc(12px * var(--font-scale));font-weight:600}
+#loadpill .lp-steps li.on{background:var(--navy-soft);color:var(--navy)}
+#loadpill .lp-steps li.done{background:#E7F5F2;color:#0B6B5E}
+#loadpill .lp-steps li.done::before{content:'✓ '}
+#loadpill .lp-msg{margin-top:9px;font-size:calc(13px * var(--font-scale));color:var(--ink-2);line-height:1.4}
 /* 새로 그리는 동안 살짝 죽여 둔다 */
 .view.vload{opacity:.5;transition:opacity .12s}
 .view.vload *{cursor:progress!important}
@@ -579,7 +589,10 @@ textarea.in{height:auto}
 .callout{padding:11px 14px;border-radius:var(--r);background:var(--navy-soft);color:var(--navy-ink);font-size:calc(12.5px * var(--font-scale));line-height:1.6;margin-bottom:12px;border:1px solid transparent}
 .callout.warn{background:var(--amber-soft);color:var(--amber);border-color:#F1E2BF}
 .utm-short{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.utm-short.big .mono{font-size:15px;font-weight:700}
-tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}   /* 긴 주소가 td nowrap 을 물려받아 표를 옆으로 늘리던 것 (2026-09-21) */tr.off>td{opacity:.55}
+tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}
+.utm-long{margin-top:4px} .utm-long summary{cursor:pointer;color:var(--muted);font-size:calc(12px * var(--font-scale));list-style:none;display:inline-flex;align-items:center;min-height:28px}
+.utm-long summary::before{content:'▸ '} .utm-long[open] summary::before{content:'▾ '} .utm-long summary::-webkit-details-marker{display:none}
+.utm-lk{white-space:nowrap} .utm-hit{background:#FFF4CC;border-radius:3px}   /* 긴 주소가 td nowrap 을 물려받아 표를 옆으로 늘리던 것 (2026-09-21) */tr.off>td{opacity:.55}
 .callout.ok{background:var(--teal-soft);color:var(--teal);border-color:#CDE8E2}
 
 /* ── 차트 공통 ── */
@@ -1655,8 +1668,17 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <button class="btn sm" onclick="utmNew()">+ 새 캠페인</button>
             <span class="note">코드 규칙 <b class="mono">yymm_주제</b> — 예: <span class="mono">2609_chuseok</span> · 한 번 정하면 바꾸지 않습니다</span>
           </div>
-          <div class="tw"><table><thead><tr><th>코드</th><th>이름</th><th>종류</th><th>발송일</th><th>대상 조건</th><th class="num">발송</th><th class="num">클릭</th><th class="num">구매</th><th class="num">매출</th><th></th></tr></thead>
-            <tbody id="utmRows"></tbody></table></div>
+          <!-- 2026-10-03: 링크가 많아져도 다룰 수 있게 — 캠페인별/링크 전체 · 찾기 · 상태 · 정렬 · 쪽 나누기 · 링크는 접어 두고 긴 주소는 눌러야 보인다 -->
+          <div class="filters utm-tools" style="margin-bottom:8px;align-items:center;row-gap:8px">
+            <div class="seg2" id="utmView" role="group" aria-label="보기"><button data-v="camp" class="on" onclick="utmSet('view','camp')">캠페인별</button><button data-v="link" onclick="utmSet('view','link')">링크 전체</button></div>
+            <input class="in" id="utmQ" placeholder="코드 · 이름 · 짧은 주소 · 긴 주소 · utm_source" aria-label="캠페인·링크 찾기" autocomplete="off" oninput="utmQIn()" style="flex:1 1 220px;max-width:360px">
+            <div class="seg2" id="utmSt" role="group" aria-label="상태"><button data-v="on" class="on" onclick="utmSet('st','on')">켜짐</button><button data-v="off" onclick="utmSet('st','off')">접음·꺼짐</button><button data-v="all" onclick="utmSet('st','all')">전체</button></div>
+            <select class="in" id="utmSort" aria-label="정렬" onchange="utmSet('sort',this.value)" style="width:auto">
+              <option value="recent">최근 것부터</option><option value="clicks">클릭 많은 순</option><option value="bought">구매 많은 순</option><option value="links">링크 많은 순</option><option value="code">코드 순</option></select>
+            <span style="flex:1"></span><span class="note" id="utmSum"></span>
+          </div>
+          <div class="tw"><table><thead id="utmHead"></thead><tbody id="utmRows"></tbody></table></div>
+          <div class="pager"><span id="utmRange"></span><div class="btns" id="utmPg"></div></div>
         </div>
         <div class="card">
           <h3>단축 링크 주소 <span>문자에 찍히는 앞부분</span></h3>
@@ -2020,7 +2042,11 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 <datalist id="handlerList"></datalist>
 <div class="tip" id="tip"></div>
 <div id="loadbar"></div>
-<div id="loadpill"><i></i><span id="loadpillTx">불러오는 중…</span><b id="loadpillSub"></b></div>
+<div id="loadpill"><div class="lp-t"><i aria-hidden="true"></i><span id="loadpillTx">불러오는 중…</span><b id="loadpillPct">0%</b></div>
+  <div class="lp-bar" role="progressbar" aria-label="불러오기 진행"><s id="loadpillBar"></s></div>
+  <ol class="lp-steps" id="loadpillSteps"><li>자료 요청</li><li>자료 받기</li><li>화면 그리기</li></ol>
+  <div class="lp-msg" id="loadpillMsg">준비하는 중…</div><b id="loadpillSub" hidden></b>
+  <span id="loadpillSr" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></span></div>
 <div class="toast" id="toast"></div>
 <div id="modalHost"></div>
 
@@ -2136,23 +2162,85 @@ function rpcBar(d){
   clearTimeout(RPC_T);
   if(RPC_BUSY>0){
     b.classList.add('on'); b.style.width=(30+Math.min(60,RPC_BUSY*12))+'%';
-    if(!RPC_PILL){ RPC_T0=Date.now();
-      RPC_PILL=setTimeout(()=>{ if(RPC_BUSY>0 && p) p.classList.add('on'); }, 220); }   // 아주 빠른 건 안 띄운다
-    if(p) $('loadpillSub').textContent = RPC_BUSY>1 ? RPC_BUSY+'건' : '';
+    clearTimeout(LP_DONE_T);
+    if(!RPC_PILL){ RPC_T0=Date.now(); LP_SR='';
+      RPC_PILL=setTimeout(()=>{ if(RPC_BUSY>0 && p){ p.classList.add('on'); lpPaint(); clearInterval(LP_TICK); LP_TICK=setInterval(lpPaint,250); } }, 220); }   // 아주 빠른 건 안 띄운다
   } else {
-    b.style.width='100%'; clearTimeout(RPC_PILL); RPC_PILL=null;
-    if(p) p.classList.remove('on');
+    b.style.width='100%'; clearTimeout(RPC_PILL); RPC_PILL=null; clearInterval(LP_TICK);
+    if(p && p.classList.contains('on')) lpFinish(); else RPC_ACT.clear();
     RPC_T=setTimeout(()=>{ b.classList.remove('on'); setTimeout(()=>{ if(RPC_BUSY===0) b.style.width='0'; },300); },180);
   }
+}
+/* ── 진행 카드 — 호출마다 [기다림 → 받는 중(받은 바이트) → 끝] 을 적어 두고 250ms 마다 그린다 ── */
+const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
+const FN_LABEL={fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
+  fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
+  fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',
+  fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
+  fn_sl_pending:'샵링커 주문',fn_sl_status:'샵링커 상태',fn_order_queue:'전표 대기열',fn_settlement_list:'정산',fn_sub_plans:'구독 플랜',fn_store_daily_list:'매장 마감',
+  fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴'};
+const rpcLabel=fn=>FN_LABEL[fn]||'자료';
+const lpKB=b=>b>=1e6?(b/1e6).toFixed(1)+'MB':Math.max(1,Math.round(b/1e3))+'KB';
+function rpcExp(fn){ try{ return (JSON.parse(localStorage.getItem('dc_rpc_bytes')||'{}'))[fn]||0; }catch(e){ return 0; } }
+function rpcExpSave(fn,n){ try{ const m=JSON.parse(localStorage.getItem('dc_rpc_bytes')||'{}'); m[fn]=n; localStorage.setItem('dc_rpc_bytes',JSON.stringify(m)); }catch(e){} }
+function lpProg(r,now){
+  if(r.stage==='done') return 1;
+  if(r.stage==='recv') return .15+.8*(r.exp ? Math.min(.98, r.got/Math.max(r.exp, r.got*1.02)) : Math.min(.9, 1-1/(1+r.got/150000)));
+  return Math.min(.14, .03+((now-r.t0)/1000)*.012);   // 서버 기다리는 동안도 조금씩 — 멈춘 것처럼 안 보이게
+}
+function lpSteps(done){ document.querySelectorAll('#loadpillSteps li').forEach((li,i)=>{ li.classList.toggle('done',done[i]===true); li.classList.toggle('on',done[i]==='on'); }); }
+function lpPaint(){
+  const recs=[...RPC_ACT.values()]; if(!recs.length || !$('loadpill')) return;
+  const now=Date.now(), sec=Math.floor((now-RPC_T0)/1000);
+  const pct=Math.min(99, Math.round(95*recs.reduce((a,r)=>a+lpProg(r,now),0)/recs.length));
+  const act=recs.filter(r=>r.stage!=='done'), slow=act.slice().sort((a,b)=>lpProg(a,now)-lpProg(b,now))[0];
+  let msg, step;
+  if(!slow){ msg='화면 그리는 중…'; step=2; }
+  else if(slow.stage==='wait'){ step=0; msg = (now-slow.t0)>=6000 ? `${rpcLabel(slow.fn)} — 서버가 집계하는 중입니다 · 조금만 기다려 주세요` : `서버에서 ${rpcLabel(slow.fn)} 꺼내는 중…`; }
+  else { step=1; msg = slow.exp ? `${rpcLabel(slow.fn)} 받는 중… ${lpKB(slow.got)} / 약 ${lpKB(Math.max(slow.exp,slow.got))}` : `${rpcLabel(slow.fn)} 받는 중… ${lpKB(slow.got)}`; }
+  const sr=msg.replace(/ [0-9.]+(KB|MB).*$/,''); if(sr!==LP_SR){ LP_SR=sr; const e=$('loadpillSr'); if(e) e.textContent=sr; }
+  if(recs.length>1) msg+=` · ${recs.length}개 중 ${recs.length-act.length}개 받음`;
+  if(sec>=2) msg+=` · ${sec}초`;
+  $('loadpillPct').textContent=pct+'%'; $('loadpillBar').style.width=pct+'%'; $('loadpillMsg').textContent=msg;
+  const waiting=recs.some(r=>r.stage==='wait');
+  lpSteps([waiting?(step===0?'on':false):true, act.length?(step===1?'on':false):true, step===2?'on':false]);
+}
+function lpFinish(){   // 다 받았으면 100% 를 잠깐 보여 주고 닫는다
+  $('loadpillPct').textContent='100%'; $('loadpillBar').style.width='100%'; $('loadpillMsg').textContent='다 받았습니다 · 화면 그리는 중…'; lpSteps([true,true,'on']);
+  RPC_ACT.clear(); clearTimeout(LP_DONE_T);
+  LP_DONE_T=setTimeout(()=>{ if(RPC_BUSY===0){ const p=$('loadpill'); if(p) p.classList.remove('on'); } }, 300);
+}
+/* 읽기 호출은 PostgREST 를 직접 불러 받은 바이트를 센다 (supabase-js 는 다 받은 뒤에야 돌려준다). 안 되면 {ok:false} → sb.rpc 로 */
+async function rpcStream(fn,args,rec){
+  let tok=null; try{ const {data}=await sb.auth.getSession(); tok=data&&data.session&&data.session.access_token; }catch(e){}
+  if(!tok || typeof TextDecoder==='undefined') return {ok:false};
+  let res; try{ res=await fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{method:'POST',
+    headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+tok,'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(args||{})}); }
+  catch(e){ return {ok:false}; }
+  if(!res.ok){ let m=''; try{ const j=await res.json(); m=(j&&(j.message||j.hint))||''; }catch(e){} if(!m) return {ok:false}; throw new Error(String(m).replace(/^.*?: /,'')); }
+  if(res.status===204) return {ok:true,data:null};
+  rec.stage='recv';
+  let txt='';
+  if(res.body && res.body.getReader){ const rd=res.body.getReader(), parts=[]; let got=0;
+    for(;;){ const {done,value}=await rd.read(); if(done) break; parts.push(value); got+=value.length; rec.got=got; }
+    const buf=new Uint8Array(got); let o=0; for(const q of parts){ buf.set(q,o); o+=q.length; } txt=new TextDecoder().decode(buf); }
+  else txt=await res.text();
+  if(!txt) return {ok:false};
+  let data; try{ data=JSON.parse(txt); }catch(e){ return {ok:false}; }
+  rpcExpSave(fn, rec.got||txt.length);
+  return {ok:true,data};
 }
 function loadPillText(t){ const e=$('loadpillTx'); if(e) e.textContent=t||'불러오는 중…'; }
 /* 진행 중인 조회가 끝날 때까지 (최소 0.35초, 최대 12초) */
 function rpcIdle(){ const t0=Date.now();
   return new Promise(res=>{ const tick=()=>{ const el=Date.now()-t0;
     if((RPC_BUSY===0 && el>350) || el>12000) return res(); setTimeout(tick,80); }; tick(); }); }
-async function rpcRaw(fn,args={}){ rpcBar(1);
-  try{ const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
-  finally{ rpcBar(-1); } }
+async function rpcRaw(fn,args={}){
+  const rec={fn,t0:Date.now(),stage:'wait',got:0,exp:rpcExp(fn)}; RPC_ACT.set(++RPC_SEQ,rec); rpcBar(1);
+  try{
+    if(!RPC_NOCACHE.test(fn)){ const r=await rpcStream(fn,args,rec); if(r.ok) return r.data; rec.stage='wait'; }   // 쓰기 호출은 늘 supabase-js 로
+    const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
+  finally{ rec.stage='done'; rpcBar(-1); } }
 async function rpc(fn,args={},opt={}){
   if(RPC_NOCACHE.test(fn)){ const d=await rpcRaw(fn,args); rpcClear(); return d; }
   if(opt.fresh) RPC_CACHE.delete(fn+'|'+JSON.stringify(args));
@@ -4670,7 +4758,7 @@ async function dashLoadData(seq){
   catch(e){
     if(e && e.http && ![500,502,503,504].includes(e.http)) return fail(e.message||e);   // 권한 등 — 다시 해도 같다
     up({stage:'retry', data:Math.max(DP.data,.15)});
-    try{ pay=await rpcRaw('fn_dash_payload', a); }
+    try{ pay=await rpcQuiet('fn_dash_payload', a); }   // 한 번 더는 다른 길(supabase-js)로 — rpcRaw 는 이제 같은 직접 호출을 쓴다
     catch(e2){ return fail(e2.message||e2); }
   }
   if(!live()) return;                         // 받는 사이 집계 기준을 바꿨다 — 새 요청이 따로 돈다
@@ -5676,16 +5764,55 @@ async function utmBaseEdit(){ const cur=(UTM&&UTM.short_base)||'';
     init:()=>setTimeout(()=>$('ub_base').focus(),30)});
   if(!d) return;
   try{ await rpc('fn_utm_setting_save',{p_base:d}); toast('단축 링크 주소를 바꿨습니다 — 모든 링크가 새 앞부분으로 보입니다','ok'); rpcClear(); await loadUtm(); }catch(e){ toast(e.message,'bad'); } }
+/* 목록 상태 — 보기(camp|link) · 상태(on|off|all) · 정렬 · 찾기 · 쪽 · 펼친 캠페인. 보기·상태·정렬은 이 브라우저에 남긴다 */
+let UTM_UI={view:'camp',st:'on',sort:'recent'}, UTM_Q='', UTM_PG=0, UTM_OPEN=new Set(), UTM_QT=null;
+try{ Object.assign(UTM_UI, JSON.parse(localStorage.getItem('dc_utm_ui')||'{}')); }catch(e){}
+function utmSet(k,v){ UTM_UI[k]=v; UTM_PG=0; try{ localStorage.setItem('dc_utm_ui', JSON.stringify(UTM_UI)); }catch(e){} utmRender(); }
+function utmQIn(){ clearTimeout(UTM_QT); UTM_QT=setTimeout(()=>{ UTM_Q=$('utmQ').value.trim().toLowerCase(); UTM_PG=0; utmRender(); },200); }
+function utmGo(p){ UTM_PG=p; utmRender(); }
+function utmToggle(code){ UTM_OPEN.has(code)?UTM_OPEN.delete(code):UTM_OPEN.add(code); utmRender(); }
+const utmLinkHit=(k,q)=>!q || [k.short,k.slug,k.url,k.label,k.utm_source,k.utm_campaign].some(v=>String(v||'').toLowerCase().includes(q));
+const utmCampHit=(c,q)=>!q || [c.code,c.name,c.note,utmSegLabel(c.segment_code)].some(v=>String(v||'').toLowerCase().includes(q));
+function utmLinkCell(k, withCamp){   /* 짧은 주소 + 복사 + 표시 · 긴 주소는 접어 둔다 */
+  return `<div class="utm-short"><span class="mono">${esc(k.short)}</span> <button class="btn sm ghost" data-cp="${esc(k.short)}" onclick="utmCp(this.dataset.cp)">복사</button>`
+    +(withCamp?` <span class="tag n mono">${esc(k._camp)}</span>`:'')
+    +(k.label?` <span class="tag n">${esc(k.label)}</span>`:'')+(k.utm_source?` <span class="tag n mono" title="utm_source">${esc(k.utm_source)}</span>`:'')+(k.active?'':' <span class="tag n">꺼짐</span>')+`</div>`
+    +`<details class="utm-long"><summary>긴 주소</summary><div class="note mono" style="word-break:break-all">${esc(k.url)} <button class="btn sm ghost" data-cp="${esc(k.url)}" onclick="utmCp(this.dataset.cp)">긴 주소 복사</button></div></details>`; }
 function utmRender(){
   utmBaseShow();
-  const rows=UTM_CAMPS||[];
-  $('utmRows').innerHTML = rows.map(c=>{
+  const all=UTM_CAMPS||[], q=UTM_Q, V=UTM_UI.view, ST=UTM_UI.st, SO=UTM_UI.sort;
+  ['utmView','utmSt'].forEach(id=>{ const k=id==='utmView'?'view':'st'; document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x.dataset.v===UTM_UI[k])); });
+  if($('utmSort')){ $('utmSort').value=SO; try{ segSync(); }catch(e){} } if($('utmQ') && document.activeElement!==$('utmQ')) $('utmQ').value=UTM_Q;
+  const links=all.flatMap(c=>(c.links||[]).map(k=>Object.assign({_camp:c.code,_campOn:c.active!==false},k)));
+  const onL=links.filter(k=>k.active).length;
+  $('utmSum').textContent=`캠페인 ${n(all.length)} · 링크 ${n(links.length)}개 (켜짐 ${n(onL)}) · 클릭 ${n(all.reduce((a,c)=>a+(+c.clicks||0),0))} · 구매 ${n(all.reduce((a,c)=>a+(+c.bought||0),0))}`;
+  const desc=(a,b)=>String(b||'').localeCompare(String(a||''));
+  if(V==='link'){   /* 링크 전체 — 링크 한 줄씩. 많아졌을 때 클릭 순으로 보거나 주소로 바로 찾는다 */
+    $('utmHead').innerHTML='<tr><th>짧은 주소 · 캠페인</th><th class="num">클릭</th><th class="num">오늘</th><th>만든 때</th><th></th></tr>';
+    let L=links.filter(k=>(ST==='all'||(ST==='on'?k.active:!k.active)) && (utmLinkHit(k,q) || utmCampHit(all.find(c=>c.code===k._camp)||{},q)));
+    L.sort(SO==='clicks'?(a,b)=>(b.hits||0)-(a.hits||0):SO==='code'?(a,b)=>String(a._camp).localeCompare(String(b._camp)):(a,b)=>desc(a.created_at,b.created_at));
+    const P=pgCut('utm_link',UTM_PG,L,'utmGo'); UTM_PG=P.page; $('utmPg').innerHTML=P.bar; $('utmRange').textContent=P.range||(L.length?`${n(L.length)}개`:'');
+    $('utmRows').innerHTML=P.rows.map(k=>`<tr class="${k.active?'':'off'}"><td style="white-space:normal">${utmLinkCell(k,true)}</td>
+      <td class="num">${n(k.hits)}</td><td class="num">${k.hits_today?n(k.hits_today):'<span class="note">-</span>'}</td><td class="note mono">${esc(k.created_at||'')}</td>
+      <td><button class="btn sm ghost" data-slug="${esc(k.slug)}" onclick="utmLinkToggle(this.dataset.slug)">${k.active?'끄기':'켜기'}</button></td></tr>`).join('')
+      || `<tr><td colspan="5" class="note" style="text-align:center;padding:24px">${q?'찾는 링크가 없습니다':'링크가 없습니다 — 캠페인 줄의 [+ 링크] 로 만듭니다'}</td></tr>`;
+    return;
+  }
+  /* 캠페인별 — 캠페인 한 줄 + [링크 n ▾] 를 눌러야 링크가 펼쳐진다. 찾기가 링크에 걸리면 그 캠페인은 저절로 펼친다 */
+  $('utmHead').innerHTML='<tr><th>코드</th><th>이름</th><th>발송일 · 종류</th><th>대상 조건</th><th>링크</th><th class="num">발송</th><th class="num">클릭</th><th class="num">구매</th><th class="num">매출</th><th></th></tr>';
+  let C=all.filter(c=>ST==='all'||(ST==='on'?c.active!==false:c.active===false));
+  C=C.map(c=>{ const lk=(c.links||[]).filter(k=>utmLinkHit(k,q)); return {c, lk:q?lk:(c.links||[]), hit:utmCampHit(c,q), lhit:!!q&&lk.length>0}; }).filter(x=>x.hit||x.lhit);
+  const key={recent:x=>x.c.send_on||x.c.first_sent||'', clicks:x=>+x.c.clicks||0, bought:x=>+x.c.bought||0, links:x=>(x.c.links||[]).length, code:x=>x.c.code};
+  C.sort(SO==='code'?(a,b)=>String(a.c.code).localeCompare(String(b.c.code)):SO==='recent'?(a,b)=>desc(key.recent(a),key.recent(b)):(a,b)=>key[SO](b)-key[SO](a));
+  const P=pgCut('utm',UTM_PG,C,'utmGo'); UTM_PG=P.page; $('utmPg').innerHTML=P.bar; $('utmRange').textContent=P.range||(C.length&&q?`${n(C.length)}개 찾음`:'');
+  $('utmRows').innerHTML = P.rows.map(({c,lk,lhit})=>{
+    const tot=(c.links||[]).length, on=(c.links||[]).filter(k=>k.active).length, open=UTM_OPEN.has(c.code)||lhit;
     const head=`<tr class="${c.active===false?'off':''}">
       <td class="mono"><b>${esc(c.code)}</b>${c.active===false?' <span class="tag n">접음</span>':''}</td>
       <td>${esc(c.name)}${c.note?`<div class="note">${esc(c.note)}</div>`:''}</td>
-      <td>${esc(UTM_MED[c.medium]||c.medium||'')}</td>
-      <td class="mono">${esc(c.send_on||'')}${c.first_sent&&c.first_sent!==c.send_on?`<div class="note">실제 ${esc(c.first_sent)}</div>`:''}</td>
+      <td class="mono">${esc(c.send_on||'')} <span class="note">${esc(UTM_MED[c.medium]||c.medium||'')}</span>${c.first_sent&&c.first_sent!==c.send_on?`<div class="note">실제 ${esc(c.first_sent)}</div>`:''}</td>
       <td>${c.segment_code?`<button class="btn sm ghost" data-code="${esc(c.code)}" data-seg="${esc(c.segment_code)}" onclick="utmExtract(this.dataset.code,this.dataset.seg)" title="이 조건으로 발송 대상 추출로 갑니다">${esc(utmSegLabel(c.segment_code))}</button>`:'<span class="note">-</span>'}</td>
+      <td class="utm-lk">${tot?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmToggle(this.dataset.code)" aria-expanded="${open}">링크 ${n(tot)}${on<tot?` · 꺼짐 ${n(tot-on)}`:''} ${open?'▴':'▾'}</button>`:'<span class="note">없음</span>'}</td>
       <td class="num">${c.sent?n(c.sent):'<span class="note">-</span>'}</td>
       <td class="num">${c.clicks?n(c.clicks):'<span class="note">-</span>'}</td>
       <td class="num">${c.bought?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmBought(this.dataset.code)" title="이 캠페인 수신자의 발송 뒤 주문을 통합 원장에서 봅니다">${n(c.bought)}</button>`:'<span class="note">-</span>'}</td>
@@ -5693,12 +5820,10 @@ function utmRender(){
       <td style="white-space:nowrap"><button class="btn sm" data-code="${esc(c.code)}" onclick="utmLinkNew(this.dataset.code)">+ 링크</button>
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmEdit(this.dataset.code)">수정</button>
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmDel(this.dataset.code)">${c.sent?'접기':'삭제'}</button></td></tr>`;
-    const sub=(c.links||[]).map(k=>`<tr class="utm-link ${k.active?'':'off'}"><td></td><td colspan="4">
-        <div class="utm-short"><span class="mono">${esc(k.short)}</span> <button class="btn sm ghost" data-cp="${esc(k.short)}" onclick="utmCp(this.dataset.cp)">복사</button>${k.label?` <span class="tag n">${esc(k.label)}</span>`:''}${k.utm_source?` <span class="tag n mono" title="utm_source">${esc(k.utm_source)}</span>`:''}${k.active?'':' <span class="tag n">꺼짐</span>'}</div>
-        <div class="note mono" style="word-break:break-all">${esc(k.url)} <button class="btn sm ghost" data-cp="${esc(k.url)}" onclick="utmCp(this.dataset.cp)">긴 주소 복사</button></div></td>
+    const sub=open?lk.map(k=>`<tr class="utm-link ${k.active?'':'off'}"><td></td><td colspan="4">${utmLinkCell(k,false)}</td>
         <td></td><td class="num">${n(k.hits)}${k.hits_today?`<div class="note">오늘 ${n(k.hits_today)}</div>`:''}</td><td colspan="2" class="note">${esc(k.created_at||'')}</td>
-        <td><button class="btn sm ghost" data-slug="${esc(k.slug)}" onclick="utmLinkToggle(this.dataset.slug)">${k.active?'끄기':'켜기'}</button></td></tr>`).join('');
-    return head+sub; }).join('') || `<tr><td colspan="10" class="note" style="text-align:center;padding:24px">캠페인이 없습니다 — [+ 새 캠페인] 으로 시작하세요</td></tr>`;
+        <td><button class="btn sm ghost" data-slug="${esc(k.slug)}" onclick="utmLinkToggle(this.dataset.slug)">${k.active?'끄기':'켜기'}</button></td></tr>`).join(''):'';
+    return head+sub; }).join('') || `<tr><td colspan="10" class="note" style="text-align:center;padding:24px">${q?'찾는 캠페인·링크가 없습니다':ST==='off'?'접은 캠페인이 없습니다':'캠페인이 없습니다 — [+ 새 캠페인] 으로 시작하세요'}</td></tr>`;
 }
 /* [구매]·[매출] 숫자 → 통합 원장 : 캠페인 수신자(발송 실패 제외)의 발송 뒤 주문만 (fn_order_list p_campaign · fn_utm_campaigns 의 bought 와 같은 규칙). 기간은 첫 발송일 ~ 오늘 */
 function utmBought(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code); if(!c) return;
@@ -5730,7 +5855,7 @@ async function utmDel(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code); if(
                :`<p><b class="mono">${esc(code)}</b> 를 지웁니다. 만들어 둔 단축 링크도 함께 사라져 <b>이미 보낸 문자의 링크가 죽습니다.</b></p>`});
   if(!ok) return;
   try{ await rpc('fn_utm_campaign_del',{p_code:code}); toast('처리했습니다','ok'); rpcClear(); await loadUtm(); }catch(e){ toast(e.message,'bad'); } }
-async function utmLinkNew(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code); if(!c) return;
+async function utmLinkNew(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code); if(!c) return; UTM_OPEN.add(code);
   const d=await modal({title:'단축 링크 만들기 · '+code, ok:'만들기', wide:true,
     html:`<div class="fgrid" style="grid-template-columns:1fr 1fr">
       <div style="grid-column:1/-1"><label>랜딩 주소 <span style="color:var(--bad)">필수</span></label><input class="in" id="ul_landing" value="${esc(c.landing||'')}" placeholder="https://..."></div>

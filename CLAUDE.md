@@ -166,9 +166,15 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-10-03 · v164 — UI 규칙(v161)·대시보드 진행 카드는 아직 test 폴더만)
+## 지금 상태 (2026-10-03 · v165 — UI 규칙(v161)·진행 카드(v164·v165)·UTM 목록(v165)은 아직 test 폴더만)
 
 ### 되는 것
+- **관리자 화면 전체 진행 카드 · UTM 관리 목록 (v165 · 2026-10-03 · admin/test 에만)** — "test 에 모든 불러오기가 뜨는 곳에 대시보드랑 동일하게 progress" + "UTM 관리 페이지 링크 생성한거 많아지면 관리해야하잖아".
+  **진행 카드** — 모든 조회가 거치는 `rpcRaw` 의 '불러오는 중' 알약(`#loadpill`)을 대시보드 카드와 같은 모양으로: 제목(`loadPillText`, 화면 이름) · 퍼센트 바 · 단계 3개(자료 요청 · 자료 받기 · 화면 그리기) · 지금 하는 일 글("서버에서 고객 목록 꺼내는 중…" → "고객 목록 받는 중… 91KB / 약 249KB" → "다 받았습니다 · 화면 그리는 중…") · 2초부터 경과 초 · 6초 넘게 기다리면 "— 서버가 집계하는 중입니다" · 여러 개면 "3개 중 2개 받음". 호출마다 `RPC_ACT` 에 [기다림 → 받는 중(바이트) → 끝] 을 적고 250ms 마다 그린다. **읽기 호출(RPC_NOCACHE 에 안 걸리는 것)은 `rpcStream` 이 PostgREST 를 fetch 로 직접 불러 받은 바이트를 센다** — 세션이 없거나 스트림이 안 되거나 응답이 비면 `{ok:false}` 로 supabase-js 에 넘긴다(그래서 mock 테스트는 그대로). 오류 문구는 PostgREST `message` 그대로. 쓰기 호출은 늘 supabase-js. 받은 크기는 `localStorage dc_rpc_bytes`(함수별) 에 남겨 두 번째부터 '약 nKB' 로 남은 양을 보인다. 이름표는 `FN_LABEL`(없으면 '자료'). 220ms 안에 끝나는 건 안 띄운다(전과 같음). 낭독은 단계가 바뀔 때만(`#loadpillSr`).
+  **UTM 목록** — 캠페인 표 위에 도구 줄: [캠페인별 | 링크 전체] · 찾기(코드·이름·짧은 주소·긴 주소·utm_source) · [켜짐 | 접음·꺼짐 | 전체](기본 켜짐) · 정렬(최근 것부터 · 클릭 · 구매 · 링크 수 · 코드) · 합계 한 줄(캠페인·링크(켜짐)·클릭·구매) · 쪽 나누기(`pgCut` 'utm'/'utm_link'). 캠페인별은 **링크를 접어 둔다** — `[링크 3 · 꺼짐 1 ▾]` 를 눌러야 펼친다(`UTM_OPEN`), 찾기가 링크에 걸리면 그 캠페인만 저절로 펼치고 맞는 링크만, [+ 링크] 로 만들면 그 캠페인을 펼쳐 둔다. **긴 주소는 `<details>` [긴 주소] 를 눌러야** 보인다(전엔 줄마다 긴 주소가 표를 덮었다). 링크 전체는 링크 한 줄씩(짧은 주소 · 캠페인 · utm_source · 클릭 · 오늘 · 만든 때 · [끄기]). 종류 칸은 발송일 칸에 합쳤다(1280 에서 버튼 열이 잘렸다). 보기·상태·정렬은 `localStorage dc_utm_ui`.
+  관리자 select 는 `segify` 가 버튼 묶음으로 바꾸므로 값을 코드로 바꾸면 `segSync()` 를 불러야 버튼이 따라 켜진다.
+  **대시보드의 '한 번 더' 는 `rpcQuiet`(supabase-js)로** — `rpcRaw` 가 이제 같은 직접 호출을 쓰므로 500 을 같은 길로 다시 받았다(dashprog P8 이 잡음). `ptest/utm.mjs` 는 링크가 접혀 있으니 펼친 뒤 본다(U2·U12).
+  테스트 `ptest/loadprog.mjs` L1~L10 × PC·폰 = 19 (고객 통합 · 0.7초 대기 + 249KB 를 1.8초에 · 세션 없음 · 권한 오류) · `ptest/utmlist.mjs` U1~U9 × PC·폰 = 17 (캠페인 40 · 링크 90) · adlists · ovf_admin · dashprog · utm · uiaudit.
 - **매출 대시보드가 수집 직후 안 열리던 것 · 진행 카드 (mvp_184 · v164 · 2026-10-03)** — "여기가 답답해 더 빠르게 안돼? … progress bar 라도 … ~하는 중 멘트 남겨서" (폰 사진, 01:37 KST).
   **원인은 캐시 통째 삭제** — `core.app_setting` 의 statement 트리거 `dash_cache_bust` 가 `core.dash_cache` 를 `delete … where true` 했다. 샵링커 수집기가 `fn_sl_log` 로 `sl_last_sync` 를 쓸 때마다(하루 5번) 캐시 0행 → 다음 워머(최대 15분)까지 그 틈에 연 사람이 직접 굽는다: 12개월 원장 **7.9~13초 > authenticated 8초** → 57014. 10-02 16:36 UTC 수집 → 16:37 사용자 → 16:45 워머가 1분 37초 걸려 다시 채움. /dash/(anon 3초)도 그 틈엔 못 열렸고, [캐시 지우고 새로고침](`fn_dash_refresh`)은 8초 안에 12벌을 굽게 돼 있어 **늘 시간 초과**(같은 트랜잭션의 delete 도 롤백 — 오류만 냈다). `fn_sl_refund_apply`·`f_godo_hist_apply` 도 같은 delete-all 이었다.
   **DB(바로 적용)** — `core.dash_cache_state`(한 줄: dirty_at · rebuild_req · req_at) · `core.f_dash_src_at()`(원천 max(updated_at) + dirty_at) · **`core.f_dash_payload_get`** = 24시간 안 캐시는 나이와 상관없이 바로 준다(`cached`·`stale`·`built_at` 를 붙여서), 없을 때만 굽는다. `fn_dash_payload`·`fn_dash_payload_pub` 가 이걸 쓴다. 지우던 네 곳은 **dirty 표시만**. `fn_dash_refresh` 는 **예약만**(rebuild_req) → 새 cron `dash-warm-req`(매분 · 예약 있을 때만 `f_dash_warm`). `f_dash_warm` = advisory lock(동시 실행 방지) · built_at 만 보고 판단(전엔 키마다 1MB payload 를 꺼내 jsonb_set — 할 일 없는 회차도 5초) · 원장 먼저 · 3일 지난 키 정리 · 예약 해제. 새 RPC `fn_dash_status`(built_at·stale 만 · authenticated).
