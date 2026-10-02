@@ -4865,7 +4865,8 @@ const GRES=[['진행전','연락 전'],['진행중','상담중'],['보류','보�
 function gridOpts(key,row){
   if(key==='CH') return [['','채널']].concat(((INQ&&INQ.channels)||[]).map(c=>[c.code,c.label]));
   if(key==='TY') return ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]).length ? ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]) : [['product','상품 문의']];
-  if(key==='RT'){ const all=(INQ&&INQ.routes)||[]; const ch=row&&row.ch; return [['','선택']].concat(all.filter(r=>!ch || !r.channel_code || r.channel_code===ch).map(r=>[r.code,r.label])); }
+  /* 2026-10-03: fn_inq_codes 의 routes 는 {label,ch} 뿐이라 r.code·r.channel_code 는 undefined — option value 가 '' 가 돼 여러 건 표의 유입경로가 늘 빈값으로 저장됐다. 값은 라벨(한 건씩 폼과 같음), 거르기는 ch 로 */
+  if(key==='RT'){ const all=(INQ&&INQ.routes)||[]; const ch=row&&row.ch; return [['','선택']].concat(all.filter(r=>!ch || !r.ch || r.ch===ch).map(r=>[r.label,r.label])); }
   if(key==='CAT') return [['','관심 품목']].concat(CATS.map(c=>[c,catLabel(c)]));
   if(key==='RES') return GRES;
   return key||[];
