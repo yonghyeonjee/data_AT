@@ -26,7 +26,7 @@ function needXLSX(){ if(window.XLSX) return Promise.resolve();
 :root{
   --ground:#F3F4F7; --surface:#FFFFFF; --surface-2:#F7F8FB; --surface-3:#EEF0F4;
   --line:#E4E7EE; --line-2:#CDD3DE; --line-3:#B4BCCA;
-  --ink:#141820; --ink-2:#2E3542; --muted:#646D7C; --faint:#98A1B0;
+  --ink:#141820; --ink-2:#2E3542; --muted:#646D7C; --faint:#6B7484;   /* 2026-10-03: 실제 글자에 362곳 쓰여 4.7:1 로 (전엔 2.6:1) */
   --navy:#1428A0; --navy-2:#3E5BC9; --navy-3:#7A8CE8; --navy-soft:#EAEEFB; --navy-ink:#0E1A6B;
   --accent:var(--navy); --accent-soft:var(--navy-soft);
   --teal:#0F7B6C; --teal-soft:#E3F3F0; --ok:var(--teal); --ok-soft:var(--teal-soft);
@@ -44,7 +44,7 @@ function needXLSX(){ if(window.XLSX) return Promise.resolve();
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:var(--font);background:var(--ground);color:var(--ink);font-size:calc(13.5px * var(--font-scale));line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;letter-spacing:-.005em}
+body{font-family:var(--font);background:var(--ground);color:var(--ink);font-size:calc(13.5px * var(--font-scale));line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;letter-spacing:-.005em;word-break:keep-all}
 button,input,select,textarea{font:inherit;color:inherit}
 .hidden{display:none!important}
 .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
@@ -789,6 +789,14 @@ tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}   /* 긴 �
 @media(max-width:1080px){.d21,.d11,.d12{grid-template-columns:1fr}}
 .dnote{font-size:calc(11.5px * var(--font-scale));color:var(--faint);margin-top:10px;line-height:1.6}
 
+/* 키보드 포커스 표시 (2026-10-03) */
+.btn:focus-visible, .in:focus-visible, button:focus-visible, a:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--navy) !important;outline-offset:2px}
+/* 폰(≤640px) — 버튼 40px · 입력칸 16px (2026-10-03 UI 규칙 점검) */
+@media(max-width:640px){
+  .btn, .btn.sm{height:auto;min-height:40px}
+  .in{font-size:16px;height:auto;min-height:40px}
+  .seg button, .chip{min-height:40px}
+}
 /* ═══════════════════════ 모바일 (≤ 900px) ═══════════════════════ */
 #app{height:100dvh}
 .hbg{display:none;width:38px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);flex-direction:column;justify-content:center;align-items:center;gap:4px;cursor:pointer;flex:none;padding:0}
@@ -1007,7 +1015,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         <div class="preset">
           <button data-p="yd">어제</button><button data-p="tw">이번 주</button><button data-p="lw">지난 주</button><button data-p="tm">이번 달</button><button data-p="lm">지난 달</button><button data-p="30" class="on">30일</button><button data-p="90">90일</button><button data-p="y">올해</button><button data-p="ly">작년</button>
         </div>
-        <input type="date" id="pFrom"><span style="color:var(--faint)">~</span><input type="date" id="pTo">
+        <input type="date" id="pFrom" aria-label="시작일"><span style="color:var(--faint)">~</span><input type="date" id="pTo" aria-label="종료일">
         <button class="btn sm" onclick="applyPeriod()">적용</button>
       </div>
     </div>
@@ -1034,8 +1042,8 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         <div class="card">
           <div class="filters">
             <input class="in" id="ivQ" placeholder="품목코드 · 상품명 · 모델 · 규격" style="min-width:240px" onkeydown="if(event.key==='Enter')loadStock()">
-            <select class="in" id="ivWh" onchange="loadStock()"><option value="">전체 창고</option></select>
-            <select class="in" id="ivCat" onchange="loadStock()"><option value="">전체 분류</option></select>
+            <select class="in" id="ivWh" aria-label="창고" onchange="loadStock()"><option value="">전체 창고</option></select>
+            <select class="in" id="ivCat" aria-label="분류" onchange="loadStock()"><option value="">전체 분류</option></select>
             <label class="switch" id="ivLow" onclick="this.classList.toggle('on');loadStock()"><span class="sw"></span>안전재고 미달만</label>
             <label class="switch" id="ivExc" onclick="this.classList.toggle('on');loadStock()" title="수수료·운송료처럼 물건이 아닌 품목. 집계에서 빠져 있고, 여기서 품목별로 넣고 뺄 수 있습니다"><span class="sw"></span>집계 제외 품목 보기</label>
             <button class="btn" onclick="loadStock()">조회</button>
@@ -1053,7 +1061,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         <div class="card">
           <div class="filters">
             <select class="in" id="mvKind" onchange="loadMoves(0)"><option value="">전체 구분</option><option value="in">입고</option><option value="out">출고</option><option value="move">창고이동</option><option value="adjust">재고조정</option><option value="sync">이카운트 동기화</option></select>
-            <select class="in" id="mvWh" onchange="loadMoves(0)"><option value="">전체 창고</option></select>
+            <select class="in" id="mvWh" aria-label="창고" onchange="loadMoves(0)"><option value="">전체 창고</option></select>
             <input class="in" id="mvQ" placeholder="품목 · 코드 · 모델 · 참조번호 · 메모 · 담당" style="min-width:260px" onkeydown="if(event.key==='Enter')loadMoves(0)">
             <button class="btn" onclick="loadMoves(0)">조회</button>
             <button class="btn ghost" onclick="$('mvKind').value='';$('mvWh').value='';$('mvQ').value='';loadMoves(0)">초기화</button>
@@ -1181,10 +1189,10 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         <div class="card">
           <div class="filters">
             <select class="in" id="oSrc" onchange="loadOrders(0)" title="데이터 출처"><option value="">전체 출처</option><option value="shoplinker" title="샵링커로 들어온 온라인 몰 주문">온라인</option><option value="godo_hist" title="고도몰 4몰 과거 주문 (2021 ~ 2025-08 · 샵링커 이전)">고도몰 과거</option><option value="ecount">이카운트(VMS)</option><option value="rental">렌탈</option><option value="store">매장 입력</option></select>
-            <select class="in" id="oCh" onchange="loadOrders(0)"><option value="">전체 구분</option><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select>
+            <select class="in" id="oCh" aria-label="채널" onchange="loadOrders(0)"><option value="">전체 구분</option><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select>
             <select class="in" id="oChName" onchange="loadOrders(0)" title="채널"><option value="">전체 채널</option></select>
             <select class="in" id="oSt" onchange="loadOrders(0)" title="상태"><option value="">전체 상태</option><option value="normal">정상</option><option value="refund">환불 있음</option></select>
-            <select class="in" id="oHd" onchange="loadOrders(0)"><option value="">전체 담당</option></select>
+            <select class="in" id="oHd" aria-label="담당" onchange="loadOrders(0)"><option value="">전체 담당</option></select>
             <input class="in" id="oQ" placeholder="고객명 · 전화 · 주문번호 · 상품 · 모델 · 담당" style="min-width:250px" onkeydown="if(event.key==='Enter')loadOrders(0)">
             <button class="btn" onclick="loadOrders(0)">조회</button>
             <button class="btn ghost" onclick="resetOrders()">초기화</button>
@@ -1220,7 +1228,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         <div class="card">
           <h3>채널별 일별 매출 <span id="ocSub"></span>
             <div class="actions">
-              <button class="btn sm ghost" onclick="ocMove(-1)">‹</button><input class="in" type="month" id="ocMonth" style="width:150px" onchange="loadChannelGrid()"><button class="btn sm ghost" onclick="ocMove(1)">›</button>
+              <button class="btn sm ghost" onclick="ocMove(-1)">‹</button><input class="in" type="month" id="ocMonth" aria-label="월" style="width:150px" onchange="loadChannelGrid()"><button class="btn sm ghost" onclick="ocMove(1)">›</button>
               <label class="switch" id="ocRefund" onclick="this.classList.toggle('on');renderChannelGrid()"><span class="sw"></span>환불 입력</label>
               <button class="btn sm" onclick="saveChannelGrid()">일괄 저장</button>
             </div></h3>
@@ -1233,7 +1241,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         </div>
         <div class="card">
           <h3>오픈마켓 정산내역 <span id="stSub"></span>
-            <div class="actions"><select class="in" id="stCh" onchange="loadSettlements()"><option value="">전체 채널</option><option>SSG</option><option>쿠팡</option><option>롯데온</option><option>P몰</option><option>S몰</option><option>시흥</option></select>
+            <div class="actions"><select class="in" id="stCh" aria-label="채널" onchange="loadSettlements()"><option value="">전체 채널</option><option>SSG</option><option>쿠팡</option><option>롯데온</option><option>P몰</option><option>S몰</option><option>시흥</option></select>
               <select class="in" id="stMonths" onchange="loadSettlements()"><option value="6">최근 6개월</option><option value="12" selected>최근 12개월</option><option value="24">최근 24개월</option></select>
               <button class="btn sm ghost" onclick="stAddRow()">+ 직접 추가</button></div></h3>
           <div class="tw"><table><thead><tr><th>채널</th><th>판매월</th><th class="num">판매금액</th><th class="num">수수료제외</th><th class="num">배송완료(수수료제외)</th><th>구매확정기간</th><th>정산일</th><th class="num">정산예정금액</th><th class="num">비율</th><th>지급여부</th><th>지급일</th><th>비고</th><th></th></tr></thead><tbody id="tbSettle"></tbody></table></div>
@@ -2037,13 +2045,13 @@ function pgBar(key,page,total,go){
   add(0); for(let p=page-2;p<=page+2;p++) add(p); add(last); nums.sort((a,b)=>a-b);
   let h=`<select class="in pgper" data-noseg="1" title="한 쪽에 보일 행 수" onchange="pgSet('${key}',this.value,${go})">`
       + PG_OPTS.map(v=>`<option value="${v}"${v===per?' selected':''}>${v}행</option>`).join('') + '</select>'
-      + `<button class="btn sm ghost" ${page<=0?'disabled':''} onclick="${go}(0)" title="처음">«</button>`
-      + `<button class="btn sm ghost" ${page<=0?'disabled':''} onclick="${go}(${page-1})" title="이전">‹</button>`;
+      + `<button class="btn sm ghost" ${page<=0?'disabled':''} onclick="${go}(0)" title="처음" aria-label="첫 쪽">«</button>`
+      + `<button class="btn sm ghost" ${page<=0?'disabled':''} onclick="${go}(${page-1})" title="이전" aria-label="이전 쪽">‹</button>`;
   let prev=-1;
   nums.forEach(p=>{ if(prev>=0&&p-prev>1) h+='<span class="pgdots">…</span>';
     h+=`<button class="btn sm pgn ${p===page?'':'ghost'}" onclick="${go}(${p})">${p+1}</button>`; prev=p; });
-  h+=`<button class="btn sm ghost" ${page>=last?'disabled':''} onclick="${go}(${page+1})" title="다음">›</button>`
-   + `<button class="btn sm ghost" ${page>=last?'disabled':''} onclick="${go}(${last})" title="끝">»</button>`;
+  h+=`<button class="btn sm ghost" ${page>=last?'disabled':''} onclick="${go}(${page+1})" title="다음" aria-label="다음 쪽">›</button>`
+   + `<button class="btn sm ghost" ${page>=last?'disabled':''} onclick="${go}(${last})" title="끝" aria-label="마지막 쪽">»</button>`;
   return h;
 }
 /* 받아 둔 전체 줄을 화면에서 쪽으로 자른다 — 서버 쪽 나누기가 없는 표(견적·방문 접수·재고·구독 플랜·정산·등록 요청).
@@ -4194,9 +4202,9 @@ const CB_VIEWS={
   stock:    {q:'ivQ'}, moves:{q:'mvQ'}, items:{q:'itQ'}, oq:{q:'oqQ'}, log:{q:'lgQ'}};
 function cbarEl(){ let el=$('cbar'); if(el) return el;
   el=document.createElement('div'); el.id='cbar'; el.className='cbar';
-  el.innerHTML=`<div class="grp"><span class="lb">검색</span><select class="in" id="cbField"></select><input class="in" id="cbQ" placeholder="검색어 — Enter" onkeydown="if(event.key==='Enter')cbarGo()"></div>
-    <div class="grp"><span class="lb">채널</span><select class="in" id="cbCh"><option value="">전체 채널</option>${O_CH_NAMES.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
-    <div class="grp"><span class="lb">상품유형</span><select class="in" id="cbCat"><option value="">전체 유형</option>${CB_CATS.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+  el.innerHTML=`<div class="grp"><span class="lb">검색</span><select class="in" id="cbField" aria-label="검색 대상"></select><input class="in" id="cbQ" placeholder="검색어 — Enter" onkeydown="if(event.key==='Enter')cbarGo()"></div>
+    <div class="grp"><span class="lb">채널</span><select class="in" id="cbCh" aria-label="채널"><option value="">전체 채널</option>${O_CH_NAMES.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+    <div class="grp"><span class="lb">상품유형</span><select class="in" id="cbCat" aria-label="분류"><option value="">전체 유형</option>${CB_CATS.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
     <button class="btn sm" onclick="cbarGo()">조회</button><button class="btn sm ghost" onclick="cbarReset()">초기화</button><span class="cnt" id="cbCnt"></span>
     <div class="extra" id="cbExtra" hidden></div>`;
   return el; }
