@@ -350,6 +350,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .lvcal .day.we i{color:var(--bad)} .lvcal .day.other{opacity:.45} .lvcal .day.today{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)} .lvcal .day.today i{color:var(--navy)}
 .lvcal .day.pick{background:var(--accent-soft);border-color:var(--navy)}
 .lvtools{flex-wrap:wrap;gap:6px;align-items:center}
+.lvlt{font-size:calc(14px * var(--font-scale));font-weight:800;margin-right:2px}
 .lvtools .lvsel{width:auto;min-width:118px;min-height:40px;padding:6px 10px;font-size:calc(12.5px * var(--font-scale))}
 .lvlist{display:block}
 .lvr{display:grid;grid-template-columns:84px 1fr auto;gap:2px 10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:6px}
@@ -361,6 +362,9 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .lvr .nm{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:700;font-size:calc(13.5px * var(--font-scale))}
 .lvr .sub{color:var(--muted);font-size:calc(11.5px * var(--font-scale));margin-top:1px;overflow-wrap:anywhere}
 .lvr .act{display:flex;gap:6px}
+.lvr .tag.lvk{background:var(--surface-2,#EEF0F4);color:var(--muted);border:1px solid transparent}
+.lvr .tag.lvk.k-half{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
+.lvr .tag.lvk.k-edu{background:#fff;color:var(--ink-2);border-color:var(--line-2)}
 .lvr .act .mini{min-height:40px;min-width:48px;margin:0}
 @media(max-width:720px){
   .lvr{grid-template-columns:1fr auto;gap:2px 8px;padding:9px 10px}
@@ -369,7 +373,13 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
   .lvtools .lvsel{flex:1 1 44%;min-width:0}
 }
 .lvchip.ed{cursor:pointer} .lvchip.ed:hover{outline:2px solid rgba(255,255,255,.85);outline-offset:-2px}
-.lvchip{display:block;font-size:calc(10px * var(--font-scale));color:#fff;border-radius:4px;padding:1px 3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lvchip{display:block;font-size:calc(10px * var(--font-scale));color:#fff;border-radius:4px;padding:1px 3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--c,#0F766E)}
+/* 종류는 칩 글자로 적고, 왼쪽 띠로 한 번 더 갈라 준다 — 반차 노랑 · 교육 흰색.
+   반만 칠하는 그라데이션은 흰 글자가 밝은 쪽에서 안 읽혀 접었다(대비 4.5:1 규칙). */
+.lvchip{padding-left:3px}
+.lvchip.k-half{background:var(--c);box-shadow:inset 5px 0 0 #F2B01E;padding-left:9px}
+.lvchip.k-edu{background:var(--c);box-shadow:inset 5px 0 0 #FFFFFF;padding-left:9px}
+.lvchip.k-store{background:#8A909E}
 .lvmore{font-size:calc(10px * var(--font-scale));color:var(--muted)}
 .lvdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
 .lvmask{position:fixed;inset:0;z-index:70;background:rgba(15,27,77,.45);display:flex;align-items:center;justify-content:center;padding:16px}
@@ -377,7 +387,17 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .lvdlg h3{margin:0 0 12px;font-size:calc(16px * var(--font-scale));font-weight:800}
 .lvform{display:grid;gap:10px} .lvform label{display:block;font-size:calc(12.5px * var(--font-scale));font-weight:600;color:var(--muted);margin-bottom:4px} .lvform label small{font-weight:400}
 .lvform .two{display:grid;grid-template-columns:1fr 1fr;gap:8px} .lvform .in{width:100%;box-sizing:border-box}
-.lvform .btns{display:flex;gap:8px;margin-top:4px} .lvform .btns .btn{flex:1;margin:0;min-height:44px} .lvform .btns .btn.bad{flex:0 0 auto;margin-right:16px}
+.lvdlg{position:relative}
+.lvx{position:absolute;top:8px;right:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+  border:0;background:transparent;border-radius:10px;font-size:calc(17px * var(--font-scale));line-height:1;color:var(--muted);cursor:pointer;font-family:inherit}
+.lvx:hover{background:var(--surface-2,#EEF0F4);color:var(--ink)}
+.lvdlg h3{padding-right:44px}
+/* 창 아래 버튼 한 줄 — 지우기는 왼쪽 끝(빨강 테두리), 저장은 오른쪽 끝(청록 채움). 둘이 멀어야 오탭이 안 난다 */
+.lvform .btns{display:flex;align-items:center;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.lvform .btns .btn{flex:0 0 auto;width:auto;min-width:112px;padding:12px 18px;margin:0;min-height:44px}
+.lvform .btns #lvSaveBtn{margin-left:auto}
+.lvform .btns .btn.danger{background:#fff;color:var(--bad);border:1.5px solid var(--bad)}
+.lvform .btns .btn.danger:hover{background:var(--bad-soft)}
 @keyframes bubIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .lvcal-hd .btn{min-width:40px;padding-left:8px;padding-right:8px}
 /* 좁은 폰 : 주차 열을 좁히고 칸 사이를 1px 로, 카드 여백 안쪽으로 16px 넓혀 날짜 칸을 40px 이상으로 */
@@ -1318,9 +1338,10 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button type="button" class="btn sm" onclick="lvAddOpen()" style="margin:0">＋ 입력</button>
       </div>
       <div class="lvcal" id="lvCal" aria-label="휴가 달력"></div>
-      <p class="note-in" style="margin:6px 0 0">날짜를 누르면 새로 넣는 창이, <b>칸 안의 이름을 누르면 그 휴가를 고치는 창</b>이 뜹니다. 아래 목록의 [수정] 도 같습니다. 목록은 담당자·종류로 거를 수 있고 쪽으로 나눠 보입니다. 이름 색은 담당자마다 다릅니다. <b>W37</b> 은 1월 1일이 든 주를 1주로 센 주차입니다.</p>
+      <p class="note-in" style="margin:6px 0 0">날짜를 누르면 새로 넣는 창이, <b>칸 안의 이름을 누르면 그 휴가를 고치는 창</b>이 뜹니다. 칩에 종류가 같이 적히고 <b>왼쪽 띠</b>로 갈립니다 — <b style="color:var(--warn)">노랑 띠 = 반차</b> · 흰 띠 = 교육 · 회색 = 매장휴무. 아래 목록은 <b>달력이 연 달</b>의 휴가이고 담당자·종류로 거를 수 있습니다. 이름 색은 담당자마다 다릅니다. <b>W37</b> 은 1월 1일이 든 주를 1주로 센 주차입니다.</p>
       <div class="lvmask hidden" id="lvAdd" onclick="if(event.target===this)lvAddClose()">
         <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="lvAddTitle">
+          <button type="button" class="lvx" onclick="lvAddClose()" aria-label="닫기" title="닫기">✕</button>
           <h3 id="lvAddTitle">휴가 입력</h3>
           <div class="lvform">
             <div><label for="lv_staff">담당자 선택</label>
@@ -1331,12 +1352,12 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
               <option value="반차">반차 (오후 3시까지)</option><option value="휴무">휴무</option><option value="교육">교육</option><option value="휴가" selected>휴가</option><option value="연차">연차</option><option value="매장휴무">매장휴무</option>
             </select><small class="note-in" id="lv_kindHint" style="display:block;margin:4px 0 0"></small></div>
             <div><label for="lv_note">메모 <small>(선택)</small></label><input class="in" id="lv_note" placeholder="예: 오전 병원 · 본사 교육"></div>
-            <div class="btns"><button class="btn bad hidden" id="lvDelBtn" onclick="lvDelCur()">지우기</button><button class="btn ghost" onclick="lvAddClose()">닫기</button><button class="btn" id="lvSaveBtn" onclick="lvSave()">추가</button></div>
+            <div class="btns"><button class="btn danger hidden" id="lvDelBtn" onclick="lvDelCur()">지우기</button><button class="btn" id="lvSaveBtn" onclick="lvSave()">추가</button></div>
           </div>
         </div>
       </div>
       <div class="daterow lvtools" style="margin-top:12px;margin-bottom:8px">
-        <div class="seg sm" id="lv_range"><button type="button" data-v="month" class="on" onclick="lvRange(this)">이 달</button><button type="button" data-v="upcoming" onclick="lvRange(this)">앞으로</button><button type="button" data-v="past" onclick="lvRange(this)">지난 것</button><button type="button" data-v="all" onclick="lvRange(this)">전체</button></div>
+        <b id="lvListTitle" class="lvlt">이 달 휴가</b>
         <select class="in lvsel" id="lv_fstaff" aria-label="담당자로 거르기" onchange="lvGo(0)"><option value="">담당자 전체</option></select>
         <select class="in lvsel" id="lv_fkind" aria-label="종류로 거르기" onchange="lvGo(0)"><option value="">종류 전체</option><option>반차</option><option>휴무</option><option>교육</option><option>휴가</option><option>연차</option><option>매장휴무</option></select>
         <button type="button" class="btn ghost sm" id="lv_fclr" onclick="lvFilterClear()" style="margin:0">거르개 해제</button>
@@ -3659,7 +3680,7 @@ function lvWeekNo(d){ const jan1=new Date(d.getFullYear(),0,1); const off=(jan1.
 const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 function lvOn(ds){ return ((LV&&LV.rows)||[]).filter(r=>r.from<=ds && ds<=r.to); }
 function lvMove(n){ if(!LV_YM||n===0){ const t=new Date(); LV_YM={y:t.getFullYear(),m:t.getMonth()}; }
-  if(n){ LV_YM.m+=n; if(LV_YM.m<0){ LV_YM.m=11; LV_YM.y--; } if(LV_YM.m>11){ LV_YM.m=0; LV_YM.y++; } } lvRender(); }
+  if(n){ LV_YM.m+=n; if(LV_YM.m<0){ LV_YM.m=11; LV_YM.y--; } if(LV_YM.m>11){ LV_YM.m=0; LV_YM.y++; } } LV_PG=0; lvRender(); }
 function lvRender(){
   const cal=$('lvCal'); if(!cal) return; if(!LV_YM) lvMove(0);
   const {y,m}=LV_YM; const first=new Date(y,m,1), last=new Date(y,m+1,0);
@@ -3672,10 +3693,18 @@ function lvRender(){
     if(dow(d)===0) html+=`<div class="wk">W${lvWeekNo(d)}</div>`;
     const ds=ymd(d), on=lvOn(ds);
     html+=`<button type="button" class="day${d.getMonth()!==m?' other':''}${ds===today?' today':''}${LV_PICK===ds?' pick':''}${dow(d)>=5?' we':''}" data-d="${ds}" onclick="lvTap('${ds}')" title="${ds}${on.length?' · '+on.map(r=>r.name).join(', '):''}"><i>${d.getDate()}</i>`
-      + on.slice(0,3).map(r=>`<span class="lvchip ed" onclick="event.stopPropagation();lvEdit(${r.id})" title="${esc(r.kind||'휴가')} · 눌러서 수정" style="background:${r.kind==='매장휴무'?'#8A909E':lvColor(r.name)}">${esc(r.kind==='매장휴무'?'매장휴무':String(r.name).slice(0,3)+(r.kind==='반차'?'·반':''))}</span>`).join('')
+      + on.slice(0,3).map(r=>lvChip(r)).join('')
       + (on.length>3?`<span class="lvmore">+${on.length-3}</span>`:'') + `</button>`;
   }
   cal.innerHTML=html; lvRenderList();
+}
+/* 칩 = 사람 색 + 종류 글자. 반차는 반만 칠해 한눈에 갈린다 (전엔 '·반' 한 글자뿐이라 휴무와 똑같아 보였다) */
+const LV_KIND_CLS={'반차':'k-half','교육':'k-edu','매장휴무':'k-store'};
+function lvChip(r){
+  const kind=r.kind||'휴가', c=kind==='매장휴무'?'#8A909E':lvColor(r.name);
+  const txt=kind==='매장휴무' ? '매장휴무' : String(r.name).slice(0,3)+' '+kind;
+  return `<span class="lvchip ed ${LV_KIND_CLS[kind]||''}" onclick="event.stopPropagation();lvEdit(${r.id})"
+    title="${esc(r.name)} · ${esc(kind)} · 눌러서 수정" style="--c:${c}">${esc(txt)}</span>`;
 }
 /* 날짜를 누르면 팝업 — 시작일·종료일이 그 날로 채워지고, 종료일은 창에서 바꾼다 */
 function lvTap(ds){ LV_PICK=ds; lvAddOpen(ds, ds); lvRender(); }
@@ -3713,7 +3742,6 @@ const LV_KIND_HINT={ '반차':'오후 3시까지 자동 배정에서 빠집니�
 function lvKindHint(){ const k=$('lv_kind').value; $('lv_kindHint').textContent = LV_KIND_HINT[k] || '그날 자동 배정에서 빠집니다.'; }
 function lvAddClose(){ $('lvAdd').classList.add('hidden'); LV_PICK=null; LV_EDIT=null; lvRender(); }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(!$('lvAdd').classList.contains('hidden')) lvAddClose(); if($('cdDlg')&&!$('cdDlg').classList.contains('hidden')) cdClose(); if($('msgDlg')&&!$('msgDlg').classList.contains('hidden')) msgClose(); } });
-function lvRange(b){ $('lv_range').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); lvGo(0); }
 function lvGo(p){ LV_PG=Math.max(0,Number(p)||0); lvRenderList(); }
 function lvFilterClear(){ $('lv_fstaff').value=''; $('lv_fkind').value=''; lvGo(0); }
 /* 담당자 거르개는 실제로 휴가가 있는 사람만 (고를 수 없는 이름을 늘어놓지 않는다) */
@@ -3735,11 +3763,11 @@ function lvWhen(f,t){
 }
 function lvRenderList(){
   const box=$('lvList'); if(!box||!LV) return;
-  const mode=(($('lv_range').querySelector('button.on')||{}).dataset||{}).v||'month';
   const fs=($('lv_fstaff')||{}).value||'', fk=($('lv_fkind')||{}).value||'';
   const today=todayStr(); const {y,m}=LV_YM||{}; const m0=`${y}-${String(m+1).padStart(2,'0')}-01`, m1=ymd(new Date(y,m+1,0));
+  $('lvListTitle').textContent=`${y}년 ${m+1}월 휴가`;
   const rows=((LV.rows)||[])
-    .filter(r=> mode==='all' ? true : mode==='upcoming' ? r.to>=today : mode==='past' ? r.to<today : (r.from<=m1 && r.to>=m0))
+    .filter(r=> r.from<=m1 && r.to>=m0)
     .filter(r=> !fs || r.name===fs)
     .filter(r=> !fk || (r.kind||'휴가')===fk)
     .slice().sort((a,b)=>a.from<b.from?1:a.from>b.from?-1:0);
@@ -3756,11 +3784,11 @@ function lvRenderList(){
     return `<div class="lvr${x.to<today?' gone':''}">
       <div class="dt">${lvWhen(x.from,x.to)}</div>
       <div class="bd"><div class="nm"><span class="lvdot" style="background:${kind==='매장휴무'?'#8A909E':lvColor(x.name)}"></span>${esc(x.name)}
-        <span class="tag" style="background:var(--surface-2,#EEF0F4);color:var(--muted)">${esc(kind)}</span>${x.now?'<span class="mine">휴가 중</span>':''}</div>
+        <span class="tag lvk ${LV_KIND_CLS[kind]||''}">${esc(kind)}</span>${x.now?'<span class="mine">휴가 중</span>':''}</div>
         <div class="sub">${x.note?esc(x.note)+' · ':''}${x.by?esc(x.by)+' 입력':''}</div></div>
       <div class="act"><button class="mini" onclick="lvEdit(${x.id})">수정</button><button class="mini bad" onclick="lvDel(${x.id},'${esc(x.name)}')">지우기</button></div></div>`;
   }).join('')
-    : `<div class="empty">${flt?'거르개에 맞는 휴가가 없습니다':mode==='month'?'이 달에는 휴가가 없습니다':mode==='upcoming'?'앞으로 잡힌 휴가가 없습니다':mode==='past'?'지난 휴가가 없습니다':'등록된 휴가가 없습니다'}</div>`;
+    : `<div class="empty">${flt?'거르개에 맞는 휴가가 없습니다':'이 달에는 휴가가 없습니다 — 위 달력의 ‹ › 로 다른 달을 보세요'}</div>`;
   $('lvPg').innerHTML = rows.length>per ? `<div class="pager">${pgBar('lv',LV_PG,rows.length,'lvGo')}</div>` : '';
 }
 async function loadLeave(){
@@ -3785,6 +3813,7 @@ async function lvSave(){
   if(!st) return toast('담당자를 고르세요','bad'); if(!f||!t) return toast('기간을 넣으세요','bad'); if(t<f) return toast('종료일이 시작일보다 앞입니다','bad');
   const kind=$('lv_kind').value||'휴가';
   const ed=LV_EDIT;
+  if(ed && !confirm(`${st} · ${f}${t!==f?' ~ '+t:''} · ${kind} 으로 바꿉니다. 계속할까요?`)) return;
   try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:ed||null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null,p_kind:kind});
     toast(`${st} ${kind} ${f}${t!==f?'~'+t:''} ${ed?'고쳤습니다':'넣었습니다'} — ${kind==='매장휴무'?'배정은 그대로 갑니다':kind==='반차'?'오후 3시까지 자동 배정에서 빠집니다':'그동안 자동 배정에서 빠집니다'}`,'ok');
     $('lv_note').value=''; LV_PICK=null; LV_EDIT=null; $('lvAdd').classList.add('hidden'); loadLeave();
