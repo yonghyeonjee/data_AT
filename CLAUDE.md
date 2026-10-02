@@ -165,9 +165,18 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-10-02 · v156)
+## 지금 상태 (2026-10-02 · v157)
 
 ### 되는 것
+- **속도 2차 — DB 정비 완료 · 화면은 생각만큼 안 느렸다 (v157 · 2026-10-02)** — "가능한 빨라지도록 다시 확인해봐".
+  **v156 에서 미뤘던 DDL 이 전부 들어갔다.** 처음에 MCP 가 60초로 끊긴 범인을 찾았다 — **pg_cron 의 `f_dash_warm`(15분 주기)이 `core.orders` 를 잡고 있는 동안 `DROP INDEX`·`VACUUM`·`ALTER` 가 뒤에 줄을 선다**(`pg_stat_activity` 를 `datname` 으로 거르면 안 보인다 — pg_cron 은 `postgres` DB 에서 돈다). 그 창을 피하니 통과했다.
+  `ix_orders_updated`(워머의 '바뀌었나?' 검사 **55ms → 3.5ms**) · **`vacuum (analyze) core.orders` — 죽은 행 24,352 → 0**(core.orders 를 읽는 모든 인덱스 스캔이 heap 재방문 2.4만 번을 덜었다) · autovacuum 5%/2000행으로 조임. 안 쓰는 인덱스 2개 drop 만 아직(효과 작음).
+  **화면 — 내 첫 측정이 틀렸다.** "store.html 폰 파싱+실행 2,565ms" 는 **첫 회(콜드 브라우저)를 안 버린 착시**였다. 워밍 뒤 3회 중앙값은 **1,097ms** 다. **브라우저 성능은 첫 회를 버리고 여러 번 재서 중앙값을 볼 것.**
+  CPU 프로파일로 잡은 진짜 조각은 `buildSubTabs` — **카드마다 `subTabTitle` 을 3번**(필터·서명·렌더) 부르고, 바로 앞 `applySecOrder` 가 DOM 을 옮긴 직후 `offsetParent` 를 읽어 **강제 레이아웃**이 걸렸다. 제목을 한 번만 읽고 값싼 검사(`.hidden` → `closest` → 제목)를 앞에 두어 레이아웃을 재는 카드 수를 줄였다 → **1,097 → 1,057ms (약 40ms)**. 작지만 하는 일이 줄었고 동작은 같다.
+  `loadStats` 에 `if(!ST_LOADED) return;` 를 넣었다(실제로는 시작할 때 안 불린다 — **프로파일러가 그 줄에 216ms 를 잘못 귀속했다**. 방어로만 남긴다).
+  **최종**: 담당자 `fn_store_status` **488ms**(최대 23,169ms 였던 것) · consults_my 49ms · requests 12ms / 관리자 `fn_home` 7ms · `fn_data_stamp` 2ms · `fn_data_status` 1ms · `fn_dash_payload` 72ms.
+  **남은 유일한 100ms 초과는 `fn_store_status`** — 10KB · select 43개 · core.orders 11회 · crm.consult 11회. 사람마다 값이 달라 전역 캐시를 못 쓴다. 쪼개려면 조각별로 재 보고 들어가야 한다(다음 후보).
+  UAT 4조합 · tour 폰 13탭 · audit 12조합 · grid · lvedit 40 · tyx 16 · tagshot ✓.
 - **느려진 원인은 화면이 아니라 백그라운드 워밍이었다 (mvp_181 · v156 · 2026-10-02)** — "속도가 너무 느려". `pg_stat_statements` 로 재니 범인이 바로 나왔다.
   **`f_dash_warm` 2,306회 × 평균 56.9초 = 누적 36.4시간**, `f_customer_roll` 576회 × 19.3초 = 3.1시간. 정작 원본 `core.orders` 는 **하루 5번**만 바뀐다.
   **① 대시보드 워밍이 15분마다 16벌(8기간 × 2모드)을 강제 재빌드했다** — `f_dash_payload_cached(..., interval '0')` 은 캐시 무시라는 뜻이었다. 한 번 도는 데 106초(올해·원장 한 벌만 38.6초).

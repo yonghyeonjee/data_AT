@@ -3428,14 +3428,24 @@ async function secOrderSave(){ try{ await rpc('fn_store_pref',{p_code:CODE,p_key
 function buildSubTabs(name){
   const bar=$('subTabs'), panel=$('tab-'+name); if(!bar||!panel) return;
   if(SEC_ORDER_LOADED) applySecOrder(name, panel);
-  const cards=[...panel.querySelectorAll('.card')].filter(c=>!c.closest('.card .card') && !c.classList.contains('hidden') && c.offsetParent!==null && subTabTitle(c));
+  /* 폰에서 여기가 제일 무거웠다(326ms) — subTabTitle 을 카드마다 3번 부르고,
+     applySecOrder 가 DOM 을 옮긴 직후 offsetParent 를 읽어 강제 레이아웃이 걸렸다.
+     제목은 한 번만 읽고, 값싼 검사를 앞에 두어 레이아웃을 재는 카드 수를 줄인다. */
+  const cards=[], titles=[];
+  for(const c of panel.querySelectorAll('.card')){
+    if(c.classList.contains('hidden')) continue;
+    if(c.closest('.card .card')) continue;
+    const t=subTabTitle(c); if(!t) continue;
+    if(c.offsetParent===null) continue;        /* 레이아웃을 재는 것은 맨 마지막 */
+    cards.push(c); titles.push(t);
+  }
   /* 목록이 그대로면 손대지 않는다 : 다시 그리면 깜빡이고 눌러둔 위치도 풀린다 */
-  const sig=name+'|'+cards.map(c=>subTabTitle(c)).join('|');
+  const sig=name+'|'+titles.join('|');
   if(sig===SUBTAB_SIG) return;
   SUBTAB_SIG=sig;
   if(cards.length<2){ bar.classList.add('hidden'); bar.innerHTML=''; return; }
   const cur=(bar.querySelector('a.on')||{}).dataset?.sec;
-  bar.innerHTML='<div class="st-wrap">'+cards.map((c,i)=>{ if(!c.id) c.id=`sec-${name}-${i}`; return `<a href="#${c.id}" data-sec="${c.id}" class="${c.id===cur?'on':''}">${esc(subTabTitle(c))}</a>`; }).join('')
+  bar.innerHTML='<div class="st-wrap">'+cards.map((c,i)=>{ if(!c.id) c.id=`sec-${name}-${i}`; return `<a href="#${c.id}" data-sec="${c.id}" class="${c.id===cur?'on':''}">${esc(titles[i])}</a>`; }).join('')
     +`<a href="javascript:void 0" class="so" title="섹션 순서 바꾸기" onclick="secOrderOpen('${name}')">⚙</a></div>`;
   bar.classList.remove('hidden');
   bar.querySelectorAll('a[data-sec]').forEach(a=>a.onclick=e=>{ e.preventDefault(); const el=document.getElementById(a.dataset.sec); if(!el) return;
@@ -3633,6 +3643,7 @@ function stScope(){
 document.addEventListener('click', e=>{ const b=e.target.closest('#st_scope button'); if(!b) return;
   ST_SCOPE=b.dataset.v; try{ localStorage.setItem('dc_st_scope', ST_SCOPE); }catch(e2){} loadStats(); });
 async function loadStats(){
+  if(!ST_LOADED) return;   /* 상담 현황 탭을 아직 안 열었다 — 시작할 때 그리느라 폰에서 216ms 를 썼다 */
   const box=$('stBody'); if(!box) return;
   stMonthChips();
   const grain=(($('st_grain').querySelector('button.on')||{}).dataset||{}).v||'month';

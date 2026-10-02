@@ -41,18 +41,26 @@
 --   fn_store_requests(20초 폴링) 25ms · fn_store_consults_my 58ms
 
 ------------------------------------------------------------------------------
--- 아직 안 한 것 — MCP execute_sql 이 core.orders/crm.customer_roll 대상 DDL 에서
--- 60초로 계속 끊겼다(락은 없었다. pg_locks 확인함). Supabase SQL 편집기에서 한 줄씩 실행할 것.
+-- 2026-10-02 추가 적용 (처음엔 MCP 가 60초로 끊겨 미뤘던 것 — 범인은 pg_cron 의 f_dash_warm 이
+-- core.orders 를 잡고 있는 15분 주기였다. 그 창을 피하니 전부 통과했다.)
 --
--- create index if not exists ix_orders_updated on core.orders (updated_at desc);
---   → 워머의 '바뀌었나?' 검사가 지금 19만 행을 전부 훑는다(55ms). 이걸 넣으면 1ms 미만.
---
--- drop index if exists core.ix_orders_test;   -- 한 번도 안 쓴 인덱스 (대량 적재 쓰기 비용)
--- drop index if exists crm.ix_croll_net;      -- 한 번도 안 쓴 인덱스 (6.2만 건 전면 갱신 대상)
---
+-- create index ix_orders_updated on core.orders (updated_at desc);
+--   → 워머의 '바뀌었나?' 검사: 19만 행 전수 스캔 55ms → 3.5ms (Index Only Scan, heap fetch 1)
 -- vacuum (analyze) core.orders;
---   → 죽은 행 24,352개 · 마지막 autovacuum 2026-09-22. 모든 인덱스 스캔이 heap 을 2.4만 번 더 읽는다.
+--   → 죽은 행 24,352 → 0. core.orders 를 읽는 모든 인덱스 스캔이 heap 재방문 2.4만 번을 덜었다.
 -- alter table core.orders set (autovacuum_vacuum_scale_factor=0.05,
 --                              autovacuum_vacuum_threshold=2000,
 --                              autovacuum_analyze_scale_factor=0.05);
---   → 대량 적재 표라 기본 20% 기준이 너무 느슨하다.
+--   → 기본 20% 는 대량 적재 표에 너무 느슨했다(마지막 autovacuum 이 10일 전이었다).
+--
+-- 아직 안 한 것 (효과 작음, 계속 락에 걸린다):
+--   drop index core.ix_orders_test;  drop index crm.ix_croll_net;   -- 한 번도 안 쓴 인덱스
+
+------------------------------------------------------------------------------
+-- 최종 실측 (2026-10-02)
+--   담당자 로그인 fn_store_status  최대 23,169ms → 488ms   ← 남은 유일한 100ms 초과. 다음 후보.
+--   담당자 fn_store_consults_my 49ms · fn_store_requests(20초 폴링) 12ms
+--   관리자 fn_home 7ms · fn_data_stamp 2ms · fn_data_status 1ms · fn_dash_payload 72ms
+--
+-- fn_store_status 는 10KB · select 43개 · core.orders 11회 · crm.consult 11회 짜리 집계다.
+-- 사람마다 다른 값이라 전역 캐시를 못 쓴다 — 쪼개려면 조각별로 재 보고 들어가야 한다.
