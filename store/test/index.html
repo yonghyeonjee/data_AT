@@ -992,10 +992,12 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
   .lvdlg.wide{width:100%;max-height:94vh;padding:14px 12px 12px}
   .dv .kv{grid-template-columns:78px 1fr}
   .cstick{padding:8px 10px} .cstick .hlist{max-height:32vh} .cstick .who .x{padding:0 2px}
+  /* 줄 안 버튼 묶음(.item.oc .act)은 폰에서 글자 아래 한 줄로 — 옆에 두면 제목 칸이 130px 로 눌려 세 줄로 꺾인다 (알림·견적서·찾기) */
+  .item.oc{grid-template-columns:1fr} .item.oc .act{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;justify-items:start;justify-content:flex-start;align-self:auto;margin-top:2px}
 }
 @media(max-width:999px){
   /* 쪽 번호 — 데스크톱은 30~38px 이라 폰에서는 손가락 크기(40px)로 올린다 (공용 pgBar 를 쓰는 목록 전부) */
-  .pager .btn{min-width:40px;min-height:40px;padding:6px 8px} .pager .pgn{min-width:40px} .pager select.pgper{min-height:40px}
+  .pager .btn{min-width:40px;min-height:40px;padding:6px 8px} .pager .pgn{min-width:40px} .pager select.pgper{min-height:40px;margin:0}
   /* 서랍 : --side-w 는 넓은 화면의 고정 메뉴용(34vw). 폰에서 그대로 쓰면 122px 이 돼 글자가 전부 두 줄로 꺾인다 */
   .side{width:min(86vw, 340px)}
   .side .it,.side .lk{min-height:44px}
@@ -1170,7 +1172,9 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
     <div class="card" id="cbCard">
       <h2>콜백 약속 <span id="cbSub"></span></h2>
+      <div class="seg sm cflt" id="cb_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="cbFlt('all')">전체 <i>0</i></button><button type="button" data-v="over" onclick="cbFlt('over')" title="약속 시각이 지났는데 아직 완료하지 않은 것">지난 약속 <i>0</i></button><button type="button" data-v="today" onclick="cbFlt('today')">오늘 <i>0</i></button><button type="button" data-v="next" onclick="cbFlt('next')" title="내일 이후">예정 <i>0</i></button><button type="button" data-v="none" onclick="cbFlt('none')" title="담당자가 없는 약속">미배정 <i>0</i></button></div>
       <div id="cbList"><div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div></div>
+      <div id="cb_pg"></div>
     </div>
     <div class="card hidden" id="hlCard">
       <h2>우선 순위 상담 <span id="hlSub">점장님 · 대표님만 보입니다</span></h2>
@@ -1257,7 +1261,9 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
     <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
     <div class="prow" id="qt_period"></div>
+      <div class="seg sm cflt" id="qt_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="qtFlt('all')">전체 <i>0</i></button><button type="button" data-v="live" onclick="qtFlt('live')" title="마감일이 아직 안 지난 견적서">유효 <i>0</i></button><button type="button" data-v="over" onclick="qtFlt('over')" title="유효기한이 지난 견적서 — 다시 발행하거나 고객에게 연락">마감 지남 <i>0</i></button><button type="button" data-v="none" onclick="qtFlt('none')">마감 없음 <i>0</i></button></div>
       <div class="list" id="qtList" style="margin-top:12px"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
+      <div id="qt_pg"></div>
     </div>
   </section>
 
@@ -1277,7 +1283,9 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <label for="cu_ch" class="lbl" style="font-size:calc(12.5px * var(--font-scale));color:var(--muted);font-weight:600">문의 채널</label>
         <select class="in" id="cu_ch" style="flex:1;min-width:160px" onchange="loadMyCustomers()"><option value="">전체 채널</option></select>
       </div>
+      <div class="seg sm cflt" id="cu_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="cuFlt('all')">전체 <i>0</i></button><button type="button" data-v="cb" onclick="cuFlt('cb')" title="콜백 약속이 잡혀 있고 아직 완료하지 않은 고객">콜백 대기 <i>0</i></button><button type="button" data-v="stale" onclick="cuFlt('stale')" title="상담한 지 30일이 넘도록 연락이 없는 고객">30일↑ 미접촉 <i>0</i></button><button type="button" data-v="consent" onclick="cuFlt('consent')" title="마케팅 수신에 동의한 고객">수신동의 <i>0</i></button><button type="button" data-v="buy" onclick="cuFlt('buy')" title="상담 기록 없이 구매만 한 고객">구매만 <i>0</i></button></div>
       <div class="list" id="mcuList" style="margin-top:12px"><div class="empty">불러오는 중…</div></div>
+      <div id="cu_pg"></div>
     </div>
   </section>
 
@@ -1289,7 +1297,9 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="chips filter multi" id="al_kind" role="group" aria-label="종류 (여러 개 선택)" style="margin-bottom:10px">
         <span class="chip" data-v="quote" data-l="견적서" role="checkbox" aria-checked="false">견적서</span><span class="chip" data-v="assign" data-l="배정" role="checkbox" aria-checked="false">배정</span><span class="chip" data-v="inquiry" data-l="새 문의" role="checkbox" aria-checked="false">새 문의</span><span class="chip" data-v="callback" data-l="콜백" role="checkbox" aria-checked="false">콜백</span>
       </div>
+      <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="al_q" placeholder="고객명 · 내용으로 찾기" autocomplete="off" oninput="alSearch()"><button type="button" class="go" onclick="alSearch()" aria-label="찾기">⌕</button></div></div>
       <div class="list" id="alList"><div class="empty">불러오는 중…</div></div>
+      <div id="al_pg"></div>
     </div>
     <div class="card">
       <h2>자동 알림 <span class="devtag">개발 전</span></h2>
@@ -1470,12 +1480,16 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
     <div class="card">
       <h2>오늘 입력한 판매 <span id="todaySum"></span></h2>
+      <div class="seg sm cflt" id="ts_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="tsFlt('all')">전체 <i>0</i></button><button type="button" data-v="mine" onclick="tsFlt('mine')">내 건 <i>0</i></button><button type="button" data-v="매출" onclick="tsFlt('매출')" title="아직 확정 전">매출 <i>0</i></button><button type="button" data-v="판매완료" onclick="tsFlt('판매완료')">판매완료 <i>0</i></button><button type="button" data-v="cx" onclick="tsFlt('cx')">취소·환불 <i>0</i></button></div>
       <div class="list" id="todayList"><div class="empty">아직 없습니다</div></div>
+      <div id="ts_pg"></div>
     </div>
     <div class="card">
       <h2>확정 대기 · 매출 단계 <span id="openSum">최근 60일 · 내 건 우선</span></h2>
       <p class="note-in" style="margin:0 0 10px">배송·설치가 끝나 확정되면 <b>판매완료</b>를 누르세요. <b>취소·환불</b>도 담당자가 바로 처리할 수 있고, 되돌릴 수 있습니다.</p>
+      <div class="seg sm cflt" id="op_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="opFlt('all')">전체 <i>0</i></button><button type="button" data-v="mine" onclick="opFlt('mine')">내 건 <i>0</i></button><button type="button" data-v="일시불" onclick="opFlt('일시불')">일시불 <i>0</i></button><button type="button" data-v="구독" onclick="opFlt('구독')">구독 <i>0</i></button><button type="button" data-v="직판" onclick="opFlt('직판')">직판 <i>0</i></button></div>
       <div class="list" id="openList"><div class="empty">확정 대기 건이 없습니다</div></div>
+      <div id="op_pg"></div>
     </div>
   </section>
 
@@ -1780,7 +1794,9 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="card hidden" id="reqCard">
       <h2>판매 요청 <span id="req_sub"></span></h2>
       <p class="note-in" style="margin-top:0">매장·온라인사업부 등 어느 부서든 판매 입력하며 <b>이카운트 주문서 요청</b>을 켠 건입니다. 요청자 이름 옆에 부서가 붙습니다. <b>[주문서로]</b> 누르면 아래 직접 입력 칸에 채워지고 등록하면 요청이 자동으로 처리됨 · <b>[내가 맡기]</b> 다른 담당자에게 "내가 처리 중"으로 보임 · <b>[직접 처리함]</b> 이카운트에 손으로 넣었을 때(전표번호 메모) · <b>[불필요]</b> 주문서가 필요 없는 건(사유 메모).</p>
+      <div class="seg sm cflt" id="rq_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="rqFlt('all')">전체 <i>0</i></button><button type="button" data-v="open" onclick="rqFlt('open')" title="아직 아무도 맡지 않은 요청">대기 <i>0</i></button><button type="button" data-v="taken" onclick="rqFlt('taken')">처리 중 <i>0</i></button><button type="button" data-v="mine" onclick="rqFlt('mine')">내가 맡은 <i>0</i></button></div>
       <div id="req_rows"><div class="empty">요청이 없습니다</div></div>
+      <div id="rq_pg"></div>
       <details style="margin-top:10px"><summary style="font-size:calc(12.5px * var(--font-scale));color:var(--muted);cursor:pointer">최근 처리한 요청</summary><div id="req_done" style="margin-top:8px"></div></details>
     </div>
     <div class="modeseg"><button class="on" data-m="quick" onclick="orMode('quick')">빠른 모드</button><button data-m="wiz" onclick="orMode('wiz')">단계별 모드</button></div>
@@ -1944,19 +1960,30 @@ function pgSize(key){ const v=Number(PG[key]); return PG_OPTS.indexOf(v)>=0 ? v 
 function pgSet(key,v,go){ PG[key]=Number(v)||PG_DEF; try{ localStorage.setItem('dc_pg',JSON.stringify(PG)); }catch(e){} if(typeof go==='function') go(0); }
 function pgBar(key,page,total,go){
   const per=pgSize(key), last=Math.max(0,Math.ceil((Number(total)||0)/per)-1); page=Math.max(0,Math.min(page,last));
+  /* 폰은 번호 창을 ±1 로 줄이고 «» 를 뺀다 — 40px 버튼 7개가 카드 한 줄에 들어간다(±2 + «» 는 두 줄로 꺾여 4·» 가 혼자 남았다). 줄 수 select 는 맨 뒤라 다음 줄 가운데에 선다 */
+  const narrow = window.innerWidth<=640, w = narrow ? 1 : 2;
   const nums=[], add=p=>{ if(p>=0&&p<=last&&nums.indexOf(p)<0) nums.push(p); };
-  add(0); for(let p=page-2;p<=page+2;p++) add(p); add(last); nums.sort((a,b)=>a-b);
-  let h=`<select class="pgper" title="한 쪽에 보일 줄 수" onchange="pgSet('${key}',this.value,${go})">`
-      + PG_OPTS.map(v=>`<option value="${v}"${v===per?' selected':''}>${v}줄</option>`).join('') + '</select>'
-      + `<button class="btn ghost sm" ${page<=0?'disabled':''} onclick="${go}(0)">«</button>`
-      + `<button class="btn ghost sm" ${page<=0?'disabled':''} onclick="${go}(${page-1})">‹</button>`;
+  add(0); for(let p=page-w;p<=page+w;p++) add(p); add(last); nums.sort((a,b)=>a-b);
+  const sel=`<select class="pgper" title="한 쪽에 보일 줄 수" aria-label="한 쪽에 보일 줄 수" onchange="pgSet('${key}',this.value,${go})">`
+      + PG_OPTS.map(v=>`<option value="${v}"${v===per?' selected':''}>${v}줄</option>`).join('') + '</select>';
+  let h=(narrow?'':sel)
+      + (narrow?'':`<button class="btn ghost sm" ${page<=0?'disabled':''} onclick="${go}(0)" aria-label="첫 쪽">«</button>`)
+      + `<button class="btn ghost sm" ${page<=0?'disabled':''} onclick="${go}(${page-1})" aria-label="이전 쪽">‹</button>`;
   let prev=-1;
   nums.forEach(p=>{ if(prev>=0&&p-prev>1) h+='<span class="pgdots">…</span>';
-    h+=`<button class="btn ${p===page?'':'ghost'} sm pgn" onclick="${go}(${p})">${p+1}</button>`; prev=p; });
-  h+=`<button class="btn ghost sm" ${page>=last?'disabled':''} onclick="${go}(${page+1})">›</button>`
-   + `<button class="btn ghost sm" ${page>=last?'disabled':''} onclick="${go}(${last})">»</button>`;
+    h+=`<button class="btn ${p===page?'':'ghost'} sm pgn" onclick="${go}(${p})"${p===page?' aria-current="page"':''}>${p+1}</button>`; prev=p; });
+  h+=`<button class="btn ghost sm" ${page>=last?'disabled':''} onclick="${go}(${page+1})" aria-label="다음 쪽">›</button>`
+   + (narrow?'':`<button class="btn ghost sm" ${page>=last?'disabled':''} onclick="${go}(${last})" aria-label="마지막 쪽">»</button>`)
+   + (narrow?sel:'');
   return h;
 }
+/* 목록 공용 — 전체 줄을 주면 이 쪽의 줄과 쪽 바(.pager)를 돌려준다. 줄 수는 pgSize(key)(localStorage dc_pg). 쪽이 범위를 벗어나면 마지막 쪽으로 */
+function pgCut(key,page,rows,go){ const per=pgSize(key), total=rows.length, last=Math.max(0,Math.ceil(total/per)-1); page=Math.max(0,Math.min(Number(page)||0,last));
+  return {page, per, total, rows:rows.slice(page*per,(page+1)*per), bar: total>per?`<div class="pager">${pgBar(key,page,total,go)}</div>`:'',
+          range: total>per?`${total}건 중 ${page*per+1}–${Math.min(total,(page+1)*per)}`:''}; }
+/* 거르개 세그(.seg.cflt) 공용 — 누른 버튼만 켜고(segPick) 버튼마다 건수를 적는다(segCount) */
+function segPick(id,v){ const el=$(id); if(el) el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); return v; }
+function segCount(id,counts){ const el=$(id); if(!el) return; el.querySelectorAll('button').forEach(b=>{ const i=b.querySelector('i'); if(i) i.textContent=String(counts[b.dataset.v]??0); }); }
 const todayStr = (d=0) => { const t=new Date(); t.setDate(t.getDate()+d); return new Date(t.getTime()-t.getTimezoneOffset()*60000).toISOString().slice(0,10); };
 const won = v => (Number(v)||0).toLocaleString('ko-KR') + '원';
 const num = el => Number(String(el.value).replace(/[^0-9]/g,'')) || 0;
@@ -2060,14 +2087,14 @@ async function start(){
   if(!MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
   REQ_SEEN=null; loadRequests(); reqPoll(); loadGifts(); askNotify();
 }
-function render(){
-  initSuggest(); setTimeout(syncNav,0);
-  const s = STATUS;
-  const handlers = s.staff || [];
-  ['s_handler','c_handler','cg_handler','sg_handler'].forEach(id=>{ const el=$(id); if(!el) return; const keep=el.value;
-    el.innerHTML = handlers.map(h=>`<option ${h===(keep||ME)?'selected':''}>${h}</option>`).join(''); });
-  ['s_handlerHint','c_handlerHint'].forEach(id=>$(id).textContent='기본 '+ME);
-  $('d_byNote').textContent = `입력자 ${ME} 로 기록됩니다`;
+/* 판매 입력 — 오늘 판매·확정 대기 목록. 거르개(내 건·단계/구분) + 쪽 나누기. 자료는 fn_store_status (today_sales · open_sales 최근 60일 60건) */
+let TS_FLT='all', TS_PG=0, OP_FLT='all', OP_PG=0;
+const saleMatch=(x,f)=> f==='all' ? true : f==='mine' ? !!x.mine : f==='cx' ? (x.stage==='취소'||x.stage==='환불') : (f==='매출'||f==='판매완료') ? x.stage===f : (x.kind||'일시불')===f;
+function tsFlt(v){ TS_FLT=segPick('ts_flt',v); TS_PG=0; if(STATUS) renderSales(STATUS); }
+function tsGo(p){ TS_PG=p; if(STATUS) renderSales(STATUS); }
+function opFlt(v){ OP_FLT=segPick('op_flt',v); OP_PG=0; if(STATUS) renderSales(STATUS); }
+function opGo(p){ OP_PG=p; if(STATUS) renderSales(STATUS); }
+function renderSales(s){
   $('pillToday').textContent = `오늘 ${s.today_sales.length}건`;
   const sum = s.today_sales.reduce((a,x)=>a+Number(x.amount),0);
   $('todaySum').textContent = s.today_sales.length ? won(sum) : '';
@@ -2080,16 +2107,31 @@ function render(){
                         ? (canCx(x) ? `<button class="mini" onclick="cancelUndo(${x.id})">되돌리기</button>` : '')
                       : x.stage==='매출' ? `<button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료로</button>`+cxBtn(x)
                       : x.stage==='판매완료' ? `<button class="mini" onclick="setStage(${x.id},'매출')">매출로 되돌리기</button>`+cxBtn(x) : '';
-  $('todayList').innerHTML = s.today_sales.length ? s.today_sales.map(x=>`
+  const tsAll=s.today_sales, tsRows=tsAll.filter(x=>saleMatch(x,TS_FLT));
+  segCount('ts_flt',{all:tsAll.length, mine:tsAll.filter(x=>x.mine).length, '매출':tsAll.filter(x=>x.stage==='매출').length, '판매완료':tsAll.filter(x=>x.stage==='판매완료').length, cx:tsAll.filter(x=>saleMatch(x,'cx')).length});
+  const T=pgCut('ts',TS_PG,tsRows,'tsGo'); TS_PG=T.page; { const pg=$('ts_pg'); if(pg) pg.innerHTML=T.bar; }
+  $('todayList').innerHTML = T.rows.length ? T.rows.map(x=>`
     <div class="item"><div class="t">${x.time}</div>
       <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span><span class="tag ${x.stage||''}">${x.stage||''}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}</div></div>
-      <div class="act"><div class="a">${won(x.amount)}</div>${stageBtn(x)}${tsBtn(x)}</div></div>`).join('') : '<div class="empty">아직 없습니다</div>';
-  const op = s.open_sales || [];
-  $('openSum').textContent = op.length ? `${s.open_count||op.length}건 · ${won(op.reduce((a,x)=>a+Number(x.amount),0))}` : '최근 60일 · 내 건 우선';
-  $('openList').innerHTML = op.length ? op.map(x=>`
+      <div class="act"><div class="a">${won(x.amount)}</div>${stageBtn(x)}${tsBtn(x)}</div></div>`).join('') : `<div class="empty">${tsAll.length?'이 조건에 맞는 판매가 없습니다':'아직 없습니다'}</div>`;
+  const opAll = s.open_sales || [], op = opAll.filter(x=>saleMatch(x,OP_FLT));
+  segCount('op_flt',{all:opAll.length, mine:opAll.filter(x=>x.mine).length, '일시불':opAll.filter(x=>(x.kind||'일시불')==='일시불').length, '구독':opAll.filter(x=>x.kind==='구독').length, '직판':opAll.filter(x=>x.kind==='직판').length});
+  const O=pgCut('op',OP_PG,op,'opGo'); OP_PG=O.page; { const pg=$('op_pg'); if(pg) pg.innerHTML=O.bar; }
+  $('openSum').textContent = opAll.length ? `${s.open_count||opAll.length}건 · ${won(opAll.reduce((a,x)=>a+Number(x.amount),0))}${O.range?' · '+O.range.replace(/^\d+건 중 /,''):''}` : '최근 60일 · 내 건 우선';
+  $('openList').innerHTML = O.rows.length ? O.rows.map(x=>`
     <div class="item"><div class="t">${String(x.date).slice(5).replace('-','/')}</div>
       <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}</div></div>
-      <div class="act"><div class="a">${won(x.amount)}</div><button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료</button>${cxBtn(x)}${tsBtn(x)}</div></div>`).join('') : '<div class="empty">확정 대기 건이 없습니다</div>';
+      <div class="act"><div class="a">${won(x.amount)}</div><button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료</button>${cxBtn(x)}${tsBtn(x)}</div></div>`).join('') : `<div class="empty">${opAll.length?'이 조건에 맞는 건이 없습니다':'확정 대기 건이 없습니다'}</div>`;
+}
+function render(){
+  initSuggest(); setTimeout(syncNav,0);
+  const s = STATUS;
+  const handlers = s.staff || [];
+  ['s_handler','c_handler','cg_handler','sg_handler'].forEach(id=>{ const el=$(id); if(!el) return; const keep=el.value;
+    el.innerHTML = handlers.map(h=>`<option ${h===(keep||ME)?'selected':''}>${h}</option>`).join(''); });
+  ['s_handlerHint','c_handlerHint'].forEach(id=>$(id).textContent='기본 '+ME);
+  $('d_byNote').textContent = `입력자 ${ME} 로 기록됩니다`;
+  renderSales(s);
   if($('r_handler').options.length<=1){ $('r_handler').innerHTML = '<option value="">전체 프로</option>' + handlers.map(h=>`<option ${h===ME?'selected':''}>${h}</option>`).join(''); }
   lockToMe();
   if(!$('r_from').value) setReportRange('day');
@@ -3895,13 +3937,19 @@ async function loadAlerts(){
   try{ const d=await rpc('fn_store_alerts',{p_code:CODE,p_limit:150}); AL_ROWS=d.rows||[]; }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   renderAlerts();
 }
+let AL_PG=0, AL_SIG='';
+function alGo(p){ AL_PG=p; renderAlerts(); }
+function alSearch(){ renderAlerts(); }
 function renderAlerts(){
-  alKindSync(); const box=$('alList'); const rows=AL_ROWS.filter(x=>AL_KINDS.has(x.kind));
-  $('alSub').textContent = rows.length?`${rows.length}건 · 최근 90일`:'';
+  alKindSync(); const box=$('alList'); const q=(($('al_q')||{}).value||'').trim().toLowerCase(), d=q.replace(/\D/g,'');
+  const rows=AL_ROWS.filter(x=>AL_KINDS.has(x.kind)).filter(x=>!q || [x.title,x.detail,x.quote_no].some(v=>String(v||'').toLowerCase().includes(q)) || (d.length>=3 && String(x.phone||'').includes(d)));
+  const sig=q+'|'+[...AL_KINDS].sort().join(','); if(sig!==AL_SIG){ AL_SIG=sig; AL_PG=0; }   /* 검색어·종류가 바뀌면 1쪽부터 */
+  const P=pgCut('al',AL_PG,rows,'alGo'); AL_PG=P.page; const pg=$('al_pg'); if(pg) pg.innerHTML=P.bar;
+  $('alSub').textContent = rows.length?(P.range?`최근 90일 · ${P.range}`:`${rows.length}건 · 최근 90일`):'';
   const ICO={quote:'📄',assign:'👤',inquiry:'📥',callback:'📞'};
   const when=v=>{ v=String(v||''); return v.length>=16 ? v.slice(5,10).replace('-','/')+' '+v.slice(11,16) : v; };
   const sample = AL_KINDS.has('quote') ? `<div class="item oc sample"><div><div class="p">🔔 (예시) 김샘플 님 견적서 유효기한 3일 전 <span class="devtag">자동 알림 · 개발 전</span></div><div class="m">자동 알림이 붙으면 이렇게 쌓입니다. 줄에서 바로 상담으로 가서 이어서 상담하거나 메시지를 보냅니다.</div></div><div class="act"><button class="mini" onclick="goTab('inbox')">상담 열기</button><button class="mini" onclick="msgSend('김샘플','010-****-0000')">메시지 보내기</button></div></div>` : '';
-  box.innerHTML = sample + (rows.length ? rows.map(x=>{
+  box.innerHTML = (P.page?'':sample) + (P.rows.length ? P.rows.map(x=>{
     const badge = x.kind==='quote' ? (x.viewed?'<span class="mine">고객이 열어봄</span>':'<span class="res pre">아직 안 열어봄</span>')
                 : x.kind==='callback' ? (x.done?'<span class="res done">완료</span>':x.overdue?'<span class="res alarm" style="background:#FEE2E2;color:#B91C1C">지남</span>':'<span class="res open">예정</span>')
                 : x.kind==='inquiry' && x.result==='진행전' ? '<span class="res pre">연락 전</span>' : '';
@@ -3910,7 +3958,7 @@ function renderAlerts(){
               : `<button class="mini" onclick="alOpenConsult('${esc(who)}')">상담 열기</button>`)
               + `<button class="mini" onclick="msgSend('${esc(who)}','${esc(x.phone||'')}')" title="문자 발송 — 개발 전">메시지 보내기</button>`;
     return `<div class="item oc"><div><div class="p">${ICO[x.kind]||''} ${esc(x.title||'')} ${badge}</div><div class="m">${when(x.at)} · ${esc(x.detail||'')}</div></div><div class="act">${act}</div></div>`; }).join('')
-    : `<div class="empty">${AL_KINDS.size?'알림이 없습니다':'위에서 볼 종류를 체크하세요'}</div>`);
+    : `<div class="empty">${!AL_KINDS.size?'위에서 볼 종류를 체크하세요':q?'맞는 알림이 없습니다':'알림이 없습니다'}</div>`);
 }
 function msgSend(name, phone){ $('msgTo').textContent = `받는 사람: ${name||'-'}${phone?' · '+phone:''}`; $('msgDlg').classList.remove('hidden'); }
 function msgClose(){ $('msgDlg').classList.add('hidden'); }
@@ -3933,15 +3981,21 @@ async function loadMyCustomers(){
   try{
     const rows=await rpc('fn_store_my_customers',{p_code:CODE,p_q:($('cu_q').value||'').trim()||null,p_from:pd.from,p_to:pd.to,p_channel:$('cu_ch').value||null});
     if(seq!==CU_SEQ) return;
-    CU_ROWS=rows||[]; renderMyCustomers();
+    CU_ROWS=rows||[]; CU_PG=0; renderMyCustomers();
   }catch(e){ if(seq===CU_SEQ) box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
 }
 const cuAgo=d=> d==null?'':(d<=0?'오늘':d===1?'어제':`${d}일 전`);
+let CU_FLT='all', CU_PG=0;
+function cuFlt(v){ CU_FLT=segPick('cu_flt',v); CU_PG=0; renderMyCustomers(); }
+function cuGo(p){ CU_PG=p; renderMyCustomers(); }
+const cuMatch=(x,f)=> f==='all' ? true : f==='cb' ? !!x.open_callback : f==='stale' ? (x.consult_n>0 && Number(x.days)>=30) : f==='consent' ? !!x.consent : f==='buy' ? !x.last_result : true;
 function renderMyCustomers(){
-  const box=$('mcuList'); const rows=CU_ROWS; const filtered=!!($('cu_q').value.trim()||periodOf('cu').from||periodOf('cu').to||$('cu_ch').value);
-  $('mcSub').textContent = rows.length ? `${rows.length}명${filtered?' · 조건 적용':''}` : '';
-  if(!rows.length){ box.innerHTML=`<div class="empty">${filtered?'이 조건에 맞는 고객이 없습니다. 기간·채널을 [전체]로 두면 다 보입니다.':'아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.'}</div>`; return; }
-  box.innerHTML=rows.map(x=>{
+  const box=$('mcuList'); const all=CU_ROWS, rows=all.filter(x=>cuMatch(x,CU_FLT)); const filtered=!!($('cu_q').value.trim()||periodOf('cu').from||periodOf('cu').to||$('cu_ch').value);
+  segCount('cu_flt',{all:all.length, cb:all.filter(x=>cuMatch(x,'cb')).length, stale:all.filter(x=>cuMatch(x,'stale')).length, consent:all.filter(x=>cuMatch(x,'consent')).length, buy:all.filter(x=>cuMatch(x,'buy')).length});
+  const P=pgCut('cu',CU_PG,rows,'cuGo'); CU_PG=P.page; const pg=$('cu_pg'); if(pg) pg.innerHTML=P.bar;
+  $('mcSub').textContent = rows.length ? `${rows.length}명${rows.length!==all.length?` / ${all.length}명`:''}${filtered?' · 조건 적용':''}${P.range?' · '+P.range:''}` : '';
+  if(!rows.length){ box.innerHTML=`<div class="empty">${(filtered||CU_FLT!=='all')?'이 조건에 맞는 고객이 없습니다. 기간·채널·위 거르개를 [전체]로 두면 다 보입니다.':'아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.'}</div>`; return; }
+  box.innerHTML=P.rows.map(x=>{
     const ru=RES_UI[x.last_result]||(x.last_result?['pre',x.last_result]:null);
     const d=Number(x.days); const stale=x.consult_n>0 && d>=30;
     return `<div class="cuitem" id="cu_${esc(x.key)}">
@@ -4016,11 +4070,20 @@ async function qtTest(no, name){
 }
 function quoteMatch(x,q){ q=String(q||'').trim().toLowerCase(); if(!q) return true; const d=q.replace(/\D/g,'');
   return [x.name,x.no,x.models,x.memo].some(v=>String(v||'').toLowerCase().includes(q)) || (d.length>=3 && String(x.tel||'').includes(d)); }
+let QT_FLT='all', QT_PG=0, QT_SIG='';
+function qtFlt(v){ QT_FLT=segPick('qt_flt',v); QT_PG=0; quoteFilter(); }
+function qtGo(p){ QT_PG=p; quoteFilter(); }
+const qtOver=x=>{ const u=String(x.until||'').replace(/\./g,'-').slice(0,10); return u ? (u<todayStr() ? 'over' : 'live') : 'none'; };
 function quoteFilter(){
   const q=($('qt_q')||{}).value||''; const all=(STATUS&&STATUS.quotes)||[]; const pr=periodOf('qt');
-  const list=all.filter(x=>quoteMatch(x,q)).filter(x=>{ const d=String(x.at||'').slice(0,10); return (!pr.from||d>=pr.from)&&(!pr.to||d<=pr.to); });
-  $('qtSub').textContent=(q?`${list.length}건 찾음 / `:'')+(all.length?`${all.length}건 · 최근 90일`:'최근 90일');
-  $('qtList').innerHTML=list.length?list.map(quoteRow).join(''):`<div class="empty">${q?'맞는 견적서가 없습니다':'홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.'}</div>`;
+  const base=all.filter(x=>quoteMatch(x,q)).filter(x=>{ const d=String(x.at||'').slice(0,10); return (!pr.from||d>=pr.from)&&(!pr.to||d<=pr.to); });
+  segCount('qt_flt',{all:base.length, live:base.filter(x=>qtOver(x)==='live').length, over:base.filter(x=>qtOver(x)==='over').length, none:base.filter(x=>qtOver(x)==='none').length});
+  const list = QT_FLT==='all' ? base : base.filter(x=>qtOver(x)===QT_FLT);
+  const sig=q+'|'+pr.from+'|'+pr.to; if(sig!==QT_SIG){ QT_SIG=sig; QT_PG=0; }   /* 검색어·기간이 바뀌면 1쪽부터 */
+  const P=pgCut('qt',QT_PG,list,'qtGo'); QT_PG=P.page;
+  $('qtSub').textContent=(q?`${list.length}건 찾음 / `:QT_FLT!=='all'?`${list.length}건 / `:'')+(P.range ? `최근 90일 · ${P.range}` : (all.length?`${all.length}건 · 최근 90일`:'최근 90일'));
+  $('qtList').innerHTML=P.rows.length?P.rows.map(quoteRow).join(''):`<div class="empty">${(q||QT_FLT!=='all'||pr.from||pr.to)?'맞는 견적서가 없습니다':'홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.'}</div>`;
+  const pg=$('qt_pg'); if(pg) pg.innerHTML=P.bar;
 }
 /* ═══ 홈 찾기 — 상담과 견적서를 한 번에. 상담은 서버(내 것 / 점장님은 전체), 견적서는 이미 받아 둔 90일치에서 ═══ */
 const fmtAt=v=>{ v=String(v||''); return v.length>10 ? v.slice(5,10).replace('-','/') : v; };
@@ -4031,11 +4094,19 @@ async function homeFind(){
   const mgr=!!(STATUS&&STATUS.is_mgr); let rows=[], err='';
   try{ const d=await rpc('fn_store_consult_find',{p_code:CODE,p_q:q,p_limit:50}); rows=d.rows||[]; }catch(e){ rows=[]; err=e.message; }
   const qs=((STATUS&&STATUS.quotes)||[]).filter(x=>quoteMatch(x,q));
+  FIND={rows,qs,err,q}; FD_PG=0; FQ_PG=0; renderFind();
+}
+let FIND=null, FD_PG=0, FQ_PG=0;
+function fdGo(p){ FD_PG=p; renderFind(); }
+function fqGo(p){ FQ_PG=p; renderFind(); }
+function renderFind(){
+  if(!FIND) return; const {rows,qs,err,q}=FIND, box=$('findBody'), mgr=!!(STATUS&&STATUS.is_mgr);
+  const FD=pgCut('fd',FD_PG,rows,'fdGo'); FD_PG=FD.page; const FQ=pgCut('fq',FQ_PG,qs,'fqGo'); FQ_PG=FQ.page;
   const crow=x=>`<div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small>${x.src?` <span class="tag">${esc(x.src)}</span>`:''}${x.result?` <span class="tag">${esc(x.result)}</span>`:''}${x.mine?'<span class="mine">내 상담</span>':''}</div>
       <div class="m">${fmtAt(x.at)}${x.handler?' · 담당 '+esc(x.handler):' · 미배정'}${x.interest?' · '+esc(x.interest):''}${x.content?' · '+esc(String(x.content).slice(0,60)):''}</div></div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}${x.id?`<button class="mini" onclick="cdOpen(${x.id})">상세</button>`:''}${(mgr||x.mine)?`<button class="mini ok" onclick="findOpen()">상담 열기</button>`:`<span class="mini" style="opacity:.7" title="다른 담당자의 상담 — 넘겨받으려면 점장님에게">담당 ${esc(x.handler||'없음')}</span>`}</div></div>`;
-  box.innerHTML=`<div class="fsec"><b>상담 ${rows.length}건 <small style="font-weight:500;color:var(--muted)">전체 담당자</small></b>${rows.length?rows.map(crow).join(''):`<div class="empty">${err?esc(err):'맞는 상담이 없습니다'}</div>`}</div>
-    <div class="fsec"><b>견적서 ${qs.length}건 <small>최근 90일</small></b>${qs.length?qs.map(quoteRow).join(''):'<div class="empty">맞는 견적서가 없습니다</div>'}</div>`;
+  box.innerHTML=`<div class="fsec"><b>상담 ${rows.length}건 <small style="font-weight:500;color:var(--muted)">전체 담당자</small></b>${rows.length?FD.rows.map(crow).join('')+FD.bar:`<div class="empty">${err?esc(err):'맞는 상담이 없습니다'}</div>`}</div>
+    <div class="fsec"><b>견적서 ${qs.length}건 <small>최근 90일</small></b>${qs.length?FQ.rows.map(quoteRow).join('')+FQ.bar:'<div class="empty">맞는 견적서가 없습니다</div>'}</div>`;
 }
 /* 찾은 검색어 그대로 상담 탭으로 — 점장님은 전체 상담·배정, 담당자는 내 상담 */
 function findOpen(){
@@ -4045,19 +4116,31 @@ function findOpen(){
   else { $('mc_q').value=q; toolsToggle('mcTools',true); MC_FLT='all'; const f=$('mc_flt'); if(f) f.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all'));
     mcSearch(); setTimeout(()=>{ const el=$('mcCard'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },80); }
 }
+/* 홈 콜백 약속 — 거르개(전체·지난·오늘·예정·미배정) + 쪽 나누기. 자료는 fn_store_status.callbacks(지난 14일 ~ 앞으로 30일) */
+let CB_FLT='all', CB_PG=0;
+const cbMatch=(x,f)=> f==='all' ? true : f==='over' ? !!x.overdue : f==='today' ? (!!x.today && !x.overdue) : f==='next' ? (!x.overdue && !x.today) : f==='none' ? !x.handler : true;
+function cbFlt(v){ CB_FLT=segPick('cb_flt',v); CB_PG=0; renderCallbacks(); }
+function cbGo(p){ CB_PG=p; renderCallbacks(); }
+function renderCallbacks(cbs){
+  cbs = cbs || ((STATUS&&STATUS.callbacks)||[]);
+  segCount('cb_flt',{all:cbs.length, over:cbs.filter(x=>cbMatch(x,'over')).length, today:cbs.filter(x=>cbMatch(x,'today')).length, next:cbs.filter(x=>cbMatch(x,'next')).length, none:cbs.filter(x=>cbMatch(x,'none')).length});
+  const rows=cbs.filter(x=>cbMatch(x,CB_FLT));
+  const P=pgCut('cb',CB_PG,rows,'cbGo'); CB_PG=P.page; const pg=$('cb_pg'); if(pg) pg.innerHTML=P.bar;
+  $('cbList').innerHTML=P.rows.length?P.rows.map(x=>{ const [d,hm]=fmtWhen(x.at); return `
+    <div class="cb ${x.overdue?'overdue':x.today?'today':''}">
+      <div class="when">${d}<b>${hm}</b></div>
+      <div><div class="who">${esc(x.name)}<small>${x.phone||''}</small>${x.mine?'':`<span class="other">${esc(x.handler||'미배정')}</span>`}</div>
+        <div class="what">${esc([x.interest,x.model].filter(Boolean).join(' '))}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}</div>
+        <div class="row">${x.tel?`<a class="call" href="tel:${x.tel}">📞 전화</a>`:''}<button class="done" onclick="cbAction(${x.id},'done')">완료</button><button onclick="cbAction(${x.id},'tomorrow')">내일로</button><button onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매 확정</button></div></div>
+    </div>`; }).join(''):`<div class="empty">${cbs.length?'이 조건에 맞는 약속이 없습니다':'잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.'}</div>`;
+}
 function renderHome(s){
   const cbs=s.callbacks||[], oc=s.my_open_consults||[], mc=s.my_customers||[];
   const due=cbs.filter(x=>x.overdue||x.today).length;
   /* 홈 KPI 줄은 뺐다 — 흐름 띠(renderFlow)가 같은 숫자를 보여준다 */
   if(MC_LOADED) loadMyConsults(MC_OFF, true);
   $('cbSub').textContent=cbs.length?`${cbs.length}건 · 지난 약속 ${cbs.filter(x=>x.overdue).length}`:'';
-  $('cbList').innerHTML=cbs.length?cbs.map(x=>{ const [d,hm]=fmtWhen(x.at); return `
-    <div class="cb ${x.overdue?'overdue':x.today?'today':''}">
-      <div class="when">${d}<b>${hm}</b></div>
-      <div><div class="who">${esc(x.name)}<small>${x.phone||''}</small>${x.mine?'':`<span class="other">${esc(x.handler||'미배정')}</span>`}</div>
-        <div class="what">${esc([x.interest,x.model].filter(Boolean).join(' '))}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}</div>
-        <div class="row">${x.tel?`<a class="call" href="tel:${x.tel}">📞 전화</a>`:''}<button class="done" onclick="cbAction(${x.id},'done')">완료</button><button onclick="cbAction(${x.id},'tomorrow')">내일로</button><button onclick="toSale('${esc(x.ref)}','${esc(x.name)}')">구매 확정</button></div></div>
-    </div>`; }).join(''):'<div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div>';
+  renderCallbacks(cbs);
   quoteFilter();   /* 견적서 목록은 quoteFilter 가 그린다 (견적서 탭 검색과 공용) */
   $('mcSub').textContent=s.my_customer_count?`${s.my_customer_count}명 · 최근 ${mc.length}명 표시`:'';
   /* 내 고객 목록은 탭을 열 때 fn_store_my_customers 로 따로 그린다 (loadMyCustomers) */
@@ -5456,6 +5539,9 @@ function notify(title, body){
   }catch(e){}
 }
 function askNotify(){ try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){} }
+let RQ_FLT='all', RQ_PG=0;
+function rqFlt(v){ RQ_FLT=segPick('rq_flt',v); RQ_PG=0; renderRequests(); }
+function rqGo(p){ RQ_PG=p; renderRequests(); }
 function renderRequests(){
   const r=REQ; if(!r) return;
   const tab=document.querySelector('.tab[data-tab="order"]');
@@ -5465,15 +5551,18 @@ function renderRequests(){
   /* 처리 담당자 카드 */
   const card=$('reqCard'); if(card){ card.classList.toggle('hidden', !r.can_process);
     if(r.can_process){ const open=r.open||[];
-      $('req_sub').textContent=open.length?`${open.length}건 대기`:'';
-      $('req_rows').innerHTML=open.length?open.map(x=>`<div class="rq${x.status==='taken'?' taken':''}">
+      segCount('rq_flt',{all:open.length, open:open.filter(x=>x.status==='open').length, taken:open.filter(x=>x.status==='taken').length, mine:open.filter(x=>x.mine).length});
+      const rqRows=open.filter(x=>RQ_FLT==='all'||(RQ_FLT==='mine'?!!x.mine:x.status===RQ_FLT));
+      const RQ=pgCut('rq',RQ_PG,rqRows,'rqGo'); RQ_PG=RQ.page; { const pg=$('rq_pg'); if(pg) pg.innerHTML=RQ.bar; }
+      $('req_sub').textContent=open.length?`${open.length}건 대기${RQ.range?' · '+RQ.range.replace(/^\d+건 중 /,''):''}`:'';
+      $('req_rows').innerHTML=RQ.rows.length?RQ.rows.map(x=>`<div class="rq${x.status==='taken'?' taken':''}">
           <div class="t"><b>${esc(x.product)}</b> × ${x.qty}${x.model?` <span style="font-family:ui-monospace,monospace;font-size:calc(12px * var(--font-scale));color:var(--muted)">${esc(x.model)}</span>`:''}
             <small>${esc(x.at)} · ${esc(x.by)}${x.by_dept?`(${esc(x.by_dept)})`:''} 요청 · ${x.cust?esc(x.cust):'고객 미상'}${x.phone?' '+x.phone:''} · ${won(x.amount||0)}${x.kind?' · '+esc(x.kind):''}${x.note?' · '+esc(x.note):''}</small>
             ${x.status==='taken'?`<small><span class="st">${x.mine?'내가':esc(x.taken_by)} 처리 중</span></small>`:''}
             ${(x.items&&x.items.length>1)?`<div class="rq-items">${x.items.map(it=>`<div><span>${esc(it.product_name)} × ${esc(String(it.qty||1))}${it.model_code?` <i>${esc(it.model_code)}</i>`:''}</span><b>${(it.cand||[])[0]?esc(it.cand[0].code):'<em>코드 없음</em>'}</b></div>`).join('')}</div>`
             :`<div class="cands">${(x.cand||[]).length?(x.cand||[]).map((c,i)=>`<span class="${i===0?'first':''}" title="${esc(c.name||'')}">${esc(c.code)}</span>`).join(''):'<span style="background:#FBE9E7;color:#B3261E">품목코드 후보 없음 — 품목 검색으로 찾으세요</span>'}</div>`}</div>
           <div class="acts"><button class="pri" onclick="reqToOrder(${x.id})">주문서로</button>${x.status==='open'?`<button onclick="reqTake(${x.id})">내가 맡기</button>`:''}<button onclick="reqClose(${x.id},'done')">직접 처리함</button><button onclick="reqClose(${x.id},'skip')">불필요</button></div>
-        </div>`).join(''):'<div class="empty">대기 중인 요청이 없습니다</div>';
+        </div>`).join(''):`<div class="empty">${open.length?'이 조건에 맞는 요청이 없습니다':'대기 중인 요청이 없습니다'}</div>`;
       $('req_done').innerHTML=(r.recent_done||[]).map(x=>`<div class="rq"><div class="t">${esc(x.product)} × ${x.qty}<small>${esc(x.at)} ${esc(x.by)} 요청 → ${esc(x.done_at||'')} ${esc(x.done_by||'')} <span class="st ${x.status}">${x.status==='done'?'처리됨':'불필요'}</span>${x.queue_id?` · 주문서 #${x.queue_id}`:''}</small></div></div>`).join('')||'<div class="empty">없음</div>';
     } }
   /* 요청자 카드 (홈) */
