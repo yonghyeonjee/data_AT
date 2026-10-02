@@ -1,0 +1,58 @@
+-- mvp_181 · 2026-10-02 · 느림의 원인 세 가지 (DB 쪽) — 이미 서버에 반영됨, 기록용
+--
+-- 측정(pg_stat_statements) 요지
+--   f_dash_warm      2,306회 × 평균 56.9초 = 누적 36.4시간   ← 가장 큰 낭비
+--   f_customer_roll    576회 × 평균 19.3초 = 누적  3.1시간
+--   fn_data_status             평균 1.7초 (실측 11.5초)      ← 캐시가 아예 없었다
+--   fn_home / fn_data_stamp    평균 1.35초 / 1.46초          ← 캐시 수명이 워밍 주기보다 짧았다
+--   원본 자료(core.orders)는 하루 5번만 바뀐다 (10-02 08시·05시, 10-01 10·09·04시)
+
+------------------------------------------------------------------------------
+-- ① f_dash_warm : 16벌(8기간 × 2모드)을 15분마다 '강제' 재빌드하고 있었다
+--    (f_dash_payload_cached 에 interval '0' = 캐시 무시)
+--    → 원본이 바뀐 뒤에만 굽는다. p_ttl 은 "이 시각보다 뒤에 구운 캐시는 그대로 쓴다" 는 뜻이라
+--      now() - (마지막 변경) 을 주면 변경 뒤에 구운 것만 통과한다. 6시간은 안전망.
+--    → ec.cand_cache(f_sl_pending) 도 20분 창 안에 변경이 있을 때만. 크론이 15분이라 어떤 변경도 놓치지 않는다.
+--    결과: 106초 → 3.1초 (97% 감소)
+--
+-- ② f_customer_roll : 매시간 core.orders 19만 건을 다시 훑었다
+--    → crm.customer_roll.updated_at >= max(core.orders.updated_at) 이면 통째로 건너뛴다
+--    결과: 19.3초 → 0.1초(건너뛸 때). 반환형이 int 라 건너뛸 때도 행 수를 돌려준다.
+--
+-- ③ 캐시 수명이 워밍 주기보다 짧았다 — 그 틈에 들어온 사용자가 전체 빌드를 떠안았다
+--    f_rpc_warm 은 5분(300초)마다 굽는데
+--      fn_data_stamp 는 60초  안쪽 캐시만 사용 → 80% 확률로 4.5초 빌드
+--      fn_home       은 120초 안쪽 캐시만 사용 → 60% 확률로 6.2초 빌드
+--    → 둘 다 6분으로. 자료가 더 묵지는 않는다(어차피 5분마다 새로 굽는다).
+--
+-- ④ fn_data_status 는 캐시가 없어 열 때마다 11.5초를 다 썼다
+--    → 본문을 core.f_data_status_build() 로 떼고(권한 줄만 제거) fn_data_status 는 캐시만 읽는다.
+--      f_rpc_warm 이 10분에 한 번만 굽고(11초짜리라 매 5분은 과하다) 읽는 쪽 수명은 30분.
+--      '뭘 올려야 하나' 를 보는 화면이라 30분 지연은 문제없다.
+--    ACL 은 create or replace 라 보존된다 (authenticated·service_role 만 — anon 없음).
+
+-- 적용 뒤 실측 (관리자)
+--   fn_home          1,354ms →   30ms
+--   fn_data_stamp    1,459ms →   20ms
+--   fn_data_status  11,474ms →    5ms
+--   fn_dash_payload  1,586ms →   77ms
+-- 담당자 화면(anon · 3초 제한)
+--   fn_store_status    최대 23,169ms → 458ms   (23초 꼬리는 워머 경합이었다)
+--   fn_store_requests(20초 폴링) 25ms · fn_store_consults_my 58ms
+
+------------------------------------------------------------------------------
+-- 아직 안 한 것 — MCP execute_sql 이 core.orders/crm.customer_roll 대상 DDL 에서
+-- 60초로 계속 끊겼다(락은 없었다. pg_locks 확인함). Supabase SQL 편집기에서 한 줄씩 실행할 것.
+--
+-- create index if not exists ix_orders_updated on core.orders (updated_at desc);
+--   → 워머의 '바뀌었나?' 검사가 지금 19만 행을 전부 훑는다(55ms). 이걸 넣으면 1ms 미만.
+--
+-- drop index if exists core.ix_orders_test;   -- 한 번도 안 쓴 인덱스 (대량 적재 쓰기 비용)
+-- drop index if exists crm.ix_croll_net;      -- 한 번도 안 쓴 인덱스 (6.2만 건 전면 갱신 대상)
+--
+-- vacuum (analyze) core.orders;
+--   → 죽은 행 24,352개 · 마지막 autovacuum 2026-09-22. 모든 인덱스 스캔이 heap 을 2.4만 번 더 읽는다.
+-- alter table core.orders set (autovacuum_vacuum_scale_factor=0.05,
+--                              autovacuum_vacuum_threshold=2000,
+--                              autovacuum_analyze_scale_factor=0.05);
+--   → 대량 적재 표라 기본 20% 기준이 너무 느슨하다.

@@ -165,9 +165,25 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-10-02 · v155)
+## 지금 상태 (2026-10-02 · v156)
 
 ### 되는 것
+- **느려진 원인은 화면이 아니라 백그라운드 워밍이었다 (mvp_181 · v156 · 2026-10-02)** — "속도가 너무 느려". `pg_stat_statements` 로 재니 범인이 바로 나왔다.
+  **`f_dash_warm` 2,306회 × 평균 56.9초 = 누적 36.4시간**, `f_customer_roll` 576회 × 19.3초 = 3.1시간. 정작 원본 `core.orders` 는 **하루 5번**만 바뀐다.
+  **① 대시보드 워밍이 15분마다 16벌(8기간 × 2모드)을 강제 재빌드했다** — `f_dash_payload_cached(..., interval '0')` 은 캐시 무시라는 뜻이었다. 한 번 도는 데 106초(올해·원장 한 벌만 38.6초).
+  → **원본이 바뀐 뒤에만 굽는다**: `p_ttl = least(now() - max(updated_at of orders·store_daily·channel_daily), 6시간)`. `p_ttl` 이 "이 시각보다 뒤에 구운 캐시는 그대로 쓴다" 는 뜻이라 한 줄로 끝난다. `ec.cand_cache`(f_sl_pending)도 20분 창 안에 변경이 있을 때만(크론 15분이라 어떤 변경도 안 놓친다). **106초 → 3.1초.**
+  **② `f_customer_roll` 이 매시간 19만 건을 다시 훑었다** → `crm.customer_roll.updated_at >= max(core.orders.updated_at)` 이면 통째로 건너뛴다. **19.3초 → 0.1초.** 반환형이 `int` 라 건너뛸 때도 행 수를 돌려준다(jsonb 로 바꾸려다 `cannot change return type` 을 만났다).
+  **③ 캐시 수명이 워밍 주기보다 짧으면 그 틈에 들어온 사람이 전체 빌드를 떠안는다** — `f_rpc_warm` 은 **5분(300초)**마다 굽는데 `fn_data_stamp` 는 **60초**, `fn_home` 은 **120초** 안쪽 캐시만 썼다. 그래서 80%·60% 확률로 4.5초·6.2초를 사용자가 냈다(실측 avg 1.4s·max 7.5s 의 정체).
+  → 둘 다 **6분**으로. **자료가 더 묵지 않는다** — 어차피 5분마다 새로 굽기 때문. **수명은 워밍 주기보다 길어야 한다**는 것이 규칙이다.
+  **④ `fn_data_status` 는 캐시가 아예 없어 열 때마다 11.5초를 다 썼다** → 본문을 `core.f_data_status_build()` 로 떼고(권한 줄만 제거, mvp_138 과 같은 방식) `fn_data_status` 는 캐시만 읽는다. 워머는 **10분에 한 번만**(11초짜리라 매 5분은 과하다), 읽는 쪽 수명은 **30분**('뭘 올려야 하나' 화면이라 문제없다). `create or replace` 라 **ACL 보존**(authenticated·service_role 만, anon 없음).
+  **실측 결과** — 관리자 `fn_home` 1,354→**30ms** · `fn_data_stamp` 1,459→**20ms** · `fn_data_status` 11,474→**5ms** · `fn_dash_payload` 1,586→**77ms**.
+  담당자 화면(anon·3초 제한) `fn_store_status` **최대 23,169ms → 458ms** — **23초 꼬리는 워머 경합이었다**(함수 자체는 멀쩡했다). `fn_store_requests`(20초 폴링) 25ms · `fn_store_consults_my` 58ms. 화면 코드는 안 고쳤다(`start()` 는 이미 병렬 호출).
+  **아직 안 한 것 — Supabase SQL 편집기에서 한 줄씩 실행할 것.** MCP `execute_sql` 이 `core.orders`·`crm.customer_roll` 대상 DDL 에서 계속 60초로 끊겼다(`pg_locks` 확인 — **락은 없었다**. MCP 경로 문제).
+  `create index if not exists ix_orders_updated on core.orders (updated_at desc);`(워머의 '바뀌었나?' 검사가 지금 19만 행을 훑는다 — 55ms → 1ms 미만) ·
+  `vacuum (analyze) core.orders;`(**죽은 행 24,352개 · 마지막 autovacuum 9/22** — 모든 인덱스 스캔이 heap 을 2.4만 번 더 읽는다) ·
+  `alter table core.orders set (autovacuum_vacuum_scale_factor=0.05, autovacuum_vacuum_threshold=2000, autovacuum_analyze_scale_factor=0.05);` ·
+  안 쓰는 인덱스 `core.ix_orders_test`·`crm.ix_croll_net` drop. 전부 `sql/mvp_181_speed.sql` 맨 아래에 그대로 적어 뒀다.
+  **화면 무게는 따로다** — store.html 543K(gzip 154K) · admin.html 702K(gzip 201K). 한 파일이라 첫 로드에 전부 받는다. 줄이려면 빌드 단계가 필요해 이번엔 손대지 않았다.
 - **휴가 창·목록·칩 정리 (v155 · 2026-10-02)** — v154 를 쓰면서 나온 지적 세 개.
   **① 창 버튼이 깨져 있었다** — "버튼은 다 아래 저장과 삭제는 색을 다르게 … 하나는 오른쪽 끝 하나는 왼쪽끝 … 닫기는 상단에 X".
   범인은 `.btn{width:100%}` — flex 안에서 `flex:0 0 auto` 와 겹쳐 [지우기]가 폭을 다 먹고 [닫기]·[저장]이 세로로 쪼개졌다. **창 버튼은 `width:auto;min-width:112px` 로 폭을 직접 준다.**
