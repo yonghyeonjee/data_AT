@@ -129,6 +129,7 @@ end $outer$;
   `crm` 표를 열지 말고 개인정보 없는 신호 표(`public.consult_ping`)를 따로 둔다
 - **바깥으로 나간 HTTP(이카운트 전송)는 롤백되지 않는다 (2026-09-17 사고).** `core.f_ec_call` 은 호출 사이 1.2초를 쉬어 여러 장을 한 문장에 넣으면 anon 3초를 넘겨 57014 로 롤백 — DB 는 '대기'로 돌아가는데 이카운트엔 전표가 생긴다. `ec.api_log` 도 같이 사라져 흔적이 없다.
   게다가 화면 `rpc()` 의 타임아웃 재시도가 그걸 3번 반복했다. **바깥으로 나가는 RPC(`order_send`)는 `RPC_NO_RETRY`, 전표는 한 장씩(mvp_151).** 새로 바깥 호출을 만들 때 같은 규칙.
+- **대시보드 캐시를 지우지 말 것 (mvp_184 · 2026-10-03 사고)** — 12개월 집계가 8~13초라 지우는 순간 다음 사람이 8초(anon 3초) 제한에 걸린다. 원천이 바뀌면 `core.f_dash_mark_dirty()` 로 **표시만** 하고, 다시 굽는 건 워머(15분)·`dash-warm-req`(예약 시 1분)가 한다. 사용자 요청 경로에서 무거운 걸 다시 굽게 하지 말 것.
 - **예외를 던지는 함수 안의 insert 는 함께 롤백된다.** 남겨야 하는 기록(실패 카운트 등)은
   자기호출(`extensions.http` → PostgREST)로 별도 커밋
 - `now()` 는 트랜잭션 시작 시각 — 루프 안 간격은 `clock_timestamp()`
@@ -165,9 +166,18 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-10-03 · v163 — UI 규칙(v161)은 아직 test 폴더만)
+## 지금 상태 (2026-10-03 · v164 — UI 규칙(v161)·대시보드 진행 카드는 아직 test 폴더만)
 
 ### 되는 것
+- **매출 대시보드가 수집 직후 안 열리던 것 · 진행 카드 (mvp_184 · v164 · 2026-10-03)** — "여기가 답답해 더 빠르게 안돼? … progress bar 라도 … ~하는 중 멘트 남겨서" (폰 사진, 01:37 KST).
+  **원인은 캐시 통째 삭제** — `core.app_setting` 의 statement 트리거 `dash_cache_bust` 가 `core.dash_cache` 를 `delete … where true` 했다. 샵링커 수집기가 `fn_sl_log` 로 `sl_last_sync` 를 쓸 때마다(하루 5번) 캐시 0행 → 다음 워머(최대 15분)까지 그 틈에 연 사람이 직접 굽는다: 12개월 원장 **7.9~13초 > authenticated 8초** → 57014. 10-02 16:36 UTC 수집 → 16:37 사용자 → 16:45 워머가 1분 37초 걸려 다시 채움. /dash/(anon 3초)도 그 틈엔 못 열렸고, [캐시 지우고 새로고침](`fn_dash_refresh`)은 8초 안에 12벌을 굽게 돼 있어 **늘 시간 초과**(같은 트랜잭션의 delete 도 롤백 — 오류만 냈다). `fn_sl_refund_apply`·`f_godo_hist_apply` 도 같은 delete-all 이었다.
+  **DB(바로 적용)** — `core.dash_cache_state`(한 줄: dirty_at · rebuild_req · req_at) · `core.f_dash_src_at()`(원천 max(updated_at) + dirty_at) · **`core.f_dash_payload_get`** = 24시간 안 캐시는 나이와 상관없이 바로 준다(`cached`·`stale`·`built_at` 를 붙여서), 없을 때만 굽는다. `fn_dash_payload`·`fn_dash_payload_pub` 가 이걸 쓴다. 지우던 네 곳은 **dirty 표시만**. `fn_dash_refresh` 는 **예약만**(rebuild_req) → 새 cron `dash-warm-req`(매분 · 예약 있을 때만 `f_dash_warm`). `f_dash_warm` = advisory lock(동시 실행 방지) · built_at 만 보고 판단(전엔 키마다 1MB payload 를 꺼내 jsonb_set — 할 일 없는 회차도 5초) · 원장 먼저 · 3일 지난 키 정리 · 예약 해제. 새 RPC `fn_dash_status`(built_at·stale 만 · authenticated).
+  실측(롤백 블록): 관리자 `fn_dash_payload` **85ms** · app_setting 을 건드려도 캐시 16→16행 · 25ms(stale) · 예약 → 16:51 1분 잡이 집어 1분 38초에 16벌 · 예약 없는 1분 잡 3~27ms.
+  **진행 카드(test 에만 — admin/test · dash/test)** — 대시보드 위 카드에 단계 4개(화면 준비 · 자료 요청 · 자료 받기 · 그리기) · 퍼센트 바 · 지금 하는 일 글("서버에서 집계해 둔 자료를 꺼내는 중…" → "자료 받는 중… 253KB / 약 674KB" → "표와 그래프 그리는 중…") · 2초부터 경과 초. 서버를 6초 넘게 기다리면 "서버가 자료를 새로 집계하는 중입니다 · 보통 10초 안에 끝납니다". 받기는 **PostgREST 를 fetch 로 직접 불러 받은 바이트를 센다**(supabase-js 는 다 받은 뒤에야 돌려준다 · 전체 크기는 지난번 크기 `localStorage dash_bytes_<기준>`). 권한 오류면 빨간 카드 + [다시 시도], 500(시간 초과)이면 rpc 로 한 번 더. 대시보드가 다 그리면 iframe 이 `dash-rendered` 를 보내 카드가 닫힌다(신호 없는 옛 판은 3초 뒤).
+  화면 전환이 다 받을 때까지 기다리지 않는다(전엔 화면 전체를 흐리게 + 알약). iframe 주소 `?v=Date.now()` → `DASH_V`(판 번호) — **열 때마다 160KB 를 새로 받던 것**. stale 이면 안내 "새 자료 반영 중 (몇 분 안에)" + 20초마다 `fn_dash_status` → 다 구워지면 [새 자료 보기 · M/D HH:MM 집계] (보던 화면을 멋대로 다시 그리지 않는다). [다시 집계] 는 버튼에 "다시 집계 중… 0:12" 경과를 보여 주고 끝나면 저절로 새 자료로.
+  **`/dash/test/` 는 9/13 판에 멈춰 있었다** — admin/test 가 품는 대시보드다. 지금 dash/index.html 로 맞추고 embed 신호 세 줄만 더했다(favicon 경로 ../../).
+  **본 파일 admin.html 은 버튼 글과 안내만** — [캐시 지우고 새로고침] → [다시 집계], 예약이면 "다시 집계를 예약했습니다 — 1~3분…" (DB 가 이제 예약만 하므로 '완료 · 0ms' 는 거짓말이 된다). 진행 카드·iframe 판 번호는 test 확인 뒤 올린다(그때 dash/index.html 에도 embed 신호).
+  테스트 `ptest/dashprog.mjs` P1~P12 × PC·폰 = 33 (660KB 를 2.4초에 흘려보내는 가짜 fetch · 401·500 · stale → 새 자료 보기 · 다시 집계 → 저절로) · dashmall(/dash/test/) 38 · adlists · ovf_admin · uiaudit. 같은 툴바의 `.seg2` 버튼(현행 시스템·원장 등, 폰 30px)도 40px 로(v161 규칙 확장 · test 에만). `ovf_admin.mjs` 는 낭독용으로 숨긴 1px 글(aria-live 상태 글)을 '세로 잘림' 으로 세지 않게 고쳤다.
 - **매장 직접 방문의 유입경로는 네이버·구글·카카오 (mvp_183 · v162 · 2026-10-03)** — "매장 방문인데 검색광고로 있는 이상한 경로는 뭐야?" → 오류가 아니라 설계: **문의 채널** = 문의가 들어온 자리(매장에 걸어 들어옴), **유입경로** = 우리를 어떻게 알았나("어디서 보고 오셨는지"). '검색광고-방문'(`core.inq_route ad_visit`, 매장 직접 방문 소속)은 옛 이카운트 가망고객 분류를 그대로 가져온 것으로 검색광고 뒤의 행동으로 `-방문`/`-전화`(VMS) 를 갈랐다. 22건(이카운트 가망고객 9/3 일괄 13 · 담당자 직접 입력 9, 대부분 구매완료).
   "일단 네이버로 바꾸자. 매장일 경우 네이버·구글·카카오 정도로" → `ad_visit` 끄고 `sv_naver`·`sv_google`·`sv_kakao`(sort 160~162) 를 매장 직접 방문 채널에 넣었다. 화면은 `fn_inq_codes` 로 읽으니 **배포 없이 바로** 바뀐다(한 건씩 폼·여러 건 표·문의 접수 전부). 옛 22건의 글자는 그대로(합치는 SQL 은 `sql/mvp_183` 주석). VMS 의 '검색광고-전화' 는 그대로. 공통 묶음의 '카카오채널'(kakao_ch) 과 매장 '카카오' 가 둘 다 보인다 — 뜻이 다르다(카카오채널로 문의 vs 카카오에서 보고 방문).
   **유입경로 select 는 어떤 채널에서도 모든 경로를 고를 수 있다** — 고른 채널 것이 첫 묶음, 아래 '공통'·'그 밖'. 채널을 바꿔도 고른 값은 남는다(`renderRoutes` 의 keep).

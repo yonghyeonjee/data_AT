@@ -795,8 +795,30 @@ tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}   /* 긴 �
 @media(max-width:640px){
   .btn, .btn.sm{height:auto;min-height:40px}
   .in{font-size:16px;height:auto;min-height:40px}
-  .seg button, .chip{min-height:40px}
+  .seg button, .chip, .seg2 button{min-height:40px}
 }
+/* ── 대시보드 진행 카드 (2026-10-03) — 화면 준비 · 자료 요청 · 자료 받기 · 그리기 ── */
+.dprog{position:absolute;inset:0;z-index:3;display:flex;align-items:flex-start;justify-content:center;padding:56px 16px 16px;background:rgba(238,241,245,.9)}
+.dprog[hidden]{display:none}
+.dprog-card{position:relative;width:min(460px,100%);background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(16,20,32,.10);padding:18px 18px 16px}
+.dprog-t{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:calc(15px * var(--font-scale))}
+.dprog-t b{flex:1;font-weight:700}
+.dprog-t .pct{font-variant-numeric:tabular-nums;font-weight:800;color:var(--navy)}
+.dprog-spin{width:16px;height:16px;border:2.5px solid #D5DBEA;border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;flex:none}
+.dprog-bar{height:8px;border-radius:99px;background:#E6EAF2;overflow:hidden;margin:12px 0}
+.dprog-bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--navy),#6C7FE8);transition:width .3s ease}
+.dprog-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.dprog-steps li{text-align:center;padding:7px 4px;border-radius:8px;background:#F3F5F9;color:var(--muted);font-size:calc(12px * var(--font-scale));font-weight:600}
+.dprog-steps li.on{background:var(--navy-soft);color:var(--navy)}
+.dprog-steps li.done{background:#E7F5F2;color:#0B6B5E}
+.dprog-steps li.done::before{content:'✓ '}
+.dprog-msg{margin-top:12px;font-size:calc(13.5px * var(--font-scale));color:var(--ink-2);line-height:1.45;min-height:2.9em}
+.dprog.err .dprog-spin{display:none}
+.dprog.err .dprog-bar i{background:#B3261E}
+.dprog.err .dprog-msg{color:#B3261E}
+.dprog-act{margin-top:10px;display:flex;justify-content:flex-end}
+@media(max-width:480px){ .dprog{padding-top:24px} .dprog-steps{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
 /* ═══════════════════════ 모바일 (≤ 900px) ═══════════════════════ */
 #app{height:100dvh}
 .hbg{display:none;width:38px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);flex-direction:column;justify-content:center;align-items:center;gap:4px;cursor:pointer;flex:none;padding:0}
@@ -1111,12 +1133,24 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="seg2" id="segBasis"><button id="db-manual" onclick="setDashBasis('manual')">수기입력</button><button class="on" id="db-ledger" onclick="setDashBasis('ledger')">원장</button></div>
           <span style="flex:1"></span>
           <span class="note" id="dashNote">Datacenter 데이터 · 최근 12개월 · 기간·채널·지표는 아래 대시보드 안에서 고릅니다</span>
-          <button class="btn sm ghost" id="btnDashRefresh" onclick="refreshDash()" title="캐시를 지우고 원천 데이터를 다시 집계합니다 (15분마다 자동으로도 미리 만들어 둡니다)">캐시 지우고 새로고침</button>
+          <button class="btn sm hidden" id="dashFreshBtn" onclick="dashApplyFresh()">새 자료 보기</button>
+          <button class="btn sm ghost" id="btnDashRefresh" onclick="refreshDash()" title="원천 자료로 다시 집계합니다 — 서버가 1~3분 안에 끝내면 화면이 저절로 바뀝니다 (자료가 바뀌면 15분 안에 자동으로도 다시 굽습니다)">다시 집계</button>
           <button class="btn sm ghost" id="btnDashFull" onclick="dashFullscreen()" title="대시보드만 화면 가득 (Esc 로 돌아옴)">전체 화면 ⛶</button>
           <button class="btn sm ghost hidden" id="btnGasUrl" onclick="setGasUrl()">기존 앱 주소</button>
           <a class="btn sm ghost" id="dashShareLink" href="/dash/" target="_blank">외부 공유 화면 ↗</a>
         </div>
-        <div id="dashFull" style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#eef1f5"><iframe id="dashFrame" src="about:blank" allowfullscreen style="width:100%;height:calc(100vh - 150px);border:0;display:block"></iframe></div>
+        <div id="dashFull" style="position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#eef1f5"><iframe id="dashFrame" src="about:blank" allowfullscreen style="width:100%;height:calc(100vh - 150px);border:0;display:block"></iframe>
+          <div class="dprog" id="dashProg" hidden>
+            <div class="dprog-card">
+              <div class="dprog-t"><i class="dprog-spin" aria-hidden="true"></i><b id="dpTitle">매출 대시보드 여는 중</b><span class="pct" id="dpPct">0%</span></div>
+              <div class="dprog-bar" role="progressbar" aria-label="대시보드 불러오기 진행"><i id="dpBar"></i></div>
+              <ol class="dprog-steps" id="dpSteps"><li>화면 준비</li><li>자료 요청</li><li>자료 받기</li><li>그리기</li></ol>
+              <div class="dprog-msg" id="dpMsg">준비하는 중…</div>
+              <span id="dpSr" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></span>
+              <div class="dprog-act hidden" id="dpAct"><button class="btn sm" onclick="dashRetry()">다시 시도</button></div>
+            </div>
+          </div>
+        </div>
         <div id="dashLite" class="hidden">
         <div class="mast">
           <div class="row1">
@@ -4529,31 +4563,159 @@ async function setGasUrl(){
   $('dashFrame').src='about:blank'; loadDash();
 }
 let DASH_PAY=null, DASH_READY=false;
-window.addEventListener('message',e=>{ if(e.data&&e.data.type==='dash-ready'){ DASH_READY=true; dashSend(); } });
-function dashSend(){ const fr=$('dashFrame'); if(!DASH_PAY||!DASH_READY||!fr.contentWindow) return; try{ fr.contentWindow.postMessage({type:'dash-payload',data:DASH_PAY},'*'); }catch(e){} }
+const DASH_V='164';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
+window.addEventListener('message',e=>{ const t=e.data&&e.data.type;
+  if(t==='dash-ready'){ DASH_READY=true; dpSet({frame:1}); dashSend(); }
+  else if(t==='dash-rendered'){ dpDone(); } });
+function dashSend(){ const fr=$('dashFrame'); if(!DASH_PAY||!DASH_READY||!fr.contentWindow) return;
+  try{ fr.contentWindow.postMessage({type:'dash-payload',data:DASH_PAY},'*'); dpSet({draw:.35, sent:Date.now()}); }catch(e){} }
 /* 대시보드만 전체 화면 — 대표님 보고용. Esc 로 돌아온다 */
 function dashFullscreen(){ const el=$('dashFull'); if(!el) return;
   if(document.fullscreenElement){ document.exitFullscreen(); return; }
   (el.requestFullscreen||el.webkitRequestFullscreen||function(){ toast('이 브라우저는 전체 화면을 지원하지 않습니다','bad'); }).call(el); }
 document.addEventListener('fullscreenchange', ()=>{ const fr=$('dashFrame'); if(fr) fr.style.height = document.fullscreenElement ? '100vh' : 'calc(100vh - 150px)'; const b=$('btnDashFull'); if(b) b.textContent = document.fullscreenElement ? '전체 화면 끝 ⛶' : '전체 화면 ⛶'; });
-async function refreshDash(){
-  const b=$('btnDashRefresh'); b.disabled=true; const t=b.textContent; b.textContent='집계 중…';
-  try{ const r=await rpc('fn_dash_refresh',{p_months:12}); toast(`대시보드 다시 집계 완료 · ${r.ms}ms`); DASH_PAY=null; await loadDash(); loadStamp(); }
-  catch(e){ toast(e.message,'bad'); }
-  finally{ b.disabled=false; b.textContent=t; }
+
+/* ── 진행 카드 (2026-10-03) — "불러오는 중" 한 줄 대신 지금 무엇을 하는지 단계·퍼센트·초로 보여 준다 ──
+   화면 준비(iframe) 와 자료(서버 → 받기) 는 동시에 가고, 둘 다 끝나면 그리기. 받기는 실제 받은 바이트로 찬다
+   (전체 크기는 지난번에 받은 크기 — 처음이면 약 760KB). 대시보드가 다 그리면 'dash-rendered' 를 보내 온다 */
+const DP={on:false,t0:0,frame:0,data:0,draw:0,stage:'',got:0,exp:0,err:'',tick:null,sent:0,sr:''};
+function dpExpect(){ try{ return +localStorage.getItem('dash_bytes_'+DASH_BASIS)||760000; }catch(e){ return 760000; } }
+function dpStart(){
+  Object.assign(DP,{on:true,t0:Date.now(),frame:DASH_READY?1:0,data:0,draw:0,stage:'fetch',got:0,exp:dpExpect(),err:'',sent:0,sr:''});
+  const el=$('dashProg'); if(!el) return; el.hidden=false; el.classList.remove('err');
+  $('dpTitle').textContent='매출 대시보드 여는 중'; $('dpAct').classList.add('hidden');
+  clearInterval(DP.tick); DP.tick=setInterval(dpPaint,250); dpPaint();
 }
+function dpSet(p){ if(!DP.on) return; Object.assign(DP,p); dpPaint(); }
+function dpKB(b){ return b>=1e6 ? (b/1e6).toFixed(1)+'MB' : Math.max(1,Math.round(b/1e3))+'KB'; }
+function dpPaint(){
+  if(!DP.on || !$('dashProg')) return;
+  const sec=Math.floor((Date.now()-DP.t0)/1000);
+  let data=DP.data;
+  if(DP.stage==='fetch') data=Math.max(data, Math.min(.14, .03+sec*.012));   // 서버 기다리는 동안도 조금씩 — 멈춘 것처럼 안 보이게
+  const pct=Math.min(99, Math.round(100*(.12*DP.frame + .73*data + .15*DP.draw)));
+  let msg, step;
+  if(data<1){
+    step = DP.stage==='fetch' ? 1 : 2;
+    msg = DP.stage==='fetch' ? (sec>=6 ? '서버가 자료를 새로 집계하는 중입니다 · 보통 10초 안에 끝납니다' : '서버에서 집계해 둔 자료를 꺼내는 중…')
+        : DP.stage==='recv'  ? `자료 받는 중… ${dpKB(DP.got)} / 약 ${dpKB(Math.max(DP.exp,DP.got))}`
+        : DP.stage==='retry' ? '연결이 고르지 않아 한 번 더 받는 중…'
+        : '받은 자료 정리하는 중…';
+  }
+  else if(DP.frame<1){ step=0; msg='대시보드 화면 여는 중…'; }
+  else { step=3; msg='표와 그래프 그리는 중…'; }
+  const sr=msg.replace(/ [0-9.]+(KB|MB).*$/,'');
+  if(sr!==DP.sr){ DP.sr=sr; const s=$('dpSr'); if(s) s.textContent=sr; }   // 읽어 주기는 단계가 바뀔 때만
+  if(sec>=2) msg+=` · ${sec}초`;
+  $('dpPct').textContent=pct+'%'; $('dpBar').style.width=pct+'%'; $('dpMsg').textContent=msg;
+  const done=[DP.frame>=1, data>=.15, data>=1, DP.draw>=1];   // 화면 준비 · 자료 요청 · 자료 받기 · 그리기
+  document.querySelectorAll('#dpSteps li').forEach((li,i)=>{ li.classList.toggle('done',done[i]); li.classList.toggle('on',!done[i]&&i===step); });
+  if(DP.sent && DP.draw<1 && Date.now()-DP.sent>3000) dpDone();   // 다 그렸다는 신호가 없는 옛 대시보드 대비
+}
+function dpDone(){ if(!DP.on) return; DP.on=false; clearInterval(DP.tick);
+  $('dpPct').textContent='100%'; $('dpBar').style.width='100%'; $('dpMsg').textContent='다 됐습니다';
+  document.querySelectorAll('#dpSteps li').forEach(li=>{ li.classList.add('done'); li.classList.remove('on'); });
+  setTimeout(()=>{ const el=$('dashProg'); if(el && !DP.on) el.hidden=true; }, 350); }
+function dpFail(m){ DP.on=false; clearInterval(DP.tick); const el=$('dashProg'); if(!el) return;
+  el.hidden=false; el.classList.add('err'); $('dpTitle').textContent='매출 대시보드를 열지 못했습니다'; $('dpPct').textContent='';
+  document.querySelectorAll('#dpSteps li.on').forEach(li=>li.classList.remove('on'));
+  $('dpMsg').textContent=m; $('dpSr').textContent=m; $('dpAct').classList.remove('hidden'); }
+function dashRetry(){ DASH_PAY=null; loadDashDc(); }
+
+/* 자료는 PostgREST 를 직접 불러 받은 바이트를 센다 (supabase-js 는 다 받은 뒤에야 돌려준다). 안 되면 rpc 로 한 번 더 */
+async function dashFetch(args, up){
+  let tok=null; try{ const {data}=await sb.auth.getSession(); tok=data&&data.session&&data.session.access_token; }catch(e){}
+  if(!tok || typeof TextDecoder==='undefined') throw new Error('no-stream');
+  const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(), 40000);
+  try{
+    const res=await fetch(SUPABASE_URL+'/rest/v1/rpc/fn_dash_payload',{method:'POST',signal:ctl.signal,
+      headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+tok,'Content-Type':'application/json',Accept:'application/json'},
+      body:JSON.stringify(args)});
+    if(!res.ok){ let m=''; try{ const j=await res.json(); m=(j&&(j.message||j.hint))||''; }catch(e){}
+      const er=new Error(m||('서버 응답 '+res.status)); er.http=res.status; throw er; }
+    up({stage:'recv', data:.15});
+    if(!res.body || !res.body.getReader) return await res.json();
+    const rd=res.body.getReader(), parts=[]; let got=0;
+    for(;;){ const {done,value}=await rd.read(); if(done) break; parts.push(value); got+=value.length;
+      up({got, data:.15+.8*Math.min(.98, got/Math.max(DP.exp, got*1.02))}); }
+    up({stage:'parse', data:.96});
+    const buf=new Uint8Array(got); let o=0; for(const p of parts){ buf.set(p,o); o+=p.length; }
+    const j=JSON.parse(new TextDecoder().decode(buf));
+    try{ localStorage.setItem('dash_bytes_'+DASH_BASIS, String(got)); }catch(e){}
+    return j;
+  } finally { clearTimeout(tm); }
+}
+function dashArgs(){ const to=new Date(), from=new Date(to.getFullYear(), to.getMonth()-11, 1); return {p_from:iso(from),p_to:iso(to),p_mode:DASH_BASIS}; }
+function dashHM(ts){ const d=new Date(ts); if(!ts || isNaN(d)) return String(ts||''); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function dashNoteSet(){ if(!DASH_PAY) return; const a=dashArgs(), b=DASH_BASIS==='ledger'?'원장(주문 원천)':'담당자 수기입력';
+  const at=DASH_PAY.built_at ? dashHM(DASH_PAY.built_at) : (DASH_PAY.updated||'');
+  $('dashNote').textContent=`현행 시스템 · ${b} 기준 · ${a.p_from} ~ ${a.p_to} · ${at} 집계`
+    + (DASH_WANT ? ' · 서버에서 다시 집계하는 중' : DASH_PAY.stale ? ' · 새 자료 반영 중 (몇 분 안에)' : ''); }
+let DASH_LOADING=null, DASH_SEQ=0;
 async function loadDashDc(){
   const fr=$('dashFrame');
-  if(!fr.src.includes('embed=1')){ DASH_READY=false; fr.src=DASH_DIR+'index.html?embed=1&v='+Date.now(); }
-  if(DASH_PAY) return;
-  const to=new Date(), from=new Date(to.getFullYear(), to.getMonth()-11, 1);
-  $('dashNote').textContent='데이터 불러오는 중…';
-  try{ DASH_PAY=await rpc('fn_dash_payload',{p_from:iso(from),p_to:iso(to),p_mode:DASH_BASIS}); }
-  catch(e){ $('dashNote').textContent='불러오지 못했습니다: '+e.message; return; }
-  const b=DASH_BASIS==='ledger'?'원장(주문 원천)':'담당자 수기입력';
-  $('dashNote').textContent=`현행 시스템 · ${b} 기준 · ${iso(from)} ~ ${iso(to)} · 집계 ${DASH_PAY.updated||''}${DASH_PAY.cached?' (캐시)':''}`;
-  dashSend();
+  if(!fr.src.includes('embed=1')){ DASH_READY=false; fr.onload=()=>dpSet({frame:Math.max(DP.frame,.7)}); fr.src=DASH_DIR+'index.html?embed=1&v='+DASH_V; }
+  if(DASH_PAY){ dashNoteSet(); return; }
+  if(DASH_LOADING && DASH_LOADING.mode===DASH_BASIS) return;   // 같은 걸 이미 받는 중
+  /* 기다리지 않는다 — 다 받을 때까지 화면 전체를 흐리게 두지 않고, 진행은 대시보드 위 카드가 보여 준다 */
+  const seq=++DASH_SEQ, p=dashLoadData(seq); DASH_LOADING={mode:DASH_BASIS,p};
+  p.finally(()=>{ if(DASH_LOADING && DASH_LOADING.p===p) DASH_LOADING=null; });
 }
+async function dashLoadData(seq){
+  const a=dashArgs(), live=()=>seq===DASH_SEQ, up=x=>{ if(live()) dpSet(x); };
+  dpStart(); $('dashNote').textContent='데이터 불러오는 중…';
+  const fail=m=>{ if(!live()) return; dpFail('불러오지 못했습니다 · '+m); $('dashNote').textContent='불러오지 못했습니다: '+m; };
+  let pay=null;
+  try{ pay=await dashFetch(a, up); }
+  catch(e){
+    if(e && e.http && ![500,502,503,504].includes(e.http)) return fail(e.message||e);   // 권한 등 — 다시 해도 같다
+    up({stage:'retry', data:Math.max(DP.data,.15)});
+    try{ pay=await rpcRaw('fn_dash_payload', a); }
+    catch(e2){ return fail(e2.message||e2); }
+  }
+  if(!live()) return;                         // 받는 사이 집계 기준을 바꿨다 — 새 요청이 따로 돈다
+  DASH_PAY=pay; dpSet({data:1, stage:'done'});
+  dashNoteSet(); dashSend(); dashWatch();
+}
+
+/* 새 자료 지켜보기 — 수집 직후엔 서버가 직전 집계를 먼저 주고(stale) 몇 분 안에 다시 굽는다.
+   그동안 20초마다 built_at 만 묻는다(700KB 를 다시 받지 않는다). 다 구워지면 [새 자료 보기] — 보던 화면을 멋대로 다시 그리지 않는다.
+   [다시 집계] 를 누른 경우만 끝나면 저절로 새 자료로 그린다 */
+let DASH_WATCH=null, DASH_WANT=false, DASH_REQ_T0=0, DASH_REQ_TICK=null;
+const dashPollMs=w=>window.DASH_POLL_MS || (w?10000:20000);   /* 테스트는 짧게 */
+async function rpcQuiet(fn,args){ const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message); return data; }
+function dashFreshBtn(on, at){ const b=$('dashFreshBtn'); if(!b) return; b.classList.toggle('hidden',!on); if(on) b.textContent=`새 자료 보기 · ${dashHM(at)} 집계`; }
+function dashApplyFresh(){ DASH_WANT=false; dashFreshBtn(false); DASH_PAY=null; loadDashDc(); }
+function dashWatch(){
+  clearTimeout(DASH_WATCH);
+  if(!DASH_PAY || (!DASH_PAY.stale && !DASH_WANT)){ dashFreshBtn(false); return; }
+  const t0=Date.now();
+  const tick=async()=>{
+    if(VIEW!=='dash' || document.hidden){ DASH_WATCH=setTimeout(tick, dashPollMs(false)); return; }   // 안 보고 있으면 쉬었다가
+    if(Date.now()-t0 > 10*60e3){ DASH_WANT=false; dashNoteSet(); return; }
+    try{ const s=await rpcQuiet('fn_dash_status', dashArgs());
+      const newer = s && s.built_at && !s.stale && (!DASH_PAY || !DASH_PAY.built_at || new Date(s.built_at) > new Date(DASH_PAY.built_at));
+      if(newer){ if(DASH_WANT){ toast('다시 집계가 끝났습니다 · 새 자료로 그립니다','ok'); dashApplyFresh(); } else dashFreshBtn(true, s.built_at); return; }
+    }catch(e){}
+    DASH_WATCH=setTimeout(tick, dashPollMs(DASH_WANT));
+  };
+  DASH_WATCH=setTimeout(tick, dashPollMs(DASH_WANT));
+}
+/* [다시 집계] — 서버에 예약만 한다(1분 안에 시작, 1~3분). 8초 안에 12벌을 굽던 옛 방식은 늘 시간 초과였다 */
+async function refreshDash(){
+  const b=$('btnDashRefresh'); if(!b || b.disabled) return;
+  b.disabled=true;
+  try{ const r=await rpc('fn_dash_refresh',{p_months:12});
+    if(r && r.queued){ toast('다시 집계를 맡겼습니다 · 1~3분 뒤 화면이 저절로 바뀝니다','ok');
+      DASH_WANT=true; DASH_REQ_T0=Date.now(); dashRefreshTick(); dashNoteSet(); dashWatch(); }
+    else { toast(`대시보드 다시 집계 완료 · ${r&&r.ms}ms`); DASH_PAY=null; b.disabled=false; loadDash(); }
+    loadStamp();
+  }catch(e){ toast(e.message,'bad'); b.disabled=false; }
+}
+function dashRefreshTick(){ const b=$('btnDashRefresh'); clearInterval(DASH_REQ_TICK);
+  const paint=()=>{ if(!DASH_WANT){ clearInterval(DASH_REQ_TICK); b.disabled=false; b.textContent='다시 집계'; return; }
+    const s=Math.floor((Date.now()-DASH_REQ_T0)/1000); b.textContent=`다시 집계 중… ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+  DASH_REQ_TICK=setInterval(paint,1000); paint(); }
 function loadDashGas(){
   const fr=$('dashFrame');
   if(!GAS_DASH_URL){ fr.src='about:blank'; $('dashNote').textContent='기존 app 주소가 아직 없습니다 — [기존 앱 주소] 를 눌러 /exec 주소를 넣으세요'; return; }
