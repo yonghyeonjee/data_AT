@@ -349,6 +349,26 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .lvcal .day i{font-style:normal;font-size:calc(11.5px * var(--font-scale));font-weight:700;color:var(--ink-2)}
 .lvcal .day.we i{color:var(--bad)} .lvcal .day.other{opacity:.45} .lvcal .day.today{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)} .lvcal .day.today i{color:var(--navy)}
 .lvcal .day.pick{background:var(--accent-soft);border-color:var(--navy)}
+.lvtools{flex-wrap:wrap;gap:6px;align-items:center}
+.lvtools .lvsel{width:auto;min-width:118px;min-height:40px;padding:6px 10px;font-size:calc(12.5px * var(--font-scale))}
+.lvlist{display:block}
+.lvr{display:grid;grid-template-columns:84px 1fr auto;gap:2px 10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:6px}
+.lvr.gone{background:#FAFBFC;border-color:var(--line)}
+.lvr.gone .dt b,.lvr.gone .nm{color:var(--muted)}
+.lvr .dt{white-space:nowrap;line-height:1.2}
+.lvr .dt b{display:block;font-weight:800;font-size:calc(13px * var(--font-scale));font-variant-numeric:tabular-nums}
+.lvr .dt span{color:var(--muted);font-weight:600;font-size:calc(11px * var(--font-scale))}
+.lvr .nm{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:700;font-size:calc(13.5px * var(--font-scale))}
+.lvr .sub{color:var(--muted);font-size:calc(11.5px * var(--font-scale));margin-top:1px;overflow-wrap:anywhere}
+.lvr .act{display:flex;gap:6px}
+.lvr .act .mini{min-height:40px;min-width:48px;margin:0}
+@media(max-width:720px){
+  .lvr{grid-template-columns:1fr auto;gap:2px 8px;padding:9px 10px}
+  .lvr .bd{grid-column:1 / -1;grid-row:2}
+  .lvr .dt{grid-column:1;grid-row:1} .lvr .act{grid-column:2;grid-row:1}
+  .lvtools .lvsel{flex:1 1 44%;min-width:0}
+}
+.lvchip.ed{cursor:pointer} .lvchip.ed:hover{outline:2px solid rgba(255,255,255,.85);outline-offset:-2px}
 .lvchip{display:block;font-size:calc(10px * var(--font-scale));color:#fff;border-radius:4px;padding:1px 3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lvmore{font-size:calc(10px * var(--font-scale));color:var(--muted)}
 .lvdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
@@ -357,7 +377,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .lvdlg h3{margin:0 0 12px;font-size:calc(16px * var(--font-scale));font-weight:800}
 .lvform{display:grid;gap:10px} .lvform label{display:block;font-size:calc(12.5px * var(--font-scale));font-weight:600;color:var(--muted);margin-bottom:4px} .lvform label small{font-weight:400}
 .lvform .two{display:grid;grid-template-columns:1fr 1fr;gap:8px} .lvform .in{width:100%;box-sizing:border-box}
-.lvform .btns{display:flex;gap:8px;margin-top:4px} .lvform .btns .btn{flex:1;margin:0;min-height:44px}
+.lvform .btns{display:flex;gap:8px;margin-top:4px} .lvform .btns .btn{flex:1;margin:0;min-height:44px} .lvform .btns .btn.bad{flex:0 0 auto;margin-right:16px}
 @keyframes bubIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .lvcal-hd .btn{min-width:40px;padding-left:8px;padding-right:8px}
 /* 좁은 폰 : 주차 열을 좁히고 칸 사이를 1px 로, 카드 여백 안쪽으로 16px 넓혀 날짜 칸을 40px 이상으로 */
@@ -952,6 +972,8 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
   .cstick{padding:8px 10px} .cstick .hlist{max-height:32vh} .cstick .who .x{padding:0 2px}
 }
 @media(max-width:999px){
+  /* 쪽 번호 — 데스크톱은 30~38px 이라 폰에서는 손가락 크기(40px)로 올린다 (공용 pgBar 를 쓰는 목록 전부) */
+  .pager .btn{min-width:40px;min-height:40px;padding:6px 8px} .pager .pgn{min-width:40px} .pager select.pgper{min-height:40px}
   /* 서랍 : --side-w 는 넓은 화면의 고정 메뉴용(34vw). 폰에서 그대로 쓰면 122px 이 돼 글자가 전부 두 줄로 꺾인다 */
   .side{width:min(86vw, 340px)}
   .side .it,.side .lk{min-height:44px}
@@ -1296,7 +1318,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button type="button" class="btn sm" onclick="lvAddOpen()" style="margin:0">＋ 입력</button>
       </div>
       <div class="lvcal" id="lvCal" aria-label="휴가 달력"></div>
-      <p class="note-in" style="margin:6px 0 0">날짜를 누르면 창이 뜹니다. 종료일과 메모는 창에서 넣습니다. 이름 색은 담당자마다 다릅니다. <b>W37</b> 은 1월 1일이 든 주를 1주로 센 주차입니다.</p>
+      <p class="note-in" style="margin:6px 0 0">날짜를 누르면 새로 넣는 창이, <b>칸 안의 이름을 누르면 그 휴가를 고치는 창</b>이 뜹니다. 아래 목록의 [수정] 도 같습니다. 목록은 담당자·종류로 거를 수 있고 쪽으로 나눠 보입니다. 이름 색은 담당자마다 다릅니다. <b>W37</b> 은 1월 1일이 든 주를 1주로 센 주차입니다.</p>
       <div class="lvmask hidden" id="lvAdd" onclick="if(event.target===this)lvAddClose()">
         <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="lvAddTitle">
           <h3 id="lvAddTitle">휴가 입력</h3>
@@ -1309,15 +1331,19 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
               <option value="반차">반차 (오후 3시까지)</option><option value="휴무">휴무</option><option value="교육">교육</option><option value="휴가" selected>휴가</option><option value="연차">연차</option><option value="매장휴무">매장휴무</option>
             </select><small class="note-in" id="lv_kindHint" style="display:block;margin:4px 0 0"></small></div>
             <div><label for="lv_note">메모 <small>(선택)</small></label><input class="in" id="lv_note" placeholder="예: 오전 병원 · 본사 교육"></div>
-            <div class="btns"><button class="btn ghost" onclick="lvAddClose()">닫기</button><button class="btn" onclick="lvSave()">추가</button></div>
+            <div class="btns"><button class="btn bad hidden" id="lvDelBtn" onclick="lvDelCur()">지우기</button><button class="btn ghost" onclick="lvAddClose()">닫기</button><button class="btn" id="lvSaveBtn" onclick="lvSave()">추가</button></div>
           </div>
         </div>
       </div>
-      <div class="daterow" style="margin-top:12px;margin-bottom:6px">
-        <div class="seg sm" id="lv_range"><button type="button" data-v="month" class="on" onclick="lvRange(this)">이 달</button><button type="button" data-v="upcoming" onclick="lvRange(this)">앞으로</button><button type="button" data-v="all" onclick="lvRange(this)">전체</button></div>
+      <div class="daterow lvtools" style="margin-top:12px;margin-bottom:8px">
+        <div class="seg sm" id="lv_range"><button type="button" data-v="month" class="on" onclick="lvRange(this)">이 달</button><button type="button" data-v="upcoming" onclick="lvRange(this)">앞으로</button><button type="button" data-v="past" onclick="lvRange(this)">지난 것</button><button type="button" data-v="all" onclick="lvRange(this)">전체</button></div>
+        <select class="in lvsel" id="lv_fstaff" aria-label="담당자로 거르기" onchange="lvGo(0)"><option value="">담당자 전체</option></select>
+        <select class="in lvsel" id="lv_fkind" aria-label="종류로 거르기" onchange="lvGo(0)"><option value="">종류 전체</option><option>반차</option><option>휴무</option><option>교육</option><option>휴가</option><option>연차</option><option>매장휴무</option></select>
+        <button type="button" class="btn ghost sm" id="lv_fclr" onclick="lvFilterClear()" style="margin:0">거르개 해제</button>
         <span class="note-in" id="lvCount" style="margin:0"></span>
       </div>
-      <div class="list" id="lvList"><div class="empty">불러오는 중…</div></div>
+      <div class="lvlist" id="lvList"><div class="empty">불러오는 중…</div></div>
+      <div id="lvPg"></div>
     </div>
   </section>
 
@@ -3625,7 +3651,7 @@ async function loadStats(){
 /* ═══ 휴가 (점장님·대표님) ═══ */
 let LV=null;
 /* ═══ 휴가 — 달력으로 본다. 날짜를 누르면 시작일, 한 번 더 누르면 종료일. 목록은 이 달 · 앞으로 · 전체 ═══ */
-let LV_YM=null, LV_PICK=null;
+let LV_YM=null, LV_PICK=null, LV_EDIT=null, LV_PG=0;   /* LV_EDIT = 고치는 중인 휴가 id (없으면 새로 넣기) */
 const LV_COLORS=['#0F766E','#0F7B6C','#8A5D00','#7A3EB8','#B3261E','#0B6E99','#5C6B2E','#A0522D'];
 function lvColor(name){ const st=(LV&&LV.staff)||[]; const i=st.indexOf(name); return LV_COLORS[(i<0?String(name).length:i)%LV_COLORS.length]; }
 /* 1월 1일이 든 주가 W1, 월요일 시작 */
@@ -3646,38 +3672,101 @@ function lvRender(){
     if(dow(d)===0) html+=`<div class="wk">W${lvWeekNo(d)}</div>`;
     const ds=ymd(d), on=lvOn(ds);
     html+=`<button type="button" class="day${d.getMonth()!==m?' other':''}${ds===today?' today':''}${LV_PICK===ds?' pick':''}${dow(d)>=5?' we':''}" data-d="${ds}" onclick="lvTap('${ds}')" title="${ds}${on.length?' · '+on.map(r=>r.name).join(', '):''}"><i>${d.getDate()}</i>`
-      + on.slice(0,3).map(r=>`<span class="lvchip" style="background:${r.kind==='매장휴무'?'#8A909E':lvColor(r.name)}" title="${esc(r.kind||'휴가')}">${esc(r.kind==='매장휴무'?'매장휴무':String(r.name).slice(0,3)+(r.kind==='반차'?'·반':''))}</span>`).join('')
+      + on.slice(0,3).map(r=>`<span class="lvchip ed" onclick="event.stopPropagation();lvEdit(${r.id})" title="${esc(r.kind||'휴가')} · 눌러서 수정" style="background:${r.kind==='매장휴무'?'#8A909E':lvColor(r.name)}">${esc(r.kind==='매장휴무'?'매장휴무':String(r.name).slice(0,3)+(r.kind==='반차'?'·반':''))}</span>`).join('')
       + (on.length>3?`<span class="lvmore">+${on.length-3}</span>`:'') + `</button>`;
   }
   cal.innerHTML=html; lvRenderList();
 }
 /* 날짜를 누르면 팝업 — 시작일·종료일이 그 날로 채워지고, 종료일은 창에서 바꾼다 */
 function lvTap(ds){ LV_PICK=ds; lvAddOpen(ds, ds); lvRender(); }
-function lvAddOpen(f, t){ const box=$('lvAdd'); box.classList.remove('hidden'); if(f) $('lv_from').value=f; if(t) $('lv_to').value=t;
+function lvAddOpen(f, t){ LV_EDIT=null; const box=$('lvAdd'); box.classList.remove('hidden'); if(f) $('lv_from').value=f; if(t) $('lv_to').value=t;
   if(!$('lv_from').value){ $('lv_from').value=todayStr(); $('lv_to').value=todayStr(); }
-  const d=$('lv_from').value; $('lvAddTitle').textContent = d ? `휴가 입력 · ${d.slice(5).replace('-','/')}` : '휴가 입력';
-  $('lv_note').value=''; $('lv_kind').value='휴가'; lvKindHint(); setTimeout(()=>$('lv_staff').focus(),50); }
+  $('lv_note').value=''; $('lv_kind').value='휴가'; lvKindHint(); lvDlgMode(); setTimeout(()=>$('lv_staff').focus(),50); }
+/* 이미 넣은 휴가를 고친다 — 같은 창에 값을 채우고 저장 때 p_id 를 보낸다 (서버는 원래부터 받고 있었다) */
+function lvEdit(id){
+  const r=((LV&&LV.rows)||[]).find(x=>String(x.id)===String(id));
+  if(!r) return toast('휴가를 찾지 못했습니다 — 새로고침 해 주세요','bad');
+  LV_EDIT=r.id; LV_PICK=null;
+  $('lvAdd').classList.remove('hidden');
+  lvPickStaff(r.name);
+  $('lv_from').value=r.from; $('lv_to').value=r.to;
+  $('lv_kind').value=r.kind||'휴가'; lvKindHint();
+  $('lv_note').value=r.note||'';
+  lvDlgMode(); lvRender(); setTimeout(()=>$('lv_from').focus(),50);
+}
+/* 담당자를 고른 상태로 — 매장 목록에 없으면 [전체] 로 넓히고, 그래도 없으면(비활성 담당자) 칸을 만들어 둔다 */
+function lvPickStaff(name){
+  const sel=$('lv_staff'); if(!sel) return; lvFillStaff();
+  const has=()=>[...sel.options].some(o=>o.value===name);
+  if(name && !has()){ const b=$('lv_scope')&&$('lv_scope').querySelector('[data-v="전체"]'); if(b) lvScope(b); }
+  if(name && !has()) sel.insertAdjacentHTML('beforeend',`<option>${esc(name)}</option>`);
+  sel.value=name||'';
+}
+function lvDlgMode(){
+  const ed=!!LV_EDIT, d=$('lv_from').value;
+  $('lvAddTitle').textContent = ed ? '휴가 수정' : (d ? `휴가 입력 · ${d.slice(5).replace('-','/')}` : '휴가 입력');
+  $('lvSaveBtn').textContent = ed ? '저장' : '추가';
+  $('lvDelBtn').classList.toggle('hidden', !ed);
+}
 /* 종류별 배정 영향 — 반차는 오후 3시까지만 빠지고, 매장휴무는 배정이 그대로 간다(끝나면 순서대로 처리) */
 const LV_KIND_HINT={ '반차':'오후 3시까지 자동 배정에서 빠집니다. 3시 뒤에는 정상 배정.', '매장휴무':'배정은 그대로 갑니다 — 휴무가 끝나면 순서대로 처리. 표시용입니다.' };
 function lvKindHint(){ const k=$('lv_kind').value; $('lv_kindHint').textContent = LV_KIND_HINT[k] || '그날 자동 배정에서 빠집니다.'; }
-function lvAddClose(){ $('lvAdd').classList.add('hidden'); LV_PICK=null; lvRender(); }
+function lvAddClose(){ $('lvAdd').classList.add('hidden'); LV_PICK=null; LV_EDIT=null; lvRender(); }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(!$('lvAdd').classList.contains('hidden')) lvAddClose(); if($('cdDlg')&&!$('cdDlg').classList.contains('hidden')) cdClose(); if($('msgDlg')&&!$('msgDlg').classList.contains('hidden')) msgClose(); } });
-function lvRange(b){ $('lv_range').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); lvRenderList(); }
+function lvRange(b){ $('lv_range').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); lvGo(0); }
+function lvGo(p){ LV_PG=Math.max(0,Number(p)||0); lvRenderList(); }
+function lvFilterClear(){ $('lv_fstaff').value=''; $('lv_fkind').value=''; lvGo(0); }
+/* 담당자 거르개는 실제로 휴가가 있는 사람만 (고를 수 없는 이름을 늘어놓지 않는다) */
+function lvFillFilter(){
+  const sel=$('lv_fstaff'); if(!sel||!LV) return; const cur=sel.value;
+  const names=[...new Set(((LV.rows)||[]).map(r=>r.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+  sel.innerHTML='<option value="">담당자 전체</option>'+names.map(x=>`<option>${esc(x)}</option>`).join('');
+  sel.value = names.includes(cur) ? cur : '';
+}
+const LV_DOW=['일','월','화','수','목','금','토'];
+/* 10/31(금) · 기간이면 10/28~31 (달이 넘어가면 10/28~11/02) + 며칠인지 */
+function lvWhen(f,t){
+  const d1=new Date(f+'T00:00:00'), d2=new Date(t+'T00:00:00');
+  const md=d=>`${d.getMonth()+1}/${d.getDate()}`;
+  if(f===t) return `<b>${md(d1)}</b><span>${LV_DOW[d1.getDay()]}</span>`;
+  const days=Math.round((d2-d1)/86400000)+1;
+  const to = d1.getMonth()===d2.getMonth() ? String(d2.getDate()) : md(d2);
+  return `<b>${md(d1)}~${to}</b><span>${days}일</span>`;
+}
 function lvRenderList(){
-  const box=$('lvList'); if(!box||!LV) return; const mode=(($('lv_range').querySelector('button.on')||{}).dataset||{}).v||'month';
+  const box=$('lvList'); if(!box||!LV) return;
+  const mode=(($('lv_range').querySelector('button.on')||{}).dataset||{}).v||'month';
+  const fs=($('lv_fstaff')||{}).value||'', fk=($('lv_fkind')||{}).value||'';
   const today=todayStr(); const {y,m}=LV_YM||{}; const m0=`${y}-${String(m+1).padStart(2,'0')}-01`, m1=ymd(new Date(y,m+1,0));
-  const rows=((LV.rows)||[]).filter(r=> mode==='all' ? true : mode==='upcoming' ? r.to>=today : (r.from<=m1 && r.to>=m0))
+  const rows=((LV.rows)||[])
+    .filter(r=> mode==='all' ? true : mode==='upcoming' ? r.to>=today : mode==='past' ? r.to<today : (r.from<=m1 && r.to>=m0))
+    .filter(r=> !fs || r.name===fs)
+    .filter(r=> !fk || (r.kind||'휴가')===fk)
     .slice().sort((a,b)=>a.from<b.from?1:a.from>b.from?-1:0);
-  $('lvCount').textContent = rows.length ? `${rows.length}건` : '';
-  box.innerHTML = rows.length ? rows.map(x=>`<div class="item oc"><div><div class="p"><span class="lvdot" style="background:${lvColor(x.name)}"></span>${esc(x.name)} <span class="tag" style="background:var(--surface-2,#EEF0F4);color:var(--muted)">${esc(x.kind||'휴가')}</span> ${x.now?'<span class="mine">휴가 중</span>':''}</div>
-      <div class="m">${esc(x.from)}${x.to!==x.from?' ~ '+esc(x.to):''}${x.note?' · '+esc(x.note):''}${x.by?' · '+esc(x.by)+' 입력':''}</div></div>
-      <div class="act"><button class="mini bad" onclick="lvDel(${x.id},'${esc(x.name)}')">지우기</button></div></div>`).join('')
-    : `<div class="empty">${mode==='month'?'이 달에는 휴가가 없습니다':mode==='upcoming'?'앞으로 잡힌 휴가가 없습니다':'등록된 휴가가 없습니다'}</div>`;
+  const per=pgSize('lv'), last=Math.max(0,Math.ceil(rows.length/per)-1);
+  if(LV_PG>last) LV_PG=last;
+  const page=rows.slice(LV_PG*per, LV_PG*per+per);
+  const flt=(fs?1:0)+(fk?1:0);
+  $('lv_fclr').classList.toggle('hidden', !flt);
+  $('lvCount').textContent = rows.length
+    ? (rows.length>per ? `${rows.length}건 중 ${LV_PG*per+1}–${LV_PG*per+page.length}` : `${rows.length}건`) + (flt?' · 걸러진 목록':'')
+    : '';
+  box.innerHTML = page.length ? page.map(x=>{
+    const kind=x.kind||'휴가';
+    return `<div class="lvr${x.to<today?' gone':''}">
+      <div class="dt">${lvWhen(x.from,x.to)}</div>
+      <div class="bd"><div class="nm"><span class="lvdot" style="background:${kind==='매장휴무'?'#8A909E':lvColor(x.name)}"></span>${esc(x.name)}
+        <span class="tag" style="background:var(--surface-2,#EEF0F4);color:var(--muted)">${esc(kind)}</span>${x.now?'<span class="mine">휴가 중</span>':''}</div>
+        <div class="sub">${x.note?esc(x.note)+' · ':''}${x.by?esc(x.by)+' 입력':''}</div></div>
+      <div class="act"><button class="mini" onclick="lvEdit(${x.id})">수정</button><button class="mini bad" onclick="lvDel(${x.id},'${esc(x.name)}')">지우기</button></div></div>`;
+  }).join('')
+    : `<div class="empty">${flt?'거르개에 맞는 휴가가 없습니다':mode==='month'?'이 달에는 휴가가 없습니다':mode==='upcoming'?'앞으로 잡힌 휴가가 없습니다':mode==='past'?'지난 휴가가 없습니다':'등록된 휴가가 없습니다'}</div>`;
+  $('lvPg').innerHTML = rows.length>per ? `<div class="pager">${pgBar('lv',LV_PG,rows.length,'lvGo')}</div>` : '';
 }
 async function loadLeave(){
   const box=$('lvList'); if(!box) return;
   try{ LV=await rpc('fn_store_leave_list',{p_code:CODE}); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
-  lvFillStaff();
+  lvFillStaff(); lvFillFilter();
   const today=LV.today||[]; $('lvSub').textContent = today.length ? `오늘 휴가 ${today.join(', ')}` : '오늘 휴가 없음';
   lvRender();
 }
@@ -3695,12 +3784,15 @@ async function lvSave(){
   const st=$('lv_staff').value, f=$('lv_from').value, t=$('lv_to').value;
   if(!st) return toast('담당자를 고르세요','bad'); if(!f||!t) return toast('기간을 넣으세요','bad'); if(t<f) return toast('종료일이 시작일보다 앞입니다','bad');
   const kind=$('lv_kind').value||'휴가';
-  try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null,p_kind:kind});
-    toast(`${st} ${kind} ${f}${t!==f?'~'+t:''} 넣었습니다 — ${kind==='매장휴무'?'배정은 그대로 갑니다':kind==='반차'?'오후 3시까지 자동 배정에서 빠집니다':'그동안 자동 배정에서 빠집니다'}`,'ok'); $('lv_note').value=''; LV_PICK=null; $('lvAdd').classList.add('hidden'); loadLeave();
+  const ed=LV_EDIT;
+  try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:ed||null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null,p_kind:kind});
+    toast(`${st} ${kind} ${f}${t!==f?'~'+t:''} ${ed?'고쳤습니다':'넣었습니다'} — ${kind==='매장휴무'?'배정은 그대로 갑니다':kind==='반차'?'오후 3시까지 자동 배정에서 빠집니다':'그동안 자동 배정에서 빠집니다'}`,'ok');
+    $('lv_note').value=''; LV_PICK=null; LV_EDIT=null; $('lvAdd').classList.add('hidden'); loadLeave();
   }catch(e){ toast(e.message,'bad'); }
 }
 async function lvDel(id,name){ if(!confirm(`${name} 휴가를 지웁니다. 계속할까요?`)) return;
-  try{ await rpc('fn_store_leave_delete',{p_code:CODE,p_id:id}); toast('지웠습니다','ok'); loadLeave(); }catch(e){ toast(e.message,'bad'); } }
+  try{ await rpc('fn_store_leave_delete',{p_code:CODE,p_id:id}); toast('지웠습니다','ok'); LV_EDIT=null; $('lvAdd').classList.add('hidden'); loadLeave(); }catch(e){ toast(e.message,'bad'); } }
+function lvDelCur(){ if(!LV_EDIT) return; lvDel(LV_EDIT, $('lv_staff').value||'이'); }
 /* 탭 배지 — 글자는 그대로 두고 숫자만 붙였다 뗀다 (innerHTML 을 다시 쓰면 다른 곳이 붙인 배지가 사라진다) */
 function setTabBadge(t, n, alarm){
   const b=document.querySelector(`.tab[data-tab="${t}"]`); if(!b) return;
