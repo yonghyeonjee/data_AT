@@ -2207,6 +2207,7 @@ async function logout(){ await sb.auth.signOut(); localStorage.removeItem('dc_lo
 
 
 /* ═══════════════ 홈 ═══════════════ */
+const HOME_DS_HIDE=new Set(['ec_stock','channel_daily']);   // 홈 데이터 상태에서 감춤 — 이카운트 재고 동기화 · 온라인 채널 일매출 (데이터 가져오기 화면에서 본다)
 function pct(a,b){ if(!b) return null; return Math.round((a-b)/b*1000)/10; }
 async function loadHome(){
   let h, st; try{ [h,st]=await Promise.all([rpc('fn_home'), rpc('fn_data_stamp')]); }catch(e){ $('homeHero').innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
@@ -2230,7 +2231,7 @@ async function loadHome(){
   $('todoList').innerHTML=todo.map(([k,v,t,d,view,bad])=>`<a href="#${view}" onclick="show('${view}');return false" class="${v?'':'zero'} ${v&&bad?'bad':''}"><span class="n">${n(v||0)}</span><span class="t"><b>${t}</b><span>${d}</span></span><span class="go">열기 ›</span></a>`).join('');
   // 데이터 상태
   const sy=h.sync||{}; const syncBad=(h.sync_fail_24h||0)>0 || (sy.status&&sy.status!=='DONE');
-  const rows=(st.src||[]).map(x=>{ const at=x.at||''; const bad=/실패/.test(x.note||''); const late=!at; return `<div><span class="dot ${late?'none':bad?'bad':''}"></span><span class="lb">${esc(x.label)}${x.note?`<small style="display:block;color:var(--faint);font-size:calc(11px * var(--font-scale))">${esc(x.note)}</small>`:''}</span><b>${esc(at||'없음')}</b></div>`; });
+  const rows=(st.src||[]).filter(x=>!HOME_DS_HIDE.has(x.k)).map(x=>{ const at=x.at||''; const bad=/실패/.test(x.note||''); const late=!at; return `<div><span class="dot ${late?'none':bad?'bad':''}"></span><span class="lb">${esc(x.label)}${x.note?`<small style="display:block;color:var(--faint);font-size:calc(11px * var(--font-scale))">${esc(x.note)}</small>`:''}</span><b>${esc(at||'없음')}</b></div>`; });
   rows.unshift(`<div><span class="dot ${syncBad?'bad':''}"></span><span class="lb">샵링커 자동 수집 <span class="m">${esc(sy.job||'')} ${esc(sy.period||'')}</span></span><b>${esc(sy.at||'없음')} · ${esc(sy.status||'-')} · 신규 ${n(sy.inserted||0)}/갱신 ${n(sy.updated||0)}${h.sync_fail_24h?` · <span style="color:var(--bad)">24h 오류 ${h.sync_fail_24h}</span>`:''}</b></div>`);
   rows.push(`<div><span class="dot none"></span><span class="lb">총량</span><b>원장 ${n(C.orders||0)} · 고객 ${n(C.customers||0)} · 상담 ${n(C.consults||0)} · 견적 ${n(C.quotes||0)} · 품목 ${n(C.items||0)}</b></div>`);
   $('dataList').innerHTML=rows.join(''); $('dsSub').textContent=`${esc(h.now||'')} 기준`;
