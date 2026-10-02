@@ -1,0 +1,51 @@
+-- mvp_182 · 2026-10-02 · 테스트 자료가 통계에 새던 곳 (적용 완료 — 기록용)
+-- "테스트들은 모든 통계에서 제외 됐는지도 확인하고"
+--
+-- 전수 조사: core.orders / crm.consult / crm.quote / crm.submission 를 읽는 함수 90여 개를 테스트 표식
+-- (orders.is_test · consult.hidden_at/deleted_at(+ 개발 계정 트리거) · core.f_quote_is_test · crm.inquiry_flag) 기준으로 훑었다.
+--
+-- 이미 빠지고 있던 것: core.f_consult_stats(상담 현황·상담 대시보드) · core.f_dash_payload(/dash/·관리자 대시보드 — orders_live) ·
+--   core.f_customer_roll · fn_store_report · fn_store_daily_prefill · fn_order_flow(p_include_test) · fn_store_status(consult_scoped) ·
+--   fn_funnel_stats · fn_store_handler_load · fn_utm_campaigns · fn_crm_targets_v2 · fn_store_quotes · fn_store_alerts
+--
+-- 새던 것 (이 파일로 고침 — pg_get_functiondef 를 정규식으로 부분 치환, create or replace 라 ACL 그대로):
+--  1 fn_order_summary · fn_order_list  통합 원장 요약·목록에 is_test 줄(4건 · 5,989만원 포함)이 들어갔다 → not coalesce(o.is_test,false)
+--  2 fn_order_export                  내보내기에도 → 같은 조건
+--  3 fn_dashboard_v2                  매출 대시보드(lite) 두 스캔 + pending_submissions → is_test · 방문 접수 플래그 제외
+--  4 fn_visit_stats                   방문 접수 통계 — 매장방문 21건이 전부 테스트 플래그였는데 다 세고 있었다 → inquiry_flag(store) hidden/is_test 제외
+--  5 core.f_home_build                관리자 홈 총량 '견적' 이 테스트 견적 33건 포함(77→44) · 할 일 '방문 접수' 가 테스트 22건 포함 → 제외
+--  6 fn_quote_list                    관리자 견적 목록·합계 → core.f_quote_is_test 제외 (문의 관리 [삭제됨] 에서는 여전히 보임)
+--  7 fn_store_requests                상담·배정 배지가 deleted_at 을 안 봤다 → deleted_at is null 추가
+--  8 fn_activity_log                  활동 로그의 매장 판매 줄 → is_test 제외
+--  9 fn_store_my_customers · fn_store_customer_search · fn_store_customer_detail  고객별 구매 N건·금액에 테스트 판매 포함 → 제외
+-- 10 fn_submission_list               관리자 방문 접수 목록에 테스트 22건이 '접수' 로 남아 있었다 → 플래그 제외 (홈 할 일 수와 같아진다)
+-- 11 fn_store_status                   my_customers·my_customer_count(화면은 안 쓰지만 아직 계산) 의 core.orders 6곳 → is_test 제외
+--
+-- 검증: 한 트랜잭션 안에서 테스트 주문(is_test)·개발 계정 상담(트리거 숨김)·테스트 숨김 상담·삭제 상담·테스트 이름 견적·플래그 방문 접수를 넣고
+--   16개 통계 출력을 전후 비교 → 바뀐 키 없음(diff=[]) 확인 뒤 raise 로 롤백. (sql 은 세션 기록 참고)
+--   core.f_consult_stats 의 deleted_n(삭제 상담 수) 만 삭제 상담을 넣으면 0→1 로 바뀐다 — '삭제 포함' 안내용 숫자라 그게 맞다.
+--
+-- 치환 규칙 (pg_temp.patch(fn, 정규식, 치환, 최소지점, 최대지점) 로 적용):
+--  fn_order_summary / fn_order_list : 'and \(p_channel is null or o\.channel_type = p_channel\)'
+--     → 'and not coalesce(o.is_test,false) /* 테스트 판매 제외 (2026-10-02) */ and (p_channel is null or o.channel_type = p_channel)'
+--  fn_order_export : "(o\.order_at < \(\(p_to \+ 1\)::timestamp at time zone 'Asia/Seoul'\))(\s+order by o\.order_at desc, o\.id desc)" → '\1 and not coalesce(o.is_test,false)\2'
+--  fn_dashboard_v2 : 'from core\.orders\s+where\s+order_at >= core\.f_kst\((p_from|v_cf)\)' → 'from core.orders where not coalesce(is_test,false) and order_at >= core.f_kst(\1)'  (2곳)
+--  fn_dashboard_v2 · core.f_home_build : "from crm\.submission\s+where\s+status\s*=\s*'접수'"
+--     → "from crm.submission s where s.status = '접수' and not exists (select 1 from crm.inquiry_flag f where f.form = 'store' and f.src_id = s.id and (f.hidden or f.is_test))"
+--  core.f_home_build : "'quotes', \(select count\(\*\) from crm\.quote\)" → "'quotes', (select count(*) from crm.quote q where not core.f_quote_is_test(q.quote_no, q.customer_name, q.counselor))"
+--  fn_visit_stats : "from crm\.submission\s+where\s+request_type = '매장방문'\s+and\s+submitted_at >= core\.f_kst\(v_from\)"
+--     → "from crm.submission s where s.request_type = '매장방문' and not exists (select 1 from crm.inquiry_flag f where f.form = 'store' and f.src_id = s.id and (f.hidden or f.is_test)) and s.submitted_at >= core.f_kst(v_from)"
+--  fn_quote_list : "from crm\.quote q\s+where\s+core\.f_role\(\) <> 'anon'\s+and" → "from crm.quote q where core.f_role() <> 'anon' and not core.f_quote_is_test(q.quote_no, q.customer_name, q.counselor) and"
+--  fn_store_requests : "from crm\.consult c where c\.hidden_at is null and c\.consult_at > now\(\) - interval '90 days'" → '... c.hidden_at is null and c.deleted_at is null and ...'
+--                      'from crm\.consult x where x\.hidden_at is null and \(x\.handler' → '... x.hidden_at is null and x.deleted_at is null and (x.handler'
+--  fn_activity_log : "from core\.orders o where o\.source in \('store','store_sale'\)" → '... and not coalesce(o.is_test,false)'
+--  fn_store_my_customers : 'from core\.orders o where o\.buyer_key = c\.buyer_key(\s*\))' → '... and not coalesce(o.is_test,false)\1'
+--                          "from core\.orders o0 where o0\.handler = v_me and o0\.source = 'store' and o0\.buyer_key is not null" → '... and not coalesce(o0.is_test,false)'
+--  fn_store_customer_search : 'from core\.orders o where o\.buyer_key = c\.buyer_key' → '... and not coalesce(o.is_test,false)'  (6곳)
+--  fn_store_customer_detail : 'from core\.orders o where o\.buyer_key = p_key order by o\.order_at desc limit 20' → '... and not coalesce(o.is_test,false) order by ...'
+--  fn_store_status : 'from core\.orders o where o\.handler = v_me and o\.buyer_key is not null' (2곳) · 'from core\.orders o2 where ... o2\.order_at > m\.last_at' (2곳) · 'from core\.orders o where o\.buyer_key = x\.buyer_key\)' (2곳) → 각각 and not coalesce(…is_test,false)
+--  fn_submission_list : 'from crm\.submission s\s+where\s+\(p_status is null' → 'from crm.submission s where not exists (select 1 from crm.inquiry_flag f where f.form = ''store'' and f.src_id = s.id and (f.hidden or f.is_test)) and (p_status is null'
+--
+-- 손 안 댄 것: fn_dashboard_kpi(어느 화면도 안 부름) · core.f_data_stamp_build/f_data_status_build(자료 상태 — 줄 수 그대로가 맞다) ·
+--   crm.customer 의 테스트 고객(is_test 열이 없다 — 이름이 test/테스트/홍길동/이순신 인 15명 중 수신동의 1명, 지용현 9건 중 동의 2) ·
+--   core.store_daily(테스트 판매가 있던 날의 마감 줄은 없었다)
