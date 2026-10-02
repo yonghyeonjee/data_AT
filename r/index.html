@@ -27,7 +27,7 @@ p{font-size:15px;line-height:1.7;margin:0 0 14px}
     <a class="btn" href="https://www.samsungsh.co.kr">삼성스토어 시흥 홈페이지로</a>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://wdahskrcpjooqhwwxjiu.supabase.co" crossorigin>
 <script>
 const SB_URL="https://wdahskrcpjooqhwwxjiu.supabase.co";
 const SB_KEY="sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
@@ -38,11 +38,14 @@ function fail(){ document.getElementById('m').hidden=true; document.getElementBy
 (async()=>{
   if(!/^[a-z0-9]{3,12}$/.test(slug)) return fail();
   try{
-    const sb=window.supabase.createClient(SB_URL,SB_KEY);
-    const call=sb.rpc('fn_link_go',{p_slug:slug, p_ref:document.referrer||null, p_ua:(navigator.userAgent||'').slice(0,200)});
-    const wait=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000));
-    const {data,error}=await Promise.race([call,wait]);
-    if(error||!data||!data.url) return fail();
+    /* supabase-js 없이 PostgREST 를 바로 부른다 — CDN 스크립트(약 170KB) 한 번을 안 받으니 문자 링크를 누른 뒤 더 빨리 넘어간다 */
+    const ac=new AbortController(); const tm=setTimeout(()=>ac.abort(),5000);
+    const res=await fetch(SB_URL+'/rest/v1/rpc/fn_link_go',{method:'POST', signal:ac.signal,
+      headers:{'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json', 'Accept':'application/json'},
+      body:JSON.stringify({p_slug:slug, p_ref:document.referrer||null, p_ua:(navigator.userAgent||'').slice(0,200)})});
+    clearTimeout(tm);
+    const data=res.ok ? await res.json() : null;
+    if(!data||!data.url) return fail();
     location.replace(data.url);
   }catch(e){ fail(); }
 })();

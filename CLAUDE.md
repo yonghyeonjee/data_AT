@@ -165,9 +165,20 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-10-02 · v157)
+## 지금 상태 (2026-10-02 · v158)
 
 ### 되는 것
+- **속도 3차 — 화면이 부르는 횟수를 줄였다 (v158 · 2026-10-02)** — "더 기술적으로 속도를 올릴 수 있는 곳이 없나 찾아봐".
+  **DB 는 더 짤 데가 없다** — `fn_store_status` 를 조각별로 재니 전부 5ms 이하(가장 큰 `my_customers` 2.9~4.6ms), 전체 13~33ms. **첫 호출만 70~340ms**(plpgsql 이 43개 문장을 그 연결에서 처음 계획할 때) — PostgREST 연결마다 한 번이라 평소엔 안 보인다.
+  **`pg_stat_statements` 는 8/28 부터 누적**이라 v156 이전 워머 경합 시대가 섞여 있다 — "fn_store_status 488ms" 는 그 평균이었다. 지금 수치를 보려면 `pg_stat_statements_reset()` 뒤 한두 시간을 볼 것.
+  **화면 쪽에서 찾은 것** ① **로그인마다 `fn_store_consult_stats` 를 불렀다** — `render()` 가 `ST_LOADED=true; loadStats()` 로 상담 현황 탭을 열지도 않았는데 그리고 있었다(v157 의 "시작할 때 안 불린다" 는 틀린 말이었다 — `render()` 안에 있었다).
+  담당자 RPC 중 제일 무겁다(연결 첫 호출 **1,247ms**, 그 뒤 10~55ms, 응답 6KB). 이제 `goTab('stats')` 에서만 부른다. 점장 `loadLeave()` 도 render 가 아니라 휴가 탭을 열 때(goTab 에 원래 있었다). **시작 RPC 담당자 8→7 · 점장 10→8**(`ptest/startrpc.mjs` 로 센다).
+  ② **`loadStatus` 가 status → quotes 를 직렬로** 기다렸다 — 로그인·모든 저장 뒤 새로고침(20여 곳)마다 왕복 한 번이 더 걸렸다. 이미 확인된 코드(새로고침)면 **둘을 같이 보내고**, 처음 로그인(코드 확인 전)이면 status 뒤에 보내되 **기다리지 않는다**(틀린 코드가 실패 두 번으로 잡히지 않게 — 원래 주석의 이유는 그대로 지킨다). 견적서 목록은 도착하면 `quoteFilter()` 가 채운다.
+  ③ **`<link rel="preconnect">`** 가 admin.html 에만 있었다 — store·index·stock·q·visit·dash·r 전부에 supabase·jsdelivr 두 줄. 폰 첫 로드에서 첫 RPC 의 DNS+TLS 를 HTML 파싱과 겹친다.
+  ④ **`/r/` 착지 페이지가 supabase-js(CDN 약 170KB)를 받고 나서야 RPC 를 보냈다** — 문자 링크를 누른 고객이 기다리는 자리. 이제 **`fetch` 로 PostgREST(`/rest/v1/rpc/fn_link_go`)를 바로** 부른다(apikey·Bearer 헤더, 5초 AbortController). `tools/godo/r.html`(고도몰 `/data/r.html` 전달본)도 같이 고쳤다 — **고도몰 쪽은 다시 올려야 적용**(지금 것도 동작은 한다). `ptest/utm.mjs` R1 이 CDN 요청 0개를 확인한다.
+  **MCP `execute_sql` 은 `DROP` 문에서 늘 60초로 끊긴다** — v156~157 의 `DROP INDEX` 도, 이번에 만든 측정용 표 `core.pss_snap` 의 `drop table` 도(`lock_timeout='4s'` 를 걸어도 오류 없이 60초 — **락이 아니다**, `pg_stat_activity` 에 기다리는 세션도 없다). CREATE·VACUUM·ALTER 는 된다. sql_drop 이벤트 트리거(`pgrst_drop_watch`·`issue_graphql_placeholder`) 쪽 길로 보인다. **DROP 은 Supabase SQL 편집기에서.**
+  → 지울 것: `drop table core.pss_snap;`(pg_stat_statements 스냅샷, 4,441줄, 쓸모 없음) · `drop index core.ix_orders_test; drop index crm.ix_croll_net;`(v156 부터 미룬 것).
+  UAT 4조합 · tour 폰 13탭 · audit 12조합 · lvedit 40 · grid · tyx · utm 16 ✓.
 - **속도 2차 — DB 정비 완료 · 화면은 생각만큼 안 느렸다 (v157 · 2026-10-02)** — "가능한 빨라지도록 다시 확인해봐".
   **v156 에서 미뤘던 DDL 이 전부 들어갔다.** 처음에 MCP 가 60초로 끊긴 범인을 찾았다 — **pg_cron 의 `f_dash_warm`(15분 주기)이 `core.orders` 를 잡고 있는 동안 `DROP INDEX`·`VACUUM`·`ALTER` 가 뒤에 줄을 선다**(`pg_stat_activity` 를 `datname` 으로 거르면 안 보인다 — pg_cron 은 `postgres` DB 에서 돈다). 그 창을 피하니 통과했다.
   `ix_orders_updated`(워머의 '바뀌었나?' 검사 **55ms → 3.5ms**) · **`vacuum (analyze) core.orders` — 죽은 행 24,352 → 0**(core.orders 를 읽는 모든 인덱스 스캔이 heap 재방문 2.4만 번을 덜었다) · autovacuum 5%/2000행으로 조임. 안 쓰는 인덱스 2개 drop 만 아직(효과 작음).

@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Datacenter · 매장</title>
 <link rel="icon" href="/favicon.ico?v=3">
+<link rel="preconnect" href="https://wdahskrcpjooqhwwxjiu.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
@@ -2010,10 +2012,17 @@ let enterPin=async function(){ const v=$('pinInput').value.trim(); if(v.length!=
 $('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') enterPin(); });
 $('pinInput').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/\D/g,''); if(!PIN_UNTIL && e.target.value.length<4) $('pinErr').textContent=''; if(e.target.value.length===4) enterPin(); });
 async function loadStatus(code){
-  /* 코드 확인은 status 하나로만 — 병렬로 두 개를 보내면 틀린 코드 한 번이 실패 두 번으로 잡힌다 */
-  const st = await rpc('fn_store_status', {p_code: code||CODE});
-  const qt = await rpc('fn_store_quotes', {p_code: code||CODE}).catch(()=>[]);
-  STATUS = st; STATUS.quotes = qt||[]; ME = STATUS.me; return STATUS; }
+  /* 코드 확인은 status 하나로만 — 병렬로 두 개를 보내면 틀린 코드 한 번이 실패 두 번으로 잡힌다.
+     이미 확인된 코드(새로고침)면 견적서 목록을 같이 보내고, 처음 로그인이면 status 뒤에 보내되 기다리지 않는다 (왕복 한 번을 아낀다) */
+  const c = code||CODE, fresh = !!code && code!==CODE;
+  const qtP = fresh ? null : rpc('fn_store_quotes', {p_code: c}).catch(()=>null);
+  const st = await rpc('fn_store_status', {p_code: c});
+  const prev = (STATUS&&STATUS.quotes)||[];
+  STATUS = st; STATUS.quotes = prev; ME = STATUS.me;
+  const p = qtP || rpc('fn_store_quotes', {p_code: c}).catch(()=>null);
+  const done = p.then(q=>{ if(q && STATUS===st){ STATUS.quotes = q; if($('qtList')||$('qt_q')) try{ quoteFilter(); }catch(e){} } });
+  if(!fresh) await done;   /* 새로고침은 둘 다 기다린다 (호출한 쪽이 바로 render 한다) */
+  return STATUS; }
 
 /* ═══ 글자 크기 설정 ═══ */
 function setFontScale(scale){
@@ -2090,9 +2099,9 @@ function render(){
   const hc=$('hlCard'); if(hc){ hc.classList.toggle('hidden', !s.is_mgr);
     if(s.is_mgr && !HL_LOADED){ HL_LOADED=true; loadHandlerLoad(); } }
   const ac=$('allCard'); if(ac){ ac.classList.toggle('hidden', !s.is_mgr); }   /* 목록은 배정 탭을 열 때 불러온다 */
-  const lc=$('lvCard'); if(lc){ lc.classList.toggle('hidden', !s.is_mgr); if(s.is_mgr && !LV_LOADED){ LV_LOADED=true; loadLeave(); } }
+  const lc=$('lvCard'); if(lc){ lc.classList.toggle('hidden', !s.is_mgr); }   /* 휴가 목록은 휴가 탭을 열 때 (goTab) */
   const sw=$('st_who'); if(sw) sw.classList.toggle('hidden', !s.is_mgr);
-  if(!ST_LOADED){ ST_LOADED=true; loadStats(); }
+  /* 상담 현황(fn_store_consult_stats · 담당자 RPC 중 제일 무겁다)은 탭을 열 때 부른다 (goTab) — 전엔 로그인마다 불렀다 */
   if(!QL_LOADED){ QL_LOADED=true; loadQuickLinks(); loadSecOrder(); }
   /* 상담 탭 배지는 20초 폴링(inboxCheck)이 맡는다. 첫 화면에서 아직 없을 때만 미배정 수로 채운다 */
   if(s.is_mgr) setTabBadge('assign', Number(s.unassigned_n||0), true);
@@ -3301,6 +3310,7 @@ function goTab(name, fromHistory){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
   ['home','inbox','assign','quote','customer','alerts','stats','leave','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='leave' && !LV_LOADED){ LV_LOADED=true; loadLeave(); }
+  if(name==='stats' && !ST_LOADED){ ST_LOADED=true; loadStats(); }
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
   if(name==='report' && !REPORT_LOADED) loadReport();
   if(name==='online' && !OC_LOADED) loadOnlineDay();
