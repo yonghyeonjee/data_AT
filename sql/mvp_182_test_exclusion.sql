@@ -20,6 +20,7 @@
 --  9 fn_store_my_customers · fn_store_customer_search · fn_store_customer_detail  고객별 구매 N건·금액에 테스트 판매 포함 → 제외
 -- 10 fn_submission_list               관리자 방문 접수 목록에 테스트 22건이 '접수' 로 남아 있었다 → 플래그 제외 (홈 할 일 수와 같아진다)
 -- 11 fn_store_status                   my_customers·my_customer_count(화면은 안 쓰지만 아직 계산) 의 core.orders 6곳 → is_test 제외
+-- 12 fn_store_channel_day · fn_channel_daily_month  온라인 채널 일매출 대사 — 온라인 출처만 읽어 지금은 안 새지만 샵링커 줄에 is_test 를 붙이면 샐 자리 → is_test 제외
 --
 -- 검증: 한 트랜잭션 안에서 테스트 주문(is_test)·개발 계정 상담(트리거 숨김)·테스트 숨김 상담·삭제 상담·테스트 이름 견적·플래그 방문 접수를 넣고
 --   16개 통계 출력을 전후 비교 → 바뀐 키 없음(diff=[]) 확인 뒤 raise 로 롤백. (sql 은 세션 기록 참고)
@@ -44,6 +45,7 @@
 --  fn_store_customer_search : 'from core\.orders o where o\.buyer_key = c\.buyer_key' → '... and not coalesce(o.is_test,false)'  (6곳)
 --  fn_store_customer_detail : 'from core\.orders o where o\.buyer_key = p_key order by o\.order_at desc limit 20' → '... and not coalesce(o.is_test,false) order by ...'
 --  fn_store_status : 'from core\.orders o where o\.handler = v_me and o\.buyer_key is not null' (2곳) · 'from core\.orders o2 where ... o2\.order_at > m\.last_at' (2곳) · 'from core\.orders o where o\.buyer_key = x\.buyer_key\)' (2곳) → 각각 and not coalesce(…is_test,false)
+--  fn_store_channel_day / fn_channel_daily_month : "from core\.orders o\s+where\s+o\.source in \('shoplinker',\s*'godo',\s*'smartstore'\)" → 'from core.orders o where not coalesce(o.is_test,false) and o.source in (...)'
 --  fn_submission_list : 'from crm\.submission s\s+where\s+\(p_status is null' → 'from crm.submission s where not exists (select 1 from crm.inquiry_flag f where f.form = ''store'' and f.src_id = s.id and (f.hidden or f.is_test)) and (p_status is null'
 --
 -- 손 안 댄 것: fn_dashboard_kpi(어느 화면도 안 부름) · core.f_data_stamp_build/f_data_status_build(자료 상태 — 줄 수 그대로가 맞다) ·
