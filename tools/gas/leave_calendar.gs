@@ -11,7 +11,7 @@
  *  ④ installLeaveSyncTrigger 를 1회 실행 → 15분마다 자동 동기화
  *
  * 캘린더 일정은 태그 dc_leave_id 로 식별한다. 태그 없는 일정(손으로 넣은 것)은 건드리지 않는다.
- * 반차는 종일이 아니라 그날 시간 일정으로 넣는다 — 오전 반차 09:00~14:00 · 오후 반차 14:00~21:00
+ * 반차는 종일이 아니라 그날 시간 일정으로 넣는다 — 오전 반차 09:00~14:00 · 오후 반차 14:00~20:00
  * (기간이면 하루씩, 태그 "id:YYYY-MM-DD"). half 가 없는 옛 반차는 오전으로 본다.
  ***********************************************************************/
 var CAL_ID = 'c3e549542f1c7e457d0caaebbfb5d68584c9ea538e3dac7e990f16197c8d44f3@group.calendar.google.com';
@@ -39,7 +39,7 @@ function titleOf_(r) {
   if (r.kind === '반차') return r.name + ' · ' + (r.half === 'pm' ? '오후 반차' : '오전 반차');
   return r.name + ' · ' + r.kind;
 }
-var HALF_AM = [9, 14], HALF_PM = [14, 21];   // 오전 반차 09:00~14:00 · 오후 반차 14:00~21:00
+var HALF_AM = [9, 14], HALF_PM = [14, 20];   // 오전 반차 09:00~14:00 · 오후 반차 14:00~20:00
 function at_(d, h) { var x = new Date(d); x.setHours(h, 0, 0, 0); return x; }
 function ymdStr_(d) { return Utilities.formatDate(d, 'Asia/Seoul', 'yyyy-MM-dd'); }
 function descOf_(r) { return [r.note ? '메모: ' + r.note : '', r.by ? '입력: ' + r.by : '', '데이터센터 휴가 #' + r.id].filter(String).join('\n'); }

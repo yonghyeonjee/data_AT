@@ -49,7 +49,7 @@ end $function$;
 revoke all on function public.fn_store_leave_save(text,bigint,text,date,date,text,text,text) from public;
 grant execute on function public.fn_store_leave_save(text,bigint,text,date,date,text,text,text) to anon, authenticated, service_role;
 
--- 목록·캘린더 피드에 half · ICS 는 오전 09:00~14:00 · 오후 14:00~21:00 (제목 '이름 · 오전 반차/오후 반차')
+-- 목록·캘린더 피드에 half · ICS 는 오전 09:00~14:00 · 오후 14:00~20:00 (제목 '이름 · 오전 반차/오후 반차')
 do $o$ declare v text;
 begin
   v := pg_get_functiondef('public.fn_store_leave_list(text)'::regprocedure);
@@ -59,7 +59,7 @@ begin
   v := pg_get_functiondef('public.fn_leave_ics(text)'::regprocedure);
   v := replace(v, 'select l.id, l.staff_name, l.from_date, l.to_date, l.kind,', 'select l.id, l.staff_name, l.from_date, l.to_date, l.kind, l.half,');
   v := replace(v, 'E''T000000Z', 'case when r.half=''pm'' then ''T050000Z'' else ''T000000Z'' end || E''');
-  v := replace(v, 'E''T060000Z', 'case when r.half=''pm'' then ''T120000Z'' else ''T050000Z'' end || E''');
+  v := replace(v, 'E''T060000Z', 'case when r.half=''pm'' then ''T110000Z'' else ''T050000Z'' end || E''');
   v := replace(v, 'E'' · 반차', 'case when r.half=''pm'' then '' · 오후 반차'' else '' · 오전 반차'' end || E''');
   execute v;
 end $o$;
