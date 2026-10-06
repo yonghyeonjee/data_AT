@@ -2230,6 +2230,8 @@ selLoad();buildControls();syncScopeBtns();drawFinds();a=firstA;b=lastA;render();
       const d=e.data; if(!d || d.type!=='dash-payload' || !d.data || !d.data.days) return;
       if(DATA) { location.reload(); return; }
       DATA=d.data; startDash();
+      /* 다 그렸다고 부모(관리자 콘솔)에 알린다 — 진행 카드가 이걸 받고 닫힌다 (2026-10-03) */
+      try{ requestAnimationFrame(()=>setTimeout(()=>{ try{ parent.postMessage({type:'dash-rendered'}, '*'); }catch(e){} }, 0)); }catch(e){}
     });
     window.__dashReady=true;
     try{ parent.postMessage({type:'dash-ready'}, '*'); }catch(e){}
