@@ -169,6 +169,9 @@ end $outer$;
 ## 지금 상태 (2026-10-06 · v168 — test 폴더에만 있던 것(UI 규칙 v161 · 진행 카드 v164·v165 · UTM 목록 v165)을 전부 본 파일에 올림: store.html · admin.html · visit/index.html · dash/index.html)
 
 ### 되는 것
+- **일 마감 '최근 마감'·'미마감' 이 비던 것 (mvp_186 · v170 · 2026-10-06)** — "담당자 화면에 일 마감이 10월 게 지워진 것 같다". 지워진 게 아니었다 — 차효범 프로님 10/1~10/6 마감 11줄은 DB 에 그대로, `store_daily_delete` 기록 0건.
+  `fn_store_status` 의 `p_store` 기본값이 '시흥점'(mvp_31) 에서 **NULL** 로 바뀌어 있었고 화면은 p_store 를 안 보내므로 `closed_recent`·`closed_mine`·`unclosed_days`·`unclosed_mine` 의 `store = p_store` 가 전부 거짓 → 빈 목록(언제 바뀌었는지는 기록 없음). 월 마감(`fn_store_month_close`)은 매장 조건이 없어 정상이었다.
+  본문 첫 줄에 `p_store := coalesce(nullif(p_store,''),'시흥점')` (시그니처·ACL 그대로). **p_store 를 받는 다른 fn_store_* 5개는 기본값 '시흥점' 그대로**다. 화면 수정 없음.
 - **'UTM 관리' → '발송 링크 관리' (v169 · 2026-10-06)** — "utm 관리 이름을 발송 링크 관리로 바꿔줘 · 시스템에서도". `core.menu_item 'utm'` label 을 DB 에서 바꿨고(메뉴는 DB 에서 읽으니 바로 반영), `admin.html`·`admin/test` 의 화면 글자(제목 `TITLES.utm`·발송 대상 추출 옆 버튼·안내문) 9곳도 같이. 코드 이름(`utm`·`loadUtm`·`UTM_*`)과 GA4 의 utm_source·utm_campaign 값은 그대로다. 테스트 `utm.mjs` U1·`sendlog.mjs` T1 이 새 이름을 본다(utm 16 · sendlog 43 · utmlist 17 · cdash 17 · ovf_admin ✓).
 - **반차는 오전·오후 (mvp_185 · v166 · 2026-10-06 · store.html·store/test 둘 다)** — "반차 오후인지 오전인지 결정할 수 있게 · 오전 반차는 오후 2시까지 없는 거고 오후 반차는 오후 2시부터 없는 거야" → "아 오후 3시로 해줘".
   `core.staff_leave.half`('am'|'pm', 반차일 때만 · CHECK). 옛 반차 10건은 am. **배정·잔디 알림 제외는 전부 `core.f_staff_on_leave` 한 곳**(`f_assign_next` 순번 · `fn_submit_inquiry` 휴가 재배정 · 목록 '휴가 중') — 오전 = KST 15:00 전까지 빠짐 · 오후 = 15:00 부터 빠짐(처음 요청은 2시였다가 3시로 바꿨다 · 전엔 반차 = 15:00 전까지 하나).
