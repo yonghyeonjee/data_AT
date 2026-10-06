@@ -1,5 +1,5 @@
 -- mvp_185 · 2026-10-06 · 반차를 오전·오후로 나눈다 — 배정·알림 제외도 그 시간만
--- "휴무에 반차 오후인지, 오전인지 결정할 수 있게 · 오전 반차는 오후 2시까지 없는 거고 오후 반차는 오후 2시부터 없는 거야"
+-- "휴무에 반차 오후인지, 오전인지 결정할 수 있게 · 오전 반차는 오후 2시까지 없는 거고 오후 반차는 오후 2시부터 없는 거야" → "아 오후 3시로 해줘"
 --
 -- 전엔 반차 = 오후 3시 전까지 빠짐 하나뿐이었다.
 -- 배정·잔디 알림의 휴가 제외는 전부 core.f_staff_on_leave 한 곳을 거친다
@@ -13,14 +13,14 @@ update core.staff_leave set half='am' where kind='반차' and half is null;
 create or replace function core.f_staff_on_leave(p_name text, p_on date default null::date)
  returns boolean language sql stable set search_path to 'pg_catalog','public'
 as $function$
-  /* 반차: 오전(am) = 오후 2시 전까지 없음 · 오후(pm) = 오후 2시부터 없음. 매장휴무는 배정 그대로 */
+  /* 반차: 오전(am) = 오후 3시 전까지 없음 · 오후(pm) = 오후 3시부터 없음. 매장휴무는 배정 그대로 */
   select exists (select 1 from core.staff_leave l
                   where l.staff_name = p_name
                     and coalesce(p_on, (now() at time zone 'Asia/Seoul')::date) between l.from_date and l.to_date
                     and l.kind <> '매장휴무'
                     and (l.kind <> '반차'
-                         or (coalesce(l.half,'am') = 'am' and (now() at time zone 'Asia/Seoul')::time <  time '14:00')
-                         or (l.half = 'pm'                and (now() at time zone 'Asia/Seoul')::time >= time '14:00')));
+                         or (coalesce(l.half,'am') = 'am' and (now() at time zone 'Asia/Seoul')::time <  time '15:00')
+                         or (l.half = 'pm'                and (now() at time zone 'Asia/Seoul')::time >= time '15:00')));
 $function$;
 
 -- fn_store_leave_save 에 p_half 추가. MCP 는 DROP 에서 60초로 끊기므로(전부 롤백) 옛 판은 이름만 바꿔 비켜 두었다.
@@ -49,7 +49,7 @@ end $function$;
 revoke all on function public.fn_store_leave_save(text,bigint,text,date,date,text,text,text) from public;
 grant execute on function public.fn_store_leave_save(text,bigint,text,date,date,text,text,text) to anon, authenticated, service_role;
 
--- 목록·캘린더 피드에 half · ICS 는 오전 09:00~14:00 · 오후 14:00~20:00 (제목 '이름 · 오전 반차/오후 반차')
+-- 목록·캘린더 피드에 half · ICS 는 오전 09:00~15:00 · 오후 15:00~20:00 (제목 '이름 · 오전 반차/오후 반차')
 do $o$ declare v text;
 begin
   v := pg_get_functiondef('public.fn_store_leave_list(text)'::regprocedure);
@@ -58,10 +58,11 @@ begin
   execute replace(v, '''kind'', l.kind,', '''kind'', l.kind, ''half'', l.half,');
   v := pg_get_functiondef('public.fn_leave_ics(text)'::regprocedure);
   v := replace(v, 'select l.id, l.staff_name, l.from_date, l.to_date, l.kind,', 'select l.id, l.staff_name, l.from_date, l.to_date, l.kind, l.half,');
-  v := replace(v, 'E''T000000Z', 'case when r.half=''pm'' then ''T050000Z'' else ''T000000Z'' end || E''');
-  v := replace(v, 'E''T060000Z', 'case when r.half=''pm'' then ''T110000Z'' else ''T050000Z'' end || E''');
+  v := replace(v, 'E''T000000Z', 'case when r.half=''pm'' then ''T060000Z'' else ''T000000Z'' end || E''');
+  v := replace(v, 'E''T060000Z', 'case when r.half=''pm'' then ''T110000Z'' else ''T060000Z'' end || E''');
   v := replace(v, 'E'' · 반차', 'case when r.half=''pm'' then '' · 오후 반차'' else '' · 오전 반차'' end || E''');
   execute v;
 end $o$;
 
+-- 2026-10-06 같은 날 기준 시각을 2시 → 3시로 바꿨다(ICS 오전 UTC 00~06 · 오후 06~11).
 -- 검증(롤백 블록, 14:21 KST): 오전 반차 → 배정 받음(on=f) · 오후 반차 → 빠짐(on=t) · 휴가에 p_half 를 줘도 null · 반차에 p_half 없으면 am

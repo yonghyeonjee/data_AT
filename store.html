@@ -1362,7 +1362,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
               <select class="in" id="lv_staff"></select></div>
             <div class="two"><div><label for="lv_from">시작일</label><input class="in" type="date" id="lv_from"></div><div><label for="lv_to">종료일</label><input class="in" type="date" id="lv_to" onchange="if($('lv_from').value&&this.value<$('lv_from').value)this.value=$('lv_from').value"></div></div>
             <div><label for="lv_kind">종류</label><select class="in" id="lv_kind" onchange="lvKindHint()">
-              <option value="반차|am">오전 반차 (오후 2시까지 없음)</option><option value="반차|pm">오후 반차 (오후 2시부터 없음)</option><option value="휴무">휴무</option><option value="교육">교육</option><option value="휴가" selected>휴가</option><option value="연차">연차</option><option value="매장휴무">매장휴무</option>
+              <option value="반차|am">오전 반차 (오후 3시까지 없음)</option><option value="반차|pm">오후 반차 (오후 3시부터 없음)</option><option value="휴무">휴무</option><option value="교육">교육</option><option value="휴가" selected>휴가</option><option value="연차">연차</option><option value="매장휴무">매장휴무</option>
             </select><small class="note-in" id="lv_kindHint" style="display:block;margin:4px 0 0"></small></div>
             <div><label for="lv_note">메모 <small>(선택)</small></label><input class="in" id="lv_note" placeholder="예: 오전 병원 · 본사 교육"></div>
             <div class="btns"><button class="btn danger hidden" id="lvDelBtn" onclick="lvDelCur()">지우기</button><button class="btn" id="lvSaveBtn" onclick="lvSave()">추가</button></div>
@@ -3764,7 +3764,7 @@ function lvRender(){
 }
 /* 칩 = 사람 색 + 종류 글자. 반차는 반만 칠해 한눈에 갈린다 (전엔 '·반' 한 글자뿐이라 휴무와 똑같아 보였다) */
 const LV_KIND_CLS={'반차':'k-half','교육':'k-edu','매장휴무':'k-store'};
-/* 반차는 오전·오후로 갈린다 — 오전 = 오후 2시 전까지 없음 · 오후 = 오후 2시부터 없음 (옛 반차는 오전으로 들어 있다) */
+/* 반차는 오전·오후로 갈린다 — 오전 = 오후 3시 전까지 없음 · 오후 = 오후 3시부터 없음 (옛 반차는 오전으로 들어 있다) */
 function lvKindNm(r){ const k=r.kind||'휴가'; return k==='반차' ? (r.half==='pm'?'오후 반차':'오전 반차') : k; }
 function lvKindVal(r){ const k=r.kind||'휴가'; return k==='반차' ? '반차|'+(r.half==='pm'?'pm':'am') : k; }
 function lvChip(r){
@@ -3804,8 +3804,8 @@ function lvDlgMode(){
   $('lvSaveBtn').textContent = ed ? '저장' : '추가';
   $('lvDelBtn').classList.toggle('hidden', !ed);
 }
-/* 종류별 배정 영향 — 오전 반차는 오후 2시 전까지, 오후 반차는 2시부터 빠지고, 매장휴무는 배정이 그대로 간다(끝나면 순서대로 처리) */
-const LV_KIND_HINT={ '반차|am':'오후 2시 전까지 자동 배정·알림에서 빠집니다. 2시부터 정상 배정.', '반차|pm':'오후 2시부터 자동 배정·알림에서 빠집니다. 2시 전에는 정상 배정.', '매장휴무':'배정은 그대로 갑니다 — 휴무가 끝나면 순서대로 처리. 표시용입니다.' };
+/* 종류별 배정 영향 — 오전 반차는 오후 3시 전까지, 오후 반차는 3시부터 빠지고, 매장휴무는 배정이 그대로 간다(끝나면 순서대로 처리) */
+const LV_KIND_HINT={ '반차|am':'오후 3시 전까지 자동 배정·알림에서 빠집니다. 3시부터 정상 배정.', '반차|pm':'오후 3시부터 자동 배정·알림에서 빠집니다. 3시 전에는 정상 배정.', '매장휴무':'배정은 그대로 갑니다 — 휴무가 끝나면 순서대로 처리. 표시용입니다.' };
 function lvKindHint(){ const k=$('lv_kind').value; $('lv_kindHint').textContent = LV_KIND_HINT[k] || '그날 자동 배정에서 빠집니다.'; }
 function lvAddClose(){ $('lvAdd').classList.add('hidden'); LV_PICK=null; LV_EDIT=null; lvRender(); }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(!$('lvAdd').classList.contains('hidden')) lvAddClose(); if($('cdDlg')&&!$('cdDlg').classList.contains('hidden')) cdClose(); if($('msgDlg')&&!$('msgDlg').classList.contains('hidden')) msgClose(); } });
@@ -3882,7 +3882,7 @@ async function lvSave(){
   const ed=LV_EDIT;
   if(ed && !confirm(`${st} · ${f}${t!==f?' ~ '+t:''} · ${nm} 으로 바꿉니다. 계속할까요?`)) return;
   try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:ed||null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null,p_kind:kind,p_half:half||null});
-    toast(`${st} ${nm} ${f}${t!==f?'~'+t:''} ${ed?'고쳤습니다':'넣었습니다'} — ${kind==='매장휴무'?'배정은 그대로 갑니다':kind!=='반차'?'그동안 자동 배정에서 빠집니다':half==='pm'?'오후 2시부터 자동 배정에서 빠집니다':'오후 2시 전까지 자동 배정에서 빠집니다'}`,'ok');
+    toast(`${st} ${nm} ${f}${t!==f?'~'+t:''} ${ed?'고쳤습니다':'넣었습니다'} — ${kind==='매장휴무'?'배정은 그대로 갑니다':kind!=='반차'?'그동안 자동 배정에서 빠집니다':half==='pm'?'오후 3시부터 자동 배정에서 빠집니다':'오후 3시 전까지 자동 배정에서 빠집니다'}`,'ok');
     $('lv_note').value=''; LV_PICK=null; LV_EDIT=null; $('lvAdd').classList.add('hidden'); loadLeave();
   }catch(e){ toast(e.message,'bad'); }
 }
