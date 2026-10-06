@@ -1708,7 +1708,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="unclosed" id="d_unclosed"></div>
       </div>
       <div class="d-sum" id="d_sum"></div>
-      <div class="drow head"><div>구분</div><div>프로</div><div class="r ds">판매완료</div><div class="r">매출<small>미확정</small></div><div class="r">환불</div><div></div></div>
+      <div class="drow head"><div>구분</div><div>프로</div><div class="r ds">판매완료</div><div class="r">매출</div><div class="r">환불</div><div></div></div>
       <div id="d_rows"></div>
       <button class="btn ghost sm" onclick="addDailyRow()">+ 줄 추가</button>
       <p class="note-in" id="d_byNote"></p>
@@ -5015,7 +5015,7 @@ function renderDailyLists(s){
   const cr = all ? (s.closed_recent||[]) : (s.closed_mine||[]);
   $('d_recentSub').textContent = '7일 · ' + (all?'매장 전체':'본인');
   $('d_recent').innerHTML = cr.length ? cr.map(x=>`
-    <div class="item"><div class="t">${x.d.slice(5).replace('-','/')}</div><div class="p">마감 완료${all&&x.by?` <small style="color:var(--faint)">· ${esc(x.by)}</small>`:''}${Number(x.pending)?` <small style="color:var(--warn)">· 미확정 ${wonS(x.pending)}</small>`:''}</div><div class="a">${won(x.net)}</div>
+    <div class="item"><div class="t">${x.d.slice(5).replace('-','/')}</div><div class="p">마감 완료${all&&x.by?` <small style="color:var(--faint)">· ${esc(x.by)}</small>`:''}${Number(x.pending)?` <small style="color:var(--muted)">· 그중 확정 전 ${wonS(x.pending)}</small>`:''}</div><div class="a">${won(x.net)}</div>
       <div class="ed"><button onclick="dailyEdit('${x.d}')">수정</button><button class="del" onclick="dailyDelete('${x.d}','${won(x.net)}')">삭제</button></div></div>`).join('') : `<div class="empty">최근 7일 ${all?'매장':'내'} 마감 없음</div>`;
   /* 탭 배지 없음 (재촉 금지) */
 }
@@ -5034,9 +5034,10 @@ async function loadDailyDay(){
   [...keys].sort().forEach(k=>{ const src=(p.rows||[]).find(r=>byKey(r)===k), c=cmap[k];
     const r=c||src; addDailyRow({sale_kind:r.sale_kind,handler:r.handler,sales:c?c.sales:src.sales,pending:c?c.pending:src.pending,refund:c?c.refund:0,n:src?src.n:(c?c.n:0),auto:!!src,saved:!!c}); });
   if(!keys.size){ ['일시불','구독'].forEach(k=>addDailyRow({sale_kind:k,handler:dScopeAll()?'':ME,sales:0,pending:0,refund:0,n:0})); }
-  const closedN=closed.length, savedTot=closed.reduce((a,x)=>a+Number(x.sales||0)-Number(x.refund||0),0);
-  $('d_sum').innerHTML=`<span>판매 입력 <b>${Number(T.n||0).toLocaleString('ko-KR')}건</b></span><span>판매완료 <b>${wonS(T.done||0)}</b></span><span>매출(미확정) <b>${wonS(T.open||0)}</b></span>`
-    + (closedN?`<span>· 저장된 마감 <b>${wonS(savedTot)}</b>${Math.abs(savedTot-Number(T.done||0))>0?` <span class="warn">판매 입력과 ${wonS(Math.abs(savedTot-Number(T.done||0)))} 차이</span>`:''}</span>`:'<span>· 아직 마감 안 함</span>');
+  /* 매출과 판매완료를 가르지 않는다 (mvp_187 · 대시보드 mvp_154 와 같은 규칙) — 저장된 마감 = 매출 + 확정 전 − 환불, 비교 상대는 판매 입력의 판매완료 + 매출 */
+  const closedN=closed.length, savedTot=closed.reduce((a,x)=>a+Number(x.sales||0)+Number(x.pending||0)-Number(x.refund||0),0), inTot=Number(T.done||0)+Number(T.open||0);
+  $('d_sum').innerHTML=`<span>판매 입력 <b>${Number(T.n||0).toLocaleString('ko-KR')}건</b></span><span>매출 <b>${wonS(inTot)}</b>${Number(T.open)?` <small style="color:var(--muted)">(확정 전 ${wonS(T.open)})</small>`:''}</span>`
+    + (closedN?`<span>· 저장된 마감 <b>${wonS(savedTot)}</b>${Math.abs(savedTot-inTot)>0?` <span class="warn">판매 입력과 ${wonS(Math.abs(savedTot-inTot))} 차이</span>`:''}</span>`:'<span>· 아직 마감 안 함</span>');
   $('d_byNote').textContent = closedN ? `${d} 마감 저장됨 · 입력 ${[...new Set(closed.map(x=>x.by).filter(Boolean))].join(', ')} — 고쳐서 [마감 저장]하면 내 줄이 새 내용으로 바뀝니다` : '';
   $('d_btn').textContent = closedN ? '마감 수정 저장' : '마감 저장';
   /* DPS 대사 (전체 모드) */
@@ -5087,9 +5088,9 @@ function dailyText(){
   const d=$('d_date').value; if(!d) return '';
   let rows=[]; try{ rows=dailyRows(); }catch(e){ rows=[]; }
   const all=dScopeAll();
-  const tot=rows.reduce((a,x)=>a+Number(x.sales||0)-Number(x.refund||0),0), pend=rows.reduce((a,x)=>a+Number(x.pending||0),0);
-  const L=[`[삼성스토어 시흥] ${d} 일일 마감${all?' · 매장 전체':' · '+ME}`, `판매완료 ${won(tot)}${pend?` · 미확정 ${won(pend)}`:''}`, ''];
-  rows.forEach(x=>L.push(`- ${x.handler||'-'} | ${x.sale_kind} | 판매완료 ${won(x.sales)}${Number(x.pending)?` · 미확정 ${won(x.pending)}`:''}${Number(x.refund)?` · 환불 ${won(x.refund)}`:''}`));
+  const sales=rows.reduce((a,x)=>a+Number(x.sales||0)+Number(x.pending||0),0), ref=rows.reduce((a,x)=>a+Number(x.refund||0),0), conf=rows.reduce((a,x)=>a+Number(x.sales||0),0);
+  const L=[`[삼성스토어 시흥] ${d} 일일 마감${all?' · 매장 전체':' · '+ME}`, `매출 ${won(sales)}${ref?` · 환불 ${won(ref)}`:''}${conf&&conf<sales?` (확정 ${won(conf)})`:''}`, ''];
+  rows.forEach(x=>L.push(`- ${x.handler||'-'} | ${x.sale_kind} | 매출 ${won(Number(x.sales||0)+Number(x.pending||0))}${Number(x.refund)?` · 환불 ${won(x.refund)}`:''}`));
   const T=(D_PRE&&D_PRE.total)||{}; if(Number(T.n)) L.push('', `판매 입력 ${Number(T.n).toLocaleString('ko-KR')}건`);
   return L.join('\n');
 }
@@ -5106,7 +5107,7 @@ async function loadMonthClose(){
   let m; try{ m=await rpc('fn_store_month_close',{p_code:CODE,p_month:el.value+'-01',p_all:mScopeAll()}); }catch(e){ $('m_sum').innerHTML=`<span class="warn">${esc(e.message)}</span>`; return; }
   M_DATA=m; const T=m.total||{}, days=m.by_day||[], miss=m.missing||[];
   $('m_sub').textContent=`${el.value.replace('-','년 ')}월 · ${mScopeAll()?'매장 전체':ME}`;
-  $('m_sum').innerHTML=`<span>순매출 <b>${wonS(T.net||0)}</b></span><span>판매완료 <b>${wonS(T.sales||0)}</b></span><span>환불 <b>${wonS(T.refund||0)}</b></span><span>마감 <b>${T.days_closed||0}일</b>${miss.length?` <small style="color:var(--muted)">· 안 한 날 ${miss.length}일</small>`:''}</span>`;
+  $('m_sum').innerHTML=`<span>순매출 <b>${wonS(T.net||0)}</b></span><span>매출 <b>${wonS(T.sales||0)}</b></span><span>환불 <b>${wonS(T.refund||0)}</b></span><span>마감 <b>${T.days_closed||0}일</b>${miss.length?` <small style="color:var(--muted)">· 안 한 날 ${miss.length}일</small>`:''}</span>`;
   const md=v=>String(v).slice(5).replace('-','/');
   $('m_tbl').innerHTML = days.length ? `<thead><tr><th>날짜</th><th class="num">일시불</th><th class="num">구독</th><th class="num">직판</th><th class="num">환불</th><th class="num">순매출</th></tr></thead><tbody>`
     + days.map(x=>`<tr><td>${md(x.d)}</td><td class="num">${wonS(x.lump||0)}</td><td class="num">${wonS(x.sub||0)}</td><td class="num">${wonS(x.direct||0)}</td><td class="num">${wonS(x.refund||0)}</td><td class="num"><b>${wonS(x.net||0)}</b></td></tr>`).join('')
@@ -5117,7 +5118,7 @@ async function loadMonthClose(){
 function monthText(m, ym){
   const T=m.total||{}, days=m.by_day||[], H=m.by_handler||[], miss=m.missing||[]; const md=v=>String(v).slice(5).replace('-','/');
   const L=[`[삼성스토어 시흥] ${ym.replace('-','년 ')}월 월 마감${mScopeAll()?' · 매장 전체':' · '+ME}`,
-    `순매출 ${won(T.net||0)} · 판매완료 ${won(T.sales||0)} · 환불 ${won(T.refund||0)} · 마감 ${T.days_closed||0}일`, ''];
+    `순매출 ${won(T.net||0)} · 매출 ${won(T.sales||0)} · 환불 ${won(T.refund||0)} · 마감 ${T.days_closed||0}일`, ''];
   days.forEach(x=>L.push(`■ ${md(x.d)} — 순매출 ${won(x.net||0)} (일시불 ${won(x.lump||0)} · 구독 ${won(x.sub||0)} · 직판 ${won(x.direct||0)}${Number(x.refund)?` · 환불 ${won(x.refund)}`:''})`));
   if(mScopeAll() && H.length){ L.push('', '프로별'); H.forEach(x=>L.push(`  ${x.h}: ${won(x.net||0)} (${x.days}일)`)); }
   if(miss.length) L.push('', `마감 안 한 날: ${miss.map(md).join(', ')}`);
@@ -5127,7 +5128,7 @@ async function copyMonthText(){ const t=$('m_text').value; if(!t) return toast('
   try{ await navigator.clipboard.writeText(t); toast('복사됨 — 보고에 붙여 넣으세요','ok'); }catch(e){ $('m_text').select(); document.execCommand('copy'); toast('복사됨','ok'); } }
 document.addEventListener('click', e=>{ const b=e.target.closest('#m_scope button'); if(!b) return; $('m_scope').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); loadMonthClose(); });
 /* DPS 합계 대사 */
-function dpsDiff(){ const sc=(D_PRE&&D_PRE.store_closed)||[]; const f=k=>Number((sc.find(x=>x.sale_kind===k)||{}).sales||0)-Number((sc.find(x=>x.sale_kind===k)||{}).refund||0);
+function dpsDiff(){ const sc=(D_PRE&&D_PRE.store_closed)||[]; const f=k=>{ const r=sc.find(x=>x.sale_kind===k)||{}; return Number(r.sales||0)+Number(r.pending||0)-Number(r.refund||0); };
   [['일시불','d_cash'],['구독','d_sub']].forEach(([k,id])=>{ const dps=num($(id+'_s'))-num($(id+'_r')), mine=f(k); const el=$(id+'_diff');
     if(!num($(id+'_s'))&&!num($(id+'_r'))){ el.textContent=`마감 합계 ${wonS(mine)}`; el.style.color=''; return; }
     const diff=dps-mine; el.textContent = diff===0?`마감 합계 ${wonS(mine)} · 일치`:`마감 합계 ${wonS(mine)} · 차이 ${diff>0?'+':''}${wonS(diff)}`; el.style.color = diff===0?'var(--ok)':'var(--warn)'; }); }
