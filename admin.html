@@ -1562,9 +1562,9 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
             <div style="grid-column:span 2"><label>캠페인명 <span style="color:var(--bad)">필수</span>
               <span class="note">감사로그·발송 이력·UTM 에 같은 이름이 쓰입니다</span></label>
-              <div style="display:flex;gap:6px"><input class="in" id="crmReason" list="crmCampList" placeholder="예: 2609_chuseok (UTM 관리의 캠페인 코드)" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_reason">
+              <div style="display:flex;gap:6px"><input class="in" id="crmReason" list="crmCampList" placeholder="예: 2609_chuseok (발송 링크 관리의 캠페인 코드)" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_reason">
               <button class="btn sm" style="white-space:nowrap" onclick="utmQuick()" title="캠페인명의 코드로 단축 링크를 만듭니다 · 캠페인이 아직 없으면 먼저 등록합니다">링크 만들기</button>
-              <button class="btn sm ghost" style="white-space:nowrap" onclick="show('utm')" title="캠페인·링크·클릭 전체 보기">UTM 관리</button></div></div>
+              <button class="btn sm ghost" style="white-space:nowrap" onclick="show('utm')" title="캠페인·링크·클릭 전체 보기">발송 링크 관리</button></div></div>
             <div><label>키워드</label><input class="in" id="crmQ" placeholder="이름 · 최근상품 · 관심상품" onkeydown="if(event.key==='Enter')loadTargets(0)"></div>
             <div><label>유입·구매 채널</label><select class="in" id="crmCh"><option value="">전체</option></select></div>
             <div><label>구매 카테고리</label><select class="in" id="crmCat"><option value="">전체</option></select></div>
@@ -1660,7 +1660,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         </div>
       </div>
 
-      <!-- ═══ UTM 관리 — 캠페인 · 단축 링크 · 클릭 (mvp_152) ═══ -->
+      <!-- ═══ 발송 링크 관리 — 캠페인 · 단축 링크 · 클릭 (mvp_152) ═══ -->
       <div class="view hidden" id="v-utm">
         <div class="card">
           <h3>캠페인 <span>한 번의 발송 = 캠페인 하나 · 코드가 utm_campaign 이면서 발송 이력·접근 기록의 이름이 됩니다</span></h3>
@@ -4268,7 +4268,7 @@ function renderUnderConstruction(v){
       <div class="uc-tape"></div>
     </div>`;
 }
-const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'UTM 관리',cdash:'상담 대시보드'};
+const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드'};
 let VIEW='home';
 function toggleNav(force){ const on = force===undefined ? !document.body.classList.contains('nav-open') : !!force; document.body.classList.toggle('nav-open', on); }
 /* 뒤로가기 = 이전 화면. 화면을 바꿀 때마다 히스토리에 한 칸 쌓고, popstate 로 되돌아온다.
@@ -5095,7 +5095,7 @@ function empty(){ return '<div class="note" style="padding:36px 0;text-align:cen
 let oPage=0, oLast=0, oRows=[];
 const O_CH_NAMES=['P몰','S몰','AT몰','시흥','B2B','E스토어','가전시장','쿠팡','11번가','지마켓','옥션','SSG','현대홈쇼핑','쿠팡이츠','SK스토아','토스쇼핑','롯데온','카카오-관악','카카오-시흥','한퓨어','통신판매(VMS)','매장(시흥)','매장구독(시흥)','직판','렌탈'];
 let O_CH_FILLED=false;
-let O_CAMP=null;   /* UTM 관리 [구매] 에서 넘어온 캠페인 — 수신자의 발송 뒤 주문만 (mvp_174) */
+let O_CAMP=null;   /* 발송 링크 관리 [구매] 에서 넘어온 캠페인 — 수신자의 발송 뒤 주문만 (mvp_174) */
 function oCampRender(){ const el=$('oCamp'); if(!el) return; el.hidden=!O_CAMP;
   el.innerHTML=O_CAMP?`캠페인 <span class="mono">${esc(O_CAMP.code)}</span> ${esc(O_CAMP.name||'')} 수신자의 발송 뒤 주문<button type="button" title="캠페인 조건 빼기" onclick="oCampClear()">✕</button>`:''; }
 function oCampClear(){ O_CAMP=null; oCampRender(); loadOrders(0); }
@@ -5454,7 +5454,7 @@ async function loadSegments(){
   try{ SEGS=await rpc('fn_crm_segments'); }catch(e){ SEGS=[]; }
   if(!Array.isArray(SEGS)) SEGS=[];
   segRender();
-  /* UTM 관리 [대상 조건] 에서 넘어온 경우 — 목록이 채워진 뒤에 그 조건을 건다 */
+  /* 발송 링크 관리 [대상 조건] 에서 넘어온 경우 — 목록이 채워진 뒤에 그 조건을 건다 */
   if(PENDING_SEG){ const c=PENDING_SEG; PENDING_SEG=null; if(SEGS.some(g=>g.code===c)) applySegment(c); }
 }
 function segToggle(open){
@@ -5743,7 +5743,7 @@ document.addEventListener('click', e=>{ const sp=e.target.closest('#cd_span butt
   if(b.parentNode.id==='cd_scope'){ CD_SCOPE=b.dataset.v; try{ localStorage.setItem('dc_cd_scope', CD_SCOPE); }catch(e2){} }
   loadCdash(); });
 
-/* ═══════════════ UTM 관리 — 캠페인 · 단축 링크 · 클릭 (mvp_152) ═══════════════
+/* ═══════════════ 발송 링크 관리 — 캠페인 · 단축 링크 · 클릭 (mvp_152) ═══════════════
    캠페인 코드 하나가 utm_campaign · 발송 이력(send_log.campaign) · 접근 기록(access_log.reason) 의 이름을 겸한다.
    단축 링크 {short_base}슬러그 (앞부분은 core.app_setting short_base · fn_utm_setting_save 로 바꿈) 는 착지 페이지(/r/)가 fn_link_go 로 클릭을 적고 원래 주소로 보낸다. */
 let UTM=null, UTM_CAMPS=null, PENDING_SEG=null;
@@ -5879,7 +5879,7 @@ async function utmLinkNew(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code);
 async function utmLinkToggle(slug){ try{ await rpc('fn_utm_link_del',{p_slug:slug}); rpcClear(); await loadUtm(); }catch(e){ toast(e.message,'bad'); } }
 function utmCp(t){ if(!t) return; navigator.clipboard.writeText(t).then(()=>toast('복사했습니다','ok'),()=>toast('복사하지 못했습니다','bad')); }
 async function utmCampsReload(){ UTM_CAMPS=null; return utmCampsEnsure(); }
-/* 발송 대상 추출의 캠페인명 칸 옆 목록 — UTM 관리의 코드를 고를 수 있게 */
+/* 발송 대상 추출의 캠페인명 칸 옆 목록 — 발송 링크 관리의 코드를 고를 수 있게 */
 function utmFillList(){ let dl=$('crmCampList'); if(!dl){ dl=document.createElement('datalist'); dl.id='crmCampList'; document.body.appendChild(dl); }
   dl.innerHTML=(UTM_CAMPS||[]).filter(c=>c.active!==false).map(c=>`<option value="${esc(c.code)}">${esc(c.name)}</option>`).join(''); }
 /* 발송 대상 추출 [링크 만들기] — 캠페인명에서 코드를 찾아 그 캠페인의 단축 링크를 만든다.
@@ -6178,7 +6178,7 @@ function renderSendOpts(){
   const dates=UP.data.map(r=>excelDate(H(r,'발송일','발송일시','일자'))).filter(Boolean).sort();
   const rows=mapRows(UP); const fail=rows.filter(x=>x.status==='failed').length;
   $('upOpts').innerHTML=`<div style="grid-column:1/-1">
-    <label>캠페인 코드 <span style="color:var(--bad)">필수</span> — <b>UTM 관리의 코드 그대로</b> (예: 2609_toner) · 같은 코드여야 발송·클릭·구매가 한 줄로 이어집니다</label>
+    <label>캠페인 코드 <span style="color:var(--bad)">필수</span> — <b>발송 링크 관리의 코드 그대로</b> (예: 2609_toner) · 같은 코드여야 발송·클릭·구매가 한 줄로 이어집니다</label>
     <input class="in mono" id="upCamp" list="campList" placeholder="예: 2609_chuseok — 오른쪽 ▾ 에서 고르기" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_code" oninput="sendOptsChanged()">${utmCampListHtml()}
     <label style="margin-top:8px">발송일 <span class="note">줄마다 발송일이 없을 때 쓸 날짜</span></label>
     <input class="in" type="date" id="upSentAt" value="${dates[0]||''}">

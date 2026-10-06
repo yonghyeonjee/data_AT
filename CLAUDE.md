@@ -169,6 +169,7 @@ end $outer$;
 ## 지금 상태 (2026-10-06 · v168 — test 폴더에만 있던 것(UI 규칙 v161 · 진행 카드 v164·v165 · UTM 목록 v165)을 전부 본 파일에 올림: store.html · admin.html · visit/index.html · dash/index.html)
 
 ### 되는 것
+- **'UTM 관리' → '발송 링크 관리' (v169 · 2026-10-06)** — "utm 관리 이름을 발송 링크 관리로 바꿔줘 · 시스템에서도". `core.menu_item 'utm'` label 을 DB 에서 바꿨고(메뉴는 DB 에서 읽으니 바로 반영), `admin.html`·`admin/test` 의 화면 글자(제목 `TITLES.utm`·발송 대상 추출 옆 버튼·안내문) 9곳도 같이. 코드 이름(`utm`·`loadUtm`·`UTM_*`)과 GA4 의 utm_source·utm_campaign 값은 그대로다. 테스트 `utm.mjs` U1·`sendlog.mjs` T1 이 새 이름을 본다(utm 16 · sendlog 43 · utmlist 17 · cdash 17 · ovf_admin ✓).
 - **반차는 오전·오후 (mvp_185 · v166 · 2026-10-06 · store.html·store/test 둘 다)** — "반차 오후인지 오전인지 결정할 수 있게 · 오전 반차는 오후 2시까지 없는 거고 오후 반차는 오후 2시부터 없는 거야" → "아 오후 3시로 해줘".
   `core.staff_leave.half`('am'|'pm', 반차일 때만 · CHECK). 옛 반차 10건은 am. **배정·잔디 알림 제외는 전부 `core.f_staff_on_leave` 한 곳**(`f_assign_next` 순번 · `fn_submit_inquiry` 휴가 재배정 · 목록 '휴가 중') — 오전 = KST 15:00 전까지 빠짐 · 오후 = 15:00 부터 빠짐(처음 요청은 2시였다가 3시로 바꿨다 · 전엔 반차 = 15:00 전까지 하나).
   `fn_store_leave_save` 에 `p_half`(반차인데 비면 am, 다른 종류면 버림). **옛 7인자 판은 `fn_store_leave_save_old184` 로 이름만 바꿔 비켰다**(MCP DROP 60초 — SQL 편집기에서 drop 할 것). `fn_store_leave_list`·`fn_leave_feed` 가 `half` 를 주고, ICS 는 오전 09:00~15:00 · 오후 15:00~20:00 · 제목 '이름 · 오전 반차'.
