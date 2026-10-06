@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Datacenter · 매장</title>
 <link rel="icon" href="/favicon.ico?v=3">
 <link rel="preconnect" href="https://wdahskrcpjooqhwwxjiu.supabase.co" crossorigin>
@@ -13,7 +13,7 @@
 <style>
 :root{
   --ground:#F3F4F7; --surface:#FFFFFF; --surface-2:#F7F8FA; --line:#E4E7EE; --line-2:#CDD3DE;
-  --ink:#141820; --ink-2:#2E3542; --muted:#646D7C; --faint:#98A1B0;
+  --ink:#141820; --ink-2:#2E3542; --muted:#646D7C; --faint:#6B7484;   /* 2026-10-03: 장식용이었지만 실제 글자(힌트·날짜·빈 목록)에 쓰여 4.7:1 로 올림 (전엔 2.6:1) */
   --accent:#0F766E; --navy:#0F766E; --navy-ink:#0B5A55; --accent-ink:#FFFFFF; --accent-soft:#E3F3F1;   /* 담당자 화면은 청록 — 관리자(남색)와 한눈에 구분 */
   --ok:#0F7B6C; --ok-soft:#E3F3F0; --warn:#8A5D00; --warn-soft:#FBF1DC; --bad:#B3261E; --bad-soft:#FBE9E7;
   --sub:#7A3EB8; --sub-soft:#F0E8F8;
@@ -23,7 +23,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;background:var(--ground);color:var(--ink);font-size:calc(15px * var(--font-scale));line-height:1.5;-webkit-font-smoothing:antialiased}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgun Gothic",sans-serif;background:var(--ground);color:var(--ink);font-size:calc(15px * var(--font-scale));line-height:1.5;-webkit-font-smoothing:antialiased;word-break:keep-all}
 button,input,select,textarea{font:inherit;color:inherit}
 .hidden{display:none!important}
 
@@ -274,6 +274,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .seg button.on.open{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
 .seg button.on.done{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
 .item .act{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.item .act .cxw{display:flex;justify-content:flex-end;width:100%;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}   /* [취소·환불] 은 [판매완료] 와 떨어뜨린다 (파괴적 버튼 이격) */
 .mini{padding:5px 9px;border-radius:7px;border:1.5px solid var(--line-2);background:#fff;font-size:calc(11.5px * var(--font-scale));font-weight:700;cursor:pointer;color:var(--ink-2);white-space:nowrap}
 .mini.ok{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)} .mini.warn{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
 .mini.bad{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
@@ -984,6 +985,8 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .bt-act{display:flex;gap:10px;align-items:center;margin-top:10px} .bt-act .btn{margin-top:0} .bt-act .btn.ghost.sm{padding:12px 14px;min-height:44px;white-space:nowrap}
 .bt-act .gsum{margin-left:auto;font-weight:700;color:var(--ink-2);font-size:calc(14px * var(--font-scale));white-space:nowrap} .bt-act .btn:not(.ghost){width:auto;padding:13px 22px;min-height:44px}
 
+/* 키보드 포커스 표시 — outline:none 을 둔 칸도 Tab 으로 가면 보이게 (2026-10-03) */
+.btn:focus-visible, .mini:focus-visible, .in:focus-visible, button:focus-visible, a:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--accent) !important;outline-offset:2px}
 /* ═══ 모바일 보정 — 스타일시트 맨 끝: 앞의 규칙과 특이도가 같아도 여기가 이긴다 ═══ */
 @media (max-width:640px){
   .tools-toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 14px;margin:0 0 10px;border:1.5px solid var(--line);border-radius:10px;background:#F7F8FB;color:var(--ink);font:inherit;font-size:calc(13px * var(--font-scale));font-weight:700;cursor:pointer;text-align:left}
@@ -999,6 +1002,17 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 @media(max-width:999px){
   /* 쪽 번호 — 데스크톱은 30~38px 이라 폰에서는 손가락 크기(40px)로 올린다 (공용 pgBar 를 쓰는 목록 전부) */
   .pager .btn{min-width:40px;min-height:40px;padding:6px 8px} .pager .pgn{min-width:40px} .pager select.pgper{min-height:40px;margin:0}
+  /* 2026-10-03 UI 규칙 — 입력칸은 16px 이상(iOS 가 포커스 때 확대하지 않게 · 핀치 줌은 다시 허용) · '사용 방법' 접기 줄 40px · 내 상담 줄 체크박스 40px 터치 */
+  /* 기본 .in 은 원래 16px×배율이라 손대지 않는다 — 작은 칸만 자기 배율을 유지한 채 16px 아래로 못 내려가게 (선택자는 원래 규칙과 같은 특이도) */
+  textarea.in{font-size:max(16px, calc(15px * var(--font-scale)))}
+  .oc-row .in, .gtbl .gr .in{font-size:max(16px, calc(14px * var(--font-scale)))}
+  .drow .in{font-size:max(16px, calc(13.5px * var(--font-scale)))}
+  .ocpick .r .in, .wiz .in{font-size:max(16px, calc(13px * var(--font-scale)))}
+  .wiz select.in.cand, .wiz .pick .in, .copybox{font-size:max(16px, calc(12.5px * var(--font-scale)))}
+  .intro summary{min-height:40px}
+  .crow > input[type=checkbox]{appearance:none;-webkit-appearance:none;width:40px;height:40px;margin:-9px -6px -9px -10px;border:0;background:transparent;display:grid;place-items:center;cursor:pointer}
+  .crow > input[type=checkbox]::before{content:'';width:20px;height:20px;border:2px solid var(--line-2);border-radius:5px;background:#fff}
+  .crow > input[type=checkbox]:checked::before{background:var(--accent);border-color:var(--accent);box-shadow:inset 0 0 0 3px #fff}
   /* 서랍 : --side-w 는 넓은 화면의 고정 메뉴용(34vw). 폰에서 그대로 쓰면 122px 이 돼 글자가 전부 두 줄로 꺾인다 */
   .side{width:min(86vw, 340px)}
   .side .it,.side .lk{min-height:44px}
@@ -1055,6 +1069,9 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 .rep-ctl .row2>*{min-width:0}
 @media (max-width:999px){
   .seg.cres{flex-wrap:wrap} .seg.cres button{flex:1 1 30%}
+  /* 2026-10-03: 세그 버튼 글자는 버튼 안에서 접지 않는다 — 안 들어가면 버튼째로 다음 줄 (360px·글자 1.3 에서 '연락 전' 이 두 줄로 섰다). 44px 하한(.seg.sm)보다 뒤에 둬야 이긴다 */
+  .seg button{white-space:nowrap}   /* 폭은 44px 하한 그대로 — flex-basis auto 라 글자 폭(max-content)으로 줄을 잡아 줄어들지 않는다 */
+  .seg.cres button{min-width:max-content}   /* 상태 세그만 basis 30% 라 글자보다 좁아질 수 있어 글자 폭을 하한으로 */
   .gtbl{padding:4px 8px;overflow-x:hidden} .gtbl .gh{display:none} .gview .hint{display:none}
   .gtbl .gr{display:grid;grid-template-columns:1fr 1fr;min-width:0;padding:10px 0 8px;gap:8px 6px}
   .gtbl .gc{width:auto} .gtbl .gc small{display:block;font-size:calc(11.5px * var(--font-scale));color:var(--muted);font-weight:700;margin:0 0 3px 2px} .gtbl .gh .gc.req small,.gtbl .gr .gc.req small{color:var(--bad,#C62828)}
@@ -1409,8 +1426,8 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="linkchip hidden" id="s_link"></div>
       <div class="qpick hidden" id="s_qpick"></div>
       <div class="grid2">
-        <div class="f"><label>판매일 <span class="req">*</span></label><input class="in" type="date" id="s_date"></div>
-        <div class="f"><label>담당 프로님 <span class="hint" id="s_handlerHint"></span></label><select class="in" id="s_handler"></select></div>
+        <div class="f"><label>판매일 <span class="req">*</span></label><input class="in" type="date" id="s_date" aria-label="판매일"></div>
+        <div class="f"><label>담당 프로님 <span class="hint" id="s_handlerHint"></span></label><select class="in" id="s_handler" aria-label="담당 프로님"></select></div>
       </div>
       <div class="grid2">
         <div class="f"><label>구분 <span class="req">*</span></label>
@@ -1428,7 +1445,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         </div>
       </div>
       <div class="f"><label>기존 고객 찾기 <span class="hint">이름 또는 번호 뒷자리 4자리 이상</span></label>
-        <div class="csearch"><input class="in" id="s_csq" placeholder="홍길동 / 1234" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();custSearch('s')}"><button type="button" class="go" onclick="custSearch('s')">⌕</button></div>
+        <div class="csearch"><input class="in" id="s_csq" placeholder="홍길동 / 1234" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();custSearch('s')}"><button type="button" class="go" onclick="custSearch('s')" aria-label="찾기">⌕</button></div>
         <div class="cres hidden" id="s_cres"></div>
       </div>
       <div class="linked hidden" id="s_linked"><span id="s_linkedTxt"></span><button type="button" onclick="custClear('s')">해제 ×</button></div>
@@ -1440,7 +1457,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="f"><label>상품명 <span class="req">*</span><span class="hint">DPS 화면 그대로</span></label><input class="in" id="s_product" placeholder="예: 비스포크 AI 콤보 세탁건조기" autocomplete="off" list="productList"><datalist id="productList"></datalist></div>
       <div class="grid3">
         <div class="f"><label>모델코드</label><input class="in" id="s_model" placeholder="WD90F" style="text-transform:uppercase" autocomplete="off"></div>
-        <div class="f"><label>수량</label><input class="in num" type="number" id="s_qty" value="1" min="1"></div>
+        <div class="f"><label>수량</label><input class="in num" type="number" id="s_qty" aria-label="수량" value="1" min="1"></div>
         <div class="f"><label>판매가 <span class="req">*</span></label><input class="in num" inputmode="numeric" id="s_amount" placeholder="0" oninput="comma(this)"></div>
       </div>
       <div id="s_items"></div>
@@ -1448,7 +1465,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="total"><span style="color:var(--muted);font-size:calc(13px * var(--font-scale))">합계 (VAT 포함) <small id="s_totalN" style="color:var(--faint)"></small></span><b id="s_total">0원</b></div>
       <div class="grid2">
         <div class="f"><label>결제</label>
-          <select class="in" id="s_pay"><option value="">선택 안 함</option><option>삼성카드</option><option>타사카드</option><option>현금</option><option>구독(월납)</option><option>기타</option></select></div>
+          <select class="in" id="s_pay" aria-label="결제"><option value="">선택 안 함</option><option>삼성카드</option><option>타사카드</option><option>현금</option><option>구독(월납)</option><option>기타</option></select></div>
         <div class="f"><label>상담번호 <span class="hint">상담에서 넘어온 건이면 자동으로 채워집니다</span></label><input class="in" id="s_consult" placeholder="SC260902-000001" autocomplete="off"></div>
       </div>
       <div class="nextbox">
@@ -1465,7 +1482,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="gift-links" id="s_gift_links"></div>
       </div>
       <div class="f">
-        <div class="toggle on" id="s_consent" onclick="this.classList.toggle('on')">
+        <div class="toggle" id="s_consent" onclick="this.classList.toggle('on')">
           <div><b>마케팅 수신 동의</b><small>고객이 동의한 경우에만 켜두세요</small></div><div class="sw"></div>
         </div>
       </div>
@@ -1556,15 +1573,15 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </div>
       <div class="fgrp a"><div class="fgrp-t">언제 · 누가</div>
       <div class="grid2">
-        <div class="f"><label>상담일 <span class="req">*</span></label><input class="in" type="date" id="c_date"></div>
-        <div class="f"><label>상담사 <span class="hint" id="c_handlerHint"></span></label><select class="in" id="c_handler"></select></div>
+        <div class="f"><label>상담일 <span class="req">*</span></label><input class="in" type="date" id="c_date" aria-label="상담일"></div>
+        <div class="f"><label>상담사 <span class="hint" id="c_handlerHint"></span></label><select class="in" id="c_handler" aria-label="상담사"></select></div>
       </div>
       </div>
       <div class="fgrp b"><div class="fgrp-t">고객</div>
       <button type="button" class="foldbtn" id="c_findBtn" aria-expanded="false" aria-controls="c_findBox" onclick="cFindToggle()">⌕ 기존 고객 찾기 <i>펼치기</i></button>
       <div class="foldbox" id="c_findBox">
       <div class="f"><label>기존 고객 찾기 <span class="hint">이름 또는 번호 뒷자리 4자리 이상</span></label>
-        <div class="csearch"><input class="in" id="c_csq" placeholder="홍길동 / 1234" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();custSearch('c')}"><button type="button" class="go" onclick="custSearch('c')">⌕</button></div>
+        <div class="csearch"><input class="in" id="c_csq" placeholder="홍길동 / 1234" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();custSearch('c')}"><button type="button" class="go" onclick="custSearch('c')" aria-label="찾기">⌕</button></div>
         <div class="cres hidden" id="c_cres"></div>
       </div>
       </div>
@@ -1586,7 +1603,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="tyx hidden" id="c_tyx"></div>
         <div class="xd" id="c_xd"><div id="c_xd_rows"></div><button type="button" class="mini" id="c_xd_add" onclick="xdAdd()">＋ 날짜 추가</button> <span class="hint">필요한 날짜가 더 있으면 (예: 예식장 계약일) — 진행 기록에 글로 남습니다</span></div></div>
       <div class="f"><label>유입경로 <span class="req">*</span> <span class="hint">고른 문의 채널의 경로가 위에 옵니다</span></label>
-          <select class="in" id="c_route"><option value="">선택</option></select></div>
+          <select class="in" id="c_route" aria-label="유입경로"><option value="">선택</option></select></div>
       </div>
       <div class="fgrp b"><div class="fgrp-t">무엇에 관심이 있나</div>
       <div class="f"><label>관심 품목 <span class="req">*</span></label>
@@ -1681,7 +1698,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="card">
       <h2>일 마감 <span id="d_me"></span></h2>
       <div class="daterow">
-        <input class="in" type="date" id="d_date" onchange="loadDailyDay()">
+        <input class="in" type="date" id="d_date" aria-label="마감 날짜" onchange="loadDailyDay()">
         <button class="btn ghost sm" onclick="setDaily(-1)">어제</button>
         <button class="btn ghost sm" onclick="setDaily(0)">오늘</button>
         <div class="seg sm" id="d_scope" style="margin-left:auto"><button type="button" class="on" data-v="mine">본인</button><button type="button" data-v="all">전체</button></div>
@@ -1724,7 +1741,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </div>
       <div class="d-sum" id="m_sum"></div>
       <div class="tw"><table class="slt" id="m_tbl"></table></div>
-      <textarea class="copybox" id="m_text" readonly style="margin-top:10px;min-height:120px"></textarea>
+      <textarea class="copybox" id="m_text" aria-label="월 보고 텍스트" readonly style="margin-top:10px;min-height:120px"></textarea>
       <div class="cbar" style="margin-top:8px"><button class="btn sm" onclick="copyMonthText()">월 보고 텍스트 복사</button></div>
     </div>
   </section>
@@ -1741,13 +1758,13 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="card" id="moveCard">
       <h2>입고 · 출고 <span id="sk_me"></span></h2>
       <div class="daterow">
-        <select class="in" id="sk_wh" onchange="whChanged()"></select>
+        <select class="in" id="sk_wh" aria-label="창고" onchange="whChanged()"></select>
         <input class="in" id="mv_q" placeholder="품목코드 · 모델 · 상품명" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();mvFind();}" oninput="mvReset()">
         <button class="btn ghost sm" onclick="mvFind()">찾기</button>
       </div>
       <div id="mv_pick"></div>
       <div class="mv-act">
-        <div class="f"><label class="lbl">수량</label><input class="in num" type="number" id="mv_qty" value="1" min="1"></div>
+        <div class="f"><label class="lbl">수량</label><input class="in num" type="number" id="mv_qty" aria-label="수량" value="1" min="1"></div>
         <button class="btn in-btn" onclick="mvApply('in')">＋ 입고</button>
         <button class="btn out-btn" onclick="mvApply('out')">− 출고</button>
       </div>
@@ -1755,7 +1772,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <summary style="font-size:calc(13px * var(--font-scale));font-weight:600;color:var(--muted);cursor:pointer">여러 품목 한 번에 · 엑셀 붙여넣기</summary>
         <p class="note-in">엑셀에서 <b>품목코드(또는 품목명) · 수량</b> 두 열을 복사해 붙여넣고 [확인]을 누르면 품목을 찾아 보여줍니다. 맞으면 [반영]. 세트 품목은 구성품으로 나뉘어 들어갑니다.</p>
         <div class="daterow">
-          <select class="in" id="bm_kind"><option value="out">출고 (−)</option><option value="in">입고 (+)</option></select>
+          <select class="in" id="bm_kind" aria-label="입출고 구분"><option value="out">출고 (−)</option><option value="in">입고 (+)</option></select>
           <button class="btn ghost sm" onclick="bmCheck()">확인</button>
         </div>
         <textarea class="in" id="bm_text" style="width:100%;height:96px;font-family:ui-monospace,monospace;font-size:calc(12px * var(--font-scale));resize:vertical" placeholder="MLT-D111S/TND&#9;2&#10;CLT-00316&#9;1"></textarea>
@@ -1774,7 +1791,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button class="btn ghost sm" onclick="loadStk(0)">조회</button>
       </div>
       <div class="daterow" style="margin-top:6px">
-        <select class="in" id="sk_cat" onchange="loadStk(0)"><option value="">전체 분류</option></select>
+        <select class="in" id="sk_cat" aria-label="분류" onchange="loadStk(0)"><option value="">전체 분류</option></select>
         <label class="sk-tog"><input type="checkbox" id="sk_has" checked onchange="loadStk(0)"> 재고 있는 것만</label>
       </div>
       <div class="oc-sum"><div><div class="k">품목</div><div class="v" id="sk_cnt">-</div></div><div><div class="k">합계 수량</div><div class="v" id="sk_qty">-</div></div></div>
@@ -2101,7 +2118,7 @@ function renderSales(s){
   $('todaySum').textContent = s.today_sales.length ? won(sum) : '';
   /* 취소·환불은 내 건이거나 점장님·대표님만 */
   const canCx = x => x.mine || (STATUS && STATUS.is_mgr);
-  const cxBtn = x => canCx(x) ? `<button class="mini bad" onclick="cancelOpen(${x.id})">취소·환불</button>` : '';
+  const cxBtn = x => canCx(x) ? `<span class="cxw"><button class="mini bad" onclick="cancelOpen(${x.id})">취소·환불</button></span>` : '';   /* 파괴적 버튼은 떼어 둔다 (.cxw) */
   /* 개발·온라인사업부만: 테스트로 넣은 판매를 집계에서 뺀다 (관리자 주문·판매·매출 흐름 › 테스트 카드에서 해제) */
   const tsBtn = x => /개발|온라인/.test((STATUS&&STATUS.dept)||'') ? `<button class="mini" style="opacity:.8" onclick="saleTest(${x.id},'${esc(x.product||'')}')" title="테스트로 넣은 판매 — 확정 대기·현황·일 마감에서 뺍니다">테스트로</button>` : '';
   const stageBtn = x => (x.stage==='취소'||x.stage==='환불')
@@ -2663,10 +2680,10 @@ function wizMount(host, cfg){
       <div class="wiz-seg"><button class="${S.src==='auto'?'on':''}" data-s="auto">자동 수집된 주문</button><button class="${S.src==='file'?'on':''}" data-s="file">파일 업로드</button></div>
       ${S.src==='auto'?`
       <div class="wiz-form">
-        <div><label>시작일 <i>*</i></label><input class="in" type="date" id="wzFrom" value="${esc(S.from||ago(7))}"></div>
+        <div><label>시작일 <i>*</i></label><input class="in" type="date" id="wzFrom" aria-label="시작일" value="${esc(S.from||ago(7))}"></div>
         <div><label>종료일 <i>*</i></label><input class="in" type="date" id="wzTo" value="${esc(S.to||today())}"></div>
-        <div><label>날짜 기준</label><select class="in" id="wzBasis"><option value="ship" ${!S.basis||S.basis==='ship'?'selected':''}>발송일 (송장 등록)</option><option value="order" ${S.basis==='order'?'selected':''}>주문일</option><option value="collect" ${S.basis==='collect'?'selected':''}>주문 수집일</option></select></div>
-        <div><label>채널</label><select class="in" id="wzCh"><option value="">전체 채널</option>${(S.channels||[]).map(c=>`<option ${S.ch===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+        <div><label>날짜 기준</label><select class="in" id="wzBasis" aria-label="날짜 기준"><option value="ship" ${!S.basis||S.basis==='ship'?'selected':''}>발송일 (송장 등록)</option><option value="order" ${S.basis==='order'?'selected':''}>주문일</option><option value="collect" ${S.basis==='collect'?'selected':''}>주문 수집일</option></select></div>
+        <div><label>채널</label><select class="in" id="wzCh" aria-label="채널"><option value="">전체 채널</option>${(S.channels||[]).map(c=>`<option ${S.ch===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
         <div><label>검색</label><input class="in" id="wzQ" value="${esc(S.q||'')}" placeholder="주문번호 · 구매자 · 상품 · 옵션"></div>
         <div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;margin:0 0 9px;font-weight:500;color:#2E3542;font-size:calc(12.5px * var(--font-scale))"><input type="checkbox" id="wzDone" ${S.incDone?'checked':''}> 이미 만든 주문도 보기</label></div>
         <div style="display:flex;align-items:flex-end"><button class="btn" id="wzLoad" style="width:100%">불러오기</button></div>
