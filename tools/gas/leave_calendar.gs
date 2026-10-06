@@ -11,7 +11,8 @@
  *  ④ installLeaveSyncTrigger 를 1회 실행 → 15분마다 자동 동기화
  *
  * 캘린더 일정은 태그 dc_leave_id 로 식별한다. 태그 없는 일정(손으로 넣은 것)은 건드리지 않는다.
- * 반차는 종일이 아니라 그날 09:00~15:00 일정으로 넣는다 (기간이면 하루씩, 태그 "id:YYYY-MM-DD").
+ * 반차는 종일이 아니라 그날 시간 일정으로 넣는다 — 오전 반차 09:00~14:00 · 오후 반차 14:00~21:00
+ * (기간이면 하루씩, 태그 "id:YYYY-MM-DD"). half 가 없는 옛 반차는 오전으로 본다.
  ***********************************************************************/
 var CAL_ID = 'c3e549542f1c7e457d0caaebbfb5d68584c9ea538e3dac7e990f16197c8d44f3@group.calendar.google.com';
 var DC_URL  = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
@@ -35,9 +36,10 @@ function ymd_(s) { var p = String(s).split('-'); return new Date(Number(p[0]), N
 function addDays_(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function titleOf_(r) {
   if (r.kind === '매장휴무') return '매장휴무' + (r.note ? ' · ' + r.note : '');
+  if (r.kind === '반차') return r.name + ' · ' + (r.half === 'pm' ? '오후 반차' : '오전 반차');
   return r.name + ' · ' + r.kind;
 }
-var HALF_START = 9, HALF_END = 15;   // 반차 = 09:00 ~ 15:00
+var HALF_AM = [9, 14], HALF_PM = [14, 21];   // 오전 반차 09:00~14:00 · 오후 반차 14:00~21:00
 function at_(d, h) { var x = new Date(d); x.setHours(h, 0, 0, 0); return x; }
 function ymdStr_(d) { return Utilities.formatDate(d, 'Asia/Seoul', 'yyyy-MM-dd'); }
 function descOf_(r) { return [r.note ? '메모: ' + r.note : '', r.by ? '입력: ' + r.by : '', '데이터센터 휴가 #' + r.id].filter(String).join('\n'); }
@@ -52,9 +54,10 @@ function syncLeaveToCalendar() {
   var made = 0, changed = 0, removed = 0;
   rows.forEach(function (r) {
     var title = titleOf_(r), desc = descOf_(r);
-    if (r.kind === '반차') {                                    // 하루씩 09:00~15:00
+    if (r.kind === '반차') {                                    // 하루씩 · 오전/오후
+      var hh = r.half === 'pm' ? HALF_PM : HALF_AM;
       for (var d = ymd_(r.from); d <= ymd_(r.to); d = addDays_(d, 1)) {
-        var key = r.id + ':' + ymdStr_(d), s = at_(d, HALF_START), e = at_(d, HALF_END), hv = existing[key];
+        var key = r.id + ':' + ymdStr_(d), s = at_(d, hh[0]), e = at_(d, hh[1]), hv = existing[key];
         if (hv) {
           var hsame = hv.getTitle() === title && hv.getDescription() === desc && !hv.isAllDayEvent()
                    && hv.getStartTime().getTime() === s.getTime() && hv.getEndTime().getTime() === e.getTime();

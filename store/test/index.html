@@ -381,6 +381,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
    반만 칠하는 그라데이션은 흰 글자가 밝은 쪽에서 안 읽혀 접었다(대비 4.5:1 규칙). */
 .lvchip{padding-left:3px}
 .lvchip.k-half{background:var(--c);box-shadow:inset 5px 0 0 #F2B01E;padding-left:9px}
+.lvchip.k-half.pm{box-shadow:inset -5px 0 0 #F2B01E;padding-left:3px;padding-right:9px} /* 오후 반차는 띠가 오른쪽 */
 .lvchip.k-edu{background:var(--c);box-shadow:inset 5px 0 0 #FFFFFF;padding-left:9px}
 .lvchip.k-store{background:#8A909E}
 .lvmore{font-size:calc(10px * var(--font-scale));color:var(--muted)}
@@ -1367,7 +1368,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button type="button" class="btn sm" onclick="lvAddOpen()" style="margin:0">＋ 입력</button>
       </div>
       <div class="lvcal" id="lvCal" aria-label="휴가 달력"></div>
-      <p class="note-in" style="margin:6px 0 0">날짜를 누르면 새로 넣는 창이, <b>칸 안의 이름을 누르면 그 휴가를 고치는 창</b>이 뜹니다. 칩에 종류가 같이 적히고 <b>왼쪽 띠</b>로 갈립니다 — <b style="color:var(--warn)">노랑 띠 = 반차</b> · 흰 띠 = 교육 · 회색 = 매장휴무. 아래 목록은 <b>달력이 연 달</b>의 휴가이고 담당자·종류로 거를 수 있습니다. 이름 색은 담당자마다 다릅니다. <b>W37</b> 은 1월 1일이 든 주를 1주로 센 주차입니다.</p>
+      <p class="note-in" style="margin:6px 0 0">날짜를 누르면 새로 넣는 창이, <b>칸 안의 이름을 누르면 그 휴가를 고치는 창</b>이 뜹니다. 칩에 종류가 같이 적히고 <b>왼쪽 띠</b>로 갈립니다 — <b style="color:var(--warn)">노랑 띠 = 반차</b>(왼쪽 = 오전 · 오른쪽 = 오후) · 흰 띠 = 교육 · 회색 = 매장휴무. 아래 목록은 <b>달력이 연 달</b>의 휴가이고 담당자·종류로 거를 수 있습니다. 이름 색은 담당자마다 다릅니다. <b>W37</b> 은 1월 1일이 든 주를 1주로 센 주차입니다.</p>
       <div class="lvmask hidden" id="lvAdd" onclick="if(event.target===this)lvAddClose()">
         <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="lvAddTitle">
           <button type="button" class="lvx" onclick="lvAddClose()" aria-label="닫기" title="닫기">✕</button>
@@ -1378,7 +1379,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
               <select class="in" id="lv_staff"></select></div>
             <div class="two"><div><label for="lv_from">시작일</label><input class="in" type="date" id="lv_from"></div><div><label for="lv_to">종료일</label><input class="in" type="date" id="lv_to" onchange="if($('lv_from').value&&this.value<$('lv_from').value)this.value=$('lv_from').value"></div></div>
             <div><label for="lv_kind">종류</label><select class="in" id="lv_kind" onchange="lvKindHint()">
-              <option value="반차">반차 (오후 3시까지)</option><option value="휴무">휴무</option><option value="교육">교육</option><option value="휴가" selected>휴가</option><option value="연차">연차</option><option value="매장휴무">매장휴무</option>
+              <option value="반차|am">오전 반차 (오후 2시까지 없음)</option><option value="반차|pm">오후 반차 (오후 2시부터 없음)</option><option value="휴무">휴무</option><option value="교육">교육</option><option value="휴가" selected>휴가</option><option value="연차">연차</option><option value="매장휴무">매장휴무</option>
             </select><small class="note-in" id="lv_kindHint" style="display:block;margin:4px 0 0"></small></div>
             <div><label for="lv_note">메모 <small>(선택)</small></label><input class="in" id="lv_note" placeholder="예: 오전 병원 · 본사 교육"></div>
             <div class="btns"><button class="btn danger hidden" id="lvDelBtn" onclick="lvDelCur()">지우기</button><button class="btn" id="lvSaveBtn" onclick="lvSave()">추가</button></div>
@@ -3780,11 +3781,14 @@ function lvRender(){
 }
 /* 칩 = 사람 색 + 종류 글자. 반차는 반만 칠해 한눈에 갈린다 (전엔 '·반' 한 글자뿐이라 휴무와 똑같아 보였다) */
 const LV_KIND_CLS={'반차':'k-half','교육':'k-edu','매장휴무':'k-store'};
+/* 반차는 오전·오후로 갈린다 — 오전 = 오후 2시 전까지 없음 · 오후 = 오후 2시부터 없음 (옛 반차는 오전으로 들어 있다) */
+function lvKindNm(r){ const k=r.kind||'휴가'; return k==='반차' ? (r.half==='pm'?'오후 반차':'오전 반차') : k; }
+function lvKindVal(r){ const k=r.kind||'휴가'; return k==='반차' ? '반차|'+(r.half==='pm'?'pm':'am') : k; }
 function lvChip(r){
-  const kind=r.kind||'휴가', c=kind==='매장휴무'?'#8A909E':lvColor(r.name);
-  const txt=kind==='매장휴무' ? '매장휴무' : String(r.name).slice(0,3)+' '+kind;
-  return `<span class="lvchip ed ${LV_KIND_CLS[kind]||''}" onclick="event.stopPropagation();lvEdit(${r.id})"
-    title="${esc(r.name)} · ${esc(kind)} · 눌러서 수정" style="--c:${c}">${esc(txt)}</span>`;
+  const kind=r.kind||'휴가', nm=lvKindNm(r), c=kind==='매장휴무'?'#8A909E':lvColor(r.name);
+  const txt=kind==='매장휴무' ? '매장휴무' : String(r.name).slice(0,3)+' '+nm;
+  return `<span class="lvchip ed ${LV_KIND_CLS[kind]||''}${kind==='반차'&&r.half==='pm'?' pm':''}" onclick="event.stopPropagation();lvEdit(${r.id})"
+    title="${esc(r.name)} · ${esc(nm)} · 눌러서 수정" style="--c:${c}">${esc(txt)}</span>`;
 }
 /* 날짜를 누르면 팝업 — 시작일·종료일이 그 날로 채워지고, 종료일은 창에서 바꾼다 */
 function lvTap(ds){ LV_PICK=ds; lvAddOpen(ds, ds); lvRender(); }
@@ -3799,7 +3803,7 @@ function lvEdit(id){
   $('lvAdd').classList.remove('hidden');
   lvPickStaff(r.name);
   $('lv_from').value=r.from; $('lv_to').value=r.to;
-  $('lv_kind').value=r.kind||'휴가'; lvKindHint();
+  $('lv_kind').value=lvKindVal(r); lvKindHint();
   $('lv_note').value=r.note||'';
   lvDlgMode(); lvRender(); setTimeout(()=>$('lv_from').focus(),50);
 }
@@ -3817,8 +3821,8 @@ function lvDlgMode(){
   $('lvSaveBtn').textContent = ed ? '저장' : '추가';
   $('lvDelBtn').classList.toggle('hidden', !ed);
 }
-/* 종류별 배정 영향 — 반차는 오후 3시까지만 빠지고, 매장휴무는 배정이 그대로 간다(끝나면 순서대로 처리) */
-const LV_KIND_HINT={ '반차':'오후 3시까지 자동 배정에서 빠집니다. 3시 뒤에는 정상 배정.', '매장휴무':'배정은 그대로 갑니다 — 휴무가 끝나면 순서대로 처리. 표시용입니다.' };
+/* 종류별 배정 영향 — 오전 반차는 오후 2시 전까지, 오후 반차는 2시부터 빠지고, 매장휴무는 배정이 그대로 간다(끝나면 순서대로 처리) */
+const LV_KIND_HINT={ '반차|am':'오후 2시 전까지 자동 배정·알림에서 빠집니다. 2시부터 정상 배정.', '반차|pm':'오후 2시부터 자동 배정·알림에서 빠집니다. 2시 전에는 정상 배정.', '매장휴무':'배정은 그대로 갑니다 — 휴무가 끝나면 순서대로 처리. 표시용입니다.' };
 function lvKindHint(){ const k=$('lv_kind').value; $('lv_kindHint').textContent = LV_KIND_HINT[k] || '그날 자동 배정에서 빠집니다.'; }
 function lvAddClose(){ $('lvAdd').classList.add('hidden'); LV_PICK=null; LV_EDIT=null; lvRender(); }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(!$('lvAdd').classList.contains('hidden')) lvAddClose(); if($('cdDlg')&&!$('cdDlg').classList.contains('hidden')) cdClose(); if($('msgDlg')&&!$('msgDlg').classList.contains('hidden')) msgClose(); } });
@@ -3864,7 +3868,7 @@ function lvRenderList(){
     return `<div class="lvr${x.to<today?' gone':''}">
       <div class="dt">${lvWhen(x.from,x.to)}</div>
       <div class="bd"><div class="nm"><span class="lvdot" style="background:${kind==='매장휴무'?'#8A909E':lvColor(x.name)}"></span>${esc(x.name)}
-        <span class="tag lvk ${LV_KIND_CLS[kind]||''}">${esc(kind)}</span>${x.now?'<span class="mine">휴가 중</span>':''}</div>
+        <span class="tag lvk ${LV_KIND_CLS[kind]||''}">${esc(lvKindNm(x))}</span>${x.now?'<span class="mine">휴가 중</span>':''}</div>
         <div class="sub">${x.note?esc(x.note)+' · ':''}${x.by?esc(x.by)+' 입력':''}</div></div>
       <div class="act"><button class="mini" onclick="lvEdit(${x.id})">수정</button><button class="mini bad" onclick="lvDel(${x.id},'${esc(x.name)}')">지우기</button></div></div>`;
   }).join('')
@@ -3891,11 +3895,11 @@ function lvScope(b){ $('lv_scope').querySelectorAll('button').forEach(x=>x.class
 async function lvSave(){
   const st=$('lv_staff').value, f=$('lv_from').value, t=$('lv_to').value;
   if(!st) return toast('담당자를 고르세요','bad'); if(!f||!t) return toast('기간을 넣으세요','bad'); if(t<f) return toast('종료일이 시작일보다 앞입니다','bad');
-  const kind=$('lv_kind').value||'휴가';
+  const [kind,half]=($('lv_kind').value||'휴가').split('|'), nm=lvKindNm({kind,half});
   const ed=LV_EDIT;
-  if(ed && !confirm(`${st} · ${f}${t!==f?' ~ '+t:''} · ${kind} 으로 바꿉니다. 계속할까요?`)) return;
-  try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:ed||null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null,p_kind:kind});
-    toast(`${st} ${kind} ${f}${t!==f?'~'+t:''} ${ed?'고쳤습니다':'넣었습니다'} — ${kind==='매장휴무'?'배정은 그대로 갑니다':kind==='반차'?'오후 3시까지 자동 배정에서 빠집니다':'그동안 자동 배정에서 빠집니다'}`,'ok');
+  if(ed && !confirm(`${st} · ${f}${t!==f?' ~ '+t:''} · ${nm} 으로 바꿉니다. 계속할까요?`)) return;
+  try{ await rpc('fn_store_leave_save',{p_code:CODE,p_id:ed||null,p_staff:st,p_from:f,p_to:t,p_note:$('lv_note').value.trim()||null,p_kind:kind,p_half:half||null});
+    toast(`${st} ${nm} ${f}${t!==f?'~'+t:''} ${ed?'고쳤습니다':'넣었습니다'} — ${kind==='매장휴무'?'배정은 그대로 갑니다':kind!=='반차'?'그동안 자동 배정에서 빠집니다':half==='pm'?'오후 2시부터 자동 배정에서 빠집니다':'오후 2시 전까지 자동 배정에서 빠집니다'}`,'ok');
     $('lv_note').value=''; LV_PICK=null; LV_EDIT=null; $('lvAdd').classList.add('hidden'); loadLeave();
   }catch(e){ toast(e.message,'bad'); }
 }
