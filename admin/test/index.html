@@ -809,6 +809,7 @@ tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}
   .btn, .btn.sm{height:auto;min-height:40px}
   .in{font-size:16px;height:auto;min-height:40px}
   .seg button, .chip, .seg2 button{min-height:40px}
+  .pchip button{min-width:40px;min-height:40px;font-size:calc(15px * var(--font-scale))}   /* 배정 순번 칩의 ‹ › ✕ (mvp_188) */
 }
 /* ── 대시보드 진행 카드 (2026-10-03) — 화면 준비 · 자료 요청 · 자료 받기 · 그리기 ── */
 .dprog{position:absolute;inset:0;z-index:3;display:flex;align-items:flex-start;justify-content:center;padding:56px 16px 16px;background:rgba(238,241,245,.9)}
@@ -1957,7 +1958,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <input class="in" id="poolNew" placeholder="목록에 없는 이름" style="width:170px"
                    onkeydown="if(event.key==='Enter'){event.preventDefault();poolAddNew()}">
             <button class="btn sm ghost" onclick="poolAddNew()">+ 직접 입력</button>
-            <span class="note">‹ › 로 순서를 바꾸고 ✕ 로 뺍니다 · 왼쪽부터 차례로 배정됩니다</span>
+            <span class="note">‹ › 로 순서를 바꾸고 ✕ 로 빼면 <b>바로 저장</b>됩니다 · 왼쪽부터 차례로 배정 · 이름순이 아니라 여기 순서입니다</span>
           </div>
         </div>
         <div class="grid g32">
@@ -2632,8 +2633,9 @@ function renderPool(){
   const sc=poolScope(), on=poolNames(sc), all=POOL.staff||[];
   const st=(POOL.state||[]).find(x=>x.scope===sc);
   const isItem=sc.indexOf('item:')===0;
+  const sv=(POOL.saved||[]).find(x=>x.scope===sc);
   $('poolState').textContent = on.length
-    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'}`
+    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'}${sv?` · 순서 저장 ${sv.at}${sv.by&&sv.by.indexOf('(')<0?` ${sv.by.split('@')[0]}`:''}`:''}`
     : (sc==='default' ? '기본 순번이 비어 있습니다 — 아무도 배정되지 않습니다'
        : isItem ? '이 품목 규칙 없음 → 접수 종류나 기본 순번을 씁니다'
                 : '이 종류 규칙 없음 → 기본 순번을 씁니다');
@@ -2648,20 +2650,21 @@ function renderPool(){
   $('poolAdd').innerHTML = rest.length ? rest.map(nm=>`<option>${esc(nm)}</option>`).join('')
                                        : '<option value="">모두 넣었습니다</option>';
 }
+/* ‹ › ✕ 넣기 는 바로 저장한다 — [이 규칙 저장] 을 안 누르면 다음에 열 때 저장된 순서(처음엔 이름순)로 되돌아 보여 "자꾸 이름순으로 바뀐다" 가 됐다 (mvp_188) */
 function poolMove(i,d){ const on=poolNames(poolScope()); const j=i+d; if(j<0||j>=on.length) return;
-  const t=on[i]; on[i]=on[j]; on[j]=t; poolSet(on); }
-function poolDrop(i){ const on=poolNames(poolScope()); on.splice(i,1); poolSet(on); }
+  const t=on[i]; on[i]=on[j]; on[j]=t; poolSet(on); savePool(true); }
+function poolDrop(i){ const on=poolNames(poolScope()); const nm=on[i]; if(!confirm(`${nm} 을(를) 순번에서 뺄까요? (바로 저장됩니다)`)) return; on.splice(i,1); poolSet(on); savePool(true); }
 function poolPush(nm){ nm=(nm||'').trim(); if(!nm) return;
   const on=poolNames(poolScope()); if(on.indexOf(nm)>=0) return toast('이미 들어 있습니다','bad');
-  on.push(nm); poolSet(on); }
+  on.push(nm); poolSet(on); savePool(true); }
 function poolAddSel(){ poolPush($('poolAdd').value); }
 function poolAddNew(){ const el=$('poolNew'); poolPush(el.value); el.value=''; el.focus(); }
-async function savePool(){
+async function savePool(auto){
   const sc=poolScope(), names=poolNames(sc);
   const label = sc==='default' ? '기본' : sc.indexOf('item:')===0 ? sc.slice(5) : sc;
   try{ const r=await rpc('fn_assign_pool_save',{p_scope:sc,p_names:names});
-    toast(names.length?`${label} 배정 ${r.n}명 저장`:`${label} 규칙을 지웠습니다`,'ok'); loadPool(); }
-  catch(e){ toast(e.message,'bad'); }
+    toast(names.length?`${label} 배정 ${r.n}명 저장됨 · ${names.join(' → ')}`:`${label} 규칙을 지웠습니다`,'ok'); loadPool(); }
+  catch(e){ toast(e.message,'bad'); if(auto) loadPool(); }   /* 자동 저장이 실패하면 서버 순서로 되돌려 보여 준다 */
 }
 
 /* ═══════════════ 주문 · 판매 · 매출 흐름 ═══════════════ */

@@ -169,6 +169,10 @@ end $outer$;
 ## 지금 상태 (2026-10-06 · v168 — test 폴더에만 있던 것(UI 규칙 v161 · 진행 카드 v164·v165 · UTM 목록 v165)을 전부 본 파일에 올림: store.html · admin.html · visit/index.html · dash/index.html)
 
 ### 되는 것
+- **문의 자동 배정 순번은 저장된 순서다 — 이름순 아님 (mvp_188 · v172 · 2026-10-07)** — "일단 이것부터 fix 해놔, 자꾸 이름순으로 바꾸지 말고". **기본 순번 = 최태웅 → 차효범 → 김규완 → 송희봉 → 이수혁 → 권혁찬** (2026-10-07 10:43 관리자 화면에서 저장). 세션에서 `core.assign_pool` 을 다시 넣거나 이름순으로 정렬하지 말 것.
+  **되돌리는 코드는 없었다** — assign_pool 을 쓰는 함수는 `f_assign_next`·`f_consult_assign_cursor`·`fn_assign_pool`·`fn_assign_pool_save` 넷, cron 없음. `pg_stat_statements`(8/28~)로 `fn_assign_pool_save` 는 **3번** 불렸고 마지막이 10/07 10:43(edge log · 폰). 그 전엔 9/8 에 만들 때 들어간 **이름순(권·김·송·이·차·최)** 이 그대로였다 — 9/29~10/6 구독·홈페이지 문의가 이름순으로 돈 이유(10/7 13:05 권혁찬부터 새 순서: 커서 이수혁(10:42 507 송→이 로 따라감) 다음).
+  **"자꾸 바뀐다" = ‹ › 로 옮기고 [이 규칙 저장] 을 안 누른 것** — 다음에 열면 저장된(이름) 순서로 보인다. 그래서 ‹ › ✕ [+ 넣기] 가 **바로 저장**(`savePool(true)`, 실패하면 서버 순서로 되돌려 보임), ✕ 는 confirm. 안내 글 "바로 저장됩니다 · 이름순이 아니라 여기 순서".
+  **저장 기록 `core.assign_pool_log`**(at · by_user=JWT email · by_role · scope · before → after) — `fn_assign_pool_save` 가 매번 남기고 `fn_assign_pool.saved` 로 상태 줄에 '순서 저장 10-07 10:43 yonghyeonjee'. 다음에 또 "바뀌었다" 면 이 표부터 본다. 폰 칩 버튼(‹ › ✕) 20 → 40px(모바일 보정). 테스트 `ptest/pool_probe.mjs` A1~A8 × 1280·390 = 15 · ovf_admin · uiaudit admin.
 - **일 마감·월 마감은 매출과 판매완료를 가르지 않는다 (mvp_187 · v171 · 2026-10-06)** — "아마 매출과 판매를 구분하지 않는 것으로 일단 매출로 잡기로 했지 않았어?" 맞다. 대시보드는 9/17(mvp_154)에 그렇게 고쳤는데 담당자 화면의 **최근 마감·월 마감은 `sales`(판매완료)만 더하고 있었다.**
   9/14 에 일 마감의 판매완료 입력칸을 숨긴 뒤(판매 입력에서 자동으로 오게) 직원이 적는 금액은 전부 `pending_sales` 로 들어가 차효범 프로님 10월 월 마감이 날마다 0원이었다(9/14 이후 `sales` 가 있는 줄은 9/21 직판 196만 하나). 되돌릴 '정상이던 판' 은 없다 — 월 마감(9/13)은 처음부터 sales 만 더했다.
   DB: `fn_store_month_close` 의 `sum(sales)` ×9 → `sum(sales + pending_sales)` · net ×1, `fn_store_status` closed_recent·closed_mine net ×2 — 응답 키 그대로(`pending` 은 그중 확정 전 분). `fn_store_daily_prefill` 은 그대로(화면이 더한다). 10월 월 마감 0 → **1억 6,632만**.
