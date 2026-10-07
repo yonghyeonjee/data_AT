@@ -1236,7 +1236,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       <div class="view hidden" id="v-orders">
         <div class="card">
           <div class="filters">
-            <select class="in" id="oSrc" onchange="loadOrders(0)" title="데이터 출처"><option value="">전체 출처</option><option value="shoplinker" title="샵링커로 들어온 온라인 몰 주문">온라인</option><option value="godo_hist" title="고도몰 4몰 과거 주문 (2021 ~ 2025-08 · 샵링커 이전)">고도몰 과거</option><option value="ecount">이카운트(VMS)</option><option value="rental">렌탈</option><option value="store">매장 입력</option></select>
+            <select class="in" id="oSrc" onchange="loadOrders(0)" title="데이터 출처"><option value="">전체 출처</option><option value="shoplinker" title="샵링커로 들어온 온라인 몰 주문">온라인</option><option value="godo_hist" title="고도몰 4몰 과거 주문 (2021 ~ 2025-08 · 샵링커 이전)">고도몰 과거</option><option value="ecount">이카운트(VMS)</option><option value="rental">렌탈</option><option value="store">매장 입력</option><option value="dps" title="DPS(삼성 대리점 시스템)에서 가져온 매장 판매사원 6명 전표 (2024-10 ~)">DPS 매장 전표</option></select>
             <select class="in" id="oCh" aria-label="채널" onchange="loadOrders(0)"><option value="">전체 구분</option><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select>
             <select class="in" id="oChName" onchange="loadOrders(0)" title="채널"><option value="">전체 채널</option></select>
             <select class="in" id="oSt" onchange="loadOrders(0)" title="상태"><option value="">전체 상태</option><option value="normal">정상</option><option value="refund">환불 있음</option></select>
@@ -5135,7 +5135,7 @@ function renderOrderSummary(m){
     qcard('순매출', wonK(m.net), '', 'ok'),
     qcard('평균 주문액', wonK(aov)),
   ].join('');
-  const src=(m.by_source||[]).map(x=>`${({shoplinker:'샵링커',ecount:'이카운트(VMS)',rental:'렌탈',store:'매장'})[x.k]||x.k} <b>${n(x.n)}</b>`).join(' · ');
+  const src=(m.by_source||[]).map(x=>`${({shoplinker:'샵링커',ecount:'이카운트(VMS)',rental:'렌탈',store:'매장 입력',dps:'DPS 매장',godo_hist:'고도몰 과거'})[x.k]||x.k} <b>${n(x.n)}</b>`).join(' · ');
   const ch=(m.by_channel||[]).slice(0,6).map(x=>`${esc(x.k||'-')} <b>${wonK(x.net)}</b>`).join(' · ');
   $('oMeta').innerHTML=`<span>출처 ${src||'—'}</span><span>채널 상위 ${ch||'—'}</span><span>마지막 주문일 <b>${esc(m.last_at||'—')}</b></span><span>최근 적재 <b>${esc(m.loaded_at||'—')}</b></span>`;
 }
@@ -5149,7 +5149,7 @@ async function loadOrders(page){
   $('oCount').textContent=`총 ${n(total)}행 · ${total?oPage*oPer+1:0}~${Math.min(total,(oPage+1)*oPer)}`;
   $('oPg').innerHTML=pgBar('orders',oPage,total,'loadOrders');
   $('tbOrders').innerHTML=oRows.map(o=>`<tr>
-    <td class="mono">${dfmt(o.order_at)}</td><td><span class="tag ${o.channel_type}">${o.channel_type}</span></td><td>${esc(o.channel_name)}<div style="font-size:calc(10.5px * var(--font-scale));color:var(--faint)" class="mono">${esc(o.order_no||'')}</div></td>
+    <td class="mono">${dfmt(o.order_at)}</td><td><span class="tag ${o.channel_type}">${o.channel_type}</span></td><td>${esc(o.channel_name)}${o.source==='dps'?' <span class="tag n" title="DPS 전표 (판매번호 아래)">DPS</span>':''}<div style="font-size:calc(10.5px * var(--font-scale));color:var(--faint)" class="mono">${esc(o.order_no||'')}</div></td>
     <td><b>${esc(o.customer_name)}</b></td><td class="mono" style="color:${unmask?'var(--bad)':'var(--muted)'}">${esc(o.customer_phone||'-')}</td>
     <td class="wrap">${o.model_code?`<span class="mono" style="font-weight:700">${esc(o.model_code)}</span> `:''}${esc(o.product_name||'')}</td><td class="num">${n(o.qty)}</td><td class="num">${n(o.gross_amount)}</td><td class="num" style="color:var(--bad)">${Number(o.refund_amount)?n(o.refund_amount):''}</td>
     <td class="num"><b>${n(o.net_amount)}</b></td><td>${esc(o.handler||'')}</td><td style="color:var(--muted);font-size:calc(12px * var(--font-scale))">${esc(o.status)}</td>
