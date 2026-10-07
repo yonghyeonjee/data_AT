@@ -6742,7 +6742,7 @@ async function loadCustomers(page){
   $('tbCust').innerHTML=d.rows.map(r=>`<tr>
     <td><b>${esc(r.name||'-')}</b>${r.biz?' <span class="tag n">사업자</span>':''}</td>
     <td class="mono">${esc(r.phone||'-')}</td>
-    <td class="wrap" style="font-size:calc(12px * var(--font-scale))">${(r.chans||[]).map(c=>`<span class="tag n" style="margin-right:3px">${esc(c)}</span>`).join('')}</td>
+    <td class="wrap" style="font-size:calc(12px * var(--font-scale))">${(r.chans||[]).map(c=>`<span class="tag n" style="margin-right:3px">${esc(c)}</span>`).join('')}${(r.sub?['구독']:[]).concat((r.kinds||[]).filter(k=>k&&k!=='구독')).map(k=>`<span class="tag ${k==='구독'?'y':'n'}" style="margin-right:3px" title="${k==='구독'&&(r.sub_kinds||[]).length?esc('DPS 구독: '+(r.sub_kinds||[]).join('·')):'구매 구분 (원장·DPS)'}">${esc(k)}</span>`).join('')}</td>
     <td class="num">${r.cnt?n(r.cnt)+'회':'<span style="color:var(--faint)">-</span>'}</td>
     <td class="num"><b>${n(r.net)}</b></td>
     <td class="mono" style="font-size:calc(12px * var(--font-scale))">${esc(r.last_at||'-')}</td>
@@ -6777,7 +6777,8 @@ function renderCustStats(){
   const sel=$('cuSrc');
   if(sel.options.length<=1) sel.innerHTML='<option value="">전체 유입</option>'+
     CRM_SRC.map(([g,k,label])=>`<option value="${esc(k)}">${esc(g)} · ${esc(label)}</option>`).join('')+
-    (c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>`<option>${esc(x.k)}</option>`).join('');
+    (c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>`<option>${esc(x.k)}</option>`).join('')+
+    '<option value="구독">구매 구분 · 구독 (원장·DPS)</option><option value="일시불">구매 구분 · 일시불</option>';   /* mvp_190: 출처 칸으로 구매 구분도 거른다 */
 }
 function resetCustomers(){ ['cuQ','cuSrc','cuFreq','cuConsent'].forEach(id=>$(id).value=''); $('cuSort').value='net_desc'; loadCustomers(0); }
 
