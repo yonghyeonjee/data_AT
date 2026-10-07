@@ -1960,6 +1960,13 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <button class="btn sm ghost" onclick="poolAddNew()">+ 직접 입력</button>
             <span class="note">‹ › 로 순서를 바꾸고 ✕ 로 빼면 <b>바로 저장</b>됩니다 · 왼쪽부터 차례로 배정 · 이름순이 아니라 여기 순서입니다</span>
           </div>
+          <div class="filters hidden" id="poolCursorRow">
+            <span class="lb">마지막 배정</span>
+            <select class="in" id="poolCursor" data-noseg="1" style="min-width:150px" aria-label="마지막 배정"></select>
+            <button class="btn sm ghost" onclick="poolCursorSet(false)">이 사람으로 지정</button>
+            <button class="btn sm ghost" onclick="poolCursorSet(true)">처음부터</button>
+            <span class="note">테스트 문의로 순번이 한 칸 돌았으면 테스트 전 사람으로 되돌리세요 · 다음 문의는 그 다음 사람에게 갑니다</span>
+          </div>
         </div>
         <div class="grid g32">
           <div class="card"><h3>담당자 · 매장 입력 코드 <span>매장 화면은 이 4자리로 로그인합니다</span>
@@ -2633,9 +2640,9 @@ function renderPool(){
   const sc=poolScope(), on=poolNames(sc), all=POOL.staff||[];
   const st=(POOL.state||[]).find(x=>x.scope===sc);
   const isItem=sc.indexOf('item:')===0;
-  const sv=(POOL.saved||[]).find(x=>x.scope===sc);
+  const sv=(POOL.saved||[]).find(x=>x.scope===sc), nx=(POOL.next||{})[sc];
   $('poolState').textContent = on.length
-    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'}${sv?` · 순서 저장 ${sv.at}${sv.by&&sv.by.indexOf('(')<0?` ${sv.by.split('@')[0]}`:''}`:''}`
+    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'} · 다음 ${nx||'(전원 휴가)'}${sv?` · 순서 저장 ${sv.at}${sv.by&&sv.by.indexOf('(')<0?` ${sv.by.split('@')[0]}`:''}`:''}`
     : (sc==='default' ? '기본 순번이 비어 있습니다 — 아무도 배정되지 않습니다'
        : isItem ? '이 품목 규칙 없음 → 접수 종류나 기본 순번을 씁니다'
                 : '이 종류 규칙 없음 → 기본 순번을 씁니다');
@@ -2649,6 +2656,15 @@ function renderPool(){
   const rest=all.filter(nm=>on.indexOf(nm)<0);
   $('poolAdd').innerHTML = rest.length ? rest.map(nm=>`<option>${esc(nm)}</option>`).join('')
                                        : '<option value="">모두 넣었습니다</option>';
+  /* 마지막 배정 지정 — 테스트 문의로 순번이 한 칸 돌았을 때 되돌린다 (mvp_189). 다음 배정 = 고른 사람 다음(휴가 제외) */
+  $('poolCursor').innerHTML = on.map(nm=>`<option${st&&st.last===nm?' selected':''}>${esc(nm)}</option>`).join('');
+  $('poolCursorRow').classList.toggle('hidden', !on.length);
+}
+async function poolCursorSet(reset){
+  const sc=poolScope(), v=reset?null:$('poolCursor').value;
+  if(!confirm(reset?'마지막 배정을 지우고 처음(1번)부터 돌릴까요?':`마지막 배정을 ${v} 으로 놓을까요?\n다음 문의는 그 다음 사람에게 갑니다.`)) return;
+  try{ const r=await rpc('fn_assign_cursor_set',{p_scope:sc,p_staff:v}); toast(`마지막 배정 ${r.from||'(없음)'} → ${r.to||'(처음부터)'}`,'ok'); loadPool(); }
+  catch(e){ toast(e.message,'bad'); }
 }
 /* ‹ › ✕ 넣기 는 바로 저장한다 — [이 규칙 저장] 을 안 누르면 다음에 열 때 저장된 순서(처음엔 이름순)로 되돌아 보여 "자꾸 이름순으로 바뀐다" 가 됐다 (mvp_188) */
 function poolMove(i,d){ const on=poolNames(poolScope()); const j=i+d; if(j<0||j>=on.length) return;
