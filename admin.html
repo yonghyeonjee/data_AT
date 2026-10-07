@@ -1144,7 +1144,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <span style="font-size:calc(12.5px * var(--font-scale));color:var(--muted)">출처</span>
           <div class="seg2"><button class="on" id="ds-dc" onclick="setDashSrc('dc')">현행 시스템</button><button id="ds-gas" onclick="setDashSrc('gas')">대시보드 v4 (기존 app)</button></div>
           <span style="font-size:calc(12.5px * var(--font-scale));color:var(--muted);margin-left:8px">집계 기준</span>
-          <div class="seg2" id="segBasis"><button id="db-manual" onclick="setDashBasis('manual')">수기입력</button><button class="on" id="db-ledger" onclick="setDashBasis('ledger')">원장</button></div>
+          <div class="seg2" id="segBasis" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커·매장 입력·DPS 매장 전표) · DPS = DPS 전표 전체(B2C · 매장·온라인 모두 DPS 판매일 기준)"><button id="db-manual" onclick="setDashBasis('manual')">수기입력</button><button class="on" id="db-ledger" onclick="setDashBasis('ledger')">원장</button><button id="db-dps" onclick="setDashBasis('dps')">DPS</button></div>
           <span style="flex:1"></span>
           <span class="note" id="dashNote">Datacenter 데이터 · 최근 12개월 · 기간·채널·지표는 아래 대시보드 안에서 고릅니다</span>
           <button class="btn sm hidden" id="dashFreshBtn" onclick="dashApplyFresh()">새 자료 보기</button>
@@ -2656,7 +2656,7 @@ function renderPool(){
   const rest=all.filter(nm=>on.indexOf(nm)<0);
   $('poolAdd').innerHTML = rest.length ? rest.map(nm=>`<option>${esc(nm)}</option>`).join('')
                                        : '<option value="">모두 넣었습니다</option>';
-  /* 마지막 배정 지정 — 테스트 문의로 순번이 한 칸 돌았을 때 되돌린다 (mvp_189). 다음 배정 = 고른 사람 다음(휴가 제외) */
+  /* 마지막 배정 지정 — 테스트 문의로 순번이 한 칸 돌았을 때 되돌린다 (mvp_191). 다음 배정 = 고른 사람 다음(휴가 제외) */
   $('poolCursor').innerHTML = on.map(nm=>`<option${st&&st.last===nm?' selected':''}>${esc(nm)}</option>`).join('');
   $('poolCursorRow').classList.toggle('hidden', !on.length);
 }
@@ -4670,7 +4670,7 @@ async function setGasUrl(){
   $('dashFrame').src='about:blank'; loadDash();
 }
 let DASH_PAY=null, DASH_READY=false;
-const DASH_V='164';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
+const DASH_V='165';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
 window.addEventListener('message',e=>{ const t=e.data&&e.data.type;
   if(t==='dash-ready'){ DASH_READY=true; dpSet({frame:1}); dashSend(); }
   else if(t==='dash-rendered'){ dpDone(); } });
@@ -4754,7 +4754,7 @@ async function dashFetch(args, up){
 }
 function dashArgs(){ const to=new Date(), from=new Date(to.getFullYear(), to.getMonth()-11, 1); return {p_from:iso(from),p_to:iso(to),p_mode:DASH_BASIS}; }
 function dashHM(ts){ const d=new Date(ts); if(!ts || isNaN(d)) return String(ts||''); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
-function dashNoteSet(){ if(!DASH_PAY) return; const a=dashArgs(), b=DASH_BASIS==='ledger'?'원장(주문 원천)':'담당자 수기입력';
+function dashNoteSet(){ if(!DASH_PAY) return; const a=dashArgs(), b=DASH_BASIS==='ledger'?'원장(주문 원천)':DASH_BASIS==='dps'?'DPS 전표(B2C · DPS 판매일)':'담당자 수기입력';
   const at=DASH_PAY.built_at ? dashHM(DASH_PAY.built_at) : (DASH_PAY.updated||'');
   $('dashNote').textContent=`현행 시스템 · ${b} 기준 · ${a.p_from} ~ ${a.p_to} · ${at} 집계`
     + (DASH_WANT ? ' · 서버에서 다시 집계하는 중' : DASH_PAY.stale ? ' · 새 자료 반영 중 (몇 분 안에)' : ''); }
@@ -4831,7 +4831,7 @@ function loadDashGas(){
 }
 async function loadDash(){
   $('ds-dc').classList.toggle('on',DASH_SRC==='dc'); $('ds-gas').classList.toggle('on',DASH_SRC==='gas');
-  $('db-manual').classList.toggle('on',DASH_BASIS==='manual'); $('db-ledger').classList.toggle('on',DASH_BASIS==='ledger');
+  $('db-manual').classList.toggle('on',DASH_BASIS==='manual'); $('db-ledger').classList.toggle('on',DASH_BASIS==='ledger'); $('db-dps').classList.toggle('on',DASH_BASIS==='dps');
   const dc=DASH_SRC==='dc';
   $('segBasis').style.opacity=dc?'1':'.35'; $('segBasis').style.pointerEvents=dc?'auto':'none';
   $('segBasis').title=dc?'':'기존 app 은 구글 시트 원장만 씁니다';
@@ -6758,7 +6758,7 @@ async function loadCustomers(page){
   $('tbCust').innerHTML=d.rows.map(r=>`<tr>
     <td><b>${esc(r.name||'-')}</b>${r.biz?' <span class="tag n">사업자</span>':''}</td>
     <td class="mono">${esc(r.phone||'-')}</td>
-    <td class="wrap" style="font-size:calc(12px * var(--font-scale))">${(r.chans||[]).map(c=>`<span class="tag n" style="margin-right:3px">${esc(c)}</span>`).join('')}</td>
+    <td class="wrap" style="font-size:calc(12px * var(--font-scale))">${(r.chans||[]).map(c=>`<span class="tag n" style="margin-right:3px">${esc(c)}</span>`).join('')}${(r.sub?['구독']:[]).concat((r.kinds||[]).filter(k=>k&&k!=='구독')).map(k=>`<span class="tag ${k==='구독'?'y':'n'}" style="margin-right:3px" title="${k==='구독'&&(r.sub_kinds||[]).length?esc('DPS 구독: '+(r.sub_kinds||[]).join('·')):'구매 구분 (원장·DPS)'}">${esc(k)}</span>`).join('')}</td>
     <td class="num">${r.cnt?n(r.cnt)+'회':'<span style="color:var(--faint)">-</span>'}</td>
     <td class="num"><b>${n(r.net)}</b></td>
     <td class="mono" style="font-size:calc(12px * var(--font-scale))">${esc(r.last_at||'-')}</td>
@@ -6793,7 +6793,8 @@ function renderCustStats(){
   const sel=$('cuSrc');
   if(sel.options.length<=1) sel.innerHTML='<option value="">전체 유입</option>'+
     CRM_SRC.map(([g,k,label])=>`<option value="${esc(k)}">${esc(g)} · ${esc(label)}</option>`).join('')+
-    (c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>`<option>${esc(x.k)}</option>`).join('');
+    (c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>`<option>${esc(x.k)}</option>`).join('')+
+    '<option value="구독">구매 구분 · 구독 (원장·DPS)</option><option value="일시불">구매 구분 · 일시불</option>';   /* mvp_190: 출처 칸으로 구매 구분도 거른다 */
 }
 function resetCustomers(){ ['cuQ','cuSrc','cuFreq','cuConsent'].forEach(id=>$(id).value=''); $('cuSort').value='net_desc'; loadCustomers(0); }
 

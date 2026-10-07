@@ -1,4 +1,4 @@
--- mvp_189 · 2026-10-07 · ① 테스트 문의는 잔디 카드만 — 순번·통계·고객 표에 영향 없음  ② 배정 순번 '마지막 배정' 지정(되돌리기)  ③ '다음 배정' 표시
+-- mvp_191 · 2026-10-07 · ① 테스트 문의는 잔디 카드만 — 순번·통계·고객 표에 영향 없음  ② 배정 순번 '마지막 배정' 지정(되돌리기)  ③ '다음 배정' 표시
 -- 배경: "잔디 알림이 가는지 테스트해 보려는데 기존 담당자 순서에 영향이 없게 하는 방법" → B안.
 -- ① fn_submit_inquiry (부분 치환 8지점): 이름·담당에 test·테스트 가 있으면 전엔 저장 없이 skipped 였다(잔디도 안 감).
 --    이제 v_test=true → 담당 '지용현'(개발 계정) 고정 → 트리거 trg_consult_dev_is_test 가 '테스트 (개발 계정 담당)' 숨김 ·
@@ -9,7 +9,7 @@
 -- ② fn_assign_cursor_set(p_scope, p_staff) — admin/dev. p_staff null = 처음부터. core.assign_pool_log 에 kind='cursor' 로 기록(before=[이전], after=[새]).
 --    core.assign_pool_log.kind text default 'order' 추가.
 -- ③ fn_assign_pool 응답 'next' {scope: 다음 사람} — 순번표·휴가(f_staff_on_leave)·커서로 f_assign_next 와 같은 규칙, 부작용 없음.
--- 화면(admin/test → admin.html, v173): 상태 줄 '다음 차효범' · 칩 아래 [마지막 배정 ▾][이 사람으로 지정][처음부터](confirm). 테스트 ptest/pool_probe.mjs A2·A2b (17/17 × 1280·390).
+-- 화면(admin/test → admin.html, v175): 상태 줄 '다음 차효범' · 칩 아래 [마지막 배정 ▾][이 사람으로 지정][처음부터](confirm). 테스트 ptest/pool_probe.mjs A2·A2b (17/17 × 1280·390).
 alter table core.assign_pool_log add column if not exists kind text not null default 'order';
 create or replace function public.fn_assign_cursor_set(p_scope text, p_staff text)
 returns jsonb language plpgsql volatile security definer set search_path to 'pg_catalog','public' as $$
