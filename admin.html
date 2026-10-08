@@ -811,7 +811,7 @@ tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}
   .btn, .btn.sm{height:auto;min-height:40px}
   .in{font-size:16px;height:auto;min-height:40px}
   .seg button, .chip, .seg2 button{min-height:40px}
-  .pchip button{min-width:40px;min-height:40px;font-size:calc(15px * var(--font-scale))}   /* 배정 순번 칩의 ‹ › ✕ (mvp_188) */
+  .pchip button{min-width:40px;min-height:40px;font-size:calc(15px * var(--font-scale))}   /* 배정 순번 칩의 ‹ › ✕ (mvp_188) */  #urBody label.switch{min-height:40px;display:inline-flex;align-items:center}   /* 캠페인 문의한 사람 창의 실명 스위치 */
 }
 /* ── 대시보드 진행 카드 (2026-10-03) — 화면 준비 · 자료 요청 · 자료 받기 · 그리기 ── */
 .dprog{position:absolute;inset:0;z-index:3;display:flex;align-items:flex-start;justify-content:center;padding:56px 16px 16px;background:rgba(238,241,245,.9)}
@@ -2226,7 +2226,7 @@ function rpcBar(d){
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
 const FN_LABEL={fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
-  fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',
+  fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
   fn_sl_pending:'샵링커 주문',fn_sl_status:'샵링커 상태',fn_order_queue:'전표 대기열',fn_settlement_list:'정산',fn_sub_plans:'구독 플랜',fn_store_daily_list:'매장 마감',
   fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴',fn_crm_followups:'후속 관리',fn_product_sdp_upsert:'제품 정보'};
@@ -5909,7 +5909,7 @@ function utmRender(){
   if($('utmSort')){ $('utmSort').value=SO; try{ segSync(); }catch(e){} } if($('utmQ') && document.activeElement!==$('utmQ')) $('utmQ').value=UTM_Q;
   const links=all.flatMap(c=>(c.links||[]).map(k=>Object.assign({_camp:c.code,_campOn:c.active!==false},k)));
   const onL=links.filter(k=>k.active).length;
-  $('utmSum').textContent=`캠페인 ${n(all.length)} · 링크 ${n(links.length)}개 (켜짐 ${n(onL)}) · 클릭 ${n(all.reduce((a,c)=>a+(+c.clicks||0),0))} · 구매 ${n(all.reduce((a,c)=>a+(+c.bought||0),0))}`;
+  $('utmSum').textContent=`캠페인 ${n(all.length)} · 링크 ${n(links.length)}개 (켜짐 ${n(onL)}) · 클릭 ${n(all.reduce((a,c)=>a+(+c.clicks||0),0))} · 문의 ${n(all.reduce((a,c)=>a+(+c.inquiries||0),0))} · 구매 ${n(all.reduce((a,c)=>a+(+c.bought||0),0))}`;
   const desc=(a,b)=>String(b||'').localeCompare(String(a||''));
   if(V==='link'){   /* 링크 전체 — 링크 한 줄씩. 많아졌을 때 클릭 순으로 보거나 주소로 바로 찾는다 */
     $('utmHead').innerHTML='<tr><th>짧은 주소 · 캠페인</th><th class="num">클릭</th><th class="num">오늘</th><th>만든 때</th><th></th></tr>';
@@ -5923,7 +5923,7 @@ function utmRender(){
     return;
   }
   /* 캠페인별 — 캠페인 한 줄 + [링크 n ▾] 를 눌러야 링크가 펼쳐진다. 찾기가 링크에 걸리면 그 캠페인은 저절로 펼친다 */
-  $('utmHead').innerHTML='<tr><th>코드</th><th>이름</th><th>발송일 · 종류</th><th>대상 조건</th><th>링크</th><th class="num">발송</th><th class="num">클릭</th><th class="num">구매</th><th class="num">매출</th><th></th></tr>';
+  $('utmHead').innerHTML='<tr><th>코드</th><th>이름</th><th>발송일 · 종류</th><th>대상 조건</th><th>링크</th><th class="num">발송</th><th class="num">클릭</th><th class="num" title="이 캠페인 링크(utm_campaign)로 들어와 남긴 문의">문의</th><th class="num">구매</th><th class="num">매출</th><th></th></tr>';
   let C=all.filter(c=>ST==='all'||(ST==='on'?c.active!==false:c.active===false));
   C=C.map(c=>{ const lk=(c.links||[]).filter(k=>utmLinkHit(k,q)); return {c, lk:q?lk:(c.links||[]), hit:utmCampHit(c,q), lhit:!!q&&lk.length>0}; }).filter(x=>x.hit||x.lhit);
   const key={recent:x=>x.c.send_on||x.c.first_sent||'', clicks:x=>+x.c.clicks||0, bought:x=>+x.c.bought||0, links:x=>(x.c.links||[]).length, code:x=>x.c.code};
@@ -5939,15 +5939,45 @@ function utmRender(){
       <td class="utm-lk">${tot?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmToggle(this.dataset.code)" aria-expanded="${open}">링크 ${n(tot)}${on<tot?` · 꺼짐 ${n(tot-on)}`:''} ${open?'▴':'▾'}</button>`:'<span class="note">없음</span>'}</td>
       <td class="num">${c.sent?n(c.sent):'<span class="note">-</span>'}</td>
       <td class="num">${c.clicks?n(c.clicks):'<span class="note">-</span>'}</td>
+      <td class="num">${c.inquiries?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmResp(this.dataset.code)" title="이 링크로 문의한 사람 — 처음 들어온 경로 · 가입일 · 구매 이력">${n(c.inquiries)}</button>`:'<span class="note">-</span>'}</td>
       <td class="num">${c.bought?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmBought(this.dataset.code)" title="이 캠페인 수신자의 발송 뒤 주문을 통합 원장에서 봅니다">${n(c.bought)}</button>`:'<span class="note">-</span>'}</td>
       <td class="num">${c.bought_amt?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmBought(this.dataset.code)" title="이 캠페인 수신자의 발송 뒤 주문을 통합 원장에서 봅니다">${wonK(c.bought_amt)}</button>`:'<span class="note">-</span>'}</td>
       <td style="white-space:nowrap"><button class="btn sm" data-code="${esc(c.code)}" onclick="utmLinkNew(this.dataset.code)">+ 링크</button>
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmEdit(this.dataset.code)">수정</button>
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmDel(this.dataset.code)">${c.sent?'접기':'삭제'}</button></td></tr>`;
     const sub=open?lk.map(k=>`<tr class="utm-link ${k.active?'':'off'}"><td></td><td colspan="4">${utmLinkCell(k,false)}</td>
-        <td></td><td class="num">${n(k.hits)}${k.hits_today?`<div class="note">오늘 ${n(k.hits_today)}</div>`:''}</td><td colspan="2" class="note">${esc(k.created_at||'')}</td>
+        <td></td><td class="num">${n(k.hits)}${k.hits_today?`<div class="note">오늘 ${n(k.hits_today)}</div>`:''}</td><td colspan="3" class="note">${esc(k.created_at||'')}</td>
         <td><button class="btn sm ghost" data-slug="${esc(k.slug)}" onclick="utmLinkToggle(this.dataset.slug)">${k.active?'끄기':'켜기'}</button></td></tr>`).join(''):'';
-    return head+sub; }).join('') || `<tr><td colspan="10" class="note" style="text-align:center;padding:24px">${q?'찾는 캠페인·링크가 없습니다':ST==='off'?'접은 캠페인이 없습니다':'캠페인이 없습니다 — [+ 새 캠페인] 으로 시작하세요'}</td></tr>`;
+    return head+sub; }).join('') || `<tr><td colspan="11" class="note" style="text-align:center;padding:24px">${q?'찾는 캠페인·링크가 없습니다':ST==='off'?'접은 캠페인이 없습니다':'캠페인이 없습니다 — [+ 새 캠페인] 으로 시작하세요'}</td></tr>`;
+}
+/* [문의] 숫자 → 이 캠페인 링크로 문의한 사람 (2026-10-08) — 처음 들어온 경로(채널) · 가입·처음 확인일 · 문의 전 구매 · 문자 받은 기록.
+   문의는 구독 페이지 등 폼의 pageUrl 에 남은 utm_campaign 으로 캠페인에 붙인다 (core.f_consult_campaign) */
+let UR_CODE=null;
+async function utmResp(code){
+  UR_CODE=code; const c=(UTM_CAMPS||[]).find(x=>x.code===code)||{code};
+  modal({title:`${c.name||c.code} · 문의한 사람`, xwide:true, cancel:null, ok:'닫기',
+    html:`<div id="urBody"><div class="note" style="padding:16px">불러오는 중…</div></div>`, init:()=>urLoad(false)});
+}
+async function urLoad(unmask){
+  let d; try{ d=await rpc('fn_utm_responses',{p_code:UR_CODE,p_unmask:!!unmask},{fresh:true}); }catch(e){ const b=$('urBody'); if(b) b.innerHTML=`<div class="note" style="color:var(--bad)">${esc(e.message)}</div>`; return; }
+  const b=$('urBody'); if(!b) return; const s=d.summary||{}, R=d.rows||[];
+  const chips=o=>Object.entries(o||{}).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span class="tag n">${esc(k)} ${n(v)}</span>`).join(' ');
+  const ago=dt=>{ if(!dt) return ''; const m=Math.round((Date.now()-new Date(dt+'T00:00:00+09:00'))/2629746e3); return m>=12?`${Math.floor(m/12)}년${m%12?` ${m%12}개월`:''} 전`:`${m}개월 전`; };
+  b.innerHTML=`<p class="note" style="margin:0 0 8px">문의 <b>${n(d.total)}</b>건 · 이미 고객 명단에 있던 사람 ${n(s.known)} · 처음 보는 번호 ${n(s.new_person)} · <b>문의 전 구매 없음 ${n(s.never_bought)}</b> · 구매 이력 있음 ${n(s.bought_before)} · 문의 뒤 구매 ${n(s.bought_after)} · 이 캠페인 발송 기록 있음 ${n(s.sent_this)}</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px"><span class="note">처음 들어온 경로</span> ${chips(s.by_chan)}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><span class="note">가입·처음 확인 연도</span> ${chips(s.by_year)}
+      <span style="flex:1"></span><label class="switch ${d.unmask?'on':''}" onclick="urLoad(${d.unmask?'false':'true'})"><span class="sw"></span>실명·실번호</label></div>
+    <div class="tw"><table><thead><tr><th>문의</th><th>고객</th><th>문의 내용</th><th>담당 · 상태</th><th>처음 들어온 경로</th><th>가입·처음 확인</th><th class="num">문의 전 구매</th><th>문자</th></tr></thead><tbody>${
+      R.map(r=>`<tr><td class="mono">${esc(r.at)}</td>
+        <td><b>${esc(r.name||'')}</b><div class="note mono">${esc(r.phone||'')}</div></td>
+        <td>${esc(r.typ||'')}${r.model?`<div class="note">${esc(r.model)}</div>`:''}</td>
+        <td>${esc(r.handler||'미배정')}<div class="note">${esc(r.result||'')}</div></td>
+        <td>${(r.chans||[]).length?(r.chans||[]).map(x=>`<span class="tag n">${esc(x)}</span>`).join(' '):'<span class="note">처음 보는 번호</span>'}${r.consent?' <span class="tag ok" title="마케팅 수신동의">동의</span>':''}</td>
+        <td class="mono">${r.first_seen?`${esc(r.first_seen)}<div class="note">${ago(r.first_seen)}</div>`:'<span class="note">-</span>'}</td>
+        <td class="num">${r.buy_n?`${n(r.buy_n)}건 · ${wonK(r.buy_amt)}<div class="note">마지막 ${esc(r.buy_last||'')}</div>`:'<span class="note">없음</span>'}${r.after_n?`<div class="note" style="color:var(--ok)">문의 뒤 ${n(r.after_n)}건</div>`:''}${r.prev_consults?`<div class="note">이전 상담 ${n(r.prev_consults)}</div>`:''}</td>
+        <td>${r.sent_this?'<span class="tag ok">이 캠페인</span>':'<span class="note">이 캠페인 기록 없음</span>'}${r.sent_other?`<div class="note">다른 캠페인 ${n(r.sent_other)}</div>`:''}</td></tr>`).join('')
+      || '<tr><td colspan="8" class="note" style="text-align:center;padding:20px">이 캠페인 링크로 들어온 문의가 없습니다</td></tr>'}</tbody></table></div>
+    <p class="note" style="margin-top:8px">가입·처음 확인 = 고도몰 회원이면 가입일, 그 밖에는 우리 명단에 처음 들어온 날. '이 캠페인 기록 없음' 은 센드온 결과 파일을 아직 [CRM 발송 고객] 에 안 올렸다는 뜻일 수 있습니다.</p>`;
 }
 /* [구매]·[매출] 숫자 → 통합 원장 : 캠페인 수신자(발송 실패 제외)의 발송 뒤 주문만 (fn_order_list p_campaign · fn_utm_campaigns 의 bought 와 같은 규칙). 기간은 첫 발송일 ~ 오늘 */
 function utmBought(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code); if(!c) return;
