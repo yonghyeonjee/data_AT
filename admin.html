@@ -4489,7 +4489,11 @@ function placeCbar(v){
   if(!cfg){ const pb=$('periodBar'); if(pb && el.contains(pb) && PB_HOME){ pb.classList.add('hidden'); PB_HOME.appendChild(pb); } el.remove(); return; }
   if(CB_VIEW!==v){ CB_VIEW=v; CB.q=''; CB.field=''; CB.channel=''; CB.category=''; }   /* 화면이 바뀌면 조건은 새로 */
   [cfg.q, cfg.channel].forEach(id=>{ if(id && $(id)) $(id).classList.add('hidden'); });   /* 화면 자체 검색칸·채널은 공통 바로 대신 (중복 제거) */
-  const view=$('v-'+v); const first=view.querySelector('.card'); if(!first) return;
+  const view=$('v-'+v);
+  /* 검색 칸(cfg.q)이 든 카드 앞에 붙인다 — 고객 통합·품목·주문서는 목록 카드가 셋째·둘째라 바가 맨 위 KPI 카드 위에 떠서
+     폰에서 [고객 목록] 탭으로 내려가면 검색 칸이 화면 밖이었다 (2026-10-08). 검색 칸이 첫 카드에 있는 화면은 전과 같다 */
+  const qCard = cfg.q && $(cfg.q) ? $(cfg.q).closest('.card') : null;
+  const first = (qCard && view.contains(qCard)) ? qCard : view.querySelector('.card'); if(!first) return;
   /* 첫 카드가 격자(.grid 등) 안에 있으면 view 의 직계 자식이 아니라 insertBefore 가 NotFoundError 를 낸다
      → 그 카드를 품은 view 직계 자식 앞에 넣는다 */
   let anchor=first; while(anchor.parentNode && anchor.parentNode!==view) anchor=anchor.parentNode;
@@ -4589,13 +4593,15 @@ function buildSubTabs(v){
   bar.innerHTML=cards.map((c,i)=>{ if(!c.id) c.id=`sec-${v}-${i}`; return `<a href="#${c.id}" data-sec="${c.id}" class="${c.id===cur?'on':''}">${esc(subTabTitle(c))}</a>`; }).join('');
   bar.classList.remove('hidden');
   bar.querySelectorAll('a').forEach(a=>a.onclick=e=>{ e.preventDefault(); const el=document.getElementById(a.dataset.sec), sc=document.querySelector('.content'); if(!el||!sc) return;
-    sc.scrollTo({top: el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 10, behavior:'smooth'}); subTabActive(a.dataset.sec); });
+    sc.scrollTo({top: secAnchor(el).getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 10, behavior:'smooth'}); subTabActive(a.dataset.sec); });
   if(!cur) subTabActive(cards[0].id);
 }
+/* 카드 바로 앞에 공통 검색 바가 붙어 있으면 탭으로 내려갈 때 그 바부터 보인다 — 검색 칸이 화면 밖으로 밀리지 않게 */
+function secAnchor(el){ const prev=el&&el.previousElementSibling; return (prev&&prev.id==='cbar')?prev:el; }
 function subTabActive(id){ document.querySelectorAll('#subTabs a').forEach(a=>{ const on=a.dataset.sec===id; a.classList.toggle('on',on); if(on) a.scrollIntoView({block:'nearest',inline:'nearest'}); }); }
 document.addEventListener('DOMContentLoaded',()=>{ const sc=document.querySelector('.content'); if(!sc) return; let t=null;
   sc.addEventListener('scroll',()=>{ if(t) return; t=setTimeout(()=>{ t=null; const bar=$('subTabs'); if(!bar||bar.classList.contains('hidden')) return;
-    const top=sc.getBoundingClientRect().top+40; let best=null; bar.querySelectorAll('a').forEach(a=>{ const el=document.getElementById(a.dataset.sec); if(el && el.getBoundingClientRect().top<=top) best=a.dataset.sec; });
+    const top=sc.getBoundingClientRect().top+40; let best=null; bar.querySelectorAll('a').forEach(a=>{ const el=document.getElementById(a.dataset.sec); if(el && secAnchor(el).getBoundingClientRect().top<=top) best=a.dataset.sec; });
     if(best) subTabActive(best); },80); },{passive:true}); });
 
 /* ═══════════════ 온라인 채널 ═══════════════ */
