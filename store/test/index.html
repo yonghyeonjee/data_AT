@@ -1297,7 +1297,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <h2>내 고객 <span id="mcSub"></span></h2>
       <div class="csearch"><input class="in" id="cu_q" placeholder="이름 · 번호 뒷자리" autocomplete="off" onkeydown="if(event.key==='Enter')loadMyCustomers()"><button type="button" class="go" onclick="loadMyCustomers()" aria-label="찾기">⌕</button></div>
       <div class="prow" id="cu_period" style="margin-top:8px"></div>
-      <div class="row2" style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="row2" style="margin-top:8px;margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <label for="cu_ch" class="lbl" style="font-size:calc(12.5px * var(--font-scale));color:var(--muted);font-weight:600">문의 채널</label>
         <select class="in" id="cu_ch" style="flex:1;min-width:160px" onchange="loadMyCustomers()"><option value="">전체 채널</option></select>
       </div>
@@ -4000,7 +4000,7 @@ async function loadMyCustomers(){
   cuFillChannels();
   box.innerHTML='<div class="empty">불러오는 중…</div>';
   try{
-    const rows=await rpc('fn_store_my_customers',{p_code:CODE,p_q:($('cu_q').value||'').trim()||null,p_from:pd.from,p_to:pd.to,p_channel:$('cu_ch').value||null});
+    const rows=await rpc('fn_store_my_customers',{p_code:CODE,p_q:($('cu_q').value||'').trim()||null,p_from:pd.from,p_to:pd.to,p_channel:$('cu_ch').value||null,p_limit:2000});   /* DPS 판매 고객까지 전부 (담당자당 1,000명 안팎 · 서버 120ms) — 전엔 기본 100명에서 잘렸다 (2026-10-08) */
     if(seq!==CU_SEQ) return;
     CU_ROWS=rows||[]; CU_PG=0; renderMyCustomers();
   }catch(e){ if(seq===CU_SEQ) box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }

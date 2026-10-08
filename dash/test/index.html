@@ -163,6 +163,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .oostrip .nums b{font-family:var(--mono);font-weight:700;color:var(--ink);margin-left:5px}
 .oostrip .nums u{text-decoration:none;font-family:var(--mono);font-size:11.5px;margin-left:5px}
 .oostrip .nums u.up{color:var(--teal)}.oostrip .nums u.down{color:var(--red)}
+.oostrip .nums em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-left:6px}
 
 .chart{width:100%;height:auto;display:block}
 .legend{display:flex;flex-wrap:wrap;gap:5px 14px;margin-top:12px}
@@ -501,6 +502,7 @@ body{background:
     <div class="seg" role="group" aria-label="집계 기준" id="basisseg" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커 등)에서 집계한 값">
       <button id="m-manual" aria-pressed="false">수기입력</button>
       <button id="m-ledger" aria-pressed="true">원장</button>
+      <button id="m-dps" aria-pressed="false" title="DPS 전표 전체 (B2C · 매장·온라인 모두 DPS 판매일 기준)">DPS</button>
     </div>
     <button class="ghost" id="b-refresh" title="원본을 다시 읽어 대시보드를 새로 만듭니다">데이터 갱신</button>
       <button class="ghost" id="b-pres">발표 모드</button>
@@ -713,7 +715,7 @@ const SHARE_URL = '__PASTE_ANYONE_DEPLOY_EXEC_URL__';
 const DC_URL = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_dash_payload_pub';
 const DC_ANON = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 const DC_MONTHS = 24;   // 자체 모드로 불러올 기간(개월) — 전년 동기 비교를 위해 24 (2026-09-19)
-function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='manual'?'manual':'ledger'; }   /* 기본 = 원장(주문 원천, 자동 수집). 수기입력은 대사표를 올렸을 때만 (2026-09-17) */
+function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='manual'?'manual':v==='dps'?'dps':'ledger'; }   /* 기본 = 원장(주문 원천, 자동 수집). 수기입력은 대사표를 올렸을 때만 (2026-09-17) */
 const GAS_READY = SHARE_URL.indexOf('http')===0;   // 기존 app(GAS) 공유 주소가 실제로 설정돼 있는가
 function dashSrc(){ if(!GAS_READY){ try{ if(sessionStorage.getItem('dash_src')==='gas') sessionStorage.removeItem('dash_src'); }catch(e){} return 'dc'; }
   let v=''; try{ v=new URLSearchParams(location.search).get('src')||sessionStorage.getItem('dash_src')||''; }catch(e){} return v==='gas'?'gas':'dc'; }
@@ -1111,11 +1113,18 @@ function drawKpis(){
   // 5 일평균
   d=dOf(cur[key]/cur.days,prv?prv[key]/prv.days:null);
   K.push({k:'일평균',v:won(cur[key]/cur.days),cls:'',d:d[0],dc:d[1],sp:cur.byDay.map(x=>x[key]),col:'#1428A0'});
-  // 6 오프라인 묶음 : VMS · 렌탈 · 구독 중 값이 있는 것을 한 칸에
+  // 6 매장 = 매장(시흥) 일반 + 매장구독(시흥) 구독 — 둘 다 매장 매출, 일반/구독은 따로 (2026-10-08)
+  const stv=STORE_CH>=0&&inScope(STORE_CH)?cur.byCh[STORE_CH][key]:0, stp=(prv&&STORE_CH>=0&&inScope(STORE_CH))?prv.byCh[STORE_CH][key]:0;
+  const svp=(prv&&SUBS_CH>=0&&inScope(SUBS_CH))?prv.byCh[SUBS_CH][key]:0;
+  if(stv+sv>0){
+    d=dOf(stv+sv,prv?stp+svp:null);
+    K.push({k:'매장 (일반 · 구독)',v:won(stv+sv)+'<span class="v2">'+wonS(stv)+' · '+wonS(sv)+'</span>',cls:'',d:d[0],dc:d[1],
+      sub:'일반 '+wonS(stv)+(prv?' (전기 '+wonS(stp)+')':'')+' · 구독 '+wonS(sv)+(prv?' (전기 '+wonS(svp)+')':'')});
+  }
+  // 7 VMS · 렌탈 중 값이 있는 것을 한 칸에
   const ex=[];
   if(VMS_CH>=0&&vv>0)ex.push(['VMS',vv]);
   if(RENT_CH>=0&&rv>0)ex.push(['렌탈',rv]);
-  if(sv>0)ex.push(['구독',sv]);
   if(ex.length){
     K.push({k:ex.map(x=>x[0]).join(' · '),
       v:won(ex[0][1])+(ex.length>1?'<span class="v2">'+ex.slice(1).map(x=>wonS(x[1])).join(' · ')+'</span>':''),
@@ -1145,7 +1154,8 @@ function drawOO(){
     if(!prv||!p)return '';
     const x=(v-p)/Math.abs(p)*100;
     return '<u class="'+(x>=0?'up':'down')+'">'+(x>=0?'+':'')+x.toFixed(0)+'%</u>';};
-  const st=STORE_CH>=0?cur.byCh[STORE_CH][key]:0;
+  /* 매장 = 매장(시흥) 일반 + 매장구독(시흥) 구독 — 둘 다 매장 매출이고 일반/구독은 따로 보인다 (2026-10-08) */
+  const st1=STORE_CH>=0?cur.byCh[STORE_CH][key]:0, st2=SUBS_CH>=0?cur.byCh[SUBS_CH][key]:0, st=st1+st2;
   const rv=RENT_CH>=0?cur.byCh[RENT_CH][key]:0;
   const vms=CH.findIndex(c=>c.name==='통신판매(VMS)');
   const vv=vms>=0?cur.byCh[vms][key]:0;
@@ -1166,7 +1176,7 @@ function drawOO(){
     +'<span class="nums">'
     +'<span>온라인<b>'+wonS(on)+'</b>'+dd(on,onP)+'</span>'
     +'<span>오프라인<b>'+wonS(off)+'</b>'+dd(off,offP)+'</span>'
-    +(st>0?'<span>매장<b>'+wonS(st)+'</b></span>':'')
+    +(st>0?'<span title="매장(시흥) 일반 + 매장구독(시흥) 구독">매장<b>'+wonS(st)+'</b><em>일반 '+wonS(st1)+' · 구독 '+wonS(st2)+'</em></span>':'')
     +(rv>0?'<span>렌탈<b>'+wonS(rv)+'</b></span>':'')
     +(vv>0?'<span>VMS<b>'+wonS(vv)+'</b></span>':'')
     +'</span>';
@@ -2255,13 +2265,14 @@ selLoad();buildControls();syncScopeBtns();drawFinds();a=firstA;b=lastA;render();
       bs.style.opacity = src==='dc'?'1':'.35'; bs.style.pointerEvents = src==='dc'?'auto':'none';
       bs.querySelector('#m-manual').setAttribute('aria-pressed', mode==='manual');
       bs.querySelector('#m-ledger').setAttribute('aria-pressed', mode==='ledger');
-      bs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ const want=b.id==='m-ledger'?'ledger':'manual'; if(want===mode) return;
+      const md=bs.querySelector('#m-dps'); if(md) md.setAttribute('aria-pressed', mode==='dps');
+      bs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ const want=b.id==='m-ledger'?'ledger':b.id==='m-dps'?'dps':'manual'; if(want===mode) return;
         try{ sessionStorage.setItem('dash_basis', want); }catch(e){} const u=new URL(location.href); u.searchParams.set('mode', want); location.href=u.toString(); });
     }
     const sn=document.getElementById('srcnote');
     if(sn) sn.textContent='출처 · '+(src==='gas'
       ? '대시보드 v4 (기존 app · 구글시트 원본)'
-      : '현행 시스템 (Datacenter · 최근 '+DC_MONTHS+'개월 · '+(mode==='ledger'?'원장 기준':'수기입력 기준')+')');
+      : '현행 시스템 (Datacenter · 최근 '+DC_MONTHS+'개월 · '+(mode==='ledger'?'원장 기준':mode==='dps'?'DPS 전표 기준 (B2C)':'수기입력 기준')+')');
   }
   function dcRange(){
     const to=new Date(); const from=new Date(to.getFullYear(), to.getMonth()-DC_MONTHS+1, 1);

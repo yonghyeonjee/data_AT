@@ -163,6 +163,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .oostrip .nums b{font-family:var(--mono);font-weight:700;color:var(--ink);margin-left:5px}
 .oostrip .nums u{text-decoration:none;font-family:var(--mono);font-size:11.5px;margin-left:5px}
 .oostrip .nums u.up{color:var(--teal)}.oostrip .nums u.down{color:var(--red)}
+.oostrip .nums em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-left:6px}
 
 .chart{width:100%;height:auto;display:block}
 .legend{display:flex;flex-wrap:wrap;gap:5px 14px;margin-top:12px}
@@ -1112,11 +1113,18 @@ function drawKpis(){
   // 5 일평균
   d=dOf(cur[key]/cur.days,prv?prv[key]/prv.days:null);
   K.push({k:'일평균',v:won(cur[key]/cur.days),cls:'',d:d[0],dc:d[1],sp:cur.byDay.map(x=>x[key]),col:'#1428A0'});
-  // 6 오프라인 묶음 : VMS · 렌탈 · 구독 중 값이 있는 것을 한 칸에
+  // 6 매장 = 매장(시흥) 일반 + 매장구독(시흥) 구독 — 둘 다 매장 매출, 일반/구독은 따로 (2026-10-08)
+  const stv=STORE_CH>=0&&inScope(STORE_CH)?cur.byCh[STORE_CH][key]:0, stp=(prv&&STORE_CH>=0&&inScope(STORE_CH))?prv.byCh[STORE_CH][key]:0;
+  const svp=(prv&&SUBS_CH>=0&&inScope(SUBS_CH))?prv.byCh[SUBS_CH][key]:0;
+  if(stv+sv>0){
+    d=dOf(stv+sv,prv?stp+svp:null);
+    K.push({k:'매장 (일반 · 구독)',v:won(stv+sv)+'<span class="v2">'+wonS(stv)+' · '+wonS(sv)+'</span>',cls:'',d:d[0],dc:d[1],
+      sub:'일반 '+wonS(stv)+(prv?' (전기 '+wonS(stp)+')':'')+' · 구독 '+wonS(sv)+(prv?' (전기 '+wonS(svp)+')':'')});
+  }
+  // 7 VMS · 렌탈 중 값이 있는 것을 한 칸에
   const ex=[];
   if(VMS_CH>=0&&vv>0)ex.push(['VMS',vv]);
   if(RENT_CH>=0&&rv>0)ex.push(['렌탈',rv]);
-  if(sv>0)ex.push(['구독',sv]);
   if(ex.length){
     K.push({k:ex.map(x=>x[0]).join(' · '),
       v:won(ex[0][1])+(ex.length>1?'<span class="v2">'+ex.slice(1).map(x=>wonS(x[1])).join(' · ')+'</span>':''),
@@ -1146,7 +1154,8 @@ function drawOO(){
     if(!prv||!p)return '';
     const x=(v-p)/Math.abs(p)*100;
     return '<u class="'+(x>=0?'up':'down')+'">'+(x>=0?'+':'')+x.toFixed(0)+'%</u>';};
-  const st=STORE_CH>=0?cur.byCh[STORE_CH][key]:0;
+  /* 매장 = 매장(시흥) 일반 + 매장구독(시흥) 구독 — 둘 다 매장 매출이고 일반/구독은 따로 보인다 (2026-10-08) */
+  const st1=STORE_CH>=0?cur.byCh[STORE_CH][key]:0, st2=SUBS_CH>=0?cur.byCh[SUBS_CH][key]:0, st=st1+st2;
   const rv=RENT_CH>=0?cur.byCh[RENT_CH][key]:0;
   const vms=CH.findIndex(c=>c.name==='통신판매(VMS)');
   const vv=vms>=0?cur.byCh[vms][key]:0;
@@ -1167,7 +1176,7 @@ function drawOO(){
     +'<span class="nums">'
     +'<span>온라인<b>'+wonS(on)+'</b>'+dd(on,onP)+'</span>'
     +'<span>오프라인<b>'+wonS(off)+'</b>'+dd(off,offP)+'</span>'
-    +(st>0?'<span>매장<b>'+wonS(st)+'</b></span>':'')
+    +(st>0?'<span title="매장(시흥) 일반 + 매장구독(시흥) 구독">매장<b>'+wonS(st)+'</b><em>일반 '+wonS(st1)+' · 구독 '+wonS(st2)+'</em></span>':'')
     +(rv>0?'<span>렌탈<b>'+wonS(rv)+'</b></span>':'')
     +(vv>0?'<span>VMS<b>'+wonS(vv)+'</b></span>':'')
     +'</span>';
