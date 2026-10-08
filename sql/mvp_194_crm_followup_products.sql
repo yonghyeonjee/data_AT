@@ -1,35 +1,38 @@
--- mvp_194 (2026-10-08) 관리자 CRM › 후속 관리 + SDP 제품 정보 적재 + 내 고객 DPS 고객 — 적용 기록 (DB 에는 이미 반영됨)
+-- mvp_194 (2026-10-08 · v180) 관리자 CRM › 후속 관리 + SDP 제품 정보 적재 + 내 고객 DPS 고객 — 적용 기록 (DB 에는 이미 반영됨)
 --
 -- 요청: "CRM 메뉴에 하나 추가해서 구독 만료일자, 견적 보낸지 3일 / 7일 이내를 모아 볼 수 있는 거를 넣어주고 정수기, 세탁기(AI콤보), 공기청정기가 들어갈 수 있게
 --        제품명이나 카테고리는 기존 정보를 참고로하고 첨부한 파일도 datacenter에 제품정보로 넣어서 쓰도록"
 --       "dps에서 매장 담당자들의 판매건들을 가져왔으니, 내 고객에서 검색되게 해줘야지" · "문의채널 선택창 아래와 padding 필요해"
 --
--- ── 1. 제품 정보 (core.product · 전엔 0행) ──
--- core.sdp_stage(kind, chunk, data) — SQL 로 나눠 올릴 때 쓰는 임시 자리 (RLS on · 정책 없음)
+-- ※ MCP execute_sql 은 보내는 글에 drop·truncate 낱말이 있으면 60초로 끊긴다 — 그래서 아래 함수들은 temp table 없이 CTE 로만 짰다.
+--
+-- ── 1. 제품 정보 (core.product · 전엔 0행 → 1,235모델) ──
 -- core.f_product_sdp_merge(p_models, p_plans, p_feats, p_care, p_by) — 열: models [model, cat, sub, value, planset, featset, prepay_no, q, type, ver, vers]
---   · plans [id, [[years, care_id, total, monthly]…]] · feats [id, [feature…]] · care [id, name]
+--   · plans [id, [[years, care_id, total, monthly]…]] · feats [id, [feature…]] · care [id, name]   (plan 원소 별칭은 pe(v) — p 는 바깥 열과 겹친다)
 --   → core.product(model_code pk, category_l1 = SDP 카테고리, category_l2 = 종류, list_price = v, brand 삼성, product_type 대물,
---      attrs.sdp{ver, vers, prepay_no, q, type, plans[{years, care, total, monthly}]}, attrs.features, attrs.dc_category = core.f_category(…))
---   제품명은 기존 정보에서: 원장 product_name_raw(가장 많이 쓰인 것) → inv.item.name → '카테고리 종류' (attrs.name_source)
--- public.fn_product_sdp_upsert(p_file, p_payload) — admin·uploader. raw.upload(source 'sdp_product') 한 줄 + 위 merge
--- public.fn_product_sdp_fetch(p_url default null) — admin. DB 가 raw.githubusercontent.com 의 tools/sdp/products_sdp.json 을 http_get 으로 읽어 merge
---   (컨테이너는 Supabase 로 못 나가고 MCP execute_sql 은 4KB 넘는 DDL 에서 60초로 끊겨 300KB JSON 을 SQL 로 못 넣는다 — 저장소가 공개라 DB 가 직접 가져온다)
+--      attrs.sdp{ver, vers, prepay_no, q, type, plans[{years, care, total, monthly}], by, loaded_at}, attrs.features, attrs.dc_category = core.f_category(…))
+--   제품명(not null)은 기존 정보에서: 원장 product_name_raw 중 그 모델로 가장 많이 적힌 **한글** 이름(코드만 적힌 줄 제외) → inv.item.name → '카테고리 종류' (attrs.name_source)
+-- public.fn_product_sdp_upsert(p_file, p_payload) — admin·uploader. raw.upload(source 'sdp_product') 한 줄 + merge  (PC: tools/sdp/load_products.mjs)
+-- public.fn_product_sdp_fetch(p_url default main 의 tools/sdp/products_sdp.json) — admin. DB 가 raw.githubusercontent.com 에서 extensions.http_get 으로 읽어 merge
+--   (컨테이너는 Supabase 로 못 나가고 MCP 는 293KB 를 못 보낸다 — 저장소가 공개라 DB 가 직접 가져온다). 2026-10-08 branch 주소로 적재 (raw.upload 832·833).
+-- core.sdp_stage — SQL 로 나눠 올리려다 만든 빈 표. 안 쓴다 → SQL 편집기에서 drop (core.f_zz_ddl_size_probe 도).
 --
 -- ── 2. 후속 관리 ──
 -- core.f_phone_show(p_phone, p_unmask) — 숫자만 남겨 010-****-5678 / 켜면 010-1234-5678
--- core.f_followup_group(p_model, p_name) — '정수기' | 'AI콤보' | '공기청정기' | null (필터·소모품은 null · core.product 카테고리 우선, 없으면 모델 접두·이름)
--- public.fn_crm_followups(p_kind, p_opt) — authenticated. p_kind:
---   'sub'     DPS 구독 전표(판매) 의 만료 — 취소·해지완료·가입취소·미가입(대상) 제외. 올인원은 DPS 종료일이 start+6개월로 잘못 찍혀 있어
---             총구독료 ÷ 월 요금(= 개월 · 36/48/60/72)으로 되살린 만료일(end_fixed=true · end_dps 에 원래 값). p_opt.days 30|60|90 · -1 = 만료 지남 90일
---   'quote'   crm.quote 마지막 판 · 보낸 날 = quote_share 만든 때(없으면 발행일 · shared=false '발행만'). p_opt.days 3|7|14|30. bought = 보낸 뒤 그 고객 주문
+-- core.f_followup_group(p_model, p_name) — '정수기' | 'AI콤보' | '공기청정기' | null (화면 RPC 는 같은 규칙을 조인으로 인라인 — FROM 이 있는 스칼라 SQL 함수는 줄마다 따로 돌아 4~11초였다)
+-- public.fn_crm_followups(p_kind, p_opt) — authenticated. 응답 {rows, total, counts, unmask, today, opt}
+--   'sub'     DPS 구독 전표(판매)의 만료 — 취소·해지완료·가입취소·미가입(대상) 제외. 올인원은 DPS 종료일이 start+6개월로 잘못 찍혀 있어(term_months 6 = 6년)
+--             총구독료 ÷ 월 요금(= 36·48·60·72개월)으로 되살린 만료일(end_fixed · end_dps 원래 값). p_opt.days 30|90|180|365 · -1 = 만료 지남 90일. counts d30·d90·d180·d365·past·active·next_end
+--   'quote'   crm.quote 마지막 판 · 보낸 날 = quote_share 만든 때(없으면 발행일 · shared=false '발행만'). p_opt.days 3|7|14|30. bought = 보낸 뒤 그 고객 주문. 마지막 상담은 buyer_key 또는 번호 일치
 --   'product' 정수기·AI콤보·공기청정기 산 고객 — core.orders(테스트·취소·환불·오픈마켓 제외) ∪ dps.sale(판매 · 구독이면 dps.subscription.model, 아니면 sale_item.model)
---             고객·모델별 마지막 구매 하나 · months = 경과 개월 · p_opt.group · min_m · max_m
---   공통: p_opt.q(이름·번호 뒷자리·모델·담당) · unmask(admin 만 · crm.access_log 'followup_<kind>:unmask') · limit(≤2000) · counts(칩 숫자) · total
+--             고객·모델별 마지막 구매 하나 · months = 경과 개월 · p_opt.group · min_m · max_m · counts = 그룹별 고객 수(정수기 354 · AI콤보 1,174 · 공기청정기 940)
+--   공통: p_opt.q(이름·번호 뒷자리·모델·담당) · unmask(admin 만 · crm.access_log 'followup_<kind>:unmask') · limit(≤2000)
+--   속도(2026-10-08): sub 150ms · quote 190ms · product 1.1~2.8초
 --
 -- ── 3. 내 고객 (store.html · store/test) ──
--- loadMyCustomers 가 p_limit:2000 을 보낸다 — 전엔 기본 100명에서 잘려 DPS 로 들어온 매장 판매 고객(담당자당 460~1,000명)이 목록·거르개에 안 보였다 (서버 120ms).
+-- loadMyCustomers 가 p_limit:2000 을 보낸다 — 전엔 기본 100명에서 잘려 DPS 로 들어온 매장 판매 고객(담당자당 459~1,004명)이 목록·거르개에 안 보였다 (서버 120ms).
 -- 문의 채널 select 줄(.row2) margin-bottom 12px.
 --
--- ── 4. 메뉴 ──
+-- ── 4. 메뉴 (main 배포 뒤) ──
 -- insert into core.menu_item (code, group_code, label, sort, state, note, envs)
--- values ('followup', 'crm', '후속 관리', 45, 'on', '구독 만료 · 견적 후속 · 정수기·AI콤보·공기청정기', '{test,prod}');   -- main 배포 뒤
+-- values ('followup', 'crm', '후속 관리', 45, 'on', '구독 만료 · 견적 후속 · 정수기·AI콤보·공기청정기', '{test,prod}');
