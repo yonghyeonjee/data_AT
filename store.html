@@ -2060,6 +2060,7 @@ async function loadStatus(code){
   /* 코드 확인은 status 하나로만 — 병렬로 두 개를 보내면 틀린 코드 한 번이 실패 두 번으로 잡힌다.
      이미 확인된 코드(새로고침)면 견적서 목록을 같이 보내고, 처음 로그인이면 status 뒤에 보내되 기다리지 않는다 (왕복 한 번을 아낀다) */
   const c = code||CODE, fresh = !!code && code!==CODE;
+  CU_AT=0;   /* 저장 뒤 새로고침이면 내 고객도 다음에 열 때 새로 받는다 */
   const qtP = fresh ? null : rpc('fn_store_quotes', {p_code: c}).catch(()=>null);
   const st = await rpc('fn_store_status', {p_code: c});
   const prev = (STATUS&&STATUS.quotes)||[];
@@ -3990,6 +3991,7 @@ document.addEventListener('click', e=>{ const c=e.target.closest('#al_kind .chip
   try{ localStorage.setItem('dc_al_kinds', JSON.stringify([...AL_KINDS])); }catch(e){} renderAlerts(); });
 /* ═══ 내 고객 : 내가 상담·판매한 고객 전부 — 마지막 상태·상담 횟수·지난 날짜, 줄을 누르면 이력이 아래로 펼쳐진다 ═══ */
 let CU_ROWS=[], CU_DETAIL={}, CU_SEQ=0;
+var CU_AT=0, CU_SIG='';   /* var — loadStatus(위쪽)가 이 줄보다 먼저 불려도 TDZ 오류가 안 나게 */
 function cuFillChannels(){ const sel=$('cu_ch'); if(!sel||!INQ||sel.options.length>1) return;
   sel.innerHTML='<option value="">전체 채널</option>'+(INQ.channels||[]).map(c=>`<option value="${esc(c.code)}">${esc(c.label)}</option>`).join(''); }
 async function loadMyCustomers(){
@@ -3998,11 +4000,16 @@ async function loadMyCustomers(){
   /* 채널 목록(fn_inq_codes)은 상담 입력 탭에서만 불러왔었다 — 내 고객 탭을 먼저 열면 '전체 채널'만 보이던 버그 */
   if(!INQ){ try{ await loadInqCodes(); }catch(e){} if(seq!==CU_SEQ) return; }
   cuFillChannels();
+  /* 탭을 다시 열 때마다 담당자당 1,000명 · 약 380KB 를 새로 받던 것 — 조건이 같고 2분 안이면 받아 둔 것으로 그린다.
+     저장 뒤 새로고침(loadStatus)·검색·기간·채널을 바꾸면 새로 받는다 (2026-10-10) */
+  const args={p_code:CODE,p_q:($('cu_q').value||'').trim()||null,p_from:pd.from,p_to:pd.to,p_channel:$('cu_ch').value||null,p_limit:2000};
+  const sig=JSON.stringify(args);
+  if(sig===CU_SIG && CU_AT && Date.now()-CU_AT<120000){ renderMyCustomers(); return; }
   box.innerHTML='<div class="empty">불러오는 중…</div>';
   try{
-    const rows=await rpc('fn_store_my_customers',{p_code:CODE,p_q:($('cu_q').value||'').trim()||null,p_from:pd.from,p_to:pd.to,p_channel:$('cu_ch').value||null,p_limit:2000});   /* DPS 판매 고객까지 전부 (담당자당 1,000명 안팎 · 서버 120ms) — 전엔 기본 100명에서 잘렸다 (2026-10-08) */
+    const rows=await rpc('fn_store_my_customers',args);   /* DPS 판매 고객까지 전부 (담당자당 1,000명 안팎 · 서버 120ms) — 전엔 기본 100명에서 잘렸다 (2026-10-08) */
     if(seq!==CU_SEQ) return;
-    CU_ROWS=rows||[]; CU_PG=0; renderMyCustomers();
+    CU_ROWS=rows||[]; CU_PG=0; CU_SIG=sig; CU_AT=Date.now(); renderMyCustomers();
   }catch(e){ if(seq===CU_SEQ) box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
 }
 const cuAgo=d=> d==null?'':(d<=0?'오늘':d===1?'어제':`${d}일 전`);
@@ -5393,6 +5400,7 @@ function ocSave(id){ const d=$('ocd_'+id).value, t=$('oct_'+id).value; if(!d) re
 let REQ=null, REQ_SEEN=null, REQ_T=null, REQ_ID=null;
 async function loadRequests(){
   if(!CODE || LOCKED) return;
+  if(document.hidden) return;   /* 다른 앱·탭에 가 있을 때는 20초 폴링을 쉰다 — 돌아오면 visibilitychange 가 바로 부른다 */
   let r; try{ r=await rpc('fn_store_requests',{p_code:CODE}); }catch(e){ return; }
   REQ=r; renderRequests(); inboxCheck(r.inbox);
   /* 새 요청이 늘어나면 알림 (처리 담당자만) */

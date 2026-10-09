@@ -167,9 +167,16 @@ end $outer$;
 
 ---
 
-## 지금 상태 (2026-10-08 · v183 — 발송 링크 관리 [문의] · 관리자 검색 바 위치 · 문자 수신거부 목록 업로드 · 발송 대상 카테고리 조건 줄 표시 · 내보내기 상한 해제 · DPS 채널 이름 · 관리자 CRM [후속 관리] · SDP 제품 정보 → core.product)
+## 지금 상태 (2026-10-10 · v184 — 속도 점검(대시보드 워머 지난달 낭비 · 발송 대상 선택지 캐시 · 내 고객 재사용) · 발송 링크 관리 [문의] · 관리자 검색 바 위치 · 문자 수신거부 목록 업로드 · 발송 대상 카테고리 조건 줄 표시 · 내보내기 상한 해제 · DPS 채널 이름 · 관리자 CRM [후속 관리] · SDP 제품 정보 → core.product)
 
 ### 되는 것
+- **속도 점검 — 쓸데없이 느리게 하던 것 (mvp_197 · v184 · 2026-10-10)** — "이상한 곳 없는지 테스트 진행해" + "속도와 불필요하게 느려지게하는 부분이 있는지".
+  **전체 회귀 50개 스위트 통과**(UAT 4조합+test 2 · audit 12 · tour · lists · lvedit · grid · tyx · segshot · tagshot · probes · ovf_admin · adlists · followup · optout · sendlog · utm · utmlist · utmresp · cbsearch · cdash · dsgroup · loadprog · segpick · dash 5종). 실패 1 은 `dashprog` P6 가 `v=164` 를 박아 둔 것(DASH_V 는 v180 에 180 으로 올렸다) — 테스트를 'DASH_V 숫자이고 시각이 아님' 으로 고쳤다. 지난 24시간 API 4xx·5xx 0 · Postgres ERROR 0 · cron 실패 0.
+  ① **`core.f_dash_warm` 이 15분마다 6.5~7초씩 돌았다** — 굽는 키 중 '지난달'(9/1~9/30 × 원장·수기·DPS)을 같은 함수 끝의 "끝 날짜가 3일 지난 키 정리" 가 바로 지워 **매번 3벌을 굽고 지웠다**. 그래서 [지난달] 을 누른 사람은 늘 캐시를 못 만나 직접 구웠다(2~8초 · /dash/ 는 anon 3초). 쓰지 않는 변수 `d_all`(orders_live 전체 min) 0.6초도 매번. → 정리에서 지난달 키 제외 · d_all 삭제 → **할 일 없는 회차 6.6초 → 23ms**. 자정에 날짜가 바뀌면 키 24벌을 새로 굽느라 77~87초 걸리는 건 그대로(키에 오늘 날짜가 들어 있다).
+  ② **`fn_crm_options`(발송 대상 추출의 채널·카테고리·지역 선택지)** 가 CRM 화면을 열 때마다 고객 6.2만·주문 19만 줄을 distinct 로 훑었다(340~745ms) → `core.rpc_cache 'crm_options'` 70분 캐시 + `f_rpc_warm` 이 60분마다 다시 굽는다(`core.f_crm_options_build`). **0.9ms**, 결과 같음, ACL 그대로(anon 없음).
+  ③ **담당자 내 고객 탭** — 탭을 열 때마다 `fn_store_my_customers`(p_limit 2000 · 담당자당 약 380KB)를 새로 받았다 → 같은 조건이면 2분 안엔 받아 둔 것으로 그린다(`CU_SIG`·`CU_AT`, `var` — loadStatus 가 먼저 불려도 TDZ 안 나게). 저장 뒤 새로고침(`loadStatus`)·검색·기간·채널을 바꾸면 새로 받는다. ④ **숨은 탭에서는 20초 폴링(`loadRequests`)을 쉰다** — 돌아오면 visibilitychange 가 바로 부른다.
+  **잰 값(DB 안 · 두 번째 호출)**: 담당자(anon) `fn_store_status` 86~109ms · consults_my 18~93 · my_customers 88~104(380KB) · consult_stats 9~47 · 나머지 10ms 이하 — 시작 RPC 담당자 7 · 점장 8 그대로. 관리자 `fn_home`·`fn_data_stamp`·`fn_data_status` 캐시 1ms 이하 · 대시보드 12개월 61~74ms(캐시) · `fn_customer_list` 366ms(검색 602) · `fn_order_summary` 462 · `fn_crm_targets_v2` 수신동의 890·재구매 442 · `fn_utm_campaigns` 274 · 후속 관리 제품군 720~790(360KB). 관리자 24화면을 열 때 **같은 RPC 를 두 번 부르는 곳은 없다**(`ptest/rpccount.mjs`). 0.3초 넘는 남은 것은 버튼을 눌러야 도는 추출·검색이라 손대지 않았다.
+  `pg_stat_statements` 는 8/28 부터 누적이라 옛 워머 경합 시대 값이 섞여 있다 — 지금 값은 이렇게 직접 잰다(관리자 = `request.jwt.claims` 에 admin sub · 담당자 = anon + `core.staff.code` 를 블록 안에서만, raise 로 롤백). 테스트 `ptest/cureuse.mjs` R1~R6 × 본·test × PC·폰 = 24.
 - **발송 링크 관리 [문의] — 캠페인 링크로 문의한 사람 (mvp_196 · v183 · 2026-10-08)** — "그것도 발송관리에서 볼수 있음 좋겠는데"(오늘 tabs12 문자로 온 자급제 문의 3건이 어느 채널 회원이고 언제 가입했고 산 적이 있는지).
   문의 → 캠페인 연결은 **폼이 남긴 `raw_payload.pageUrl` 의 `utm_campaign`**(`core.f_consult_campaign`, 소문자). `fn_utm_campaigns` 가 캠페인마다 `inquiries`(삭제·테스트 숨김 제외)를 주고, 캠페인 표에 **[문의]** 열(클릭과 구매 사이 · 합계 줄에도). 숫자를 누르면 `utmResp(code)` → 창(`#urBody`, `fn_utm_responses(p_code,p_unmask)`):
   요약(이미 명단에 있던 사람 · 처음 보는 번호 · **문의 전 구매 없음** · 구매 이력 있음 · 문의 뒤 구매 · 이 캠페인 발송 기록) + 처음 들어온 경로 칩 + 가입·처음 확인 연도 칩 + 줄(문의 시각 · 고객 · 문의 유형·모델 · 담당·상태 · 경로 태그·수신동의 · 가입일과 'N년 전' · 문의 전 구매 건수·금액·마지막 · 문의 뒤 구매 · 이전 상담 · 문자(이 캠페인/다른 캠페인)). [실명·실번호] 는 관리자만(`crm.access_log 'utm_responses:unmask'`).
