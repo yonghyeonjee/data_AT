@@ -4622,7 +4622,8 @@ function show(v, opt){ if(!TITLES[v]) v='home';
     $('v-dev').innerHTML=`<div class="uc"><div class="uc-tape"></div><div class="uc-body"><h4>${esc(TITLES[v])} — 화면 파일이 아직 이 버전이 아닙니다</h4>
       <p>메뉴는 서버에 등록됐지만 이 화면이 든 <b>admin.html</b>(또는 admin/test/index.html)이 아직 올라가지 않았습니다. 최신 zip 의 파일을 올리고 새로고침(Ctrl+F5)하세요.</p>
       <button class="btn sm ghost" onclick="show('home')">홈으로 가기</button></div></div>`; if(!opt.fromHistory) pushView(v, !!opt.replace); return; }
-  const dev=(MENU_STATE[v]||{}).state==='dev'; VIEW=v;
+  /* '개발 중' 메뉴는 보통 공사 중 안내만 — 개발 계정(fn_me.is_dev · core.app_setting dev_users)은 실제 화면을 열어 써 본다 (mvp_201) */
+  const dev=(MENU_STATE[v]||{}).state==='dev' && !(ME&&ME.is_dev); VIEW=v;
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('hidden', dev ? x.id!=='v-dev' : x.id!=='v-'+v));
   document.querySelectorAll('.nav[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===v));
   $('title').textContent=TITLES[v]; renderTitleLink(v);
