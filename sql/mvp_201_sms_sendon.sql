@@ -508,3 +508,4 @@ grant execute on function public.fn_sms_blocklist_pull(boolean) to authenticated
 update core.menu_item set state = 'dev', updated_at = now() where code = 'sms';
 -- API KEY 는 사용자가 전달한 값을 core.sms_config.api_key 에 넣었다(여기엔 적지 않는다). 센드온 로그인 ID 는 아직 없어 account_id 는 비어 있다 —
 -- 센드온 응답: 키만 보내면 400 '형식', 다른 ID 를 붙이면 403 '계정 ID가 일치하지 않습니다' (= IP 는 통과, ID 가 틀림). 관리자 [메시지 발송 관리] › 설정 › 센드온 계정 아이디.
+-- 2026-10-12 사용자 전달: account_id='pcnik1' 저장. 연결 확인 → 401 '허가되지 않은 사용자입니다. Whitelist IP 등록 후 이용해주세요' — 센드온 콘솔 허용 IP 에 43.201.156.141 등록이 남았다.
