@@ -1,34 +1,42 @@
 /**
  * ═══════════════════════════════════════════════════════════════════
- *  홈페이지 견적문의 (지메일) → Datacenter 상담 자동 등록
+ *  홈페이지 견적문의 (지메일) → Datacenter 상담 자동 등록   v2 (2026-10-12 · mvp_202)
  *  ───────────────────────────────────────────────────────────────────
  *  고도몰이 보내는 "[삼성스토어 시흥점] 견적문의 에 새글이 등록되었습니다" 메일을
  *  받은편지함에서 찾아 표(성함·연락처·방문경로…)를 읽고, Datacenter 에
  *  상담(진행전)으로 넣습니다. 담당자는 배정 순번(휴가자 제외)대로 자동 배정됩니다.
  *
+ *  ▸ v2 에서 바뀐 것 — "빠지는 메일이 없게"
+ *    · 메일 한 통(메시지 ID) 단위로 보낸 것을 기억합니다. 지메일이 새 메일을 이미 처리한
+ *      스레드에 묶어도(제목이 전부 같아서 그럴 수 있다) 새 메일은 새 ID 라 빠지지 않습니다.
+ *      (v1 은 스레드 라벨로 걸러서 그런 메일을 영영 건너뛰었다 — 2026-10-04 · 10-12 누락)
+ *    · 1시간마다 recheckInquiries 가 최근 7일 메일 ID 전부를 Datacenter 와 대조해
+ *      빠진 것만 다시 보냅니다 (fn_inquiry_mail_check). Datacenter 를 고치던 순간에 빠진 것도 한 시간 안에 들어갑니다.
+ *    · 표를 못 읽은 메일도 버리지 않습니다 — 본문(raw)을 같이 보내면 Datacenter 가 한 번 더 읽고,
+ *      그래도 이름이 없으면 '(이름 확인 필요)' 로 상담을 만들고 잔디 카드에 ⚠ 가 붙습니다.
+ *    · 대조할 때마다 심장박동을 찍어, 스크립트가 멈추면 아침 09:10 수집 미도착 감시가 잔디로 알립니다.
+ *
  *  ▸ 설치 (받는 계정으로 로그인한 상태에서)
- *    1. script.google.com → 새 프로젝트 → 이 파일 붙여넣기
- *    2. 프로젝트 설정 → appsscript.json 표시 → 같이 드린 appsscript.json 으로 교체
- *    3. runOnce() 한 번 실행 → 권한 승인 (Gmail 읽기 · 라벨 · 외부 호출)
- *    4. 실행 로그에 "✅ 연결 정상" 이 보이면 setupInquiryTrigger() 한 번 실행
- *       → 1분마다 자동으로 돕니다 (메일 오면 대개 1분 안에 담당자 화면·잔디에 뜸)
+ *    1. script.google.com → 프로젝트 열기 → 이 파일로 통째로 바꾸기 (DC_KEY 는 기존 값 그대로)
+ *    2. runOnce() 한 번 실행 → 권한 승인 · 실행 로그에 "✅ 연결 정상"
+ *    3. setupInquiryTrigger() 한 번 (1분) + setupRecheckTrigger() 한 번 (1시간)
  *
- *  ▸ 처리한 메일에는 라벨 "DC적재" 가 붙습니다. 라벨을 떼면 다음 번에 다시 넣습니다
- *    (Datacenter 쪽은 메일 ID 로 중복을 막으므로 두 번 들어가지 않습니다).
+ *  ▸ 라벨은 표시용입니다. "DC적재" = 보냄, "DC확인필요" = 표를 못 읽어 원문으로 보냄(Datacenter 문의 관리에서 이름·번호를 고칠 것).
+ *    라벨을 떼도 다시 들어가지 않습니다 (Datacenter 가 메일 ID 로 중복을 막는다).
  *
- *  ▸ 새 문의가 들어가면 잔디 CRM 방으로 알림이 같이 나갑니다 (Datacenter 쪽에서 보냄).
- *    문구·on/off 는 관리자 화면 → 알림 에서 바꿉니다.
- *
- *  ▸ 이름·연락처는 Datacenter 로만 보내고 이 스크립트에는 남기지 않습니다.
+ *  ▸ 이름·연락처는 Datacenter 로만 보내고 이 스크립트에는 남기지 않습니다 (보낸 메일 ID 만 기억).
  * ═══════════════════════════════════════════════════════════════════ */
 
 var DC_URL   = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
 var DC_ANON  = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 var DC_KEY   = 'PASTE_DC_KEY_HERE';          // fn_inquiry_mail_ingest 전용 키
 var LABEL    = 'DC적재';        // 넘긴 메일
-var LABEL_NG = 'DC확인필요';     // 표를 못 읽은 메일 (사람이 한 번 봐야 함)
-var QUERY    = 'subject:견적문의 newer_than:30d -label:' + LABEL + ' -label:' + LABEL_NG;
-var MAX_PER_RUN = 30;
+var LABEL_NG = 'DC확인필요';     // 표를 못 읽어 원문으로 넘긴 메일 (Datacenter 에서 이름·번호 확인)
+var QUERY    = 'subject:견적문의';
+var MAX_THREADS = 100;
+var SENT_PROP = 'dc_sent_ids';   // 보낸 메시지 ID (최근 400개)
+var SENT_KEEP = 400;
+var RAW_MAX   = 4000;            // 본문 원문 최대 글자
 
 /* 메일 표의 항목 이름 → Datacenter 필드 */
 var FIELD_MAP = {
@@ -43,32 +51,53 @@ var FIELD_MAP = {
   '상담방법': 'method', '상담 방법': 'method',
   '첨부파일': 'attach',
   '이메일': 'email', 'E-mail': 'email',
-  '문의내용': 'memo', '내용': 'memo', '메모': 'memo'
+  '문의내용': 'memo', '문의 내용': 'memo', '요청사항': 'memo', '내용': 'memo', '메모': 'memo'
 };
 /* 사업자 견적문의는 게시판이 따로다 (/board/contact_business/). 제목으로 가른다. */
 var BIZ_RE = /(사업자|법인|기업|B2B)/i;
 
 /* ── 진입점 ─────────────────────────────────────────────── */
-function collectInquiries(){
-  var label = getOrCreateLabel_(LABEL);
-  var threads = GmailApp.search(QUERY, 0, MAX_PER_RUN);
-  if(!threads.length){ Logger.log('새 견적문의 메일 없음'); return; }
-  var rows = [], done = [], bad = [];
+/* 1분 — 최근 2일 메일 중 아직 안 보낸 것 */
+function collectInquiries(){ sync_(2, false); }
+/* 1시간 — 최근 7일 메일 ID 전부를 Datacenter 와 대조해 빠진 것만 다시 보냄 (+ 심장박동) */
+function recheckInquiries(){ sync_(7, true); }
+
+function sync_(days, askDc){
+  var threads = GmailApp.search(QUERY + ' newer_than:' + days + 'd', 0, MAX_THREADS);
+  var msgs = [];
   threads.forEach(function(th){
-    var got = false;
-    th.getMessages().forEach(function(msg){
-      var row = parseMessage_(msg);
-      if(row){ rows.push(row); got = true; }
-    });
-    if(got) done.push(th);
-    else { bad.push(th); Logger.log('표를 못 읽음 — "' + th.getFirstMessageSubject() + '" → 라벨 ' + LABEL_NG); }
+    th.getMessages().forEach(function(m){ if(/견적문의/.test(String(m.getSubject() || ''))) msgs.push(m); });
   });
-  /* 못 읽은 메일에도 라벨을 붙인다. 안 붙이면 매번 다시 집어서 새 메일 자리를 잡아먹는다 */
-  if(bad.length){ var ng = getOrCreateLabel_(LABEL_NG); bad.forEach(function(th){ th.addLabel(ng); }); }
-  if(!rows.length){ Logger.log('읽은 문의 0건'); return; }
+  var todo;
+  if(askDc){
+    var ids = msgs.map(function(m){ return m.getId(); });
+    var chk = dcCall_('fn_inquiry_mail_check', { p_key: DC_KEY, p_ids: ids });
+    if(!chk || !chk.ok){ Logger.log('❌ 대조 실패 — 다음 시간에 다시'); return; }
+    var missing = {}; (chk.missing || []).forEach(function(id){ missing[id] = true; });
+    todo = msgs.filter(function(m){ return missing[m.getId()]; });
+    Logger.log('🔎 최근 ' + days + '일 메일 ' + ids.length + '통 대조 · Datacenter 에 없는 것 ' + todo.length + '통'
+               + (todo.length ? ' → 다시 보냅니다' : ''));
+  } else {
+    var sent = loadSent_();
+    todo = msgs.filter(function(m){ return !sent[m.getId()]; });
+    if(!todo.length){ Logger.log('새 견적문의 메일 없음'); return; }
+  }
+  if(!todo.length) return;
+
+  var rows = todo.map(buildRow_);
   var res = dcCall_('fn_inquiry_mail_ingest', { p_key: DC_KEY, p_rows: rows });
-  if(!res || !res.ok){ Logger.log('❌ Datacenter 적재 실패 — 라벨을 붙이지 않습니다. 다음 실행에 다시 시도합니다.'); return; }
-  done.forEach(function(th){ th.addLabel(label); });
+  if(!res || !res.ok){ Logger.log('❌ Datacenter 적재 실패 — 보낸 것으로 적지 않습니다. 다음 실행에 다시 시도합니다.'); return; }
+
+  /* 보낸 ID 기억 + 라벨 (표시용) */
+  var okLabel = getOrCreateLabel_(LABEL), ngLabel = getOrCreateLabel_(LABEL_NG);
+  var sentNow = loadSent_();
+  todo.forEach(function(m, i){
+    sentNow[m.getId()] = 1;
+    var th = m.getThread();
+    th.addLabel(rows[i].name ? okLabel : ngLabel);
+    if(!rows[i].name) Logger.log('⚠ 표를 못 읽음 — "' + rows[i].subject + '" → 원문으로 보냄 · Datacenter 문의 관리에서 이름·번호 확인');
+  });
+  saveSent_(sentNow);
   Logger.log('✅ 문의 ' + rows.length + '건 보냄 · 새로 등록 ' + res.inserted + ' · 이미 있음 ' + res.duplicate + ' · 건너뜀 ' + res.skipped
              + (res.inserted ? ' · 잔디 알림 나감' : ''));
   (res.rows || []).forEach(function(r){ Logger.log('   #' + r.id + ' ' + r.name + ' → ' + (r.handler || '미배정')); });
@@ -79,50 +108,60 @@ function runOnce(){
   var st = dcCall_('fn_inquiry_mail_status', { p_key: DC_KEY });
   if(st && st.ok) Logger.log('✅ 연결 정상 · 지금까지 지메일로 들어온 상담 ' + st.total + '건 · 마지막 ' + (st.last || '-'));
   else { Logger.log('❌ 연결 실패 — 바로 위 로그를 보세요'); return; }
-  collectInquiries();
+  recheckInquiries();
 }
 
-/* 자동 실행 — 기본 1분 (Apps Script 가 허용하는 가장 짧은 주기)
-   메일이 오면 대개 1분 안에 담당자 화면과 잔디에 뜹니다.
-   ※ 일반 gmail.com 계정은 스크립트 실행시간이 하루 90분입니다.
-     한 번 도는 데 1~2초라 1분 주기면 하루 25~50분쯤 씁니다. 넉넉하지만,
-     "초과" 경고 메일이 오면 setupInquiryTrigger5() 로 바꾸세요. (Workspace 계정은 6시간이라 여유롭습니다) */
-function setupInquiryTrigger(){ setTrigger_(1); }
-function setupInquiryTrigger5(){ setTrigger_(5); }
-function setTrigger_(min){
-  ScriptApp.getProjectTriggers().forEach(function(t){ if(t.getHandlerFunction() === 'collectInquiries') ScriptApp.deleteTrigger(t); });
-  ScriptApp.newTrigger('collectInquiries').timeBased().everyMinutes(min).create();
-  Logger.log('✅ ' + min + '분마다 collectInquiries 가 돕니다');
+/* 자동 실행 — 1분(수집) + 1시간(대조). 둘 다 켜 둘 것.
+   ※ 일반 gmail.com 계정은 스크립트 실행시간이 하루 90분. 1분 주기 한 번에 1~2초라 넉넉하지만
+     "초과" 경고 메일이 오면 setupInquiryTrigger5() 로 바꾸세요. (Workspace 계정은 6시간) */
+function setupInquiryTrigger(){ setTrigger_('collectInquiries', 1); }
+function setupInquiryTrigger5(){ setTrigger_('collectInquiries', 5); }
+function setupRecheckTrigger(){ setTrigger_('recheckInquiries', 60); }
+function setTrigger_(fn, min){
+  ScriptApp.getProjectTriggers().forEach(function(t){ if(t.getHandlerFunction() === fn) ScriptApp.deleteTrigger(t); });
+  var tb = ScriptApp.newTrigger(fn).timeBased();
+  if(min >= 60) tb.everyHours(Math.round(min / 60)); else tb.everyMinutes(min);
+  tb.create();
+  Logger.log('✅ ' + (min >= 60 ? Math.round(min / 60) + '시간' : min + '분') + '마다 ' + fn + ' 가 돕니다');
 }
-/* 자동 실행 끄기 */
+/* 자동 실행 끄기 (둘 다) */
 function stopInquiryTrigger(){
   var n = 0;
-  ScriptApp.getProjectTriggers().forEach(function(t){ if(t.getHandlerFunction() === 'collectInquiries'){ ScriptApp.deleteTrigger(t); n++; } });
+  ScriptApp.getProjectTriggers().forEach(function(t){
+    if(t.getHandlerFunction() === 'collectInquiries' || t.getHandlerFunction() === 'recheckInquiries'){ ScriptApp.deleteTrigger(t); n++; }
+  });
   Logger.log(n ? '멈췄습니다 (' + n + '개 삭제)' : '켜져 있던 자동 실행이 없습니다');
 }
 
-/* ── 메일 한 통 → 한 줄 ────────────────────────────────── */
-function parseMessage_(msg){
-  var obj = parseTable_(msg.getPlainBody() || '');
+/* ── 메일 한 통 → 한 줄 (표를 못 읽어도 raw 로 보낸다) ─────────── */
+function buildRow_(msg){
+  var plain = String(msg.getPlainBody() || '');
+  var obj = parseTable_(plain);
   if(!obj.name) obj = mergeObj_(obj, parseHtml_(msg.getBody() || ''));
-  if(!obj.name) return null;
   obj.msg_id = msg.getId();
   obj.received_at = msg.getDate().toISOString();
   obj.subject = String(msg.getSubject() || '').slice(0, 120);
   if(BIZ_RE.test(obj.subject)) obj.kind = '사업자';
+  obj.raw = (plain || strip_(msg.getBody() || '')).replace(/\r/g, '').slice(0, RAW_MAX);
   return obj;
 }
 function mergeObj_(a, b){ Object.keys(b).forEach(function(k){ if(!a[k]) a[k] = b[k]; }); return a; }
 
-/* 텍스트 본문 : "성함\t지용현" 또는 "성함  지용현" 한 줄씩 */
+/* 텍스트 본문 : "성함\t지용현" 또는 "성함  지용현" 한 줄씩.
+   라벨만 있고 값이 다음 줄부터 오는 칸(문의내용)은 다음 라벨 전까지 이어 붙인다. */
 function parseTable_(text){
-  var out = {};
+  var out = {}, pending = null;
   String(text).split(/\r?\n/).forEach(function(line){
-    var m = line.match(/^\s*([가-힣A-Za-z ]{2,12})\s*[\t:：]\s*(.*)$/) || line.match(/^\s*([가-힣A-Za-z ]{2,12})\s{2,}(.*)$/);
-    if(!m) return;
-    var key = FIELD_MAP[m[1].trim()]; if(!key) return;
-    var val = m[2].trim();
-    if(!out[key] && val !== '') out[key] = val;
+    var m = line.match(/^\s*([가-힣A-Za-z\- ]{2,12})\s*[\t:：]\s*(.*)$/) || line.match(/^\s*([가-힣A-Za-z\- ]{2,12})\s{2,}(.*)$/)
+         || line.match(/^\s*([가-힣A-Za-z\- ]{2,12})\s*()$/);   /* 라벨만 있는 줄 (값은 다음 줄부터) */
+    var key = m ? FIELD_MAP[m[1].trim()] : null;
+    if(key){
+      var val = m[2].trim();
+      if(val !== ''){ if(!out[key]) out[key] = val; pending = null; }
+      else pending = out[key] ? null : key;
+      return;
+    }
+    if(pending && line.trim() !== ''){ out[pending] = (out[pending] ? out[pending] + ' ' : '') + line.trim(); }
   });
   return out;
 }
@@ -137,9 +176,19 @@ function parseHtml_(html){
   return out;
 }
 function strip_(s){
-  return String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '')
+  return String(s || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/(tr|p|div|li)>/gi, '\n').replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
-    .replace(/\s+/g, ' ').trim();
+    .replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
+}
+
+/* ── 보낸 메시지 ID 기억 (이름·번호는 남기지 않는다) ─────────── */
+function loadSent_(){
+  try { var s = PropertiesService.getScriptProperties().getProperty(SENT_PROP); var arr = s ? JSON.parse(s) : [];
+        var o = {}; arr.forEach(function(id){ o[id] = 1; }); return o; } catch(e){ return {}; }
+}
+function saveSent_(o){
+  var arr = Object.keys(o); if(arr.length > SENT_KEEP) arr = arr.slice(arr.length - SENT_KEEP);
+  PropertiesService.getScriptProperties().setProperty(SENT_PROP, JSON.stringify(arr));
 }
 
 /* ── Datacenter 호출 ───────────────────────────────────── */
