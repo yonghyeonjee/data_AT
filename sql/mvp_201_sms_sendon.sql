@@ -1,4 +1,4 @@
--- mvp_201 · 문자 발송 (센드온) — 설정 · 템플릿 · 발송 엔진 · 관리자/담당자 RPC (2026-10-12 · v187)
+-- mvp_201 · 문자 발송 (센드온) — 설정 · 템플릿 · 발송 엔진 · 관리자/담당자 RPC (2026-10-12 · v188)
 -- 센드온 API: POST https://api.sendon.io/v2/messages/sms · Authorization: Basic base64(계정ID:API KEY)
 --   응답은 늘 HTTP 200, 본문 code 로 판정 · 허용 IP(Supabase egress 43.201.156.141) 를 센드온 콘솔에 등록해야 호출된다
 --   type SMS(90바이트)/LMS(2000바이트 · title 필수) · from 발신번호(숫자만) · to [번호…] · message · isAd(기본 true!)
