@@ -1043,12 +1043,16 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 .prodsug .sug.g b{color:var(--teal,#0B5E57)}
 .prodsug .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .prodraw summary{cursor:pointer;color:var(--muted);font-size:calc(12px * var(--font-scale));min-height:32px;display:flex;align-items:center}
+.campsug{position:absolute;z-index:30;left:0;right:0;top:100%;margin-top:4px;max-height:260px}
+.campsug .sug .note{margin-left:auto;font-size:calc(11.5px * var(--font-scale))}
+.smsc textarea.in{min-height:110px}
 /* 모바일 보정 — 스타일시트 맨 끝 (앞 규칙과 특이도가 같아도 여기가 이긴다) */
 @media(max-width:640px){
   .prodchip button{min-width:40px;min-height:40px} .prodsug .sug{min-height:40px} .prodraw summary{min-height:40px}
   .switch{height:auto;min-height:40px}   /* 실명·실번호 같은 토글이 36px 였다 (2026-10-12) */
   .qstat{margin-top:0}
 }
+@media (max-width:640px){ .campsug .sug{min-height:40px} .smsc textarea.in,.smsc .in{font-size:16px} #smsForm .in{font-size:16px} }
 </style>
 </head>
 <body>
@@ -1672,7 +1676,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
             <div style="grid-column:span 2"><label>캠페인명 <span style="color:var(--bad)">필수</span>
               <span class="note">감사로그·발송 이력·UTM 에 같은 이름이 쓰입니다</span></label>
-              <div style="display:flex;gap:6px"><input class="in" id="crmReason" list="crmCampList" placeholder="예: 2609_chuseok (발송 링크 관리의 캠페인 코드)" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_reason">
+              <div style="display:flex;gap:6px"><input class="in" id="crmReason" placeholder="예: 2609_chuseok (발송 링크 관리의 캠페인 코드 · 누르면 목록)" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_reason" readonly onfocus="this.removeAttribute('readonly');campPick(this)" oninput="campPick(this)" onblur="campPickHide(this)">
               <button class="btn sm" style="white-space:nowrap" onclick="utmQuick()" title="캠페인명의 코드로 단축 링크를 만듭니다 · 캠페인이 아직 없으면 먼저 등록합니다">링크 만들기</button>
               <button class="btn sm ghost" style="white-space:nowrap" onclick="show('utm')" title="캠페인·링크·클릭 전체 보기">발송 링크 관리</button></div></div>
             <div><label>키워드</label><input class="in" id="crmQ" placeholder="이름 · 최근상품 · 관심상품" onkeydown="if(event.key==='Enter')loadTargets(0)"></div>
@@ -1696,6 +1700,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <span style="flex:1"></span>
             <button class="btn ghost" onclick="exportTargets('xlsx')">엑셀 내려받기</button>
             <button class="btn ghost" onclick="exportTargets('csv')">CSV 복사</button>
+            <button class="btn" onclick="smsOpenTargets()" title="추출된 명단 전체에 문자 — [메시지 발송 관리] 의 모드(테스트/실제)대로 나갑니다">문자 보내기</button>
           </div>
           <div class="qstat" data-view="crm"></div>
           <div id="crmChips" class="legend" style="margin:-4px 0 10px"></div>
@@ -1818,6 +1823,56 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="pager"><span id="fuProdRange"></span><div class="btns" id="fuProdPg"></div></div>
         </div>
       </div>
+      <!-- ═══ 메시지 발송 관리 — 센드온 문자 (mvp_200) : 계정·잔액·단가 · 설정(꺼짐/테스트/실제) · 템플릿 · 수신거부 받아오기 · 발송 내역 ═══ -->
+      <div class="view hidden" id="v-sms">
+        <div class="callout" id="smsState">불러오는 중…</div>
+        <div class="card">
+          <h3>센드온 계정 · 잔액 <span>API KEY 는 서버에만 저장되고 화면에는 앞·뒤 4자리만 보입니다 · 호출은 Supabase 서버 IP 에서 나가므로 센드온 콘솔 [API KEY 관리 › 허용 IP] 에 아래 서버 IP 를 등록해야 합니다</span>
+            <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" onclick="smsCheck()">연결 확인 · 잔액</button><button class="btn sm ghost" onclick="loadSms()">새로고침</button></span></h3>
+          <div class="qsum" id="smsSum"></div>
+          <div id="smsCheckBox" class="note" style="line-height:1.8"></div>
+        </div>
+        <div class="card">
+          <h3>설정 <span>기본은 <b>꺼짐</b> — 담당자 화면 [문자] 버튼이 보이지만 잠깁니다. 켜고 <b>테스트</b> 모드면 보내기를 눌러도 실제로 나가지 않고 기록만 남고, <b>실제 발송</b>으로 바꾸면 그때부터 센드온으로 나갑니다</span>
+            <span style="margin-left:auto"><button class="btn sm" onclick="smsSave()">저장</button></span></h3>
+          <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))" id="smsForm">
+            <div><label>문자 기능</label><select class="in" id="smsEnabled" aria-label="문자 기능"><option value="false">꺼짐 (보이지만 잠김)</option><option value="true">켜짐</option></select></div>
+            <div><label>발송 모드</label><select class="in" id="smsMode" aria-label="발송 모드"><option value="test">테스트 (기록만)</option><option value="live">실제 발송</option></select></div>
+            <div><label>센드온 계정 아이디</label><input class="in" id="smsAccount" placeholder="센드온 로그인 아이디" autocomplete="off" name="dc_sendon_acct" readonly onfocus="this.removeAttribute('readonly')"></div>
+            <div><label>API KEY <span class="note" id="smsKeyNote"></span></label><input class="in mono" id="smsKey" type="password" placeholder="새 키를 넣을 때만 · 비우면 그대로" autocomplete="new-password" name="dc_sendon_key" readonly onfocus="this.removeAttribute('readonly')"></div>
+            <div><label>발신번호 <span class="note">숫자만 · 센드온에 등록·승인된 번호</span></label><input class="in mono" id="smsSender" placeholder="03180423166" inputmode="numeric"></div>
+            <div><label>하루 발송 상한 <span class="note">실제 발송 기준</span></label><input class="in num" id="smsDaily" type="number" min="1" step="100"></div>
+            <div><label>광고 머리말</label><input class="in" id="smsAdPrefix" placeholder="(광고)"></div>
+            <div><label>광고 꼬리말 <span class="note">무료수신거부 080 번호</span></label><input class="in" id="smsAdFooter" placeholder="무료수신거부 080-000-0000"></div>
+          </div>
+          <p class="note" style="margin-top:8px">광고로 보내면 머리말·꼬리말이 자동으로 붙습니다. 광고 문자는 <b>수신동의 고객에게만</b> — 발송 대상 추출이 그 규칙으로 명단을 뽑고, 수신거부 번호는 보낼 때 서버가 한 번 더 뺍니다.</p>
+        </div>
+        <div class="card">
+          <h3>템플릿 <span><b>{이름}</b> {담당자} {매장전화} {견적링크} {기한} {모델} {월요금} {콜백시각} {링크} 자리가 실제 값으로 바뀝니다 · 담당자 화면에는 '담당자'·'공통' 것만 보입니다</span>
+            <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="smsTplAdd()">+ 템플릿</button><button class="btn sm" onclick="smsSave()">저장</button></span></h3>
+          <div class="tw"><table><thead><tr><th>코드</th><th>이름</th><th style="min-width:320px">본문</th><th>쓰는 곳</th><th>광고</th><th>사용</th><th></th></tr></thead><tbody id="tbSmsTpl"></tbody></table></div>
+        </div>
+        <div class="card">
+          <h3>수신거부 받아오기 <span>센드온 통합 수신거부(080 ARS · 웹 · API 등록)를 전부 받아 우리 수신거부 목록(crm.sms_optout)에 넣고, 번호가 같은 고객의 수신동의를 끕니다 · 되돌리기는 데이터 가져오기 › 적재 기록</span>
+            <span style="margin-left:auto"><button class="btn sm" onclick="smsPull()">센드온 수신거부 받아오기</button></span></h3>
+          <div id="smsPullBox" class="note">센드온 <b>주소록</b>(그룹·멤버)은 API 에 조회 기능이 없어 가져올 수 없습니다 — 우리 명단(고객 통합 · 발송 대상 추출)이 주소록입니다.</div>
+        </div>
+        <div class="card">
+          <h3>발송 내역 <span>테스트·실제 모두 · 담당자 화면에서 보낸 것도 여기 쌓입니다</span>
+            <span style="margin-left:auto"><button class="btn sm ghost" onclick="loadSmsLog(0)">새로고침</button></span></h3>
+          <div class="filters">
+            <input class="in" id="smsLogQ" placeholder="이름 · 번호 · 내용 · 캠페인 · 보낸 사람" aria-label="찾기" style="max-width:280px" onkeydown="if(event.key==='Enter')loadSmsLog(0)">
+            <select class="in" id="smsLogMode" aria-label="모드" onchange="loadSmsLog(0)"><option value="">테스트 + 실제</option><option value="test">테스트만</option><option value="live">실제만</option></select>
+            <select class="in" id="smsLogStatus" aria-label="상태" onchange="loadSmsLog(0)"><option value="">모든 상태</option><option value="sent">보냄</option><option value="test">테스트</option><option value="failed">실패</option><option value="blocked">차단</option></select>
+            <label class="switch" id="smsLogUnmask" onclick="this.classList.toggle('on');loadSmsLog(0)"><span class="sw"></span>실명·실번호</label>
+            <button class="btn" onclick="loadSmsLog(0)">조회</button>
+          </div>
+          <div class="qstat" data-view="sms"></div>
+          <div class="tw"><table><thead><tr><th>시각</th><th>모드</th><th>상태</th><th>종류 · 캠페인</th><th>받는 사람</th><th>SMS/LMS</th><th style="min-width:280px">본문</th><th>보낸 사람</th></tr></thead><tbody id="tbSmsLog"></tbody></table></div>
+          <div class="pager"><span id="smsLogCount"></span><div class="btns" id="smsLogPg"></div></div>
+        </div>
+      </div>
+
       <div class="view hidden" id="v-utm">
         <div class="card">
           <h3>캠페인 <span>한 번의 발송 = 캠페인 하나 · 코드가 utm_campaign 이면서 발송 이력·접근 기록의 이름이 됩니다</span></h3>
@@ -2318,7 +2373,7 @@ let toastT; function toast(m,c=''){ const t=$('toast'); t.textContent=m; t.class
 /* 같은 화면을 왔다갔다 할 때 같은 질의를 다시 던지지 않게 45초만 담아둔다.
    저장·수정 계열(fn_*_save 등)은 담지 않고, 실행되면 캐시를 통째로 비운다. */
 const RPC_CACHE=new Map(), RPC_TTL=45000;
-const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle|void|to_order|rollback|auto_run|unlock|hide|exclude)/i;
+const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle|void|to_order|rollback|auto_run|unlock|hide|exclude|check|pull)/i;
 function rpcClear(){ RPC_CACHE.clear(); }
 let RPC_BUSY=0, RPC_T=null;
 let RPC_PILL=null, RPC_T0=0;
@@ -2344,7 +2399,7 @@ const FN_LABEL={fn_customer_list:'고객 목록',fn_customer_stats:'고객 통�
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
   fn_sl_pending:'샵링커 주문',fn_sl_status:'샵링커 상태',fn_order_queue:'전표 대기열',fn_settlement_list:'정산',fn_sub_plans:'구독 플랜',fn_store_daily_list:'매장 마감',
-  fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴',fn_crm_followups:'후속 관리',fn_product_sdp_upsert:'제품 정보'};
+  fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴',fn_crm_followups:'후속 관리',fn_product_sdp_upsert:'제품 정보',fn_sms_config_get:'문자 설정',fn_sms_log:'문자 발송 내역',fn_sms_check:'센드온 연결 확인',fn_sms_send:'문자 보내기',fn_sms_blocklist_pull:'센드온 수신거부'};
 const rpcLabel=fn=>FN_LABEL[fn]||'자료';
 const lpKB=b=>b>=1e6?(b/1e6).toFixed(1)+'MB':Math.max(1,Math.round(b/1e3))+'KB';
 function rpcExp(fn){ try{ return (JSON.parse(localStorage.getItem('dc_rpc_bytes')||'{}'))[fn]||0; }catch(e){ return 0; } }
@@ -2402,7 +2457,7 @@ function rpcIdle(){ const t0=Date.now();
   return new Promise(res=>{ const tick=()=>{ const el=Date.now()-t0;
     if((RPC_BUSY===0 && el>350) || el>12000) return res(); setTimeout(tick,80); }; tick(); }); }
 /* 조회 상태 줄 — 검색 바 바로 아래 '조회 중…' → '조회 완료 · 건수'. 공통 바가 있는 화면은 바 아래에 저절로 생기고, 조건 폼이 따로인 화면(수동 추출·자동 발송 대상·발송 링크)은 HTML 의 .qstat[data-view] 자리 (2026-10-12) */
-const QS_COUNT={customers:'cuCount',orders:'oCount',inbox:'iqCount',items:'itCount',log:'lgCount',oq:'oqCount',stock:'ivCount',moves:'mvCount',consults:'cCount',crm:()=>TG?$('tgCount').textContent:'',utm:'utmSum',followup:'fuNote'};
+const QS_COUNT={customers:'cuCount',orders:'oCount',inbox:'iqCount',items:'itCount',log:'lgCount',oq:'oqCount',stock:'ivCount',moves:'mvCount',consults:'cCount',crm:()=>TG?$('tgCount').textContent:'',utm:'utmSum',followup:'fuNote',sms:'smsLogCount'};
 let QS_T=null;
 function qstatEl(){ let el=document.querySelector(`.qstat[data-view="${VIEW}"]:not([data-auto])`); if(el) return el;
   const cb=$('cbar'); if(!cb||!cb.isConnected||!CB_VIEWS[VIEW]) return null;
@@ -4406,7 +4461,7 @@ document.querySelectorAll('.preset button').forEach(b=>b.addEventListener('click
 function applyPeriod(){ if(!$('pFrom').value||!$('pTo').value) return toast('시작일과 종료일을 넣어주세요','bad'); P={from:$('pFrom').value,to:$('pTo').value}; PRESET='custom'; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); periodLabel(); refreshView(); }
 
 /* ═══════════════ 네비 ═══════════════ */
-const NAV_ICON={followup:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,cdash:`<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 6-7"/><circle cx="20" cy="6" r="1.5"/></svg>`,utm:`<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>`,home:`<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,dash:`<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,orders:`<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,flow:`<svg viewBox="0 0 24 24"><path d="M3 6h5l3 6-3 6H3M10 6h5l3 6-3 6h-5M17 6h4v12h-4"/></svg>`,online:`<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg>`,daily:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,inbox:`<svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg>`,consults:`<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>`,customers:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>`,crm:`<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>`,stock:`<svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>`,moves:`<svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg>`,items:`<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>`,wiz:`<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/><path d="M18 10l3 2-3 2"/></svg>`,oq:`<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,upload:`<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>`,log:`<svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,option:`<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>`,notify:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`};
+const NAV_ICON={sms:`<svg viewBox="0 0 24 24"><path d="M4 4h16v12H7l-3 3z"/><path d="M8 9h8M8 12h5"/></svg>`,followup:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,cdash:`<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 6-7"/><circle cx="20" cy="6" r="1.5"/></svg>`,utm:`<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>`,home:`<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,dash:`<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,orders:`<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,flow:`<svg viewBox="0 0 24 24"><path d="M3 6h5l3 6-3 6H3M10 6h5l3 6-3 6h-5M17 6h4v12h-4"/></svg>`,online:`<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg>`,daily:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,inbox:`<svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg>`,consults:`<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>`,customers:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>`,crm:`<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>`,stock:`<svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>`,moves:`<svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg>`,items:`<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>`,wiz:`<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/><path d="M18 10l3 2-3 2"/></svg>`,oq:`<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,upload:`<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>`,log:`<svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,option:`<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>`,notify:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`};
 /* ===== 후속 관리 (2026-10-08 · mvp_194) — 구독 만료 · 견적 보낸 뒤 N일 · 정수기·AI콤보·공기청정기 산 고객. 세 카드가 각각 fn_crm_followups 를 부른다 ===== */
 const FU={sub:{days:180,page:0,rows:[],counts:{},total:0}, quote:{days:7,page:0,rows:[],counts:{},total:0}, product:{group:'정수기',min_m:'',page:0,rows:[],counts:{},total:0}};
 const FU_SEQ={sub:0,quote:0,product:0};
@@ -4491,7 +4546,7 @@ let MENU=[], MENU_STATE={};
 const NAV_FALLBACK=[
   {group:'_top',group_label:'',items:[{code:'home',label:'홈',state:'on'}]},
   {group:'sales',group_label:'매출',items:[{code:'dash',label:'매출 대시보드',state:'on'},{code:'flow',label:'주문 · 판매 · 매출',state:'on'},{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'}]},
-  {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출 · 수동',state:'on'},{code:'followup',label:'자동 발송 대상',state:'on'}]},
+  {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출 · 수동',state:'on'},{code:'followup',label:'자동 발송 대상',state:'on'},{code:'sms',label:'메시지 발송 관리',state:'on'}]},
   {group:'inv',group_label:'재고',items:[{code:'stock',label:'재고 현황',state:'on'},{code:'moves',label:'입출고',state:'on'},{code:'items',label:'품목',state:'on'},{code:'oq',label:'주문서 · 전송',state:'on'},{code:'wiz',label:'주문 변환',state:'on'}]},
   {group:'data',group_label:'데이터',items:[{code:'upload',label:'데이터 가져오기',state:'on'},{code:'log',label:'서비스 로그',state:'on'},{code:'settings',label:'설정 · 담당자',state:'on'}]},
   {group:'ops',group_label:'운영',items:[{code:'option',label:'옵션 · 권한',state:'on'},{code:'notify',label:'알림 관리',state:'on'}]}];
@@ -4536,7 +4591,7 @@ function renderUnderConstruction(v){
       <div class="uc-tape"></div>
     </div>`;
 }
-const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출 · 수동',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드',followup:'자동 발송 대상'};
+const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출 · 수동',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드',followup:'자동 발송 대상',sms:'메시지 발송 관리'};
 let VIEW='home';
 function toggleNav(force){ const on = force===undefined ? !document.body.classList.contains('nav-open') : !!force; document.body.classList.toggle('nav-open', on); }
 /* 뒤로가기 = 이전 화면. 화면을 바꿀 때마다 히스토리에 한 칸 쌓고, popstate 로 되돌아온다.
@@ -4727,7 +4782,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup};
+const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
@@ -6451,6 +6506,142 @@ async function exportTargets(kind){
   toast(`${n(d.total)}명 ${kind==='xlsx'?'엑셀로 내려받았습니다':'CSV 로 복사했습니다'} · 감사로그 기록됨`,'ok');
 }
 
+/* ═══ 메시지 발송 관리 — 센드온 문자 (mvp_200)
+   키는 서버(core.sms_config)에만. 화면은 설정·잔액·템플릿·내역을 보고, 보내기는 fn_sms_send(관리자)·fn_store_sms_send(담당자)가
+   core.f_sms_send 를 거친다 — 테스트 모드면 센드온을 부르지 않고 crm.sms_message 에 'test' 로만 남긴다. ═══ */
+let SMS_CFG=null, SMS_TPL=[], SMS_LOG_PG=0;
+function smsBytes(t){ let n=0; for(const ch of String(t||'')) n+= ch.codePointAt(0)<128?1:2; return n; }   /* 통신사 셈법: ASCII 1 · 한글·기호 2 */
+function smsType(b){ return b<=90?'SMS':'LMS'; }
+function smsWon(x){ return Number(x||0).toLocaleString('ko-KR',{maximumFractionDigits:1}); }   /* 단가는 9.9원처럼 소수점이 있다 */
+function smsRender(body,vars){ let v=String(body||''); Object.entries(vars||{}).forEach(([k,val])=>{ v=v.split('{'+k+'}').join(val==null?'':String(val)); }); v=v.replace(/\{[^{}\n]{1,20}\}/g,''); v=v.replace(/\n[ \t·]*\n/g,'\n'); return v.trim(); }
+function smsAdWrap(body,isAd){ if(!isAd||!SMS_CFG) return body; let v=body; if(!/^\(광고\)/.test(v)) v=(SMS_CFG.ad_prefix||'(광고)')+' '+v; const f=(SMS_CFG.ad_footer||'').trim(); if(f && !v.includes(f)) v+='\n'+f; return v; }
+const SMS_MODE_NM={test:'테스트 모드',live:'실제 발송'};
+async function smsCfgEnsure(fresh){ if(SMS_CFG && !fresh) return SMS_CFG; SMS_CFG=await rpc('fn_sms_config_get',{},{fresh:true}); return SMS_CFG; }
+async function loadSms(){ try{ await smsCfgEnsure(true); }catch(e){ $('smsState').className='callout warn'; $('smsState').textContent=e.message; return; } smsPaint(); loadSmsLog(0); }
+function smsPaint(){ const c=SMS_CFG; if(!c||!$('smsSum')) return; const lc=c.last_check||{}; const td=c.today||{}, wk=c.week||{};
+  const st=$('smsState'); st.className='callout '+(!c.enabled?'warn':c.mode==='live'?'ok':'');
+  st.innerHTML= !c.enabled ? `<b>문자 기능이 꺼져 있습니다</b> — 담당자 화면에 [문자] 버튼은 보이지만 잠겨 있고, 발송 대상 추출의 [문자 보내기]도 막힙니다. 아래 설정에서 켜면 바로 쓸 수 있습니다 (켜도 테스트 모드면 실제로 나가지 않습니다).`
+    : c.mode==='live' ? `<b>실제 발송 모드</b> — [보내기]를 누르면 센드온으로 나갑니다. 오늘 실제 ${n(td.live||0)}건 · 실패 ${n(td.failed||0)} · 차단 ${n(td.blocked||0)}`
+    : `<b>테스트 모드</b> — [보내기]를 눌러도 실제로 나가지 않고 발송 내역에 '테스트' 로만 남습니다. 오늘 테스트 ${n(td.test||0)}건. 실제로 보내려면 아래 모드를 [실제 발송] 으로.`;
+  const pts=lc.points!=null?Number(lc.points):null, cr=lc.credits!=null?Number(lc.credits):0; const costs=lc.costs||{};
+  $('smsSum').innerHTML=[qcard('기능',c.enabled?'켜짐':'꺼짐','',c.enabled?'ok':'warn'), qcard('모드',SMS_MODE_NM[c.mode]||esc(c.mode||''),'',c.mode==='live'?'ok':''),
+    qcard('API KEY',c.has_key?esc(c.key_masked):'없음','',c.has_key?'':'warn','서버에만 저장'),
+    qcard('발신번호',esc(c.sender_no||'-'),'',lc.sender_ok===true?'ok':(lc.sender_ok===false?'warn':''), lc.sender_ok===true?'센드온 승인됨':lc.sender_ok===false?'센드온 목록에 없거나 미승인':'연결 확인 전'),
+    qcard('남은 포인트',pts==null?'—':smsWon(pts),pts==null?'':'원','', cr?`크레딧 ${smsWon(cr)}`:'연결 확인하면 보임'),
+    qcard('단가',costs.SMS!=null?`SMS ${smsWon(costs.SMS)}·LMS ${smsWon(costs.LMS||0)}`:'—','','', lc.cost_name?esc(lc.cost_name):'1건당 포인트'),
+    qcard('이번 주 실제',n(wk.live||0),'건','', `테스트 ${n(wk.test||0)}`),
+    qcard('서버 IP',esc(c.egress_ip||'확인 전'),'','', '센드온 허용 IP 에 등록')].join('');
+  $('smsCheckBox').innerHTML = c.last_check_at ? `마지막 연결 확인 ${esc(c.last_check_at)} · ${lc.ok?'<span class="tag ok">성공</span>':'<span class="tag bad">실패</span>'} ${esc(lc.message||'')}`
+      + ((lc.numbers||[]).length?`<br>센드온에 등록된 발신번호: ${lc.numbers.map(x=>`<span class="tag ${x.status==='ACTIVE'?'ok':'n'}">${esc(x.number)} ${esc(x.name||'')} · ${esc(x.status)}</span>`).join(' ')}`:'')
+      : '아직 연결을 확인하지 않았습니다 — 계정·키를 저장한 뒤 [연결 확인 · 잔액]. 발신번호 목록·포인트·단가만 읽고 문자는 보내지 않습니다.';
+  $('smsEnabled').value=String(!!c.enabled); $('smsMode').value=c.mode||'test'; $('smsAccount').value=c.account_id||''; $('smsKey').value=''; $('smsKeyNote').textContent=c.has_key?`지금 ${c.key_masked}`:'아직 없음';
+  $('smsSender').value=c.sender_no||''; $('smsDaily').value=c.daily_limit||2000; $('smsAdPrefix').value=c.ad_prefix||'(광고)'; $('smsAdFooter').value=c.ad_footer||'';
+  try{ segSync(); }catch(e){}
+  SMS_TPL=(c.templates||[]).map(t=>({...t})); smsTplRender();
+}
+function smsTplRender(){ $('tbSmsTpl').innerHTML=SMS_TPL.map((t,k)=> t._del ? '' : `<tr>
+    <td><input class="in mono" value="${esc(t.code||'')}" ${t._new?'placeholder="my_code"':'readonly'} oninput="SMS_TPL[${k}].code=this.value.trim()" style="width:130px" aria-label="코드"></td>
+    <td><input class="in" value="${esc(t.label||'')}" oninput="SMS_TPL[${k}].label=this.value" style="width:130px" aria-label="이름"></td>
+    <td><textarea class="in" rows="3" oninput="SMS_TPL[${k}].body=this.value;this.nextElementSibling.textContent=smsBytes(this.value)+'바이트 · '+smsType(smsBytes(this.value))" style="width:100%;min-width:300px;font:inherit" aria-label="본문">${esc(t.body||'')}</textarea><div class="note">${smsBytes(t.body)}바이트 · ${smsType(smsBytes(t.body))}</div></td>
+    <td><select class="in" data-noseg="1" onchange="SMS_TPL[${k}].scope=this.value" aria-label="쓰는 곳"><option value="both"${t.scope==='both'?' selected':''}>공통</option><option value="store"${t.scope==='store'?' selected':''}>담당자</option><option value="admin"${t.scope==='admin'?' selected':''}>관리자</option></select></td>
+    <td style="text-align:center"><input type="checkbox" ${t.is_ad?'checked':''} onchange="SMS_TPL[${k}].is_ad=this.checked" style="width:18px;height:18px" aria-label="광고"></td>
+    <td style="text-align:center"><input type="checkbox" ${t.active!==false?'checked':''} onchange="SMS_TPL[${k}].active=this.checked" style="width:18px;height:18px" aria-label="사용"></td>
+    <td><button class="btn sm ghost" onclick="SMS_TPL[${k}]._del=true;smsTplRender()">지우기</button></td></tr>`).join('')||'<tr><td colspan="7" class="note" style="text-align:center;padding:16px">템플릿 없음 — [+ 템플릿]</td></tr>'; }
+function smsTplAdd(){ SMS_TPL.push({code:'',label:'',body:'',scope:'both',is_ad:false,active:true,sort:100,_new:true}); smsTplRender(); }
+async function smsSave(){
+  const tpl=SMS_TPL.map(t=> t._del ? (t._new?null:{code:t.code,delete:true}) : {code:t.code,label:t.label,body:t.body,scope:t.scope,is_ad:!!t.is_ad,active:t.active!==false,sort:t.sort||100,note:t.note||null}).filter(Boolean);
+  const bad=tpl.find(t=>!t.delete && !/^[a-z0-9_]{2,40}$/.test(t.code||'')); if(bad) return toast('템플릿 코드는 영문 소문자·숫자·_ 2~40자','bad');
+  const d={enabled:$('smsEnabled').value==='true', mode:$('smsMode').value, account_id:$('smsAccount').value.trim(), sender_no:$('smsSender').value.trim(), daily_limit:Number($('smsDaily').value)||2000, ad_prefix:$('smsAdPrefix').value.trim()||'(광고)', ad_footer:$('smsAdFooter').value.trim(), templates:tpl};
+  const key=$('smsKey').value.trim(); if(key) d.api_key=key;
+  if(d.mode==='live' && SMS_CFG && SMS_CFG.mode!=='live'){ if(!(await modal({title:'실제 발송으로 바꿉니다',html:'이제부터 [보내기]를 누르면 <b>센드온으로 실제 문자가 나갑니다</b> (포인트 차감). 발신번호 승인 · 허용 IP 등록 · 포인트를 확인했나요?',ok:'실제 발송으로',danger:true}))) return; }
+  try{ SMS_CFG=await rpc('fn_sms_config_save',{p_data:d}); toast('저장했습니다'+(key?' · API KEY 교체':''),'ok'); smsPaint(); }catch(e){ toast(e.message,'bad'); }
+}
+async function smsCheck(){ const b=$('smsCheckBox'); b.innerHTML='센드온에 묻는 중… (발신번호 · 포인트 · 단가 — 문자는 안 나갑니다)';
+  try{ const r=await rpc('fn_sms_check'); await smsCfgEnsure(true); smsPaint(); toast(r.ok?`연결 성공 · 포인트 ${smsWon(r.points||0)}원`:`연결 실패 · ${r.message||''}`, r.ok?'ok':'bad'); }
+  catch(e){ b.innerHTML=esc(e.message); toast(e.message,'bad'); } }
+async function smsPull(){ if(!(await modal({title:'센드온 수신거부 받아오기',html:'센드온 통합 수신거부 목록을 전부 받아 우리 수신거부 목록에 넣고, 번호가 같은 고객의 <b>수신동의를 끕니다</b>. 되돌리기는 데이터 가져오기 › 적재 기록에서 할 수 있습니다.',ok:'받아오기'}))) return;
+  const b=$('smsPullBox'); b.innerHTML='받아오는 중…';
+  try{ const r=await rpc('fn_sms_blocklist_pull',{p_unified:true}); const im=r.import||{};
+    b.innerHTML=(r.ok?'<span class="tag ok">완료</span> ':'<span class="tag bad">실패</span> ')+esc(r.message||'')+(r.partial?' · <b>목록이 더 있습니다 — 한 번 더 누르세요</b>':'')
+      +(r.import?`<br>읽은 번호 ${n(im.rows)} · 새 번호 ${n(im.new)} · 이미 있던 번호 ${n(im.dup)} · 고객 찾음 ${n(im.matched)} · 수신동의 끔 ${n(im.off)} · 마스터에 없음 ${n(im.unmatched)}`:'');
+    toast(r.message||'완료', r.ok?'ok':'bad'); }
+  catch(e){ b.innerHTML=esc(e.message); toast(e.message,'bad'); } }
+async function loadSmsLog(page){ if(!$('tbSmsLog')) return; SMS_LOG_PG=Math.max(0,page||0); const per=pgSize('smslog'); qstatSet('busy');
+  let d; try{ d=await rpc('fn_sms_log',{p_q:$('smsLogQ').value.trim()||null,p_mode:$('smsLogMode').value||null,p_status:$('smsLogStatus').value||null,p_limit:per,p_offset:SMS_LOG_PG*per,p_unmask:$('smsLogUnmask').classList.contains('on')},{fresh:true}); }
+  catch(e){ qstatSet('err'); return toast(e.message,'bad'); }
+  const s=d.summary||{}; $('smsLogCount').textContent=`${n(d.total)}건 · 실제 ${n(s.live||0)} · 테스트 ${n(s.test||0)} · 실패 ${n(s.failed||0)} · 차단 ${n(s.blocked||0)} · ${d.total?SMS_LOG_PG*per+1:0}–${SMS_LOG_PG*per+(d.rows||[]).length}`;
+  $('smsLogPg').innerHTML=pgBar('smslog',SMS_LOG_PG,d.total||0,'loadSmsLog'); setTimeout(()=>qstatSet('done'),0);
+  const ST={sent:['보냄','ok'],test:['테스트','n'],failed:['실패','bad'],blocked:['차단','bad']}; const KN={quote:'견적서',callback:'콜백',thanks:'감사',manual:'직접',campaign:'캠페인',test:'테스트'};
+  $('tbSmsLog').innerHTML=(d.rows||[]).map(r=>`<tr><td class="mono" style="font-size:calc(11.5px * var(--font-scale))">${esc(r.at)}</td><td>${r.mode==='live'?'<span class="tag ok">실제</span>':'<span class="tag n">테스트</span>'}</td>
+    <td><span class="tag ${(ST[r.status]||['',''])[1]}">${(ST[r.status]||[r.status])[0]}</span>${r.reason?`<div class="note">${esc(r.reason)}</div>`:''}</td>
+    <td style="font-size:calc(12px * var(--font-scale))">${esc(KN[r.kind]||r.kind)}${r.campaign?`<div class="mono note">${esc(r.campaign)}</div>`:''}</td>
+    <td><b>${esc(r.name||'')}</b><div class="mono" style="font-size:calc(12px * var(--font-scale))">${esc(r.phone||'')}</div></td>
+    <td style="font-size:calc(12px * var(--font-scale))">${esc(r.type)}${r.is_ad?' <span class="tag n">광고</span>':''}<div class="note">${n(r.bytes)}B</div></td>
+    <td class="wrap" style="font-size:calc(12px * var(--font-scale));white-space:pre-wrap;max-width:420px">${esc(r.body)}</td><td style="font-size:calc(12px * var(--font-scale))">${esc(r.by||'')}</td></tr>`).join('')
+    ||'<tr><td colspan="8" class="note" style="text-align:center;padding:20px">보낸 문자가 없습니다</td></tr>';
+}
+/* ── 발송 대상 추출 [문자 보내기] — 추출된 명단 전체(p_export · 실번호 · 감사로그)에 한 본문. 조각으로 나눠 보내고 진행을 보인다 ── */
+function smsPreview(){ if(!TG||!$('smsBody')) return; const body=$('smsBody').value; const isAd=$('smsIsAd').classList.contains('on');
+  const first=(TG.rows||[])[0]||{}; const v=smsAdWrap(smsRender(body,{이름:first.name||'고객',매장전화:'031-8042-3166'}),isAd); const b=smsBytes(v), ty=smsType(b);
+  $('smsPrev').textContent=v||'(본문 없음)'; $('smsCount').innerHTML=`<b>${n(b)}</b>바이트 · <b>${ty}</b>${b>2000?' <span style="color:var(--bad)">2,000바이트 초과</span>':''}`;
+  $('smsTitle').style.display= ty==='LMS' ? '' : 'none';
+  const lc=(SMS_CFG&&SMS_CFG.last_check)||{}; const costs=lc.costs||{}; const unit=costs[ty]; const pts=lc.points==null?null:(Number(lc.points)||0)+(Number(lc.credits)||0);
+  $('smsCost').innerHTML = unit==null ? '단가·잔액을 모릅니다 — [메시지 발송 관리 › 연결 확인 · 잔액] 을 한 번 누르면 예상 비용과 부족 금액이 보입니다'
+    : (()=>{ const est=unit*TG.total; const short=pts==null?null:Math.max(0,est-pts); return `예상 비용 <b>${smsWon(est)}원</b> (${ty} ${smsWon(unit)}원 × ${n(TG.total)}명)${pts!=null?` · 남은 포인트 ${smsWon(pts)}원 · ${short>0?`<b style="color:var(--bad)">부족 ${smsWon(short)}원 — 충전 후 보내세요</b>`:'<span class="tag ok">충분</span>'}`:''}`; })();
+}
+function smsTplPick(){ const code=$('smsTpl').value; const t=(SMS_CFG.templates||[]).find(x=>x.code===code); if(!t) return; $('smsBody').value=t.body||''; $('smsIsAd').classList.toggle('on',!!t.is_ad); smsPreview(); }
+async function smsOpenTargets(){
+  if(!TG||!TG.total) return toast('먼저 추출하세요','bad');
+  try{ await smsCfgEnsure(true); }catch(e){ return toast(e.message,'bad'); }
+  if(!SMS_CFG.enabled) return toast('문자 기능이 꺼져 있습니다 — [메시지 발송 관리] 에서 켜세요','bad');
+  const p=tgParams(); const camp=p.p_reason; const tpls=(SMS_CFG.templates||[]).filter(t=>t.active!==false && t.scope!=='store'); const live=SMS_CFG.mode==='live';
+  const host=$('modalHost');
+  host.innerHTML=`<div class="mask" id="smsMask"><div class="dlg" role="dialog" aria-modal="true" style="max-width:760px"><h4>문자 보내기 · 발송 대상</h4><div class="body smsc">
+    <div class="note" style="margin-bottom:8px">받는 사람 <b>${n(TG.total)}명</b> (지금 추출된 명단 전체 · 수신거부·번호 오류·중복은 보낼 때 서버가 뺍니다) · 캠페인 <b class="mono">${esc(camp)}</b> · <span class="tag ${live?'ok':'n'}">${live?'실제 발송':'테스트 모드 — 실제로 나가지 않고 기록만'}</span></div>
+    <label>템플릿</label><select class="in" id="smsTpl" data-noseg="1" onchange="smsTplPick()"><option value="">(직접 쓰기)</option>${tpls.map(t=>`<option value="${esc(t.code)}">${esc(t.label)}${t.is_ad?' · 광고':''}</option>`).join('')}</select>
+    <label style="margin-top:8px;display:block">본문 <span class="note">{이름} 은 받는 사람 이름으로 바뀝니다 · 링크는 발송 링크 관리의 짧은 주소를</span></label><textarea class="in" id="smsBody" rows="6" style="width:100%;font:inherit" oninput="smsPreview()"></textarea>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px"><label class="switch on" id="smsIsAd" onclick="this.classList.toggle('on');smsPreview()"><span class="sw"></span>광고 (머리말·꼬리말 자동)</label><input class="in" id="smsTitle" placeholder="LMS 제목" value="삼성스토어 시흥점" style="max-width:220px"><span class="note" id="smsCount"></span></div>
+    <div class="note" style="margin-top:8px">미리보기 (첫 사람 기준)</div><pre class="prodsug" id="smsPrev" style="white-space:pre-wrap;font:inherit;margin:4px 0 0"></pre>
+    <div class="note" id="smsCost" style="margin-top:8px"></div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:10px;flex-wrap:wrap"><input class="in mono" id="smsSelf" placeholder="내 번호 (테스트 1건)" style="max-width:180px" inputmode="numeric"><button class="btn sm ghost" onclick="smsSendSelf()">내 번호로 1건 보내기</button><span class="note">${live?'실제로 1건 나갑니다':'테스트 모드라 기록만 남습니다'}</span></div>
+    <div id="smsProg" class="note" style="margin-top:8px"></div></div>
+    <div class="btns"><button class="btn ghost" id="smsNo">닫기</button><button class="btn ${live?'danger':''}" id="smsOk">${live?`${n(TG.total)}명에게 실제 발송`:`테스트로 기록 (${n(TG.total)}명)`}</button></div></div></div>`;
+  const close=()=>{ host.innerHTML=''; }; $('smsNo').onclick=close; $('smsOk').onclick=()=>smsSendTargets(close);
+  if(tpls.length){ $('smsTpl').value=tpls[0].code; smsTplPick(); } else smsPreview();
+}
+async function smsSendSelf(){ const ph=$('smsSelf').value.trim(); if(!/^01[016789]\d{7,8}$/.test(ph.replace(/\D/g,''))) return toast('휴대폰 번호를 적어주세요','bad');
+  const body=$('smsBody').value.trim(); if(!body) return toast('본문을 적어주세요','bad'); const p=tgParams();
+  try{ const r=await rpc('fn_sms_send',{p_rows:[{phone:ph,name:'테스트'}],p_body:body,p_title:$('smsTitle').value.trim()||null,p_campaign:p.p_reason+'_test',p_kind:'test',p_is_ad:$('smsIsAd').classList.contains('on'),p_opt:{}});
+    const it=(r.items||[])[0]||{}; toast(r.mode==='live'?(it.status==='sent'?`내 번호로 보냈습니다 (${it.type})`:`못 보냈습니다 · ${it.reason||''}`):`테스트로 기록했습니다 (${it.type} ${n(it.bytes)}B · 실제 발송 없음)`, it.status==='failed'||it.status==='blocked'?'bad':'ok'); }
+  catch(e){ toast(e.message,'bad'); } }
+async function smsSendTargets(close){
+  const body=$('smsBody').value.trim(); if(!body) return toast('본문을 적어주세요','bad');
+  const isAd=$('smsIsAd').classList.contains('on'); const title=$('smsTitle').value.trim(); const p=tgParams(); const camp=p.p_reason; const live=SMS_CFG.mode==='live';
+  if(smsBytes(smsAdWrap(smsRender(body,{이름:'홍길동'}),isAd))>2000) return toast('2,000바이트를 넘습니다','bad');
+  if(live && !(await modal({title:'실제 발송',html:`<b>${n(TG.total)}명</b>에게 실제 문자가 나갑니다 (포인트 차감). 되돌릴 수 없습니다.`,ok:'보내기',danger:true,requireText:'발송'}))) return;
+  const ok=$('smsOk'), prog=$('smsProg'); ok.disabled=true; prog.textContent='명단 받는 중…';
+  let all; try{ const d=await rpc('fn_crm_targets_v2',{...p,p_unmask:true,p_limit:100000,p_offset:0,p_export:true}); all=(d.rows||[]).map(r=>({phone:r.phone,name:r.name,key:r.key})); }
+  catch(e){ prog.textContent=e.message; ok.disabled=false; return; }
+  const personal=/\{[^{}\n]+\}/.test(body); const CH= live ? (personal?20:150) : 200;   /* 개인화 본문은 사람마다 센드온 호출 한 번 — 8초 안에 들게 작게 */
+  let sent=0,test=0,blocked=0,failed=0,done=0,stop=false;
+  for(let i=0;i<all.length && !stop;i+=CH){ const chunk=all.slice(i,i+CH);
+    try{ const r=await rpc('fn_sms_send',{p_rows:chunk,p_body:body,p_title:title||null,p_campaign:camp,p_kind:'campaign',p_is_ad:isAd,p_opt:{}}); sent+=r.sent||0; test+=r.test||0; blocked+=r.blocked||0; failed+=r.failed||0; }
+    catch(e){ failed+=chunk.length; prog.innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; if(/권한|설정|상한|꺼져/.test(e.message)) stop=true; }
+    done+=chunk.length; if(!stop) prog.textContent=`${n(done)} / ${n(all.length)} 처리 … ${live?`보냄 ${n(sent)}`:`테스트 ${n(test)}`} · 차단 ${n(blocked)} · 실패 ${n(failed)}`;
+    if(live && i+CH<all.length) await new Promise(r=>setTimeout(r,300)); }
+  prog.innerHTML=`<b>끝</b> — ${live?`보냄 ${n(sent)}`:`테스트 기록 ${n(test)} (실제 발송 없음)`} · 차단 ${n(blocked)} · 실패 ${n(failed)} · <a href="javascript:void 0" onclick="show('sms')">발송 내역 보기 →</a>`;
+  ok.textContent='닫기'; ok.disabled=false; ok.className='btn ghost'; ok.onclick=close; toast('문자 보내기 끝','ok');
+}
+/* ── 캠페인 코드 고르기 — datalist 대신 우리 목록. (크롬이 datalist 칸을 로그인 칸으로 보고 저장된 비밀번호를 띄웠다 · readonly 였다가 누르면 풀리는 것도 그 때문) ── */
+function campPick(inp){ if(inp.dataset.cpskip){ delete inp.dataset.cpskip; return; } utmCampsEnsure().then(()=>{ const q=(inp.value||'').trim().toLowerCase(); const par=inp.parentElement; let box=par.querySelector('.campsug');
+    if(!box){ box=document.createElement('div'); box.className='prodsug campsug'; par.style.position='relative'; par.appendChild(box); }
+    const list=(UTM_CAMPS||[]).filter(c=>c.active!==false && (!q||String(c.code).toLowerCase().includes(q)||String(c.name||'').toLowerCase().includes(q))).slice(0,30);
+    box.innerHTML=list.map(c=>`<button type="button" class="sug" onmousedown="event.preventDefault()" onclick="campPickSet(this,'${esc(c.code)}')"><b class="mono">${esc(c.code)}</b><span class="note">${esc(c.name||'')}</span></button>`).join('')
+      || `<div class="note">맞는 캠페인 코드가 없습니다 — 적은 글 그대로 씁니다 (발송 링크 관리에서 캠페인을 등록하면 여기 보입니다)</div>`;
+    box.classList.remove('hidden'); }); }
+function campPickSet(btn,code){ const box=btn.closest('.campsug'); const inp=box.parentElement.querySelector('input'); inp.value=code; inp.dataset.cpskip='1'; inp.dispatchEvent(new Event('input',{bubbles:true})); delete inp.dataset.cpskip; box.classList.add('hidden'); }
+function campPickHide(inp){ setTimeout(()=>{ const box=inp.parentElement.querySelector('.campsug'); if(box) box.classList.add('hidden'); },160); }
+
 /* ═══════════════ 업로드 ═══════════════ */
 let UP=null;
 const drop=$('drop'); ['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')})); ['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')})); drop.addEventListener('drop',ev=>handleFile(ev.dataTransfer.files[0]));
@@ -6665,7 +6856,7 @@ function renderSendOpts(){
   const rows=mapRows(UP); const fail=rows.filter(x=>x.status==='failed').length;
   $('upOpts').innerHTML=`<div style="grid-column:1/-1">
     <label>캠페인 코드 <span style="color:var(--bad)">필수</span> — <b>발송 링크 관리의 코드 그대로</b> (예: 2609_toner) · 같은 코드여야 발송·클릭·구매가 한 줄로 이어집니다</label>
-    <input class="in mono" id="upCamp" list="campList" placeholder="예: 2609_chuseok — 오른쪽 ▾ 에서 고르기" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_code" oninput="sendOptsChanged()">${utmCampListHtml()}
+    <input class="in mono" id="upCamp" placeholder="예: 2609_chuseok — 누르면 캠페인 코드 목록" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_code" readonly onfocus="this.removeAttribute('readonly');campPick(this)" oninput="sendOptsChanged();campPick(this)" onblur="campPickHide(this)">
     <label style="margin-top:8px">발송일 <span class="note">줄마다 발송일이 없을 때 쓸 날짜</span></label>
     <input class="in" type="date" id="upSentAt" value="${dates[0]||''}">
     <p class="note" style="margin-top:6px">${dates.length?`파일 안 발송일 ${esc(dates[0])} ~ ${esc(dates[dates.length-1])}`:'파일에 발송일 열이 없습니다 — 위 날짜로 들어갑니다'} ·
@@ -6960,6 +7151,9 @@ const PAGE_INFO={
     t:'구매 금액이 0 인 구매완료 건은 판매 입력과 연결되지 않은 것입니다. 담당자 화면 [구매 확정] 으로 넣으면 금액이 채워집니다.'},
   followup:{d:'오늘 연락할 고객을 세 갈래로 모은 페이지입니다 — 구독 만료가 다가온 고객, 견적을 보낸 지 3일·7일 된 고객, 정수기·세탁기(AI콤보)·공기청정기를 산 고객(필터·소모품 안내).',
     s:['구독 만료는 DPS 구독 전표 기준입니다. 올인원은 DPS 화면의 종료일이 6개월로 잘못 찍혀 있어 총 구독료 ÷ 월 요금으로 기간을 되살려 만료일을 셉니다([계산] 표시).','견적은 공유 링크를 만든 때를 보낸 날로 봅니다. 링크 없이 발행만 한 견적은 발행일 기준이고 [발행만] 으로 표시됩니다.','제품군은 원장과 DPS 전표를 합쳐 고객·모델별 마지막 구매만 보입니다. 오픈마켓 주문자는 마케팅에 쓸 수 없어 빠집니다.','[실명·실번호] 는 관리자만 켤 수 있고 접근 기록이 남습니다. [CSV 복사] 는 보이는 조건의 줄 전부를 엑셀용으로 복사합니다.']},
+  sms:{d:'센드온 문자 연동을 관리하는 페이지입니다 — 계정·API KEY·발신번호, 테스트/실제 발송 모드, 남은 포인트와 단가, 템플릿, 센드온 수신거부 받아오기, 보낸 문자 내역.',
+    s:['계정 아이디·API KEY·발신번호를 저장하고 [연결 확인 · 잔액] 으로 센드온이 응답하는지 봅니다. 허용 IP 에 우리 서버 IP 가 등록돼 있어야 합니다.','기능을 켜도 기본은 테스트 모드 — 담당자·관리자 [보내기] 가 기록만 남깁니다. 실제로 보내려면 모드를 [실제 발송] 으로 바꿉니다.','문자를 보내는 자리는 발송 대상 추출 [문자 보내기] 와 담당자 화면(견적서 보내기 · 상담 줄 · CRM).'],
+    t:'센드온 주소록은 API 가 없어 못 가져옵니다 — 우리 명단(고객 통합 · 발송 대상 추출)이 주소록입니다.'},
   utm:{d:'문자 캠페인을 등록하고 단축 링크를 만드는 페이지입니다. 캠페인 코드 하나가 utm_campaign · 발송 이력 · 접근 기록의 이름을 겸해서, 추출 → 발송 → 클릭 → 구매가 한 줄로 이어집니다.',
     s:['[+ 새 캠페인] 으로 코드(yymm_주제)·이름·발송일·대상 조건을 등록합니다.','[+ 링크] 로 단축 링크를 만들고 문자에는 짧은 주소만 넣습니다.','[CRM 발송 고객] 을 올릴 때 같은 코드를 적어야 발송·구매 열이 채워집니다.']},
   upload:{d:'외부 시스템의 데이터를 이 서비스에 넣는 페이지입니다. 소스를 고르고 파일을 올리거나 엑셀에서 붙여넣으면, 같은 검증·매핑을 거쳐 중복 없이 적재됩니다.',
