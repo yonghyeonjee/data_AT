@@ -1013,10 +1013,41 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 .cjlnk{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--ink);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .cjlnk:hover{text-decoration-color:currentColor}
 @media(max-width:640px){
+
   .cjev{grid-template-columns:46px 10px minmax(0,1fr);gap:0 6px}
   .cjst{min-width:76px;padding:6px 7px}
   .iff .ar{display:none} .iff .st{flex:1 1 calc(50% - 8px)}
   .cjlnk{min-height:40px}
+}
+/* 조회 상태 줄 — 모든 검색 바 바로 아래: 조회 중 → 조회 완료 · 건수 (2026-10-12) */
+.qstat{display:flex;align-items:center;gap:8px;margin:-6px 0 12px;padding:6px 12px;border-radius:8px;background:var(--surface-2,#F7F8FA);border:1px solid var(--line);font-size:calc(12.5px * var(--font-scale));color:var(--muted);min-height:32px}
+.qstat:empty{display:none}
+.qstat .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:0 0 auto}
+.qstat.busy{color:var(--navy)} .qstat.busy .dot{background:var(--navy);animation:qsPulse 1s ease-in-out infinite}
+.qstat.done{color:var(--ink-2)} .qstat.done .dot{background:#2E7D32} .qstat.done b{color:var(--ink);font-variant-numeric:tabular-nums}
+.qstat.err{color:var(--red)} .qstat.err .dot{background:var(--red)}
+@keyframes qsPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.cbar + .qstat{margin-top:-8px}
+/* 제품 찾기 (수동 발송 대상 추출) — 고른 제품은 칩, 입력하면 후보 */
+.prodsel{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 6px;min-height:28px}
+.prodchip{display:inline-flex;align-items:center;gap:4px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--navy-soft,#EEF2FF);color:var(--navy);font-size:calc(12.5px * var(--font-scale));font-weight:700}
+.prodchip.g{background:var(--teal-soft,#E6F4F2);color:var(--teal,#0B5E57)}
+.prodchip button{border:0;background:none;color:inherit;font:inherit;cursor:pointer;min-width:28px;min-height:28px;border-radius:50%;padding:0}
+.prodchip button:hover{background:rgba(0,0,0,.08)}
+.prodsug{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-top:6px;padding:8px 10px;box-shadow:var(--shadow);max-height:380px;overflow:auto}
+.prodsug .sh{font-size:calc(11.5px * var(--font-scale));font-weight:700;color:var(--muted);margin:6px 0 4px}
+.prodsug .sh:first-child{margin-top:0}
+.prodsug .sug{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface-2,#F7F8FA);border-radius:8px;padding:7px 10px;margin:3px 0;cursor:pointer;font:inherit;font-size:calc(13px * var(--font-scale));color:var(--ink)}
+.prodsug .sug:hover{border-color:var(--navy);background:var(--navy-soft,#EEF2FF)}
+.prodsug .sug b{font-weight:800} .prodsug .sug small{margin-left:auto;color:var(--muted);white-space:nowrap;font-size:calc(12px * var(--font-scale))}
+.prodsug .sug.g b{color:var(--teal,#0B5E57)}
+.prodsug .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.prodraw summary{cursor:pointer;color:var(--muted);font-size:calc(12px * var(--font-scale));min-height:32px;display:flex;align-items:center}
+/* 모바일 보정 — 스타일시트 맨 끝 (앞 규칙과 특이도가 같아도 여기가 이긴다) */
+@media(max-width:640px){
+  .prodchip button{min-width:40px;min-height:40px} .prodsug .sug{min-height:40px} .prodraw summary{min-height:40px}
+  .switch{height:auto;min-height:40px}   /* 실명·실번호 같은 토글이 36px 였다 (2026-10-12) */
+  .qstat{margin-top:0}
 }
 </style>
 </head>
@@ -1573,7 +1604,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           </div>
         </div>
         <div class="card">
-          <h3>발송 대상 추출 <span>연락처 있는 고객만 · 오픈마켓 고객 제외 · 추출과 내보내기는 감사로그에 남습니다</span></h3>
+          <h3>발송 대상 추출 · 수동 <span>조건을 걸어 명단을 뽑아 직접(센드온) 보냅니다 · 연락처 있는 고객만 · 오픈마켓 고객 제외 · 제품 판정은 [자동 발송 대상]과 같은 규칙 · 추출과 내보내기는 감사로그에 남습니다</span></h3>
           <div class="callout warn">
             <b>오픈마켓(스마트스토어·쿠팡·11번가·지마켓·옥션·SSG·롯데온 등) 고객은 어떤 기준으로도 나오지 않습니다.</b>
             오픈마켓에서 받은 주문자 정보는 그 주문을 처리하는 데만 쓸 수 있고, 우리 이름으로 광고·안내 메시지를 보내는 데 쓰면 안 됩니다.
@@ -1588,9 +1619,17 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           </div>
           <div id="prodBox" class="hidden" style="margin:-4px 0 12px;padding:12px 14px;background:var(--bg2);border-radius:8px">
             <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:0">
-              <div style="grid-column:span 2"><label>제품 <span style="color:var(--bad)">필수</span>
-                <span class="note">품목명·모델코드에 들어가는 말 (여러 개는 <b>|</b> 로)</span></label>
-                <input class="in" id="crmProd" placeholder="HAF-" onkeydown="if(event.key==='Enter')loadTargets(0)"></div>
+              <div style="grid-column:1/-1"><label>제품 찾기 <span style="color:var(--bad)">필수</span>
+                <span class="note">제품군 · 제품 이름 · 모델 — 적으면 아래에 후보가 나오고, 고른 것이 조건이 됩니다 (여러 개 고르면 하나라도 산 사람)</span></label>
+                <div class="prodsel" id="prodSel"></div>
+                <input class="in" id="crmProdQ" placeholder="예: 정수기 · 필터 · WD25DB · 토너 — 적고 고르세요" autocomplete="off" oninput="prodSugIn()" onfocus="prodSugIn()" onkeydown="prodSugKey(event)" aria-label="제품 찾기">
+                <input type="hidden" id="crmProd">
+                <div class="prodsug hidden" id="prodSug" role="listbox"></div>
+                <details class="prodraw"><summary>조건 글 보기 · 직접 고치기</summary>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:4px"><code class="mono" id="prodRawT" style="flex:1;overflow-wrap:anywhere"></code>
+                    <input class="in" id="crmProdRaw" placeholder="@정수기|HAF-|WD25DB" style="flex:2;min-width:160px" aria-label="조건 글">
+                    <button type="button" class="btn sm ghost" onclick="prodRawApply()">적용</button></div>
+                  <p class="note" style="margin:4px 0 0"><b>@정수기 · @AI콤보 · @공기청정기</b> 는 제품군(자동 발송 대상과 같은 판정), 그 밖은 품목명·모델에 들어가는 말(정규식). 여러 개는 <b>|</b> 로.</p></details></div>
             </div>
             <div class="filters" style="margin-top:8px">
               <span class="note" style="font-weight:700">자주 쓰는 제품</span>
@@ -1600,7 +1639,8 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
               <button class="btn sm ghost" onclick="pickProd('MLT-|CLT-|INK-','토너·잉크')">토너·잉크</button>
             </div>
             <p class="note" style="margin:8px 0 0">아래 <b>최근 구매일 시작·끝</b>이 “<b>그 제품을 산 기간</b>”으로 바뀝니다.
-              예) 3~6개월 전에 필터를 산 사람 → 시작·끝을 그 기간으로 잡으세요.</p>
+              예) 3~6개월 전에 필터를 산 사람 → 시작·끝을 그 기간으로 잡으세요. 끝 날짜 뒤에 같은 제품을 또 산 사람은 빠집니다.
+              제품군을 고르면 <b>[자동 발송 대상] 의 제품군 카드와 같은 사람</b>이 나옵니다(원장 + DPS 전표 · 오픈마켓 제외). <button type="button" class="btn sm ghost" onclick="show('followup')">자동 발송 대상 보기</button></p>
             <p class="note" style="margin:6px 0 0"><b>오픈마켓에서 산 기록은 세지 않습니다.</b> 같은 제품이라도 스마트스토어·쿠팡 주문으로 알게 된 것은
               우리가 마케팅에 쓸 수 있는 정보가 아닙니다. 그래서 정수기 필터처럼 오픈마켓 판매가 대부분인 제품은 대상이 매우 적게 나옵니다.</p>
           </div>
@@ -1657,6 +1697,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <button class="btn ghost" onclick="exportTargets('xlsx')">엑셀 내려받기</button>
             <button class="btn ghost" onclick="exportTargets('csv')">CSV 복사</button>
           </div>
+          <div class="qstat" data-view="crm"></div>
           <div id="crmChips" class="legend" style="margin:-4px 0 10px"></div>
           <div class="tw"><table><thead><tr><th>고객</th><th>연락처</th><th>지역</th><th>채널</th><th class="num">구매</th><th class="num">누적</th><th>최근 구매</th><th>최근 상품</th><th>관심 상품</th><th>담당</th><th>최근 발송</th></tr></thead><tbody id="tbTargets"></tbody></table></div>
           <div class="pager"><span id="tgCount">아직 추출하지 않았습니다</span><div class="btns" id="tgPg"></div></div>
@@ -1734,13 +1775,19 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       <!-- 후속 관리 (2026-10-08 · mvp_194): 구독 만료 · 견적 보낸 뒤 3일/7일 · 정수기·세탁기(AI콤보)·공기청정기 산 고객 -->
       <div class="view hidden" id="v-followup">
         <div class="card">
-          <h3>후속 관리 <span>오늘 연락할 고객을 세 갈래로 모았습니다 · 번호는 가려 보이고 [실명·실번호] 는 접근 기록이 남습니다</span></h3>
+          <h3>자동 발송 대상 <span>조건을 고르지 않아도 날마다 저절로 모이는 명단 — 구독 만료 · 견적 뒤 며칠 · 제품군 재구매. 손으로 조건을 걸어 뽑는 것은 [발송 대상 추출 · 수동] · 번호는 가려 보이고 [실명·실번호] 는 접근 기록이 남습니다</span></h3>
           <div class="filters" style="align-items:center">
             <input class="in" id="fuQ" placeholder="고객명 · 번호 뒷자리 · 모델 · 담당" aria-label="찾기" autocomplete="off" onkeydown="if(event.key==='Enter')loadFollowup()" style="flex:1 1 220px;max-width:360px">
+            <select class="in" id="fuHandler" aria-label="담당" data-noseg="1" onchange="fuFlt()" style="width:auto"><option value="">전체 담당</option></select>
+            <select class="in" id="fuChannel" aria-label="채널" data-noseg="1" onchange="fuFlt()" style="width:auto"><option value="">전체 채널</option></select>
+            <select class="in" id="fuConsent" aria-label="수신동의" onchange="fuFlt()" style="width:auto"><option value="">동의 전체</option><option value="y">수신동의</option><option value="n">미동의</option></select>
+            <label class="switch" id="fuNoOpt" onclick="this.classList.toggle('on');fuFlt()"><span class="sw"></span>수신거부 빼기</label>
             <label class="switch" id="fuUnmask" onclick="this.classList.toggle('on');loadFollowup()"><span class="sw"></span>실명·실번호</label>
             <button class="btn sm" onclick="loadFollowup()">조회</button>
-            <span class="note" id="fuNote"></span>
+            <button class="btn sm ghost" onclick="fuReset()">초기화</button>
           </div>
+          <div class="qstat" data-view="followup"></div>
+          <div class="note" id="fuNote"></div>
         </div>
         <div class="card" id="fuSubCard">
           <h3>구독 만료 예정 <span>DPS 구독 전표 기준 · 취소·해지·미가입은 뺐습니다 · 올인원 만료일은 총 구독료 ÷ 월 요금으로 되살린 기간</span></h3>
@@ -1765,7 +1812,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="filters" style="align-items:center;row-gap:8px">
             <div class="seg2" id="fuProdSeg" role="group" aria-label="제품군"><button data-v="정수기" data-c="정수기" class="on" onclick="fuSet('product','group','정수기')">정수기 <i></i></button><button data-v="AI콤보" data-c="AI콤보" onclick="fuSet('product','group','AI콤보')">세탁기(AI콤보) <i></i></button><button data-v="공기청정기" data-c="공기청정기" onclick="fuSet('product','group','공기청정기')">공기청정기 <i></i></button></div>
             <select class="in" id="fuProdMin" aria-label="구매 경과" onchange="fuSet('product','min_m',this.value)" style="width:auto"><option value="">구매 경과 전체</option><option value="3">3개월 이상</option><option value="6">6개월 이상</option><option value="12">12개월 이상</option><option value="24">24개월 이상</option></select>
-            <span style="flex:1"></span><button class="btn sm ghost" onclick="fuCsv('product')">CSV 복사</button>
+            <span style="flex:1"></span><button class="btn sm ghost" onclick="fuToManual()" title="이 제품군·구매 경과를 조건으로 [발송 대상 추출 · 수동] 에서 같은 사람을 뽑습니다">이 조건으로 수동 추출 →</button><button class="btn sm ghost" onclick="fuCsv('product')">CSV 복사</button>
           </div>
           <div class="tw"><table><thead><tr><th>구매일</th><th>경과</th><th>고객</th><th>연락처</th><th>제품</th><th>구분</th><th>채널</th><th>담당</th><th>동의</th><th>최근 상담</th><th>최근 발송</th></tr></thead><tbody id="fuProdRows"></tbody></table></div>
           <div class="pager"><span id="fuProdRange"></span><div class="btns" id="fuProdPg"></div></div>
@@ -1787,6 +1834,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
               <option value="recent">최근 것부터</option><option value="clicks">클릭 많은 순</option><option value="bought">구매 많은 순</option><option value="links">링크 많은 순</option><option value="code">코드 순</option></select>
             <span style="flex:1"></span><span class="note" id="utmSum"></span>
           </div>
+          <div class="qstat" data-view="utm"></div>
           <div class="tw"><table><thead id="utmHead"></thead><tbody id="utmRows"></tbody></table></div>
           <div class="pager"><span id="utmRange"></span><div class="btns" id="utmPg"></div></div>
         </div>
@@ -2293,7 +2341,7 @@ function rpcBar(d){
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
 const FN_LABEL={fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
-  fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
+  fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
   fn_sl_pending:'샵링커 주문',fn_sl_status:'샵링커 상태',fn_order_queue:'전표 대기열',fn_settlement_list:'정산',fn_sub_plans:'구독 플랜',fn_store_daily_list:'매장 마감',
   fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴',fn_crm_followups:'후속 관리',fn_product_sdp_upsert:'제품 정보'};
@@ -2353,12 +2401,26 @@ function loadPillText(t){ const e=$('loadpillTx'); if(e) e.textContent=t||'불�
 function rpcIdle(){ const t0=Date.now();
   return new Promise(res=>{ const tick=()=>{ const el=Date.now()-t0;
     if((RPC_BUSY===0 && el>350) || el>12000) return res(); setTimeout(tick,80); }; tick(); }); }
+/* 조회 상태 줄 — 검색 바 바로 아래 '조회 중…' → '조회 완료 · 건수'. 공통 바가 있는 화면은 바 아래에 저절로 생기고, 조건 폼이 따로인 화면(수동 추출·자동 발송 대상·발송 링크)은 HTML 의 .qstat[data-view] 자리 (2026-10-12) */
+const QS_COUNT={customers:'cuCount',orders:'oCount',inbox:'iqCount',items:'itCount',log:'lgCount',oq:'oqCount',stock:'ivCount',moves:'mvCount',consults:'cCount',crm:()=>TG?$('tgCount').textContent:'',utm:'utmSum',followup:'fuNote'};
+let QS_T=null;
+function qstatEl(){ let el=document.querySelector(`.qstat[data-view="${VIEW}"]:not([data-auto])`); if(el) return el;
+  const cb=$('cbar'); if(!cb||!cb.isConnected||!CB_VIEWS[VIEW]) return null;
+  el=$('qstatAuto'); if(!el){ el=document.createElement('div'); el.id='qstatAuto'; el.className='qstat'; el.dataset.auto='1'; }
+  if(el.previousElementSibling!==cb) cb.insertAdjacentElement('afterend',el); el.dataset.view=VIEW; return el; }
+function qstatSet(st){ const el=qstatEl(); if(!el) return; clearTimeout(QS_T);
+  if(st==='busy'){ el.className='qstat busy'; el.innerHTML='<span class="dot" aria-hidden="true"></span><span>조회 중…</span>'; el.setAttribute('aria-live','polite'); return; }
+  if(st==='err'){ el.className='qstat err'; el.innerHTML='<span class="dot" aria-hidden="true"></span><span>조회 실패 — 다시 시도해 주세요</span>'; return; }
+  const src=QS_COUNT[VIEW]; const txt=(typeof src==='function'?src():(src&&$(src)?$(src).textContent:''))||'';
+  el.className='qstat done'; el.innerHTML=`<span class="dot" aria-hidden="true"></span><span>조회 완료${txt.trim()?' · <b>'+esc(txt.trim())+'</b>':''}</span>`; }
 async function rpcRaw(fn,args={}){
   const rec={fn,t0:Date.now(),stage:'wait',got:0,exp:rpcExp(fn)}; RPC_ACT.set(++RPC_SEQ,rec); rpcBar(1);
+  const qsRead=!RPC_NOCACHE.test(fn); let qsOk=true; if(qsRead) qstatSet('busy');
   try{
     if(!RPC_NOCACHE.test(fn)){ const r=await rpcStream(fn,args,rec); if(r.ok) return r.data; rec.stage='wait'; }   // 쓰기 호출은 늘 supabase-js 로
     const {data,error}=await sb.rpc(fn,args); if(error) throw new Error(error.message.replace(/^.*?: /,'')); return data; }
-  finally{ rec.stage='done'; rpcBar(-1); } }
+  catch(e){ qsOk=false; throw e; }
+  finally{ rec.stage='done'; rpcBar(-1); if(qsRead && RPC_BUSY===0){ clearTimeout(QS_T); QS_T=setTimeout(()=>{ if(RPC_BUSY===0) qstatSet(qsOk?'done':'err'); },80); } } }
 async function rpc(fn,args={},opt={}){
   if(RPC_NOCACHE.test(fn)){ const d=await rpcRaw(fn,args); rpcClear(); return d; }
   if(opt.fresh) RPC_CACHE.delete(fn+'|'+JSON.stringify(args));
@@ -4354,20 +4416,43 @@ function fuOpt(k){ const o={q:($('fuQ').value||'').trim(), unmask:$('fuUnmask').
   return o; }
 async function fuLoad(k){ const seq=++FU_SEQ[k]; const S=FU[k], ids=FU_IDS[k]; const tb=$(ids.rows); if(tb) tb.innerHTML=`<tr><td colspan="${ids.cols}" class="note">불러오는 중…</td></tr>`;
   try{ const r=await rpc('fn_crm_followups',{p_kind:k,p_opt:fuOpt(k)},{fresh:true}); if(seq!==FU_SEQ[k]) return;
-    S.rows=r.rows||[]; S.counts=r.counts||{}; S.total=Number(r.total)||0; S.page=0; S.today=r.today||''; fuRender(k); fuNote(); }
+    S.rows=r.rows||[]; S.counts=r.counts||{}; S.total=Number(r.total)||0; S.page=0; S.today=r.today||''; fuFillOpts(); fuRender(k); fuNote(); }
   catch(e){ if(seq!==FU_SEQ[k]) return; if(tb) tb.innerHTML=`<tr><td colspan="${ids.cols}" class="note">${esc(e.message)}</td></tr>`; toast(e.message,'bad'); } }
 function loadFollowup(){ fuLoad('sub'); fuLoad('quote'); fuLoad('product'); }
+let PENDING_PROD=null;
+/* [이 조건으로 수동 추출 →] — 제품군 카드의 제품군·구매 경과를 수동 추출의 조건으로 넘긴다 (같은 판정 core.f_product_buyers 라 같은 사람이 나온다) */
+function fuToManual(){ const g=FU.product.group, m=Number(FU.product.min_m)||0; let to=''; if(m){ const d=new Date(); d.setMonth(d.getMonth()-m); to=iso(d); }
+  PENDING_PROD={toks:['@'+g], to, reason:g+' 재구매 안내'}; show('crm'); }
+/* 거르개 바(담당·채널·동의·수신거부 빼기) — 세 카드에 같이 걸린다 · 화면에서 거른다 */
+const FU_F={handler:'',channel:'',consent:'',noopt:false};
+function fuFlt(){ FU_F.handler=$('fuHandler').value; FU_F.channel=$('fuChannel').value; FU_F.consent=$('fuConsent').value; FU_F.noopt=$('fuNoOpt').classList.contains('on');
+  ['sub','quote','product'].forEach(k=>{ FU[k].page=0; fuRender(k); }); fuNote(); }
+function fuReset(){ $('fuQ').value=''; ['fuHandler','fuChannel','fuConsent'].forEach(id=>$(id).value=''); $('fuNoOpt').classList.remove('on'); fuFlt(); loadFollowup(); }
+function fuRowsOf(k){ const S=FU[k]; return (S.rows||[]).filter(r=>{
+  const h = k==='sub'?r.staff : k==='quote'?r.counselor : r.handler;
+  if(FU_F.handler && (h||'')!==FU_F.handler) return false;
+  if(FU_F.channel && k!=='quote' && (r.channel||'')!==FU_F.channel) return false;
+  if(FU_F.consent && k!=='quote' && !!r.consent!==(FU_F.consent==='y')) return false;
+  if(FU_F.noopt && r.optout) return false; return true; }); }
+function fuFillOpts(){ const hs=new Set(), cs=new Set();
+  (FU.sub.rows||[]).forEach(r=>{ if(r.staff) hs.add(r.staff); if(r.channel) cs.add(r.channel); });
+  (FU.quote.rows||[]).forEach(r=>{ if(r.counselor) hs.add(r.counselor); });
+  (FU.product.rows||[]).forEach(r=>{ if(r.handler) hs.add(r.handler); if(r.channel) cs.add(r.channel); });
+  const fill=(id,set,all)=>{ const el=$(id); if(!el) return; const cur=el.value; el.innerHTML=`<option value="">${all}</option>`+[...set].sort().map(x=>`<option>${esc(x)}</option>`).join(''); el.value=[...set].includes(cur)?cur:''; };
+  fill('fuHandler',hs,'전체 담당'); fill('fuChannel',cs,'전체 채널'); }
 function fuSet(k,key,v){ FU[k][key]=v; const seg=$(FU_IDS[k].seg); if(seg&&(key==='days'||key==='group')) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', String(b.dataset.v)===String(v))); fuLoad(k); }
 function fuGoSub(p){ FU.sub.page=p; fuRender('sub'); }  function fuGoQuote(p){ FU.quote.page=p; fuRender('quote'); }  function fuGoProd(p){ FU.product.page=p; fuRender('product'); }
 function fuNote(){ const u=$('fuUnmask').classList.contains('on'); const g={'정수기':'정수기','AI콤보':'세탁기(AI콤보)','공기청정기':'공기청정기'}[FU.product.group]||FU.product.group;
-  $('fuNote').textContent=`${FU.sub.today||''} 기준 · 구독 만료 ${n(FU.sub.total)}${FU.sub.counts&&FU.sub.counts.next_end?` (가장 가까운 만료 ${FU.sub.counts.next_end})`:''} · 견적 ${n(FU.quote.total)} · ${g} ${n(FU.product.total)}`+(u?' · 실명·실번호 조회는 접근 기록에 남습니다':''); }
+  const f=(k)=>{ const a=fuRowsOf(k).length, b=(FU[k].rows||[]).length; return a===b?n(b):`${n(a)}/${n(b)}`; };
+  $('fuNote').textContent=`${FU.sub.today||''} 기준 · 구독 만료 ${f('sub')}${FU.sub.counts&&FU.sub.counts.next_end?` (가장 가까운 만료 ${FU.sub.counts.next_end})`:''} · 견적 ${f('quote')} · ${g} ${f('product')}`+(FU_F.handler||FU_F.channel||FU_F.consent||FU_F.noopt?' · 거르개 적용':'')+(u?' · 실명·실번호 조회는 접근 기록에 남습니다':''); }
 const fuDay=d=> d==null?'-':d===0?'오늘':d>0?`D-${d}`:`${-d}일 지남`;
 const fuLc=r=>{ const k=r.last_consult; if(!k) return ''; return `<span class="note" title="${esc(k.handler||'')}${k.callback_at?' · 콜백 '+dtfmt(k.callback_at):''}">${esc(k.result||'')} ${dfmt(k.at)}</span>`; };
 const fuConsent=r=> r.optout?'<span class="tag bad" title="문자 수신거부 목록에 있는 번호">수신거부</span>':r.consent?'<span class="tag y">동의</span>':(r.consent_dps?'<span class="tag n" title="DPS 고객정보의 SMS 동의 · 다른 경로 동의 기록 없음">DPS 동의</span>':'');
 function fuRender(k){
   const S=FU[k], ids=FU_IDS[k]; const seg=$(ids.seg);
   if(seg){ seg.querySelectorAll('button').forEach(b=>{ const i=b.querySelector('i'); if(!i) return; const c=S.counts||{}; const key=b.dataset.c; i.textContent=(key&&c[key]!=null)?n(c[key]):''; }); }
-  const P=pgCut('fu_'+k, S.page, S.rows, ids.go); S.page=P.page; $(ids.pg).innerHTML=P.bar; $(ids.range).textContent=P.range||(S.total?`${n(S.total)}건`:'');
+  const rows=fuRowsOf(k), flt=rows.length!==(S.rows||[]).length;
+  const P=pgCut('fu_'+k, S.page, rows, ids.go); S.page=P.page; $(ids.pg).innerHTML=P.bar; $(ids.range).textContent=(P.range||(rows.length?`${n(rows.length)}건`:''))+(flt?` (거르기 전 ${n(S.rows.length)})`:'');
   const tb=$(ids.rows); if(!tb) return;
   if(!P.rows.length){ tb.innerHTML=`<tr><td colspan="${ids.cols}" class="note">해당하는 고객이 없습니다</td></tr>`; return; }
   if(k==='sub') tb.innerHTML=P.rows.map(r=>`<tr>
@@ -4406,7 +4491,7 @@ let MENU=[], MENU_STATE={};
 const NAV_FALLBACK=[
   {group:'_top',group_label:'',items:[{code:'home',label:'홈',state:'on'}]},
   {group:'sales',group_label:'매출',items:[{code:'dash',label:'매출 대시보드',state:'on'},{code:'flow',label:'주문 · 판매 · 매출',state:'on'},{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'}]},
-  {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출',state:'on'},{code:'followup',label:'후속 관리',state:'on'}]},
+  {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출 · 수동',state:'on'},{code:'followup',label:'자동 발송 대상',state:'on'}]},
   {group:'inv',group_label:'재고',items:[{code:'stock',label:'재고 현황',state:'on'},{code:'moves',label:'입출고',state:'on'},{code:'items',label:'품목',state:'on'},{code:'oq',label:'주문서 · 전송',state:'on'},{code:'wiz',label:'주문 변환',state:'on'}]},
   {group:'data',group_label:'데이터',items:[{code:'upload',label:'데이터 가져오기',state:'on'},{code:'log',label:'서비스 로그',state:'on'},{code:'settings',label:'설정 · 담당자',state:'on'}]},
   {group:'ops',group_label:'운영',items:[{code:'option',label:'옵션 · 권한',state:'on'},{code:'notify',label:'알림 관리',state:'on'}]}];
@@ -4451,7 +4536,7 @@ function renderUnderConstruction(v){
       <div class="uc-tape"></div>
     </div>`;
 }
-const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드',followup:'후속 관리'};
+const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출 · 수동',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드',followup:'자동 발송 대상'};
 let VIEW='home';
 function toggleNav(force){ const on = force===undefined ? !document.body.classList.contains('nav-open') : !!force; document.body.classList.toggle('nav-open', on); }
 /* 뒤로가기 = 이전 화면. 화면을 바꿀 때마다 히스토리에 한 칸 쌓고, popstate 로 되돌아온다.
@@ -4553,7 +4638,7 @@ function placeCbar(v){
   cbarRestore();
   /* 공통 바가 없는 화면(데이터 가져오기 등)으로 갈 때 기간 바가 공통 바 안에 든 채로 같이 지워지던 것 (2026-09-21)
      → 주문 목록 → 데이터 가져오기 → 주문 목록 에서 $('periodBar') 가 null 이라 화면이 안 그려졌다. 기간 바를 제자리로 돌려놓고 지운다 */
-  if(!cfg){ const pb=$('periodBar'); if(pb && el.contains(pb) && PB_HOME){ pb.classList.add('hidden'); PB_HOME.appendChild(pb); } el.remove(); return; }
+  if(!cfg){ const pb=$('periodBar'); if(pb && el.contains(pb) && PB_HOME){ pb.classList.add('hidden'); PB_HOME.appendChild(pb); } el.remove(); const qa=$('qstatAuto'); if(qa) qa.remove(); return; }
   if(CB_VIEW!==v){ CB_VIEW=v; CB.q=''; CB.field=''; CB.channel=''; CB.category=''; }   /* 화면이 바뀌면 조건은 새로 */
   [cfg.q, cfg.channel].forEach(id=>{ if(id && $(id)) $(id).classList.add('hidden'); });   /* 화면 자체 검색칸·채널은 공통 바로 대신 (중복 제거) */
   const view=$('v-'+v);
@@ -4642,13 +4727,13 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList);},upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup};
+const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
-  if(v) v.classList.add('vload');
-  try{ await fn(); }catch(e){ toast(e.message||String(e),'bad'); }
-  finally{ if(RPC_BUSY>0) await rpcIdle(); if(v) v.classList.remove('vload'); loadPillText(''); try{ cbarApply(); }catch(e){} try{ buildSubTabs(VIEW); }catch(e){} try{ segify(); segSync(); }catch(e){} }
+  if(v) v.classList.add('vload'); qstatSet('busy'); let qsOk=true;
+  try{ await fn(); }catch(e){ qsOk=false; toast(e.message||String(e),'bad'); }
+  finally{ if(RPC_BUSY>0) await rpcIdle(); if(v) v.classList.remove('vload'); loadPillText(''); setTimeout(()=>{ if(RPC_BUSY===0) qstatSet(qsOk?'done':'err'); },90); try{ cbarApply(); }catch(e){} try{ buildSubTabs(VIEW); }catch(e){} try{ segify(); segSync(); }catch(e){} }
 }
 /* ── 화면 안 이동 탭 : 카드(섹션)가 둘 이상이면 헤더 아래에 탭을 만들고, 누르면 그 카드로 스크롤 ── */
 function subTabTitle(c){ const h=c.querySelector(':scope > h3'); if(!h) return ''; const t=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').replace(/\s+/g,' ').trim(); return (t||h.textContent.replace(/\s+/g,' ').trim()).slice(0,24); }
@@ -5593,8 +5678,9 @@ async function loadTargets(page){
   if(p.p_reason.length<3) return toast('캠페인명을 3자 이상 적어주세요 — 감사로그에 남습니다','bad');
   if(TG_BASIS==='product' && !p.p_product) return toast('어떤 제품인지 먼저 적어주세요 (예: HAF-)','bad');
   tgPage=Math.max(0,page||0);
+  prodRenderSel(); qstatSet('busy');
   let d; try{ d=await rpc('fn_crm_targets_v2',{...p,p_limit:pgSize('targets'),p_offset:tgPage*pgSize('targets'),p_export:false}); }
-  catch(e){ return toast(e.message,'bad'); }
+  catch(e){ qstatSet('err'); return toast(e.message,'bad'); }
   TG=d; tgFillOptions(d.options);
   const s=d.summary;
   const tgPer=pgSize('targets');
@@ -5606,11 +5692,12 @@ async function loadTargets(page){
     + (Number(s.blocked_optout)>0 ? ` · 문자 수신거부라 제외 ${n(s.blocked_optout)}명` : '')
     + (TG_BASIS==='repeat' && s.asof ? ` · 기준일 ${s.asof}` : '')
     + (p.p_category && TG_BASIS!=='product' ? ` · 카테고리 조건은 '한 번이라도 산 고객' (최근 구매·최근 상품 열은 ${p.p_category}의 마지막 구매)` : '');
+  setTimeout(()=>qstatSet('done'),0);
   $('tgByCh').innerHTML=simpleBars((s.by_channel||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--navy)'})));
   $('tgByCat').innerHTML=simpleBars((s.by_category||[]).map(x=>({k:x.k,v:x.n,unit:'명',color:'var(--teal)'})));
   const BASIS_NM={consent:'수신동의 고객',repeat:'거래 재구매 주기',product:'제품 재구매'};
   const chips=[['기준',BASIS_NM[TG_BASIS]||TG_BASIS],
-    ['제품',TG_BASIS==='product'?p.p_product:null],
+    ['제품',TG_BASIS==='product'?prodTokens().map(prodLabel).join(' | '):null],
     ['기준일',TG_BASIS==='repeat'?(s.asof||null):null],
     ['키워드',p.p_q],['채널',p.p_channel],['카테고리',p.p_category],['지역',p.p_region],
     ['구분',p.p_kind==='business'?'사업자':p.p_kind==='personal'?'개인':null],
@@ -5809,7 +5896,7 @@ function setBasis(b){
      '이미 보낸 사람 제외' 를 '전부 제외' 로 미리 놓는다 — 8/14 발송분은 '30일 내' 로는 안 빠진다 */
   if(b!=='consent' && !$('crmNoSend').value) $('crmNoSend').value='36500';
   $('tbBasisP').className = 'btn sm' + (b==='product' ? '' : ' ghost');
-  $('prodBox').classList.toggle('hidden', b!=='product');
+  $('prodBox').classList.toggle('hidden', b!=='product'); if(b==='product') prodRenderSel();
   $('asofBox').classList.toggle('hidden', b!=='repeat');
   if(b==='repeat' && !$('crmAsof').value) $('crmAsof').value = iso(new Date());
   $('crmFromL').textContent = b==='product' ? '이 제품을 산 기간 · 시작' : '최근 구매일 시작';
@@ -5824,11 +5911,45 @@ function setBasis(b){
 function setBasisQuiet(b){
   const keep=TG; TG=null; try{ setBasis(b); } finally { TG=keep; }
 }
-function pickProd(re, label){
-  $('crmProd').value = re;
-  if(!$('crmReason').value.trim()) $('crmReason').value = label + ' 교체 안내';
-  loadTargets(0);
-}
+function pickProd(re, label){ prodAdd(re, label, label + ' 교체 안내'); }
+/* ═══ 제품 찾기 (2026-10-12) — 조건 글(#crmProd, '@정수기|HAF-|WD25DB') 은 그대로 두고, 사람은 칩으로 고른다.
+   후보는 fn_product_suggest: 제품군(자동 발송 대상과 같은 판정) · 이 말이 든 제품 전부 · 판 적 있는 모델 · SDP 제품표 */
+const PS_LABEL={'HAF-':'정수기 필터','WD-?FLTR':'건조기 필터','콤보|WD9[0-9]H':'AI 콤보','MLT-|CLT-|INK-':'토너·잉크'};
+let PS_T=null, PS_SEQ=0;
+const psEsc=s=>String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function prodTokens(){ return ($('crmProd').value||'').split('|').map(x=>x.trim()).filter(Boolean); }
+function prodLabel(x){ if(x==='@*') return '제품군 전부'; if(x.startsWith('@')) return x.slice(1)+' (제품군)'; return PS_LABEL[x]||x.replace(/\\(.)/g,'$1'); }
+function prodRenderSel(){ const box=$('prodSel'); if(!box) return; const t=prodTokens();
+  box.innerHTML = t.length
+    ? t.map(x=>`<span class="prodchip ${x.startsWith('@')?'g':''}"><b>${esc(prodLabel(x))}</b><button type="button" aria-label="${esc(prodLabel(x))} 빼기" onclick="prodDel(this.dataset.t)" data-t="${esc(x)}">✕</button></span>`).join('')
+      + (t.length>1?'<span class="note">— 하나라도 산 사람</span>':'')
+    : '<span class="note">아직 고른 제품이 없습니다 — 아래 칸에 제품 이름이나 모델을 적어 고르세요</span>';
+  const raw=$('prodRawT'); if(raw) raw.textContent=$('crmProd').value||'(없음)'; const ri=$('crmProdRaw'); if(ri && document.activeElement!==ri) ri.value=$('crmProd').value; }
+function prodSet(toks){ $('crmProd').value=[...new Set(toks.map(x=>x.trim()).filter(Boolean))].join('|'); prodRenderSel(); }
+function prodAdd(tok, label, reason){ if(!tok) return; const t=prodTokens(); if(!t.includes(tok)) t.push(tok); if(label) PS_LABEL[tok]=label;
+  prodSet(t); const q=$('crmProdQ'); if(q) q.value=''; prodSugHide();
+  if(!$('crmReason').value.trim() && (reason||label)) $('crmReason').value=reason||(label+' 안내');
+  loadTargets(0); }
+function prodDel(tok){ prodSet(prodTokens().filter(x=>x!==tok)); if(TG && prodTokens().length) loadTargets(0); else if(TG){ $('tgCount').textContent='제품을 골라야 뽑힙니다'; } }
+function prodRawApply(){ prodSet(($('crmProdRaw').value||'').split('|')); if(prodTokens().length) loadTargets(0); }
+function prodSugHide(){ const b=$('prodSug'); if(b){ b.classList.add('hidden'); b.innerHTML=''; } }
+function prodSugKey(e){ if(e.key==='Escape'){ prodSugHide(); return; }
+  if(e.key==='Enter'){ e.preventDefault(); const first=$('prodSug')&&$('prodSug').querySelector('.sug'); if(first) first.click(); else { const q=$('crmProdQ').value.trim(); if(q.length>=2) prodAdd(psEsc(q), `‘${q}’ 가 든 제품`, q+' 안내'); } } }
+function prodSugIn(){ clearTimeout(PS_T); const q=$('crmProdQ').value.trim(); PS_T=setTimeout(()=>prodSugLoad(q), 250); }
+async function prodSugLoad(q){ const box=$('prodSug'); if(!box) return; const seq=++PS_SEQ;
+  box.classList.remove('hidden'); box.innerHTML='<div class="note">찾는 중…</div>';
+  let d; try{ d=await rpc('fn_product_suggest',{p_q:q||null}); }catch(e){ if(seq===PS_SEQ) box.innerHTML=`<div class="note" style="color:var(--red)">${esc(e.message)}</div>`; return; }
+  if(seq!==PS_SEQ) return; const have=new Set(prodTokens()); let h='';
+  const G=(d.groups||[]).filter(g=>!have.has(g.token));
+  if(G.length) h+=`<div class="sh">제품군 — 자동 발송 대상과 같은 판정 · 원장 + DPS 전표 · 오픈마켓 제외</div>`+G.map(g=>`<button type="button" class="sug g" data-t="${esc(g.token)}" data-l="${esc(g.label)}" onclick="prodAdd(this.dataset.t,this.dataset.l,this.dataset.l+' 재구매 안내')"><b>${esc(g.label)}</b>${g.note?`<span class="note">${esc(g.note)}</span>`:''}<small>${n(g.n)}명</small></button>`).join('');
+  if(d.term && d.term.text){ const t=d.term; const tok=psEsc(t.text); if(!have.has(tok)) h+=`<div class="sh">이 말이 들어간 제품 전부</div><button type="button" class="sug t" data-t="${esc(tok)}" data-l="${esc('‘'+t.text+'’ 가 든 제품')}" onclick="prodAdd(this.dataset.t,this.dataset.l,'${esc(t.text)} 안내')"><b>‘${esc(t.text)}’</b> 이(가) 품목명·모델에 든 제품 전부<small>${n(t.n)}명 · ${n(t.lines)}줄</small></button>`; }
+  const M=(d.models||[]).filter(m=>!have.has(psEsc(m.model)));
+  if(M.length) h+=`<div class="sh">판 적 있는 모델</div>`+M.map(m=>`<button type="button" class="sug m" data-t="${esc(psEsc(m.model))}" data-l="${esc(m.model)}" onclick="prodAdd(this.dataset.t,this.dataset.l,this.dataset.l+' 안내')"><b class="mono">${esc(m.model)}</b><span class="note" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name||'')}</span><small>${n(m.n)}명${m.last?' · 마지막 '+esc(String(m.last).slice(0,7)):''}</small></button>`).join('');
+  const S=(d.sdp||[]).filter(x=>!have.has(psEsc(x.model)) && !M.some(m=>m.model===x.model));
+  if(S.length) h+=`<div class="sh">SDP 제품표 (아직 판 기록이 없을 수 있음)</div>`+S.map(x=>`<button type="button" class="sug s" data-t="${esc(psEsc(x.model))}" data-l="${esc(x.model)}" onclick="prodAdd(this.dataset.t,this.dataset.l,this.dataset.l+' 안내')"><b class="mono">${esc(x.model)}</b><span class="note">${esc(x.name||'')}</span><small>${esc(x.cat||'')}</small></button>`).join('');
+  if(!h) h=`<div class="note">${q.length<2?'두 글자 이상 적으면 제품 이름·모델을 찾습니다':'맞는 제품이 없습니다 — 다른 말로 적어 보세요'}</div>`;
+  box.innerHTML=h; }
+document.addEventListener('click',e=>{ if(!e.target.closest('#prodSug,#crmProdQ')) prodSugHide(); });
 /* 조건을 글로 복사한다. 받은 사람이 [조건 붙여넣기] 하면 같은 대상이 나온다 */
 function condOf(){ const p=tgParams(); delete p.p_unmask; delete p.p_reason;
   const o={}; Object.keys(p).sort().forEach(k=>{ if(p[k]!==null&&p[k]!==''&&p[k]!==false) o[k]=p[k]; }); return o; }
@@ -6252,7 +6373,7 @@ async function utmQuick(){
 /* [대상 조건] → 발송 대상 추출로. 캠페인 코드를 캠페인명에 넣어 감사로그가 같은 이름으로 남게 한다 */
 function utmExtract(code, seg){ $('crmReason').value=code; PENDING_SEG=seg||null; show('crm'); }
 function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value='');
-  $('crmNext').classList.remove('on'); $('crmSort').value='recent'; if($('crmReason').value.trim().length>=3) loadTargets(0); }
+  $('crmNext').classList.remove('on'); $('crmSort').value='recent'; prodRenderSel(); if($('crmReason').value.trim().length>=3 && (TG_BASIS!=='product'||prodTokens().length)) loadTargets(0); }
 /* ═══ 미입금 주문 (결제 안 한 고객) ═══
    고도몰에서 받아 올린 입금 대기 주문. 샵링커는 결제가 끝난 주문만 주므로 여기로 따로 받는다. */
 let upPage=0, UPL=null;
