@@ -14,6 +14,7 @@
  *      빠진 것만 다시 보냅니다 (fn_inquiry_mail_check). Datacenter 를 고치던 순간에 빠진 것도 한 시간 안에 들어갑니다.
  *    · 표를 못 읽은 메일도 버리지 않습니다 — 본문(raw)을 같이 보내면 Datacenter 가 한 번 더 읽고,
  *      그래도 이름이 없으면 '(이름 확인 필요)' 로 상담을 만들고 잔디 카드에 ⚠ 가 붙습니다.
+ *    · 스팸함으로 간 알림 메일도 찾습니다(in:anywhere). 받은편지함에 없는데 데이터센터에 들어왔다면 스팸함을 보세요.
  *    · 대조할 때마다 심장박동을 찍어, 스크립트가 멈추면 아침 09:10 수집 미도착 감시가 잔디로 알립니다.
  *
  *  ▸ 설치 (받는 계정으로 로그인한 상태에서)
@@ -32,7 +33,7 @@ var DC_ANON  = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 var DC_KEY   = 'PASTE_DC_KEY_HERE';          // fn_inquiry_mail_ingest 전용 키
 var LABEL    = 'DC적재';        // 넘긴 메일
 var LABEL_NG = 'DC확인필요';     // 표를 못 읽어 원문으로 넘긴 메일 (Datacenter 에서 이름·번호 확인)
-var QUERY    = 'subject:견적문의';
+var QUERY    = 'in:anywhere -in:trash subject:견적문의';   // 스팸함에 들어간 알림 메일도 (기본 검색은 스팸을 빼고 찾는다)
 var MAX_THREADS = 100;
 var SENT_PROP = 'dc_sent_ids';   // 보낸 메시지 ID (최근 400개)
 var SENT_KEEP = 400;
