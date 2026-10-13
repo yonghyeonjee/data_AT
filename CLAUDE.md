@@ -145,6 +145,7 @@ end $outer$;
   본문은 마크다운 링크 `[글자](주소)` 를 읽는다
 - `crm.consult.source` 는 CHECK 제약이다 — 새 출처를 넣으려면 제약을 먼저 고쳐야 한다
 - 컨테이너에서 외부 HTTP 는 프록시가 막는다. Supabase 는 MCP 로, 잔디는 DB `extensions.http_post` 로
+- **저장소를 private 로 바꾸면 사이트 전체가 404 가 된다 (2026-10-12 사고).** 무료 계정은 비공개 저장소에서 GitHub Pages 를 못 쓴다 — 전환 순간 Pages 가 내려가고 `db.samsungat.co.kr` 전 화면(store·admin·q·dash)이 GitHub 404. **public 으로 되돌려도 Pages 는 저절로 안 켜진다** — Settings › Pages 에서 Deploy from a branch · `main` · `/ (root)` 저장 + Custom domain `db.samsungat.co.kr` + (몇 분 뒤) Enforce HTTPS 를 다시 해야 배포가 돈다. 비공개로 가려면 GitHub Pro(사이트 자체는 그래도 공개) 또는 웹 파일만 다른 곳으로 배포하는 구성을 먼저 만들 것. 비공개면 `fn_product_sdp_fetch`(raw.githubusercontent.com)도 404, Actions 는 월 2,000분 제한.
 
 ---
 
