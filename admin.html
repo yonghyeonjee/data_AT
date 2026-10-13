@@ -6560,10 +6560,10 @@ async function smsSave(){
 async function smsCheck(){ const b=$('smsCheckBox'); b.innerHTML='센드온에 묻는 중… (발신번호 · 포인트 · 단가 — 문자는 안 나갑니다)';
   try{ const r=await rpc('fn_sms_check'); await smsCfgEnsure(true); smsPaint(); toast(r.ok?`연결 성공 · 포인트 ${smsWon(r.points||0)}원`:`연결 실패 · ${r.message||''}`, r.ok?'ok':'bad'); }
   catch(e){ b.innerHTML=esc(e.message); toast(e.message,'bad'); } }
-async function smsPull(){ if(!(await modal({title:'센드온 수신거부 받아오기',html:'센드온 통합 수신거부 목록을 전부 받아 우리 수신거부 목록에 넣고, 번호가 같은 고객의 <b>수신동의를 끕니다</b>. 되돌리기는 데이터 가져오기 › 적재 기록에서 할 수 있습니다.',ok:'받아오기'}))) return;
+async function smsPull(){ if(!(await modal({title:'센드온 수신거부 받아오기',html:'센드온 080 수신거부(ARS)와 통합 수신거부를 받아 우리 수신거부 목록에 넣고, 번호가 같은 고객의 <b>수신동의를 끕니다</b>. 되돌리기는 데이터 가져오기 › 적재 기록에서 할 수 있습니다.',ok:'받아오기'}))) return;
   const b=$('smsPullBox'); b.innerHTML='받아오는 중…';
   try{ const r=await rpc('fn_sms_blocklist_pull',{p_unified:true}); const im=r.import||{};
-    b.innerHTML=(r.ok?'<span class="tag ok">완료</span> ':'<span class="tag bad">실패</span> ')+esc(r.message||'')+(r.partial?' · <b>목록이 더 있습니다 — 한 번 더 누르세요</b>':'')
+    b.innerHTML=(r.ok?'<span class="tag ok">완료</span> ':'<span class="tag bad">실패</span> ')+esc(r.message||'')+(r.partial?' · <b>목록이 더 있습니다 — 한 번 더 누르면 멈춘 곳부터 이어 받습니다</b>':'')
       +(r.import?`<br>읽은 번호 ${n(im.rows)} · 새 번호 ${n(im.new)} · 이미 있던 번호 ${n(im.dup)} · 고객 찾음 ${n(im.matched)} · 수신동의 끔 ${n(im.off)} · 마스터에 없음 ${n(im.unmatched)}`:'');
     toast(r.message||'완료', r.ok?'ok':'bad'); }
   catch(e){ b.innerHTML=esc(e.message); toast(e.message,'bad'); } }
