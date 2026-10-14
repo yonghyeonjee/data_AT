@@ -1253,6 +1253,12 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div id="cbList"><div class="empty">잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.</div></div>
       <div id="cb_pg"></div>
     </div>
+    <!-- 마감 임박 견적서 (v199 · test 먼저) — 유효기한 D-3 ~ D+7 · 없으면 안 보인다 -->
+    <div class="card hidden" id="dqCard">
+      <h2>마감 임박 견적서 <span id="dqSub"></span></h2>
+      <p class="note-in" style="margin-top:0">유효기한이 <b>3일 안</b>이거나 <b>지난 지 7일 안</b>인 견적서입니다. 고객이 결정하기 전에 한 통 보내세요 — [💬 문자]는 견적 링크·기한이 채워진 문자 창(센드온)으로, [보내기]는 링크 복사·카카오까지 고르는 창으로 열립니다.</p>
+      <div class="list" id="dqList"></div>
+    </div>
     <div class="card hidden" id="hlCard">
       <h2>우선 순위 상담 <span id="hlSub">점장님 · 대표님만 보입니다</span></h2>
       <p class="note-in" style="margin-top:0">누구부터 챙길지 볼 때 봅니다. <b>14일·30일</b>은 그만큼 손 안 댄 건수입니다. 이름을 누르면 <b>상담</b> 탭에서 그 담당자 건만 봅니다.</p>
@@ -2139,7 +2145,7 @@ async function loadStatus(code){
   const prev = (STATUS&&STATUS.quotes)||[];
   STATUS = st; STATUS.quotes = prev; ME = STATUS.me;
   const p = qtP || rpc('fn_store_quotes', {p_code: c}).catch(()=>null);
-  const done = p.then(q=>{ if(q && STATUS===st){ STATUS.quotes = q; if($('qtList')||$('qt_q')) try{ quoteFilter(); }catch(e){} } });
+  const done = p.then(q=>{ if(q && STATUS===st){ STATUS.quotes = q; if($('qtList')||$('qt_q')) try{ quoteFilter(); }catch(e){} try{ renderDueQuotes(); renderHomeAlert(STATUS); }catch(e){} } });
   if(!fresh) await done;   /* 새로고침은 둘 다 기다린다 (호출한 쪽이 바로 render 한다) */
   return STATUS; }
 
@@ -4007,12 +4013,26 @@ function renderFlow(s){
   ].filter(Boolean);
   el.innerHTML=steps.map((st,i)=>`<button type="button" class="step${st.alarm?' alarm':st.warn?' warn':''}" onclick="${st.go}"${st.tip?` title="${esc(st.tip)}"`:''}><i>${i+1}</i><b>${st.k}</b><span class="v">${st.v}</span><small>${st.sub}</small></button>`).join('<span class="arr" aria-hidden="true">›</span>');
 }
+/* 홈 : 마감 임박 견적서 (v199) — 유효기한 D-3 ~ D+7 인 견적서. [💬 문자] 는 fn_quote_share 로 링크·기한을 받아 quote_link 템플릿을 채운 문자 창 */
+function dqRows(){ const all=(STATUS&&STATUS.quotes)||[]; const today=todayStr();
+  const diff=d=>Math.round((new Date(d+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
+  return all.map(x=>({x,d:String(x.until||'').replace(/\./g,'-').slice(0,10)})).filter(o=>/^\d{4}-\d\d-\d\d$/.test(o.d)).map(o=>({x:o.x,d:o.d,n:diff(o.d)})).filter(o=>o.n>=-7&&o.n<=3).sort((a,b)=>a.n-b.n||String(a.x.at).localeCompare(String(b.x.at))); }
+function renderDueQuotes(){ const card=$('dqCard'); if(!card) return; const rows=dqRows(); card.classList.toggle('hidden',!rows.length); if(!rows.length){ $('dqList').innerHTML=''; return rows; }
+  $('dqSub').textContent=`${rows.length}건 · 지남 ${rows.filter(o=>o.n<0).length} · 오늘 ${rows.filter(o=>o.n===0).length} · 3일 안 ${rows.filter(o=>o.n>0).length}`;
+  $('dqList').innerHTML=rows.map(({x,n:dn})=>`<div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qUntil(x.until)} <small style="color:${dn<0?'#B3261E':dn===0?'#8A5A00':'var(--muted)'};font-weight:700">${dn<0?`${-dn}일 지남`:dn===0?'오늘 마감':`D-${dn}`}</small></div>
+      <div class="m">${String(x.at||'').slice(5,10).replace('-','/')} 발행 · ${esc(x.models||'')}${x.monthly?` · 월 ${won(x.monthly)}`:x.final?` · ${won(x.final)}`:''}</div></div>
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="dqSms('${esc(x.no)}','${esc(x.name||'')}')" title="견적 링크·기한이 채워진 문자 (센드온)">💬 문자</button><button class="mini" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button></div></div>`).join('');
+  return rows; }
+async function dqSms(no,name){ let d; try{ d=await rpc('fn_quote_share',{p_code:CODE,p_no:no}); }catch(e){ return toast(e.message,'bad'); }
+  smsCompose({name:d.name||name||'', phone:(d.phone||'').replace(/\D/g,''), quote_no:d.no, kind:'quote', template:'quote_link',
+    vars:{모델:d.models||'', 월요금:(d.monthly?`월 ${won(d.monthly)}`:(d.final?won(d.final):'')), 견적링크:d.url, 기한:d.expires_d, 담당자:ME}}); }
 /* 홈 : 지금 챙길 것 — 없으면 안 보인다 */
 function renderHomeAlert(s){
   const al=$('homeAlert'); if(!al) return; const items=[];
   if(s.is_mgr && Number(s.unassigned_n||0)>0) items.push(`<button type="button" class="al bad" onclick="goTab('assign')"><b>미배정 문의 ${s.unassigned_n}건</b><span>담당자를 정해 주세요 ›</span></button>`);
   const late=(s.callbacks||[]).filter(x=>x.overdue).length;
   if(late) items.push(`<button type="button" class="al warn" onclick="document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})"><b>지난 콜백 ${late}건</b><span>약속 시각이 지났습니다 ›</span></button>`);
+  const dq=dqRows(); if(dq.length) items.push(`<button type="button" class="al warn" onclick="document.getElementById('dqCard').scrollIntoView({behavior:'smooth',block:'start'})"><b>마감 임박 견적서 ${dq.length}건</b><span>${dq.filter(o=>o.n<0).length?`지남 ${dq.filter(o=>o.n<0).length} · `:''}문자 한 통 ›</span></button>`);
   al.innerHTML=items.join(''); al.classList.toggle('hidden', !items.length);
 }
 /* ═══ 내 고객 탭 찾기 — 상담 입력의 고객 찾기와 같은 RPC ═══ */
@@ -4362,6 +4382,7 @@ function renderHome(s){
   $('cbSub').textContent=cbs.length?`${cbs.length}건 · 지난 약속 ${cbs.filter(x=>x.overdue).length}`:'';
   renderCallbacks(cbs);
   quoteFilter();   /* 견적서 목록은 quoteFilter 가 그린다 (견적서 탭 검색과 공용) */
+  renderDueQuotes();
   $('mcSub').textContent=s.my_customer_count?`${s.my_customer_count}명 · 최근 ${mc.length}명 표시`:'';
   /* 내 고객 목록은 탭을 열 때 fn_store_my_customers 로 따로 그린다 (loadMyCustomers) */
   setTabBadge('home', due, cbs.some(x=>x.overdue));
