@@ -100,6 +100,10 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .tile.ok{background:#EAF5F3;border-color:#BFE0DA}.tile.ok .v{color:var(--teal)}
 .tile.navy{background:var(--navy-soft);border-color:#B9C2E8}.tile.navy .v{color:var(--navy)}
 .tile.warn{background:#FDF6E7;border-color:#F0DCA8}.tile.warn .v{color:var(--amber)}
+a.tile{text-decoration:none;color:inherit;display:block;position:relative}
+a.tile:hover{box-shadow:0 2px 8px rgba(20,40,160,.15);border-color:var(--navy-2)}
+.tile .go{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--navy);border:1px solid #B9C2E8;background:#fff;border-radius:6px;padding:7px 10px;min-height:32px}
+@media(max-width:760px){.tile .go{min-height:40px;padding:10px 12px}}
 
 .foot{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.8}
 
@@ -353,9 +357,11 @@ function freq(d){
 
 function crm(d){
   const c=d.crm||{};
+  /* 사내 로그인(관리자 세션)이 있을 때만 수동 추출로 넘기는 버튼 — 같은 셈법(재구매 주기 · 채널 VMS · 예상재구매일 창)으로 뽑는다 */
+  const adm=!!dcToken(); const go=(lo,hi)=>adm?`/admin.html?tg=vms_due&lo=${lo}&hi=${hi}#crm`:null;
   const tiles=[
-    ['교체 예정 30일 안', c.due30, '이번 달 안내 발송 대상 (주기 기준)', 'navy'],
-    ['예정일 지남 (60일 안)', c.overdue, '재구매가 늦어진 고객 — 우선 연락', 'hot'],
+    ['교체 예정 30일 안', c.due30, '이번 달 안내 발송 대상 (주기 기준)', 'navy', go(0,30)],
+    ['예정일 지남 (60일 안)', c.overdue, '재구매가 늦어진 고객 — 우선 연락', 'hot', go(-60,-1)],
     ['이탈 위험', c.risk, '2회 이상 샀는데 6~12개월 소식 없음', 'warn'],
     ['우량 고객 이탈 위험', c.high_risk, '4회 이상 · 연 30만원 이상 · 120일 넘게 미구매', 'hot'],
     ['문자 발송 가능', c.sms_ok, '휴대폰 있음 · 수신거부 아님 · 6개월 안 거래 · 2회 이상', 'ok'],
@@ -363,8 +369,9 @@ function crm(d){
     ['휴대폰 번호 없음', c.no_mobile, '1년 안 거래인데 문자를 못 보냄 — 번호 보완', 'warn'],
     ['수신거부', c.optout, '080 수신거부 · 발송에서 자동 제외', ''],
   ];
-  $('#tiles').innerHTML=tiles.map(([k,v,s,cls])=>`<div class="tile ${cls}"><span class="k">${k}</span><span class="v">${n(v)}<small style="font-size:13px;font-weight:600;margin-left:2px">명</small></span><span class="s">${s}</span></div>`).join('');
-  $('#capCrm').innerHTML=`당장 보낼 수 있는 안내 = 교체 예정 30일 안 ${n(c.due30)}명 + 예정일 지남 ${n(c.overdue)}명 중 문자 발송 가능 조건을 만족하는 고객. 같은 제품을 6개월 안에 거래한 고객에게는 수신동의 없이도 <b>거래 안내 문자</b>를 보낼 수 있고, 그 밖의 광고성 문자는 수신동의 ${n(c.sms_consent)}명에게만. 우량 고객 이탈 위험 <b>${n(c.high_risk)}명</b>은 담당자 전화가 맞다.`;
+  $('#tiles').innerHTML=tiles.map(([k,v,s,cls,href])=>{ const inner=`<span class="k">${k}</span><span class="v">${n(v)}<small style="font-size:13px;font-weight:600;margin-left:2px">명</small></span><span class="s">${s}</span>${href?'<span class="go">발송 대상 추출 →</span>':''}`;
+    return href?`<a class="tile ${cls}" href="${href}" target="_blank" rel="noopener" title="관리자 › 발송 대상 추출 · 수동 — 재구매 주기 · VMS · 이 창으로 바로 뽑습니다">${inner}</a>`:`<div class="tile ${cls}">${inner}</div>`; }).join('');
+  $('#capCrm').innerHTML=`당장 보낼 수 있는 안내 = 교체 예정 30일 안 ${n(c.due30)}명 + 예정일 지남 ${n(c.overdue)}명 중 문자 발송 가능 조건을 만족하는 고객. 같은 제품을 6개월 안에 거래한 고객에게는 수신동의 없이도 <b>거래 안내 문자</b>를 보낼 수 있고, 그 밖의 광고성 문자는 수신동의 ${n(c.sms_consent)}명에게만. 우량 고객 이탈 위험 <b>${n(c.high_risk)}명</b>은 담당자 전화가 맞다.${adm?' 타일의 [발송 대상 추출 →] 은 관리자 수동 추출(재구매 주기 · VMS · 같은 날짜 창)으로 넘어간다 — 수신동의·수신거부·발송 이력은 거기서 한 번 더 걸러진다.':''}`;
 }
 
 function handlers(d){

@@ -1654,6 +1654,8 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
               <div><label>기준일
                 <span class="note">이 날짜로 예상재구매일을 계산합니다 — <b>보내는 날</b>로 맞추세요</span></label>
                 <input class="in" type="date" id="crmAsof" onchange="if(TG)loadTargets(0)"></div>
+              <div><label>예상재구매일 창 <span class="note">기준일에서 며칠 전 ~ 며칠 뒤 (기본 -30 ~ +14 · VMS 대시보드 '교체 예정 30일 안' = 0 ~ 30)</span></label>
+                <div style="display:flex;gap:6px;align-items:center"><input class="in num" type="number" id="crmDueLo" value="-30" step="1" aria-label="창 시작(일)" style="max-width:90px" onchange="if(TG)loadTargets(0)"><span class="note">~</span><input class="in num" type="number" id="crmDueHi" value="14" step="1" aria-label="창 끝(일)" style="max-width:90px" onchange="if(TG)loadTargets(0)"><span class="note">일</span></div></div>
             </div>
             <p class="note" style="margin:8px 0 0">기준일을 적어 두면 <b>누가 언제 뽑아도 같은 사람이 나옵니다.</b>
               비워 두면 뽑는 날(오늘)을 쓰므로 하루만 지나도 대상이 달라집니다.</p>
@@ -1827,6 +1829,40 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
       <!-- ═══ 메시지 발송 관리 — 센드온 문자 (mvp_201) : 계정·잔액·단가 · 설정(꺼짐/테스트/실제) · 템플릿 · 수신거부 받아오기 · 발송 내역 ═══ -->
       <div class="view hidden" id="v-sms">
         <div class="callout" id="smsState">불러오는 중…</div>
+        <!-- 문자 보내기 · 테스트 · 예약 (mvp_210 · 2026-10-14) — 번호를 직접 적어 지금 보내거나 시각을 정해 예약 -->
+        <div class="card smsc" id="smsComposeCard">
+          <h3>문자 보내기 · 테스트 · 예약 <span>번호를 직접 적어 보냅니다 — 한 줄에 한 사람(번호 이름) · 지금 보내거나 시각을 정해 예약 · 모드가 테스트면 실제로 나가지 않고 기록만 남습니다</span>
+            <span style="margin-left:auto" class="note" id="scMode"></span></h3>
+          <div class="fgrid" style="grid-template-columns:minmax(220px,1fr) minmax(280px,2fr)">
+            <div><label>받는 사람 <span class="note">한 줄에 하나 · <span class="mono">01012345678 홍길동</span> · 쉼표·탭도 됩니다</span></label>
+              <textarea class="in mono" id="scRows" rows="7" placeholder="01012345678 홍길동&#10;01098765432" oninput="scPreview()" aria-label="받는 사람"></textarea>
+              <div class="note" id="scRowsN" style="margin-top:4px"></div></div>
+            <div>
+              <label>템플릿</label><select class="in" id="scTpl" data-noseg="1" onchange="scTplPick()" aria-label="템플릿"><option value="">(직접 쓰기)</option></select>
+              <label style="margin-top:8px;display:block">본문 <span class="note">{이름} 은 받는 사람 이름으로</span></label>
+              <textarea class="in" id="scBody" rows="6" style="width:100%" oninput="scPreview()" aria-label="본문"></textarea>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px">
+                <label class="switch" id="scIsAd" onclick="this.classList.toggle('on');scPreview()"><span class="sw"></span>광고 (머리말·꼬리말 자동)</label>
+                <input class="in" id="scTitle" placeholder="LMS 제목" value="삼성스토어 시흥점" style="max-width:200px" aria-label="LMS 제목">
+                <input class="in mono" id="scCamp" placeholder="캠페인 코드 (선택)" style="max-width:200px" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_sc" readonly onfocus="this.removeAttribute('readonly');campPick(this)" oninput="campPick(this)" onblur="campPickHide(this)" aria-label="캠페인 코드">
+                <span class="note" id="scCount"></span></div>
+              <div class="note" style="margin-top:8px">미리보기 (첫 사람 기준)</div><pre class="prodsug" id="scPrev" style="white-space:pre-wrap;font:inherit;margin:4px 0 0;min-height:40px"></pre>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
+            <button class="btn" id="scSendBtn" onclick="scSendNow()">지금 보내기</button>
+            <span class="note">또는 예약</span>
+            <input class="in" type="datetime-local" id="scAt" aria-label="예약 시각" style="max-width:230px">
+            <button class="btn ghost" id="scSchedBtn" onclick="scSchedule()">예약 등록</button>
+            <span class="note">예약은 보내는 시각의 모드(테스트/실제)를 따릅니다 · 한 건에 500명까지</span>
+          </div>
+          <div id="scResult" class="note" style="margin-top:8px;line-height:1.7"></div>
+        </div>
+        <div class="card">
+          <h3>예약 발송 <span>매분 서버가 시각이 된 예약을 보냅니다 · 기능이 꺼져 있으면 실패로 남습니다 · 대기 중인 것만 취소할 수 있습니다</span>
+            <span style="margin-left:auto"><button class="btn sm ghost" onclick="loadSmsSched()">새로고침</button></span></h3>
+          <div class="tw"><table><thead><tr><th>예약 시각</th><th>상태</th><th>받는 사람</th><th style="min-width:260px">본문</th><th>캠페인</th><th>등록</th><th>결과</th><th></th></tr></thead><tbody id="tbSmsSched"></tbody></table></div>
+        </div>
         <div class="card">
           <h3>센드온 계정 · 잔액 <span>API KEY 는 서버에만 저장되고 화면에는 앞·뒤 4자리만 보입니다 · 호출은 Supabase 서버 IP 에서 나가므로 센드온 콘솔 [API KEY 관리 › 허용 IP] 에 아래 서버 IP 를 등록해야 합니다</span>
             <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" onclick="smsCheck()">연결 확인 · 잔액</button><button class="btn sm ghost" onclick="loadSms()">새로고침</button></span></h3>
@@ -2400,7 +2436,7 @@ const FN_LABEL={fn_customer_list:'고객 목록',fn_customer_stats:'고객 통�
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
   fn_sl_pending:'샵링커 주문',fn_sl_status:'샵링커 상태',fn_order_queue:'전표 대기열',fn_settlement_list:'정산',fn_sub_plans:'구독 플랜',fn_store_daily_list:'매장 마감',
-  fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴',fn_crm_followups:'후속 관리',fn_product_sdp_upsert:'제품 정보',fn_sms_config_get:'문자 설정',fn_sms_log:'문자 발송 내역',fn_sms_check:'센드온 연결 확인',fn_sms_send:'문자 보내기',fn_sms_blocklist_pull:'센드온 수신거부'};
+  fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴',fn_crm_followups:'후속 관리',fn_product_sdp_upsert:'제품 정보',fn_sms_config_get:'문자 설정',fn_sms_log:'문자 발송 내역',fn_sms_check:'센드온 연결 확인',fn_sms_send:'문자 보내기',fn_sms_blocklist_pull:'센드온 수신거부',fn_sms_schedule_list:'예약 발송',fn_sms_schedule_save:'예약 등록',fn_sms_schedule_cancel:'예약 취소'};
 const rpcLabel=fn=>FN_LABEL[fn]||'자료';
 const lpKB=b=>b>=1e6?(b/1e6).toFixed(1)+'MB':Math.max(1,Math.round(b/1e3))+'KB';
 function rpcExp(fn){ try{ return (JSON.parse(localStorage.getItem('dc_rpc_bytes')||'{}'))[fn]||0; }catch(e){ return 0; } }
@@ -4476,6 +4512,17 @@ async function fuLoad(k){ const seq=++FU_SEQ[k]; const S=FU[k], ids=FU_IDS[k]; c
   catch(e){ if(seq!==FU_SEQ[k]) return; if(tb) tb.innerHTML=`<tr><td colspan="${ids.cols}" class="note">${esc(e.message)}</td></tr>`; toast(e.message,'bad'); } }
 function loadFollowup(){ fuLoad('sub'); fuLoad('quote'); fuLoad('product'); }
 let PENDING_PROD=null;
+/* VMS 대시보드 타일 [발송 대상 추출 →] — /admin.html?tg=vms_due&lo=0&hi=30#crm 로 들어오면 재구매 주기 기준 · 채널 VMS · 창 D+lo~D+hi 로 바로 뽑는다 (mvp_210) */
+let PENDING_TG=(()=>{ try{ const q=new URLSearchParams(location.search); if(q.get('tg')!=='vms_due') return null;
+  const lo=Number(q.get('lo')), hi=Number(q.get('hi')); const o={lo:isFinite(lo)?lo:0, hi:isFinite(hi)?hi:30, ch:'VMS', reason:'VMS 교체 예정 안내 '+new Date().toISOString().slice(2,10).replace(/-/g,'')};
+  try{ history.replaceState(null,'',location.pathname+location.hash); }catch(e){} return o; }catch(e){ return null; } })();
+function tgApplyPending(){ const o=PENDING_TG; if(!o) return false; PENDING_TG=null;
+  setBasisQuiet('repeat'); $('crmAsof').value=iso(new Date()); $('crmDueLo').value=o.lo; $('crmDueHi').value=o.hi;
+  const sel=$('crmCh'); if(o.ch){ if(![...sel.options].some(x=>x.value===o.ch)){ const op=document.createElement('option'); op.textContent=o.ch; sel.appendChild(op); } sel.value=o.ch; }
+  if(typeof segSync==='function') segSync();
+  if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason;
+  toast(`VMS 대시보드에서 넘어온 조건 — 재구매 주기 · VMS · 예상재구매일 D${o.lo<0?o.lo:'+'+o.lo} ~ D${o.hi<0?o.hi:'+'+o.hi}`,'ok');
+  loadTargets(0); return true; }
 /* [이 조건으로 수동 추출 →] — 제품군 카드의 제품군·구매 경과를 수동 추출의 조건으로 넘긴다 (같은 판정 core.f_product_buyers 라 같은 사람이 나온다) */
 function fuToManual(){ const g=FU.product.group, m=Number(FU.product.min_m)||0; let to=''; if(m){ const d=new Date(); d.setMonth(d.getMonth()-m); to=iso(d); }
   PENDING_PROD={toks:['@'+g], to, reason:g+' 재구매 안내'}; show('crm'); }
@@ -4784,7 +4831,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
+const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_TG){ tgApplyPending(); } else if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
@@ -5721,14 +5768,17 @@ function tgParams(){
     p_basis:TG_BASIS, p_product:(TG_BASIS==='product' ? ($('crmProd').value.trim()||null) : null),
     p_next_only:$('crmNext').classList.contains('on'), p_sort:v('crmSort'),
     p_asof:(TG_BASIS==='repeat' ? (v('crmAsof')||null) : null),
+    p_due_lo:(TG_BASIS==='repeat' && v('crmDueLo')!=='' ? Number(v('crmDueLo')) : null),
+    p_due_hi:(TG_BASIS==='repeat' && v('crmDueHi')!=='' ? Number(v('crmDueHi')) : null),
     p_unmask:$('crmUnmask').classList.contains('on') };
 }
 function tgFillOptions(o){
   if(!o||TG_OPTS) return; TG_OPTS=o;
   const chs=[...new Set([...(o.channels||[]),...(o.purchase_channels||[])])].sort();
-  $('crmCh').innerHTML='<option value="">전체</option>'+chs.map(x=>`<option>${esc(x)}</option>`).join('');
-  $('crmCat').innerHTML='<option value="">전체</option>'+(o.categories||[]).map(x=>`<option>${esc(x)}</option>`).join('');
-  $('crmRegion').innerHTML='<option value="">전체</option>'+(o.regions||[]).map(x=>`<option>${esc(x)}</option>`).join('');
+  /* 선택지를 다시 그릴 때 이미 고른 값은 남긴다 — VMS 대시보드에서 넘어온 채널이 첫 추출 뒤 지워지던 것 (mvp_210) */
+  const fill=(id,list)=>{ const el=$(id); const keep=el.value; el.innerHTML='<option value="">전체</option>'+list.map(x=>`<option>${esc(x)}</option>`).join(''); if(keep){ if(![...el.options].some(x=>x.value===keep)){ const op=document.createElement('option'); op.textContent=keep; el.appendChild(op); } el.value=keep; } };
+  fill('crmCh',chs); fill('crmCat',o.categories||[]); fill('crmRegion',o.regions||[]);
+  if(typeof segSync==='function') segSync();
 }
 async function loadTargets(page){
   const p=tgParams();
@@ -5756,6 +5806,7 @@ async function loadTargets(page){
   const chips=[['기준',BASIS_NM[TG_BASIS]||TG_BASIS],
     ['제품',TG_BASIS==='product'?prodTokens().map(prodLabel).join(' | '):null],
     ['기준일',TG_BASIS==='repeat'?(s.asof||null):null],
+    ['창',TG_BASIS==='repeat'?`D${p.p_due_lo==null?'-30':(p.p_due_lo<0?p.p_due_lo:'+'+p.p_due_lo)} ~ D${p.p_due_hi==null?'+14':(p.p_due_hi<0?p.p_due_hi:'+'+p.p_due_hi)}`:null],
     ['키워드',p.p_q],['채널',p.p_channel],['카테고리',p.p_category],['지역',p.p_region],
     ['구분',p.p_kind==='business'?'사업자':p.p_kind==='personal'?'개인':null],
     ['최근구매',p.p_from||p.p_to?`${p.p_from||'…'}~${p.p_to||'…'}`:null],
@@ -5867,13 +5918,13 @@ async function segEdit(code){
    조건 이름과 실제 조건이 어긋난다 (예전 '토너·잉크 재구매 주기' 가 kind_goods 를 담아
    토너가 아닌 사람까지 뽑던 사고). 모르는 키가 있으면 알려 준다. */
 const SEG_KEYS=['q','channel','category','region','kind','min_cnt','min_net','dormant_days',
-  'no_send_days','sort','next_only','from','to','last_days_max','last_days_min','basis','product','asof'];
+  'no_send_days','sort','next_only','from','to','last_days_max','last_days_min','basis','product','asof','due_lo','due_hi'];
 function segToForm(pm){
   const set=(id,v)=>{ $(id).value = (v===null||v===undefined)?'':String(v); };
   const bad=Object.keys(pm||{}).filter(k=>SEG_KEYS.indexOf(k)<0);
   if(bad.length) toast('이 조건에 화면이 모르는 항목이 있어 그 부분은 걸리지 않습니다: '+bad.join(', '),'bad');
   /* 대상 기준·제품·기준일을 먼저 맞춘다 — 이게 빠지면 같은 조건 버튼을 눌러도 사람마다 다른 수가 나온다 */
-  set('crmProd', pm.product); set('crmAsof', pm.asof);
+  set('crmProd', pm.product); set('crmAsof', pm.asof); set('crmDueLo', pm.due_lo==null?-30:pm.due_lo); set('crmDueHi', pm.due_hi==null?14:pm.due_hi);
   if(pm.basis && pm.basis!==TG_BASIS) setBasisQuiet(pm.basis);
   else setBasisQuiet(pm.basis || TG_BASIS);
   set('crmQ',pm.q); set('crmCh',pm.channel); set('crmCat',pm.category); set('crmRegion',pm.region); set('crmKind',pm.kind);
@@ -5914,6 +5965,7 @@ async function saveSegment(){
   pm.basis=TG_BASIS;
   if(TG_BASIS==='product' && v('crmProd')) pm.product=v('crmProd');
   if(TG_BASIS==='repeat'  && v('crmAsof')) pm.asof=v('crmAsof');
+  if(TG_BASIS==='repeat'){ if(v('crmDueLo')!=='' && Number(v('crmDueLo'))!==-30) pm.due_lo=Number(v('crmDueLo')); if(v('crmDueHi')!=='' && Number(v('crmDueHi'))!==14) pm.due_hi=Number(v('crmDueHi')); }
   const days=d=>d?Math.max(0,Math.round((Date.now()-new Date(d).getTime())/86400000)):null;
   const data=await modal({title:'조건을 이름 붙여 저장', ok:'저장', wide:true,
     html:`<p class="note" style="margin:0 0 10px">지금 걸어 둔 조건을 그대로 저장합니다. 다음부터는 버튼 한 번으로 같은 대상을 뽑습니다.
@@ -6024,7 +6076,7 @@ async function pasteCond(){
   if(!d) return;
   const set=(id,v)=>{ $(id).value=(v===null||v===undefined)?'':String(v); };
   setBasisQuiet(d.p_basis||'consent');
-  set('crmProd',d.p_product); set('crmAsof',d.p_asof); set('crmQ',d.p_q); set('crmCh',d.p_channel);
+  set('crmProd',d.p_product); set('crmAsof',d.p_asof); set('crmDueLo',d.p_due_lo==null?-30:d.p_due_lo); set('crmDueHi',d.p_due_hi==null?14:d.p_due_hi); set('crmQ',d.p_q); set('crmCh',d.p_channel);
   set('crmCat',d.p_category); set('crmRegion',d.p_region); set('crmKind',d.p_kind);
   set('crmFrom',d.p_from); set('crmTo',d.p_to); set('crmMinCnt',d.p_min_cnt); set('crmMinNet',d.p_min_net);
   set('crmDormant',d.p_dormant_days); set('crmNoSend',d.p_no_send_days); set('crmSort',d.p_sort||'recent');
@@ -6519,7 +6571,51 @@ function smsRender(body,vars){ let v=String(body||''); Object.entries(vars||{}).
 function smsAdWrap(body,isAd){ if(!isAd||!SMS_CFG) return body; let v=body; if(!/^\(광고\)/.test(v)) v=(SMS_CFG.ad_prefix||'(광고)')+' '+v; const f=(SMS_CFG.ad_footer||'').trim(); if(f && !v.includes(f)) v+='\n'+f; return v; }
 const SMS_MODE_NM={test:'테스트 모드',live:'실제 발송'};
 async function smsCfgEnsure(fresh){ if(SMS_CFG && !fresh) return SMS_CFG; SMS_CFG=await rpc('fn_sms_config_get',{},{fresh:true}); return SMS_CFG; }
-async function loadSms(){ try{ await smsCfgEnsure(true); }catch(e){ $('smsState').className='callout warn'; $('smsState').textContent=e.message; return; } smsPaint(); loadSmsLog(0); }
+async function loadSms(){ try{ await smsCfgEnsure(true); }catch(e){ $('smsState').className='callout warn'; $('smsState').textContent=e.message; return; } smsPaint(); scInit(); loadSmsLog(0); loadSmsSched(); }
+/* ═══ 문자 보내기 · 테스트 · 예약 (mvp_210) — 번호를 직접 적어 fn_sms_send(지금) / fn_sms_schedule_save(예약). 명단 추출의 [문자 보내기] 와 같은 렌더·바이트 셈법 ═══ */
+function scParseRows(){ const out=[], bad=[]; const seen=new Set();
+  String($('scRows').value||'').split(/\n/).map(l=>l.trim()).filter(Boolean).forEach(l=>{ const parts=l.split(/[,\t]+|\s{1,}/).filter(Boolean); let ph=null, nm=[];
+    parts.forEach(x=>{ const d=x.replace(/\D/g,''); if(!ph && /^01[016789]\d{7,8}$/.test(d)) ph=d; else nm.push(x); });
+    if(!ph){ bad.push(l); return; } if(seen.has(ph)){ bad.push(l+' (중복)'); return; } seen.add(ph); out.push({phone:ph, name:nm.join(' ').trim()||'고객'}); });
+  return {rows:out, bad}; }
+function scInit(){ const c=SMS_CFG||{}; const tpls=(c.templates||[]).filter(t=>t.active!==false && t.scope!=='store');
+  const sel=$('scTpl'); const keep=sel.value; sel.innerHTML='<option value="">(직접 쓰기)</option>'+tpls.map(t=>`<option value="${esc(t.code)}">${esc(t.label)}${t.is_ad?' · 광고':''}</option>`).join(''); if(keep) sel.value=keep;
+  const live=c.mode==='live'; $('scMode').innerHTML=!c.enabled?'<span class="tag warn">기능 꺼짐 — 보내기·예약 잠김</span>':live?'<span class="tag ok">실제 발송 모드 — 포인트가 나갑니다</span>':'<span class="tag n">테스트 모드 — 기록만</span>';
+  $('scSendBtn').disabled=!c.enabled; $('scSchedBtn').disabled=!c.enabled; $('scSendBtn').textContent=live?'지금 실제 발송':'지금 보내기 (테스트 기록)';
+  if(!$('scAt').value){ const d=new Date(Date.now()+60*60*1000); d.setSeconds(0,0); const z=n=>String(n).padStart(2,'0'); $('scAt').value=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; }
+  scPreview(); }
+function scTplPick(){ const t=(SMS_CFG&&SMS_CFG.templates||[]).find(x=>x.code===$('scTpl').value); if(!t) return; $('scBody').value=t.body||''; $('scIsAd').classList.toggle('on',!!t.is_ad); scPreview(); }
+function scPreview(){ if(!$('scBody')) return; const {rows,bad}=scParseRows(); const first=rows[0]||{name:'홍길동'};
+  $('scRowsN').innerHTML=`받는 사람 <b>${n(rows.length)}명</b>`+(bad.length?` · <span style="color:var(--bad)">못 읽은 줄 ${bad.length}: ${esc(bad.slice(0,3).join(' / '))}</span>`:'');
+  const body=$('scBody').value; const isAd=$('scIsAd').classList.contains('on'); const v=smsAdWrap(smsRender(body,{이름:first.name}),isAd); const by=smsBytes(v);
+  $('scPrev').textContent=v||'(본문 없음)'; $('scCount').innerHTML=`<b>${n(by)}바이트</b> · ${by<=90?'SMS':by<=2000?'LMS':'<span style="color:var(--bad)">2,000 초과</span>'}`; }
+async function scSendNow(){ try{ await smsCfgEnsure(); }catch(e){ return toast(e.message,'bad'); } if(!SMS_CFG.enabled) return toast('문자 기능이 꺼져 있습니다 — 아래 설정에서 켜세요','bad');
+  const {rows,bad}=scParseRows(); if(!rows.length) return toast('받는 사람을 적어주세요 (01012345678 홍길동)','bad'); if(bad.length && !(await modal({title:'못 읽은 줄',html:`${bad.length}줄은 번호를 못 읽어 빼고 보냅니다.<br><span class="note">${esc(bad.slice(0,5).join('<br>'))}</span>`,ok:'빼고 보내기'}))) return;
+  const body=$('scBody').value.trim(); if(!body) return toast('본문을 적어주세요','bad'); const isAd=$('scIsAd').classList.contains('on'); const live=SMS_CFG.mode==='live';
+  if(smsBytes(smsAdWrap(smsRender(body,{이름:'홍길동'}),isAd))>2000) return toast('2,000바이트를 넘습니다','bad');
+  if(live && !(await modal({title:'실제 발송',html:`<b>${n(rows.length)}명</b>에게 실제 문자가 나갑니다 (포인트 차감). 되돌릴 수 없습니다.`,ok:'보내기',danger:true,requireText:'발송'}))) return;
+  const btn=$('scSendBtn'); btn.disabled=true; $('scResult').textContent='보내는 중…';
+  try{ const r=await rpc('fn_sms_send',{p_rows:rows,p_body:body,p_title:$('scTitle').value.trim()||null,p_campaign:$('scCamp').value.trim()||null,p_kind:'manual',p_is_ad:isAd,p_opt:{}});
+    const items=(r.items||[]).map(it=>`<span class="tag ${it.status==='sent'?'ok':it.status==='test'?'n':'warn'}">${esc(it.status==='sent'?'보냄':it.status==='test'?'테스트':it.status==='blocked'?'차단':'실패')}</span> ${esc(it.name||'')} ${esc(it.phone||'')} · ${esc(it.type||'')} ${n(it.bytes)}B${it.reason?` · <span style="color:var(--bad)">${esc(it.reason)}</span>`:''}`).join('<br>');
+    $('scResult').innerHTML=`<b>${r.mode==='live'?'실제 발송':'테스트 기록'}</b> — ${r.mode==='live'?`보냄 ${n(r.sent)}`:`테스트 ${n(r.test)}`} · 차단 ${n(r.blocked)} · 실패 ${n(r.failed)}${r.mode==='live'?` · 센드온 호출 ${n(r.calls)}`:' · 실제로 나가지 않았습니다'}<br>${items}`;
+    toast(r.mode==='live'?'보냈습니다':'테스트로 기록했습니다','ok'); loadSmsLog(0); smsCfgEnsure(true).then(smsPaint); }
+  catch(e){ $('scResult').innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; toast(e.message,'bad'); }
+  btn.disabled=false; }
+async function scSchedule(){ try{ await smsCfgEnsure(); }catch(e){ return toast(e.message,'bad'); } if(!SMS_CFG.enabled) return toast('문자 기능이 꺼져 있습니다 — 아래 설정에서 켜세요','bad');
+  const {rows,bad}=scParseRows(); if(!rows.length) return toast('받는 사람을 적어주세요','bad'); if(rows.length>500) return toast('예약 한 건에 500명까지','bad');
+  const body=$('scBody').value.trim(); if(!body) return toast('본문을 적어주세요','bad'); const isAd=$('scIsAd').classList.contains('on');
+  const at=$('scAt').value; if(!at) return toast('예약 시각을 고르세요','bad'); const d=new Date(at); if(!(d.getTime()>Date.now()+60*1000)) return toast('예약 시각은 지금부터 1분 뒤 이후로','bad');
+  const live=SMS_CFG.mode==='live'; const when=d.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  if(!(await modal({title:'예약 등록',html:`<b>${esc(when)}</b> 에 <b>${n(rows.length)}명</b>에게 보냅니다.${bad.length?`<br>못 읽은 ${bad.length}줄은 뺍니다.`:''}<br><span class="note">${live?'지금 실제 발송 모드 — 그때도 실제면 포인트가 나갑니다':'지금 테스트 모드 — 그때까지 실제 발송으로 바꾸지 않으면 기록만 남습니다'}</span>`,ok:'예약',danger:live}))) return;
+  try{ const r=await rpc('fn_sms_schedule_save',{p_send_at:d.toISOString(),p_rows:rows,p_body:body,p_title:$('scTitle').value.trim()||null,p_campaign:$('scCamp').value.trim()||null,p_kind:'manual',p_is_ad:isAd,p_note:null},{fresh:true});
+    toast(`예약 #${r.id} 등록 — ${when} · ${n(r.n)}명`,'ok'); $('scResult').innerHTML=`예약 <b>#${r.id}</b> · ${esc(when)} · ${n(r.n)}명 — 아래 [예약 발송] 에서 취소할 수 있습니다`; loadSmsSched(); }
+  catch(e){ toast(e.message,'bad'); } }
+const SC_ST={pending:['대기','n'],running:['보내는 중','n'],done:['보냄','ok'],failed:['실패','warn'],cancelled:['취소','']};
+async function loadSmsSched(){ const tb=$('tbSmsSched'); if(!tb) return; let d; try{ d=await rpc('fn_sms_schedule_list',{p_limit:60},{fresh:true}); }catch(e){ tb.innerHTML=`<tr><td colspan="8" style="color:var(--bad)">${esc(e.message)}</td></tr>`; return; }
+  const rows=(d&&d.rows)||[]; if(!rows.length){ tb.innerHTML='<tr><td colspan="8" class="note">예약이 없습니다</td></tr>'; return; }
+  tb.innerHTML=rows.map(r=>{ const st=SC_ST[r.status]||[r.status,'']; const res=r.result?`${r.result.mode==='live'?'실제':'테스트'} · ${r.result.mode==='live'?`보냄 ${n(r.result.sent)}`:`테스트 ${n(r.result.test)}`} · 차단 ${n(r.result.blocked)} · 실패 ${n(r.result.failed)}`:(r.error?`<span style="color:var(--bad)">${esc(r.error)}</span>`:'');
+    return `<tr><td class="mono">${esc(r.send_at)}</td><td><span class="tag ${st[1]}">${st[0]}</span></td><td>${n(r.n)}명<div class="note mono">${esc(r.first||'')}${r.first_name?' '+esc(r.first_name):''}${r.n>1?' 외':''}</div></td><td class="wrap" style="white-space:normal;max-width:360px">${r.is_ad?'<span class="tag n">광고</span> ':''}${esc(r.body)}</td><td class="mono">${esc(r.campaign||'')}</td><td class="note">${esc(r.by||'')}<br>${esc(r.created_at||'')}</td><td class="note">${r.run_at?esc(r.run_at)+' · ':''}${res}</td><td>${r.status==='pending'?`<button class="btn sm ghost" onclick="scCancel(${r.id})">취소</button>`:''}</td></tr>`; }).join(''); }
+async function scCancel(id){ if(!(await modal({title:'예약 취소',html:`예약 #${id} 를 취소합니다.`,ok:'취소하기',danger:true}))) return; try{ await rpc('fn_sms_schedule_cancel',{p_id:id},{fresh:true}); toast('취소했습니다','ok'); loadSmsSched(); }catch(e){ toast(e.message,'bad'); } }
 function smsPaint(){ const c=SMS_CFG; if(!c||!$('smsSum')) return; const lc=c.last_check||{}; const td=c.today||{}, wk=c.week||{};
   const st=$('smsState'); st.className='callout '+(!c.enabled?'warn':c.mode==='live'?'ok':'');
   st.innerHTML= !c.enabled ? `<b>문자 기능이 꺼져 있습니다</b> — 담당자 화면에 [문자] 버튼은 보이지만 잠겨 있고, 발송 대상 추출의 [문자 보내기]도 막힙니다. 아래 설정에서 켜면 바로 쓸 수 있습니다 (켜도 테스트 모드면 실제로 나가지 않습니다).`
