@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>삼성앤텍 VMS 고객·매출 대시보드</title>
+<link rel="icon" href="../../favicon.ico?v=3">
+<link rel="preconnect" href="https://wdahskrcpjooqhwwxjiu.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* /dash/ 와 같은 색·글꼴 토큰. 폰트 하한 11px */
+:root{--ground:#EDF0F4;--card:#FFF;--ink:#0E1116;--ink-2:#3C434D;--muted:#6B727C;
+--rule:#D5D9DF;--rule-soft:#E9ECF0;--navy:#1428A0;--navy-2:#3E5BC9;--navy-3:#7A8CE8;--navy-soft:#E4E7F6;
+--red:#B3261E;--teal:#0F7B6C;--amber:#8A5D00;--grey:#AEB5BF;
+--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+--sans:'Pretendard Variable',Pretendard,-apple-system,system-ui,'Malgun Gothic',sans-serif}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;word-break:keep-all}
+.wrap{max-width:1400px;margin:0 auto;padding:22px 20px 90px}
+button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid #F0B429;outline-offset:2px}
+
+.mast{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between;
+  margin:0 0 13px;padding:18px clamp(16px,2.5vw,26px);border-radius:14px;color:#fff;position:relative;overflow:hidden;
+  background:linear-gradient(120deg,#0B0F2E 0%,#141E64 55%,#1428A0 100%);
+  box-shadow:0 1px 3px rgba(14,17,22,.08),0 10px 30px rgba(20,40,160,.18)}
+.mast::after{content:'';position:absolute;right:-70px;top:-100px;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(122,140,232,.35),transparent 70%);pointer-events:none}
+.mast h1{font-size:clamp(21px,2.8vw,27px);font-weight:800;letter-spacing:-.03em;margin:0;line-height:1.15;display:flex;align-items:center;gap:11px}
+.mast h1 .mk{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.18);
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.04em}
+.sub{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.8}
+.sub b{color:#fff;font-weight:600}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;position:relative;z-index:1}
+.ghost{font-family:var(--sans);font-size:13.5px;font-weight:700;background:rgba(255,255,255,.12);color:#fff;
+  border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:9px 15px;cursor:pointer;transition:.15s;min-height:40px}
+.ghost:hover{background:#fff;color:var(--navy)}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:13px;margin-bottom:13px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:12px;box-shadow:0 1px 3px rgba(14,17,22,.05);overflow:hidden;min-width:0}
+.sp4{grid-column:span 4}.sp5{grid-column:span 5}.sp6{grid-column:span 6}.sp7{grid-column:span 7}.sp8{grid-column:span 8}.sp12{grid-column:span 12}
+.card-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:15px 18px 0}
+.card-h h2{font-size:15.5px;font-weight:750;margin:0;letter-spacing:-.02em}
+.note{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.card-b{padding:14px 18px 18px}
+.cap{font-size:13px;color:var(--ink-2);margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--rule-soft);line-height:1.6}
+.cap b{font-weight:700;color:var(--ink)}
+.cap .warn{color:var(--red);font-weight:700}
+
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--rule-soft)}
+.kpi{background:#fff;padding:15px 16px 13px;min-width:0}
+.kpi .k{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;white-space:nowrap}
+.kpi .v{font-size:clamp(21px,2.4vw,29px);font-weight:800;letter-spacing:-.04em;line-height:1;display:block;white-space:nowrap}
+.kpi .v small{font-size:.46em;font-weight:650;margin-left:2px;color:var(--ink-2)}
+.kpi .v.accent{color:var(--navy)}
+.kpi .d{font-family:var(--mono);font-size:11.5px;font-weight:600;margin-top:6px;display:block}
+.kpi .d.up{color:var(--teal)}.kpi .d.down{color:var(--red)}.kpi .d.flat{color:var(--muted)}
+
+.chart{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:5px 14px;margin-top:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2)}
+.legend i{width:11px;height:11px;border-radius:3px}
+.empty{font-family:var(--mono);font-size:12px;color:var(--muted);padding:26px 0;text-align:center}
+
+/* 가로 막대 줄 */
+.rk{display:flex;align-items:center;gap:12px;padding:7px 4px;border-radius:8px}
+.rk-n{font-family:var(--mono);font-size:12px;font-weight:600;color:#A2AAB6;width:20px;text-align:right;flex-shrink:0}
+.rk-b{flex:1;min-width:0}
+.rk-t{display:flex;align-items:baseline;gap:9px;margin-bottom:5px}
+.rk-nm{font-size:14px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rk-nm em{font-family:var(--mono);font-style:normal;font-size:11px;color:var(--muted);font-weight:500;margin-left:7px}
+.rk-v{margin-left:auto;font-family:var(--mono);font-size:13.5px;font-weight:600;white-space:nowrap}
+.rk-tr{height:12px;background:var(--rule-soft);border-radius:3px;overflow:hidden}
+.rk-tr i{display:block;height:100%;border-radius:3px;background:var(--navy)}
+.rk-tr i.teal{background:var(--teal)}.rk-tr i.amber{background:#C98A1E}.rk-tr i.red{background:var(--red)}.rk-tr i.grey{background:var(--grey)}
+.rk-s{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-top:3px}
+
+/* 표 */
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;
+  text-align:right;padding:6px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:8px 8px;border-bottom:1px solid var(--rule-soft);text-align:right;font-family:var(--mono);font-size:13px;white-space:nowrap}
+.tbl td:first-child{font-family:var(--sans);font-weight:650;white-space:normal}
+.tbl td.sp{padding:4px 8px}
+.tbl tr.tot td{font-weight:700;border-top:2px solid var(--rule);background:#FAFBFC}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.spark{width:150px;height:22px;display:block}
+
+/* 상태 타일 (CRM 실행 대상) */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tile{border:1px solid var(--rule-soft);border-radius:10px;padding:12px 14px;background:#FAFBFC;min-width:0}
+.tile .k{font-size:12.5px;font-weight:700;color:var(--ink-2);display:block;margin-bottom:4px}
+.tile .v{font-family:var(--mono);font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1.1;display:block}
+.tile .s{font-size:11.5px;color:var(--muted);display:block;margin-top:5px;line-height:1.45}
+.tile.hot{background:#FDF0EE;border-color:#F0C4C0}.tile.hot .v{color:var(--red)}
+.tile.ok{background:#EAF5F3;border-color:#BFE0DA}.tile.ok .v{color:var(--teal)}
+.tile.navy{background:var(--navy-soft);border-color:#B9C2E8}.tile.navy .v{color:var(--navy)}
+.tile.warn{background:#FDF6E7;border-color:#F0DCA8}.tile.warn .v{color:var(--amber)}
+
+.foot{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.8}
+
+/* ── 잠금 화면 ── */
+#gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(120deg,#0B0F2E 0%,#141E64 55%,#1428A0 100%)}
+#gate .g{width:100%;max-width:400px;background:#fff;border-radius:16px;padding:34px 30px 28px;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.35)}
+#gate .lg{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--navy);font-weight:700}
+#gate h1{font-size:22px;font-weight:800;letter-spacing:-.025em;margin:8px 0 4px}
+#gate p{font-size:13px;color:var(--muted);margin:0 0 18px}
+#gate input{width:100%;text-align:center;font-family:var(--mono);font-size:26px;letter-spacing:.4em;padding:13px;border:1.5px solid var(--rule);border-radius:10px;outline:none}
+#gate input:focus{border-color:var(--navy);box-shadow:0 0 0 4px var(--navy-soft)}
+#gate button{width:100%;margin-top:12px;padding:13px;border:0;border-radius:10px;background:var(--navy);color:#fff;font-family:var(--sans);font-weight:700;font-size:15px;cursor:pointer}
+#gate button:disabled{opacity:.55;cursor:default}
+#gate .err{font-family:var(--mono);font-size:12.5px;color:var(--red);min-height:18px;margin-top:10px}
+#gate .err.wait{color:var(--navy)}
+#gate .ft{font-size:11.5px;color:var(--muted);margin-top:14px}
+
+@media(max-width:1100px){.sp4,.sp5,.sp7,.sp8{grid-column:span 6}}
+@media(max-width:760px){
+  .wrap{padding:12px 12px 60px}
+  .sp4,.sp5,.sp6,.sp7,.sp8{grid-column:span 12}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .card-h{padding:13px 14px 0}.card-b{padding:12px 14px 14px}
+  .mast{padding:14px 16px}
+  .spark{width:110px}
+}
+@media print{body{background:#fff}.mast{box-shadow:none}.controls{display:none}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="g">
+    <div class="lg">SAMSUNG&amp;TECH · VMS</div>
+    <h1>VMS 고객·매출 대시보드</h1>
+    <p>공유 비밀번호를 입력하세요</p>
+    <input id="gpw" type="password" inputmode="numeric" maxlength="12" placeholder="••••" autocomplete="off" aria-label="공유 비밀번호">
+    <button id="gbtn">열기</button>
+    <div class="err" id="gerr"></div>
+    <div class="ft">삼성앤텍 · 열람용 · 이카운트 판매현황(소모품 통신판매) 기준</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <h1><span class="mk">VMS</span>VMS 고객·매출 대시보드</h1>
+      <div class="sub" id="mastSub">—</div>
+    </div>
+    <div class="controls">
+      <button class="ghost" id="b-print" type="button">인쇄 · PDF</button>
+      <button class="ghost" id="b-reload" type="button">새로고침</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="card sp12">
+      <div class="card-h"><h2>핵심 지표</h2><span class="note">최근 12개월 · 괄호 안은 직전 12개월 대비</span></div>
+      <div class="kpis" id="kpis"></div>
+    </section>
+
+    <section class="card sp8">
+      <div class="card-h"><h2>월별 매출 추이</h2><span class="note">최근 24개월 · 재구매 / 신규 구분</span></div>
+      <div class="card-b"><div id="chMonths"></div><div class="legend"><span><i style="background:var(--navy)"></i>재구매 고객 매출</span><span><i style="background:var(--navy-3)"></i>신규 고객 매출</span><span><i style="background:var(--teal);width:18px;height:3px;border-radius:2px"></i>구매 고객 수</span></div><p class="cap" id="capMonths"></p></div>
+    </section>
+
+    <section class="card sp4">
+      <div class="card-h"><h2>고객 구매 경과 분포</h2><span class="note">마지막 구매일 기준</span></div>
+      <div class="card-b"><div id="chSeg"></div><p class="cap" id="capSeg"></p></div>
+    </section>
+
+    <section class="card sp7">
+      <div class="card-h"><h2>주요 모델 매출 및 추이</h2><span class="note">최근 12개월 상위 10 · 월별 추이</span></div>
+      <div class="card-b"><div class="tw" id="chModels"></div><p class="cap" id="capModels"></p></div>
+    </section>
+
+    <section class="card sp5">
+      <div class="card-h"><h2>교체 예정 고객 일정</h2><span class="note">앞으로 13주 · 주별</span></div>
+      <div class="card-b"><div id="chDue"></div><p class="cap" id="capDue"></p></div>
+    </section>
+
+    <section class="card sp6">
+      <div class="card-h"><h2>고객 가치(LTV) 분포</h2><span class="note">최근 12개월 구매 고객 · 연간 구매액 구간</span></div>
+      <div class="card-b"><div id="chTiers"></div><p class="cap" id="capTiers"></p></div>
+    </section>
+
+    <section class="card sp6">
+      <div class="card-h"><h2>구매 빈도별 고객 가치</h2><span class="note">최근 12개월 구매 고객 · 누적 구매 횟수</span></div>
+      <div class="card-b"><div class="tw" id="chFreq"></div><p class="cap" id="capFreq"></p></div>
+    </section>
+
+    <section class="card sp12">
+      <div class="card-h"><h2>CRM 실행 대상 현황</h2><span class="note">오늘 기준 · 문자 발송·전화 대상 규모</span></div>
+      <div class="card-b"><div class="tiles" id="tiles"></div><p class="cap" id="capCrm"></p></div>
+    </section>
+
+    <section class="card sp7">
+      <div class="card-h"><h2>담당자별 실적</h2><span class="note">최근 12개월 · 매출 · 거래 고객 수</span></div>
+      <div class="card-b"><div id="chHandlers"></div></div>
+    </section>
+
+    <section class="card sp5">
+      <div class="card-h"><h2>문자 발송 현황</h2><span class="note">VMS·토너 캠페인 발송 이력</span></div>
+      <div class="card-b"><div class="tiles" id="smsTiles" style="grid-template-columns:repeat(3,1fr)"></div><p class="cap" id="capSms"></p></div>
+    </section>
+  </div>
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+const DC_BASE='https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/';
+const DC_ANON='sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
+let DATA=null;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n=v=>(v==null?'—':Number(v).toLocaleString('ko-KR'));
+/* 억·만 단위 — 발표용 짧은 표기 */
+function won(v){ v=Number(v)||0; const a=Math.abs(v); const s=v<0?'-':'';
+  if(a>=1e8) return s+(a/1e8).toFixed(a>=1e9?0:1).replace(/\.0$/,'')+'억';
+  if(a>=1e4) return s+Math.round(a/1e4).toLocaleString('ko-KR')+'만';
+  return s+a.toLocaleString('ko-KR')+'원'; }
+function pct(a,b){ if(!b) return null; return Math.round((a-b)/b*100); }
+function dHtml(p,suffix){ if(p==null) return '<span class="d flat">비교 없음</span>';
+  const c=p>0?'up':p<0?'down':'flat'; return `<span class="d ${c}">${p>0?'▲':p<0?'▼':'='} ${Math.abs(p)}%${suffix||''}</span>`; }
+
+function dcToken(){
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i); if(!/^sb-.*-auth-token$/.test(k)) continue;
+      let raw=localStorage.getItem(k)||''; if(raw.indexOf('base64-')===0){ try{ raw=atob(raw.slice(7)); }catch(e){ continue; } }
+      let j; try{ j=JSON.parse(raw); }catch(e){ continue; }
+      const t=j&&(j.access_token||(j.currentSession&&j.currentSession.access_token));
+      const exp=j&&(j.expires_at||(j.currentSession&&j.currentSession.expires_at));
+      if(t && (!exp || exp*1000 > Date.now()+30000)) return t;
+    }
+  }catch(e){}
+  return '';
+}
+
+/* ── 그리기 ── */
+function kpis(d){
+  const k=d.kpi||{};
+  const items=[
+    ['매출 (12개월)', won(k.rev12), dHtml(pct(k.rev12,k.rev_prev12)), 'accent'],
+    ['구매 고객 수', n(k.buyers12)+'<small>명</small>', dHtml(pct(k.buyers12,k.buyers_prev12))],
+    ['주문 건수', n(k.orders12)+'<small>건</small>', '<span class="d flat">고객×구매일 기준</span>'],
+    ['건당 평균', won(k.avg_order), '<span class="d flat">주문 1건 평균 금액</span>'],
+    ['재구매 고객 비율', (k.repeat_rate==null?'—':k.repeat_rate)+'<small>%</small>', `<span class="d flat">매출의 ${k.rev_rep_share==null?'—':k.rev_rep_share}% 가 재구매</span>`],
+    ['구매 주기 중앙값', (k.med_cycle==null?'—':k.med_cycle)+'<small>일</small>', `<span class="d flat">고객 누적 구매액 평균 ${won(k.ltv_avg)}</span>`],
+  ];
+  $('#kpis').innerHTML=items.map(([kk,v,dd,cls])=>`<div class="kpi"><span class="k">${kk}</span><span class="v ${cls||''}">${v}</span>${dd}</div>`).join('');
+}
+
+/* 월별 매출 — 누적 막대(재구매·신규) + 구매 고객 수 선 */
+function months(d){
+  const ms=d.months||[]; if(!ms.length){ $('#chMonths').innerHTML='<div class="empty">자료 없음</div>'; return; }
+  const W=900,H=260,L=56,R=44,T=14,B=34, iw=W-L-R, ih=H-T-B;
+  const tot=ms.map(m=>(m.rev_rep||0)+(m.rev_new||0)); const mx=Math.max(1,...tot);
+  const buy=ms.map(m=>(m.buyers_rep||0)+(m.buyers_new||0)); const bmx=Math.max(1,...buy);
+  const bw=iw/ms.length, gap=Math.max(2,bw*.22);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="월별 매출 추이">`;
+  for(let i=0;i<=4;i++){ const y=T+ih-ih*i/4; s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#E9ECF0"/><text x="${L-6}" y="${y+4}" text-anchor="end" font-size="11" fill="#6B727C" font-family="IBM Plex Mono">${won(mx*i/4)}</text>`; }
+  ms.forEach((m,i)=>{ const x=L+i*bw+gap/2, w=bw-gap; const hr=ih*(m.rev_rep||0)/mx, hn=ih*(m.rev_new||0)/mx;
+    s+=`<rect x="${x}" y="${T+ih-hr}" width="${w}" height="${hr}" fill="#1428A0" rx="2"><title>${m.m} 재구매 ${won(m.rev_rep)} · ${n(m.buyers_rep)}명</title></rect>`;
+    s+=`<rect x="${x}" y="${T+ih-hr-hn}" width="${w}" height="${hn}" fill="#7A8CE8" rx="2"><title>${m.m} 신규 ${won(m.rev_new)} · ${n(m.buyers_new)}명</title></rect>`;
+    if(i%2===(ms.length%2?0:1)||ms.length<=12) s+=`<text x="${x+w/2}" y="${H-12}" text-anchor="middle" font-size="11" fill="#6B727C" font-family="IBM Plex Mono">${m.m.slice(2).replace('-','.')}</text>`; });
+  const pts=buy.map((b,i)=>`${(L+i*bw+bw/2).toFixed(1)},${(T+ih-ih*b/bmx).toFixed(1)}`).join(' ');
+  s+=`<polyline points="${pts}" fill="none" stroke="#0F7B6C" stroke-width="2.5" stroke-linejoin="round"/>`;
+  buy.forEach((b,i)=>{ s+=`<circle cx="${L+i*bw+bw/2}" cy="${T+ih-ih*b/bmx}" r="3" fill="#0F7B6C"><title>${ms[i].m} 구매 고객 ${n(b)}명</title></circle>`; });
+  for(let i=0;i<=2;i++){ const y=T+ih-ih*i/2; s+=`<text x="${W-R+6}" y="${y+4}" font-size="11" fill="#0F7B6C" font-family="IBM Plex Mono">${n(Math.round(bmx*i/2))}명</text>`; }
+  s+='</svg>'; $('#chMonths').innerHTML=s;
+  /* 설명 한 줄 — 완결된 마지막 달(이번 달 제외) 과 그 전년 같은 달 */
+  const last=ms.length>=2?ms[ms.length-2]:ms[ms.length-1]; const yoy=ms.length>=14?ms[ms.length-14]:null;
+  const lt=(last.rev_rep||0)+(last.rev_new||0), yt=yoy?((yoy.rev_rep||0)+(yoy.rev_new||0)):null;
+  const share=lt?Math.round(100*(last.rev_rep||0)/lt):null;
+  $('#capMonths').innerHTML=`<b>${last.m.replace(/-0?/,'년 ')}월</b> 매출 ${won(lt)} · 구매 고객 ${n((last.buyers_rep||0)+(last.buyers_new||0))}명 (신규 ${n(last.buyers_new)}명)`+
+    (yt?` · 전년 같은 달 대비 ${dHtml(pct(lt,yt))}`:'')+(share!=null?` · 재구매 비중 <b>${share}%</b>`:'')+'. 매출은 기존 고객의 재구매가 떠받친다 — 신규 유입보다 <b>교체 주기 관리</b>가 매출을 지킨다.';
+}
+
+function hbar(id, rows, opt){
+  opt=opt||{}; const mx=Math.max(1,...rows.map(r=>r.v));
+  $(id).innerHTML=rows.length?rows.map((r,i)=>`<div class="rk"><span class="rk-n">${opt.rank?i+1:''}</span><div class="rk-b">
+    <div class="rk-t"><span class="rk-nm">${esc(r.k)}${r.sub?`<em>${esc(r.sub)}</em>`:''}</span><span class="rk-v">${r.vs}</span></div>
+    <div class="rk-tr"><i class="${r.c||''}" style="width:${Math.max(1,100*r.v/mx).toFixed(1)}%"></i></div>
+    ${r.s?`<span class="rk-s">${r.s}</span>`:''}</div></div>`).join(''):'<div class="empty">자료 없음</div>';
+}
+
+function seg(d){
+  const sg=d.seg||[]; const tot=sg.reduce((a,b)=>a+(b.n||0),0);
+  const colors=['teal','','amber','red','grey'];
+  hbar('#chSeg', sg.map((r,i)=>({k:r.k, v:r.n, vs:n(r.n)+'명', c:colors[i]||'', s:`전체의 ${tot?Math.round(100*r.n/tot):0}% · 1인 누적 구매액 평균 ${won(r.avg)}`})));
+  const active=sg.slice(0,3).reduce((a,b)=>a+(b.n||0),0);
+  $('#capSeg').innerHTML=`거래 이력 고객 <b>${n(tot)}명</b> 중 1년 안에 산 고객은 <b>${n(active)}명</b>. 2년 넘게 소식이 없는 고객이 대부분이라 <b>6~12개월 구간(${n(sg[2]?sg[2].n:0)}명)</b>이 이탈 전 마지막 접점이다.`;
+}
+
+function models(d){
+  const md=d.models||[]; const mm=d.months12||[];
+  if(!md.length){ $('#chModels').innerHTML='<div class="empty">자료 없음</div>'; return; }
+  const mx=Math.max(1,...md.map(m=>m.amt12));
+  function spark(tr){ const W=150,H=22; const t=Math.max(1,...tr); const bw=W/tr.length;
+    return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true">${tr.map((v,i)=>`<rect x="${(i*bw+1).toFixed(1)}" y="${(H-H*v/t).toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${(H*v/t).toFixed(1)}" fill="${i===tr.length-1?'#7A8CE8':'#1428A0'}" rx="1"><title>${mm[i]||''} ${won(v)}</title></rect>`).join('')}</svg>`; }
+  const tot=md.reduce((a,b)=>a+(b.amt12||0),0);
+  $('#chModels').innerHTML=`<table class="tbl"><thead><tr><th>모델</th><th>매출 12개월</th><th>비중</th><th>고객</th><th>수량</th><th style="text-align:left">월별 추이 (${mm[0]||''}~${mm[mm.length-1]||''})</th></tr></thead><tbody>`+
+    md.map((m,i)=>`<tr><td><span style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-right:6px">${i+1}</span>${esc(m.model)}<div style="font-size:11.5px;color:var(--muted);font-weight:500">${esc(m.name||'')}</div>
+      <div class="rk-tr" style="margin-top:4px;height:6px"><i style="width:${(100*m.amt12/mx).toFixed(1)}%"></i></div></td>
+      <td>${won(m.amt12)}</td><td>${tot?Math.round(100*m.amt12/tot):0}%</td><td>${n(m.buyers12)}명</td><td>${n(m.qty12)}개</td><td class="sp" style="text-align:left">${spark(m.trend||[])}</td></tr>`).join('')+'</tbody></table>';
+  const top=md[0]; const t3=md.slice(0,3).reduce((a,b)=>a+(b.amt12||0),0);
+  const k=d.kpi||{}; const share=k.rev12?Math.round(100*t3/k.rev12):null;
+  /* 최근 3달 평균 vs 그 전 3달 평균 (이번 달은 진행 중이라 뺀다) */
+  const mov=md.map(m=>{ const tr=m.trend||[]; if(tr.length<8) return null; const a=tr.slice(-4,-1), b=tr.slice(-7,-4); const av=a.reduce((x,y)=>x+y,0)/3, bv=b.reduce((x,y)=>x+y,0)/3; return {model:m.model,p:pct(av,bv)}; }).filter(x=>x&&x.p!=null);
+  const up=mov.filter(x=>x.p>=15).map(x=>x.model), dn=mov.filter(x=>x.p<=-15).map(x=>x.model);
+  $('#capModels').innerHTML=`<b>${esc(top.model)}</b> 가 1위(${won(top.amt12)} · ${n(top.buyers12)}명)이고 상위 3개 모델이 VMS 매출의 <b>${share==null?'—':share+'%'}</b>. 막대는 최근 12개월, 마지막(연한 색)은 이번 달 진행분.`+
+    (up.length?` 최근 3개월 상승: <b>${up.map(esc).join(', ')}</b>.`:'')+(dn.length?` 최근 3개월 하락: <span class="warn">${dn.map(esc).join(', ')}</span> — 해당 모델 고객의 교체 예정일을 먼저 확인.`:'');
+}
+
+function due(d){
+  const du=d.due||{}; const wk=du.weeks||[];
+  const W=420,H=170,L=34,T=10,B=30, iw=W-L-8, ih=H-T-B; const mx=Math.max(1,...wk.map(w=>w.n)); const bw=iw/Math.max(1,wk.length);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="교체 예정 고객 주별">`;
+  for(let i=0;i<=2;i++){ const y=T+ih-ih*i/2; s+=`<line x1="${L}" x2="${W-8}" y1="${y}" y2="${y}" stroke="#E9ECF0"/><text x="${L-5}" y="${y+4}" text-anchor="end" font-size="11" fill="#6B727C" font-family="IBM Plex Mono">${Math.round(mx*i/2)}</text>`; }
+  wk.forEach((w,i)=>{ const x=L+i*bw+2, h=ih*w.n/mx; s+=`<rect x="${x}" y="${T+ih-h}" width="${bw-4}" height="${h}" fill="${i<4?'#1428A0':'#7A8CE8'}" rx="2"><title>${w.w} 주 · ${n(w.n)}명</title></rect>`;
+    s+=`<text x="${x+(bw-4)/2}" y="${T+ih-h-4}" text-anchor="middle" font-size="10.5" fill="#3C434D" font-family="IBM Plex Mono">${w.n}</text>`;
+    if(i%2===0) s+=`<text x="${x+(bw-4)/2}" y="${H-10}" text-anchor="middle" font-size="10.5" fill="#6B727C" font-family="IBM Plex Mono">${w.w}</text>`; });
+  s+='</svg>';
+  const rows=[['지난 30일 안 예정일 지남',du.overdue,'red'],['30일 넘게 지남',du.overdue30,'grey'],['앞으로 30일',du.next30,'teal'],['31~90일',du.next90,''],['90일 이후',du.later,'grey']];
+  const rmx=Math.max(1,...rows.map(r=>r[1]||0));
+  s+=`<div style="margin-top:10px">`+rows.map(r=>`<div class="rk" style="padding:4px 2px"><span class="rk-n"></span><div class="rk-b"><div class="rk-t"><span class="rk-nm" style="font-size:13px">${r[0]}</span><span class="rk-v">${n(r[1])}명</span></div><div class="rk-tr" style="height:8px"><i class="${r[2]}" style="width:${(100*(r[1]||0)/rmx).toFixed(1)}%"></i></div></div></div>`).join('')+'</div>';
+  $('#chDue').innerHTML=s;
+  const m1=wk.slice(0,4).reduce((a,b)=>a+(b.n||0),0);
+  $('#capDue').innerHTML=`교체 예정일 = 마지막 구매일 + 그 고객의 구매 주기(중앙값). 앞으로 4주에 <b>${n(m1)}명</b>, 한 달 뒤까지 <b>${n(du.next30)}명</b>이 다시 살 시점이다. 예정일이 지난 <b>${n(du.overdue)}명</b>(30일 안)은 이번 주 안내 1순위, 30일 넘게 지난 ${n(du.overdue30)}명은 전화 확인 대상.`;
+}
+
+function tiers(d){
+  const lt=d.ltv||{}; const ts=lt.tiers||[]; const totN=ts.reduce((a,b)=>a+(b.n||0),0), totA=ts.reduce((a,b)=>a+(b.amt12||0),0);
+  const colors=['','teal','amber','grey'];
+  hbar('#chTiers', ts.map((t,i)=>({k:t.k, v:t.amt12, vs:won(t.amt12), c:colors[i], s:`${n(t.n)}명 (${totN?Math.round(100*t.n/totN):0}%) · 매출의 ${totA?Math.round(100*t.amt12/totA):0}% · 1인 평균 ${won(t.n?t.amt12/t.n:0)}`})));
+  const top=ts[0]||{};
+  $('#capTiers').innerHTML=`상위 20% 고객이 12개월 매출의 <b>${lt.top20_share==null?'—':lt.top20_share+'%'}</b>를 낸다. 연 100만원 이상 고객 <b>${n(top.n)}명</b>(${totN?Math.round(100*(top.n||0)/totN):0}%)이 매출 ${totA?Math.round(100*(top.amt12||0)/totA):0}% — 이 고객은 <b>담당자 직접 관리</b>, 30만원 미만 고객은 <b>자동 문자</b>로 나눠 접근.`;
+}
+
+function freq(d){
+  const bf=(d.ltv||{}).by_freq||[]; if(!bf.length){ $('#chFreq').innerHTML='<div class="empty">자료 없음</div>'; return; }
+  const totN=bf.reduce((a,b)=>a+(b.n||0),0);
+  $('#chFreq').innerHTML=`<table class="tbl"><thead><tr><th>구매 횟수</th><th>고객</th><th>비중</th><th>누적 구매액 평균 (LTV)</th><th>연간 환산</th><th>평균 주기</th></tr></thead><tbody>`+
+    bf.map(r=>`<tr><td>${esc(r.k)}</td><td>${n(r.n)}명</td><td>${totN?Math.round(100*r.n/totN):0}%</td><td>${won(r.avg_total)}</td><td>${r.avg_annual==null?'—':won(r.avg_annual)}</td><td>${r.avg_cyc==null?'—':n(r.avg_cyc)+'일'}</td></tr>`).join('')+'</tbody></table>';
+  const one=bf[0]||{}, top=bf[bf.length-1]||{};
+  $('#capFreq').innerHTML=`한 번만 산 고객 <b>${n(one.n)}명</b>(${totN?Math.round(100*(one.n||0)/totN):0}%)의 평균 구매액 ${won(one.avg_total)} vs 10회 이상 고객 평균 <b>${won(top.avg_total)}</b> — 두 번째 구매까지 이어지면 가치가 ${one.avg_total&&bf[1]?Math.round((bf[1].avg_total||0)/one.avg_total*10)/10:'—'}배. <b>첫 구매 뒤 첫 교체 시점 안내</b>가 LTV 를 가장 크게 늘린다. 연간 환산 = 1회 평균 × 365 ÷ 주기.`;
+}
+
+function crm(d){
+  const c=d.crm||{};
+  const tiles=[
+    ['교체 예정 30일 안', c.due30, '이번 달 안내 발송 대상 (주기 기준)', 'navy'],
+    ['예정일 지남 (60일 안)', c.overdue, '재구매가 늦어진 고객 — 우선 연락', 'hot'],
+    ['이탈 위험', c.risk, '2회 이상 샀는데 6~12개월 소식 없음', 'warn'],
+    ['우량 고객 이탈 위험', c.high_risk, '4회 이상 · 연 30만원 이상 · 120일 넘게 미구매', 'hot'],
+    ['문자 발송 가능', c.sms_ok, '휴대폰 있음 · 수신거부 아님 · 6개월 안 거래 · 2회 이상', 'ok'],
+    ['마케팅 수신동의', c.sms_consent, '동의 기록이 있는 고객 (광고성 발송 가능)', 'ok'],
+    ['휴대폰 번호 없음', c.no_mobile, '1년 안 거래인데 문자를 못 보냄 — 번호 보완', 'warn'],
+    ['수신거부', c.optout, '080 수신거부 · 발송에서 자동 제외', ''],
+  ];
+  $('#tiles').innerHTML=tiles.map(([k,v,s,cls])=>`<div class="tile ${cls}"><span class="k">${k}</span><span class="v">${n(v)}<small style="font-size:13px;font-weight:600;margin-left:2px">명</small></span><span class="s">${s}</span></div>`).join('');
+  $('#capCrm').innerHTML=`당장 보낼 수 있는 안내 = 교체 예정 30일 안 ${n(c.due30)}명 + 예정일 지남 ${n(c.overdue)}명 중 문자 발송 가능 조건을 만족하는 고객. 같은 제품을 6개월 안에 거래한 고객에게는 수신동의 없이도 <b>거래 안내 문자</b>를 보낼 수 있고, 그 밖의 광고성 문자는 수신동의 ${n(c.sms_consent)}명에게만. 우량 고객 이탈 위험 <b>${n(c.high_risk)}명</b>은 담당자 전화가 맞다.`;
+}
+
+function handlers(d){
+  const hs=d.handlers||[];
+  hbar('#chHandlers', hs.map(h=>({k:h.h, v:h.amt12, vs:won(h.amt12), s:`거래 고객 ${n(h.buyers12)}명 · 1인당 ${won(h.buyers12?h.amt12/h.buyers12:0)}`})), {rank:true});
+}
+
+function sms(d){
+  const s=d.sms||{};
+  $('#smsTiles').innerHTML=[['최근 30일 발송',s.sent30,'navy'],['최근 90일 발송',s.sent90,''],['90일 실패',s.failed90,s.failed90?'hot':'']].map(([k,v,c])=>`<div class="tile ${c}"><span class="k">${k}</span><span class="v">${n(v)}<small style="font-size:13px;font-weight:600;margin-left:2px">건</small></span></div>`).join('');
+  $('#capSms').innerHTML=`캠페인 이름에 토너·VMS 가 든 발송 이력(센드온 결과 업로드 포함). 발송 뒤 구매 전환은 관리자 › 발송 링크 관리에서 캠페인별로 본다.`;
+}
+
+function render(){
+  const d=DATA; if(!d) return;
+  const k=d.kpi||{};
+  $('#mastSub').innerHTML=`자료 <b>이카운트 판매현황 (소모품 통신판매)</b> · 마지막 거래 <b>${esc(k.last_order||'—')}</b> · 집계 <b>${d.built_at?new Date(d.built_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</b> · 주문 = 고객×구매일 합산 · 주기 = 구매 간격 중앙값`;
+  kpis(d); months(d); seg(d); models(d); due(d); tiers(d); freq(d); crm(d); handlers(d); sms(d);
+  $('#foot').textContent='삼성앤텍 Datacenter · 오픈마켓 전표 제외 · 30분마다 다시 집계 · 고객 개인정보는 이 화면에 없습니다';
+}
+
+/* ── 잠금 화면: 비밀번호 → fn_vms_payload_pub / 사내 로그인 → fn_vms_payload ── */
+(function(){
+  const pw=$('#gpw'), btn=$('#gbtn'), err=$('#gerr'); let busy=false;
+  function got(j){ if(typeof j==='string') j=JSON.parse(j); if(!j||!j.kpi) throw new Error('데이터 형식이 올바르지 않습니다'); DATA=j; $('#gate').style.display='none'; render(); }
+  async function openWithSession(){
+    const tk=dcToken(); if(!tk) return false;
+    try{
+      const r=await fetch(DC_BASE+'fn_vms_payload',{method:'POST',headers:{'Content-Type':'application/json','apikey':DC_ANON,'Authorization':'Bearer '+tk},body:'{}'});
+      if(!r.ok) return false; got(await r.json()); return true;
+    }catch(e){ console.warn('vms session load failed', e); return false; }
+  }
+  async function open(){
+    if(busy) return;
+    const v=pw.value.trim();
+    if(!v){ err.className='err'; err.textContent='비밀번호를 입력하세요.'; pw.focus(); return; }
+    busy=true; btn.disabled=true; err.className='err wait'; err.textContent='데이터를 불러오는 중…';
+    try{
+      const r=await fetch(DC_BASE+'fn_vms_payload_pub',{method:'POST',headers:{'Content-Type':'application/json','apikey':DC_ANON,'Authorization':'Bearer '+DC_ANON},body:JSON.stringify({p_pw:v})});
+      if(r.status===401||r.status===403||r.status===400){ const t=await r.text(); if(/unauthorized|권한/.test(t)){ err.className='err'; err.textContent='비밀번호가 올바르지 않습니다.'; pw.value=''; pw.focus(); busy=false; btn.disabled=false; return; } throw new Error('불러오지 못했습니다 ('+r.status+')'); }
+      if(!r.ok){ let dd=''; try{ dd=(JSON.parse(await r.text()).message)||''; }catch(e){} throw new Error('불러오지 못했습니다 ('+r.status+')'+(dd?' · '+dd:'')); }
+      got(await r.json());
+      try{ sessionStorage.setItem('dash_pw', v); }catch(e){}
+    }catch(e){ err.className='err'; err.textContent=(e&&e.message)||'불러오지 못했습니다.'; busy=false; btn.disabled=false; }
+  }
+  btn.onclick=open;
+  pw.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); open(); } });
+  $('#b-print').onclick=()=>window.print();
+  $('#b-reload').onclick=()=>location.reload();
+  (async function(){
+    if(dcToken()){ err.className='err wait'; err.textContent='사내 계정으로 여는 중…'; if(await openWithSession()) return; err.className='err'; err.textContent=''; }
+    let saved=''; try{ saved=sessionStorage.getItem('dash_pw')||''; }catch(e){}
+    if(saved){ pw.value=saved; open(); } else pw.focus();
+  })();
+})();
+</script>
+</body>
+</html>
