@@ -1886,7 +1886,8 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         </div>
         <div class="card">
           <h3>템플릿 <span><b>{이름}</b> {담당자} {매장전화} {견적링크} {기한} {모델} {월요금} {콜백시각} {링크} 자리가 실제 값으로 바뀝니다 · 담당자 화면에는 '담당자'·'공통' 것만 보입니다</span>
-            <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="smsTplAdd()">+ 템플릿</button><button class="btn sm" onclick="smsSave()">저장</button></span></h3>
+            <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input class="in mono" id="smsTplSelf" placeholder="내 번호 (테스트 받기)" inputmode="numeric" style="max-width:180px" aria-label="내 번호" oninput="try{localStorage.setItem('dc_sms_self',this.value)}catch(e){}"><button class="btn sm ghost" onclick="smsTplAdd()">+ 템플릿</button><button class="btn sm" onclick="smsSave()">저장</button></span></h3>
+          <p class="note" id="smsTplNote" style="margin:0 0 8px">[테스트 받기] = 그 줄의 본문(저장 전 것도)에 보기 값(이름 테스트 · 담당자 지용현 · 모델 · 월요금 · 링크 …)을 채워 내 번호로 한 통 보냅니다 — 실제 발송 모드면 실제로 오고, 테스트 모드면 발송 내역에 기록만 남습니다.</p>
           <div class="tw"><table><thead><tr><th>코드</th><th>이름</th><th style="min-width:320px">본문</th><th>쓰는 곳</th><th>광고</th><th>사용</th><th></th></tr></thead><tbody id="tbSmsTpl"></tbody></table></div>
         </div>
         <div class="card">
@@ -6578,7 +6579,7 @@ function scParseRows(){ const out=[], bad=[]; const seen=new Set();
     parts.forEach(x=>{ const d=x.replace(/\D/g,''); if(!ph && /^01[016789]\d{7,8}$/.test(d)) ph=d; else nm.push(x); });
     if(!ph){ bad.push(l); return; } if(seen.has(ph)){ bad.push(l+' (중복)'); return; } seen.add(ph); out.push({phone:ph, name:nm.join(' ').trim()||'고객'}); });
   return {rows:out, bad}; }
-function scInit(){ const c=SMS_CFG||{}; const tpls=(c.templates||[]).filter(t=>t.active!==false && t.scope!=='store');
+function scInit(){ const c=SMS_CFG||{}; try{ const sv=localStorage.getItem('dc_sms_self'); if(sv && $('smsTplSelf') && !$('smsTplSelf').value) $('smsTplSelf').value=sv; }catch(e){} const tpls=(c.templates||[]).filter(t=>t.active!==false && t.scope!=='store');
   const sel=$('scTpl'); const keep=sel.value; sel.innerHTML='<option value="">(직접 쓰기)</option>'+tpls.map(t=>`<option value="${esc(t.code)}">${esc(t.label)}${t.is_ad?' · 광고':''}</option>`).join(''); if(keep) sel.value=keep;
   const live=c.mode==='live'; $('scMode').innerHTML=!c.enabled?'<span class="tag warn">기능 꺼짐 — 보내기·예약 잠김</span>':live?'<span class="tag ok">실제 발송 모드 — 포인트가 나갑니다</span>':'<span class="tag n">테스트 모드 — 기록만</span>';
   $('scSendBtn').disabled=!c.enabled; $('scSchedBtn').disabled=!c.enabled; $('scSendBtn').textContent=live?'지금 실제 발송':'지금 보내기 (테스트 기록)';
@@ -6644,7 +6645,19 @@ function smsTplRender(){ $('tbSmsTpl').innerHTML=SMS_TPL.map((t,k)=> t._del ? ''
     <td><select class="in" data-noseg="1" onchange="SMS_TPL[${k}].scope=this.value" aria-label="쓰는 곳"><option value="both"${t.scope==='both'?' selected':''}>공통</option><option value="store"${t.scope==='store'?' selected':''}>담당자</option><option value="admin"${t.scope==='admin'?' selected':''}>관리자</option></select></td>
     <td style="text-align:center"><input type="checkbox" ${t.is_ad?'checked':''} onchange="SMS_TPL[${k}].is_ad=this.checked" style="width:18px;height:18px" aria-label="광고"></td>
     <td style="text-align:center"><input type="checkbox" ${t.active!==false?'checked':''} onchange="SMS_TPL[${k}].active=this.checked" style="width:18px;height:18px" aria-label="사용"></td>
-    <td><button class="btn sm ghost" onclick="SMS_TPL[${k}]._del=true;smsTplRender()">지우기</button></td></tr>`).join('')||'<tr><td colspan="7" class="note" style="text-align:center;padding:16px">템플릿 없음 — [+ 템플릿]</td></tr>'; }
+    <td style="white-space:nowrap"><button class="btn sm" onclick="smsTplTest(${k})" title="내 번호로 이 템플릿을 한 통 받아 본다">테스트 받기</button> <button class="btn sm ghost" onclick="SMS_TPL[${k}]._del=true;smsTplRender()">지우기</button><div class="note" id="smsTplRes${k}" style="margin-top:4px;max-width:220px;white-space:normal"></div></td></tr>`).join('')||'<tr><td colspan="7" class="note" style="text-align:center;padding:16px">템플릿 없음 — [+ 템플릿]</td></tr>'; }
+/* 템플릿 [테스트 받기] (v198) — 그 줄의 본문(저장 전 것도)에 보기 값을 채워 내 번호로 한 통. 모드를 따른다(테스트면 기록만) */
+const SMS_TPL_SAMPLE={담당자:'지용현',견적링크:'https://db.samsungat.co.kr/q/?t=sample',기한:'2026.10.21',모델:'AI 콤보 WD25DB8995BZ',월요금:'102,850원',콜백시각:'오후 2시',링크:'https://www.samsungsh.co.kr/data/r.html?sample'};
+async function smsTplTest(k){ const t=SMS_TPL[k]; if(!t) return; const inp=$('smsTplSelf'); const ph=(inp.value||'').replace(/\D/g,'');
+  if(!/^01[016789]\d{7,8}$/.test(ph)){ inp.focus(); return toast('오른쪽 위 [내 번호] 칸에 휴대폰 번호를 적어주세요','bad'); }
+  const body=(t.body||'').trim(); if(!body) return toast('본문이 비어 있습니다','bad');
+  try{ await smsCfgEnsure(); }catch(e){ return toast(e.message,'bad'); } if(!SMS_CFG.enabled) return toast('문자 기능이 꺼져 있습니다 — 설정에서 켜세요','bad');
+  const box=$('smsTplRes'+k); if(box) box.textContent='보내는 중…';
+  try{ const r=await rpc('fn_sms_send',{p_rows:[{phone:ph,name:'테스트',vars:SMS_TPL_SAMPLE}],p_body:body,p_title:'삼성스토어 시흥점',p_campaign:'tpl_'+(t.code||'new'),p_kind:'test',p_is_ad:!!t.is_ad,p_opt:{}});
+    const it=(r.items||[])[0]||{}; const live=r.mode==='live'; const okk=it.status==='sent'||it.status==='test';
+    const msg=live?(it.status==='sent'?`보냈습니다 · ${it.type} ${n(it.bytes)}B`:`못 보냈습니다 · ${it.reason||''}`):`테스트 기록 · ${it.type} ${n(it.bytes)}B (실제 발송 없음)`;
+    if(box) box.innerHTML=`<span class="tag ${okk?(live?'ok':'n'):'warn'}">${live?(okk?'보냄':'실패'):'테스트'}</span> ${esc(msg)}`; toast(msg, okk?'ok':'bad'); loadSmsLog(0); }
+  catch(e){ if(box) box.innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; toast(e.message,'bad'); } }
 function smsTplAdd(){ SMS_TPL.push({code:'',label:'',body:'',scope:'both',is_ad:false,active:true,sort:100,_new:true}); smsTplRender(); }
 async function smsSave(){
   const tpl=SMS_TPL.map(t=> t._del ? (t._new?null:{code:t.code,delete:true}) : {code:t.code,label:t.label,body:t.body,scope:t.scope,is_ad:!!t.is_ad,active:t.active!==false,sort:t.sort||100,note:t.note||null}).filter(Boolean);
