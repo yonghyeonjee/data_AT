@@ -40,6 +40,13 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .ghost:hover{background:#fff;color:var(--navy)}
 
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:13px;margin-bottom:13px}
+/* 기간 바 (mvp_216) — 핵심 지표·월별 강조·모델·담당자는 고른 기간, 나머지 카드는 오늘 기준 스냅샷 */
+.pbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:10px 14px}
+.pbar .pl{font-family:var(--mono);font-size:11px;letter-spacing:.07em;color:var(--muted);margin-right:4px}
+.pchip{border:1px solid var(--rule);background:#fff;border-radius:20px;padding:7px 12px;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;min-height:40px} .pchip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.pbar select{border:1px solid var(--rule);border-radius:8px;padding:6px 8px;font-family:var(--sans);font-size:13px;min-height:40px;background:#fff;color:var(--ink-2)} .pbar select.on{border-color:var(--navy);color:var(--navy);font-weight:700}
+.pbar .pn{font-size:12px;color:var(--muted);margin-left:auto}
+.kpi .d+.d{margin-top:2px}
 .card{background:var(--card);border:1px solid var(--rule);border-radius:12px;box-shadow:0 1px 3px rgba(14,17,22,.05);overflow:hidden;min-width:0}
 .sp4{grid-column:span 4}.sp5{grid-column:span 5}.sp6{grid-column:span 6}.sp7{grid-column:span 7}.sp8{grid-column:span 8}.sp12{grid-column:span 12}
 .card-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:15px 18px 0}
@@ -131,6 +138,7 @@ a.tile:hover{box-shadow:0 2px 8px rgba(20,40,160,.15);border-color:var(--navy-2)
   .card-h{padding:13px 14px 0}.card-b{padding:12px 14px 14px}
   .mast{padding:14px 16px}
   .spark{width:110px}
+  .pchip,.pbar select{min-height:40px} .pbar .pn{margin-left:0;width:100%}
 }
 @media print{body{background:#fff}.mast{box-shadow:none}.controls{display:none}.card{break-inside:avoid}}
 </style>
@@ -161,14 +169,15 @@ a.tile:hover{box-shadow:0 2px 8px rgba(20,40,160,.15);border-color:var(--navy-2)
     </div>
   </header>
 
+  <div class="pbar" id="pbar"></div>
   <div class="grid">
     <section class="card sp12">
-      <div class="card-h"><h2>핵심 지표</h2><span class="note">최근 12개월 · 괄호 안은 직전 12개월 대비</span></div>
+      <div class="card-h"><h2>핵심 지표</h2><span class="note" id="noteKpi">최근 12개월 · 괄호 안은 직전 12개월 대비</span></div>
       <div class="kpis" id="kpis"></div>
     </section>
 
     <section class="card sp8">
-      <div class="card-h"><h2>월별 매출 추이</h2><span class="note">최근 24개월 · 재구매 / 신규 구분</span></div>
+      <div class="card-h"><h2>월별 매출 추이</h2><span class="note">최근 24개월 · 재구매 / 신규 구분 · 고른 기간은 진하게</span></div>
       <div class="card-b"><div id="chMonths"></div><div class="legend"><span><i style="background:var(--navy)"></i>재구매 고객 매출</span><span><i style="background:var(--navy-3)"></i>신규 고객 매출</span><span><i style="background:var(--teal);width:18px;height:3px;border-radius:2px"></i>구매 고객 수</span></div><p class="cap" id="capMonths"></p></div>
     </section>
 
@@ -178,7 +187,7 @@ a.tile:hover{box-shadow:0 2px 8px rgba(20,40,160,.15);border-color:var(--navy-2)
     </section>
 
     <section class="card sp7">
-      <div class="card-h"><h2>주요 모델 매출 및 추이</h2><span class="note">최근 12개월 상위 10 · 월별 추이</span></div>
+      <div class="card-h"><h2>주요 모델 매출 및 추이</h2><span class="note" id="noteModels">최근 12개월 상위 10 · 월별 추이</span></div>
       <div class="card-b"><div class="tw" id="chModels"></div><p class="cap" id="capModels"></p></div>
     </section>
 
@@ -203,7 +212,7 @@ a.tile:hover{box-shadow:0 2px 8px rgba(20,40,160,.15);border-color:var(--navy-2)
     </section>
 
     <section class="card sp7">
-      <div class="card-h"><h2>담당자별 실적</h2><span class="note">최근 12개월 · 매출 · 거래 고객 수</span></div>
+      <div class="card-h"><h2>담당자별 실적</h2><span class="note" id="noteHandlers">최근 12개월 · 매출 · 거래 고객 수</span></div>
       <div class="card-b"><div id="chHandlers"></div></div>
     </section>
 
@@ -245,9 +254,36 @@ function dcToken(){
   return '';
 }
 
+/* ── 기간 (mvp_216) — payload.periods.ranges[{key,label,s,e,cur,prev,yoy,models,handlers}] · 키 r3·r6·r12·ty·ly·m:YYYY-MM ── */
+let PER=(()=>{ try{ return sessionStorage.getItem('vms_per')||'r12'; }catch(e){ return 'r12'; } })();
+function rangeOf(){ const p=DATA&&DATA.periods; if(!p||!p.ranges) return null; return p.ranges.find(r=>r.key===PER)||p.ranges.find(r=>r.key==='r12')||null; }
+function setPer(k){ PER=k; try{ sessionStorage.setItem('vms_per',k); }catch(e){} render(); }
+function mLabel(k){ return String(k||'').replace(/^(\d{4})-0?(\d+)$/,'$1년 $2월'); }
+function dayBefore(iso){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()-1); return t.toISOString().slice(0,10); }
+function pbar(d){ const p=d.periods, bar=$('#pbar'); if(!bar) return; if(!p||!p.ranges){ bar.innerHTML=''; bar.style.display='none'; return; } bar.style.display='';
+  const quick=[['r3','최근 3개월'],['r6','최근 6개월'],['r12','최근 12개월'],['ty','올해'],['ly','작년']]; const months=(p.month_keys||[]).slice().reverse(); const isM=PER.indexOf('m:')===0;
+  bar.innerHTML=`<span class="pl">기간</span>`+quick.map(([k,l])=>`<button type="button" class="pchip${PER===k?' on':''}" data-k="${k}">${l}</button>`).join('')+
+    `<select id="pmonth" aria-label="월 선택" class="${isM?'on':''}"><option value="">월 선택…</option>${months.map(k=>`<option value="m:${k}"${PER==='m:'+k?' selected':''}>${mLabel(k)}</option>`).join('')}</select><span class="pn" id="pnote"></span>`;
+  bar.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>setPer(b.dataset.k)); $('#pmonth').onchange=e=>{ if(e.target.value) setPer(e.target.value); };
+  const r=rangeOf(); if(r) $('#pnote').textContent=`${r.label} · ${r.s} ~ ${dayBefore(r.e)} · 고객 분포·교체 예정·LTV·CRM 대상은 오늘 기준`; }
+/* 기간 바의 모델 추이 창 — 월을 골랐으면 그 달까지 12개월, 작년은 1~12월, 나머지는 최근 12개월 */
+function trendWin(p,r){ const keys=p.month_keys||[]; let end=keys.length-1; if(r.key.indexOf('m:')===0) end=Math.max(0,keys.indexOf(r.key.slice(2))); else if(r.key==='ly'){ const y=r.s.slice(0,4); end=Math.max(0,keys.indexOf(y+'-12')); }
+  const start=Math.max(0,end-11); return {start,end}; }
+
 /* ── 그리기 ── */
 function kpis(d){
-  const k=d.kpi||{};
+  const k=d.kpi||{}; const r=rangeOf();
+  if(r){ const c=r.cur||{}, pv=r.prev||{}, y=r.yoy; const isM=r.key.indexOf('m:')===0; const pn=isM?'전월':(r.key==='ty'?'작년 같은 기간':r.key==='ly'?'전년':'직전 같은 기간');
+    const share=c.rev?Math.round(100*(c.rev_rep||0)/c.rev):null, nshare=c.buyers?Math.round(100*(c.new_buyers||0)/c.buyers):0;
+    const items=[
+      ['매출 · '+r.label, won(c.rev), dHtml(pct(c.rev,pv.rev),' '+pn)+(y?dHtml(pct(c.rev,y.rev),' 전년 같은 달'):''), 'accent'],
+      ['구매 고객 수', n(c.buyers)+'<small>명</small>', dHtml(pct(c.buyers,pv.buyers),' '+pn)],
+      ['주문 건수', n(c.orders)+'<small>건</small>', dHtml(pct(c.orders,pv.orders),' '+pn)],
+      ['건당 평균', won(c.avg_order), '<span class="d flat">주문 1건 평균 금액</span>'],
+      ['신규 고객', n(c.new_buyers)+'<small>명</small>', `<span class="d flat">구매 고객의 ${nshare}% · 처음 산 사람</span>`],
+      ['재구매 매출 비중', (share==null?'—':share)+'<small>%</small>', `<span class="d flat">재구매 ${won(c.rev_rep)} · 주기 중앙값 ${k.med_cycle==null?'—':k.med_cycle}일</span>`]];
+    $('#kpis').innerHTML=items.map(([kk,v,dd,cls])=>`<div class="kpi"><span class="k">${kk}</span><span class="v ${cls||''}">${v}</span>${dd}</div>`).join('');
+    const nk=$('#noteKpi'); if(nk) nk.textContent=`${r.label} · 괄호 안은 ${pn} 대비`; return; }
   const items=[
     ['매출 (12개월)', won(k.rev12), dHtml(pct(k.rev12,k.rev_prev12)), 'accent'],
     ['구매 고객 수', n(k.buyers12)+'<small>명</small>', dHtml(pct(k.buyers12,k.buyers_prev12))],
@@ -268,9 +304,10 @@ function months(d){
   const bw=iw/ms.length, gap=Math.max(2,bw*.22);
   let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="월별 매출 추이">`;
   for(let i=0;i<=4;i++){ const y=T+ih-ih*i/4; s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#E9ECF0"/><text x="${L-6}" y="${y+4}" text-anchor="end" font-size="11" fill="#6B727C" font-family="IBM Plex Mono">${won(mx*i/4)}</text>`; }
-  ms.forEach((m,i)=>{ const x=L+i*bw+gap/2, w=bw-gap; const hr=ih*(m.rev_rep||0)/mx, hn=ih*(m.rev_new||0)/mx;
-    s+=`<rect x="${x}" y="${T+ih-hr}" width="${w}" height="${hr}" fill="#1428A0" rx="2"><title>${m.m} 재구매 ${won(m.rev_rep)} · ${n(m.buyers_rep)}명</title></rect>`;
-    s+=`<rect x="${x}" y="${T+ih-hr-hn}" width="${w}" height="${hn}" fill="#7A8CE8" rx="2"><title>${m.m} 신규 ${won(m.rev_new)} · ${n(m.buyers_new)}명</title></rect>`;
+  const r=rangeOf(); const inR=m=>{ if(!r) return true; const ms0=m+'-01'; const nx=new Date(ms0+'T00:00:00'); nx.setMonth(nx.getMonth()+1); return ms0 < r.e && nx.toISOString().slice(0,10) > r.s; };
+  ms.forEach((m,i)=>{ const x=L+i*bw+gap/2, w=bw-gap; const hr=ih*(m.rev_rep||0)/mx, hn=ih*(m.rev_new||0)/mx; const op=inR(m.m)?'':' opacity=".3"';
+    s+=`<rect x="${x}" y="${T+ih-hr}" width="${w}" height="${hr}" fill="#1428A0" rx="2"${op}><title>${m.m} 재구매 ${won(m.rev_rep)} · ${n(m.buyers_rep)}명</title></rect>`;
+    s+=`<rect x="${x}" y="${T+ih-hr-hn}" width="${w}" height="${hn}" fill="#7A8CE8" rx="2"${op}><title>${m.m} 신규 ${won(m.rev_new)} · ${n(m.buyers_new)}명</title></rect>`;
     if(i%2===(ms.length%2?0:1)||ms.length<=12) s+=`<text x="${x+w/2}" y="${H-12}" text-anchor="middle" font-size="11" fill="#6B727C" font-family="IBM Plex Mono">${m.m.slice(2).replace('-','.')}</text>`; });
   const pts=buy.map((b,i)=>`${(L+i*bw+bw/2).toFixed(1)},${(T+ih-ih*b/bmx).toFixed(1)}`).join(' ');
   s+=`<polyline points="${pts}" fill="none" stroke="#0F7B6C" stroke-width="2.5" stroke-linejoin="round"/>`;
@@ -302,22 +339,25 @@ function seg(d){
 }
 
 function models(d){
-  const md=d.models||[]; const mm=d.months12||[];
+  const r=rangeOf(), p=d.periods; let md=d.models||[], mm=d.months12||[]; let revBase=(d.kpi||{}).rev12, lbl='매출 12개월';
+  if(r&&p){ const w=trendWin(p,r); mm=(p.months24||[]).slice(w.start,w.end+1); lbl='매출 · '+r.label; revBase=(r.cur||{}).rev;
+    md=(r.models||[]).map(m=>({model:m.model,name:m.name,amt12:m.amt,buyers12:m.buyers,qty12:m.qty,trend:((p.model_month||{})[m.model]||[]).slice(w.start,w.end+1)}));
+    const nm=$('#noteModels'); if(nm) nm.textContent=`${r.label} 상위 10 · 월별 추이 ${mm[0]||''}~${mm[mm.length-1]||''}`; }
   if(!md.length){ $('#chModels').innerHTML='<div class="empty">자료 없음</div>'; return; }
   const mx=Math.max(1,...md.map(m=>m.amt12));
   function spark(tr){ const W=150,H=22; const t=Math.max(1,...tr); const bw=W/tr.length;
     return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true">${tr.map((v,i)=>`<rect x="${(i*bw+1).toFixed(1)}" y="${(H-H*v/t).toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${(H*v/t).toFixed(1)}" fill="${i===tr.length-1?'#7A8CE8':'#1428A0'}" rx="1"><title>${mm[i]||''} ${won(v)}</title></rect>`).join('')}</svg>`; }
   const tot=md.reduce((a,b)=>a+(b.amt12||0),0);
-  $('#chModels').innerHTML=`<table class="tbl"><thead><tr><th>모델</th><th>매출 12개월</th><th>비중</th><th>고객</th><th>수량</th><th style="text-align:left">월별 추이 (${mm[0]||''}~${mm[mm.length-1]||''})</th></tr></thead><tbody>`+
+  $('#chModels').innerHTML=`<table class="tbl"><thead><tr><th>모델</th><th>${lbl}</th><th>비중</th><th>고객</th><th>수량</th><th style="text-align:left">월별 추이 (${mm[0]||''}~${mm[mm.length-1]||''})</th></tr></thead><tbody>`+
     md.map((m,i)=>`<tr><td><span style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-right:6px">${i+1}</span>${esc(m.model)}<div style="font-size:11.5px;color:var(--muted);font-weight:500">${esc(m.name||'')}</div>
       <div class="rk-tr" style="margin-top:4px;height:6px"><i style="width:${(100*m.amt12/mx).toFixed(1)}%"></i></div></td>
       <td>${won(m.amt12)}</td><td>${tot?Math.round(100*m.amt12/tot):0}%</td><td>${n(m.buyers12)}명</td><td>${n(m.qty12)}개</td><td class="sp" style="text-align:left">${spark(m.trend||[])}</td></tr>`).join('')+'</tbody></table>';
   const top=md[0]; const t3=md.slice(0,3).reduce((a,b)=>a+(b.amt12||0),0);
-  const k=d.kpi||{}; const share=k.rev12?Math.round(100*t3/k.rev12):null;
+  const share=revBase?Math.round(100*t3/revBase):null;
   /* 최근 3달 평균 vs 그 전 3달 평균 (이번 달은 진행 중이라 뺀다) */
   const mov=md.map(m=>{ const tr=m.trend||[]; if(tr.length<8) return null; const a=tr.slice(-4,-1), b=tr.slice(-7,-4); const av=a.reduce((x,y)=>x+y,0)/3, bv=b.reduce((x,y)=>x+y,0)/3; return {model:m.model,p:pct(av,bv)}; }).filter(x=>x&&x.p!=null);
   const up=mov.filter(x=>x.p>=15).map(x=>x.model), dn=mov.filter(x=>x.p<=-15).map(x=>x.model);
-  $('#capModels').innerHTML=`<b>${esc(top.model)}</b> 가 1위(${won(top.amt12)} · ${n(top.buyers12)}명)이고 상위 3개 모델이 VMS 매출의 <b>${share==null?'—':share+'%'}</b>. 막대는 최근 12개월, 마지막(연한 색)은 이번 달 진행분.`+
+  $('#capModels').innerHTML=`<b>${esc(top.model)}</b> 가 1위(${won(top.amt12)} · ${n(top.buyers12)}명)이고 상위 3개 모델이 ${r?r.label:'12개월'} VMS 매출의 <b>${share==null?'—':share+'%'}</b>. 막대는 ${mm[0]||''}~${mm[mm.length-1]||''} 월별, 마지막(연한 색)은 창의 끝 달.`+
     (up.length?` 최근 3개월 상승: <b>${up.map(esc).join(', ')}</b>.`:'')+(dn.length?` 최근 3개월 하락: <span class="warn">${dn.map(esc).join(', ')}</span> — 해당 모델 고객의 교체 예정일을 먼저 확인.`:'');
 }
 
@@ -375,7 +415,8 @@ function crm(d){
 }
 
 function handlers(d){
-  const hs=d.handlers||[];
+  const r=rangeOf(); let hs=d.handlers||[];
+  if(r){ hs=(r.handlers||[]).map(h=>({h:h.h,amt12:h.amt,buyers12:h.buyers})); const nh=$('#noteHandlers'); if(nh) nh.textContent=`${r.label} · 매출 · 거래 고객 수`; }
   hbar('#chHandlers', hs.map(h=>({k:h.h, v:h.amt12, vs:won(h.amt12), s:`거래 고객 ${n(h.buyers12)}명 · 1인당 ${won(h.buyers12?h.amt12/h.buyers12:0)}`})), {rank:true});
 }
 
@@ -389,7 +430,7 @@ function render(){
   const d=DATA; if(!d) return;
   const k=d.kpi||{};
   $('#mastSub').innerHTML=`자료 <b>이카운트 판매현황 (소모품 통신판매)</b> · 마지막 거래 <b>${esc(k.last_order||'—')}</b> · 집계 <b>${d.built_at?new Date(d.built_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</b> · 주문 = 고객×구매일 합산 · 주기 = 구매 간격 중앙값`;
-  kpis(d); months(d); seg(d); models(d); due(d); tiers(d); freq(d); crm(d); handlers(d); sms(d);
+  pbar(d); kpis(d); months(d); seg(d); models(d); due(d); tiers(d); freq(d); crm(d); handlers(d); sms(d);
   $('#foot').textContent='삼성앤텍 Datacenter · 오픈마켓 전표 제외 · 30분마다 다시 집계 · 고객 개인정보는 이 화면에 없습니다';
 }
 

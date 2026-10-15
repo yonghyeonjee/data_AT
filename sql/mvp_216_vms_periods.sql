@@ -1,0 +1,11 @@
+-- mvp_216 · 2026-10-15 · VMS 대시보드 월별·기간 조회 (DB 는 이미 적용됨 · 기록용)
+-- "VMS 대시보드 (/dash/vms/)도 매출 대시보드처럼 월별 조회기능이 있어야지"
+--
+-- core.f_vms_payload_build() 에 'periods' 키를 더했다 (화면은 /dash/vms/ 기간 바). 캐시·워머·RPC(fn_vms_payload·_pub)는 그대로.
+--   periods.ranges[29] = 24개월 각 달(key 'm:YYYY-MM' · label 'YYYY년 M월') + r3·r6·r12(최근 3·6·12개월) + ty(올해) + ly(작년)
+--     각 {key,label,s,e, cur{rev,orders,buyers,new_buyers,rev_rep,avg_order}, prev(직전 같은 길이: 달은 전월 · 올해는 작년 같은 기간 · 작년은 전전년), yoy(달만 · 전년 같은 달),
+--          models[상위 10 {model,name,amt,buyers,qty}], handlers[상위 8 {h,amt,buyers}]}
+--   periods.months24 / month_keys = 24개월 라벨·키, periods.model_month = {모델: [24개월 매출]} (어느 기간이든 상위 10 에 든 모델 28개)
+-- 처음 판은 모델×달마다 o 를 다시 훑어(모델 28 × 24달) 60초를 넘겼다(pg_cancel) → (모델·달)·(모델·날짜·고객)·(담당·날짜·고객) 로 먼저 묶고 조인 → 빌드 4.8초(전 7.3초 · 옛 12개월 추이도 같은 방식으로 빨라짐) · payload 62KB.
+-- to_char 의 월은 'FMMM' ('M' 은 달 코드가 아니다 — 첫 판 라벨이 '2026년 M월' 로 찍혔다).
+-- 본문은 pg_get_functiondef('core.f_vms_payload_build()'::regprocedure) 로. 화면: 기간 바(.pbar 칩 5 + 월 select 24 · sessionStorage vms_per) · 핵심 지표(매출·구매 고객·주문·건당·신규 고객·재구매 비중 + 전기/전년 대비) · 월별 막대는 고른 기간만 진하게 · 모델 표(그 기간 상위 10 · 추이 12개월 창) · 담당자별. 고객 분포·교체 예정·LTV·CRM 대상은 오늘 기준 스냅샷(기간 바에 안내).
