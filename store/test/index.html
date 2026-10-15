@@ -1213,6 +1213,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         </div>
       </div>
       <div style="display:flex;gap:6px">
+        <button type="button" class="pill btnp" id="btnQuoteHdr" onclick="openQuote()" title="견적서 페이지를 엽니다">견적서 발행 ↗</button>
         <span class="pill" id="pillToday">오늘 0건</span>
         <span class="pill warn hidden" id="pillUnclosed"></span>
         <button type="button" class="pill btnp" id="btnLogout" onclick="logoutStore()" title="로그아웃 — 담당자 코드를 다시 입력합니다" aria-label="로그아웃"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5M15 12H3M21 3v18"/></svg><span>로그아웃</span></button>
@@ -1243,7 +1244,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel" id="tab-home">
     <div class="flow" id="homeFlow" aria-label="일의 흐름"></div>
     <div class="alert hidden" id="homeAlert"></div>
-    <div class="cta2"><button onclick="goTab('consult')">＋ 상담 입력</button><button class="alt" onclick="openQuote()">견적서 발행 ↗</button></div>
+    <div class="cta2"><button onclick="goTab('consult')">＋ 상담 입력</button><button class="alt" onclick="goTab('sale')">＋ 판매 입력</button></div>
     <div class="card" id="findCard">
       <h2>찾기 <span>상담 · 견적서 한 번에</span></h2>
       <div class="cbar"><div class="csearchbox"><input class="in" id="home_q" placeholder="이름 · 번호 뒷자리 · 견적번호 · 모델" autocomplete="off" onkeydown="if(event.key==='Enter')homeFind()"><button type="button" class="go" onclick="homeFind()" aria-label="찾기">⌕</button></div></div>
@@ -1256,14 +1257,14 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div id="cb_pg"></div>
     </div>
     <!-- 마감 임박 견적서 (v199 · test 먼저) — 유효기한 D-3 ~ D+7 · 없으면 안 보인다 -->
-    <div class="card hidden" id="dqCard">
+    <div class="card" id="dqCard">
       <h2>마감 임박 견적서 <span id="dqSub"></span></h2>
       <p class="note-in" style="margin-top:0">유효기한이 <b>3일 안</b>이거나 <b>지난 지 7일 안</b>인 견적서입니다. 고객이 결정하기 전에 한 통 보내세요 — [💬 문자]는 견적 링크·기한이 채워진 내 폰 문자앱으로, [보내기]는 링크 복사·카카오까지 고르는 창으로 열립니다.</p>
       <div class="list" id="dqList"></div>
     </div>
     <div class="card hidden" id="hlCard">
-      <h2>우선 순위 상담 <span id="hlSub">점장님 · 대표님만 보입니다</span></h2>
-      <p class="note-in" style="margin-top:0">누구부터 챙길지 볼 때 봅니다. <b>14일·30일</b>은 그만큼 손 안 댄 건수입니다. 이름을 누르면 <b>상담</b> 탭에서 그 담당자 건만 봅니다.</p>
+      <h2>우선 순위 상담 <span id="hlSub"></span></h2>
+      <p class="note-in" style="margin-top:0" id="hlNote">오래 둔 상담부터 챙길 때 봅니다. <b>14일·30일</b>은 그만큼 손 안 댄 건수입니다. 이름을 누르면 그 담당자의 미완료 상담이 아래에 펼쳐집니다.</p>
       <div class="hlbox" id="hlBody"><div class="empty">불러오는 중…</div></div>
     </div>
       <div class="card hidden" id="myReqCard">
@@ -2217,8 +2218,8 @@ function render(){
   renderDailyLists(s);
   renderHome(s);
   /* 점장님·대표님·전체 권한이면 전체 상담·배정 카드 */
-  const hc=$('hlCard'); if(hc){ hc.classList.toggle('hidden', !s.is_mgr);
-    if(s.is_mgr && !HL_LOADED){ HL_LOADED=true; loadHandlerLoad(); } }
+  const hc=$('hlCard'); if(hc){ hc.classList.remove('hidden');   /* v200: 담당자도 본다 — 서버가 자기 줄만 준다 (점장·대표는 전체) */
+    if(!HL_LOADED){ HL_LOADED=true; loadHandlerLoad(); } }
   const ac=$('allCard'); if(ac){ ac.classList.toggle('hidden', !s.is_mgr); }   /* 목록은 배정 탭을 열 때 불러온다 */
   const lc=$('lvCard'); if(lc){ lc.classList.toggle('hidden', !s.is_mgr); }   /* 휴가 목록은 휴가 탭을 열 때 (goTab) */
   const sw=$('st_who'); if(sw) sw.classList.toggle('hidden', !s.is_mgr);
@@ -3994,7 +3995,7 @@ function renderFlow(s){
 function dqRows(){ const all=(STATUS&&STATUS.quotes)||[]; const today=todayStr();
   const diff=d=>Math.round((new Date(d+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
   return all.map(x=>({x,d:String(x.until||'').replace(/\./g,'-').slice(0,10)})).filter(o=>/^\d{4}-\d\d-\d\d$/.test(o.d)).map(o=>({x:o.x,d:o.d,n:diff(o.d)})).filter(o=>o.n>=-7&&o.n<=3).sort((a,b)=>a.n-b.n||String(a.x.at).localeCompare(String(b.x.at))); }
-function renderDueQuotes(){ const card=$('dqCard'); if(!card) return; const rows=dqRows(); card.classList.toggle('hidden',!rows.length); if(!rows.length){ $('dqList').innerHTML=''; return rows; }
+function renderDueQuotes(){ const card=$('dqCard'); if(!card) return; const rows=dqRows(); if(!rows.length){ $('dqSub').textContent=''; $('dqList').innerHTML='<div class="empty">3일 안에 마감되거나 막 지난 견적서가 없습니다.</div>'; return rows; }
   $('dqSub').textContent=`${rows.length}건 · 지남 ${rows.filter(o=>o.n<0).length} · 오늘 ${rows.filter(o=>o.n===0).length} · 3일 안 ${rows.filter(o=>o.n>0).length}`;
   $('dqList').innerHTML=rows.map(({x,n:dn})=>`<div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qUntil(x.until)} <small style="color:${dn<0?'#B3261E':dn===0?'#8A5A00':'var(--muted)'};font-weight:700">${dn<0?`${-dn}일 지남`:dn===0?'오늘 마감':`D-${dn}`}</small></div>
       <div class="m">${String(x.at||'').slice(5,10).replace('-','/')} 발행 · ${esc(x.models||'')}${x.monthly?` · 월 ${won(x.monthly)}`:x.final?` · ${won(x.final)}`:''}</div></div>
@@ -5446,9 +5447,10 @@ let HL_LOADED=false;
 async function loadHandlerLoad(){
   let d; try{ d=await rpc('fn_store_handler_load',{p_code:CODE},{fresh:true}); }
   catch(e){ $('hlBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
-  const rows=d.rows||[];
-  $('hlSub').textContent = `미완료 ${d.total}건 · 14일↑ ${d.d14} · 30일↑ ${d.d30}`;
-  if(!rows.length){ $('hlBody').innerHTML='<div class="empty">우선 처리할 상담이 없습니다</div>'; return; }
+  const mgr=!!(d.is_mgr ?? (STATUS&&STATUS.is_mgr)); const rows=(d.rows||[]).filter(r=>mgr||r.handler===ME);
+  $('hlSub').textContent = mgr ? `미완료 ${d.total}건 · 14일↑ ${d.d14} · 30일↑ ${d.d30}` : `내 미완료 ${d.total}건 · 14일↑ ${d.d14} · 30일↑ ${d.d30}`;
+  const nt=$('hlNote'); if(nt) nt.innerHTML = mgr ? '오래 둔 상담부터 챙길 때 봅니다. <b>14일·30일</b>은 그만큼 손 안 댄 건수입니다. 이름을 누르면 그 담당자의 미완료 상담이 아래에 펼쳐집니다.' : '내가 맡은 미완료 상담 중 <b>오래 둔 것부터</b> 보입니다. <b>14일·30일</b>은 그만큼 손 안 댄 건수입니다.';
+  if(!rows.length){ $('hlBody').innerHTML=`<div class="empty">${mgr?'우선 처리할 상담이 없습니다':'미완료 상담이 없습니다'}</div>`; return; }
   $('hlBody').innerHTML = `<table><thead><tr><th>담당</th><th>미완료</th><th>14일↑</th><th>30일↑</th><th>지난 콜백</th><th>가장 오래된</th></tr></thead><tbody>`
     + rows.map(r=>`<tr class="${r.handler===ME?'me':''}">
         <td class="nm"><button onclick="hlOpen('${esc(r.handler)}')" aria-expanded="false" id="hlb_${esc(r.handler)}">${esc(r.handler)} <i class="hlch">▾</i></button></td>
@@ -5458,8 +5460,9 @@ async function loadHandlerLoad(){
         <td class="${r.cb_late?'b':''}">${r.cb_late||''}</td>
         <td>${r.oldest?String(r.oldest).slice(5).replace('-','/')+` <span class="${r.days>=30?'b':(r.days>=14?'w':'')}">${r.days}일</span>`:'-'}</td></tr>
         <tr class="hlx hidden" id="hlx_${esc(r.handler)}"><td colspan="6"><div class="hlxbox" id="hlxb_${esc(r.handler)}"></div></td></tr>`).join('')
-    + `<tr class="tot"><td>합계</td><td>${d.total}</td><td class="w">${d.d14}</td><td class="b">${d.d30}</td><td></td><td></td></tr>`
+    + (mgr?`<tr class="tot"><td>합계</td><td>${d.total}</td><td class="w">${d.d14}</td><td class="b">${d.d30}</td><td></td><td></td></tr>`:'')
     + `</tbody></table>`;
+  if(!mgr && rows.length) hlOpen(ME);   /* 담당자는 자기 줄 하나뿐이라 바로 펼쳐 둔다 */
 }
 /* 이름을 누르면 그 줄 아래에 그 담당자의 미완료 상담(고객)이 펼쳐진다 (v200 · "각 담당자마다 고객들의 정보가 뜨게") — fn_store_consults_all(p_handler) · 오래된 순 · [상세]·[상담 탭에서 보기] */
 const HL_CACHE={};
@@ -5467,7 +5470,7 @@ async function hlOpen(name){ const tr=$('hlx_'+name), box=$('hlxb_'+name), btn=$
   const open=tr.classList.contains('hidden'); document.querySelectorAll('#hlBody tr.hlx').forEach(x=>x.classList.add('hidden')); document.querySelectorAll('#hlBody .nm button').forEach(b=>{ b.setAttribute('aria-expanded','false'); b.classList.remove('on'); });
   if(!open) return; tr.classList.remove('hidden'); if(btn){ btn.setAttribute('aria-expanded','true'); btn.classList.add('on'); }
   if(!HL_CACHE[name]){ box.innerHTML='<div class="empty">불러오는 중…</div>';
-    try{ const d=await rpc('fn_store_consults_all',{p_code:CODE,p_scope:'open',p_handler:name,p_limit:60}); HL_CACHE[name]=(d&&d.rows)||[]; }
+    try{ const mgr=!!(STATUS&&STATUS.is_mgr); const d= mgr ? await rpc('fn_store_consults_all',{p_code:CODE,p_scope:'open',p_handler:name,p_limit:60}) : await rpc('fn_store_consults_my',{p_code:CODE,p_filter:'open',p_q:null,p_from:null,p_to:null,p_limit:60,p_offset:0}); HL_CACHE[name]=(d&&d.rows)||[]; }
     catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } }
   const rows=HL_CACHE[name].slice().sort((a,b)=>String(a.at||'').localeCompare(String(b.at||'')));
   const today=new Date(todayStr()+'T00:00:00'); const ago=v=>{ const d=Math.floor((today-new Date(String(v||'').slice(0,10)+'T00:00:00'))/86400000); return isNaN(d)?'':d; };
@@ -5475,7 +5478,7 @@ async function hlOpen(name){ const tr=$('hlx_'+name), box=$('hlxb_'+name), btn=$
     return `<div class="hlr"><div class="l"><b>${esc(x.name||'-')}</b> <span class="ph">${esc(x.phone||'')}</span> <span class="res ${ru[0]}">${esc(ru[1])}</span>${x.src?` <span class="tag src">${esc(x.src)}</span>`:''}${x.interest?` <span class="tag itm">${esc(String(x.interest).slice(0,24))}</span>`:''}
         <div class="m">${fmtAt(x.at)} 접수 · <span class="${dd>=30?'b':dd>=14?'w':''}">${dd}일 경과</span>${cb?` · 콜백 ${cb.join(' ')}`:''}${x.content?` · ${esc(String(x.content).slice(0,50))}`:''}</div></div>
         <div class="r">${x.id?`<button class="mini" onclick="cdOpen(${x.id})">상세</button>`:''}</div></div>`; }).join('') : '<div class="empty">미완료 상담이 없습니다</div>')
-    + `<div class="hlmore"><button class="mini" onclick="hlPick('${esc(name)}')">상담 탭에서 ${esc(name)} 전부 보기 →</button></div>`; }
+    + `<div class="hlmore"><button class="mini" onclick="${(STATUS&&STATUS.is_mgr)?`hlPick('${esc(name)}')`:`mcJump('open')`}">상담 탭에서 ${(STATUS&&STATUS.is_mgr)?esc(name)+' 전부':'전부'} 보기 →</button></div>`; }
 /* [상담 탭에서 보기] — 아래 전체 상담 목록을 그 담당자로 걸러 준다 */
 function hlPick(name){
   goTab('assign');
