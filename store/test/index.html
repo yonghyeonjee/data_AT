@@ -251,7 +251,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .cuitem .who .mine{font-size:calc(11px * var(--font-scale))} .cuitem .who .mine.cb{background:#FFF4E5;color:#9A5B00}
 .cuitem .meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:calc(12.5px * var(--font-scale));color:var(--muted);flex:1 1 100%}
 .cuitem .meta .ch{color:var(--navy);font-weight:600} .cuitem .meta .it{color:var(--ink)} .cuitem .meta .stale{color:#B45309;font-weight:700}
-.cuitem .chev{position:absolute;right:14px;top:12px;color:var(--faint);font-size:14px;transition:transform .15s} .cuitem{position:relative} .cuitem.open .chev{transform:rotate(180deg)}
+.cuitem{position:relative} .cuitem .chev{position:absolute;right:12px;top:10px;min-height:40px;min-width:88px;padding:0 12px;border:1.5px solid var(--line-2);border-radius:9px;background:#fff;color:var(--ink-2);font-size:calc(12.5px * var(--font-scale));font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:4px;pointer-events:none} .cuitem.open .chev{background:var(--navy);color:#fff;border-color:var(--navy)} .cuitem .head{padding-right:112px}
 .cuitem .body{border-top:1px solid var(--line);padding:10px 14px 12px;background:#FAFBFD}
 .cuitem .acts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px} .cuitem .acts .mini{min-height:40px;display:inline-flex;align-items:center;text-decoration:none}
 .cuitem .acts .mini.pri{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -861,6 +861,9 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .hlbox th,.hlbox td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .hlbox th:first-child,.hlbox td:first-child{text-align:left}
 .hlbox th{color:var(--muted);font-weight:600;font-size:calc(11.5px * var(--font-scale))}
+.hlbox .nm button{min-height:40px;padding:0 10px;border:1.5px solid transparent;border-radius:8px;background:transparent;font:inherit;font-weight:700;color:var(--navy);text-decoration:underline;cursor:pointer} .hlbox .nm button.on{background:var(--navy);color:#fff;text-decoration:none} .hlbox .nm button .hlch{font-style:normal;font-size:11px;opacity:.7}
+.hlbox tr.hlx td{text-align:left;white-space:normal;padding:0 0 10px;background:var(--surface-2,#F7F8FA)} .hlxbox{padding:8px 10px}
+.hlr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-top:6px} .hlr .l{min-width:0} .hlr .ph{color:var(--muted);font-weight:500;margin-left:4px} .hlr .m{font-size:calc(12px * var(--font-scale));color:var(--ink-2);margin-top:3px;line-height:1.4} .hlr .r{flex:none} .hlmore{margin-top:8px}
 .hlbox td.nm button{background:none;border:0;padding:4px 2px;font:inherit;font-weight:700;color:var(--navy);cursor:pointer;text-decoration:underline;min-height:36px}
 .hlbox .w{color:#8A6300;font-weight:700}
 .hlbox .b{color:#A6342A;font-weight:700}
@@ -1147,7 +1150,6 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 }
 .cuitem .cj{margin:6px 0 4px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff)}
 .cudet{margin-top:8px} .cudet summary{min-height:40px;display:flex;align-items:center;cursor:pointer;font-weight:700;color:var(--ink-2);font-size:calc(13px * var(--font-scale))}
-@media (max-width:999px){ #smsDlg .lvdlg.wide{width:100%} #sms_body{font-size:16px} }
 </style>
 </head>
 <body>
@@ -1256,7 +1258,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <!-- 마감 임박 견적서 (v199 · test 먼저) — 유효기한 D-3 ~ D+7 · 없으면 안 보인다 -->
     <div class="card hidden" id="dqCard">
       <h2>마감 임박 견적서 <span id="dqSub"></span></h2>
-      <p class="note-in" style="margin-top:0">유효기한이 <b>3일 안</b>이거나 <b>지난 지 7일 안</b>인 견적서입니다. 고객이 결정하기 전에 한 통 보내세요 — [💬 문자]는 견적 링크·기한이 채워진 문자 창(센드온)으로, [보내기]는 링크 복사·카카오까지 고르는 창으로 열립니다.</p>
+      <p class="note-in" style="margin-top:0">유효기한이 <b>3일 안</b>이거나 <b>지난 지 7일 안</b>인 견적서입니다. 고객이 결정하기 전에 한 통 보내세요 — [💬 문자]는 견적 링크·기한이 채워진 내 폰 문자앱으로, [보내기]는 링크 복사·카카오까지 고르는 창으로 열립니다.</p>
       <div class="list" id="dqList"></div>
     </div>
     <div class="card hidden" id="hlCard">
@@ -1386,35 +1388,14 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
     <div class="card">
       <h2>자동 알림 <span class="devtag">개발 전</span></h2>
-      <p class="note-in" style="margin:0 0 8px">템플릿을 정해 두면 시스템이 때맞춰 보내고, 보낸 내역이 아래 [문자 발송 내역]에 쌓입니다. 지금은 <b>[문자 보내기]</b>(견적서 [보내기] 창 · 상담 줄 · 알림 줄)로 직접 보냅니다.</p>
+      <p class="note-in" style="margin:0 0 8px">템플릿을 정해 두면 시스템이 때맞춰 보냅니다. 지금은 <b>[문자 보내기]</b>(견적서 [보내기] 창 · 상담 줄 · 알림 줄)가 <b>내 폰 문자앱</b>을 엽니다 — 내용이 채워진 채로 열리고, 내 번호로 나갑니다.</p>
       <div class="list">
         <div class="item oc"><div><div class="p">견적서 유효기한 안내</div><div class="m">기한 3일 전, 고객에게 견적 링크와 함께</div></div><div class="act"><span class="devtag">개발 전</span></div></div>
         <div class="item oc"><div><div class="p">콜백 당일 안내</div><div class="m">약속 당일 아침, 고객에게 "오늘 연락드리겠습니다"</div></div><div class="act"><span class="devtag">개발 전</span></div></div>
         <div class="item oc"><div><div class="p">상담 뒤 감사 메시지</div><div class="m">방문·상담 뒤 담당 프로님 이름으로</div></div><div class="act"><span class="devtag">개발 전</span></div></div>
       </div>
     </div>
-    <div class="card" id="smsRecentCard">
-      <h2>문자 발송 내역 <span id="smsRecentSub">내가 보낸 것 · 최근 90일</span></h2>
-      <p class="note-in" id="smsRecentNote" style="margin:0 0 8px"></p>
-      <div class="list" id="smsRecent"><div class="empty">불러오는 중…</div></div>
-    </div>
-    <!-- 문자 보내기 창 (mvp_201 · 센드온) — 견적서 [보내기] · 상담 줄 [문자] · 알림 줄 [메시지 보내기] 가 연다. 모드는 관리자 [메시지 발송 관리]에서 -->
-    <div class="lvmask hidden" id="smsDlg" onclick="if(event.target===this)smsClose()">
-      <div class="lvdlg wide" role="dialog" aria-modal="true" aria-labelledby="smsDlgTitle">
-        <button type="button" class="lvx" onclick="smsClose()" aria-label="닫기">✕</button>
-        <h3 id="smsDlgTitle">문자 보내기 <span class="devtag" id="smsModeTag"></span></h3>
-        <div class="lvform">
-          <div class="two">
-            <div><label>받는 사람</label><input class="in" id="sms_name" placeholder="고객명" autocomplete="off"></div>
-            <div><label>휴대폰</label><input class="in" id="sms_phone" placeholder="010-0000-0000" inputmode="tel" autocomplete="off"></div>
-          </div>
-          <div><label>템플릿 <small>고르면 본문이 채워지고, 고쳐 쓸 수 있습니다</small></label><select class="in" id="sms_tpl" onchange="smsTplPick()"></select></div>
-          <div><label>본문 <small id="sms_count"></small></label><textarea class="in" id="sms_body" rows="6" oninput="smsCount()" style="width:100%;box-sizing:border-box;min-height:120px"></textarea></div>
-          <p class="note-in" id="smsHint" style="margin:0"></p>
-          <div class="btns"><button class="btn ghost" onclick="smsClose()">닫기</button><button class="btn" id="smsSendBtn" style="margin-left:auto" onclick="smsSendNow()">보내기</button></div>
-        </div>
-      </div>
-    </div>
+    <!-- 문자 보내기는 내 폰 문자앱(sms:) — v200 · 센드온 창·[문자 발송 내역] 카드는 걷어냈다 (센드온은 관리자 화면에서만) -->
   </section>
 
   <!-- ── 상담 현황 ── -->
@@ -3533,8 +3514,7 @@ async function qsOpen(no, name){
     <div class="qs-link" id="qsUrl">${esc(d.url)}</div>
     <div class="qs-btns">
       <button class="btn" id="qsCopy">🔗 링크 복사</button>
-      <button class="btn" id="qsSendon" title="데이터센터가 센드온으로 보냅니다 — 관리자 설정의 모드(테스트/실제)대로">📨 문자 보내기 (센드온)</button>
-      <button class="btn" id="qsSms" title="휴대폰에서 누르면 문자앱이 내용까지 채워진 채로 열립니다 (PC 에서는 링크 복사)">💬 내 폰 문자앱으로 <span style="font-weight:600;color:var(--muted);font-size:.92em">(mobile)</span></button>
+      <button class="btn" id="qsSms" title="휴대폰에서 누르면 문자앱이 내용까지 채워진 채로 열립니다 (PC 에서는 링크 복사)">💬 문자로 보내기 <span style="font-weight:600;color:var(--muted);font-size:.92em">(mobile)</span></button>
       <button class="btn" id="qsShare">↗ 카카오 · 공유</button>
       <a class="btn" id="qsOpenLink" href="${esc(d.url)}" target="_blank" rel="noopener">👁 고객 화면 미리보기</a>
     </div>
@@ -3548,15 +3528,12 @@ async function qsOpen(no, name){
   mask.addEventListener('click',e=>{ if(e.target===mask) close(); });
   mask.querySelector('#qsClose').onclick=close;
   mask.querySelector('#qsCopy').onclick=async()=>{ await qsCopy(d.url); };
-  mask.querySelector('#qsSendon').onclick=()=>{ close(); smsCompose({name:d.name||name||'', phone:tel, quote_no:d.no, kind:'quote', template:'quote_link',
-      vars:{모델:d.models||'', 월요금:(d.monthly?`월 ${won(d.monthly)}`:(d.final?won(d.final):'')), 견적링크:d.url, 기한:d.expires_d, 담당자:ME}}); };
   mask.querySelector('#qsSms').onclick=()=>{
     if(!QS_CAN_SMS){
       toast('문자 보내기는 휴대폰에서 됩니다 — PC 라서 링크를 복사했습니다','ok');
       qsCopy(d.url); return; }
     /* 휴대폰에서는 문자앱이 내용까지 채워진 채로 열린다 (내 번호로 나감) */
-    const body=encodeURIComponent(qsMsg(d));
-    location.href = (/iPhone|iPad|Mac/i.test(navigator.userAgent) ? `sms:${tel}&body=${body}` : `sms:${tel}?body=${body}`);
+    location.href = smsAppUrl(tel, qsMsg(d));
   };
   mask.querySelector('#qsShare').onclick=async()=>{
     const txt=qsMsg(d);
@@ -4021,7 +3998,7 @@ function renderDueQuotes(){ const card=$('dqCard'); if(!card) return; const rows
   $('dqSub').textContent=`${rows.length}건 · 지남 ${rows.filter(o=>o.n<0).length} · 오늘 ${rows.filter(o=>o.n===0).length} · 3일 안 ${rows.filter(o=>o.n>0).length}`;
   $('dqList').innerHTML=rows.map(({x,n:dn})=>`<div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qUntil(x.until)} <small style="color:${dn<0?'#B3261E':dn===0?'#8A5A00':'var(--muted)'};font-weight:700">${dn<0?`${-dn}일 지남`:dn===0?'오늘 마감':`D-${dn}`}</small></div>
       <div class="m">${String(x.at||'').slice(5,10).replace('-','/')} 발행 · ${esc(x.models||'')}${x.monthly?` · 월 ${won(x.monthly)}`:x.final?` · ${won(x.final)}`:''}</div></div>
-      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="dqSms('${esc(x.no)}','${esc(x.name||'')}')" title="견적 링크·기한이 채워진 문자 (센드온)">💬 문자</button><button class="mini" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button></div></div>`).join('');
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="dqSms('${esc(x.no)}','${esc(x.name||'')}')" title="견적 링크·기한이 채워진 문자 — 내 폰 문자앱">💬 문자</button><button class="mini" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button></div></div>`).join('');
   return rows; }
 async function dqSms(no,name){ let d; try{ d=await rpc('fn_quote_share',{p_code:CODE,p_no:no}); }catch(e){ return toast(e.message,'bad'); }
   smsCompose({name:d.name||name||'', phone:(d.phone||'').replace(/\D/g,''), quote_no:d.no, kind:'quote', template:'quote_link',
@@ -4053,7 +4030,7 @@ function alKindSync(){ const box=$('al_kind'); if(!box) return; box.querySelecto
 async function loadAlerts(){
   const box=$('alList'); if(!box) return; box.innerHTML='<div class="empty">불러오는 중…</div>';
   try{ const d=await rpc('fn_store_alerts',{p_code:CODE,p_limit:150}); AL_ROWS=d.rows||[]; }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
-  renderAlerts(); smsRecentLoad();
+  renderAlerts();
 }
 let AL_PG=0, AL_SIG='';
 function alGo(p){ AL_PG=p; renderAlerts(); }
@@ -4074,7 +4051,7 @@ function renderAlerts(){
     const who=(x.title||'').split(' 님')[0];
     const act = (x.kind==='quote' ? `<button class="mini" onclick="alOpenQuote('${esc(x.quote_no||'')}')">견적서</button>`
               : `<button class="mini" onclick="alOpenConsult('${esc(who)}')">상담 열기</button>`)
-              + `<button class="mini" onclick="msgSend('${esc(who)}','${esc(x.phone||'')}')" title="문자 보내기 (센드온)">문자 보내기</button>`;
+              + `<button class="mini" onclick="msgSend('${esc(who)}','${esc(x.phone||'')}')" title="내 폰 문자앱으로 문자 보내기 (번호는 가려져 있어 문자앱에서 고릅니다)">문자 보내기</button>`;
     return `<div class="item oc"><div><div class="p">${ICO[x.kind]||''} ${esc(x.title||'')} ${badge}</div><div class="m">${when(x.at)} · ${esc(x.detail||'')}</div></div><div class="act">${act}</div></div>`; }).join('')
     : `<div class="empty">${!AL_KINDS.size?'위에서 볼 종류를 체크하세요':q?'맞는 알림이 없습니다':'알림이 없습니다'}</div>`);
 }
@@ -4084,53 +4061,18 @@ function alOpenConsult(name){ const mgr=!!(STATUS&&STATUS.is_mgr); goTab(mgr?'as
 document.addEventListener('click', e=>{ const c=e.target.closest('#al_kind .chip'); if(!c) return;
   const v=c.dataset.v; if(AL_KINDS.has(v)) AL_KINDS.delete(v); else AL_KINDS.add(v);
   try{ localStorage.setItem('dc_al_kinds', JSON.stringify([...AL_KINDS])); }catch(e){} renderAlerts(); });
-/* ═══ 문자 보내기 (mvp_201 · 센드온) — 창 하나(#smsDlg)를 견적서·상담 줄·알림 줄이 연다.
-   fn_store_sms_info 가 켜짐/모드/템플릿/내가 보낸 것을 주고, fn_store_sms_send 가 한 통을 보낸다(테스트 모드면 기록만).
-   바깥으로 나가는 호출이라 RPC_NO_RETRY — 끊겨도 다시 보내지 않는다. ═══ */
+/* ═══ 문자 보내기 = 내 폰 문자앱 (v200 · 2026-10-15) — "store 에서 문자보내기는 이전 버전처럼 사용자의 메시지 앱을 쓰게". 센드온 창(mvp_201)은 걷어냈다(센드온은 관리자 화면에서만).
+   fn_store_sms_info 는 템플릿(quote_link 등)·매장전화를 받는 데만 쓴다. 본문을 채워 sms: 로 열고(내 번호로 나간다), PC 면 내용을 복사한다. ═══ */
 let SMS_INFO=null, SMS_AT=0, SMS_CTX=null;
 async function smsInfo(fresh){ if(SMS_INFO && !fresh && Date.now()-SMS_AT<45000) return SMS_INFO; SMS_INFO=await rpc('fn_store_sms_info',{p_code:CODE}); SMS_AT=Date.now(); return SMS_INFO; }
 function smsBytes(t){ let n=0; for(const ch of String(t||'')) n+= ch.codePointAt(0)<128?1:2; return n; }
 function smsRender(body,vars){ let v=String(body||''); Object.entries(vars||{}).forEach(([k,val])=>{ v=v.split('{'+k+'}').join(val==null?'':String(val)); }); v=v.replace(/\{[^{}\n]{1,20}\}/g,''); v=v.replace(/\n[ \t·]*\n/g,'\n'); return v.trim(); }
-function smsVars(){ const o=SMS_CTX||{}; return Object.assign({이름:($('sms_name').value.trim()||'고객'), 담당자:ME, 매장전화:(SMS_INFO&&SMS_INFO.store_tel)||''}, o.vars||{}); }
-function smsCount(){ const b=smsBytes($('sms_body').value); $('sms_count').textContent=`${b}바이트 · ${b<=90?'SMS':'LMS'}${b>2000?' · 2,000바이트 초과':''}`; }
-function smsTplPick(){ const code=$('sms_tpl').value; const t=((SMS_INFO&&SMS_INFO.templates)||[]).find(x=>x.code===code); if(!t) return; $('sms_body').value=smsRender(t.body, smsVars()); smsCount(); }
-async function smsCompose(o){ SMS_CTX=o||{};
-  try{ await smsInfo(); }catch(e){ return toast(e.message,'bad'); }
-  const inf=SMS_INFO; const live=inf.mode==='live';
-  $('sms_name').value=o.name||''; $('sms_phone').value=o.phone||''; 
-  $('sms_tpl').innerHTML='<option value="">(직접 쓰기)</option>'+(inf.templates||[]).map(t=>`<option value="${esc(t.code)}">${esc(t.label)}</option>`).join('');
-  const tag=$('smsModeTag'); tag.textContent= !inf.enabled ? '꺼짐' : live ? '실제 발송' : '테스트 모드'; tag.style.background= live?'#E6F4F2':'#FFF4E5'; tag.style.color= live?'#0B5E57':'#9A5B00';
-  $('smsHint').innerHTML = !inf.enabled ? '문자 기능이 <b>꺼져 있습니다</b> — 관리자가 [메시지 발송 관리]에서 켜면 바로 보낼 수 있습니다. 지금은 보기만 됩니다.'
-    : live ? `센드온으로 <b>실제 문자</b>가 나갑니다 (발신번호 ${esc(inf.sender_no||'')}). 광고가 아닌 안내 문자만 보내세요.`
-    : '<b>테스트 모드</b> — [보내기]를 눌러도 실제로 나가지 않고 아래 [문자 발송 내역]에 테스트로만 남습니다. 실제 발송은 관리자가 켭니다.';
-  $('smsSendBtn').disabled=!inf.enabled; $('smsSendBtn').textContent= !inf.enabled ? '보내기 (꺼짐)' : live ? '실제로 보내기' : '보내기 (테스트)';
-  if(o.template && (inf.templates||[]).some(t=>t.code===o.template)){ $('sms_tpl').value=o.template; smsTplPick(); } else { $('sms_body').value=o.body||''; smsCount(); }
-  $('smsDlg').classList.remove('hidden'); setTimeout(()=>{ (o.phone?$('sms_body'):$('sms_phone')).focus(); },60);
-}
-function smsClose(){ $('smsDlg').classList.add('hidden'); }
-async function smsSendNow(){ const inf=SMS_INFO||{}; if(!inf.enabled) return toast('문자 기능이 꺼져 있습니다','bad');
-  const phone=$('sms_phone').value.replace(/\D/g,''); const body=$('sms_body').value.trim(); const name=$('sms_name').value.trim();
-  if(!/^01[016789]\d{7,8}$/.test(phone)) return toast('휴대폰 번호를 확인하세요','bad'); if(!body) return toast('본문을 적어주세요','bad'); if(smsBytes(body)>2000) return toast('2,000바이트를 넘습니다','bad');
-  if(inf.mode==='live' && !confirm(`${name||phone} 님에게 실제 문자를 보냅니다. 계속할까요?`)) return;
-  const btn=$('smsSendBtn'); btn.disabled=true; const prev=btn.textContent; btn.textContent='보내는 중…';
-  try{ const r=await rpc('fn_store_sms_send',{p_code:CODE,p_phone:phone,p_name:name||null,p_body:body,p_kind:(SMS_CTX&&SMS_CTX.kind)||'manual',p_consult_id:(SMS_CTX&&SMS_CTX.consult_id)||null,p_quote_no:(SMS_CTX&&SMS_CTX.quote_no)||null,p_key:(SMS_CTX&&SMS_CTX.key)||null});
-    const it=(r.items||[])[0]||{};
-    if(it.status==='blocked') toast(`보내지 못했습니다 · ${it.reason||''}`,'bad');
-    else if(it.status==='failed') toast(`센드온이 거절했습니다 · ${it.reason||''}`,'bad');
-    else if(r.mode==='live') toast(`보냈습니다 (${it.type} · ${it.bytes}바이트)`,'ok');
-    else toast(`테스트로 기록했습니다 (${it.type} · ${it.bytes}바이트 · 실제 발송 없음)`,'ok');
-    if(it.status!=='blocked'){ smsClose(); } SMS_AT=0; smsRecentLoad();
-  }catch(e){ toast(e.message,'bad'); }
-  finally{ btn.disabled=false; btn.textContent=prev; }
-}
-async function smsRecentLoad(){ const box=$('smsRecent'); if(!box) return;
-  let inf; try{ inf=await smsInfo(true); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
-  const note=$('smsRecentNote'); note.innerHTML = !inf.enabled ? '문자 기능이 <span class="devtag">꺼짐</span> — 관리자가 켜면 여기서 바로 보냅니다.' : inf.mode==='live' ? '센드온으로 실제 발송 중입니다.' : '<span class="devtag">테스트 모드</span> 보내기를 눌러도 실제로 나가지 않고 여기에만 남습니다.';
-  const ST={sent:['보냄','done'],test:['테스트','pre'],failed:['실패','alarm'],blocked:['차단','alarm']}; const KN={quote:'견적서',callback:'콜백',thanks:'감사',manual:'직접',campaign:'캠페인',test:'테스트'};
-  const rows=inf.recent||[]; $('smsRecentSub').textContent=rows.length?`${rows.length}건 · 최근 90일`:'내가 보낸 것 · 최근 90일';
-  box.innerHTML=rows.slice(0,30).map(x=>{ const st=ST[x.status]||[x.status,'']; return `<div class="item oc"><div><div class="p">💬 ${esc(x.name||'-')} <span class="ph">${esc(x.phone||'')}</span> <span class="res ${st[1]}">${st[0]}</span>${x.mode==='test'?' <span class="devtag">테스트</span>':''}</div><div class="m">${fmtWhen(x.at).join(' ')} · ${esc(KN[x.kind]||x.kind)} · ${esc(x.type)} ${x.bytes}B${x.reason?` · ${esc(x.reason)}`:''}<br><span style="white-space:pre-wrap">${esc(x.body||'')}</span></div></div><div class="act">${x.consult_id?`<button class="mini" onclick="cdOpen(${x.consult_id})">상담</button>`:''}<button class="mini" onclick="smsCompose({name:'${esc(x.name||'')}',phone:'',body:${JSON.stringify(x.body||'')}})">다시 쓰기</button></div></div>`; }).join('')
-    || '<div class="empty">아직 보낸 문자가 없습니다 — 견적서 [보내기] 창 · 상담 줄 [💬 문자] · 알림 줄 [문자 보내기]</div>';
-}
+async function smsCompose(o){ SMS_CTX=o||{}; let body=o.body||'';
+  if(o.template){ try{ const inf=await smsInfo(); const t=((inf&&inf.templates)||[]).find(x=>x.code===o.template); if(t) body=smsRender(t.body, Object.assign({이름:o.name||'고객', 담당자:ME, 매장전화:(inf&&inf.store_tel)||''}, o.vars||{})); }catch(e){} }
+  smsApp((o.phone||'').replace(/\D/g,''), body); }
+function smsAppUrl(tel, body){ const b=encodeURIComponent(body||''); return (/iPhone|iPad|Mac/i.test(navigator.userAgent) ? `sms:${tel||''}&body=${b}` : `sms:${tel||''}?body=${b}`); }
+function smsApp(tel, body){ if(!QS_CAN_SMS){ if(body) qsCopy(body, '문자 보내기는 휴대폰에서 됩니다 — PC 라서 내용을 복사했습니다'); else toast('문자 보내기는 휴대폰에서 됩니다 (내 폰 문자앱이 열립니다)','ok'); return; }
+  location.href = smsAppUrl(tel, body); }
 /* ═══ 고객 흐름 (mvp_198) — "고객들의 문의, 구매 흐름이 명료하게". 한 사람의 문의·상담·견적(열람)·문자·구매·환불·DPS 구독을
    한 줄 타임라인으로. 관리자(fn_customer_journey)와 담당자(fn_store_customer_journey)가 같은 그리기(cjHtml)를 쓴다 ═══ */
 const CJ_K={seen:['처음 확인','#555E6C','#EEF1F5'],inq:['문의','#1D4FB8','#EAF0FC'],consult:['상담','#0B5E57','#E6F4F2'],quote:['견적','#7A4F00','#FBF1DC'],
@@ -4238,7 +4180,7 @@ function renderMyCustomers(){
       <div class="head" role="button" tabindex="0" aria-expanded="false" onclick="cuToggle('${esc(x.key)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cuToggle('${esc(x.key)}')}">
         <div class="who"><b>${esc(x.name||'—')}</b><span class="ph">${x.phone||'번호 없음'}</span>${x.consent?'<span class="mine">수신동의</span>':''}${x.open_callback?'<span class="mine cb">콜백 대기</span>':''}</div>
         <div class="meta">${ru?`<span class="res ${ru[0]}">${esc(ru[1])}</span>`:'<span class="res pre">구매만</span>'}<span>상담 ${x.consult_n||0}회</span><span class="${stale?'stale':''}">${cuAgo(d)}</span>${x.last_channel?`<span class="ch">${esc(x.last_channel)}</span>`:''}${x.last_interest?`<span class="it">${esc(x.last_interest)}</span>`:''}${x.orders?`<span>구매 ${x.orders}건 ${won(x.spent)}</span>`:''}</div>
-        <span class="chev" aria-hidden="true">▾</span>
+        <span class="chev" aria-hidden="true">펼치기 ▾</span>
       </div>
       <div class="body hidden" id="cub_${esc(x.key)}"></div>
     </div>`; }).join('');
@@ -4247,7 +4189,7 @@ async function cuToggle(key){
   const it=$('cu_'+key), body=$('cub_'+key); if(!it||!body) return;
   const open=!it.classList.contains('open');
   it.classList.toggle('open',open); body.classList.toggle('hidden',!open);
-  it.querySelector('.head').setAttribute('aria-expanded', open?'true':'false');
+  it.querySelector('.head').setAttribute('aria-expanded', open?'true':'false'); const ch=it.querySelector('.chev'); if(ch) ch.textContent = open?'접기 ▴':'펼치기 ▾';
   if(!open) return;
   const x=CU_ROWS.find(r=>r.key===key)||{};
   const acts=`<div class="acts"><button class="mini pri" onclick="pickMine('${esc(key)}','${esc(x.name||'')}')">＋ 상담 입력</button>${x.tel?`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`:''}</div>`;
@@ -4469,7 +4411,7 @@ function renderMyConsults(){
     } else {
     /* 1줄: 하는 일 — 전화 · 콜백 · 견적서 · 구매 확정.  2줄: 상태(시스템이 가진 상태 그대로 골라서 바꾼다).  3줄: 새 상담 · 넘기기 · 삭제 */
     if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
-    if(x.tel) A.push(`<button class="mini" onclick="smsCompose({name:'${nm}',phone:'${esc(x.tel)}',consult_id:${x.id},key:'${esc(x.ref||'')}'})" title="문자 보내기 (센드온) — 관리자 설정의 모드대로">💬 문자</button>`);
+    if(x.tel) A.push(`<button class="mini" onclick="smsCompose({name:'${nm}',phone:'${esc(x.tel)}',consult_id:${x.id},key:'${esc(x.ref||'')}'})" title="내 폰 문자앱으로 문자 보내기 (내 번호로 나갑니다)">💬 문자</button>`);
     A.push(`<button class="mini" onclick="cdOpen(${x.id})" title="이 상담의 모든 내용 · 기록 · 같은 고객의 다른 상담">상세 보기</button>`);
     if(x.result!=='구매완료') A.push(`<button class="mini" onclick="ocPick(${x.id})" title="다음에 연락할 날짜·시간을 잡습니다 — 홈 [콜백 약속]에 뜹니다">📅 콜백</button>`);
     A.push(`<button class="mini" onclick="openQuote(${qArg})">견적서 ${x.quote?'열기':'만들기'} ↗</button>`);
@@ -5508,16 +5450,32 @@ async function loadHandlerLoad(){
   if(!rows.length){ $('hlBody').innerHTML='<div class="empty">우선 처리할 상담이 없습니다</div>'; return; }
   $('hlBody').innerHTML = `<table><thead><tr><th>담당</th><th>미완료</th><th>14일↑</th><th>30일↑</th><th>지난 콜백</th><th>가장 오래된</th></tr></thead><tbody>`
     + rows.map(r=>`<tr class="${r.handler===ME?'me':''}">
-        <td class="nm"><button onclick="hlPick('${esc(r.handler)}')">${esc(r.handler)}</button></td>
+        <td class="nm"><button onclick="hlOpen('${esc(r.handler)}')" aria-expanded="false" id="hlb_${esc(r.handler)}">${esc(r.handler)} <i class="hlch">▾</i></button></td>
         <td>${r.n}</td>
         <td class="${r.d14?'w':''}">${r.d14||''}</td>
         <td class="${r.d30?'b':''}">${r.d30||''}</td>
         <td class="${r.cb_late?'b':''}">${r.cb_late||''}</td>
-        <td>${r.oldest?String(r.oldest).slice(5).replace('-','/')+` <span class="${r.days>=30?'b':(r.days>=14?'w':'')}">${r.days}일</span>`:'-'}</td></tr>`).join('')
+        <td>${r.oldest?String(r.oldest).slice(5).replace('-','/')+` <span class="${r.days>=30?'b':(r.days>=14?'w':'')}">${r.days}일</span>`:'-'}</td></tr>
+        <tr class="hlx hidden" id="hlx_${esc(r.handler)}"><td colspan="6"><div class="hlxbox" id="hlxb_${esc(r.handler)}"></div></td></tr>`).join('')
     + `<tr class="tot"><td>합계</td><td>${d.total}</td><td class="w">${d.d14}</td><td class="b">${d.d30}</td><td></td><td></td></tr>`
     + `</tbody></table>`;
 }
-/* 이름을 누르면 아래 전체 상담 목록을 그 담당자로 걸러 준다 */
+/* 이름을 누르면 그 줄 아래에 그 담당자의 미완료 상담(고객)이 펼쳐진다 (v200 · "각 담당자마다 고객들의 정보가 뜨게") — fn_store_consults_all(p_handler) · 오래된 순 · [상세]·[상담 탭에서 보기] */
+const HL_CACHE={};
+async function hlOpen(name){ const tr=$('hlx_'+name), box=$('hlxb_'+name), btn=$('hlb_'+name); if(!tr||!box) return;
+  const open=tr.classList.contains('hidden'); document.querySelectorAll('#hlBody tr.hlx').forEach(x=>x.classList.add('hidden')); document.querySelectorAll('#hlBody .nm button').forEach(b=>{ b.setAttribute('aria-expanded','false'); b.classList.remove('on'); });
+  if(!open) return; tr.classList.remove('hidden'); if(btn){ btn.setAttribute('aria-expanded','true'); btn.classList.add('on'); }
+  if(!HL_CACHE[name]){ box.innerHTML='<div class="empty">불러오는 중…</div>';
+    try{ const d=await rpc('fn_store_consults_all',{p_code:CODE,p_scope:'open',p_handler:name,p_limit:60}); HL_CACHE[name]=(d&&d.rows)||[]; }
+    catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } }
+  const rows=HL_CACHE[name].slice().sort((a,b)=>String(a.at||'').localeCompare(String(b.at||'')));
+  const today=new Date(todayStr()+'T00:00:00'); const ago=v=>{ const d=Math.floor((today-new Date(String(v||'').slice(0,10)+'T00:00:00'))/86400000); return isNaN(d)?'':d; };
+  box.innerHTML=(rows.length?rows.map(x=>{ const dd=ago(x.at); const ru=RES_UI[x.result]||['pre',x.result||'']; const cb=x.callback_at?fmtWhen(x.callback_at):null;
+    return `<div class="hlr"><div class="l"><b>${esc(x.name||'-')}</b> <span class="ph">${esc(x.phone||'')}</span> <span class="res ${ru[0]}">${esc(ru[1])}</span>${x.src?` <span class="tag src">${esc(x.src)}</span>`:''}${x.interest?` <span class="tag itm">${esc(String(x.interest).slice(0,24))}</span>`:''}
+        <div class="m">${fmtAt(x.at)} 접수 · <span class="${dd>=30?'b':dd>=14?'w':''}">${dd}일 경과</span>${cb?` · 콜백 ${cb.join(' ')}`:''}${x.content?` · ${esc(String(x.content).slice(0,50))}`:''}</div></div>
+        <div class="r">${x.id?`<button class="mini" onclick="cdOpen(${x.id})">상세</button>`:''}</div></div>`; }).join('') : '<div class="empty">미완료 상담이 없습니다</div>')
+    + `<div class="hlmore"><button class="mini" onclick="hlPick('${esc(name)}')">상담 탭에서 ${esc(name)} 전부 보기 →</button></div>`; }
+/* [상담 탭에서 보기] — 아래 전체 상담 목록을 그 담당자로 걸러 준다 */
 function hlPick(name){
   goTab('assign');
   const q=$('all_q'); if(q){ q.value=name; }

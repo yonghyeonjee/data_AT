@@ -1147,7 +1147,6 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 }
 .cuitem .cj{margin:6px 0 4px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff)}
 .cudet{margin-top:8px} .cudet summary{min-height:40px;display:flex;align-items:center;cursor:pointer;font-weight:700;color:var(--ink-2);font-size:calc(13px * var(--font-scale))}
-@media (max-width:999px){ #smsDlg .lvdlg.wide{width:100%} #sms_body{font-size:16px} }
 </style>
 </head>
 <body>
@@ -1380,35 +1379,14 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
     <div class="card">
       <h2>자동 알림 <span class="devtag">개발 전</span></h2>
-      <p class="note-in" style="margin:0 0 8px">템플릿을 정해 두면 시스템이 때맞춰 보내고, 보낸 내역이 아래 [문자 발송 내역]에 쌓입니다. 지금은 <b>[문자 보내기]</b>(견적서 [보내기] 창 · 상담 줄 · 알림 줄)로 직접 보냅니다.</p>
+      <p class="note-in" style="margin:0 0 8px">템플릿을 정해 두면 시스템이 때맞춰 보냅니다. 지금은 <b>[문자 보내기]</b>(견적서 [보내기] 창 · 상담 줄 · 알림 줄)가 <b>내 폰 문자앱</b>을 엽니다 — 내용이 채워진 채로 열리고, 내 번호로 나갑니다.</p>
       <div class="list">
         <div class="item oc"><div><div class="p">견적서 유효기한 안내</div><div class="m">기한 3일 전, 고객에게 견적 링크와 함께</div></div><div class="act"><span class="devtag">개발 전</span></div></div>
         <div class="item oc"><div><div class="p">콜백 당일 안내</div><div class="m">약속 당일 아침, 고객에게 "오늘 연락드리겠습니다"</div></div><div class="act"><span class="devtag">개발 전</span></div></div>
         <div class="item oc"><div><div class="p">상담 뒤 감사 메시지</div><div class="m">방문·상담 뒤 담당 프로님 이름으로</div></div><div class="act"><span class="devtag">개발 전</span></div></div>
       </div>
     </div>
-    <div class="card" id="smsRecentCard">
-      <h2>문자 발송 내역 <span id="smsRecentSub">내가 보낸 것 · 최근 90일</span></h2>
-      <p class="note-in" id="smsRecentNote" style="margin:0 0 8px"></p>
-      <div class="list" id="smsRecent"><div class="empty">불러오는 중…</div></div>
-    </div>
-    <!-- 문자 보내기 창 (mvp_201 · 센드온) — 견적서 [보내기] · 상담 줄 [문자] · 알림 줄 [메시지 보내기] 가 연다. 모드는 관리자 [메시지 발송 관리]에서 -->
-    <div class="lvmask hidden" id="smsDlg" onclick="if(event.target===this)smsClose()">
-      <div class="lvdlg wide" role="dialog" aria-modal="true" aria-labelledby="smsDlgTitle">
-        <button type="button" class="lvx" onclick="smsClose()" aria-label="닫기">✕</button>
-        <h3 id="smsDlgTitle">문자 보내기 <span class="devtag" id="smsModeTag"></span></h3>
-        <div class="lvform">
-          <div class="two">
-            <div><label>받는 사람</label><input class="in" id="sms_name" placeholder="고객명" autocomplete="off"></div>
-            <div><label>휴대폰</label><input class="in" id="sms_phone" placeholder="010-0000-0000" inputmode="tel" autocomplete="off"></div>
-          </div>
-          <div><label>템플릿 <small>고르면 본문이 채워지고, 고쳐 쓸 수 있습니다</small></label><select class="in" id="sms_tpl" onchange="smsTplPick()"></select></div>
-          <div><label>본문 <small id="sms_count"></small></label><textarea class="in" id="sms_body" rows="6" oninput="smsCount()" style="width:100%;box-sizing:border-box;min-height:120px"></textarea></div>
-          <p class="note-in" id="smsHint" style="margin:0"></p>
-          <div class="btns"><button class="btn ghost" onclick="smsClose()">닫기</button><button class="btn" id="smsSendBtn" style="margin-left:auto" onclick="smsSendNow()">보내기</button></div>
-        </div>
-      </div>
-    </div>
+    <!-- 문자 보내기는 내 폰 문자앱(sms:) — v200 · 센드온 창·[문자 발송 내역] 카드는 걷어냈다 (센드온은 관리자 화면에서만) -->
   </section>
 
   <!-- ── 상담 현황 ── -->
@@ -3527,8 +3505,7 @@ async function qsOpen(no, name){
     <div class="qs-link" id="qsUrl">${esc(d.url)}</div>
     <div class="qs-btns">
       <button class="btn" id="qsCopy">🔗 링크 복사</button>
-      <button class="btn" id="qsSendon" title="데이터센터가 센드온으로 보냅니다 — 관리자 설정의 모드(테스트/실제)대로">📨 문자 보내기 (센드온)</button>
-      <button class="btn" id="qsSms" title="휴대폰에서 누르면 문자앱이 내용까지 채워진 채로 열립니다 (PC 에서는 링크 복사)">💬 내 폰 문자앱으로 <span style="font-weight:600;color:var(--muted);font-size:.92em">(mobile)</span></button>
+      <button class="btn" id="qsSms" title="휴대폰에서 누르면 문자앱이 내용까지 채워진 채로 열립니다 (PC 에서는 링크 복사)">💬 문자로 보내기 <span style="font-weight:600;color:var(--muted);font-size:.92em">(mobile)</span></button>
       <button class="btn" id="qsShare">↗ 카카오 · 공유</button>
       <a class="btn" id="qsOpenLink" href="${esc(d.url)}" target="_blank" rel="noopener">👁 고객 화면 미리보기</a>
     </div>
@@ -3542,15 +3519,12 @@ async function qsOpen(no, name){
   mask.addEventListener('click',e=>{ if(e.target===mask) close(); });
   mask.querySelector('#qsClose').onclick=close;
   mask.querySelector('#qsCopy').onclick=async()=>{ await qsCopy(d.url); };
-  mask.querySelector('#qsSendon').onclick=()=>{ close(); smsCompose({name:d.name||name||'', phone:tel, quote_no:d.no, kind:'quote', template:'quote_link',
-      vars:{모델:d.models||'', 월요금:(d.monthly?`월 ${won(d.monthly)}`:(d.final?won(d.final):'')), 견적링크:d.url, 기한:d.expires_d, 담당자:ME}}); };
   mask.querySelector('#qsSms').onclick=()=>{
     if(!QS_CAN_SMS){
       toast('문자 보내기는 휴대폰에서 됩니다 — PC 라서 링크를 복사했습니다','ok');
       qsCopy(d.url); return; }
     /* 휴대폰에서는 문자앱이 내용까지 채워진 채로 열린다 (내 번호로 나감) */
-    const body=encodeURIComponent(qsMsg(d));
-    location.href = (/iPhone|iPad|Mac/i.test(navigator.userAgent) ? `sms:${tel}&body=${body}` : `sms:${tel}?body=${body}`);
+    location.href = smsAppUrl(tel, qsMsg(d));
   };
   mask.querySelector('#qsShare').onclick=async()=>{
     const txt=qsMsg(d);
@@ -4033,7 +4007,7 @@ function alKindSync(){ const box=$('al_kind'); if(!box) return; box.querySelecto
 async function loadAlerts(){
   const box=$('alList'); if(!box) return; box.innerHTML='<div class="empty">불러오는 중…</div>';
   try{ const d=await rpc('fn_store_alerts',{p_code:CODE,p_limit:150}); AL_ROWS=d.rows||[]; }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
-  renderAlerts(); smsRecentLoad();
+  renderAlerts();
 }
 let AL_PG=0, AL_SIG='';
 function alGo(p){ AL_PG=p; renderAlerts(); }
@@ -4054,7 +4028,7 @@ function renderAlerts(){
     const who=(x.title||'').split(' 님')[0];
     const act = (x.kind==='quote' ? `<button class="mini" onclick="alOpenQuote('${esc(x.quote_no||'')}')">견적서</button>`
               : `<button class="mini" onclick="alOpenConsult('${esc(who)}')">상담 열기</button>`)
-              + `<button class="mini" onclick="msgSend('${esc(who)}','${esc(x.phone||'')}')" title="문자 보내기 (센드온)">문자 보내기</button>`;
+              + `<button class="mini" onclick="msgSend('${esc(who)}','${esc(x.phone||'')}')" title="내 폰 문자앱으로 문자 보내기 (번호는 가려져 있어 문자앱에서 고릅니다)">문자 보내기</button>`;
     return `<div class="item oc"><div><div class="p">${ICO[x.kind]||''} ${esc(x.title||'')} ${badge}</div><div class="m">${when(x.at)} · ${esc(x.detail||'')}</div></div><div class="act">${act}</div></div>`; }).join('')
     : `<div class="empty">${!AL_KINDS.size?'위에서 볼 종류를 체크하세요':q?'맞는 알림이 없습니다':'알림이 없습니다'}</div>`);
 }
@@ -4064,53 +4038,18 @@ function alOpenConsult(name){ const mgr=!!(STATUS&&STATUS.is_mgr); goTab(mgr?'as
 document.addEventListener('click', e=>{ const c=e.target.closest('#al_kind .chip'); if(!c) return;
   const v=c.dataset.v; if(AL_KINDS.has(v)) AL_KINDS.delete(v); else AL_KINDS.add(v);
   try{ localStorage.setItem('dc_al_kinds', JSON.stringify([...AL_KINDS])); }catch(e){} renderAlerts(); });
-/* ═══ 문자 보내기 (mvp_201 · 센드온) — 창 하나(#smsDlg)를 견적서·상담 줄·알림 줄이 연다.
-   fn_store_sms_info 가 켜짐/모드/템플릿/내가 보낸 것을 주고, fn_store_sms_send 가 한 통을 보낸다(테스트 모드면 기록만).
-   바깥으로 나가는 호출이라 RPC_NO_RETRY — 끊겨도 다시 보내지 않는다. ═══ */
+/* ═══ 문자 보내기 = 내 폰 문자앱 (v200 · 2026-10-15) — "store 에서 문자보내기는 이전 버전처럼 사용자의 메시지 앱을 쓰게". 센드온 창(mvp_201)은 걷어냈다(센드온은 관리자 화면에서만).
+   fn_store_sms_info 는 템플릿(quote_link 등)·매장전화를 받는 데만 쓴다. 본문을 채워 sms: 로 열고(내 번호로 나간다), PC 면 내용을 복사한다. ═══ */
 let SMS_INFO=null, SMS_AT=0, SMS_CTX=null;
 async function smsInfo(fresh){ if(SMS_INFO && !fresh && Date.now()-SMS_AT<45000) return SMS_INFO; SMS_INFO=await rpc('fn_store_sms_info',{p_code:CODE}); SMS_AT=Date.now(); return SMS_INFO; }
 function smsBytes(t){ let n=0; for(const ch of String(t||'')) n+= ch.codePointAt(0)<128?1:2; return n; }
 function smsRender(body,vars){ let v=String(body||''); Object.entries(vars||{}).forEach(([k,val])=>{ v=v.split('{'+k+'}').join(val==null?'':String(val)); }); v=v.replace(/\{[^{}\n]{1,20}\}/g,''); v=v.replace(/\n[ \t·]*\n/g,'\n'); return v.trim(); }
-function smsVars(){ const o=SMS_CTX||{}; return Object.assign({이름:($('sms_name').value.trim()||'고객'), 담당자:ME, 매장전화:(SMS_INFO&&SMS_INFO.store_tel)||''}, o.vars||{}); }
-function smsCount(){ const b=smsBytes($('sms_body').value); $('sms_count').textContent=`${b}바이트 · ${b<=90?'SMS':'LMS'}${b>2000?' · 2,000바이트 초과':''}`; }
-function smsTplPick(){ const code=$('sms_tpl').value; const t=((SMS_INFO&&SMS_INFO.templates)||[]).find(x=>x.code===code); if(!t) return; $('sms_body').value=smsRender(t.body, smsVars()); smsCount(); }
-async function smsCompose(o){ SMS_CTX=o||{};
-  try{ await smsInfo(); }catch(e){ return toast(e.message,'bad'); }
-  const inf=SMS_INFO; const live=inf.mode==='live';
-  $('sms_name').value=o.name||''; $('sms_phone').value=o.phone||''; 
-  $('sms_tpl').innerHTML='<option value="">(직접 쓰기)</option>'+(inf.templates||[]).map(t=>`<option value="${esc(t.code)}">${esc(t.label)}</option>`).join('');
-  const tag=$('smsModeTag'); tag.textContent= !inf.enabled ? '꺼짐' : live ? '실제 발송' : '테스트 모드'; tag.style.background= live?'#E6F4F2':'#FFF4E5'; tag.style.color= live?'#0B5E57':'#9A5B00';
-  $('smsHint').innerHTML = !inf.enabled ? '문자 기능이 <b>꺼져 있습니다</b> — 관리자가 [메시지 발송 관리]에서 켜면 바로 보낼 수 있습니다. 지금은 보기만 됩니다.'
-    : live ? `센드온으로 <b>실제 문자</b>가 나갑니다 (발신번호 ${esc(inf.sender_no||'')}). 광고가 아닌 안내 문자만 보내세요.`
-    : '<b>테스트 모드</b> — [보내기]를 눌러도 실제로 나가지 않고 아래 [문자 발송 내역]에 테스트로만 남습니다. 실제 발송은 관리자가 켭니다.';
-  $('smsSendBtn').disabled=!inf.enabled; $('smsSendBtn').textContent= !inf.enabled ? '보내기 (꺼짐)' : live ? '실제로 보내기' : '보내기 (테스트)';
-  if(o.template && (inf.templates||[]).some(t=>t.code===o.template)){ $('sms_tpl').value=o.template; smsTplPick(); } else { $('sms_body').value=o.body||''; smsCount(); }
-  $('smsDlg').classList.remove('hidden'); setTimeout(()=>{ (o.phone?$('sms_body'):$('sms_phone')).focus(); },60);
-}
-function smsClose(){ $('smsDlg').classList.add('hidden'); }
-async function smsSendNow(){ const inf=SMS_INFO||{}; if(!inf.enabled) return toast('문자 기능이 꺼져 있습니다','bad');
-  const phone=$('sms_phone').value.replace(/\D/g,''); const body=$('sms_body').value.trim(); const name=$('sms_name').value.trim();
-  if(!/^01[016789]\d{7,8}$/.test(phone)) return toast('휴대폰 번호를 확인하세요','bad'); if(!body) return toast('본문을 적어주세요','bad'); if(smsBytes(body)>2000) return toast('2,000바이트를 넘습니다','bad');
-  if(inf.mode==='live' && !confirm(`${name||phone} 님에게 실제 문자를 보냅니다. 계속할까요?`)) return;
-  const btn=$('smsSendBtn'); btn.disabled=true; const prev=btn.textContent; btn.textContent='보내는 중…';
-  try{ const r=await rpc('fn_store_sms_send',{p_code:CODE,p_phone:phone,p_name:name||null,p_body:body,p_kind:(SMS_CTX&&SMS_CTX.kind)||'manual',p_consult_id:(SMS_CTX&&SMS_CTX.consult_id)||null,p_quote_no:(SMS_CTX&&SMS_CTX.quote_no)||null,p_key:(SMS_CTX&&SMS_CTX.key)||null});
-    const it=(r.items||[])[0]||{};
-    if(it.status==='blocked') toast(`보내지 못했습니다 · ${it.reason||''}`,'bad');
-    else if(it.status==='failed') toast(`센드온이 거절했습니다 · ${it.reason||''}`,'bad');
-    else if(r.mode==='live') toast(`보냈습니다 (${it.type} · ${it.bytes}바이트)`,'ok');
-    else toast(`테스트로 기록했습니다 (${it.type} · ${it.bytes}바이트 · 실제 발송 없음)`,'ok');
-    if(it.status!=='blocked'){ smsClose(); } SMS_AT=0; smsRecentLoad();
-  }catch(e){ toast(e.message,'bad'); }
-  finally{ btn.disabled=false; btn.textContent=prev; }
-}
-async function smsRecentLoad(){ const box=$('smsRecent'); if(!box) return;
-  let inf; try{ inf=await smsInfo(true); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
-  const note=$('smsRecentNote'); note.innerHTML = !inf.enabled ? '문자 기능이 <span class="devtag">꺼짐</span> — 관리자가 켜면 여기서 바로 보냅니다.' : inf.mode==='live' ? '센드온으로 실제 발송 중입니다.' : '<span class="devtag">테스트 모드</span> 보내기를 눌러도 실제로 나가지 않고 여기에만 남습니다.';
-  const ST={sent:['보냄','done'],test:['테스트','pre'],failed:['실패','alarm'],blocked:['차단','alarm']}; const KN={quote:'견적서',callback:'콜백',thanks:'감사',manual:'직접',campaign:'캠페인',test:'테스트'};
-  const rows=inf.recent||[]; $('smsRecentSub').textContent=rows.length?`${rows.length}건 · 최근 90일`:'내가 보낸 것 · 최근 90일';
-  box.innerHTML=rows.slice(0,30).map(x=>{ const st=ST[x.status]||[x.status,'']; return `<div class="item oc"><div><div class="p">💬 ${esc(x.name||'-')} <span class="ph">${esc(x.phone||'')}</span> <span class="res ${st[1]}">${st[0]}</span>${x.mode==='test'?' <span class="devtag">테스트</span>':''}</div><div class="m">${fmtWhen(x.at).join(' ')} · ${esc(KN[x.kind]||x.kind)} · ${esc(x.type)} ${x.bytes}B${x.reason?` · ${esc(x.reason)}`:''}<br><span style="white-space:pre-wrap">${esc(x.body||'')}</span></div></div><div class="act">${x.consult_id?`<button class="mini" onclick="cdOpen(${x.consult_id})">상담</button>`:''}<button class="mini" onclick="smsCompose({name:'${esc(x.name||'')}',phone:'',body:${JSON.stringify(x.body||'')}})">다시 쓰기</button></div></div>`; }).join('')
-    || '<div class="empty">아직 보낸 문자가 없습니다 — 견적서 [보내기] 창 · 상담 줄 [💬 문자] · 알림 줄 [문자 보내기]</div>';
-}
+async function smsCompose(o){ SMS_CTX=o||{}; let body=o.body||'';
+  if(o.template){ try{ const inf=await smsInfo(); const t=((inf&&inf.templates)||[]).find(x=>x.code===o.template); if(t) body=smsRender(t.body, Object.assign({이름:o.name||'고객', 담당자:ME, 매장전화:(inf&&inf.store_tel)||''}, o.vars||{})); }catch(e){} }
+  smsApp((o.phone||'').replace(/\D/g,''), body); }
+function smsAppUrl(tel, body){ const b=encodeURIComponent(body||''); return (/iPhone|iPad|Mac/i.test(navigator.userAgent) ? `sms:${tel||''}&body=${b}` : `sms:${tel||''}?body=${b}`); }
+function smsApp(tel, body){ if(!QS_CAN_SMS){ if(body) qsCopy(body, '문자 보내기는 휴대폰에서 됩니다 — PC 라서 내용을 복사했습니다'); else toast('문자 보내기는 휴대폰에서 됩니다 (내 폰 문자앱이 열립니다)','ok'); return; }
+  location.href = smsAppUrl(tel, body); }
 /* ═══ 고객 흐름 (mvp_198) — "고객들의 문의, 구매 흐름이 명료하게". 한 사람의 문의·상담·견적(열람)·문자·구매·환불·DPS 구독을
    한 줄 타임라인으로. 관리자(fn_customer_journey)와 담당자(fn_store_customer_journey)가 같은 그리기(cjHtml)를 쓴다 ═══ */
 const CJ_K={seen:['처음 확인','#555E6C','#EEF1F5'],inq:['문의','#1D4FB8','#EAF0FC'],consult:['상담','#0B5E57','#E6F4F2'],quote:['견적','#7A4F00','#FBF1DC'],
@@ -4448,7 +4387,7 @@ function renderMyConsults(){
     } else {
     /* 1줄: 하는 일 — 전화 · 콜백 · 견적서 · 구매 확정.  2줄: 상태(시스템이 가진 상태 그대로 골라서 바꾼다).  3줄: 새 상담 · 넘기기 · 삭제 */
     if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
-    if(x.tel) A.push(`<button class="mini" onclick="smsCompose({name:'${nm}',phone:'${esc(x.tel)}',consult_id:${x.id},key:'${esc(x.ref||'')}'})" title="문자 보내기 (센드온) — 관리자 설정의 모드대로">💬 문자</button>`);
+    if(x.tel) A.push(`<button class="mini" onclick="smsCompose({name:'${nm}',phone:'${esc(x.tel)}',consult_id:${x.id},key:'${esc(x.ref||'')}'})" title="내 폰 문자앱으로 문자 보내기 (내 번호로 나갑니다)">💬 문자</button>`);
     A.push(`<button class="mini" onclick="cdOpen(${x.id})" title="이 상담의 모든 내용 · 기록 · 같은 고객의 다른 상담">상세 보기</button>`);
     if(x.result!=='구매완료') A.push(`<button class="mini" onclick="ocPick(${x.id})" title="다음에 연락할 날짜·시간을 잡습니다 — 홈 [콜백 약속]에 뜹니다">📅 콜백</button>`);
     A.push(`<button class="mini" onclick="openQuote(${qArg})">견적서 ${x.quote?'열기':'만들기'} ↗</button>`);
