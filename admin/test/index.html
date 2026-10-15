@@ -736,6 +736,15 @@ tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}
 .card .seg{background:#F3F5F9;border-color:#E4E7EE} .card .seg button{color:#646D7C} .card .seg button.on{background:#fff;color:#141E64;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .seg2{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:2px}
 .seg2 button i{font-style:normal;font-family:var(--mono);font-size:11px;opacity:.75;margin-left:4px}
+/* 자동 발송 설정 (mvp_214) — 규칙 한 줄 = 머리(켜짐·이름·조건·보내는 때·대상 수) + 문구 + 버튼 */
+.arlist .ar{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:#fff}
+.ar .arh{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center} .ar .arh b{font-size:calc(14px * var(--font-scale))} .ar .arh .cond{color:var(--muted);font-size:calc(12px * var(--font-scale))}
+.ar .arh .when{display:inline-flex;gap:6px;align-items:center;margin-left:auto} .ar .arh .when .in{width:auto;height:34px;padding:0 8px}
+.ar .arn{font-weight:800;color:var(--navy)} .ar .arn.z{color:var(--faint);font-weight:600}
+.ar textarea.in{width:100%;min-height:84px;margin-top:8px;font-size:calc(13px * var(--font-scale));line-height:1.5;resize:vertical}
+.ar .arf{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px} .ar .arf .bytes{color:var(--muted);font-size:calc(12px * var(--font-scale))} .ar .arf .res{font-size:calc(12px * var(--font-scale))}
+.ar .arpv{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px} .ar .arpv table{width:100%;border-collapse:collapse;font-size:calc(12.5px * var(--font-scale))} .ar .arpv td,.ar .arpv th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap} .ar .arpv th{color:var(--muted);font-weight:600}
+.ar .arpv .past{color:var(--red)} .ar .arnote{color:var(--faint);font-size:calc(11.5px * var(--font-scale));margin-top:6px}
 .fu-soon{color:var(--red);font-weight:700}.fu-past{color:var(--faint)} .seg2 button{border:0;background:transparent;color:var(--muted);font-size:calc(12px * var(--font-scale));font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;white-space:nowrap} .seg2 button.on{background:var(--navy);color:#fff}
 .seg.lite{background:var(--surface-2);border-color:var(--line)}
 .seg.lite button{color:var(--muted)}
@@ -1084,6 +1093,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 @media (max-width:640px){ .campsug .sug{min-height:40px} .smsc textarea.in,.smsc .in{font-size:16px} #smsForm .in{font-size:16px} }
 @media (max-width:900px){ .scwrap{grid-template-columns:1fr} .scside{position:static} .sbwrap{grid-template-columns:1fr} }
 @media (max-width:640px){ .scvars .chips .chip,.scways .w .btn,.sctest .btn{min-height:40px} .scstep .sch .seg button{min-height:40px} #smsComposeCard .in{font-size:16px} }
+@media (max-width:640px){ .ar .btn,.ar .switch{min-height:40px} .ar .arh .when{margin-left:0;width:100%} .ar .arh .when .in{height:40px;font-size:16px} .ar textarea.in,#arSelf{font-size:16px} .ar .arpv{overflow-x:auto} }
 </style>
 </head>
 <body>
@@ -1828,6 +1838,12 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="qstat" data-view="followup"></div>
           <div class="note" id="fuNote"></div>
         </div>
+        <div class="card" id="arCard">
+          <h3>자동 발송 설정 <span>명단마다 보낼 문구 · 보내는 때 · 지금 대상 수를 한 곳에서 봅니다. [테스트 받기]로 내 폰에서 먼저 받아 보고 [저장]. 정해진 시각에 저절로 보내는 엔진은 다음 단계라 '켜짐'은 그때 그대로 쓰입니다</span>
+            <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input class="in mono" id="arSelf" placeholder="내 번호 (테스트 받기)" inputmode="numeric" style="max-width:180px" aria-label="내 번호" oninput="try{localStorage.setItem('dc_sms_self',this.value)}catch(e){}"><button class="btn sm ghost" onclick="arLoad(true)">새로고침</button></span></h3>
+          <div class="note" id="arNote">자리 글자 {이름} {담당자} {매장전화} {모델} {기한} {링크} {견적링크} 는 보낼 때 사람마다 채워집니다. 광고 문구면 [광고] 를 켜야 (광고) 머리말과 080 꼬리말이 붙습니다.</div>
+          <div class="arlist" id="arList"></div>
+        </div>
         <div class="card" id="fuSubCard">
           <h3>구독 만료 예정 <span>DPS 구독 전표 기준 · 취소·해지·미가입은 뺐습니다 · 올인원 만료일은 총 구독료 ÷ 월 요금으로 되살린 기간</span></h3>
           <div class="filters" style="align-items:center;row-gap:8px">
@@ -2502,7 +2518,7 @@ function rpcBar(d){
 }
 /* ── 진행 카드 — 호출마다 [기다림 → 받는 중(받은 바이트) → 끝] 을 적어 두고 250ms 마다 그린다 ── */
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
-const FN_LABEL={fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
+const FN_LABEL={fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
@@ -4581,7 +4597,69 @@ async function fuLoad(k){ const seq=++FU_SEQ[k]; const S=FU[k], ids=FU_IDS[k]; c
   try{ const r=await rpc('fn_crm_followups',{p_kind:k,p_opt:fuOpt(k)},{fresh:true}); if(seq!==FU_SEQ[k]) return;
     S.rows=r.rows||[]; S.counts=r.counts||{}; S.total=Number(r.total)||0; S.page=0; S.today=r.today||''; fuFillOpts(); fuRender(k); fuNote(); }
   catch(e){ if(seq!==FU_SEQ[k]) return; if(tb) tb.innerHTML=`<tr><td colspan="${ids.cols}" class="note">${esc(e.message)}</td></tr>`; toast(e.message,'bad'); } }
-function loadFollowup(){ fuLoad('sub'); fuLoad('quote'); fuLoad('product'); }
+function loadFollowup(){ arLoad(); fuLoad('sub'); fuLoad('quote'); fuLoad('product'); }
+/* ═══ 자동 발송 설정 (mvp_214) — crm.auto_rule: 명단(종류·조건) + 문구(crm.sms_template auto_*) + 보내는 때. 엔진은 다음 단계 ═══ */
+let AR=[], AR_PV={};
+const AR_WD={daily:'매일',mon:'월요일',tue:'화요일',wed:'수요일',thu:'목요일',fri:'금요일',sat:'토요일',sun:'일요일'};
+const AR_KIND={sub_expire:'구독 만료',quote_follow:'견적 후속',product_cycle:'소모품 주기',product_age:'사용 기간'};
+function arCond(r){ const p=r.params||{}; switch(r.kind){
+  case 'sub_expire': return `DPS 구독 만료 ${p.days}일 안 · 취소·해지 제외`;
+  case 'quote_follow': return `견적서 보낸 뒤 ${p.days}일 안 · 산 사람은 빼고 보냅니다`;
+  case 'product_cycle': return `마지막 소모품 구매${p.body?'(없으면 본체 구매)':''} + ${p.cycle_days}일 · 창 D${p.lo} ~ D+${p.hi} · 오픈마켓·수신거부 제외 · 같은 안내를 주기 절반 안에 받은 사람 제외`;
+  case 'product_age': return `${p.group} 본체 구매 ${p.min_m}~${p.max_m}개월 (원장 + DPS · 오픈마켓 제외)`; } return ''; }
+async function arLoad(fresh){ const box=$('arList'); if(!box) return;
+  try{ const sv=localStorage.getItem('dc_sms_self'); if(sv && $('arSelf') && !$('arSelf').value) $('arSelf').value=sv; }catch(e){}
+  if(!AR.length) box.innerHTML='<div class="note">불러오는 중…</div>';
+  try{ const r=await rpc('fn_auto_rules',{},{fresh:!!fresh}); AR=(r&&r.rules)||[]; if(fresh) AR_PV={}; arRender(); AR.forEach(x=>arCount(x.code)); }
+  catch(e){ box.innerHTML=`<div class="note" style="color:var(--bad)">${esc(e.message)}</div>`; } }
+function arRender(){ const box=$('arList'); if(!box) return;
+  if(!AR.length){ box.innerHTML='<div class="note">규칙이 없습니다</div>'; return; }
+  box.innerHTML=AR.map(r=>{ const c=r.code, pv=AR_PV[c]; return `<div class="ar" id="ar_${c}">
+    <div class="arh">
+      <label class="switch${r.enabled?' on':''}" id="arOn_${c}" onclick="this.classList.toggle('on')" title="엔진이 붙으면 이 규칙이 정해진 때에 저절로 보냅니다"><span class="sw"></span>켜짐</label>
+      <b>${esc(r.label)}</b><span class="tag n">${esc(AR_KIND[r.kind]||r.kind)}</span>
+      <span class="cond">${esc(arCond(r))}</span>
+      <span class="when"><span class="cond">보내는 때</span><select class="in" id="arWd_${c}" data-noseg="1" aria-label="요일">${Object.entries(AR_WD).map(([k,v])=>`<option value="${k}"${r.weekday===k?' selected':''}>${v}</option>`).join('')}</select><input class="in mono" type="time" id="arTm_${c}" value="${esc(r.send_time||'10:00')}" aria-label="시각"></span>
+    </div>
+    <div class="arf"><span>지금 대상 <span class="arn${pv&&pv.total?'':' z'}" id="arN_${c}">${pv?n(pv.total)+'명':'세는 중…'}</span></span>
+      <button class="btn sm ghost" onclick="arPreview('${c}')" id="arPvBtn_${c}">명단 보기 ▾</button>
+      ${r.note?`<span class="cond">${esc(r.note)}</span>`:''}</div>
+    <div class="arpv hidden" id="arPv_${c}"></div>
+    <textarea class="in" id="arBody_${c}" oninput="arBytes('${c}')" aria-label="문구">${esc(r.body||'')}</textarea>
+    <div class="arf"><span class="bytes" id="arBytes_${c}"></span>
+      <label class="switch${r.is_ad?' on':''}" id="arAd_${c}" onclick="this.classList.toggle('on')"><span class="sw"></span>광고</label>
+      <button class="btn sm" onclick="arTest('${c}')" title="내 번호로 이 문구를 한 통 받아 본다 (테스트 모드면 기록만)">테스트 받기</button>
+      <button class="btn sm" onclick="arSave('${c}')">저장</button>
+      <span class="res" id="arRes_${c}"></span>
+      ${r.updated_by?`<span class="arnote">마지막 저장 ${esc(String(r.updated_at||'').slice(0,16).replace('T',' '))} ${esc(r.updated_by)}</span>`:''}</div>
+  </div>`; }).join('');
+  AR.forEach(r=>arBytes(r.code)); }
+function arBytes(c){ const t=$('arBody_'+c), o=$('arBytes_'+c); if(!t||!o) return; const b=smsBytes(t.value); o.textContent=`${b}B · ${b>90?'장문 LMS':'단문 SMS'}${b>2000?' · 2,000B 초과':''}`; }
+function arSampleVars(c){ const pv=AR_PV[c], f=pv&&pv.rows&&pv.rows[0]; const v=Object.assign({}, SMS_TPL_SAMPLE);
+  if(f){ if(f.item) v.모델=f.item; if(f.due_date) v.기한=f.due_date; } return v; }
+async function arCount(c){ try{ const r=await rpc('fn_auto_rule_preview',{p_code:c,p_limit:8}); AR_PV[c]=r; const o=$('arN_'+c); if(o){ o.textContent=n(r.total||0)+'명'; o.classList.toggle('z',!r.total); } if(!$('arPv_'+c).classList.contains('hidden')) arPvRender(c); }
+  catch(e){ const o=$('arN_'+c); if(o){ o.textContent='못 셈'; o.title=e.message; } } }
+function arPreview(c){ const box=$('arPv_'+c); const open=box.classList.contains('hidden'); box.classList.toggle('hidden',!open); $('arPvBtn_'+c).textContent=open?'명단 접기 ▴':'명단 보기 ▾'; if(open) arPvRender(c); }
+function arPvRender(c){ const box=$('arPv_'+c), pv=AR_PV[c]; if(!box) return; if(!pv){ box.innerHTML='<div class="note">세는 중…</div>'; return; }
+  const rows=pv.rows||[]; if(!rows.length){ box.innerHTML='<div class="note">지금 창 안에 든 사람이 없습니다</div>'; return; }
+  const cyc=pv.kind==='product_cycle', age=pv.kind==='product_age';
+  box.innerHTML=`<table><thead><tr><th>고객</th><th>번호</th><th>제품</th><th>${age?'구매일':cyc?'마지막 구매':'기준'}</th><th>${age?'경과':cyc?'교체 예정':'마감'}</th><th>${age?'':cyc?'D':'경과'}</th><th>담당</th></tr></thead><tbody>`+
+    rows.map(x=>`<tr><td>${esc(x.name||'')}${x.optout?' <span class="tag bad">수신거부</span>':''}${x.bought?' <span class="tag ok">구매</span>':''}</td><td class="mono">${esc(x.phone||'')}</td><td style="white-space:normal;max-width:360px">${esc(x.item||'')}</td><td>${esc(x.ref_date||'')}</td><td>${esc(age?(x.days+'개월'):(x.due_date||''))}</td><td class="${cyc&&x.days<0?'past':''}">${age?'':(cyc?(x.days<0?'D'+x.days:'D+'+x.days):(x.days!=null?x.days+'일':''))}</td><td>${esc(x.handler||'')}</td></tr>`).join('')+
+    `</tbody></table><div class="arnote">${n(pv.total||0)}명 중 ${rows.length}명 · ${pv.today||''} 기준${cyc?' · D 음수 = 교체 예정일이 지남':''}</div>`; }
+async function arTest(c){ const r=AR.find(x=>x.code===c); if(!r) return; const inp=$('arSelf'); const ph=(inp.value||'').replace(/\D/g,'');
+  if(!/^01[016789]\d{7,8}$/.test(ph)){ inp.focus(); return toast('오른쪽 위 [내 번호] 칸에 휴대폰 번호를 적어주세요','bad'); }
+  const body=($('arBody_'+c).value||'').trim(); if(!body) return toast('문구가 비어 있습니다','bad');
+  try{ await smsCfgEnsure(); }catch(e){ return toast(e.message,'bad'); } if(!SMS_CFG.enabled) return toast('문자 기능이 꺼져 있습니다 — [메시지 발송 관리] 설정에서 켜세요','bad');
+  const box=$('arRes_'+c); box.textContent='보내는 중…';
+  try{ const res=await rpc('fn_sms_send',{p_rows:[{phone:ph,name:'테스트',vars:arSampleVars(c)}],p_body:body,p_title:'삼성스토어 시흥점',p_campaign:'auto_'+c,p_kind:'test',p_is_ad:$('arAd_'+c).classList.contains('on'),p_opt:{}});
+    const it=(res.items||[])[0]||{}; const live=res.mode==='live'; const okk=it.status==='sent'||it.status==='test';
+    const msg=live?(it.status==='sent'?`보냈습니다 · ${it.type} ${n(it.bytes)}B`:`못 보냈습니다 · ${it.reason||''}`):`테스트 기록 · ${it.type} ${n(it.bytes)}B (실제 발송 없음)`;
+    box.innerHTML=`<span class="tag ${okk?(live?'ok':'n'):'warn'}">${live?(okk?'보냄':'실패'):'테스트'}</span> ${esc(msg)}`; toast(msg, okk?'ok':'bad'); }
+  catch(e){ box.innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; toast(e.message,'bad'); } }
+async function arSave(c){ const d={enabled:$('arOn_'+c).classList.contains('on'), weekday:$('arWd_'+c).value, send_time:$('arTm_'+c).value||'10:00', body:$('arBody_'+c).value, is_ad:$('arAd_'+c).classList.contains('on')};
+  const box=$('arRes_'+c); box.textContent='저장 중…';
+  try{ const r=await rpc('fn_auto_rule_save',{p_code:c,p_data:d}); AR=(r&&r.rules)||AR; arRender(); toast('저장했습니다','ok'); const b2=$('arRes_'+c); if(b2) b2.innerHTML='<span class="tag ok">저장됨</span>'; }
+  catch(e){ box.innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; toast(e.message,'bad'); } }
 let PENDING_PROD=null;
 /* VMS 대시보드 타일 [발송 대상 추출 →] — /admin.html?tg=vms_due&lo=0&hi=30#crm 로 들어오면 재구매 주기 기준 · 채널 VMS · 창 D+lo~D+hi 로 바로 뽑는다 (mvp_210) */
 let PENDING_TG=(()=>{ try{ const q=new URLSearchParams(location.search); if(q.get('tg')!=='vms_due') return null;
