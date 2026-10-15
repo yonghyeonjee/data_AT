@@ -112,6 +112,8 @@ html.resuming body::after{content:'이어서 여는 중…';position:fixed;inset
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:calc(12px * var(--font-scale));font-weight:600;background:var(--surface);border:1px solid var(--line)}
 .pill.btnp{cursor:pointer;font:inherit;font-size:calc(12px * var(--font-scale));font-weight:700;color:var(--navy);min-height:32px;padding:0 10px}
 .pill.btnp:hover{background:var(--accent-soft)}
+.pill.btnp.pri{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:800;padding:0 14px}
+.pill.btnp.pri:hover{background:#0B5F58;border-color:#0B5F58}
 .pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .tabs{display:flex;gap:4px;margin-top:12px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--line)}
@@ -738,8 +740,8 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .gift-chips{margin-top:6px} .gift-chips .chip small{color:var(--muted);font-weight:400;margin-left:3px}
 .gift-links{display:none}
 .gtop{position:relative;flex:none}
-.gtop .gtb{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--line-2);background:#fff;
-  font-size:calc(18px * var(--font-scale));line-height:1;cursor:pointer;padding:0}
+.gtop .gtb{min-height:36px;border-radius:999px;border:1.5px solid var(--line-2);background:#fff;color:var(--navy);font:inherit;
+  font-size:calc(12px * var(--font-scale));font-weight:700;line-height:1;cursor:pointer;padding:0 11px;white-space:nowrap}
 .gtop .gtb:hover{border-color:var(--navy)}
 .gtop.open .gtb{border-color:var(--navy);background:var(--accent-soft,#E3F3F1)}
 .gtop .gpanel{position:absolute;left:0;top:calc(100% + 8px);z-index:60}
@@ -996,6 +998,10 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
   .tools-toggle i{margin-left:auto;font-style:normal;font-weight:600;color:var(--navy)}
   .tools{display:none} .tools.open{display:block}
   .pill.btnp{min-height:40px;padding:0 9px} .pill.btnp span{display:none}   /* 폰은 아이콘만 (터치 40px) */
+  .pill.btnp.pri{padding:0 12px} .gtop .gtb{min-height:40px}
+  /* 폰 헤더: 이름이 한 글자씩 세로로 서던 것 — 단어 단위로만 꺾고, 오른쪽 버튼 묶음은 자리가 없으면 다음 줄로 (v201) */
+  .topbar .row{flex-wrap:wrap;row-gap:6px} .topbar .row>div:first-child{flex:1 1 auto} .topbar .row>div:last-child{margin-left:auto}
+  .topbar h1{overflow-wrap:normal;word-break:keep-all}
   .lvdlg.wide{width:100%;max-height:94vh;padding:14px 12px 12px}
   .dv .kv{grid-template-columns:78px 1fr}
   .cstick{padding:8px 10px} .cstick .hlist{max-height:32vh} .cstick .who .x{padding:0 2px}
@@ -1208,12 +1214,12 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <h1 style="min-width:0"><span id="meName">시흥점</span> <small id="todayLabel"></small></h1>
         <div class="gtop hidden" id="gtop">
           <button type="button" class="gtb" onclick="event.stopPropagation();document.getElementById('gtop').classList.toggle('open')"
-                  title="사은품 · 오피스콘 · 기프티콘">🎁</button>
+                  title="사은품 · 오피스콘 · 기프티콘">오피스콘</button>
           <div class="gpanel" id="gpanel"></div>
         </div>
       </div>
       <div style="display:flex;gap:6px">
-        <button type="button" class="pill btnp" id="btnQuoteHdr" onclick="openQuote()" title="견적서 페이지를 엽니다">견적서 발행 ↗</button>
+        <button type="button" class="pill btnp pri" id="btnQuoteHdr" onclick="openQuote()" title="견적서 페이지를 엽니다">견적서 발행 ↗</button>
         <span class="pill" id="pillToday">오늘 0건</span>
         <span class="pill warn hidden" id="pillUnclosed"></span>
         <button type="button" class="pill btnp" id="btnLogout" onclick="logoutStore()" title="로그아웃 — 담당자 코드를 다시 입력합니다" aria-label="로그아웃"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5M15 12H3M21 3v18"/></svg><span>로그아웃</span></button>
@@ -5538,7 +5544,7 @@ async function loadGifts(){
   ['c','s'].forEach(pre=>{
     const ch=$(pre+'_gift_chips'); if(ch) ch.innerHTML=ps.slice(0,8).map(g=>`<span class="chip" onclick="pickGift('${pre}','${esc(g.name)}',${g.price||0})">${esc(g.name)}${g.price?`<small>${Number(g.price).toLocaleString('ko-KR')}</small>`:''}</span>`).join('');
   });
-  /* 오른쪽 떠 있는 🎁 버튼 → 오피스콘·상품권 링크 */
+  /* 오른쪽 떠 있는 [오피스콘] 버튼 → 오피스콘·상품권 링크 (전엔 🎁 아이콘 · v201) */
   const gp=$('gpanel'); if(gp){ const items=[
       L.sheet?`<a href="${esc(L.sheet)}" target="_blank" rel="noopener">문의 시트 ↗</a>`:'',
       L.officecon?`<a href="${esc(L.officecon)}" target="_blank" rel="noopener">오피스콘 ↗</a>`:'',
