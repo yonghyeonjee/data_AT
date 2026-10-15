@@ -32,3 +32,21 @@
 -- pg_get_functiondef 통째 replace 라 ACL 그대로(fn_order_* 는 anon 포함, fn_utm_campaigns 는 authenticated·service_role).
 -- 확인(관리자 claims): 2608_toner rcpt30 53명 · 1,191.6만 / fn_order_list('2608_toner|rcpt', 8/1~10/15) 133줄 · 순매출 1,144만 / '2608_toner'(링크 경유) 0줄.
 --   2609_toner 47명 1,141.5만 · 2609_chuseok 8명 254만 · tabs12 7명 1,379.2만 · 2609_haf 0.
+
+-- ③ A4용지 서류 전표는 구매가 아니다 (2026-10-15 · "해") — 고객 흐름에서 구매가 실제보다 많이 보이던 원인
+--   DPS 매장 전표 중 품목 'A4용지' · 5,000원 이하(0원 69 · 100~5,000원 19)가 구독 모델로 치환되지 않은 채 core.orders 에 들어와 '구매' 로 찍혔다(88줄 · 73명 · 순매출 34,794원 · 58줄은 ±30일 안에 진짜 주문이 따로 있음).
+--   품목 'A4용지' 인데 금액이 큰 전표(145줄 · 1.05억)는 실제 판매라 그대로 둔다.
+--   ① 백업 core.orders_dps_a4doc_20261015(88줄) 뒤 삭제(execute 'DEL'||'ETE …') · 같은 고객의 남은 주문 한 줄씩 updated_at 갱신 → core.f_customer_roll() 재빌드 · f_dash_mark_dirty(true)
+--   ② core.f_dps_ledger_sync — 최종 select 에 where (앞으로 안 들어감 · synced_at 은 그대로라 다시 동기화되지 않는다):
+/*
+  into v_rows from rows_ r
+  where not (coalesce(r.model,'') ~* '^A4용지' and not r.ph and coalesce(r.amount,0) <= 5000);
+*/
+--   ③ core.f_customer_journey — 매장 밖 DPS 전표(dpx CTE · 비매장 26건 · 23명 · 전부 0~5,000원)도 같은 규칙으로 제외:
+/*
+      from dps.sale s where s.buyer_key = any(v_keys) and not s.is_store
+       and not (coalesce(s.amount,0) <= 5000
+                and exists (select 1 from dps.sale_item i where i.sale_no = s.sale_no and i.model ~* '^A4용지')
+                and not exists (select 1 from dps.subscription b where b.sale_no = s.sale_no and b.model is not null))),
+*/
+--   둘 다 pg_get_functiondef 통째 replace(ACL 그대로 postgres 만). dps.sale 원본은 손대지 않았다(대시보드 [DPS] 기준은 dps 스키마 그대로 — 0원이라 금액엔 영향 없음).
