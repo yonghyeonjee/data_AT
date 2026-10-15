@@ -1383,7 +1383,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
 
   <!-- ── 알림 내역 ── -->
   <section class="panel hidden" id="tab-alerts">
-    <div class="intro"><b>CRM</b> — 고객에게 보낼 메시지와 나에게 온 알림이 모이는 곳입니다. 지금은 알림 내역(견적서 보냄·열람, 배정, 새 문의, 콜백)을 보고, 메시지 발송과 자동 알림(견적서 마감 안내 등)은 템플릿과 함께 준비 중입니다. 맨 위 <b>예시</b> 줄이 자동 알림이 붙으면 쌓이는 모양입니다.</div>
+    <div class="intro"><b>CRM</b> — 고객에게 보낼 메시지와 나에게 온 알림이 모이는 곳입니다. 지금은 알림 내역(견적서 보냄·열람, 배정, 새 문의, 콜백)을 보고, 메시지 발송과 자동 알림(견적서 마감 안내 등)은 템플릿과 함께 준비 중입니다. 맨 위 줄이 아래에 무엇이 쌓이는지 알려줍니다.</div>
     <div class="card">
       <h2>알림 내역 <span id="alSub"></span></h2>
       <div class="chips filter multi" id="al_kind" role="group" aria-label="종류 (여러 개 선택)" style="margin-bottom:10px">
@@ -3536,9 +3536,7 @@ async function qsOpen(no, name){
   mask.querySelector('#qsClose').onclick=close;
   mask.querySelector('#qsCopy').onclick=async()=>{ await qsCopy(d.url); };
   mask.querySelector('#qsSms').onclick=()=>{
-    if(!QS_CAN_SMS){
-      toast('문자 보내기는 휴대폰에서 됩니다 — PC 라서 링크를 복사했습니다','ok');
-      qsCopy(d.url); return; }
+    if(!QS_CAN_SMS){ close(); smsPcHint(d.url, '링크'); return; }   /* PC: 링크 복사 + 안내 창(스마트폰으로 열기 QR) */
     /* 휴대폰에서는 문자앱이 내용까지 채워진 채로 열린다 (내 번호로 나감) */
     location.href = smsAppUrl(tel, qsMsg(d));
   };
@@ -4050,7 +4048,9 @@ function renderAlerts(){
   $('alSub').textContent = rows.length?(P.range?`최근 90일 · ${P.range}`:`${rows.length}건 · 최근 90일`):'';
   const ICO={quote:'📄',assign:'👤',inquiry:'📥',callback:'📞'};
   const when=v=>{ v=String(v||''); return v.length>=16 ? v.slice(5,10).replace('-','/')+' '+v.slice(11,16) : v; };
-  const sample = AL_KINDS.has('quote') ? `<div class="item oc sample"><div><div class="p">🔔 (예시) 김샘플 님 견적서 유효기한 3일 전 <span class="devtag">자동 알림 · 개발 전</span></div><div class="m">자동 알림이 붙으면 이렇게 쌓입니다. 줄에서 바로 상담으로 가서 이어서 상담하거나 메시지를 보냅니다.</div></div><div class="act"><button class="mini" onclick="goTab('inbox')">상담 열기</button><button class="mini" onclick="msgSend('김샘플','')">문자 보내기</button></div></div>` : '';
+  /* 맨 위 안내 줄 — 아래에 무엇이 쌓이는지(켠 종류) 알려준다. 전엔 '(예시) 김샘플…' 가짜 줄이었다 (v201) */
+  const KN={quote:'견적서 보냄·열람',assign:'배정',inquiry:'새 문의',callback:'콜백'}; const kn=['quote','assign','inquiry','callback'].filter(k=>AL_KINDS.has(k)).map(k=>KN[k]);
+  const sample = kn.length ? `<div class="item oc sample"><div><div class="p">📋 아래는 <b>${kn.join(' · ')}</b> 이력입니다 <small>최근 90일 · 새 것부터</small></div><div class="m">줄의 [상담 열기]·[견적서]로 바로 그 건으로 갑니다. [문자 보내기]는 <b>스마트폰에서</b> 내 문자앱으로 보냅니다 — PC 에서는 QR 로 스마트폰에서 열 수 있습니다.</div></div></div>` : '';
   box.innerHTML = (P.page?'':sample) + (P.rows.length ? P.rows.map(x=>{
     const badge = x.kind==='quote' ? (x.viewed?'<span class="mine">고객이 열어봄</span>':'<span class="res pre">아직 안 열어봄</span>')
                 : x.kind==='callback' ? (x.done?'<span class="res done">완료</span>':x.overdue?'<span class="res alarm" style="background:#FEE2E2;color:#B91C1C">지남</span>':'<span class="res open">예정</span>')
@@ -4078,7 +4078,23 @@ async function smsCompose(o){ SMS_CTX=o||{}; let body=o.body||'';
   if(o.template){ try{ const inf=await smsInfo(); const t=((inf&&inf.templates)||[]).find(x=>x.code===o.template); if(t) body=smsRender(t.body, Object.assign({이름:o.name||'고객', 담당자:ME, 매장전화:(inf&&inf.store_tel)||''}, o.vars||{})); }catch(e){} }
   smsApp((o.phone||'').replace(/\D/g,''), body); }
 function smsAppUrl(tel, body){ const b=encodeURIComponent(body||''); return (/iPhone|iPad|Mac/i.test(navigator.userAgent) ? `sms:${tel||''}&body=${b}` : `sms:${tel||''}?body=${b}`); }
-function smsApp(tel, body){ if(!QS_CAN_SMS){ if(body) qsCopy(body, '문자 보내기는 휴대폰에서 됩니다 — PC 라서 내용을 복사했습니다'); else toast('문자 보내기는 휴대폰에서 됩니다 (내 폰 문자앱이 열립니다)','ok'); return; }
+/* PC 에서 [문자 보내기] — 문자앱은 스마트폰에만 있으므로 안내 창 + [스마트폰으로 열기] = 이 화면의 QR (v201) */
+function smsPcHint(copyText, what){
+  const nm=what||'내용', eul=(nm==='링크'?'링크를':nm+'을'), neun=(nm==='링크'?'링크는':nm+'은');
+  if(copyText) qsCopy(copyText, eul+' 복사했습니다');
+  const mask=document.createElement('div'); mask.className='lvmask'; mask.id='smsPcDlg';
+  mask.innerHTML=`<div class="lvdlg" role="dialog" aria-modal="true" aria-label="문자 보내기 안내" style="max-width:440px">
+    <h3>📱 문자 보내기</h3>
+    <p style="margin:8px 0 0;font-size:calc(15px * var(--font-scale));font-weight:700;line-height:1.5">스마트폰에서 문자 보내기를 통해 발송하실 수 있습니다.</p>
+    <p class="note-in" style="margin:8px 0 0">${copyText?`${neun} 복사해 두었습니다 — PC 에서 붙여넣어 쓰셔도 됩니다.<br>`:''}[스마트폰으로 열기]를 누르면 이 화면의 QR 이 뜹니다. 폰 카메라로 찍어 같은 화면을 열고 거기서 [문자 보내기]를 누르면 내 번호로 나갑니다.</p>
+    <div class="btns" style="margin-top:14px;display:flex;gap:8px"><button class="btn ghost" id="smsPcX" style="width:auto;min-width:112px;flex:0 0 auto">닫기</button><button class="btn" id="smsPcQr" style="width:auto;flex:1 1 auto;white-space:nowrap">📷 스마트폰으로 열기 (QR)</button></div></div>`;
+  const close=()=>mask.remove();
+  mask.addEventListener('click',e=>{ if(e.target===mask) close(); });
+  mask.querySelector('#smsPcX').onclick=close;
+  mask.querySelector('#smsPcQr').onclick=()=>{ close(); qrShow(); };
+  document.body.appendChild(mask); mask.querySelector('#smsPcQr').focus();
+}
+function smsApp(tel, body){ if(!QS_CAN_SMS){ smsPcHint(body||'', '내용'); return; }
   location.href = smsAppUrl(tel, body); }
 /* ═══ 고객 흐름 (mvp_198) — "고객들의 문의, 구매 흐름이 명료하게". 한 사람의 문의·상담·견적(열람)·문자·구매·환불·DPS 구독을
    한 줄 타임라인으로. 관리자(fn_customer_journey)와 담당자(fn_store_customer_journey)가 같은 그리기(cjHtml)를 쓴다 ═══ */
