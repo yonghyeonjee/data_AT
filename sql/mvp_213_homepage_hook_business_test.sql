@@ -1,0 +1,28 @@
+-- mvp_213 · 2026-10-15 · 홈페이지 웹훅 — 맑음 사업자 견적 문의 폼 + 테스트 글 거르기 (DB 만 · 적용됨)
+--
+-- 배경: 맑음이 dry 로 두 번 보냈다 (raw.webhook_log 20 개인 폼 · 21 사업자 폼).
+--  ① 사업자 폼(/board/contact_business/board_write.php)은 개인 폼과 etc_5·7·8 이름이 같은데 뜻이 다르다
+--     개인: etc_5 방문경로 · etc_6 구매옵션 · etc_7 아파트명 · etc_8 희망품목 · etc_9 모델명 · etc_10 상담방법
+--     사업자: subject 신청인 성함 · etc_2 연락처 · etc_3 이메일 · etc_5 사업자명 · etc_6 설치장소 · etc_7 설치 희망일 · etc_8 결제방식 · content 문의 내용 · 구분=사업자
+--     → 희망품목에 '계좌이체', 아파트명에 희망일이 들어갔다.
+--  ② 게시판에 글을 쓰면 홈페이지가 문의 메일도 보내므로 지메일 GAS 가 같은 테스트를 실제 문의로 넣었다
+--     (#570 · 담당 차효범 · CRM 방 카드 · 순번 한 칸) → 숨김 + 가짜 고객 삭제 + 순번 최태웅으로 되돌림(assign_pool_log kind cursor).
+--
+-- 고친 것 (서버 원본을 읽어 지점 수 검증 뒤 replace · execute):
+--  core.f_hook_label    : etc_3→email · 사업자명/상호/업체명/회사명→company(전엔 name) · 설치장소→site · 설치희망일/납품희망일→want_date · 결제방식/결제방법→payment
+--  core.f_hook_normalize: 구분=사업자 이고 etc_5/7/8 이 있으면 route·apt·items 를 지우고 etc_5→company · etc_6→site(option 대신) · etc_7→want_date · etc_8→payment
+--  core.f_homepage_inquiry:
+--     - content 에 '사업자명 · 설치장소 · 설치 희망일 · 결제 · 이메일' 조각, 잔디 카드 detail 에도 같은 줄
+--     - 구분 사업자면 crm.customer.account_type='business'
+--     - 테스트(이름 테스트/test/홍길동/이순신 · 번호 1234-1234/0000-0000/1111-1111/2222-2222 류)면
+--       고객 표 X · v_kind 에 '(테스트)' · 담당 지용현(트리거 trg_consult_dev_is_test 가 숨김) · 순번 안 돌림 · 알림 이벤트 inquiry.homepage.test(규칙 없음 → 잔디 X)
+--  public.fn_inquiry_mail_ingest: 같은 테스트 규칙 (v_is_test) — 고객 X · 지용현 · 알림 .test
+--
+-- 롤백 실험: 사업자 테스트 → id 지용현 · hidden '테스트 (개발 계정 담당)' · 고객 0 · 순번 그대로 /
+--            진짜 사업자(홍사업) → content '사업자 · 사업자명 삼덕무역 · 설치장소 … · 설치 희망일 2026.11.01 · 결제 계좌이체 · 이메일 …' · account_type business · 차효범 배정.
+-- 정리 SQL (적용됨):
+--   update crm.consult set hidden_at=now(), hidden_reason='테스트 — 맑음 홈페이지 웹훅 시험 글 (메일 경로 유입) 2026-10-15' where id=570;
+--   delete from crm.customer where buyer_key='0ba8af17d32fd4d7' and name='테스트';   -- 주문 0 · 상담 #570 뿐
+--   update core.assign_state set last_staff='최태웅', last_at=now() where scope='default' and last_staff='차효범';
+--   insert into core.assign_pool_log (by_user,by_role,scope,before_names,after_names,kind) values ('session@claude','admin','default','{차효범}','{최태웅}','cursor');
+-- 함수 본문은 세션 execute_sql 블록(지점 검증 replace) 그대로 — 다시 쓰려면 pg_get_functiondef 로 서버 원본을 읽을 것.
