@@ -1613,11 +1613,11 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="card"><h3>구매 횟수 분포 <span><b style="color:var(--teal)">발송 가능</b> / <span style="color:#98A1B0">전체</span> · 원장 기준</span></h3><div class="rk" id="custByFreq"></div></div>
         </div>
         <div class="card" id="ifCard">
-          <h3>문의 → 구매 흐름 <span>문의한 사람이 실제로 샀는지 — 상담 상태가 아니라 주문(매장·온라인·VMS·DPS)으로 맞춰 봅니다 · 줄을 누르면 그 사람의 흐름</span></h3>
+          <h3>문의 → 구매 흐름 <span>문의 고객의 실제 구매 여부 — 상담 상태가 아닌 주문(매장·온라인·VMS·DPS) 기준 · 행을 선택하면 고객 흐름</span></h3>
           <div class="filters">
             <div class="seg2" id="ifSpan" role="group" aria-label="문의 기간"><button type="button" data-v="30" onclick="ifSeg(this,'span')">최근 30일</button><button type="button" data-v="90" class="on" onclick="ifSeg(this,'span')">90일</button><button type="button" data-v="365" onclick="ifSeg(this,'span')">1년</button></div>
             <div class="seg2" id="ifScope" role="group" aria-label="범위"><button type="button" data-v="" class="on" onclick="ifSeg(this,'scope')">전체</button><button type="button" data-v="store" onclick="ifSeg(this,'scope')">매장</button><button type="button" data-v="out" onclick="ifSeg(this,'scope')">매장 외</button></div>
-            <div class="seg2" id="ifWin" role="group" aria-label="구매로 보는 기간"><button type="button" data-v="30" onclick="ifSeg(this,'win')">30일 안 구매</button><button type="button" data-v="90" class="on" onclick="ifSeg(this,'win')">90일 안</button><button type="button" data-v="180" onclick="ifSeg(this,'win')">180일 안</button></div>
+            <div class="seg2" id="ifWin" role="group" aria-label="구매 인정 기간"><button type="button" data-v="30" onclick="ifSeg(this,'win')">30일 내 구매</button><button type="button" data-v="90" class="on" onclick="ifSeg(this,'win')">90일 내</button><button type="button" data-v="180" onclick="ifSeg(this,'win')">180일 내</button></div>
             <span style="flex:1"></span>
             <label class="switch" id="ifUnmask" onclick="this.classList.toggle('on');loadIflow()"><span class="sw"></span>실명·실번호</label>
           </div>
@@ -2017,6 +2017,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
             <div class="seg2" id="utmSt" role="group" aria-label="상태"><button data-v="on" class="on" onclick="utmSet('st','on')">켜짐</button><button data-v="off" onclick="utmSet('st','off')">접음·꺼짐</button><button data-v="all" onclick="utmSet('st','all')">전체</button></div>
             <select class="in" id="utmSort" aria-label="정렬" onchange="utmSet('sort',this.value)" style="width:auto">
               <option value="recent">최근 것부터</option><option value="clicks">클릭 많은 순</option><option value="bought">구매 많은 순</option><option value="links">링크 많은 순</option><option value="code">코드 순</option></select>
+            <div class="seg2" id="utmBuy" role="group" aria-label="구매 기준" title="구매·매출 칸을 어떤 기준으로 셀지"><button data-v="link" class="on" onclick="utmSet('buy','link')">구매 · 링크 경유</button><button data-v="rcpt" onclick="utmSet('buy','rcpt')">수신자 30일</button></div>
             <span style="flex:1"></span><span class="note" id="utmSum"></span>
           </div>
           <div class="qstat" data-view="utm"></div>
@@ -5737,11 +5738,11 @@ const O_CH_NAMES=['P몰','S몰','AT몰','시흥','B2B','E스토어','가전시�
 let O_CH_FILLED=false;
 let O_CAMP=null;   /* 발송 링크 관리 [구매] 에서 넘어온 캠페인 — 수신자의 발송 뒤 주문만 (mvp_174) */
 function oCampRender(){ const el=$('oCamp'); if(!el) return; el.hidden=!O_CAMP;
-  el.innerHTML=O_CAMP?`캠페인 <span class="mono">${esc(O_CAMP.code)}</span> ${esc(O_CAMP.name||'')} 수신자의 발송 뒤 주문<button type="button" title="캠페인 조건 빼기" onclick="oCampClear()">✕</button>`:''; }
+  el.innerHTML=O_CAMP?`캠페인 <span class="mono">${esc(O_CAMP.code)}</span> ${esc(O_CAMP.name||'')} · ${O_CAMP.mode==='rcpt'?'수신자의 발송 뒤 30일 안 주문':'링크를 누른 사람의 클릭 뒤 30일 안 주문'}<button type="button" title="캠페인 조건 빼기" onclick="oCampClear()">✕</button>`:''; }
 function oCampClear(){ O_CAMP=null; oCampRender(); loadOrders(0); }
 function orderArgs(){ return {p_from:P.from,p_to:P.to,p_channel:$('oCh').value||null,p_handler:$('oHd').value||null,p_q:$('oQ').value||null,
   p_source:$('oSrc').value||null,p_channel_name:$('oChName').value||null,p_status:$('oSt').value||null,
-  p_category:CB.category||null,p_q_field:CB.field||null,p_campaign:O_CAMP?O_CAMP.code:null}; }
+  p_category:CB.category||null,p_q_field:CB.field||null,p_campaign:O_CAMP?(O_CAMP.code+(O_CAMP.mode==='rcpt'?'|rcpt':'')):null}; }
 function resetOrders(){ ['oSrc','oCh','oChName','oSt','oHd','oQ'].forEach(id=>$(id).value=''); $('oSort').value='date_desc'; O_CAMP=null; oCampRender(); loadOrders(0); }
 function qcard(label,val,unit,cls,sub){ return `<div class="q ${cls||''}"><small>${label}</small><b>${val}${unit?`<i>${unit}</i>`:''}</b>${sub?`<div class="sub">${sub}</div>`:''}</div>`; }
 function renderOrderSummary(m){
@@ -6448,15 +6449,22 @@ async function utmBaseEdit(){ const cur=(UTM&&UTM.short_base)||'';
   if(!d) return;
   try{ await rpc('fn_utm_setting_save',{p_base:d}); toast('단축 링크 주소를 바꿨습니다 — 모든 링크가 새 앞부분으로 보입니다','ok'); rpcClear(); await loadUtm(); }catch(e){ toast(e.message,'bad'); } }
 /* 목록 상태 — 보기(camp|link) · 상태(on|off|all) · 정렬 · 찾기 · 쪽 · 펼친 캠페인. 보기·상태·정렬은 이 브라우저에 남긴다 */
-let UTM_UI={view:'camp',st:'on',sort:'recent'}, UTM_Q='', UTM_PG=0, UTM_OPEN=new Set(), UTM_QT=null;
+let UTM_UI={view:'camp',st:'on',sort:'recent',buy:'link'}, UTM_Q='', UTM_PG=0, UTM_OPEN=new Set(), UTM_QT=null;
 try{ Object.assign(UTM_UI, JSON.parse(localStorage.getItem('dc_utm_ui')||'{}')); }catch(e){}
 function utmSet(k,v){ UTM_UI[k]=v; UTM_PG=0; try{ localStorage.setItem('dc_utm_ui', JSON.stringify(UTM_UI)); }catch(e){} utmRender(); }
 function utmQIn(){ clearTimeout(UTM_QT); UTM_QT=setTimeout(()=>{ UTM_Q=$('utmQ').value.trim().toLowerCase(); UTM_PG=0; utmRender(); },200); }
 const SMS_LINK_RX=/r\.html\?[a-z0-9]{6}\b|\/r\/\?[a-z0-9]{6}\b/i;   /* 본문에 단축 링크가 있으면 서버가 사람마다 토큰을 붙인다 (mvp_218) */
 function utmGo(p){ UTM_PG=p; utmRender(); }
 /* 구매·매출 칸 (mvp_218) — 링크를 누른 사람(사람별 토큰)의 클릭 뒤 30일 안 주문만. 사람별 링크 없이 보낸 캠페인(센드온 콘솔·옛 발송)은 셀 수 없어 '—' */
+const utmBuyMode=()=>UTM_UI.buy==='rcpt'?'rcpt':'link';
+const utmBuyN=c=>utmBuyMode()==='rcpt'?(+c.bought_rcpt30||0):(+c.bought||0);
+const utmBuyAmt=c=>utmBuyMode()==='rcpt'?(+c.bought_rcpt30_amt||0):(+c.bought_amt||0);
 function utmBoughtCell(c, amt){
-  const ref=c.bought_rcpt30?` · 참고: 수신자 중 발송 뒤 30일 안 구매 ${n(c.bought_rcpt30)}명(링크와 무관 · 세지 않음)`:'';
+  if(utmBuyMode()==='rcpt'){   /* 수신자 기준 — 발송 뒤 30일 안 주문(링크와 무관 · 재구매가 섞일 수 있음) */
+    const tt=`수신자 ${n(c.sent||0)}명 중 발송 뒤 30일 안에 산 사람 — 링크를 눌렀는지와 무관(원래 사던 사람 포함) · 통합 원장에서 봅니다`;
+    const v=utmBuyN(c); if(v) return `<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmBought(this.dataset.code)" title="${esc(tt)}">${amt?wonK(utmBuyAmt(c)):n(v)}</button>`;
+    return `<span class="note" title="${esc(c.sent?tt:'발송 이력이 없는 캠페인')}">${c.sent?'0':'—'}</span>`; }
+  const ref=c.bought_rcpt30?` · 참고: 수신자 중 발송 뒤 30일 안 구매 ${n(c.bought_rcpt30)}명(링크와 무관 · [수신자 30일] 기준으로 보면 이 값)`:'';
   const tt=`링크를 누른 사람 ${n(c.clickers||0)}명 중 클릭 뒤 30일 안에 산 사람 — 통합 원장에서 봅니다${ref}`;
   if(c.bought) return `<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmBought(this.dataset.code)" title="${esc(tt)}">${amt?wonK(c.bought_amt):n(c.bought)}</button>`;
   if(!(+c.rcpt_links)) return `<span class="note" title="${esc('사람별 링크로 보낸 적이 없어 누가 눌렀는지 모릅니다 — 이 시스템 [문자 보내기]·자동 발송으로 보내면 사람마다 다른 링크가 나가 셀 수 있습니다'+ref)}">—</span>`;
@@ -6472,11 +6480,11 @@ function utmLinkCell(k, withCamp){   /* 짧은 주소 + 복사 + 표시 · 긴 �
 function utmRender(){
   utmBaseShow();
   const all=UTM_CAMPS||[], q=UTM_Q, V=UTM_UI.view, ST=UTM_UI.st, SO=UTM_UI.sort;
-  ['utmView','utmSt'].forEach(id=>{ const k=id==='utmView'?'view':'st'; document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x.dataset.v===UTM_UI[k])); });
+  [['utmView','view'],['utmSt','st'],['utmBuy','buy']].forEach(([id,k])=>{ document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x.dataset.v===(UTM_UI[k]||(k==='buy'?'link':'')))); });
   if($('utmSort')){ $('utmSort').value=SO; try{ segSync(); }catch(e){} } if($('utmQ') && document.activeElement!==$('utmQ')) $('utmQ').value=UTM_Q;
   const links=all.flatMap(c=>(c.links||[]).map(k=>Object.assign({_camp:c.code,_campOn:c.active!==false},k)));
   const onL=links.filter(k=>k.active).length;
-  $('utmSum').textContent=`캠페인 ${n(all.length)} · 링크 ${n(links.length)}개 (켜짐 ${n(onL)}) · 클릭 ${n(all.reduce((a,c)=>a+(+c.clicks||0),0))} · 문의 ${n(all.reduce((a,c)=>a+(+c.inquiries||0),0))} · 구매(링크 경유) ${n(all.reduce((a,c)=>a+(+c.bought||0),0))}`;
+  $('utmSum').textContent=`캠페인 ${n(all.length)} · 링크 ${n(links.length)}개 (켜짐 ${n(onL)}) · 클릭 ${n(all.reduce((a,c)=>a+(+c.clicks||0),0))} · 문의 ${n(all.reduce((a,c)=>a+(+c.inquiries||0),0))} · 구매(${utmBuyMode()==='rcpt'?'수신자 30일':'링크 경유'}) ${n(all.reduce((a,c)=>a+utmBuyN(c),0))}`;
   const desc=(a,b)=>String(b||'').localeCompare(String(a||''));
   if(V==='link'){   /* 링크 전체 — 링크 한 줄씩. 많아졌을 때 클릭 순으로 보거나 주소로 바로 찾는다 */
     $('utmHead').innerHTML='<tr><th>짧은 주소 · 캠페인</th><th class="num">클릭</th><th class="num">오늘</th><th>만든 때</th><th></th></tr>';
@@ -6490,10 +6498,10 @@ function utmRender(){
     return;
   }
   /* 캠페인별 — 캠페인 한 줄 + [링크 n ▾] 를 눌러야 링크가 펼쳐진다. 찾기가 링크에 걸리면 그 캠페인은 저절로 펼친다 */
-  $('utmHead').innerHTML='<tr><th>코드</th><th>이름</th><th>발송일 · 종류</th><th>대상 조건</th><th>링크</th><th class="num">발송</th><th class="num">클릭</th><th class="num" title="이 캠페인 링크(utm_campaign)로 들어와 남긴 문의">문의</th><th class="num" title="이 캠페인의 사람별 링크를 누른 사람이 클릭 뒤 30일 안에 한 주문 — 수신자의 아무 주문이 아닙니다">구매<div class="note" style="font-weight:400">링크 경유</div></th><th class="num" title="링크를 누른 뒤 30일 안 주문의 순매출">매출</th><th></th></tr>';
+  $('utmHead').innerHTML=`<tr><th>코드</th><th>이름</th><th>발송일 · 종류</th><th>대상 조건</th><th>링크</th><th class="num">발송</th><th class="num">클릭</th><th class="num" title="이 캠페인 링크(utm_campaign)로 들어와 남긴 문의">문의</th><th class="num" title="${utmBuyMode()==='rcpt'?'수신자(발송 실패 제외)가 발송 뒤 30일 안에 한 주문 — 링크를 눌렀는지와 무관':'이 캠페인의 사람별 링크를 누른 사람이 클릭 뒤 30일 안에 한 주문 — 수신자의 아무 주문이 아닙니다'}">구매<div class="note" style="font-weight:400">${utmBuyMode()==='rcpt'?'수신자 30일':'링크 경유'}</div></th><th class="num" title="${utmBuyMode()==='rcpt'?'발송 뒤 30일 안 주문의 순매출':'링크를 누른 뒤 30일 안 주문의 순매출'}">매출</th><th></th></tr>`;
   let C=all.filter(c=>ST==='all'||(ST==='on'?c.active!==false:c.active===false));
   C=C.map(c=>{ const lk=(c.links||[]).filter(k=>utmLinkHit(k,q)); return {c, lk:q?lk:(c.links||[]), hit:utmCampHit(c,q), lhit:!!q&&lk.length>0}; }).filter(x=>x.hit||x.lhit);
-  const key={recent:x=>x.c.send_on||x.c.first_sent||'', clicks:x=>+x.c.clicks||0, bought:x=>+x.c.bought||0, links:x=>(x.c.links||[]).length, code:x=>x.c.code};
+  const key={recent:x=>x.c.send_on||x.c.first_sent||'', clicks:x=>+x.c.clicks||0, bought:x=>utmBuyN(x.c), links:x=>(x.c.links||[]).length, code:x=>x.c.code};
   C.sort(SO==='code'?(a,b)=>String(a.c.code).localeCompare(String(b.c.code)):SO==='recent'?(a,b)=>desc(key.recent(a),key.recent(b)):(a,b)=>key[SO](b)-key[SO](a));
   const P=pgCut('utm',UTM_PG,C,'utmGo'); UTM_PG=P.page; $('utmPg').innerHTML=P.bar; $('utmRange').textContent=P.range||(C.length&&q?`${n(C.length)}개 찾음`:'');
   $('utmRows').innerHTML = P.rows.map(({c,lk,lhit})=>{
@@ -6623,28 +6631,28 @@ function ifRender(){ const box=$('ifBody'), d=IF.d; if(!box||!d) return; const s
   const res=r=>{ const l=CJ_RES[r.result]||r.result||''; const st=r.result==='구매완료'&&!r.buy_at?CJ_WARN:IF_OPEN.includes(r.result)&&r.buy_at?CJ_WARN:r.result==='진행전'?CJ_BAD:''; return l?cjTag(l,st):''; };
   box.innerHTML=`
   <div class="iff">
-    <div class="st"><small>문의한 사람</small><b>${n(s.people)}명</b><i>문의 ${n(s.inquiries)}건 · 그중 전에 산 적 있는 사람 ${n(s.known_buyer)}</i></div><span class="ar" aria-hidden="true">→</span>
-    <div class="st"><small>견적 받은 사람</small><b>${n(s.quoted)}명</b><i>문의한 사람의 ${pct(s.quoted,s.people)}</i></div><span class="ar" aria-hidden="true">→</span>
-    <div class="st buy"><small>${n(d.window)}일 안에 산 사람</small><b>${n(s.bought)}명 · ${pct(s.bought,s.people)}</b><i>새 고객 ${n(s.bought_new)} · 문의한 날 ${n(s.same_day)} · 걸린 날 중앙 ${s.median_days==null?'-':s.median_days+'일'}</i></div><span class="ar" aria-hidden="true">→</span>
-    <div class="st"><small>그 사람들이 산 금액</small><b>${wonK(s.amount)}</b><i>${wh.map(([k,v])=>`${esc(k)} ${n(v)}`).join(' · ')||'—'}</i></div>
+    <div class="st"><small>문의 고객</small><b>${n(s.people)}명</b><i>문의 ${n(s.inquiries)}건 · 기존 구매 고객 ${n(s.known_buyer)}</i></div><span class="ar" aria-hidden="true">→</span>
+    <div class="st"><small>견적 발행</small><b>${n(s.quoted)}명</b><i>문의 고객의 ${pct(s.quoted,s.people)}</i></div><span class="ar" aria-hidden="true">→</span>
+    <div class="st buy"><small>${n(d.window)}일 내 구매</small><b>${n(s.bought)}명 · ${pct(s.bought,s.people)}</b><i>신규 ${n(s.bought_new)} · 당일 구매 ${n(s.same_day)} · 소요일 중앙값 ${s.median_days==null?'-':s.median_days+'일'}</i></div><span class="ar" aria-hidden="true">→</span>
+    <div class="st"><small>구매 금액</small><b>${wonK(s.amount)}</b><i>${wh.map(([k,v])=>`${esc(k)} ${n(v)}`).join(' · ')||'—'}</i></div>
   </div>
-  <div class="ifflags" role="group" aria-label="사람 거르기">${[['all','전체'],['buy','산 사람'],['nobuy','안 산 사람'],['open','아직 진행 중'],['mark','구매로 적었는데 주문 없음','warn'],['obb','진행 중인데 이미 삼','warn'],['known','전에 산 적 있는 사람']]
+  <div class="ifflags" role="group" aria-label="고객 구분">${[['all','전체'],['buy','구매'],['nobuy','미구매'],['open','상담 진행 중'],['mark','구매완료 · 주문 없음','warn'],['obb','진행 중 · 주문 있음','warn'],['known','기존 구매 고객']]
      .map(([k,l,w])=>`<button type="button" class="${w||''}${IF.flt===k?' on':''}" onclick="ifSet('flt','${k}')">${l} ${n(cnt(k))}</button>`).join('')}</div>
-  <div class="tw"><table><thead><tr><th>문의 채널</th><th class="num">사람</th><th class="num">전에 산 적</th><th class="num">견적</th><th class="num">산 사람</th><th class="num">전환</th><th class="num">산 금액</th><th class="num">걸린 날(중앙)</th></tr></thead><tbody>${
+  <div class="tw"><table><thead><tr><th>문의 채널</th><th class="num">문의 고객</th><th class="num">기존 고객</th><th class="num">견적</th><th class="num">구매</th><th class="num">전환율</th><th class="num">구매 금액</th><th class="num">소요일(중앙값)</th></tr></thead><tbody>${
     (d.by_channel||[]).map(c=>`<tr><td>${esc(c.channel||'-')}</td><td class="num">${n(c.people)}</td><td class="num">${n(c.known)}</td><td class="num">${n(c.quoted)}</td><td class="num"><b>${n(c.bought)}</b></td><td class="num">${pct(c.bought,c.people)}</td><td class="num">${wonK(c.amount)}</td><td class="num">${c.median_days==null?'-':c.median_days+'일'}</td></tr>`).join('')
-    ||'<tr><td colspan="8" class="note">이 기간에 문의가 없습니다</td></tr>'}</tbody></table></div>
-  <div class="tw" style="margin-top:10px"><table><thead><tr><th>문의</th><th>고객</th><th>채널 · 유형</th><th>담당 · 상태</th><th class="num">견적</th><th>${n(d.window)}일 안 구매</th><th></th></tr></thead><tbody id="tbIflow">${
+    ||'<tr><td colspan="8" class="note">해당 기간에 문의가 없습니다</td></tr>'}</tbody></table></div>
+  <div class="tw" style="margin-top:10px"><table><thead><tr><th>문의일</th><th>고객</th><th>채널 · 유형</th><th>담당 · 상태</th><th class="num">견적</th><th>${n(d.window)}일 내 구매</th><th></th></tr></thead><tbody id="tbIflow">${
     P.rows.map(r=>`<tr onclick="cjOpenRow(event,'${esc(r.key||'')}',${Number(r.consult)||0})" style="cursor:pointer">
-      <td class="mono">${esc(String(r.at||'').slice(5))}${Number(r.n_inq)>1?`<div class="note">문의 ${n(r.n_inq)}번</div>`:''}</td>
+      <td class="mono">${esc(String(r.at||'').slice(5))}${Number(r.n_inq)>1?`<div class="note">문의 ${n(r.n_inq)}회</div>`:''}</td>
       <td><button type="button" class="cjlnk">${esc(r.name||'(이름 없음)')}</button><div class="note mono">${esc(r.phone||'')}</div></td>
       <td class="wrap">${esc(r.channel||'')}<div class="note">${esc([r.type,r.interest].filter(Boolean).join(' · '))}</div></td>
       <td>${esc(r.handler||'미배정')} ${res(r)}</td>
       <td class="num">${r.quote_n?n(r.quote_n):'<span style="color:var(--faint)">-</span>'}</td>
-      <td class="wrap">${r.buy_at?`<b>${esc(String(r.buy_at).slice(5).replace('-','/'))}</b> ${esc(r.buy_where||'')} · ${wonK(r.buy_amt)}<div class="note">${Number(r.days)===0?'문의한 날':n(r.days)+'일 뒤'}${Number(r.buy_n)>1?` · ${n(r.buy_n)}건`:''}</div>`:'<span style="color:var(--faint)">아직 없음</span>'}${r.before_n?`<div class="note">전에 ${n(r.before_n)}건 산 고객</div>`:''}</td>
+      <td class="wrap">${r.buy_at?`<b>${esc(String(r.buy_at).slice(5).replace('-','/'))}</b> ${esc(r.buy_where||'')} · ${wonK(r.buy_amt)}<div class="note">${Number(r.days)===0?'당일':n(r.days)+'일 후'}${Number(r.buy_n)>1?` · ${n(r.buy_n)}건`:''}</div>`:'<span style="color:var(--faint)">없음</span>'}${r.before_n?`<div class="note">기존 구매 ${n(r.before_n)}건</div>`:''}</td>
       <td><button type="button" class="btn sm ghost">흐름 ›</button></td></tr>`).join('')
-    ||'<tr><td colspan="7" class="note">이 조건에 맞는 사람이 없습니다</td></tr>'}</tbody></table></div>
+    ||'<tr><td colspan="7" class="note">조건에 해당하는 고객이 없습니다</td></tr>'}</tbody></table></div>
   <div class="pager"><span>${P.range||n(rows.length)+'명'}</span><div class="btns">${P.bar}</div></div>
-  <div class="note">구매 = 첫 문의 날부터 ${n(d.window)}일 안의 순매출 있는 주문(매장·온라인·VMS·렌탈) 또는 매장 밖 DPS 판매 전표 · 같은 사람 = 휴대폰 뒤 8자리(여럿이 쓰는 번호는 제외) · 기간 안 첫 문의를 기준으로 한 사람 한 줄</div>`;
+  <div class="note">구매 = 첫 문의일로부터 ${n(d.window)}일 이내 순매출이 있는 주문(매장·온라인·VMS·렌탈) 또는 매장 외 DPS 판매 전표 · 동일 고객 = 휴대폰 뒤 8자리(공용 번호 제외) · 기간 내 첫 문의 기준 고객당 1행</div>`;
 }
 async function utmResp(code){
   UR_CODE=code; const c=(UTM_CAMPS||[]).find(x=>x.code===code)||{code};
@@ -6674,7 +6682,7 @@ async function urLoad(unmask){
 }
 /* [구매]·[매출] 숫자 → 통합 원장 : 캠페인 수신자(발송 실패 제외)의 발송 뒤 주문만 (fn_order_list p_campaign · fn_utm_campaigns 의 bought 와 같은 규칙). 기간은 첫 발송일 ~ 오늘 */
 function utmBought(code){ const c=(UTM_CAMPS||[]).find(x=>x.code===code); if(!c) return;
-  O_CAMP={code:c.code,name:c.name}; const from=c.first_sent||c.send_on||iso(new Date(Date.now()-90*864e5));
+  O_CAMP={code:c.code,name:c.name,mode:utmBuyMode()}; const from=c.first_sent||c.send_on||iso(new Date(Date.now()-90*864e5));
   P={from,to:iso(new Date())}; PRESET='custom'; $('pFrom').value=P.from; $('pTo').value=P.to; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); periodLabel();
   ['oSrc','oCh','oChName','oSt','oHd','oQ'].forEach(id=>{ if($(id)) $(id).value=''; }); oCampRender(); show('orders'); }
 function utmForm(c, lock){ c=c||{}; const segs=(UTM&&UTM.segments)||[]; const base=c.send_on||iso(new Date()); const ym=base.slice(2,4)+base.slice(5,7);

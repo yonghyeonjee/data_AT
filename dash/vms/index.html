@@ -254,14 +254,19 @@ function dcToken(){
   return '';
 }
 
-/* ── 기간 (mvp_216) — payload.periods.ranges[{key,label,s,e,cur,prev,yoy,models,handlers}] · 키 r3·r6·r12·ty·ly·m:YYYY-MM ── */
-let PER=(()=>{ try{ return sessionStorage.getItem('vms_per')||'r12'; }catch(e){ return 'r12'; } })();
-function rangeOf(){ const p=DATA&&DATA.periods; if(!p||!p.ranges) return null; return p.ranges.find(r=>r.key===PER)||p.ranges.find(r=>r.key==='r12')||null; }
+/* ── 기간 (mvp_216 · mvp_219) — payload.periods.ranges[{key,label,s,e,cur,prev,yoy,models,handlers}] · 키 td(금일)·tw(금주)·lw(이전 주)·r3·r6·r12·ty·ly·m:YYYY-MM
+   화면 전용 키 tm(금월)·lm(저번달) 은 month_keys 의 마지막·그 앞 달(m:) 로 푼다 · 기본 금월 ── */
+let PER=(()=>{ try{ return sessionStorage.getItem('vms_per')||'tm'; }catch(e){ return 'tm'; } })();
+const PER_ALIAS={tm:'금월',lm:'저번달'};
+function perKey(p){ const keys=(p&&p.month_keys)||[]; if(PER==='tm') return keys.length?'m:'+keys[keys.length-1]:'r12'; if(PER==='lm') return keys.length>1?'m:'+keys[keys.length-2]:'r12'; return PER; }
+function rangeOf(){ const p=DATA&&DATA.periods; if(!p||!p.ranges) return null; const k=perKey(p); const r=p.ranges.find(x=>x.key===k)||p.ranges.find(x=>x.key==='r12')||null;
+  if(r&&PER_ALIAS[PER]&&r.key===k) return Object.assign({}, r, {label:PER_ALIAS[PER]+' · '+r.label}); return r; }
 function setPer(k){ PER=k; try{ sessionStorage.setItem('vms_per',k); }catch(e){} render(); }
 function mLabel(k){ return String(k||'').replace(/^(\d{4})-0?(\d+)$/,'$1년 $2월'); }
 function dayBefore(iso){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()-1); return t.toISOString().slice(0,10); }
 function pbar(d){ const p=d.periods, bar=$('#pbar'); if(!bar) return; if(!p||!p.ranges){ bar.innerHTML=''; bar.style.display='none'; return; } bar.style.display='';
-  const quick=[['r3','최근 3개월'],['r6','최근 6개월'],['r12','최근 12개월'],['ty','올해'],['ly','작년']]; const months=(p.month_keys||[]).slice().reverse(); const isM=PER.indexOf('m:')===0;
+  const quick=[['td','금일'],['tw','금주'],['lw','이전 주'],['tm','금월'],['lm','저번달'],['r3','최근 3개월'],['r6','최근 6개월'],['r12','최근 12개월'],['ty','올해'],['ly','작년']]
+    .filter(([k])=>PER_ALIAS[k]||p.ranges.some(r=>r.key===k)); const months=(p.month_keys||[]).slice().reverse(); const isM=PER.indexOf('m:')===0;
   bar.innerHTML=`<span class="pl">기간</span>`+quick.map(([k,l])=>`<button type="button" class="pchip${PER===k?' on':''}" data-k="${k}">${l}</button>`).join('')+
     `<select id="pmonth" aria-label="월 선택" class="${isM?'on':''}"><option value="">월 선택…</option>${months.map(k=>`<option value="m:${k}"${PER==='m:'+k?' selected':''}>${mLabel(k)}</option>`).join('')}</select><span class="pn" id="pnote"></span>`;
   bar.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>setPer(b.dataset.k)); $('#pmonth').onchange=e=>{ if(e.target.value) setPer(e.target.value); };
@@ -273,10 +278,11 @@ function trendWin(p,r){ const keys=p.month_keys||[]; let end=keys.length-1; if(r
 /* ── 그리기 ── */
 function kpis(d){
   const k=d.kpi||{}; const r=rangeOf();
-  if(r){ const c=r.cur||{}, pv=r.prev||{}, y=r.yoy; const isM=r.key.indexOf('m:')===0; const pn=isM?'전월':(r.key==='ty'?'작년 같은 기간':r.key==='ly'?'전년':'직전 같은 기간');
+  if(r){ const c=r.cur||{}, pv=r.prev||{}, y=r.yoy; const isM=r.key.indexOf('m:')===0; const pn=isM?'전월':r.key==='td'?'전일':r.key==='tw'?'전주 같은 기간':r.key==='lw'?'전주':r.key==='ty'?'작년 같은 기간':r.key==='ly'?'전년':'직전 같은 기간';
+    const yn=isM?'전년 같은 달':r.key==='td'?'전년 같은 날':(r.key==='tw'||r.key==='lw')?'전년 같은 주':'전년 같은 기간';
     const share=c.rev?Math.round(100*(c.rev_rep||0)/c.rev):null, nshare=c.buyers?Math.round(100*(c.new_buyers||0)/c.buyers):0;
     const items=[
-      ['매출 · '+r.label, won(c.rev), dHtml(pct(c.rev,pv.rev),' '+pn)+(y?dHtml(pct(c.rev,y.rev),' 전년 같은 달'):''), 'accent'],
+      ['매출 · '+r.label, won(c.rev), dHtml(pct(c.rev,pv.rev),' '+pn)+(y?dHtml(pct(c.rev,y.rev),' '+yn):''), 'accent'],
       ['구매 고객 수', n(c.buyers)+'<small>명</small>', dHtml(pct(c.buyers,pv.buyers),' '+pn)],
       ['주문 건수', n(c.orders)+'<small>건</small>', dHtml(pct(c.orders,pv.orders),' '+pn)],
       ['건당 평균', won(c.avg_order), '<span class="d flat">주문 1건 평균 금액</span>'],
@@ -343,7 +349,7 @@ function models(d){
   if(r&&p){ const w=trendWin(p,r); mm=(p.months24||[]).slice(w.start,w.end+1); lbl='매출 · '+r.label; revBase=(r.cur||{}).rev;
     md=(r.models||[]).map(m=>({model:m.model,name:m.name,amt12:m.amt,buyers12:m.buyers,qty12:m.qty,trend:((p.model_month||{})[m.model]||[]).slice(w.start,w.end+1)}));
     const nm=$('#noteModels'); if(nm) nm.textContent=`${r.label} 상위 10 · 월별 추이 ${mm[0]||''}~${mm[mm.length-1]||''}`; }
-  if(!md.length){ $('#chModels').innerHTML='<div class="empty">자료 없음</div>'; return; }
+  if(!md.length){ $('#chModels').innerHTML='<div class="empty">자료 없음</div>'; $('#capModels').textContent=r?`${r.label} 기간의 매출 자료가 없습니다. 판매현황 파일은 하루 두 번(09:10 · 18:00) 들어옵니다.`:''; return; }
   const mx=Math.max(1,...md.map(m=>m.amt12));
   function spark(tr){ const W=150,H=22; const t=Math.max(1,...tr); const bw=W/tr.length;
     return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true">${tr.map((v,i)=>`<rect x="${(i*bw+1).toFixed(1)}" y="${(H-H*v/t).toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${(H*v/t).toFixed(1)}" fill="${i===tr.length-1?'#7A8CE8':'#1428A0'}" rx="1"><title>${mm[i]||''} ${won(v)}</title></rect>`).join('')}</svg>`; }
