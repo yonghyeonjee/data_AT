@@ -1320,7 +1320,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button type="button" data-v="all">전체 <i>0</i></button>
         <button type="button" data-v="trash" title="삭제한 상담 — 7일 안에는 되살릴 수 있습니다">휴지통 <i>0</i></button>
       </div>
-      <div class="legend"><b>할 일</b> = 연락 전 + 상담중 · <b>연락 전</b> 아직 통화 안 한 문의 · <b>상담중</b> 통화한 뒤 진행 중 · <b>보류</b> 고객 사정으로 멈춤 · <b>완료</b> 상담 끝(판매 아님) · <b>구매함</b> 판매로 이어짐 · 거절은 [전체]에서<span id="mcDevNote" class="hidden"> · <b>개발 계정</b>이라 테스트 건도 보입니다 (통계·다른 담당자에게는 안 보임)</span></div>
+      <div class="legend"><b>할 일</b> = 연락 전 + 상담중 · <b>연락 전</b> 아직 통화 안 한 문의 · <b>상담중</b> 통화한 뒤 진행 중 · <b>보류</b> 고객 사정으로 멈춤 · <b>종료</b> 구매 없이 상담만 끝냄 · <b>구매함</b> [구매 확정]으로 판매까지 이어짐 (상담 상태와 구매는 다른 축) · 거절은 [전체]에서<span id="mcDevNote" class="hidden"> · <b>개발 계정</b>이라 테스트 건도 보입니다 (통계·다른 담당자에게는 안 보임)</span></div>
       <div class="bulkbar">
         <label class="allck"><input type="checkbox" id="mc_all" onchange="mcToggleAll(this.checked)"> 전체선택</label>
         <b id="mc_selN">고른 건 없음</b>
@@ -1683,7 +1683,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
             <button type="button" data-v="진행전">연락 전</button>
             <button type="button" data-v="진행중" class="on">상담중</button>
             <button type="button" data-v="보류">보류</button>
-            <button type="button" data-v="상담완료">완료</button>
+            <button type="button" data-v="상담완료" title="구매 없이 상담만 끝냄 — 샀으면 [구매함]">종료</button>
             <button type="button" data-v="구매완료">구매함</button>
           </div>
           <select class="in hidden" id="c_result" onchange="cResultChanged()">
@@ -4080,7 +4080,7 @@ const CJ_K={seen:['처음 확인','#555E6C','#EEF1F5'],inq:['문의','#1D4FB8','
   consent:['동의','#5B3FB5','#F0ECFB'],optout:['수신거부','#B3261E','#FDECEC']};
 const CJ_G={all:null,talk:['inq','consult'],quote:['quote'],buy:['buy','dps','cancel'],send:['send'],etc:['seen','consent','optout']};
 const CJ_GN={all:'전체',talk:'문의·상담',quote:'견적',buy:'구매',send:'문자',etc:'기타'};
-const CJ_RES={진행전:'연락 전',진행중:'상담중',보류:'보류',상담완료:'완료',구매완료:'구매',거절:'거절',확인완료:'확인완료',종료:'종료'};
+const CJ_RES={진행전:'연락 전',진행중:'상담중',보류:'보류',상담완료:'종료',구매완료:'구매',거절:'거절',확인완료:'확인완료',종료:'종료'};
 const cjN=v=>Math.round(Number(v)||0).toLocaleString('ko-KR');
 const cjWon=v=>{ v=Number(v)||0; const a=Math.abs(v); return a>=1e8?(v/1e8).toFixed(2).replace(/\.?0+$/,'')+'억':a>=1e4?Math.round(v/1e4).toLocaleString('ko-KR')+'만':Math.round(v).toLocaleString('ko-KR'); };
 const cjDate=s=> s?String(s).slice(0,10).replace(/-/g,'.'):'';
@@ -4485,12 +4485,13 @@ function mcSelSync(){
 }
 /* ═══ 상태 바 : 시스템이 가진 상태 그대로 한 줄에 — 지금 상태가 켜져 있고, 다른 걸 누르면 그 상태로 바뀐다 ═══ */
 const STATE_STEPS=[
-  {v:'진행전',  l:'연락 전', act:'pre',    msg:'연락 전으로 되돌림', hint:'아직 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요. 연락 전으로 되돌리면 잡아 둔 콜백 약속도 지워집니다.'},
-  {v:'진행중',  l:'상담중',  act:'resume', hint:'통화한 뒤 진행 중입니다. 다음 연락은 [콜백]으로 잡으세요. 잘못 눌렀으면 [연락 전]으로 되돌립니다.'},
-  {v:'보류',    l:'보류',    act:'hold',   hint:'고객 사정으로 잠시 멈춤. 목록에는 남습니다.'},
-  {v:'상담완료',l:'완료',    act:'done',   hint:'상담이 끝났고 사지 않았습니다. 샀으면 [구매 확정]을 누르세요.'},
-  {v:'거절',    l:'거절',    act:'reject', hint:'고객이 거절했습니다.'},
-  {v:'구매완료',l:'구매함',  act:null,     hint:'구매로 이어졌습니다. 판매 입력에 올라가 있습니다.'},
+  /* 상담 상태(연락 전 → 상담중 → 보류/종료/거절)와 구매는 다른 축이다 — 구매는 [구매 확정] 버튼으로만 '구매함' 이 된다. '종료' 는 구매 없이 끝낸 것 (v200 문구 정리) */
+  {v:'진행전',  l:'연락 전', act:'pre',    msg:'연락 전으로 되돌림', hint:'아직 고객과 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요. 여기로 되돌리면 잡아 둔 콜백 약속도 지워집니다.'},
+  {v:'진행중',  l:'상담중',  act:'resume', hint:'고객과 상담이 진행 중인 건입니다. 다음 통화 약속은 [콜백]으로 잡고, 사기로 했으면 [구매 확정]을 누르세요.'},
+  {v:'보류',    l:'보류',    act:'hold',   hint:'고객 사정으로 잠시 멈춘 건입니다. 목록에는 남고, 다시 시작하면 [상담중]을 누르세요.'},
+  {v:'상담완료',l:'종료',    act:'done',   hint:'구매 없이 상담만 끝낸 건입니다 — 구매 완료가 아닙니다. 샀으면 이 버튼 대신 위 [구매 확정]을 누르세요.'},
+  {v:'거절',    l:'거절',    act:'reject', hint:'고객이 거절한 건입니다. 구매 없이 끝납니다.'},
+  {v:'구매완료',l:'구매함',  act:null,     hint:'구매로 이어진 건입니다. [구매 확정]을 누르면 판매 입력에 올라가며 이 상태가 됩니다.'},
 ];
 function stateBar(x){
   const cur = x.result==='종료' ? '상담완료' : x.result==='확인완료' ? '상담완료' : x.result;
@@ -5045,7 +5046,7 @@ const CATS=['TV','사운드바','벽걸이','후드','냉동고','냉장고','�
 const catLabel=c=> c==='기타' ? '기타 (직접 입력)' : c;
 const catChipsHtml=()=>CATS.map(c=>`<span class="chip" data-v="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
 if($('c_cat')) $('c_cat').innerHTML=catChipsHtml();
-const GRES=[['진행전','연락 전'],['진행중','상담중'],['보류','보류'],['상담완료','완료'],['구매완료','구매함']];
+const GRES=[['진행전','연락 전'],['진행중','상담중'],['보류','보류'],['상담완료','종료'],['구매완료','구매함']];
 function gridOpts(key,row){
   if(key==='CH') return [['','채널']].concat(((INQ&&INQ.channels)||[]).map(c=>[c.code,c.label]));
   if(key==='TY') return ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]).length ? ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]) : [['product','상품 문의']];
