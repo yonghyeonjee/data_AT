@@ -1108,6 +1108,33 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 @media (max-width:900px){ .scwrap{grid-template-columns:1fr} .scside{position:static} .sbwrap{grid-template-columns:1fr} }
 @media (max-width:640px){ .scvars .chips .chip,.scways .w .btn,.sctest .btn{min-height:40px} .scstep .sch .seg button{min-height:40px} #smsComposeCard .in{font-size:16px} }
 @media (max-width:640px){ .ar .btn,.ar .switch,.arbar .switch,.arbar .seg2 button{min-height:40px} .arform .f{width:100%} .arform .f .in,.arform .f .in.w,.arform .f .in.n{width:100%;max-width:none;min-width:0;height:40px;font-size:16px} .arform textarea.in,#arSelf{font-size:16px} .ar .arpv{overflow-x:auto} .arbar .sum{margin-left:0;width:100%} .ar .arrow .btn{margin-left:auto} }
+/* ═══ 거르개 부품 (mvp_222 · 2026-10-16) — 라디오 알약(한 가지만) · 체크 칩(여러 개) · 슬라이더(범위). 원래 input/select 는 값 저장소로 남고 .fk-hid 로 숨긴다 ═══ */
+.fk-hid{position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;overflow:hidden;clip:rect(0 0 0 0);opacity:0;pointer-events:none}
+.fk-radio{display:inline-flex;flex-wrap:wrap;gap:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:3px;vertical-align:middle;max-width:100%}
+.fk-radio button{border:0;background:transparent;color:var(--muted);font-size:calc(12px * var(--font-scale));font-weight:600;padding:6px 11px;border-radius:7px;cursor:pointer;white-space:nowrap;min-height:32px}
+.fk-radio button.on{background:var(--navy);color:#fff} .fk-radio button:focus-visible{outline:2px solid var(--navy);outline-offset:1px}
+.fk-check{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fk-check .lb{font-size:calc(12px * var(--font-scale));font-weight:700;color:var(--muted);margin-right:2px}
+.fk-chk{display:inline-flex;align-items:center;gap:7px;padding:0 11px 0 9px;min-height:32px;border:1.5px solid var(--line-2);border-radius:999px;background:#fff;font-size:calc(12px * var(--font-scale));font-weight:600;color:var(--ink-2);cursor:pointer;user-select:none}
+.fk-chk input{appearance:none;-webkit-appearance:none;width:16px;height:16px;border:2px solid var(--line-2);border-radius:4px;margin:0;display:grid;place-content:center;background:#fff;flex:none}
+.fk-chk input::before{content:'';width:8px;height:8px;background:#fff;clip-path:polygon(14% 44%,0 65%,50% 100%,100% 16%,80% 0,43% 62%);transform:scale(0)}
+.fk-chk input:checked{background:var(--navy);border-color:var(--navy)} .fk-chk input:checked::before{transform:scale(1)}
+.fk-chk.on{border-color:var(--navy);background:#EEF2FF;color:var(--navy)} .fk-chk.all{border-style:dashed} .fk-chk input:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.fk-range{display:flex;align-items:center;gap:10px;margin-top:6px;min-width:160px;width:100%}
+.fk-range input[type=range]{flex:1;min-width:0;appearance:none;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--navy) var(--p,0%),var(--line) var(--p,0%));outline:none;margin:0;cursor:pointer}
+.fk-range input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer}
+.fk-range input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer}
+.fk-range input[type=range]:focus-visible{outline:2px solid var(--navy);outline-offset:4px}
+.fk-range .fk-out{min-width:64px;text-align:right;font-size:calc(12px * var(--font-scale));font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;white-space:nowrap}
+.fk-range.z .fk-out{color:var(--muted);font-weight:600}
+.fk-range.dual{position:relative;height:30px;display:block}
+.fk-range.dual .trk{position:absolute;left:0;right:86px;top:12px;height:6px;border-radius:3px;background:var(--line)} .fk-range.dual .trk i{position:absolute;top:0;bottom:0;background:var(--navy);border-radius:3px}
+.fk-range.dual input[type=range]{position:absolute;left:0;top:12px;width:calc(100% - 86px);background:none;pointer-events:none;height:6px}
+.fk-range.dual input[type=range]::-webkit-slider-thumb{pointer-events:auto} .fk-range.dual input[type=range]::-moz-range-thumb{pointer-events:auto}
+.fk-range.dual .fk-out{position:absolute;right:0;top:5px;min-width:80px}
+.fk-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap} .fk-row .in.num{max-width:96px}
+.fgrid .fk-hid+.fk-radio{margin-top:2px;display:flex;width:100%} .fgrid .fk-radio button{flex:1 1 auto;text-align:center}   /* 조건 칸 안에서는 알약이 칸 폭을 나눠 쓴다(세로로 안 쌓이게) */
+@media(max-width:640px){ .fk-range:not(.dual){flex-wrap:wrap} .fk-range:not(.dual) .fk-out{width:100%;text-align:left;min-width:0}   /* 폰: 값 글자는 슬라이더 아래 줄로 (옆에 두면 잘린다) */ .fk-radio button,.fk-chk{min-height:40px} .fk-chk input{width:20px;height:20px} .fk-range input[type=range]{height:8px} .fk-range input[type=range]::-webkit-slider-thumb{width:28px;height:28px} .fk-range input[type=range]::-moz-range-thumb{width:28px;height:28px} .fk-range.dual{height:36px} .fk-range.dual .trk,.fk-range.dual input[type=range]{top:14px} .fk-range.dual .fk-out{top:8px} .fk-row .in.num{max-width:none;flex:1} }
 </style>
 </head>
 <body>
@@ -1797,15 +1824,15 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
             <div style="grid-column:span 2"><label>캠페인명 <span style="color:var(--bad)">필수</span></label><input class="in" id="upReason" placeholder="예: 구독 제품 문의 후 구매 시 1% 신세계 증정"></div>
             <div><label>키워드</label><input class="in" id="upQ" placeholder="주문자 · 상품 · 주문번호" onkeydown="if(event.key==='Enter')loadUnpaid(0)"></div>
-            <div><label>주문 후 최소 경과일</label><input class="in num" type="number" id="upMinD" placeholder="예: 1" min="0"></div>
-            <div><label>주문 후 최대 경과일</label><input class="in num" type="number" id="upMaxD" placeholder="예: 30" min="0"></div>
+            <div style="grid-column:span 2"><label>주문 후 경과일 <span class="note">비우면 전체 · 슬라이더나 칸으로</span></label>
+              <div class="fk-row"><input class="in num" type="number" id="upMinD" placeholder="최소" min="0" aria-label="최소 경과일"><span class="note">~</span><input class="in num" type="number" id="upMaxD" placeholder="최대" min="0" aria-label="최대 경과일"><span class="note">일</span></div></div>
             <div><label>주문금액 이상 (원)</label><input class="in num" type="number" id="upMinAmt" placeholder="예: 100000" step="10000"></div>
             <div><label>이미 보낸 사람 제외</label><select class="in" id="upNoSend"><option value="">상관없음</option><option value="7">최근 7일 내 제외</option><option value="30">최근 30일 내 제외</option><option value="36500">한 번이라도 보낸 사람 전부 제외</option></select></div>
           </div>
           <div class="filters">
             <label class="switch" id="upUnmask" onclick="this.classList.toggle('on');if(UPL)loadUnpaid(0)"><span class="sw"></span>실명·실번호</label>
             <button class="btn" onclick="loadUnpaid(0)">추출</button>
-            <button class="btn ghost" onclick="['upQ','upMinD','upMaxD','upMinAmt','upNoSend'].forEach(i=>$(i).value='');loadUnpaid(0)">초기화</button>
+            <button class="btn ghost" onclick="['upQ','upMinD','upMaxD','upMinAmt','upNoSend'].forEach(i=>$(i).value='');fkSyncAll();loadUnpaid(0)">초기화</button>
             <span style="flex:1"></span>
             <button class="btn ghost" onclick="exportUnpaid('xlsx')">엑셀 내려받기</button>
             <button class="btn ghost" onclick="exportUnpaid('csv')">CSV 복사</button>
@@ -1860,14 +1887,14 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <h3>자동 발송 대상 <span>조건을 고르지 않아도 날마다 저절로 모이는 명단 — 구독 만료 · 견적 뒤 며칠 · 제품군 재구매. 손으로 조건을 걸어 뽑는 것은 [발송 대상 추출 · 수동] · 번호는 가려 보이고 [실명·실번호] 는 접근 기록이 남습니다</span></h3>
           <div class="filters" style="align-items:center">
             <input class="in" id="fuQ" placeholder="고객명 · 번호 뒷자리 · 모델 · 담당" aria-label="찾기" autocomplete="off" onkeydown="if(event.key==='Enter')loadFollowup()" style="flex:1 1 220px;max-width:360px">
-            <select class="in" id="fuHandler" aria-label="담당" data-noseg="1" onchange="fuFlt()" style="width:auto"><option value="">전체 담당</option></select>
-            <select class="in" id="fuChannel" aria-label="채널" data-noseg="1" onchange="fuFlt()" style="width:auto"><option value="">전체 채널</option></select>
             <select class="in" id="fuConsent" aria-label="수신동의" onchange="fuFlt()" style="width:auto"><option value="">동의 전체</option><option value="y">수신동의</option><option value="n">미동의</option></select>
             <label class="switch" id="fuNoOpt" onclick="this.classList.toggle('on');fuFlt()"><span class="sw"></span>수신거부 빼기</label>
             <label class="switch" id="fuUnmask" onclick="this.classList.toggle('on');loadFollowup()"><span class="sw"></span>실명·실번호</label>
             <button class="btn sm" onclick="loadFollowup()">조회</button>
             <button class="btn sm ghost" onclick="fuReset()">초기화</button>
           </div>
+          <div class="fk-check" id="fuHandlerBox" role="group" aria-label="담당" style="margin:4px 0 6px"></div>
+          <div class="fk-check" id="fuChannelBox" role="group" aria-label="채널" style="margin:0 0 8px"></div>
           <div class="qstat" data-view="followup"></div>
           <div class="note" id="fuNote"></div>
         </div>
@@ -4898,7 +4925,7 @@ let PENDING_TG=(()=>{ try{ const q=new URLSearchParams(location.search); if(q.ge
   const lo=Number(q.get('lo')), hi=Number(q.get('hi')); const o={lo:isFinite(lo)?lo:0, hi:isFinite(hi)?hi:30, ch:'VMS', reason:'VMS 교체 예정 안내 '+new Date().toISOString().slice(2,10).replace(/-/g,'')};
   try{ history.replaceState(null,'',location.pathname+location.hash); }catch(e){} return o; }catch(e){ return null; } })();
 function tgApplyPending(){ const o=PENDING_TG; if(!o) return false; PENDING_TG=null;
-  setBasisQuiet('repeat'); $('crmAsof').value=iso(new Date()); $('crmDueLo').value=o.lo; $('crmDueHi').value=o.hi;
+  setBasisQuiet('repeat'); $('crmAsof').value=iso(new Date()); $('crmDueLo').value=o.lo; $('crmDueHi').value=o.hi; fkSyncAll();
   const sel=$('crmCh'); if(o.ch){ if(![...sel.options].some(x=>x.value===o.ch)){ const op=document.createElement('option'); op.textContent=o.ch; sel.appendChild(op); } sel.value=o.ch; }
   if(typeof segSync==='function') segSync();
   if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason;
@@ -4908,27 +4935,29 @@ function tgApplyPending(){ const o=PENDING_TG; if(!o) return false; PENDING_TG=n
 function fuToManual(){ const g=FU.product.group, m=Number(FU.product.min_m)||0; let to=''; if(m){ const d=new Date(); d.setMonth(d.getMonth()-m); to=iso(d); }
   PENDING_PROD={toks:['@'+g], to, reason:g+' 재구매 안내'}; show('crm'); }
 /* 거르개 바(담당·채널·동의·수신거부 빼기) — 세 카드에 같이 걸린다 · 화면에서 거른다 */
-const FU_F={handler:'',channel:'',consent:'',noopt:false};
-function fuFlt(){ FU_F.handler=$('fuHandler').value; FU_F.channel=$('fuChannel').value; FU_F.consent=$('fuConsent').value; FU_F.noopt=$('fuNoOpt').classList.contains('on');
+const FU_F={handlers:new Set(),channels:new Set(),consent:'',noopt:false};   /* 담당·채널은 여러 개(체크 칩 · mvp_222) */
+function fuFlt(){ FU_F.consent=$('fuConsent').value; FU_F.noopt=$('fuNoOpt').classList.contains('on');
   ['sub','quote','product'].forEach(k=>{ FU[k].page=0; fuRender(k); }); fuNote(); }
-function fuReset(){ $('fuQ').value=''; ['fuHandler','fuChannel','fuConsent'].forEach(id=>$(id).value=''); $('fuNoOpt').classList.remove('on'); fuFlt(); loadFollowup(); }
+function fuReset(){ $('fuQ').value=''; FU_F.handlers.clear(); FU_F.channels.clear(); $('fuConsent').value=''; segSync(); $('fuNoOpt').classList.remove('on'); fuFlt(); loadFollowup(); }
 function fuRowsOf(k){ const S=FU[k]; return (S.rows||[]).filter(r=>{
   const h = k==='sub'?r.staff : k==='quote'?r.counselor : r.handler;
-  if(FU_F.handler && (h||'')!==FU_F.handler) return false;
-  if(FU_F.channel && k!=='quote' && (r.channel||'')!==FU_F.channel) return false;
+  if(FU_F.handlers.size && !FU_F.handlers.has(h||'')) return false;
+  if(FU_F.channels.size && k!=='quote' && !FU_F.channels.has(r.channel||'')) return false;
   if(FU_F.consent && k!=='quote' && !!r.consent!==(FU_F.consent==='y')) return false;
   if(FU_F.noopt && r.optout) return false; return true; }); }
 function fuFillOpts(){ const hs=new Set(), cs=new Set();
   (FU.sub.rows||[]).forEach(r=>{ if(r.staff) hs.add(r.staff); if(r.channel) cs.add(r.channel); });
   (FU.quote.rows||[]).forEach(r=>{ if(r.counselor) hs.add(r.counselor); });
   (FU.product.rows||[]).forEach(r=>{ if(r.handler) hs.add(r.handler); if(r.channel) cs.add(r.channel); });
-  const fill=(id,set,all)=>{ const el=$(id); if(!el) return; const cur=el.value; el.innerHTML=`<option value="">${all}</option>`+[...set].sort().map(x=>`<option>${esc(x)}</option>`).join(''); el.value=[...set].includes(cur)?cur:''; };
-  fill('fuHandler',hs,'전체 담당'); fill('fuChannel',cs,'전체 채널'); }
+  /* 자료에서 나온 담당·채널을 체크 칩으로 — 없어진 선택은 지운다 (mvp_222) */
+  [...FU_F.handlers].forEach(x=>{ if(!hs.has(x)) FU_F.handlers.delete(x); }); [...FU_F.channels].forEach(x=>{ if(!cs.has(x)) FU_F.channels.delete(x); });
+  fkCheck('fuHandlerBox', [...hs].sort(), FU_F.handlers, ()=>fuFlt(), {all:'전체 담당',label:'담당'});
+  fkCheck('fuChannelBox', [...cs].sort(), FU_F.channels, ()=>fuFlt(), {all:'전체 채널',label:'채널'}); }
 function fuSet(k,key,v){ FU[k][key]=v; const seg=$(FU_IDS[k].seg); if(seg&&(key==='days'||key==='group')) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', String(b.dataset.v)===String(v))); fuLoad(k); }
 function fuGoSub(p){ FU.sub.page=p; fuRender('sub'); }  function fuGoQuote(p){ FU.quote.page=p; fuRender('quote'); }  function fuGoProd(p){ FU.product.page=p; fuRender('product'); }
 function fuNote(){ const u=$('fuUnmask').classList.contains('on'); const g={'정수기':'정수기','AI콤보':'세탁기(AI콤보)','공기청정기':'공기청정기'}[FU.product.group]||FU.product.group;
   const f=(k)=>{ const a=fuRowsOf(k).length, b=(FU[k].rows||[]).length; return a===b?n(b):`${n(a)}/${n(b)}`; };
-  $('fuNote').textContent=`${FU.sub.today||''} 기준 · 구독 만료 ${f('sub')}${FU.sub.counts&&FU.sub.counts.next_end?` (가장 가까운 만료 ${FU.sub.counts.next_end})`:''} · 견적 ${f('quote')} · ${g} ${f('product')}`+(FU_F.handler||FU_F.channel||FU_F.consent||FU_F.noopt?' · 거르개 적용':'')+(u?' · 실명·실번호 조회는 접근 기록에 남습니다':''); }
+  $('fuNote').textContent=`${FU.sub.today||''} 기준 · 구독 만료 ${f('sub')}${FU.sub.counts&&FU.sub.counts.next_end?` (가장 가까운 만료 ${FU.sub.counts.next_end})`:''} · 견적 ${f('quote')} · ${g} ${f('product')}`+(FU_F.handlers.size||FU_F.channels.size||FU_F.consent||FU_F.noopt?' · 거르개 적용':'')+(u?' · 실명·실번호 조회는 접근 기록에 남습니다':''); }
 const fuDay=d=> d==null?'-':d===0?'오늘':d>0?`D-${d}`:`${-d}일 지남`;
 const fuLc=r=>{ const k=r.last_consult; if(!k) return ''; return `<span class="note" title="${esc(k.handler||'')}${k.callback_at?' · 콜백 '+dtfmt(k.callback_at):''}">${esc(k.result||'')} ${dfmt(k.at)}</span>`; };
 const fuConsent=r=> r.optout?'<span class="tag bad" title="문자 수신거부 목록에 있는 번호">수신거부</span>':r.consent?'<span class="tag y">동의</span>':(r.consent_dps?'<span class="tag n" title="DPS 고객정보의 SMS 동의 · 다른 경로 동의 기록 없음">DPS 동의</span>':'');
@@ -5084,16 +5113,71 @@ function cbarEl(){ let el=$('cbar'); if(el) return el;
     <div class="extra" id="cbExtra" hidden></div>`;
   return el; }
 /* 선택지가 6개 이하인 고정 드롭다운은 라디오형 버튼(.seg2)으로 보여준다. select 는 숨긴 채 값을 들고 있고, 버튼을 누르면 select.value 가 바뀌고 change 가 난다 */
+/* ═══ 거르개 부품 (mvp_222 · 2026-10-16) — 스마트스토어센터·카페24 관리자(라디오 줄·체크 줄)·쇼피파이(칩)·에어비앤비(가격 범위 슬라이더) 식.
+   원래 input/select 를 값 저장소로 그대로 두고(.fk-hid 로 숨김) 보이는 부품만 얹는다 → tgParams·조건 복사/붙여넣기·저장 조건·segToForm 이 그대로 돈다.
+   값을 코드로 바꿨으면 fkSyncAll() 로 부품 표시를 맞춘다. ═══ */
+/* 라디오 알약 — select 하나 = 한 가지만 고르는 조건 (role=radiogroup · ← → 키) */
+function fkRadio(selId, opt){ const sel=$(selId); if(!sel||sel.dataset.fk) return null; opt=opt||{}; sel.dataset.fk='radio'; sel.classList.add('fk-hid');
+  const g=document.createElement('div'); g.className='fk-radio'; g.setAttribute('role','radiogroup'); g.setAttribute('aria-label', sel.getAttribute('aria-label')||opt.label||''); g.dataset.for=selId;
+  const lbl=t=>opt.short?opt.short(t):t;
+  const paint=()=>{ g.innerHTML=[...sel.options].map((o,i)=>`<button type="button" role="radio" aria-checked="${o.selected}" data-i="${i}" class="${o.selected?'on':''}" tabindex="${o.selected?0:-1}">${esc(lbl(o.textContent.trim()))}</button>`).join(''); };
+  g.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; sel.selectedIndex=Number(b.dataset.i); paint(); sel.dispatchEvent(new Event('change',{bubbles:true})); });
+  g.addEventListener('keydown', e=>{ if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight') return; e.preventDefault(); const k=sel.options.length; if(!k) return; sel.selectedIndex=(sel.selectedIndex+(e.key==='ArrowRight'?1:k-1))%k; paint(); const on=g.querySelector('button.on'); if(on) on.focus(); sel.dispatchEvent(new Event('change',{bubbles:true})); });
+  sel.addEventListener('fk:sync', paint); sel.insertAdjacentElement('afterend', g); paint(); return g; }
+/* 체크 칩 — 여러 개 고르는 조건. selected 는 Set, [전체] = 아무것도 안 고른 상태 */
+function fkCheck(hostId, items, selected, onchange, opt){ const host=$(hostId); if(!host) return; opt=opt||{}; const all=opt.all||'전체'; const isAll=!selected.size;
+  host.innerHTML=(opt.label?`<span class="lb">${esc(opt.label)}</span>`:'')+`<label class="fk-chk all${isAll?' on':''}"><input type="checkbox" ${isAll?'checked':''} data-all="1" aria-label="${esc(all)}">${esc(all)}</label>`
+    +items.map(v=>`<label class="fk-chk${selected.has(v)?' on':''}"><input type="checkbox" value="${esc(v)}" ${selected.has(v)?'checked':''}>${esc(v)}</label>`).join('');
+  host.onchange=e=>{ const i=e.target; if(!(i&&i.type==='checkbox')) return; if(i.dataset.all) selected.clear(); else { if(i.checked) selected.add(i.value); else selected.delete(i.value); }
+    fkCheck(hostId, items, selected, onchange, opt); if(onchange) onchange(selected); }; }
+/* 슬라이더 (한 손잡이) — 숫자 칸 아래에 붙는다. nullAt 값(보통 0)이면 칸을 비운다(= 조건 없음) · maxPlus 면 끝값을 'N+' 로 */
+function fkRange(inpId, opt){ const inp=$(inpId); if(!inp||inp.dataset.fk) return null; inp.dataset.fk='range'; opt=opt||{}; const min=opt.min??0, max=opt.max??100, step=opt.step??1, fmt=opt.fmt||(v=>n(v)), unit=opt.unit||'';
+  const w=document.createElement('div'); w.className='fk-range'; w.innerHTML=`<input type="range" min="${min}" max="${max}" step="${step}" aria-label="${esc(inp.getAttribute('aria-label')||opt.label||'')}"><output class="fk-out" aria-live="polite"></output>`;
+  const r=w.querySelector('input'), o=w.querySelector('output');
+  const paint=()=>{ const v=inp.value===''?null:Number(inp.value); const rv=v==null?(opt.nullAt??min):Math.min(max,Math.max(min,v)); r.value=rv;
+    o.textContent=v==null?(opt.empty||'제한 없음'):((opt.maxPlus&&v>=max)?fmt(max)+'+':fmt(v))+unit; w.classList.toggle('z',v==null); r.style.setProperty('--p',((rv-min)/(max-min)*100)+'%'); };
+  r.addEventListener('input',()=>{ const v=Number(r.value); inp.value=(opt.nullAt!==undefined&&v===opt.nullAt)?'':String(v); paint(); inp.dispatchEvent(new Event('input',{bubbles:true})); });
+  r.addEventListener('change',()=>inp.dispatchEvent(new Event('change',{bubbles:true})));
+  inp.addEventListener('input',paint); inp.addEventListener('fk:sync',paint); inp.insertAdjacentElement('afterend', w); paint(); return w; }
+/* 슬라이더 (두 손잡이) — 시작·끝 칸 둘. nullable 이면 양 끝에 두면 칸을 비운다(= 전체). 창은 lo·hi 칸이 든 줄(lo.parentElement) 아래 */
+function fkRange2(loId, hiId, opt){ const lo=$(loId), hi=$(hiId); if(!lo||!hi||lo.dataset.fk) return null; lo.dataset.fk='range2'; hi.dataset.fk='range2'; opt=opt||{};
+  const min=opt.min??0, max=opt.max??100, step=opt.step??1, fmt=opt.fmt||((a,b)=>`${a} ~ ${b}`), nullable=!!opt.nullable;
+  const w=document.createElement('div'); w.className='fk-range dual'; w.innerHTML=`<div class="trk"><i></i></div><input type="range" class="lo" min="${min}" max="${max}" step="${step}" aria-label="${esc(opt.label||'범위')} 시작"><input type="range" class="hi" min="${min}" max="${max}" step="${step}" aria-label="${esc(opt.label||'범위')} 끝"><output class="fk-out" aria-live="polite"></output>`;
+  const rl=w.querySelector('.lo'), rh=w.querySelector('.hi'), fill=w.querySelector('.trk i'), o=w.querySelector('output');
+  const clamp=v=>Math.max(min,Math.min(max,v));
+  const paint=()=>{ const a=lo.value===''?min:clamp(Number(lo.value)), b=hi.value===''?max:clamp(Number(hi.value)); rl.value=a; rh.value=b;
+    const pa=(a-min)/(max-min)*100, pb=(b-min)/(max-min)*100; fill.style.left=pa+'%'; fill.style.right=(100-pb)+'%';
+    const empty=nullable&&lo.value===''&&hi.value===''; o.textContent=empty?(opt.empty||'전체'):fmt(a,b); w.classList.toggle('z',empty); };
+  const push=which=>{ let a=Number(rl.value), b=Number(rh.value); if(a>b){ if(which==='lo') b=a; else a=b; }
+    lo.value=(nullable&&a===min)?'':String(a); hi.value=(nullable&&b===max)?'':String(b); paint(); lo.dispatchEvent(new Event('input',{bubbles:true})); hi.dispatchEvent(new Event('input',{bubbles:true})); };
+  rl.addEventListener('input',()=>push('lo')); rh.addEventListener('input',()=>push('hi'));
+  const chg=()=>{ lo.dispatchEvent(new Event('change',{bubbles:true})); }; rl.addEventListener('change',chg); rh.addEventListener('change',chg);
+  [lo,hi].forEach(x=>{ x.addEventListener('input',paint); x.addEventListener('fk:sync',paint); });
+  (opt.after?$(opt.after):lo.parentElement).insertAdjacentElement('afterend', w); paint(); return w; }
+function fkSyncAll(){ document.querySelectorAll('[data-fk]').forEach(x=>x.dispatchEvent(new Event('fk:sync'))); try{ segSync(); }catch(e){} }
+/* 화면별 부품 배치 — 발송 대상 추출 · 미입금 · (자동 발송 대상 칩은 fuFillOpts · 공통 바 검색 대상은 placeCbar) */
+function fkInit(){
+  fkRange('crmMinCnt',{min:0,max:10,step:1,unit:'회 이상',empty:'상관없음',nullAt:0,maxPlus:true,label:'구매 횟수 이상'});
+  fkRange('crmMinNet',{min:0,max:5000000,step:50000,fmt:v=>wonK(v)+' 이상',empty:'상관없음',nullAt:0,maxPlus:true,label:'누적 구매액 이상'});
+  fkRadio('crmKind',{label:'고객 구분'}); fkRadio('crmDormant',{label:'휴면'}); fkRadio('crmSort',{label:'정렬'});
+  fkRadio('crmNoSend',{label:'이미 보낸 사람 제외',short:s=>({'상관없음 — 보낸 적 있어도 포함':'상관없음','최근 7일 내 보낸 사람 제외':'7일 안 제외','최근 30일 내 보낸 사람 제외':'30일 안 제외','최근 90일 내 보낸 사람 제외':'90일 안 제외','한 번이라도 보낸 사람 전부 제외':'전부 제외'})[s]||s});
+  fkRange2('crmDueLo','crmDueHi',{min:-90,max:60,step:1,label:'예상재구매일 창',fmt:(a,b)=>`D${a>=0?'+':''}${a} ~ D${b>=0?'+':''}${b}`});
+  fkRange2('upMinD','upMaxD',{min:0,max:90,step:1,nullable:true,empty:'전체 기간',label:'주문 후 경과일',fmt:(a,b)=>`${a}~${b}일`});
+  fkRange('upMinAmt',{min:0,max:3000000,step:50000,fmt:v=>wonK(v)+' 이상',empty:'상관없음',nullAt:0,maxPlus:true,label:'주문금액 이상'});
+  fkRadio('upNoSend',{label:'이미 보낸 사람 제외',short:s=>s.replace(' 내 제외',' 안 제외').replace('한 번이라도 보낸 사람 전부 제외','전부 제외')});
+}
 function segify(root){
   (root||document).querySelectorAll('.filters select.in, .cbar .extra select.in').forEach(sel=>{
     if(sel.dataset.seg==='1'||sel.dataset.noseg==='1') return;
     const opts=[...sel.options]; if(opts.length<2||opts.length>6) return;
     if(opts.some(o=>/^전체 (창고|담당|채널|분류|상담사|유입|카테고리|출처)$/.test(o.textContent.trim())&&opts.length===1)) return;
     sel.dataset.seg='1'; sel.classList.add('segd');
-    const g=document.createElement('div'); g.className='seg2 segsel'; g.dataset.for=sel.id||'';
-    g.innerHTML=opts.map((o,i)=>`<button type="button" data-i="${i}" class="${o.selected?'on':''}">${esc(o.textContent.trim().replace(/^전체 /,'전체 '))}</button>`).join('');
-    g.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; sel.selectedIndex=Number(b.dataset.i);
-      g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); sel.dispatchEvent(new Event('change',{bubbles:true})); });
+    const g=document.createElement('div'); g.className='seg2 segsel'; g.dataset.for=sel.id||''; g.setAttribute('role','radiogroup'); g.setAttribute('aria-label', sel.getAttribute('aria-label')||'');
+    /* 라디오 의미(role=radio · aria-checked · ← → 키) — mvp_222 */
+    const paint=()=>g.querySelectorAll('button').forEach(x=>{ const on=Number(x.dataset.i)===sel.selectedIndex; x.classList.toggle('on',on); x.setAttribute('aria-checked',on); x.tabIndex=on?0:-1; });
+    g.innerHTML=opts.map((o,i)=>`<button type="button" role="radio" aria-checked="${o.selected}" tabindex="${o.selected?0:-1}" data-i="${i}" class="${o.selected?'on':''}">${esc(o.textContent.trim().replace(/^전체 /,'전체 '))}</button>`).join('');
+    g.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; sel.selectedIndex=Number(b.dataset.i); paint(); sel.dispatchEvent(new Event('change',{bubbles:true})); });
+    g.addEventListener('keydown',e=>{ if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight') return; e.preventDefault(); const k=sel.options.length; sel.selectedIndex=(sel.selectedIndex+(e.key==='ArrowRight'?1:k-1))%k; paint(); const on=g.querySelector('button.on'); if(on) on.focus(); sel.dispatchEvent(new Event('change',{bubbles:true})); });
     sel.insertAdjacentElement('afterend', g);
   });
 }
@@ -5143,6 +5227,7 @@ function placeCbar(v){
   const sel=$('cbField'); const fields=cfg.fields || [['','모든 컬럼']].concat(cbarHeads(view).map((h,i)=>['col:'+i,h]));
   sel.innerHTML=fields.map(([k,l])=>`<option value="${esc(k)}">${esc(l)}</option>`).join('');
   sel.value=CB.field&&fields.some(f=>f[0]===CB.field)?CB.field:''; $('cbQ').value=CB.q; $('cbCh').value=CB.channel; $('cbCat').value=CB.category;
+  fkRadio('cbField',{label:'검색 대상'}); sel.dispatchEvent(new Event('fk:sync'));   /* 검색 대상은 라디오 알약 (mvp_222) */
   cbarWatch(view);
 }
 function cbarHeads(view){ const t=view.querySelector('table'); if(!t||!t.tHead) return []; return [...t.tHead.rows[0].cells].map(th=>th.textContent.trim()).filter(Boolean); }
@@ -5153,7 +5238,7 @@ function cbarGo(){
   if(cfg.channel && $(cfg.channel)){ const o=[...$(cfg.channel).options].find(x=>x.value===CB.channel||x.text===CB.channel); $(cfg.channel).value=o?o.value:''; }
   refreshView();
 }
-function cbarReset(){ CB.q=''; CB.field=''; CB.channel=''; CB.category=''; ['cbQ','cbField','cbCh','cbCat'].forEach(id=>{ if($(id)) $(id).value=''; });
+function cbarReset(){ CB.q=''; CB.field=''; CB.channel=''; CB.category=''; ['cbQ','cbField','cbCh','cbCat'].forEach(id=>{ if($(id)) $(id).value=''; }); fkSyncAll();
   const ex=$('cbExtra'); if(ex){ ex.querySelectorAll('select').forEach(e=>e.selectedIndex=0); ex.querySelectorAll('input').forEach(e=>{ if(e.type==='checkbox') e.checked=false; else e.value=''; }); ex.querySelectorAll('.switch.on').forEach(e=>{ if(!/연락처|보기/.test(e.textContent)) e.classList.remove('on'); }); } segSync();
   const cfg=CB_VIEWS[VIEW]||{}; if(cfg.q&&$(cfg.q)) $(cfg.q).value=''; if(cfg.channel&&$(cfg.channel)) $(cfg.channel).value=''; refreshView(); }
 /* 화면 쪽 거르기 */
@@ -6315,7 +6400,7 @@ function segToForm(pm){
     .forEach(([id,v])=>{ if(v && String($(id).value)!==String(v))
       toast(`조건의 "${v}" 는 이 목록에 없어 걸리지 않았습니다`,'bad'); });
   set('crmMinCnt',pm.min_cnt); set('crmMinNet',pm.min_net);
-  set('crmDormant',pm.dormant_days); set('crmNoSend',pm.no_send_days); set('crmSort',pm.sort||'recent');
+  set('crmDormant',pm.dormant_days); set('crmNoSend',pm.no_send_days); set('crmSort',pm.sort||'recent'); fkSyncAll();
   $('crmNext').classList.toggle('on', !!pm.next_only);
   // 상대 기간(N일 전 ~ M일 전) → 날짜칸
   const day=d=>{ const x=new Date(); x.setDate(x.getDate()-d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return x.toISOString().slice(0,10); };
@@ -6386,6 +6471,7 @@ function setBasis(b){
   /* 재구매 주기 알림은 같은 사람에게 두 번 가면 안 된다. 이 기준을 고르면
      '이미 보낸 사람 제외' 를 '전부 제외' 로 미리 놓는다 — 8/14 발송분은 '30일 내' 로는 안 빠진다 */
   if(b!=='consent' && !$('crmNoSend').value) $('crmNoSend').value='36500';
+  fkSyncAll();
   $('tbBasisP').className = 'btn sm' + (b==='product' ? '' : ' ghost');
   $('prodBox').classList.toggle('hidden', b!=='product'); if(b==='product') prodRenderSel();
   $('asofBox').classList.toggle('hidden', b!=='repeat');
@@ -6878,7 +6964,7 @@ async function utmQuick(){
 }
 /* [대상 조건] → 발송 대상 추출로. 캠페인 코드를 캠페인명에 넣어 감사로그가 같은 이름으로 남게 한다 */
 function utmExtract(code, seg){ $('crmReason').value=code; PENDING_SEG=seg||null; show('crm'); }
-function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value='');
+function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value=''); $('crmDueLo').value='-30'; $('crmDueHi').value='14'; fkSyncAll();
   $('crmNext').classList.remove('on'); $('crmSort').value='recent'; prodRenderSel(); if($('crmReason').value.trim().length>=3 && (TG_BASIS!=='product'||prodTokens().length)) loadTargets(0); }
 /* ═══ 미입금 주문 (결제 안 한 고객) ═══
    고도몰에서 받아 올린 입금 대기 주문. 샵링커는 결제가 끝난 주문만 주므로 여기로 따로 받는다. */
@@ -8369,6 +8455,7 @@ document.addEventListener('click',function(e){
   if(e.target.closest('a,button,input,select')) return;
   t.classList.toggle('open');
 });
+try{ fkInit(); }catch(e){ console.warn('fk init', e); }
 </script>
 </body>
 </html>
