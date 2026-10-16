@@ -5277,10 +5277,11 @@ document.querySelectorAll('#segWf button').forEach(b=>b.addEventListener('click'
   WFMODE=b.dataset.k; document.querySelectorAll('#segWf button').forEach(x=>x.classList.toggle('on',x===b)); if(DK) drawWf(); }));
 
 let DASH_SRC=localStorage.getItem('dash_src2')||'dc';          // dc=현행 시스템(Datacenter) / gas=기존 app
-let DASH_BASIS=localStorage.getItem('dash_basis')||'ledger';   // 기본 원장(주문 원천, 자동 수집) / manual=담당자 수기입력 대사표 (2026-09-17 기본을 원장으로)
+let DASH_BASIS='ledger';   // 열 때마다 원장(주문 원천, 자동 수집)으로 시작 — 고른 기준은 이 탭 안에서만(sessionStorage) · 2026-10-16 "default 원장으로" (전엔 localStorage 에 남아 DPS 를 골랐던 사람은 다음에도 DPS 로 열렸다)
+try{ localStorage.removeItem('dash_basis'); const _sb=sessionStorage.getItem('dash_basis'); if(_sb==='manual'||_sb==='dps') DASH_BASIS=_sb; }catch(e){}
 let GAS_DASH_URL=localStorage.getItem('gas_dash_url')||'';
 function setDashSrc(v){ DASH_SRC=v; localStorage.setItem('dash_src2',v); DASH_PAY=null; DASH_READY=false; $('dashFrame').src='about:blank'; loadDash(); }
-function setDashBasis(v){ DASH_BASIS=v; localStorage.setItem('dash_basis',v); DASH_PAY=null; loadDash(); }
+function setDashBasis(v){ DASH_BASIS=v; try{ sessionStorage.setItem('dash_basis',v); }catch(e){} DASH_PAY=null; loadDash(); }
 async function setGasUrl(){
   window.__gasUrl=GAS_DASH_URL;
   const ok=await modal({title:'기존 앱 대시보드 주소', ok:'저장',
