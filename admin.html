@@ -877,9 +877,10 @@ tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}
   .filters>span[style*="flex:1"]{display:none}
   .periodbar{flex-direction:column;align-items:stretch;gap:8px;padding:8px 10px}
   .periodbar .pb-left{gap:8px}
-  .periodbar .period{flex-direction:column;align-items:stretch;gap:6px}
-  .periodbar .preset{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:4px;padding-bottom:2px}
-  .periodbar .preset button{white-space:nowrap;flex:none}
+  .cbar .periodbar{min-width:0;max-width:100%}   /* 공통 바 안의 기간 바도 내용 폭(523px)으로 안 늘어나게 */
+  .periodbar .period{flex-direction:column;align-items:stretch;gap:6px;width:100%;min-width:0}   /* 폰: 프리셋 9개 폭(501px)만큼 늘어나 카드 밖으로 잘리던 것 (mvp_221) */
+  .periodbar .preset{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:4px;padding-bottom:2px;min-width:0;max-width:100%}
+  .periodbar .preset button{white-space:nowrap;flex:none;min-height:40px}   /* 폰 터치 40px (mvp_221) */
   .periodbar input[type=date]{flex:1;min-width:0}
   .qsum{grid-template-columns:repeat(2,1fr);gap:6px}
   .qsum .q b{font-size:calc(15px * var(--font-scale))}
@@ -1020,6 +1021,13 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 .iff .st i{font-style:normal;color:var(--muted);font-size:calc(12px * var(--font-scale));font-weight:600}
 .iff .st.buy{border-color:#2E7D32;background:#F3FAF4} .iff .st.buy b{color:#1E5E24}
 .iff .ar{align-self:center;color:var(--faint);font-weight:800;font-size:18px}
+/* 경영 지표 (mvp_221) — 홈 hero 타일을 3열로, 표 안 증감 색 */
+#v-exec .exhero{grid-template-columns:repeat(3,1fr);margin:12px 0 0}
+#v-exec .exhero .h .d{margin-top:4px}
+#v-exec .exhero .h.light b i{color:var(--muted)}   /* 흰 타일의 단위 글자가 흰색(hero 기본)으로 묻히던 것 */
+#v-exec td.up{color:#15803D;font-weight:700} #v-exec td.down{color:var(--bad);font-weight:700}
+@media(max-width:1200px){#v-exec .exhero{grid-template-columns:repeat(2,1fr)}}
+
 .ifflags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .ifflags button{min-height:40px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface,#fff);padding:4px 12px;font-weight:700;cursor:pointer;font-family:inherit;font-size:calc(12.5px * var(--font-scale));color:var(--ink-2)}
 .ifflags button.warn{border-color:#E7C27A;background:#FFF8E8;color:#6E4700}
@@ -1208,6 +1216,26 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="card"><h3>최근 적재 <span class="sub">파일 업로드</span></h3><div class="tw"><table><thead><tr><th>일시</th><th>원천</th><th>파일</th><th class="num">행</th><th>담당</th></tr></thead><tbody id="tbHomeUploads"></tbody></table></div></div>
           <div class="card home-links"><h3>바로가기</h3><div class="links" id="homeLinks"></div></div>
         </div>
+      </div>
+
+      <!-- ═══ 경영 지표 (mvp_221) — 매출·고객·문의 흐름·유입·캠페인을 기간 하나로 ═══ -->
+      <div class="view hidden" id="v-exec">
+        <div class="card" id="exHead">
+          <h3>경영 지표 <span id="exSub">기간을 고르면 매출·고객·문의 → 구매 흐름·유입을 한 화면에서 봅니다 · 비교는 직전 같은 기간과 전년 같은 기간</span>
+            <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="note" id="exBuilt"></span><button class="btn sm ghost" onclick="loadExec(true)">새로고침</button></span></h3>
+          <div class="qstat" data-view="exec"></div>
+          <div class="home-hero exhero" id="exHero"></div>
+        </div>
+        <div class="card" id="exFlowCard"><h3>고객 흐름 · 문의 → 견적 → 구매 → 재구매 <span>기간 안에 문의한 사람이 실제로 샀는지를 상담 상태가 아니라 주문으로 맞춥니다 (문의일부터 90일 창) · 사람별 목록은 고객 통합 › 문의 → 구매 흐름</span></h3><div id="exFlow"></div></div>
+        <div class="grid g2">
+          <div class="card"><h3>매출 · 고객 추이 <span id="exSerSub"></span></h3><div id="exSeries"></div></div>
+          <div class="card"><h3>채널 묶음별 <span>순매출 · 비중 · 직전 기간 대비 · 주문 · 식별 고객 (오픈마켓은 안심번호라 고객을 셀 수 없음)</span></h3><div id="exGroups"></div></div>
+        </div>
+        <div class="grid g2">
+          <div class="card" id="exTrafficCard"><h3>유입 · GA4 <span id="exTrSub"></span></h3><div id="exTraffic"></div></div>
+          <div class="card"><h3>문자 · 캠페인 <span>기간 안 발송 · 링크 클릭 · 링크로 들어온 문의 · 캠페인별 성과</span></h3><div id="exCamp"></div></div>
+        </div>
+        <div class="card"><h3>고객 자산 <span>고객 마스터 전체 기준 · 기간과 무관 · 1시간마다 다시 셈</span></h3><div id="exCust"></div></div>
       </div>
 
       <!-- ═══ 재고 현황 ═══ -->
@@ -2525,7 +2553,7 @@ function rpcBar(d){
 }
 /* ── 진행 카드 — 호출마다 [기다림 → 받는 중(받은 바이트) → 끝] 을 적어 두고 250ms 마다 그린다 ── */
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
-const FN_LABEL={fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
+const FN_LABEL={fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
@@ -2746,7 +2774,7 @@ async function loadHome(){
   $('chanList').innerHTML=tc.map(x=>`<div><span>${esc(x.k||'-')}</span><span class="bar"><i style="width:${Math.round((Number(x.net)||0)/mx*100)}%"></i></span><b>${wonK(x.net)}</b></div>`).join('')||'<div class="note">이번 달 데이터 없음</div>';
   $('tbHomeConsults').innerHTML=(h.recent_consults||[]).map(c=>`<tr><td class="mono">${esc(c.at)}</td><td><b>${esc(c.name||'-')}</b></td><td>${esc(c.cat||'')}</td><td style="font-size:calc(12px * var(--font-scale))">${esc(c.route||'')}</td><td>${esc(c.handler||'')}</td><td><span class="tag ${c.result}">${esc(c.result||'')}</span></td></tr>`).join('')||'<tr><td colspan="6" class="note">없음</td></tr>';
   $('tbHomeUploads').innerHTML=(h.uploads||[]).map(u=>`<tr><td class="mono">${esc(u.at)}</td><td>${esc(u.source||'')}</td><td class="wrap" style="font-size:calc(12px * var(--font-scale))">${esc(u.file||'')}${u.chunks>1?` <span class="tag" title="큰 파일이라 ${n(u.chunks)}번에 나눠 올라왔습니다">${n(u.chunks)}조각</span>`:''}${u.rolled_back?' <span class="tag n">되돌림</span>':''}</td><td class="num">${n(u.rows||0)}${u.skipped?`<span style="color:var(--muted);font-size:calc(11px * var(--font-scale))"> / 제외 ${n(u.skipped)}</span>`:''}</td><td style="font-size:calc(12px * var(--font-scale))">${esc((u.by||'').replace(ID_DOMAIN,''))}</td></tr>`).join('')||'<tr><td colspan="5" class="note">없음</td></tr>';
-  $('homeLinks').innerHTML=[[ST,'매장 화면 ↗'],['/stock.html','재고 화면 ↗'],['/visit/?fs=1','방문 접수(태블릿) ↗'],[DASH_DIR,'외부 공유 대시보드 ↗'],['/','고객센터 ↗']].map(([u,t])=>`<a href="${u}" target="_blank">${t}</a>`).join('');
+  $('homeLinks').innerHTML=`<a href="#exec" onclick="show('exec');return false">경영 지표 ›</a>`+[[ST,'매장 화면 ↗'],['/stock.html','재고 화면 ↗'],['/visit/?fs=1','방문 접수(태블릿) ↗'],[DASH_DIR,'외부 공유 대시보드 ↗'],['/','고객센터 ↗']].map(([u,t])=>`<a href="${u}" target="_blank">${t}</a>`).join('');
 }
 
 /* ═══════════════ 재고 ═══════════════ */
@@ -4592,7 +4620,7 @@ document.querySelectorAll('.preset button').forEach(b=>b.addEventListener('click
 function applyPeriod(){ if(!$('pFrom').value||!$('pTo').value) return toast('시작일과 종료일을 넣어주세요','bad'); P={from:$('pFrom').value,to:$('pTo').value}; PRESET='custom'; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); periodLabel(); refreshView(); }
 
 /* ═══════════════ 네비 ═══════════════ */
-const NAV_ICON={sms:`<svg viewBox="0 0 24 24"><path d="M4 4h16v12H7l-3 3z"/><path d="M8 9h8M8 12h5"/></svg>`,followup:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,cdash:`<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 6-7"/><circle cx="20" cy="6" r="1.5"/></svg>`,utm:`<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>`,home:`<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,dash:`<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,orders:`<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,flow:`<svg viewBox="0 0 24 24"><path d="M3 6h5l3 6-3 6H3M10 6h5l3 6-3 6h-5M17 6h4v12h-4"/></svg>`,online:`<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg>`,daily:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,inbox:`<svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg>`,consults:`<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>`,customers:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>`,crm:`<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>`,stock:`<svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>`,moves:`<svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg>`,items:`<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>`,wiz:`<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/><path d="M18 10l3 2-3 2"/></svg>`,oq:`<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,upload:`<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>`,log:`<svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,option:`<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>`,notify:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`};
+const NAV_ICON={exec:`<svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 5-7 4 5"/><path d="M3 21h18"/></svg>`,sms:`<svg viewBox="0 0 24 24"><path d="M4 4h16v12H7l-3 3z"/><path d="M8 9h8M8 12h5"/></svg>`,followup:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,cdash:`<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 6-7"/><circle cx="20" cy="6" r="1.5"/></svg>`,utm:`<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>`,home:`<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,dash:`<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,orders:`<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,flow:`<svg viewBox="0 0 24 24"><path d="M3 6h5l3 6-3 6H3M10 6h5l3 6-3 6h-5M17 6h4v12h-4"/></svg>`,online:`<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg>`,daily:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,inbox:`<svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg>`,consults:`<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>`,customers:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>`,crm:`<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>`,stock:`<svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>`,moves:`<svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg>`,items:`<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>`,wiz:`<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/><path d="M18 10l3 2-3 2"/></svg>`,oq:`<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,upload:`<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>`,log:`<svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,option:`<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>`,notify:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`};
 /* ===== 후속 관리 (2026-10-08 · mvp_194) — 구독 만료 · 견적 보낸 뒤 N일 · 정수기·AI콤보·공기청정기 산 고객. 세 카드가 각각 fn_crm_followups 를 부른다 ===== */
 const FU={sub:{days:180,page:0,rows:[],counts:{},total:0}, quote:{days:7,page:0,rows:[],counts:{},total:0}, product:{group:'정수기',min_m:'',page:0,rows:[],counts:{},total:0}};
 const FU_SEQ={sub:0,quote:0,product:0};
@@ -4605,6 +4633,96 @@ async function fuLoad(k){ const seq=++FU_SEQ[k]; const S=FU[k], ids=FU_IDS[k]; c
     S.rows=r.rows||[]; S.counts=r.counts||{}; S.total=Number(r.total)||0; S.page=0; S.today=r.today||''; fuFillOpts(); fuRender(k); fuNote(); }
   catch(e){ if(seq!==FU_SEQ[k]) return; if(tb) tb.innerHTML=`<tr><td colspan="${ids.cols}" class="note">${esc(e.message)}</td></tr>`; toast(e.message,'bad'); } }
 function loadFollowup(){ arLoad(); fuLoad('sub'); fuLoad('quote'); fuLoad('product'); }
+/* ═══ 경영 지표 (mvp_221 · 2026-10-16) — fn_exec_kpi(매출·고객·문의·유입·링크 · 서버 10분 캐시) + fn_inquiry_flow(문의 → 구매) + fn_utm_campaigns(캠페인) 를 기간 하나로 한 화면에 ═══ */
+let EX={d:null, flow:null, camps:null, seq:0, first:true};
+const EX_CMP_NM={tm:'전월 같은 기간',lm:'전월',tw:'전주',lw:'전전주',yd:'전주 같은 요일',y:'전년 같은 기간',ly:'전전년'};
+function exCmpLbl(){ return EX_CMP_NM[PRESET]||'직전 같은 기간'; }
+async function loadExec(fresh){
+  if(EX.first){ EX.first=false; if(PRESET==='30') setPreset('tm', true); }   /* 처음 열 때 기본 기간을 안 골랐으면 이번 달 */
+  const seq=++EX.seq; const [cf,ct]=cmpRange(P.from,P.to,PRESET);
+  if(!EX.d) $('exHero').innerHTML='<div class="note">불러오는 중…</div>';
+  if(fresh) UTM_CAMPS=null;
+  let d, fl, camps;
+  try{ [d, fl, camps]=await Promise.all([
+      rpc('fn_exec_kpi',{p_from:P.from,p_to:P.to,p_cfrom:cf,p_cto:ct},{fresh:!!fresh}),
+      rpc('fn_inquiry_flow',{p_from:P.from,p_to:P.to,p_scope:null,p_window:90,p_unmask:false}).catch(()=>null),
+      utmCampsEnsure() ]); }
+  catch(e){ if(seq!==EX.seq) return; $('exHero').innerHTML=`<div class="note" style="color:var(--bad)">${esc(e.message)}</div>`; throw e; }
+  if(seq!==EX.seq) return; EX.d=d; EX.flow=fl; EX.camps=camps||[]; exRender();
+}
+function exPct(a,b){ a=Number(a)||0; b=Number(b)||0; return b?Math.round(a/b*1000)/10:null; }
+function exPctS(v){ return v==null?'-':v+'%'; }
+/* [글, 색] — 증감 한 줄. prev 가 없으면 '자료 없음' */
+function exCmp(cur, prev, fmt, lbl){ cur=Number(cur)||0; prev=Number(prev)||0; if(!prev) return [`${lbl} 자료 없음`,'']; const p=Math.round((cur-prev)/Math.abs(prev)*1000)/10; return [`${p>=0?'▲':'▼'} ${Math.abs(p)}% · ${lbl} ${fmt(prev)}`, p>=0?'up':'down']; }
+function exCmpTxt(c,p,lbl){ c=Number(c)||0; p=Number(p)||0; lbl=lbl||'직전 기간'; if(!p) return `${lbl} 자료 없음`; const v=Math.round((c-p)/p*1000)/10; return `${v>=0?'▲':'▼'} ${Math.abs(v)}% · ${lbl} ${n(p)}`; }
+function exTile(cls, small, big, unit, lines){ return `<div class="h ${cls}"><small>${small}</small><b>${big}${unit?`<i>${unit}</i>`:''}</b>${lines.map(l=>`<div class="d${l[1]?' '+l[1]:''}">${l[0]}</div>`).join('')}</div>`; }
+function exRender(){ const d=EX.d; if(!d) return; const s=d.sales||{}, pv=d.sales_prev||{}, yy=d.sales_yoy||{}, iq=d.inquiry||{}, iqp=d.inquiry_prev||{}, tr=d.traffic||{}, lk=d.links||{}, fs=(EX.flow&&EX.flow.summary)||null; const L=exCmpLbl();
+  $('exBuilt').textContent=`${d.built_at||''} 집계${d.cached?' (캐시)':''} · 원장 ${d.orders_last||''}까지`;
+  $('exSub').textContent=`${d.from} ~ ${d.to} · 비교 ${(d.prev||{}).from} ~ ${(d.prev||{}).to} (${L}) · 전년 ${(d.yoy||{}).from} ~ ${(d.yoy||{}).to}`;
+  const om=(s.groups||[]).find(g=>g.ct==='오픈마켓');
+  $('exHero').innerHTML=[
+    exTile('', '순매출 · 원장', wonK(s.net), '', [exCmp(s.net,pv.net,wonK,L), exCmp(s.net,yy.net,wonK,'전년 동기'), [`주문 ${n(s.orders)}건 · 환불 ${wonK(s.refund)}`,'']]),
+    exTile('', '객단가 · 주문당 순매출', wonK(s.avg_order), '', [exCmp(s.avg_order,pv.avg_order,wonK,L), exCmp(s.orders,pv.orders,x=>n(x)+'건',L+' 주문'), [`전년 동기 객단가 ${wonK(yy.avg_order)}`,'']]),
+    exTile('light', '구매 고객 · 식별', n(s.buyers), '명', [[`신규 ${n(s.new_buyers)} · 재구매 ${n(s.repeat_buyers)}`,''], exCmp(s.buyers,pv.buyers,x=>n(x)+'명',L), [`오픈마켓 주문 ${n(om?om.orders:0)}건은 안심번호라 고객을 셀 수 없음`,'']]),
+    exTile('light', '재구매율 · 구매 고객 중 전에도 산 사람', exPctS(s.repeat_rate), '', [[`${L} ${exPctS(pv.repeat_rate)} · 전년 동기 ${exPctS(yy.repeat_rate)}`,''], [`재구매 고객의 매출 비중 ${exPctS(s.repeat_net_share)} (전년 ${exPctS(yy.repeat_net_share)})`,''], [`식별 고객 순매출 ${wonK(s.ident_net)}`,'']]),
+    exTile('light', '문의 → 구매 (90일 창)', fs?`${n(fs.bought)}<i>명 / 문의 ${n(fs.people)}명</i>`:`${n(iq.people)}<i>명 문의</i>`, '', fs?[[`전환 ${exPctS(exPct(fs.bought,fs.people))} · 견적 ${n(fs.quoted)}명 · 구매 금액 ${wonK(fs.amount)}`,''], [`문의 ${n(iq.consults)}건 (${L} ${n(iqp.consults)}건) · 견적 발행 ${n(iq.quotes)}건`,''], [`진행 중 ${n(iq.open)}건 · 구매완료 표시 ${n(iq.bought_marked)}건`,'']]:[[`문의 ${n(iq.consults)}건 (${L} ${n(iqp.consults)}건)`,''],['흐름 자료를 못 받았습니다','']]),
+    exTile('light', '유입 · GA4', tr.has?n(tr.sessions):'—', tr.has?'세션':'', tr.has?[exCmp(tr.sessions,tr.prev_sessions,x=>n(x)+'세션',L), [`사용자 ${n(tr.users)} · 조회 ${n(tr.views)} · ${tr.last_day||''}까지`,''], [`단축 링크 클릭 ${n(lk.clicks)} · 링크로 온 문의 ${n(iq.from_links)}건`,'']]:[['GA4 연결 전 — 아래 유입 카드에 설정 안내',''], [`단축 링크 클릭 ${n(lk.clicks)} (${L} ${n(lk.clicks_prev)})`,''], [`링크로 들어온 문의 ${n(iq.from_links)}건`,'']])
+  ].join('');
+  exFlowRender(); exSeriesRender(); exGroupsRender(); exTrafficRender(); exCampRender(); exCustRender(); }
+function exFlowRender(){ const box=$('exFlow'), fl=EX.flow, d=EX.d; if(!box||!d) return;
+  if(!fl){ box.innerHTML='<div class="note">문의 → 구매 흐름 자료를 못 받았습니다 — 고객 통합 › 문의 → 구매 흐름 카드를 열어 보세요</div>'; return; }
+  const s=fl.summary||{}, iq=d.inquiry||{}, tr=d.traffic||{}, lk=d.links||{}, sa=d.sales||{}; const pg=tr.pages||{};
+  const pct=(a,b)=>exPctS(exPct(a,b));
+  box.innerHTML=`<div class="iff">
+    <div class="st"><small>유입</small><b>${tr.has?n(tr.sessions)+'<i>세션</i>':'—'}</b><i>${tr.has?`구독 페이지 ${n(pg.subscribe_inquiry||0)} · 견적서 페이지 ${n(pg.quote||0)}`:`GA4 연결 전 · 단축 링크 클릭 ${n(lk.clicks)}`}</i></div><span class="ar" aria-hidden="true">→</span>
+    <div class="st"><small>문의 고객</small><b>${n(s.people)}명</b><i>문의 ${n(s.inquiries)}건 · 기존 구매 고객 ${n(s.known_buyer)} · 문자 링크로 ${n(iq.from_links)}</i></div><span class="ar" aria-hidden="true">→</span>
+    <div class="st"><small>견적 발행</small><b>${n(s.quoted)}명</b><i>문의 고객의 ${pct(s.quoted,s.people)} · 기간 안 발행 ${n(iq.quotes)}건 · 고객에게 보냄 ${n(iq.quotes_sent)}건</i></div><span class="ar" aria-hidden="true">→</span>
+    <div class="st buy"><small>${n(fl.window)}일 내 구매</small><b>${n(s.bought)}명 · ${pct(s.bought,s.people)}</b><i>신규 ${n(s.bought_new)} · 당일 구매 ${n(s.same_day)} · 소요일 중앙값 ${s.median_days==null?'-':s.median_days+'일'} · ${wonK(s.amount)}</i></div><span class="ar" aria-hidden="true">→</span>
+    <div class="st"><small>재구매</small><b>${n(sa.repeat_buyers)}명 · ${exPctS(sa.repeat_rate)}</b><i>기간 안 구매 고객 ${n(sa.buyers)}명 중 전에도 산 사람 · 매출 비중 ${exPctS(sa.repeat_net_share)}</i></div>
+  </div>
+  <div class="tw"><table><thead><tr><th>문의 채널</th><th class="num">문의 고객</th><th class="num">기존 고객</th><th class="num">견적</th><th class="num">구매</th><th class="num">전환율</th><th class="num">구매 금액</th><th class="num">소요일(중앙값)</th></tr></thead><tbody>${
+    (fl.by_channel||[]).map(c=>`<tr><td>${esc(c.channel||'-')}</td><td class="num">${n(c.people)}</td><td class="num">${n(c.known)}</td><td class="num">${n(c.quoted)}</td><td class="num"><b>${n(c.bought)}</b></td><td class="num">${pct(c.bought,c.people)}</td><td class="num">${wonK(c.amount)}</td><td class="num">${c.median_days==null?'-':c.median_days+'일'}</td></tr>`).join('')
+    ||'<tr><td colspan="8" class="note">해당 기간에 문의가 없습니다</td></tr>'}</tbody></table></div>
+  <p class="note" style="margin:8px 0 0">구매완료로 적었는데 주문이 없는 사람 ${n(s.mark_no_order)} · 진행 중인데 이미 산 사람 ${n(s.open_but_bought)} — <a href="#customers" onclick="show('customers');return false">고객 통합 › 문의 → 구매 흐름</a>에서 사람별로 봅니다</p>`; }
+function exFmtP(p, grain){ p=String(p||''); return grain==='day'?p.slice(5).replace('-','/'):p.slice(2).replace('-','.'); }
+/* 기간별 순매출 막대 (진한) — 안쪽 연한 부분은 그 기간 구매 고객 중 신규 비율만큼 */
+function exBars(S, grain){ if(!S.length) return '<div class="note" style="padding:24px;text-align:center">기간 안에 주문이 없습니다</div>';
+  const cnt=S.length, W=Math.max(360, Math.min(760, cnt*48)), H=200, L=8, R=8, T=30, B=26, iw=W-L-R, ih=H-T-B;
+  const mx=Math.max(1,...S.map(x=>Number(x.net)||0)); const slot=iw/cnt, bw=Math.min(36, slot*0.62); const show=cnt<=14, step=show?1:Math.ceil(cnt/12);
+  const bars=S.map((x,i)=>{ const cx=L+slot*i+slot/2, v=Math.max(0,Number(x.net)||0), ht=v/mx*ih; const nb=Number(x.new_buyers)||0, b=Number(x.buyers)||0; const hn=b?ht*nb/b:0;
+    return `<g><title>${esc(exFmtP(x.p,grain))} · 순매출 ${esc(wonK(x.net))} · 주문 ${n(x.orders)}건 · 구매 고객 ${n(b)}명 (신규 ${n(nb)})</title>
+      <rect x="${(cx-bw/2).toFixed(1)}" y="${(T+ih-ht).toFixed(1)}" width="${bw.toFixed(1)}" height="${ht.toFixed(1)}" rx="3" fill="#1428A0"/>
+      <rect x="${(cx-bw/2).toFixed(1)}" y="${(T+ih-hn).toFixed(1)}" width="${bw.toFixed(1)}" height="${hn.toFixed(1)}" rx="3" fill="#7A8CE8"/>
+      ${show?`<text class="a" x="${cx.toFixed(1)}" y="${(T+ih-ht-5).toFixed(1)}" text-anchor="middle">${esc(wonK(x.net))}</text>`:''}
+      ${i%step===0?`<text x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle">${esc(exFmtP(x.p,grain))}</text>`:''}</g>`; }).join('');
+  return `<svg class="cdsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="기간별 순매출"><line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}" stroke="#E4E7EC"/>${bars}</svg>`; }
+function exSeriesRender(){ const d=EX.d, S=d.series||[], g=d.grain; $('exSerSub').textContent=`${g==='day'?'일별':'월별'} · 진한 막대 = 순매출 · 안쪽 연한 부분 = 그 기간 구매 고객 중 신규 비율`;
+  $('exSeries').innerHTML=exBars(S,g)+(S.length?`<details style="margin-top:8px"><summary style="cursor:pointer">${g==='day'?'일별':'월별'} 표 (${S.length})</summary><div class="tw" style="margin-top:6px"><table><thead><tr><th>${g==='day'?'일':'월'}</th><th class="num">순매출</th><th class="num">주문</th><th class="num">구매 고객</th><th class="num">신규</th><th class="num">재구매</th></tr></thead><tbody>${
+    S.slice().reverse().map(x=>`<tr><td class="mono">${esc(exFmtP(x.p,g))}</td><td class="num"><b>${wonK(x.net)}</b></td><td class="num">${n(x.orders)}</td><td class="num">${n(x.buyers)}</td><td class="num">${n(x.new_buyers)}</td><td class="num">${n((Number(x.buyers)||0)-(Number(x.new_buyers)||0))}</td></tr>`).join('')}</tbody></table></div></details>`:''); }
+function exGroupsRender(){ const d=EX.d, s=d.sales||{}, pv=d.sales_prev||{}; const G=s.groups||[], PG=pv.groups||[]; const tot=Number(s.net)||0;
+  $('exGroups').innerHTML=G.length?`<div class="tw"><table><thead><tr><th>묶음</th><th class="num">순매출</th><th class="num">비중</th><th class="num">${esc(exCmpLbl())} 대비</th><th class="num">주문</th><th class="num">식별 고객</th></tr></thead><tbody>${G.map(g=>{ const p=PG.find(x=>x.ct===g.ct); const dl=p&&Number(p.net)?Math.round((Number(g.net)-Number(p.net))/Math.abs(Number(p.net))*1000)/10:null;
+    return `<tr><td>${esc(g.ct)}</td><td class="num"><b>${wonK(g.net)}</b></td><td class="num">${tot?Math.round(Number(g.net)/tot*1000)/10:0}%</td><td class="num ${dl==null?'':dl>=0?'up':'down'}">${dl==null?'-':(dl>=0?'▲':'▼')+' '+Math.abs(dl)+'%'}</td><td class="num">${n(g.orders)}</td><td class="num">${g.ct==='오픈마켓'?'<span class="note">식별 불가</span>':n(g.buyers)}</td></tr>`; }).join('')}</tbody></table></div>`:'<div class="note">기간 안에 주문이 없습니다</div>'; }
+function exList(rows,k,v){ if(!rows.length) return '<div class="note">없음</div>'; const mx=Math.max(1,...rows.map(x=>Number(x[v])||0)); return `<div class="cdhb">${rows.map(x=>`<span class="n" title="${esc(x[k]||'')}">${esc(x[k]||'(없음)')}</span><span class="tr"><i style="width:${(100*(Number(x[v])||0)/mx).toFixed(1)}%"></i></span><span class="q"><b>${n(x[v])}</b></span>`).join('')}</div>`; }
+function exTrafficBars(S, grain){ if(!S.length) return ''; const cnt=S.length, W=Math.max(360, Math.min(760, cnt*40)), H=150, L=8,R=8,T=22,B=24, iw=W-L-R, ih=H-T-B; const mx=Math.max(1,...S.map(x=>Number(x.s)||0)); const slot=iw/cnt, bw=Math.min(28, slot*0.62); const show=cnt<=16, step=show?1:Math.ceil(cnt/12);
+  return `<svg class="cdsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="기간별 세션"><line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}" stroke="#E4E7EC"/>${S.map((x,i)=>{ const cx=L+slot*i+slot/2, ht=(Number(x.s)||0)/mx*ih; return `<g><title>${esc(exFmtP(x.p,grain))} · 세션 ${n(x.s)} · 사용자 ${n(x.u)}</title><rect x="${(cx-bw/2).toFixed(1)}" y="${(T+ih-ht).toFixed(1)}" width="${bw.toFixed(1)}" height="${ht.toFixed(1)}" rx="3" fill="#0F766E"/>${show?`<text class="v" x="${cx.toFixed(1)}" y="${(T+ih-ht-4).toFixed(1)}" text-anchor="middle">${n(x.s)}</text>`:''}${i%step===0?`<text x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle">${esc(exFmtP(x.p,grain))}</text>`:''}</g>`; }).join('')}</svg>`; }
+function exTrafficRender(){ const d=EX.d, tr=d.traffic||{}, lk=d.links||{}, iq=d.inquiry||{}, box=$('exTraffic'); const L=exCmpLbl();
+  if(!tr.has){ $('exTrSub').textContent='GA4 연결 전'; box.innerHTML=`<div class="callout warn"><b>GA4 방문량이 아직 들어오지 않습니다.</b> 수집기(<span class="mono">tools/ga/collect.mjs</span> · GitHub Actions 매일 12:10)는 준비돼 있고 GitHub 저장소 Settings › Secrets 세 개가 비어 있습니다.
+      <ol style="margin:8px 0 0 18px;padding:0"><li><b>GA_PROPERTY_ID</b> — GA4 속성 ID (숫자만 · GA 관리 › 속성 설정)</li><li><b>GA_SA_JSON</b> — 서비스 계정 키 JSON 전체 · 그 계정을 GA 속성에 '뷰어'로 추가</li><li><b>GA_INGEST_KEY</b> — 데이터센터 적재 키 (개발 담당에게)</li></ol>
+      <p style="margin:8px 0 0">넣은 뒤 Actions › 'GA4 방문량 수집' 을 수동 실행하면 바로 채워지고 그 뒤로는 매일 전날 자료가 들어옵니다. 들어오면 이 카드가 세션·사용자·유입 출처·캠페인별 세션으로 바뀝니다.</p></div>
+      <div class="kpis" style="margin:12px 0 0"><div class="kpi"><div class="t">단축 링크 클릭</div><div class="v">${n(lk.clicks)}</div><div class="s">${esc(L)} ${n(lk.clicks_prev)}</div></div><div class="kpi"><div class="t">링크로 들어온 문의</div><div class="v">${n(iq.from_links)}</div><div class="s">문자 링크 → 구독 페이지 폼</div></div></div>`; return; }
+  $('exTrSub').textContent=`세션 ${n(tr.sessions)} · 사용자 ${n(tr.users)} · ${tr.last_day||''}까지`;
+  const pg=tr.pages||{}; const sub=Number(pg.subscribe_inquiry)||0, qt=Number(pg.quote)||0;
+  box.innerHTML=`<div class="kpis" style="margin:0 0 12px"><div class="kpi"><div class="t">세션</div><div class="v">${n(tr.sessions)}</div><div class="s">${esc(exCmpTxt(tr.sessions,tr.prev_sessions,L))}</div></div><div class="kpi"><div class="t">사용자</div><div class="v">${n(tr.users)}</div><div class="s">${esc(exCmpTxt(tr.users,tr.prev_users,L))}</div></div><div class="kpi"><div class="t">구독 · 견적서 페이지</div><div class="v">${n(sub+qt)}</div><div class="s">문의율 ${sub+qt?Math.round(Number(iq.consults||0)/(sub+qt)*1000)/10+'%':'-'} (문의 ${n(iq.consults)}건)</div></div><div class="kpi"><div class="t">단축 링크 클릭</div><div class="v">${n(lk.clicks)}</div><div class="s">링크로 온 문의 ${n(iq.from_links)}</div></div></div>
+    ${exTrafficBars(tr.series||[], d.grain)}
+    <div class="grid g2" style="margin:12px 0 0"><div><div class="vs-t">유입 출처 (세션)</div>${exList(tr.sources||[], 'src','s')}</div><div><div class="vs-t">캠페인별 세션 (utm_campaign)</div>${exList(tr.campaigns||[], 'camp','s')}</div></div>`; }
+function exCampRender(){ const d=EX.d, lk=d.links||{}, iq=d.inquiry||{}; const L=exCmpLbl(); const dt=c=>String(c.first_sent||c.send_on||'').slice(0,10);
+  const C=(EX.camps||[]).filter(c=>{ const x=dt(c); return x && x>=d.from && x<=d.to; }).sort((a,b)=>dt(b).localeCompare(dt(a)));
+  $('exCamp').innerHTML=`<div class="kpis" style="margin:0 0 12px"><div class="kpi"><div class="t">발송 (이력)</div><div class="v">${n(lk.sends)}</div><div class="s">${esc(L)} ${n(lk.sends_prev)} · 이 시스템 실발송 ${n(lk.sms_live)}</div></div><div class="kpi"><div class="t">링크 클릭</div><div class="v">${n(lk.clicks)}</div><div class="s">${esc(L)} ${n(lk.clicks_prev)}</div></div><div class="kpi"><div class="t">링크로 온 문의</div><div class="v">${n(iq.from_links)}</div><div class="s">문의 ${n(iq.consults)}건 중</div></div></div>
+    <div class="tw"><table><thead><tr><th>캠페인</th><th>발송일</th><th class="num">발송</th><th class="num">클릭</th><th class="num">문의</th><th class="num">구매 · 링크 경유</th><th class="num">수신자 30일 구매</th><th class="num">매출 (30일)</th></tr></thead><tbody>${
+      C.map(c=>`<tr><td><b>${esc(c.name||c.code)}</b><div class="note mono">${esc(c.code)}</div></td><td class="mono">${esc(dt(c))}</td><td class="num">${n(c.sent)}</td><td class="num">${n(c.clicks)}</td><td class="num">${n(c.inquiries)}</td><td class="num">${Number(c.rcpt_links)?n(c.bought):'<span class="note" title="사람별 링크로 보낸 캠페인만 셉니다">—</span>'}</td><td class="num">${n(c.bought_rcpt30)}</td><td class="num">${wonK(c.bought_rcpt30_amt)}</td></tr>`).join('')||'<tr><td colspan="8" class="note">기간 안에 발송한 캠페인이 없습니다</td></tr>'}</tbody></table></div>
+    <p class="note" style="margin:8px 0 0">자세한 것은 <a href="#utm" onclick="show('utm');return false">발송 링크 관리</a> · 발송 이력은 이 시스템에서 보낸 것과 센드온 결과 파일을 올린 것만 셉니다</p>`; }
+function exCustRender(){ const cu=(EX.d&&EX.d.customers)||{}; const k=(t,v,s)=>`<div class="kpi"><div class="t">${t}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`; const tot=Number(cu.total)||0, wo=Number(cu.with_order)||0;
+  $('exCust').innerHTML=`<div class="kpis" style="margin:0">${k('고객 마스터',n(cu.total)+'명','23개 채널 통합')}${k('구매 이력 있음',n(cu.with_order)+'명', tot?Math.round(wo/tot*100)+'%':'')}${k('2회 이상 구매',n(cu.repeat)+'명', wo?'구매 고객의 '+Math.round(Number(cu.repeat||0)/wo*100)+'%':'')}${k('고객당 평균 순매출',wonK(cu.avg_net),'누적')}${k('문자 발송 가능',n(cu.sendable)+'명','수신동의 '+n(cu.consent)+' · 휴대폰 있는 사람')}${k('휴면 180일↑',n(cu.dormant_180)+'명','마지막 구매 뒤 반년 지남')}</div>`; }
 /* ═══ 자동 발송 설정 (mvp_214·215) — crm.auto_rule: 규칙 = 종류(kind) + 조건(params) + 문구(crm.sms_template auto_*) + 보내는 때. 표로 보고 스위치로 켜고 끄며 [+ 규칙 추가] 로 새 시나리오. 엔진은 다음 단계 ═══ */
 let AR=[], AR_PV={}, AR_OPEN=new Set(), AR_GROUPS=null;
 let AR_F=(()=>{ try{ return Object.assign({st:'all',cat:'all',arch:false}, JSON.parse(localStorage.getItem('dc_ar_f')||'{}')); }catch(e){ return {st:'all',cat:'all',arch:false}; } })();
@@ -4855,7 +4973,7 @@ async function fuCsv(k){ const S=FU[k]; if(!S.rows.length) return toast('복사�
 let MENU=[], MENU_STATE={};
 /* DB를 못 읽어도 화면은 떠야 하므로 기본 구성을 갖고 있는다 */
 const NAV_FALLBACK=[
-  {group:'_top',group_label:'',items:[{code:'home',label:'홈',state:'on'}]},
+  {group:'_top',group_label:'',items:[{code:'home',label:'홈',state:'on'},{code:'exec',label:'경영 지표',state:'on'}]},
   {group:'sales',group_label:'매출',items:[{code:'dash',label:'매출 대시보드',state:'on'},{code:'flow',label:'주문 · 판매 · 매출',state:'on'},{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'}]},
   {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출 · 수동',state:'on'},{code:'followup',label:'자동 발송 대상',state:'on'},{code:'sms',label:'메시지 발송 관리',state:'on'}]},
   {group:'inv',group_label:'재고',items:[{code:'stock',label:'재고 현황',state:'on'},{code:'moves',label:'입출고',state:'on'},{code:'items',label:'품목',state:'on'},{code:'oq',label:'주문서 · 전송',state:'on'},{code:'wiz',label:'주문 변환',state:'on'}]},
@@ -4902,7 +5020,7 @@ function renderUnderConstruction(v){
       <div class="uc-tape"></div>
     </div>`;
 }
-const TITLES={home:'홈',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출 · 수동',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드',followup:'자동 발송 대상',sms:'메시지 발송 관리'};
+const TITLES={home:'홈',exec:'경영 지표',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출 · 수동',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드',followup:'자동 발송 대상',sms:'메시지 발송 관리'};
 let VIEW='home';
 function toggleNav(force){ const on = force===undefined ? !document.body.classList.contains('nav-open') : !!force; document.body.classList.toggle('nav-open', on); }
 /* 뒤로가기 = 이전 화면. 화면을 바꿀 때마다 히스토리에 한 칸 쌓고, popstate 로 되돌아온다.
@@ -4942,7 +5060,7 @@ function show(v, opt){ if(!TITLES[v]) v='home';
   if(dev){ $('periodBar').classList.add('hidden'); $('pageIntro').classList.add('hidden'); renderUnderConstruction(v); return; }
   placePeriodBar(v); placeCbar(v); renderIntro(v); { const b=$('subTabs'); if(b){ b.classList.add('hidden'); b.innerHTML=''; } } refreshView(); }
 /* 기간 바는 그 페이지의 첫 카드 맨 위(필터 바로 위)로 옮겨 붙인다 */
-const PERIOD_VIEWS=['orders','daily','consults','log','moves','inbox','flow','cdash'];
+const PERIOD_VIEWS=['exec','orders','daily','consults','log','moves','inbox','flow','cdash'];
 
 /* ═══════════════ 공통 검색·필터 바 ═══════════════
    모든 목록 화면 맨 위에 같은 바 : [기간] [검색유형] [검색어] [채널] [상품유형] [조회] [초기화]
@@ -5094,7 +5212,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_TG){ tgApplyPending(); } else if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
+const LOADERS={home:loadHome,exec:loadExec,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_TG){ tgApplyPending(); } else if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');

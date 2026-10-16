@@ -3,8 +3,8 @@
  * GA4 방문량 → Datacenter core.web_traffic
  * ───────────────────────────────────────────────────────────────
  * 고도몰(시흥몰)에 붙은 GA4 속성에서 날짜별 세션·사용자·조회수를 가져와
- * 전체 / 구독문의 페이지 / 견적서 페이지 세 줄로 적재한다.
- * 관리자 [상담] → "방문 → 문의 → 성공" 표가 이걸 읽는다.
+ * 전체 / 구독문의 페이지 / 견적서 페이지 세 줄 + 유입 출처(src:<sessionSource>) · 캠페인(camp:<sessionCampaignName>) 줄로 적재한다.
+ * 관리자 [경영 지표] 유입 카드와 [상담] → "방문 → 문의 → 성공" 표가 이걸 읽는다. (mvp_221 · 2026-10-16 출처·캠페인 추가)
  *
  * 필요한 Secrets (GitHub 저장소)
  *   GA_PROPERTY_ID   GA4 속성 ID (숫자만, 예: 123456789)
@@ -95,9 +95,17 @@ async function main() {
     if (RE_QUOTE.test(p)) add(day, "quote", p, r.metricValues);
     else if (RE_SUB.test(p)) add(day, "subscribe_inquiry", p, r.metricValues);
   });
+  // 유입 출처 (날짜 × sessionSource · 상위) → page 'src:<출처>'   · 캠페인 (날짜 × sessionCampaignName) → page 'camp:<utm_campaign>'
+  const bySrc = await runReport(token, { dateRanges: range, dimensions: [{ name: "date" }, { name: "sessionSource" }], metrics, limit: 100000 });
+  bySrc.forEach(r => { const d = r.dimensionValues[0].value, s = (r.dimensionValues[1].value || "(none)").toLowerCase().slice(0, 60);
+    add(`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`, `src:${s}`, null, r.metricValues); });
+  const byCamp = await runReport(token, { dateRanges: range, dimensions: [{ name: "date" }, { name: "sessionCampaignName" }], metrics, limit: 100000 });
+  byCamp.forEach(r => { const d = r.dimensionValues[0].value, cname = (r.dimensionValues[1].value || "").toLowerCase().slice(0, 60);
+    if (!cname || cname === "(not set)" || cname === "(direct)" || cname === "(organic)" || cname === "(referral)") return;
+    add(`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`, `camp:${cname}`, null, r.metricValues); });
   const rows = Object.values(agg);
   if (!rows.length) { console.log("가져온 행 없음"); return; }
   const res = await rpc("fn_traffic_ingest", { p_key: INGEST, p_rows: rows });
-  console.log(`${from}~${to} · 적재 ${res.rows}행 (전체 ${rows.filter(r=>r.page==="all").length}일 · 구독문의 ${rows.filter(r=>r.page==="subscribe_inquiry").length} · 견적서 ${rows.filter(r=>r.page==="quote").length})`);
+  console.log(`${from}~${to} · 적재 ${res.rows}행 (전체 ${rows.filter(r=>r.page==="all").length}일 · 구독문의 ${rows.filter(r=>r.page==="subscribe_inquiry").length} · 견적서 ${rows.filter(r=>r.page==="quote").length} · 출처 ${rows.filter(r=>r.page.startsWith("src:")).length} · 캠페인 ${rows.filter(r=>r.page.startsWith("camp:")).length})`);
 }
 main().catch(e => { console.error("✕", e.message); process.exit(1); });
