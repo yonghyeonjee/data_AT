@@ -2020,7 +2020,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <p class="note" style="margin-top:8px">광고로 보내면 머리말·꼬리말이 자동으로 붙습니다. 광고 문자는 <b>수신동의 고객에게만</b> — 발송 대상 추출이 그 규칙으로 명단을 뽑고, 수신거부 번호는 보낼 때 서버가 한 번 더 뺍니다.</p>
         </div>
         <div class="card">
-          <h3>템플릿 <span><b>{이름}</b> {담당자} {매장전화} {견적링크} {기한} {모델} {월요금} {콜백시각} {링크} 자리가 실제 값으로 바뀝니다 · 담당자 화면에는 '담당자'·'공통' 것만 보입니다</span>
+          <h3>템플릿 <span><b>{이름}</b> {담당자} {매장전화} {견적링크} {기한} {모델} {제품} {구매일} {월요금} {콜백시각} {링크} 자리가 실제 값으로 바뀝니다 (제품·모델·구매일은 자동 발송이 지난 구매에서 채움) · 담당자 화면에는 '담당자'·'공통' 것만 보입니다</span>
             <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input class="in mono" id="smsTplSelf" placeholder="내 번호 (테스트 받기)" inputmode="numeric" style="max-width:180px" aria-label="내 번호" oninput="try{localStorage.setItem('dc_sms_self',this.value)}catch(e){}"><button class="btn sm ghost" onclick="smsTplAdd()">+ 템플릿</button><button class="btn sm" onclick="smsSave()">저장</button></span></h3>
           <p class="note" id="smsTplNote" style="margin:0 0 8px">[테스트 받기] = 그 줄의 본문(저장 전 것도)에 보기 값(이름 테스트 · 담당자 지용현 · 모델 · 월요금 · 링크 …)을 채워 내 번호로 한 통 보냅니다 — 실제 발송 모드면 실제로 오고, 테스트 모드면 발송 내역에 기록만 남습니다.</p>
           <div class="tw"><table><thead><tr><th>코드</th><th>이름</th><th style="min-width:320px">본문</th><th>쓰는 곳</th><th>광고</th><th>사용</th><th></th></tr></thead><tbody id="tbSmsTpl"></tbody></table></div>
@@ -4754,7 +4754,7 @@ function exCustRender(){ const cu=(EX.d&&EX.d.customers)||{}; const k=(t,v,s)=>`
 let AR=[], AR_PV={}, AR_OPEN=new Set(), AR_GROUPS=null;
 let AR_F=(()=>{ try{ return Object.assign({st:'all',cat:'all',arch:false}, JSON.parse(localStorage.getItem('dc_ar_f')||'{}')); }catch(e){ return {st:'all',cat:'all',arch:false}; } })();
 const AR_WD={daily:'매일',mon:'월요일',tue:'화요일',wed:'수요일',thu:'목요일',fri:'금요일',sat:'토요일',sun:'일요일'};
-const AR_VARS=['{이름}','{담당자}','{매장전화}','{모델}','{기한}','{링크}','{견적링크}'];
+const AR_VARS=['{이름}','{제품}','{모델}','{구매일}','{기한}','{담당자}','{매장전화}','{링크}','{견적링크}'];   /* 제품·모델·구매일·기한은 서버(fn_auto_rule_preview rows[].vars)가 사람마다 채운다 (mvp_223) */
 /* 종류마다 조건 칸 — [키, 라벨, 종류(num·text·group), 기본값, 자리 글]. 새 종류를 더하려면 여기 한 줄 + 서버 fn_auto_rule_preview 가지 하나 */
 const AR_KINDS={
   sub_expire:{nm:'구독 만료 예정',cat:'구독',desc:'DPS 구독 전표의 약정 만료일이 N일 안인 고객 (취소·해지·미가입 제외)',fields:[['days','만료 N일 안','num',90]],
@@ -4763,9 +4763,9 @@ const AR_KINDS={
     body:'[삼성스토어 시흥점] {이름} 님, 보내드린 견적서({모델}) 유효기한이 {기한}까지입니다. 조건 변경이나 추가 상담은 {담당자} 프로 · {매장전화}\n{견적링크}'},
   product_cycle:{nm:'소모품 교체 주기',cat:'소모품',desc:'마지막 소모품 구매(없으면 본체 구매)에 주기를 더한 날 = 교체 예정일. 그 예정일이 오늘로부터 "며칠 전 ~ 며칠 뒤" 사이인 고객 · 오픈마켓·수신거부 제외 · 같은 안내를 주기 절반 안에 받은 사람 제외',
     fields:[['consumable','소모품 제품 조건','text','','예: HAF-|정수기.*필터  (정규식 · | 로 여러 개)'],['body','본체 제품 조건 (선택)','text','','예: 정수기'],['cycle_days','교체 주기 (일)','num',180],['lo','예정일 며칠 전부터 보낼지','before',30,'일 전 — 30 이면 예정일 한 달 전부터'],['hi','예정일이 지나도 며칠까지','after',14,'일 뒤까지 — 놓친 사람도 이만큼은 받음']],
-    body:'[삼성스토어 시흥점] {이름} 님, 지난 구매 기준으로 {모델} 교체 시기가 가까워졌습니다. 주문·문의 {담당자} 프로 · {매장전화}\n{링크}'},
+    body:'[삼성스토어 시흥점] {이름} 님, {구매일}에 구매하신 {제품} 교체 시기가 가까워졌습니다. 같은 제품 바로 주문 {링크}\n문의 {담당자} 프로 · {매장전화}'},
   product_age:{nm:'본체 사용 기간',cat:'케어',desc:'제품군 본체를 산 지 N~M개월인 고객 (원장 + DPS · 오픈마켓 제외) · 구독 고객은 삼성케어가 챙기므로 기본은 일시불 구매만',fields:[['group','제품군','group','정수기'],['pay','구매 구분','sel','onetime','',[['onetime','일시불 구매만 (구독 제외)'],['sub','구독만'],['all','전부']]],['min_m','경과 최소(개월)','num',24],['max_m','경과 최대(개월)','num',25]],
-    body:'[삼성스토어 시흥점] {이름} 님, {모델} 사용 2년이 됐습니다. 점검·관리 안내를 보내드립니다. 궁금한 점은 {담당자} 프로 · {매장전화}'}};
+    body:'[삼성스토어 시흥점] {이름} 님, {구매일}에 구매하신 {제품} 사용 2년이 됐습니다. 점검·관리 안내를 보내드립니다. 궁금한 점은 {담당자} 프로 · {매장전화}'}};
 function arCond(r){ const p=r.params||{}; switch(r.kind){
   case 'sub_expire': return `DPS 구독 만료 ${p.days}일 안 · 취소·해지 제외`;
   case 'quote_follow': return `견적서 보낸 뒤 ${p.days}일 안 · 산 사람은 빼고 보냅니다`;
@@ -4851,7 +4851,7 @@ function arBytesEl(tid,oid){ const t=$(tid), o=$(oid); if(!t||!o) return 0; cons
 function arBytes(c){ arBytesEl('arBody_'+c,'arBytes_'+c); const k=$('arK_'+c), t=$('arBody_'+c); if(k&&t) k.textContent=arKindTag(t.value); }
 function arVarIns(tid,v){ const t=$(tid); if(!t) return; const s=t.selectionStart??t.value.length, e=t.selectionEnd??s; t.value=t.value.slice(0,s)+v+t.value.slice(e); t.focus(); t.selectionStart=t.selectionEnd=s+v.length; t.dispatchEvent(new Event('input')); }
 function arSampleVars(c){ const pv=AR_PV[c], f=pv&&pv.rows&&pv.rows[0]; const v=Object.assign({}, SMS_TPL_SAMPLE);
-  if(f){ if(f.item) v.모델=f.item; if(f.due_date) v.기한=f.due_date; } return v; }
+  if(f){ if(f.vars) Object.assign(v, f.vars); else { if(f.item) v.모델=f.item; if(f.due_date) v.기한=f.due_date; } } return v; }
 async function arCount(c){ try{ const r=await rpc('fn_auto_rule_preview',{p_code:c,p_limit:8}); AR_PV[c]=r; const o=$('arN_'+c); if(o){ o.textContent=n(r.total||0)+'명'; o.classList.toggle('z',!r.total); } const pb=$('arPv_'+c); if(pb && !pb.classList.contains('hidden')) arPvRender(c); arBar(); }
   catch(e){ const o=$('arN_'+c); if(o){ o.textContent='못 셈'; o.title=e.message; } } }
 function arPreview(c){ const box=$('arPv_'+c); if(!box) return; const open=box.classList.contains('hidden'); box.classList.toggle('hidden',!open); $('arPvBtn_'+c).textContent=open?'명단 접기 ▴':'명단 보기 ▾'; if(open) arPvRender(c); }
@@ -4859,7 +4859,7 @@ function arPvRender(c){ const box=$('arPv_'+c), pv=AR_PV[c]; if(!box) return; if
   const rows=pv.rows||[]; if(!rows.length){ box.innerHTML='<div class="note">지금 창 안에 든 사람이 없습니다</div>'; return; }
   const cyc=pv.kind==='product_cycle', age=pv.kind==='product_age';
   box.innerHTML=`<table><thead><tr><th>고객</th><th>번호</th><th>제품</th><th>${age?'구매일':cyc?'마지막 구매':'기준'}</th><th>${age?'경과':cyc?'교체 예정':'마감'}</th><th>${age?'':cyc?'D':'경과'}</th><th>담당</th></tr></thead><tbody>`+
-    rows.map(x=>`<tr><td>${esc(x.name||'')}${x.optout?' <span class="tag bad">수신거부</span>':''}${x.bought?' <span class="tag ok">구매</span>':''}</td><td class="mono">${esc(x.phone||'')}</td><td style="white-space:normal;max-width:360px">${esc(x.item||'')}</td><td>${esc(x.ref_date||'')}</td><td>${esc(age?(x.days+'개월'):(x.due_date||''))}</td><td class="${cyc&&x.days<0?'past':''}">${age?'':(cyc?(x.days<0?'D'+x.days:'D+'+x.days):(x.days!=null?x.days+'일':''))}</td><td>${esc(x.handler||'')}</td></tr>`).join('')+
+    rows.map(x=>`<tr><td>${esc(x.name||'')}${x.optout?' <span class="tag bad">수신거부</span>':''}${x.bought?' <span class="tag ok">구매</span>':''}</td><td class="mono">${esc(x.phone||'')}</td><td style="white-space:normal;max-width:360px">${esc(x.item||'')}${x.model&&x.model!==x.item?`<div class="mono" style="font-size:calc(11.5px * var(--font-scale));color:var(--muted)">모델 ${esc(x.model)}</div>`:''}</td><td>${esc(x.ref_date||'')}</td><td>${esc(age?(x.days+'개월'):(x.due_date||''))}</td><td class="${cyc&&x.days<0?'past':''}">${age?'':(cyc?(x.days<0?'D'+x.days:'D+'+x.days):(x.days!=null?x.days+'일':''))}</td><td>${esc(x.handler||'')}</td></tr>`).join('')+
     `</tbody></table><div class="arnote">${n(pv.total||0)}명 중 ${rows.length}명 · ${pv.today||''} 기준${cyc?' · D 음수 = 교체 예정일이 지남':''} · 저장하지 않은 조건은 반영 전입니다</div>`; }
 async function arToggle(c){ const r=AR.find(x=>x.code===c); const el=$('arOn_'+c); if(!r||!el) return; const want=!r.enabled;
   const paint=on=>{ el.classList.toggle('on',on); el.lastChild.textContent=on?'켜짐':'꺼짐'; const card=$('ar_'+c); if(card) card.classList.toggle('off',!on); };
@@ -7058,7 +7058,7 @@ async function loadSms(){ try{ await smsCfgEnsure(true); }catch(e){ $('smsState'
 /* ═══ 문자 보내기 — 센드온 [문자보내기] 양식 그대로 (mvp_211) : ① 발신번호 ② 광고 여부 ③ 변수 ④ 받는 사람(파일·추출·직접) ⑤ 문구 ⑥ 발송 시간 → 오른쪽 미리보기·테스트하기·발송 요약 → [발송하기]/[예약하기]
    받는 사람 = SC_EXT(파일·발송 대상 추출 · vars 포함) + 직접 입력 칸. 보내기는 fn_sms_send(조각) / 예약은 fn_sms_schedule_save(500명씩) · 발신번호는 p_opt.sender ═══ */
 let SC_AD=false, SC_WHEN='now', SC_EXT=[], SC_EXT_SRC='';
-const SC_VARS=['이름','담당자','매장전화','견적링크','기한','모델','월요금','콜백시각','링크'];
+const SC_VARS=['이름','담당자','매장전화','견적링크','기한','모델','제품','구매일','월요금','콜백시각','링크'];
 const scNorm=s=>{ let d=String(s==null?'':s).replace(/\D/g,''); if(/^1[016789]\d{7,8}$/.test(d)) d='0'+d; return d; };   /* 엑셀 숫자 칸은 앞 0 이 빠진다 */
 const scIsPh=s=>/^01[016789]\d{7,8}$/.test(scNorm(s));
 function fmtTel(d){ d=String(d||'').replace(/\D/g,''); if(/^02\d{7,8}$/.test(d)) return d.replace(/^(02)(\d{3,4})(\d{4})$/,'$1-$2-$3'); if(/^0\d{9,10}$/.test(d)) return d.replace(/^(\d{3})(\d{3,4})(\d{4})$/,'$1-$2-$3'); return d; }
@@ -7229,7 +7229,7 @@ function smsTplRender(){ $('tbSmsTpl').innerHTML=SMS_TPL.map((t,k)=> t._del ? ''
     <td style="text-align:center"><input type="checkbox" ${t.active!==false?'checked':''} onchange="SMS_TPL[${k}].active=this.checked" style="width:18px;height:18px" aria-label="사용"></td>
     <td style="white-space:nowrap"><button class="btn sm" onclick="smsTplTest(${k})" title="내 번호로 이 템플릿을 한 통 받아 본다">테스트 받기</button> <button class="btn sm ghost" onclick="SMS_TPL[${k}]._del=true;smsTplRender()">지우기</button><div class="note" id="smsTplRes${k}" style="margin-top:4px;max-width:220px;white-space:normal"></div></td></tr>`).join('')||'<tr><td colspan="7" class="note" style="text-align:center;padding:16px">템플릿 없음 — [+ 템플릿]</td></tr>'; }
 /* 템플릿 [테스트 받기] (v198) — 그 줄의 본문(저장 전 것도)에 보기 값을 채워 내 번호로 한 통. 모드를 따른다(테스트면 기록만) */
-const SMS_TPL_SAMPLE={담당자:'지용현',견적링크:'https://db.samsungat.co.kr/q/?t=sample',기한:'2026.10.21',모델:'AI 콤보 WD25DB8995BZ',월요금:'102,850원',콜백시각:'오후 2시',링크:'https://www.samsungsh.co.kr/data/r.html?sample'};
+const SMS_TPL_SAMPLE={담당자:'지용현',견적링크:'https://db.samsungat.co.kr/q/?t=sample',기한:'2026.10.21',모델:'AI 콤보 WD25DB8995BZ',제품:'CLT-K515S/TND [1,500매]',구매일:'2026.06.12',월요금:'102,850원',콜백시각:'오후 2시',링크:'https://www.samsungsh.co.kr/data/r.html?sample'};
 async function smsTplTest(k){ const t=SMS_TPL[k]; if(!t) return; const inp=$('smsTplSelf'); const ph=(inp.value||'').replace(/\D/g,'');
   if(!/^01[016789]\d{7,8}$/.test(ph)){ inp.focus(); return toast('오른쪽 위 [내 번호] 칸에 휴대폰 번호를 적어주세요','bad'); }
   const body=(t.body||'').trim(); if(!body) return toast('본문이 비어 있습니다','bad');
