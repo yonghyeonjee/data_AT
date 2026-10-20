@@ -1,0 +1,44 @@
+<!-- ══════════════════════════════════════════════════════════════════
+     📍 유입 추적 (SUB v1.5 · 2026-10-20 · 데이터센터 mvp_225)
+     · 이번 방문의 첫 페이지 · 마지막 외부 유입(30일) · 직전 페이지 전체 주소 · GA4 client id 를 접수에 싣는다
+     · 고도몰 공통 하단(모든 페이지)에도 같은 블록을 넣으면 사이트 첫 페이지의 외부 출처까지 잡힌다
+       (구독 페이지에만 넣어도 직전 페이지 전체 주소는 잡힌다)
+     ※ 고도몰 템플릿 치환 방지: 여는 중괄호 뒤에 항상 공백 유지
+     ══════════════════════════════════════════════════════════════════ -->
+<script>
+(function () { 
+  if (window.samTrackInto) return;
+  var OWN = /(^|\.)samsungsh\.(co\.kr|com)$/i;
+  function host(u) { try { return new URL(u).hostname; } catch (e) { return ''; } }
+  function hasUtm(u) { return /[?&]utm_(source|medium|campaign)=/.test(u || ''); }
+  function store(kind) { try { return window[kind]; } catch (e) { return null; } }
+  function get(st, k) { try { var v = st && st.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+  function put(st, k, v) { try { if (st) st.setItem(k, JSON.stringify(v)); } catch (e) { } }
+
+  window.samTrackCapture = function (href, ref, now) { 
+    href = String(href || location.href);
+    ref = String((ref === undefined ? document.referrer : ref) || '');
+    now = now || Date.now();
+    var ext = !!ref && !OWN.test(host(ref));
+    var touch = { ref: ref.slice(0, 300), landing: href.slice(0, 300), at: new Date(now).toISOString() };
+    var S = store('sessionStorage'), L = store('localStorage');
+    if (!get(S, 'sam_entry')) put(S, 'sam_entry', touch);      /* 이번 방문의 첫 페이지 */
+    if (ext || hasUtm(href)) put(L, 'sam_last_ext', touch);    /* 마지막 외부 유입 · UTM 링크 */
+  };
+
+  function gaId() { var m = document.cookie.match(/(?:^|;\s*)_ga=GA\d\.\d\.([^;]+)/); return m ? m[1] : ''; }
+
+  window.samTrackInto = function (data) { 
+    var S = store('sessionStorage'), L = store('localStorage');
+    var e = get(S, 'sam_entry'), x = get(L, 'sam_last_ext');
+    if (x && (Date.now() - Date.parse(x.at)) > 30 * 864e5) x = null;
+    data.referrerFull = String(document.referrer || '').slice(0, 300);
+    if (e) { data.entryRef = e.ref; data.entryLanding = e.landing; data.entryAt = e.at; }
+    if (x) { data.lastExtRef = x.ref; data.lastExtLanding = x.landing; data.lastExtAt = x.at; }
+    var g = gaId(); if (g) data.gaClientId = g;
+    return data;
+  };
+
+  window.samTrackCapture();
+})();
+</script>
