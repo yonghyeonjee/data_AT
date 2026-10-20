@@ -1,0 +1,11 @@
+-- mvp_227 (2026-10-20) 토너 자동 발송 문구 교체 · 빈 줄 유지 · 자동 발송 고정 링크
+-- ① core.f_sms_render: 빈 줄을 전부 지우던 줄을 부분 치환 (문단 띄움이 사라졌다)
+--    v := regexp_replace(v, '\n[ \t·]*\n', E'\n', 'g');
+--    → v := regexp_replace(v, '\n[ \t]*·[ \t·]*(?=\n|$)', '', 'g');   -- '·' 만 남은 줄만 지움
+--      v := regexp_replace(v, '\n([ \t]*\n){2,}', E'\n\n', 'g');      -- 빈 줄 여럿은 하나로
+-- ② 캠페인 auto_toner_cycle (자동 발송 · 토너·잉크 교체 주기) + 고정 단축 링크 vwjqqj
+--    → inquiry_portal.html?utm_source=crm_auto&utm_medium=lms&utm_campaign=auto_toner_cycle
+--    (data/portal.html 은 1초 meta refresh 라 UTM 이 빠져 포털로 직접 보낸다)
+--    실제 발송 때는 사람별 토큰이 붙어 날짜별 링크를 따로 만들 필요가 없다.
+-- ③ crm.sms_template auto_toner = 사용자 원문 기반 광고 문구(is_ad true · {이름} {모델} {링크}) · LMS 389B(템플릿) / 렌더 432B
+-- 무료수신거부 080 줄: core.sms_config.ad_footer 는 비어 있다 — 센드온이 isAd 발송에 자동으로 붙이는지 첫 테스트로 확인.
