@@ -1,0 +1,10 @@
+-- mvp_226 (2026-10-20) [테스트 받기]는 테스트 모드여도 실제로 보낸다
+-- "테스트도 실제 보내보는 테스트가 필요한거지" — 설정 모드가 test 면 [테스트 받기]도 기록만 남아 받아 볼 수 없었다.
+-- core.f_sms_send 두 지점 부분 치환 (서버 본문을 읽어 지점 1개씩 확인 후 execute):
+--   v_live := c.mode = 'live' and not v_force_test;
+--   → v_live := (c.mode = 'live' or (v_kind = 'test' and jsonb_array_length(p_rows) <= 3)) and not v_force_test;
+--   if v_live then v_body := core.f_sms_link_personalize(
+--   → if v_live and v_kind <> 'test' then v_body := core.f_sms_link_personalize(   -- 테스트 클릭이 캠페인 구매 귀속에 안 섞이게
+-- kind 'test' 를 쓰는 곳은 전부 내 번호 한 통: 자동 발송 [테스트 받기] · 문자 보내기 [테스트하기] · 템플릿 [테스트 받기] · 발송 대상 [내 번호로 1건].
+-- 대량 발송(manual·예약)은 그대로 모드를 따른다. send_log 는 buyer_key 16자 줄만 쓰므로 테스트 번호는 안 들어간다.
+-- 첫 발송: 토너 교체 주기(toner_cycle) 1순위 대상의 실제 정보로 문구를 채워 지정 번호로 1통 — 센드온 200 성공 · LMS 235B.

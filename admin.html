@@ -2005,7 +2005,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div id="smsCheckBox" class="note" style="line-height:1.8"></div>
         </div>
         <div class="card">
-          <h3>설정 <span>기본은 <b>꺼짐</b> — 담당자 화면 [문자] 버튼이 보이지만 잠깁니다. 켜고 <b>테스트</b> 모드면 보내기를 눌러도 실제로 나가지 않고 기록만 남고, <b>실제 발송</b>으로 바꾸면 그때부터 센드온으로 나갑니다</span>
+          <h3>설정 <span>기본은 <b>꺼짐</b> — 담당자 화면 [문자] 버튼이 보이지만 잠깁니다. 켜고 <b>테스트</b> 모드면 보내기를 눌러도 실제로 나가지 않고 기록만 남고(내 번호로 받는 [테스트 받기]·[테스트하기]는 테스트 모드여도 실제로 한 통 갑니다), <b>실제 발송</b>으로 바꾸면 그때부터 센드온으로 나갑니다</span>
             <span style="margin-left:auto"><button class="btn sm" onclick="smsSave()">저장</button></span></h3>
           <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))" id="smsForm">
             <div><label>문자 기능</label><select class="in" id="smsEnabled" aria-label="문자 기능"><option value="false">꺼짐 (보이지만 잠김)</option><option value="true">켜짐</option></select></div>
@@ -2022,7 +2022,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
         <div class="card">
           <h3>템플릿 <span><b>{이름}</b> {담당자} {매장전화} {견적링크} {기한} {모델} {제품} {구매일} {월요금} {콜백시각} {링크} 자리가 실제 값으로 바뀝니다 (제품·모델·구매일은 자동 발송이 지난 구매에서 채움) · 담당자 화면에는 '담당자'·'공통' 것만 보입니다</span>
             <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input class="in mono" id="smsTplSelf" placeholder="내 번호 (테스트 받기)" inputmode="numeric" style="max-width:180px" aria-label="내 번호" oninput="try{localStorage.setItem('dc_sms_self',this.value)}catch(e){}"><button class="btn sm ghost" onclick="smsTplAdd()">+ 템플릿</button><button class="btn sm" onclick="smsSave()">저장</button></span></h3>
-          <p class="note" id="smsTplNote" style="margin:0 0 8px">[테스트 받기] = 그 줄의 본문(저장 전 것도)에 보기 값(이름 테스트 · 담당자 지용현 · 모델 · 월요금 · 링크 …)을 채워 내 번호로 한 통 보냅니다 — 실제 발송 모드면 실제로 오고, 테스트 모드면 발송 내역에 기록만 남습니다.</p>
+          <p class="note" id="smsTplNote" style="margin:0 0 8px">[테스트 받기] = 그 줄의 본문(저장 전 것도)에 보기 값(이름 테스트 · 담당자 지용현 · 모델 · 월요금 · 링크 …)을 채워 내 번호로 한 통 보냅니다 — 테스트 모드여도 실제로 옵니다(포인트 1건 차감).</p>
           <div class="tw"><table><thead><tr><th>코드</th><th>이름</th><th style="min-width:320px">본문</th><th>쓰는 곳</th><th>광고</th><th>사용</th><th></th></tr></thead><tbody id="tbSmsTpl"></tbody></table></div>
         </div>
         <div class="card">
@@ -4838,7 +4838,7 @@ function arEditor(r){ const c=r.code, K=AR_KINDS[r.kind]||{nm:r.kind,desc:'',fie
     <label class="switch${r.is_ad?' on':''}" id="arAd_${c}" onclick="this.classList.toggle('on')"><span class="sw"></span>광고</label>
     <span class="sp"></span>
     <button class="btn sm ghost" onclick="arPreview('${c}')" id="arPvBtn_${c}">명단 보기 ▾</button>
-    <button class="btn sm" onclick="arTestAsk('${c}')" title="받을 번호를 정해 이 문구를 한 통 받아 본다 (테스트 모드면 기록만)">테스트 받기</button>
+    <button class="btn sm" onclick="arTestAsk('${c}')" title="받을 번호를 정해 이 문구를 실제로 한 통 받아 본다">테스트 받기</button>
     <button class="btn sm" onclick="arSave('${c}')">저장</button>
     ${r.archived?`<button class="btn sm ghost" onclick="arArchive('${c}',false)">복구</button>`:`<button class="btn sm ghost" style="color:var(--red)" onclick="arArchive('${c}',true)">보관</button>`}
     <span class="res" id="arRes_${c}"></span></div>
@@ -4869,7 +4869,7 @@ async function arToggle(c){ const r=AR.find(x=>x.code===c); const el=$('arOn_'+c
 /* [테스트 받기] — 누를 때마다 받을 번호를 정한다 (지난번 번호를 미리 채움 · localStorage dc_sms_self 공유) */
 async function arTestAsk(c){ const r=AR.find(x=>x.code===c); if(!r) return; let cur=''; try{ cur=($('arSelf')&&$('arSelf').value)||localStorage.getItem('dc_sms_self')||''; }catch(e){}
   const ph=await modal({title:'테스트 받기 · '+r.label, ok:'이 번호로 보내기', html:`<div class="f" style="width:100%"><label>받을 휴대폰 번호</label><input class="in mono" id="arTestPh" inputmode="numeric" placeholder="01012345678" value="${esc(cur)}" style="width:100%;max-width:none" aria-label="받을 휴대폰 번호"></div>
-      <p class="note" style="margin:8px 0 0">이 규칙의 문구(지금 적힌 것)를 첫 대상 사람의 모델·기한으로 채워 한 통 보냅니다 · ${SMS_CFG&&SMS_CFG.mode==='live'?'<b>실제 발송 모드</b>라 진짜 문자가 갑니다':'테스트 모드면 발송 결과에 기록만 남습니다'}</p>`,
+      <p class="note" style="margin:8px 0 0">이 규칙의 문구(지금 적힌 것)를 첫 대상 사람의 모델·기한으로 채워 한 통 보냅니다 · 테스트 모드여도 <b>실제로 한 통</b> 갑니다(포인트 1건 차감) · 자동 발송 대상에게는 안 갑니다</p>`,
     init:()=>{ const i=$('arTestPh'); setTimeout(()=>{ i.focus(); i.select(); },40); i.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); document.querySelector('#modalHost .btns .btn:not(.ghost)').click(); } }); },
     collect:()=>{ const v=($('arTestPh').value||'').replace(/\D/g,''); if(!/^01[016789]\d{7,8}$/.test(v)) throw new Error('휴대폰 번호를 010 으로 시작해 숫자만 적어주세요'); return v; }});
   if(!ph) return; try{ localStorage.setItem('dc_sms_self',ph); }catch(e){} if($('arSelf')) $('arSelf').value=ph; ['smsTplSelf','scSelf'].forEach(id=>{ if($(id)) $(id).value=ph; });
@@ -7228,7 +7228,7 @@ function smsTplRender(){ $('tbSmsTpl').innerHTML=SMS_TPL.map((t,k)=> t._del ? ''
     <td style="text-align:center"><input type="checkbox" ${t.is_ad?'checked':''} onchange="SMS_TPL[${k}].is_ad=this.checked" style="width:18px;height:18px" aria-label="광고"></td>
     <td style="text-align:center"><input type="checkbox" ${t.active!==false?'checked':''} onchange="SMS_TPL[${k}].active=this.checked" style="width:18px;height:18px" aria-label="사용"></td>
     <td style="white-space:nowrap"><button class="btn sm" onclick="smsTplTest(${k})" title="내 번호로 이 템플릿을 한 통 받아 본다">테스트 받기</button> <button class="btn sm ghost" onclick="SMS_TPL[${k}]._del=true;smsTplRender()">지우기</button><div class="note" id="smsTplRes${k}" style="margin-top:4px;max-width:220px;white-space:normal"></div></td></tr>`).join('')||'<tr><td colspan="7" class="note" style="text-align:center;padding:16px">템플릿 없음 — [+ 템플릿]</td></tr>'; }
-/* 템플릿 [테스트 받기] (v198) — 그 줄의 본문(저장 전 것도)에 보기 값을 채워 내 번호로 한 통. 모드를 따른다(테스트면 기록만) */
+/* 템플릿 [테스트 받기] (v198) — 그 줄의 본문(저장 전 것도)에 보기 값을 채워 내 번호로 한 통. 테스트 모드여도 실제로 나간다(mvp_226) */
 const SMS_TPL_SAMPLE={담당자:'지용현',견적링크:'https://db.samsungat.co.kr/q/?t=sample',기한:'2026.10.21',모델:'AI 콤보 WD25DB8995BZ',제품:'CLT-K515S/TND [1,500매]',구매일:'2026.06.12',월요금:'102,850원',콜백시각:'오후 2시',링크:'https://www.samsungsh.co.kr/data/r.html?sample'};
 async function smsTplTest(k){ const t=SMS_TPL[k]; if(!t) return; const inp=$('smsTplSelf'); const ph=(inp.value||'').replace(/\D/g,'');
   if(!/^01[016789]\d{7,8}$/.test(ph)){ inp.focus(); return toast('오른쪽 위 [내 번호] 칸에 휴대폰 번호를 적어주세요','bad'); }
