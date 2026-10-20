@@ -46,5 +46,5 @@ begin
   execute d;
 end $outer$;
 
--- 토너 규칙: 개인 주기 · 기본 180일 · 예정일 14일 앞부터 · 첫 회에 1년 안에 예정일이 지난 사람까지
-update crm.auto_rule set params = params || '{"cycle_mode":"personal","cycle_days":180,"lo":-365,"hi":14}' where code = 'toner_cycle';
+-- 토너 규칙: 개인 주기 · 기본 180일 · 예정일 14일 앞부터 · 첫 회에 180일 안에 예정일이 지난 사람까지 (처음 -365 → 사용자 결정으로 -180)
+update crm.auto_rule set params = params || '{"cycle_mode":"personal","cycle_days":180,"lo":-180,"hi":14}' where code = 'toner_cycle';
