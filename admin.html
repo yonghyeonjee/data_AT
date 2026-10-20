@@ -4761,15 +4761,15 @@ const AR_KINDS={
     body:'[삼성스토어 시흥점] {이름} 님, 구독 중인 {모델} 약정이 {기한}에 끝납니다. 재약정·기기 교체 혜택을 먼저 안내드리겠습니다. {담당자} 프로 · {매장전화}'},
   quote_follow:{nm:'견적 보낸 뒤',cat:'견적',desc:'견적서를 보낸 지 N일 안이고 아직 사지 않은 고객',fields:[['days','보낸 뒤 N일 안','num',3]],
     body:'[삼성스토어 시흥점] {이름} 님, 보내드린 견적서({모델}) 유효기한이 {기한}까지입니다. 조건 변경이나 추가 상담은 {담당자} 프로 · {매장전화}\n{견적링크}'},
-  product_cycle:{nm:'소모품 교체 주기',cat:'소모품',desc:'마지막 소모품 구매(없으면 본체 구매)에 주기를 더한 날 = 교체 예정일. 그 예정일이 오늘로부터 "며칠 전 ~ 며칠 뒤" 사이인 고객 · 오픈마켓·수신거부 제외 · 같은 안내를 주기 절반 안에 받은 사람 제외',
-    fields:[['consumable','소모품 제품 조건','text','','예: HAF-|정수기.*필터  (정규식 · | 로 여러 개)'],['body','본체 제품 조건 (선택)','text','','예: 정수기'],['cycle_days','교체 주기 (일)','num',180],['lo','예정일 며칠 전부터 보낼지','before',30,'일 전 — 30 이면 예정일 한 달 전부터'],['hi','예정일이 지나도 며칠까지','after',14,'일 뒤까지 — 놓친 사람도 이만큼은 받음']],
+  product_cycle:{nm:'소모품 교체 주기',cat:'소모품',desc:'마지막 소모품 구매(없으면 본체 구매)에 주기를 더한 날 = 교체 예정일. 예정일 N일 앞이 되면 보내고, 이미 지난 사람은 정한 날 수까지 첫 회에 같이 보낸다 · 구매 한 번에 한 통(다시 사면 다음 예정일에 또) · 오픈마켓·수신거부 제외',
+    fields:[['consumable','소모품 제품 조건','text','','예: HAF-|정수기.*필터  (정규식 · | 로 여러 개)'],['body','본체 제품 조건 (선택)','text','','예: 정수기'],['cycle_mode','주기','sel','fixed','',[['personal','고객마다 구매 간격 (모르면 기본 주기)'],['fixed','모두 기본 주기']]],['cycle_days','기본 주기 (일)','num',180,'일 — 고객마다면 3번 이상 산 고객은 구매 간격 중앙값'],['hi','예정일 며칠 앞에 보낼지','after',14,'일 앞 — 14 면 예정일 2주 전에'],['lo','이미 지난 사람은 며칠까지','before',30,'일 — 예정일이 이만큼 지났어도 아직 안 받았으면 보냄(첫 회에 한 번에)']],
     body:'[삼성스토어 시흥점] {이름} 님, {구매일}에 구매하신 {제품} 교체 시기가 가까워졌습니다. 같은 제품 바로 주문 {링크}\n문의 {담당자} 프로 · {매장전화}'},
   product_age:{nm:'본체 사용 기간',cat:'케어',desc:'제품군 본체를 산 지 N~M개월인 고객 (원장 + DPS · 오픈마켓 제외) · 구독 고객은 삼성케어가 챙기므로 기본은 일시불 구매만',fields:[['group','제품군','group','정수기'],['pay','구매 구분','sel','onetime','',[['onetime','일시불 구매만 (구독 제외)'],['sub','구독만'],['all','전부']]],['min_m','경과 최소(개월)','num',24],['max_m','경과 최대(개월)','num',25]],
     body:'[삼성스토어 시흥점] {이름} 님, {구매일}에 구매하신 {제품} 사용 2년이 됐습니다. 점검·관리 안내를 보내드립니다. 궁금한 점은 {담당자} 프로 · {매장전화}'}};
 function arCond(r){ const p=r.params||{}; switch(r.kind){
   case 'sub_expire': return `DPS 구독 만료 ${p.days}일 안 · 취소·해지 제외`;
   case 'quote_follow': return `견적서 보낸 뒤 ${p.days}일 안 · 산 사람은 빼고 보냅니다`;
-  case 'product_cycle': return `교체 예정일(마지막 소모품 구매${p.body?' · 없으면 본체 구매':''} + ${p.cycle_days}일)이 ${Math.abs(+p.lo||0)}일 전 ~ ${Math.abs(+p.hi||0)}일 뒤 사이 · 오픈마켓·수신거부 제외 · 같은 안내를 주기 절반 안에 받은 사람 제외`;
+  case 'product_cycle': return `교체 예정일 = 마지막 소모품 구매${p.body?'(없으면 본체 구매)':''} + ${p.cycle_mode==='personal'?`고객별 구매 간격(모르면 ${p.cycle_days}일)`:`${p.cycle_days}일`} · 예정일 ${Math.abs(+p.hi||0)}일 앞에 보냄 · 이미 지난 사람은 ${Math.abs(+p.lo||0)}일까지 · 구매 한 번에 한 통 · 오픈마켓·수신거부 제외`;
   case 'product_age': return `${p.group} 본체 ${AR_PAY_NM[p.pay||'all']||''} 구매 ${p.min_m}~${p.max_m}개월 (원장 + DPS · 오픈마켓 제외)`; } return ''; }
 const AR_PAY_NM={onetime:'일시불',sub:'구독',all:''};
 function arKindTag(body){ const b=smsBytes(body||''); return (b>90?'LMS':'SMS')+' '+n(b)+'B'; }
@@ -4859,8 +4859,8 @@ function arPvRender(c){ const box=$('arPv_'+c), pv=AR_PV[c]; if(!box) return; if
   const rows=pv.rows||[]; if(!rows.length){ box.innerHTML='<div class="note">지금 창 안에 든 사람이 없습니다</div>'; return; }
   const cyc=pv.kind==='product_cycle', age=pv.kind==='product_age';
   box.innerHTML=`<table><thead><tr><th>고객</th><th>번호</th><th>제품</th><th>${age?'구매일':cyc?'마지막 구매':'기준'}</th><th>${age?'경과':cyc?'교체 예정':'마감'}</th><th>${age?'':cyc?'D':'경과'}</th><th>담당</th></tr></thead><tbody>`+
-    rows.map(x=>`<tr><td>${esc(x.name||'')}${x.optout?' <span class="tag bad">수신거부</span>':''}${x.bought?' <span class="tag ok">구매</span>':''}</td><td class="mono">${esc(x.phone||'')}</td><td style="white-space:normal;max-width:360px">${esc(x.item||'')}${x.model&&x.model!==x.item?`<div class="mono" style="font-size:calc(11.5px * var(--font-scale));color:var(--muted)">모델 ${esc(x.model)}</div>`:''}</td><td>${esc(x.ref_date||'')}</td><td>${esc(age?(x.days+'개월'):(x.due_date||''))}</td><td class="${cyc&&x.days<0?'past':''}">${age?'':(cyc?(x.days<0?'D'+x.days:'D+'+x.days):(x.days!=null?x.days+'일':''))}</td><td>${esc(x.handler||'')}</td></tr>`).join('')+
-    `</tbody></table><div class="arnote">${n(pv.total||0)}명 중 ${rows.length}명 · ${pv.today||''} 기준${cyc?' · D 음수 = 교체 예정일이 지남':''} · 저장하지 않은 조건은 반영 전입니다</div>`; }
+    rows.map(x=>`<tr><td>${esc(x.name||'')}${x.optout?' <span class="tag bad">수신거부</span>':''}${x.bought?' <span class="tag ok">구매</span>':''}</td><td class="mono">${esc(x.phone||'')}</td><td style="white-space:normal;max-width:360px">${esc(x.item||'')}${x.model&&x.model!==x.item?`<div class="mono" style="font-size:calc(11.5px * var(--font-scale));color:var(--muted)">모델 ${esc(x.model)}</div>`:''}</td><td>${esc(x.ref_date||'')}</td><td>${esc(age?(x.days+'개월'):(x.due_date||''))}${cyc&&x.cycle?`<div style="font-size:calc(11.5px * var(--font-scale));color:var(--muted)">주기 ${n(x.cycle)}일${x.cycle_own?' · 고객':' · 기본'}</div>`:''}</td><td class="${cyc&&x.days<0?'past':''}">${age?'':(cyc?(x.days<0?'D'+x.days:'D+'+x.days):(x.days!=null?x.days+'일':''))}</td><td>${esc(x.handler||'')}</td></tr>`).join('')+
+    `</tbody></table><div class="arnote">${n(pv.total||0)}명 중 ${rows.length}명 · ${pv.today||''} 기준${cyc?' · D 음수 = 교체 예정일이 지남':''}${cyc&&pv.backlog!=null?` · 이미 지난 사람 ${n(pv.backlog)}명 · 고객별 주기 ${n(pv.own_cycle||0)}명`:''} · 저장하지 않은 조건은 반영 전입니다</div>`; }
 async function arToggle(c){ const r=AR.find(x=>x.code===c); const el=$('arOn_'+c); if(!r||!el) return; const want=!r.enabled;
   const paint=on=>{ el.classList.toggle('on',on); el.lastChild.textContent=on?'켜짐':'꺼짐'; const card=$('ar_'+c); if(card) card.classList.toggle('off',!on); };
   paint(want);
