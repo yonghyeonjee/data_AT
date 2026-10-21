@@ -1,0 +1,14 @@
+-- mvp_232 · 2026-10-21 · 발송결과 보기에 링크 클릭률 — "이거 여기에서도 링크 클릭률 보자"
+-- 문자는 열람(오픈)을 알 수 없으므로 사람별 링크(슬러그 6 + 토큰 6)를 누른 사람으로 본다.
+-- public.fn_sms_batch 를 pg_get_functiondef 부분 치환(지점 4개 · 각 1개 확인):
+--   ① 선언에 v_clk jsonb := '{}' · v_link jsonb
+--   ② 요약 select 뒤에 — 본문에서 regexp_match('[?]([a-z0-9]{6})([a-z0-9]{6})(?![a-z0-9])') 로 슬러그·토큰을 뽑아
+--      crm.link_hit(slug, tok, at >= 문자 보낸 시각) 과 맞춤 →
+--      v_clk = {메시지 id: {n 클릭 수, first 첫 클릭 MM-DD HH24:MI}}
+--      v_link = {tracked 사람별 링크로 성공한 문자 · plain 표시 없는 단축 링크 문자(테스트 등) · clicked 누른 사람 · clicks 총 클릭 ·
+--               first_min 첫 클릭까지 분(가운데 값) · last_at 마지막 클릭}
+--   ③ 받는 사람 줄마다 clicks · click_at
+--   ④ 응답에 link
+-- 화면: 결과 요약 아래 [링크 클릭] — 누른 사람 N명(클릭률 = 누른 사람 ÷ tracked) · 총 클릭 · 첫 클릭까지 · 마지막 클릭 /
+--       받는 사람 표에 '링크 클릭' 열(N회 + 첫 클릭 시각). 링크가 없거나 사람별 표시가 없으면 그 이유를 한 줄로.
+-- 확인: 10-21 16:30 자동 발송 테스트 한 통 → tracked 1 · clicked 1 · clicks 2 · first_min 0.6 · 직접 주소를 넣은 테스트 문자 → 전부 0.
