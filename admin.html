@@ -114,6 +114,22 @@ nav::-webkit-scrollbar{width:6px} nav::-webkit-scrollbar-thumb{background:rgba(2
 .nav.dev .ic{opacity:.4}
 .nav.dev .devtag{margin-left:auto;font-size:calc(9.5px * var(--font-scale));font-weight:700;letter-spacing:.04em;color:#F0B23A;background:rgba(240,178,58,.14);border:1px solid rgba(240,178,58,.3);padding:1px 6px;border-radius:6px}
 .nav.dev.active{background:rgba(240,178,58,.1);color:#F0D08A;box-shadow:inset 0 0 0 1px rgba(240,178,58,.22)}
+/* 메뉴 묶음 아코디언 (v223) — 묶음 머리(아이콘·이름·꺾쇠)를 누르면 아래 메뉴가 접히고 펼쳐진다 · 펼침 상태는 localStorage dc_nav_open */
+.navg{margin:4px 0 2px}
+.navg>.ngh{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border:0;border-radius:8px;background:none;cursor:pointer;font:inherit;font-size:calc(13.5px * var(--font-scale));font-weight:600;color:#D5DBEA;text-align:left;transition:.12s}
+.navg>.ngh:hover{background:rgba(255,255,255,.06);color:#fff}
+.navg>.ngh .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;opacity:.85;flex-shrink:0}
+.navg>.ngh .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.navg>.ngh .chev{margin-left:auto;display:inline-flex;transition:transform .15s;opacity:.7}
+.navg>.ngh .chev svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.navg:not(.open)>.ngh .chev{transform:rotate(180deg)}
+.navg>.ngh .gdot{display:none;width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
+.navg:not(.open).hasbadge>.ngh .gdot{display:inline-block}
+.navg:not(.open)>.ngb{display:none}
+.navg>.ngb .nav{padding-left:40px;font-weight:400}
+.navg>.ngb .nav>.ic{display:none}   /* 하위 메뉴는 아이콘 없이 들여쓴 글자만 (보내 준 화면처럼) */
+.navg>.ngb .nav.active{font-weight:600}
+.navg.hascur:not(.open)>.ngh{color:#fff;background:rgba(255,255,255,.08)}
 /* 공사 중 안내 */
 .uc{max-width:640px;margin:40px auto;border-radius:14px;overflow:hidden;background:var(--card,#fff);box-shadow:0 1px 3px rgba(16,24,40,.08),0 8px 24px rgba(16,24,40,.06)}
 .uc-tape{height:16px;background:repeating-linear-gradient(45deg,#F4C23D 0 14px,#2B2F3A 14px 28px)}
@@ -1135,6 +1151,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 .fk-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap} .fk-row .in.num{max-width:96px}
 .fgrid .fk-hid+.fk-radio{margin-top:2px;display:flex;width:100%} .fgrid .fk-radio button{flex:1 1 auto;text-align:center}   /* 조건 칸 안에서는 알약이 칸 폭을 나눠 쓴다(세로로 안 쌓이게) */
 @media(max-width:640px){ .fk-range:not(.dual){flex-wrap:wrap} .fk-range:not(.dual) .fk-out{width:100%;text-align:left;min-width:0}   /* 폰: 값 글자는 슬라이더 아래 줄로 (옆에 두면 잘린다) */ .fk-radio button,.fk-chk{min-height:40px} .fk-chk input{width:20px;height:20px} .fk-range input[type=range]{height:8px} .fk-range input[type=range]::-webkit-slider-thumb{width:28px;height:28px} .fk-range input[type=range]::-moz-range-thumb{width:28px;height:28px} .fk-range.dual{height:36px} .fk-range.dual .trk,.fk-range.dual input[type=range]{top:14px} .fk-range.dual .fk-out{top:8px} .fk-row .in.num{max-width:none;flex:1} }
+@media(max-width:999px){ .navg>.ngh,.navg>.ngb .nav{min-height:40px} }   /* 폰: 메뉴 묶음 머리·하위 메뉴 40px (v223) */
 </style>
 </head>
 <body>
@@ -5020,21 +5037,36 @@ async function loadMenu(pre){
     if(i.label) TITLES[i.code]=i.label; }));
   renderNav();
 }
+/* 메뉴 묶음은 아코디언 (v223) — 묶음 머리를 누르면 접고 펼친다. 처음엔 다 펼침 · 고른 상태는 브라우저에 기억 ·
+   지금 화면이 든 묶음은 저절로 펼친다 · 접힌 묶음 안에 뱃지(새 문의 등)가 있으면 머리에 빨간 점 */
+const NAV_GICON={sales:'dash',crm:'customers',inv:'stock',data:'upload',ops:'option'};
+let NAV_OPEN={}; try{ NAV_OPEN=JSON.parse(localStorage.getItem('dc_nav_open')||'{}')||{}; }catch(e){ NAV_OPEN={}; }
+function navGroupSet(g, open){ g.classList.toggle('open', open); const b=g.querySelector('.ngh'); if(b) b.setAttribute('aria-expanded', String(open));
+  NAV_OPEN[g.dataset.g]=open; try{ localStorage.setItem('dc_nav_open', JSON.stringify(NAV_OPEN)); }catch(e){} navBadgeSync(); }
+function navReveal(v){ document.querySelectorAll('#navBox .navg').forEach(g=>g.classList.toggle('hascur', !!g.querySelector(`.nav[data-v="${v}"]`)));
+  const el=document.querySelector(`#navBox .nav[data-v="${v}"]`); const g=el&&el.closest('.navg'); if(g && !g.classList.contains('open')) navGroupSet(g, true); }
+function navBadgeSync(){ document.querySelectorAll('#navBox .navg').forEach(g=>g.classList.toggle('hasbadge', [...g.querySelectorAll('.ngb .badge')].some(b=>!b.classList.contains('hidden')&&b.textContent.trim()))); }
 function renderNav(){
   const h=[];
+  const item=i=>{ const dev=i.state==='dev', bid=NAV_BADGE[i.code];
+    return `<div class="nav${dev?' dev':''}" data-v="${i.code}"${dev?' title="개발 중입니다"':''}>`
+      +`<span class="ic">${NAV_ICON[i.code]||NAV_ICON.settings}</span>${esc(i.label||TITLES[i.code])}`
+      +(dev?'<span class="devtag">개발중</span>':(bid?`<span class="badge hidden" id="${bid}"></span>`:''))+`</div>`; };
   MENU.forEach(g=>{
     const items=(g.items||[]).filter(i=>i.state!=='off' && TITLES[i.code]);
     if(!items.length) return;
-    if(g.group!=='_top' && g.group_label) h.push(`<span class="nav sep">${esc(g.group_label)}</span>`);
-    items.forEach(i=>{
-      const dev=i.state==='dev', bid=NAV_BADGE[i.code];
-      h.push(`<div class="nav${dev?' dev':''}" data-v="${i.code}"${dev?' title="개발 중입니다"':''}>`
-        +`<span class="ic">${NAV_ICON[i.code]||NAV_ICON.settings}</span>${esc(i.label||TITLES[i.code])}`
-        +(dev?'<span class="devtag">개발중</span>':(bid?`<span class="badge hidden" id="${bid}"></span>`:''))+`</div>`);
-    });
+    if(g.group==='_top' || !g.group_label){ items.forEach(i=>h.push(item(i))); return; }
+    const open=NAV_OPEN[g.group]!==false, gid='ngb_'+g.group;
+    h.push(`<div class="navg${open?' open':''}" data-g="${esc(g.group)}"><button type="button" class="ngh" aria-expanded="${open}" aria-controls="${gid}">`
+      +`<span class="ic">${NAV_ICON[NAV_GICON[g.group]]||NAV_ICON.settings}</span><span>${esc(g.group_label)}</span><span class="gdot" aria-hidden="true"></span>`
+      +`<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></span></button>`
+      +`<div class="ngb" id="${gid}">${items.map(item).join('')}</div></div>`);
   });
   $('navBox').innerHTML=h.join('');
+  try{ if(VIEW) navReveal(VIEW); }catch(e){}
+  navBadgeSync();
 }
+new MutationObserver(()=>navBadgeSync()).observe(document.getElementById('navBox')||document.body, {subtree:true, attributes:true, attributeFilter:['class'], childList:true, characterData:true});
 /* 개발 중인 메뉴를 눌렀을 때 나오는 공사장 안내 */
 function renderUnderConstruction(v){
   const m=MENU_STATE[v]||{};
@@ -5076,7 +5108,7 @@ function show(v, opt){ if(!TITLES[v]) v='home';
   toggleNav(false); opt=opt||{};
   /* 메뉴는 DB에서 오지만 화면은 이 파일에 있다 — 메뉴만 먼저 생긴 경우(화면 파일이 옛 버전) 빈 화면 대신 안내 */
   if(!$('v-'+v) && v!=='home'){ VIEW=v; document.querySelectorAll('.view').forEach(x=>x.classList.toggle('hidden', x.id!=='v-dev'));
-    document.querySelectorAll('.nav[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===v)); $('title').textContent=TITLES[v];
+    document.querySelectorAll('.nav[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===v)); navReveal(v); $('title').textContent=TITLES[v];
     $('periodBar').classList.add('hidden'); $('pageIntro').classList.add('hidden'); const cb=$('cbar'); if(cb) cb.remove();
     $('v-dev').innerHTML=`<div class="uc"><div class="uc-tape"></div><div class="uc-body"><h4>${esc(TITLES[v])} — 화면 파일이 아직 이 버전이 아닙니다</h4>
       <p>메뉴는 서버에 등록됐지만 이 화면이 든 <b>admin.html</b>(또는 admin/test/index.html)이 아직 올라가지 않았습니다. 최신 zip 의 파일을 올리고 새로고침(Ctrl+F5)하세요.</p>
@@ -5084,7 +5116,7 @@ function show(v, opt){ if(!TITLES[v]) v='home';
   /* '개발 중' 메뉴는 보통 공사 중 안내만 — 개발 계정(fn_me.is_dev · core.app_setting dev_users)은 실제 화면을 열어 써 본다 (mvp_201) */
   const dev=(MENU_STATE[v]||{}).state==='dev' && !(ME&&ME.is_dev); VIEW=v;
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('hidden', dev ? x.id!=='v-dev' : x.id!=='v-'+v));
-  document.querySelectorAll('.nav[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===v));
+  document.querySelectorAll('.nav[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===v)); navReveal(v);
   $('title').textContent=TITLES[v]; renderTitleLink(v);
   if(!opt.fromHistory) pushView(v, !!opt.replace);
   if(dev){ $('periodBar').classList.add('hidden'); $('pageIntro').classList.add('hidden'); renderUnderConstruction(v); return; }
@@ -5270,7 +5302,7 @@ function placePeriodBar(v){
   const card=document.querySelector('#v-'+v+' .card'); if(card && pb.parentNode!==card){ card.insertBefore(pb, card.firstChild); }
   pb.classList.remove('hidden');
 }
-$('navBox').addEventListener('click',e=>{ const n=e.target.closest('.nav[data-v]'); if(n) show(n.dataset.v); });
+$('navBox').addEventListener('click',e=>{ const hd=e.target.closest('.ngh'); if(hd){ const g=hd.closest('.navg'); navGroupSet(g, !g.classList.contains('open')); return; } const n=e.target.closest('.nav[data-v]'); if(n) show(n.dataset.v); });
 
 /* 표 칸 자동 줄바꿈 (2026-09-21 "테이블 텍스트가 넘어가는 현상") — td 는 기본 nowrap 이라 주소·상품명·긴 이름이
    표를 옆으로 늘려 가로 스크롤이 생기고, 그 줄의 다른 칸(.wrap)은 좁아져 세로로 길어졌다.
