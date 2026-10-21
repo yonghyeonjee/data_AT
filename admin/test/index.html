@@ -4762,14 +4762,14 @@ const AR_KINDS={
   quote_follow:{nm:'견적 보낸 뒤',cat:'견적',desc:'견적서를 보낸 지 N일 안이고 아직 사지 않은 고객',fields:[['days','보낸 뒤 N일 안','num',3]],
     body:'[삼성스토어 시흥점] {이름} 님, 보내드린 견적서({모델}) 유효기한이 {기한}까지입니다. 조건 변경이나 추가 상담은 {담당자} 프로 · {매장전화}\n{견적링크}'},
   product_cycle:{nm:'소모품 교체 주기',cat:'소모품',desc:'마지막 소모품 구매(없으면 본체 구매)에 주기를 더한 날 = 교체 예정일. 예정일 N일 앞이 되면 보내고, 이미 지난 사람은 정한 날 수까지 첫 회에 같이 보낸다 · 구매 한 번에 한 통(다시 사면 다음 예정일에 또) · 오픈마켓·수신거부 제외 · 문구가 광고면 수신 동의 또는 마지막 구매 6개월 안인 고객만',
-    fields:[['consumable','소모품 제품 조건','text','','예: HAF-|정수기.*필터  (정규식 · | 로 여러 개)'],['body','본체 제품 조건 (선택)','text','','예: 정수기'],['cycle_mode','주기','sel','fixed','',[['personal','고객마다 구매 간격 (모르면 기본 주기)'],['fixed','모두 기본 주기']]],['cycle_days','기본 주기 (일)','num',180,'일 — 고객마다면 3번 이상 산 고객은 구매 간격 중앙값'],['hi','예정일 며칠 앞에 보낼지','after',14,'일 앞 — 14 면 예정일 2주 전에'],['lo','이미 지난 사람은 며칠까지','before',30,'일 — 예정일이 이만큼 지났어도 아직 안 받았으면 보냄(첫 회에 한 번에)']],
+    fields:[['consumable','소모품 제품 조건','text','','예: HAF-|정수기.*필터  (정규식 · | 로 여러 개)'],['body','본체 제품 조건 (선택)','text','','예: 정수기'],['cycle_mode','주기','sel','fixed','',[['personal','고객마다 구매 간격 (모르면 기본 주기)'],['fixed','모두 기본 주기']]],['cycle_days','기본 주기 (일)','num',180,'일 — 고객마다면 3번 이상 산 고객은 구매 간격 중앙값'],['hi','예정일 며칠 앞에 보낼지','after',14,'일 앞 — 14 면 예정일 2주 전에'],['lo','이미 지난 사람은 며칠까지','before',30,'일 — 예정일이 이만큼 지났어도 아직 안 받았으면 보냄(첫 회에 한 번에)'],['recent_months','마지막 구매가 몇 개월 안인 고객만','numopt','','개월 — 비우면 제한 없음 · 광고 문구면 6 (거래 6개월 안)']],
     body:'[삼성스토어 시흥점] {이름} 님, {구매일}에 구매하신 {제품} 교체 시기가 가까워졌습니다. 같은 제품 바로 주문 {링크}\n문의 {담당자} 프로 · {매장전화}'},
   product_age:{nm:'본체 사용 기간',cat:'케어',desc:'제품군 본체를 산 지 N~M개월인 고객 (원장 + DPS · 오픈마켓 제외) · 구독 고객은 삼성케어가 챙기므로 기본은 일시불 구매만',fields:[['group','제품군','group','정수기'],['pay','구매 구분','sel','onetime','',[['onetime','일시불 구매만 (구독 제외)'],['sub','구독만'],['all','전부']]],['min_m','경과 최소(개월)','num',24],['max_m','경과 최대(개월)','num',25]],
     body:'[삼성스토어 시흥점] {이름} 님, {구매일}에 구매하신 {제품} 사용 2년이 됐습니다. 점검·관리 안내를 보내드립니다. 궁금한 점은 {담당자} 프로 · {매장전화}'}};
 function arCond(r){ const p=r.params||{}; switch(r.kind){
   case 'sub_expire': return `DPS 구독 만료 ${p.days}일 안 · 취소·해지 제외`;
   case 'quote_follow': return `견적서 보낸 뒤 ${p.days}일 안 · 산 사람은 빼고 보냅니다`;
-  case 'product_cycle': return `교체 예정일 = 마지막 소모품 구매${p.body?'(없으면 본체 구매)':''} + ${p.cycle_mode==='personal'?`고객별 구매 간격(모르면 ${p.cycle_days}일)`:`${p.cycle_days}일`} · 예정일 ${Math.abs(+p.hi||0)}일 앞에 보냄 · 이미 지난 사람은 ${Math.abs(+p.lo||0)}일까지 · 구매 한 번에 한 통 · 오픈마켓·수신거부 제외`;
+  case 'product_cycle': return `교체 예정일 = 마지막 소모품 구매${p.body?'(없으면 본체 구매)':''} + ${p.cycle_mode==='personal'?`고객별 구매 간격(모르면 ${p.cycle_days}일)`:`${p.cycle_days}일`} · 예정일 ${Math.abs(+p.hi||0)}일 앞에 보냄 · 이미 지난 사람은 ${Math.abs(+p.lo||0)}일까지${p.recent_months?` · 마지막 구매 ${p.recent_months}개월 안인 고객만`:''} · 구매 한 번에 한 통 · 오픈마켓·수신거부 제외`;
   case 'product_age': return `${p.group} 본체 ${AR_PAY_NM[p.pay||'all']||''} 구매 ${p.min_m}~${p.max_m}개월 (원장 + DPS · 오픈마켓 제외)`; } return ''; }
 const AR_PAY_NM={onetime:'일시불',sub:'구독',all:''};
 function arKindTag(body){ const b=smsBytes(body||''); return (b>90?'LMS':'SMS')+' '+n(b)+'B'; }
@@ -4803,7 +4803,7 @@ function arRender(){ const box=$('arList'); if(!box) return; arBar();
     <div class="ared arform${open?'':' hidden'}" id="arEd_${c}">${open?arEditor(r):''}</div></div>`; }).join('');
   rows.forEach(r=>{ if(AR_OPEN.has(r.code)){ arBytes(r.code); if(AR_PV[r.code] && $('arPv_'+r.code) && !$('arPv_'+r.code).classList.contains('hidden')) arPvRender(r.code); } }); }
 function arFieldHtml(id,f,val){ const [k,lb,ty,def,hint]=f; const v=(val==null?def:val);
-  let inp; if(ty==='num') inp=`<input class="in n mono" type="number" id="${id}" value="${esc(v==null?'':v)}" aria-label="${esc(lb)}">`;
+  let inp; if(ty==='num'||ty==='numopt') inp=`<input class="in n mono" type="number" id="${id}" value="${esc(v==null?'':v)}" aria-label="${esc(lb)}">`;
   else if(ty==='before'||ty==='after'){ const a=(v==null||v==='')?'':Math.abs(Number(v)); inp=`<input class="in n mono" type="number" min="0" id="${id}" value="${esc(a)}" aria-label="${esc(lb)}">`; }   /* 창은 '며칠 전 / 며칠 뒤' 양수로 적고 저장 때 부호를 붙인다 */
   else if(ty==='sel'){ const opts=f[5]||[]; inp=`<select class="in" id="${id}" data-noseg="1" aria-label="${esc(lb)}">${opts.map(([k,l])=>`<option value="${esc(k)}"${k===v?' selected':''}>${esc(l)}</option>`).join('')}</select>`; }
   else if(ty==='group' && AR_GROUPS && AR_GROUPS.length){ const extra=(v && !AR_GROUPS.includes(v))?`<option value="${esc(v)}" selected>${esc(v)}</option>`:''; inp=`<select class="in" id="${id}" data-noseg="1" aria-label="${esc(lb)}">${extra}${AR_GROUPS.map(g=>`<option value="${esc(g)}"${g===v?' selected':''}>${esc(g)}</option>`).join('')}</select>`; }
@@ -4811,13 +4811,14 @@ function arFieldHtml(id,f,val){ const [k,lb,ty,def,hint]=f; const v=(val==null?d
   return `<div class="f"><label>${esc(lb)}${hint&&ty!=='text'?` <span class="hint">${esc(hint)}</span>`:''}</label>${inp}</div>`; }
 function arParamsFrom(prefix,kind){ const K=AR_KINDS[kind]; const o={}; if(!K) return o;
   for(const f of K.fields){ const el=$(prefix+f[0]); if(!el) continue; const v=el.value;
-    if(f[2]==='num'){ o[f[0]]=(v===''||v==null)?null:Number(v); }
+    if(f[2]==='num'||f[2]==='numopt'){ o[f[0]]=(v===''||v==null)?null:Number(v); }
     else if(f[2]==='before'){ o[f[0]]=(v===''||v==null)?null:-Math.abs(Number(v)); }
     else if(f[2]==='after'){ o[f[0]]=(v===''||v==null)?null:Math.abs(Number(v)); }
     else o[f[0]]=(v||'').trim(); }
   if(kind==='product_cycle' && !o.consumable) throw new Error('소모품 제품 조건을 적어주세요');
   if(kind==='product_age' && !o.group) throw new Error('제품군을 골라주세요');
-  for(const f of K.fields){ if(['num','before','after'].includes(f[2]) && (o[f[0]]==null || !isFinite(o[f[0]]))) throw new Error(`${f[1]} 칸에 숫자를 적어주세요`); }
+  for(const f of K.fields){ if(['num','before','after'].includes(f[2]) && (o[f[0]]==null || !isFinite(o[f[0]]))) throw new Error(`${f[1]} 칸에 숫자를 적어주세요`);
+    if(f[2]==='numopt' && o[f[0]]!=null && !(isFinite(o[f[0]]) && o[f[0]]>0)) throw new Error(`${f[1]} 칸은 비우거나 1 이상 숫자로 적어주세요`); }
   return o; }
 function arWdSel(id,cur){ return `<select class="in" id="${id}" data-noseg="1" aria-label="요일">${Object.entries(AR_WD).map(([k,v])=>`<option value="${k}"${cur===k?' selected':''}>${v}</option>`).join('')}</select>`; }
 function arVarsHtml(tid){ return `<div>${AR_VARS.map(v=>`<span class="vchip" onclick="arVarIns('${tid}','${v}')">${v}</span>`).join('')}</div>`; }
@@ -4860,7 +4861,7 @@ function arPvRender(c){ const box=$('arPv_'+c), pv=AR_PV[c]; if(!box) return; if
   const cyc=pv.kind==='product_cycle', age=pv.kind==='product_age';
   box.innerHTML=`<table><thead><tr><th>고객</th><th>번호</th><th>제품</th><th>${age?'구매일':cyc?'마지막 구매':'기준'}</th><th>${age?'경과':cyc?'교체 예정':'마감'}</th><th>${age?'':cyc?'D':'경과'}</th><th>담당</th></tr></thead><tbody>`+
     rows.map(x=>`<tr><td>${esc(x.name||'')}${x.optout?' <span class="tag bad">수신거부</span>':''}${x.bought?' <span class="tag ok">구매</span>':''}</td><td class="mono">${esc(x.phone||'')}</td><td style="white-space:normal;max-width:360px">${esc(x.item||'')}${x.model&&x.model!==x.item?`<div class="mono" style="font-size:calc(11.5px * var(--font-scale));color:var(--muted)">모델 ${esc(x.model)}</div>`:''}</td><td>${esc(x.ref_date||'')}</td><td>${esc(age?(x.days+'개월'):(x.due_date||''))}${cyc&&x.cycle?`<div style="font-size:calc(11.5px * var(--font-scale));color:var(--muted)">주기 ${n(x.cycle)}일${x.cycle_own?' · 고객':' · 기본'}</div>`:''}</td><td class="${cyc&&x.days<0?'past':''}">${age?'':(cyc?(x.days<0?'D'+x.days:'D+'+x.days):(x.days!=null?x.days+'일':''))}</td><td>${esc(x.handler||'')}</td></tr>`).join('')+
-    `</tbody></table><div class="arnote">${n(pv.total||0)}명 중 ${rows.length}명 · ${pv.today||''} 기준${cyc?' · D 음수 = 교체 예정일이 지남':''}${cyc&&pv.backlog!=null?` · 이미 지난 사람 ${n(pv.backlog)}명 · 고객별 주기 ${n(pv.own_cycle||0)}명`:''}${pv.ad&&pv.ad_blocked?` · 광고 문자라 수신 동의도 6개월 안 거래도 없는 ${n(pv.ad_blocked)}명 제외`:''} · 저장하지 않은 조건은 반영 전입니다</div>`; }
+    `</tbody></table><div class="arnote">${n(pv.total||0)}명 중 ${rows.length}명 · ${pv.today||''} 기준${cyc?' · D 음수 = 교체 예정일이 지남':''}${cyc&&pv.backlog!=null?` · 이미 지난 사람 ${n(pv.backlog)}명 · 고객별 주기 ${n(pv.own_cycle||0)}명`:''}${pv.recent_months&&pv.recent_blocked?` · 마지막 구매가 ${pv.recent_months}개월 넘은 ${n(pv.recent_blocked)}명 제외`:''}${pv.ad&&pv.ad_blocked?` · 광고 문자라 수신 동의도 6개월 안 거래도 없는 ${n(pv.ad_blocked)}명 제외`:''} · 저장하지 않은 조건은 반영 전입니다</div>`; }
 async function arToggle(c){ const r=AR.find(x=>x.code===c); const el=$('arOn_'+c); if(!r||!el) return; const want=!r.enabled;
   const paint=on=>{ el.classList.toggle('on',on); el.lastChild.textContent=on?'켜짐':'꺼짐'; const card=$('ar_'+c); if(card) card.classList.toggle('off',!on); };
   paint(want);
