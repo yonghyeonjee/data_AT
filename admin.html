@@ -1899,7 +1899,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <div class="note" id="fuNote"></div>
         </div>
         <div class="card" id="arCard">
-          <h3>자동 발송 설정 <span>규칙 한 줄 = 누구에게(조건) · 언제(요일·시각) · 무엇을(문구). 스위치로 켜고 끄고, [열기]에서 조건·문구를 고치고 [테스트 받기]로 내 폰에서 먼저 받아 봅니다. 새 시나리오는 [+ 규칙 추가]. 정해진 시각에 저절로 보내는 엔진은 다음 단계라 '켜짐'은 그때 그대로 쓰입니다</span>
+          <h3>자동 발송 설정 <span>규칙 한 줄 = 누구에게(조건) · 언제(요일·시각) · 무엇을(문구). 스위치로 켜고 끄고, [열기]에서 조건·문구를 고치고 [테스트 받기]로 내 폰에서 먼저 받아 봅니다. 새 시나리오는 [+ 규칙 추가]. 켜진 규칙은 정해진 요일·시각에 저절로 나갑니다(실제 발송 · 09~20시 · 한 사람씩 · 소모품 주기 규칙부터) — 끄면 그 뒤로는 안 나갑니다</span>
             <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input class="in mono" id="arSelf" placeholder="내 번호 (테스트 받기)" inputmode="numeric" style="max-width:180px" aria-label="내 번호" oninput="try{localStorage.setItem('dc_sms_self',this.value)}catch(e){}"><button class="btn sm" id="arNewBtn" onclick="arNew()">+ 규칙 추가</button><button class="btn sm ghost" onclick="arLoad(true)">새로고침</button></span></h3>
           <datalist id="arCatList"><option value="구독"><option value="견적"><option value="소모품"><option value="케어"><option value="기타"></datalist>
           <div class="arbar" id="arBar"></div>
@@ -4753,7 +4753,7 @@ function exCustRender(){ const cu=(EX.d&&EX.d.customers)||{}; const k=(t,v,s)=>`
 /* ═══ 자동 발송 설정 (mvp_214·215) — crm.auto_rule: 규칙 = 종류(kind) + 조건(params) + 문구(crm.sms_template auto_*) + 보내는 때. 표로 보고 스위치로 켜고 끄며 [+ 규칙 추가] 로 새 시나리오. 엔진은 다음 단계 ═══ */
 let AR=[], AR_PV={}, AR_OPEN=new Set(), AR_GROUPS=null;
 let AR_F=(()=>{ try{ return Object.assign({st:'all',cat:'all',arch:false}, JSON.parse(localStorage.getItem('dc_ar_f')||'{}')); }catch(e){ return {st:'all',cat:'all',arch:false}; } })();
-const AR_WD={daily:'매일',mon:'월요일',tue:'화요일',wed:'수요일',thu:'목요일',fri:'금요일',sat:'토요일',sun:'일요일'};
+const AR_WD={'tue,wed,thu,fri':'화~금',weekdays:'평일(월~금)',daily:'매일',mon:'월요일',tue:'화요일',wed:'수요일',thu:'목요일',fri:'금요일',sat:'토요일',sun:'일요일'};
 const AR_VARS=['{이름}','{제품}','{모델}','{구매일}','{기한}','{담당자}','{매장전화}','{링크}','{견적링크}'];   /* 제품·모델·구매일·기한은 서버(fn_auto_rule_preview rows[].vars)가 사람마다 채운다 (mvp_223) */
 /* 종류마다 조건 칸 — [키, 라벨, 종류(num·text·group), 기본값, 자리 글]. 새 종류를 더하려면 여기 한 줄 + 서버 fn_auto_rule_preview 가지 하나 */
 const AR_KINDS={
@@ -4792,7 +4792,7 @@ function arRender(){ const box=$('arList'); if(!box) return; arBar();
   const rows=arVisible(); if(!rows.length){ box.innerHTML=`<div class="note">${AR.length?'이 조건에 맞는 규칙이 없습니다':'규칙이 없습니다 — [+ 규칙 추가]'}</div>`; return; }
   box.innerHTML=rows.map(r=>{ const c=r.code, pv=AR_PV[c], open=AR_OPEN.has(c); return `<div class="ar${r.enabled?'':' off'}${r.archived?' arch':''}" id="ar_${c}">
     <div class="arrow">
-      <label class="switch${r.enabled?' on':''}" id="arOn_${c}" onclick="arToggle('${c}')" title="엔진이 붙으면 켜진 규칙만 정해진 때에 저절로 보냅니다"><span class="sw"></span>${r.enabled?'켜짐':'꺼짐'}</label>
+      <label class="switch${r.enabled?' on':''}" id="arOn_${c}" onclick="arToggle('${c}')" title="켜진 규칙만 정해진 요일·시각에 실제로 저절로 보냅니다 — 끄면 대기 중인 것도 안 나갑니다"><span class="sw"></span>${r.enabled?'켜짐':'꺼짐'}</label>
       <span class="tag n">${esc(r.category||'기타')}</span>
       <div class="arname"><b>${esc(r.label)}</b>${r.archived?' <span class="tag">보관</span>':''}<div class="cond">${esc(arCond(r))}</div></div>
       <span class="arwhen" title="보내는 때">🕘 ${esc(AR_WD[r.weekday]||r.weekday)} ${esc(r.send_time||'')}</span>
