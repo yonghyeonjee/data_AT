@@ -130,6 +130,18 @@ nav::-webkit-scrollbar{width:6px} nav::-webkit-scrollbar-thumb{background:rgba(2
 .navg>.ngb .nav>.ic{display:none}   /* 하위 메뉴는 아이콘 없이 들여쓴 글자만 (보내 준 화면처럼) */
 .navg>.ngb .nav.active{font-weight:600}
 .navg.hascur:not(.open)>.ngh{color:#fff;background:rgba(255,255,255,.08)}
+/* 메뉴 안의 하위 메뉴 (v224) — 메시지 발송 관리 › 문자 보내기 · 발송 결과 · 템플릿 · 수신거부 · 설정 · 계정 (센드온 왼쪽 메뉴처럼 3단) */
+.nsg>.nav .chev{margin-left:auto;display:inline-flex;transition:transform .15s;opacity:.7}
+.nsg>.nav .chev svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.nsg:not(.open)>.nav .chev{transform:rotate(180deg)}
+.nsg:not(.open)>.nsb{display:none}
+.nsb{margin:0 0 4px}
+.nsb>.nav.nsub{padding:6px 12px 6px 56px;font-size:calc(12.8px * var(--font-scale));font-weight:400;color:#97A0B8}
+.nav.nsub::before{content:'';position:absolute;left:44px;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:currentColor;opacity:.55}
+.nav.nsub.on{color:#fff;font-weight:600;background:rgba(255,255,255,.07)}
+.nav.nsub.on::before{opacity:1;background:#7A8CE8}
+.navg>.ngb .nsg>.nav.active{background:rgba(255,255,255,.1);box-shadow:none}
+.subhide{display:none!important}
 /* 공사 중 안내 */
 .uc{max-width:640px;margin:40px auto;border-radius:14px;overflow:hidden;background:var(--card,#fff);box-shadow:0 1px 3px rgba(16,24,40,.08),0 8px 24px rgba(16,24,40,.06)}
 .uc-tape{height:16px;background:repeating-linear-gradient(45deg,#F4C23D 0 14px,#2B2F3A 14px 28px)}
@@ -1151,7 +1163,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 .fk-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap} .fk-row .in.num{max-width:96px}
 .fgrid .fk-hid+.fk-radio{margin-top:2px;display:flex;width:100%} .fgrid .fk-radio button{flex:1 1 auto;text-align:center}   /* 조건 칸 안에서는 알약이 칸 폭을 나눠 쓴다(세로로 안 쌓이게) */
 @media(max-width:640px){ .fk-range:not(.dual){flex-wrap:wrap} .fk-range:not(.dual) .fk-out{width:100%;text-align:left;min-width:0}   /* 폰: 값 글자는 슬라이더 아래 줄로 (옆에 두면 잘린다) */ .fk-radio button,.fk-chk{min-height:40px} .fk-chk input{width:20px;height:20px} .fk-range input[type=range]{height:8px} .fk-range input[type=range]::-webkit-slider-thumb{width:28px;height:28px} .fk-range input[type=range]::-moz-range-thumb{width:28px;height:28px} .fk-range.dual{height:36px} .fk-range.dual .trk,.fk-range.dual input[type=range]{top:14px} .fk-range.dual .fk-out{top:8px} .fk-row .in.num{max-width:none;flex:1} }
-@media(max-width:999px){ .navg>.ngh,.navg>.ngb .nav{min-height:40px} }   /* 폰: 메뉴 묶음 머리·하위 메뉴 40px (v223) */
+@media(max-width:999px){ .navg>.ngh,.navg>.ngb .nav,.nav.nsub{min-height:40px} }   /* 폰: 메뉴 묶음 머리·하위 메뉴 40px (v223) */
 </style>
 </head>
 <body>
@@ -2015,13 +2027,13 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           </div>
           <div id="scResult" class="note" style="margin-top:10px;line-height:1.7"></div>
         </div>
-        <div class="card">
+        <div class="card" id="smsAcctCard">
           <h3>센드온 계정 · 잔액 <span>API KEY 는 서버에만 저장되고 화면에는 앞·뒤 4자리만 보입니다 · 호출은 Supabase 서버 IP 에서 나가므로 센드온 콘솔 [API KEY 관리 › 허용 IP] 에 아래 서버 IP 를 등록해야 합니다</span>
             <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" onclick="smsCheck()">연결 확인 · 잔액</button><button class="btn sm ghost" onclick="loadSms()">새로고침</button></span></h3>
           <div class="qsum" id="smsSum"></div>
           <div id="smsCheckBox" class="note" style="line-height:1.8"></div>
         </div>
-        <div class="card">
+        <div class="card" id="smsConfCard">
           <h3>설정 <span>기본은 <b>꺼짐</b> — 담당자 화면 [문자] 버튼이 보이지만 잠깁니다. 켜고 <b>테스트</b> 모드면 보내기를 눌러도 실제로 나가지 않고 기록만 남고(내 번호로 받는 [테스트 받기]·[테스트하기]는 테스트 모드여도 실제로 한 통 갑니다), <b>실제 발송</b>으로 바꾸면 그때부터 센드온으로 나갑니다</span>
             <span style="margin-left:auto"><button class="btn sm" onclick="smsSave()">저장</button></span></h3>
           <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))" id="smsForm">
@@ -2036,18 +2048,18 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           </div>
           <p class="note" style="margin-top:8px">광고로 보내면 머리말·꼬리말이 자동으로 붙습니다. 광고 문자는 <b>수신동의 고객에게만</b> — 발송 대상 추출이 그 규칙으로 명단을 뽑고, 수신거부 번호는 보낼 때 서버가 한 번 더 뺍니다.</p>
         </div>
-        <div class="card">
+        <div class="card" id="smsTplCard">
           <h3>템플릿 <span><b>{이름}</b> {담당자} {매장전화} {견적링크} {기한} {모델} {제품} {구매일} {월요금} {콜백시각} {링크} 자리가 실제 값으로 바뀝니다 (제품·모델·구매일은 자동 발송이 지난 구매에서 채움) · 담당자 화면에는 '담당자'·'공통' 것만 보입니다</span>
             <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input class="in mono" id="smsTplSelf" placeholder="내 번호 (테스트 받기)" inputmode="numeric" style="max-width:180px" aria-label="내 번호" oninput="try{localStorage.setItem('dc_sms_self',this.value)}catch(e){}"><button class="btn sm ghost" onclick="smsTplAdd()">+ 템플릿</button><button class="btn sm" onclick="smsSave()">저장</button></span></h3>
           <p class="note" id="smsTplNote" style="margin:0 0 8px">[테스트 받기] = 그 줄의 본문(저장 전 것도)에 보기 값(이름 테스트 · 담당자 지용현 · 모델 · 월요금 · 링크 …)을 채워 내 번호로 한 통 보냅니다 — 테스트 모드여도 실제로 옵니다(포인트 1건 차감).</p>
           <div class="tw"><table><thead><tr><th>코드</th><th>이름</th><th style="min-width:320px">본문</th><th>쓰는 곳</th><th>광고</th><th>사용</th><th></th></tr></thead><tbody id="tbSmsTpl"></tbody></table></div>
         </div>
-        <div class="card">
+        <div class="card" id="smsOptCard">
           <h3>수신거부 받아오기 <span>센드온 통합 수신거부(080 ARS · 웹 · API 등록)를 전부 받아 우리 수신거부 목록(crm.sms_optout)에 넣고, 번호가 같은 고객의 수신동의를 끕니다 · 되돌리기는 데이터 가져오기 › 적재 기록</span>
             <span style="margin-left:auto"><button class="btn sm" onclick="smsPull()">센드온 수신거부 받아오기</button></span></h3>
           <div id="smsPullBox" class="note">센드온 <b>주소록</b>(그룹·멤버)은 API 에 조회 기능이 없어 가져올 수 없습니다 — 우리 명단(고객 통합 · 발송 대상 추출)이 주소록입니다.</div>
         </div>
-        <div class="card">
+        <div class="card" id="smsResultCard">
           <h3>발송 결과 <span>한 번의 [발송하기]·예약이 요청 하나 — 줄을 누르면 결과 요약·예약 내역·받는 사람을 봅니다 · 담당자 화면에서 보낸 것도 여기 쌓입니다</span>
             <span style="margin-left:auto;display:flex;gap:6px;align-items:center"><div class="seg sm" id="smsResTab" role="tablist"><button type="button" data-v="batch" class="on" onclick="smsResTab('batch')">발송 요청별</button><button type="button" data-v="log" onclick="smsResTab('log')">개별 메시지별</button></div><button class="btn sm ghost" onclick="loadSmsBatches(0);loadSmsLog(0)">새로고침</button></span></h3>
           <div id="smsBatchBox">
@@ -5044,14 +5056,40 @@ let NAV_OPEN={}; try{ NAV_OPEN=JSON.parse(localStorage.getItem('dc_nav_open')||'
 function navGroupSet(g, open){ g.classList.toggle('open', open); const b=g.querySelector('.ngh'); if(b) b.setAttribute('aria-expanded', String(open));
   NAV_OPEN[g.dataset.g]=open; try{ localStorage.setItem('dc_nav_open', JSON.stringify(NAV_OPEN)); }catch(e){} navBadgeSync(); }
 function navReveal(v){ document.querySelectorAll('#navBox .navg').forEach(g=>g.classList.toggle('hascur', !!g.querySelector(`.nav[data-v="${v}"]`)));
-  const el=document.querySelector(`#navBox .nav[data-v="${v}"]`); const g=el&&el.closest('.navg'); if(g && !g.classList.contains('open')) navGroupSet(g, true); }
+  const el=document.querySelector(`#navBox .nav[data-v="${v}"]`); const g=el&&el.closest('.navg'); if(g && !g.classList.contains('open')) navGroupSet(g, true);
+  if(NAV_SUB[v]) navSubSet(v, true); }
 function navBadgeSync(){ document.querySelectorAll('#navBox .navg').forEach(g=>g.classList.toggle('hasbadge', [...g.querySelectorAll('.ngb .badge')].some(b=>!b.classList.contains('hidden')&&b.textContent.trim()))); }
+/* 메뉴 안의 하위 메뉴 (v224) — 한 화면에 카드가 많은 메뉴는 카드 하나씩을 하위 메뉴로 · 누르면 그 카드만 보인다(센드온처럼 따로 쪽) ·
+   고른 하위 메뉴는 브라우저에 기억(dc_sub_cur) · 펼침 상태는 dc_nav_open 의 'sub:<코드>' */
+const NAV_SUB={sms:[
+  {k:'compose',label:'문자 보내기',id:'smsComposeCard'},{k:'result',label:'발송 결과',id:'smsResultCard'},
+  {k:'tpl',label:'템플릿',id:'smsTplCard'},{k:'optout',label:'수신거부 관리',id:'smsOptCard'},
+  {k:'conf',label:'설정',id:'smsConfCard'},{k:'acct',label:'계정 · 잔액',id:'smsAcctCard'}]};
+let SUB_CUR={}; try{ SUB_CUR=JSON.parse(localStorage.getItem('dc_sub_cur')||'{}')||{}; }catch(e){ SUB_CUR={}; }
+function subCur(v){ const L=NAV_SUB[v]; if(!L) return null; return L.find(d=>d.k===SUB_CUR[v])||L[0]; }
+function navSubSet(v, open){ const g=document.querySelector(`#navBox .nsg[data-sv="${v}"]`); if(!g) return; g.classList.toggle('open', open);
+  const b=g.querySelector(':scope > .nav'); if(b) b.setAttribute('aria-expanded', String(open));
+  NAV_OPEN['sub:'+v]=open; try{ localStorage.setItem('dc_nav_open', JSON.stringify(NAV_OPEN)); }catch(e){} }
+/* 그 화면에서 고른 카드만 보이게 하고, 하위 메뉴 켜짐·제목을 맞춘다 */
+function subApply(v){ document.querySelectorAll('#navBox .nav.nsub.on').forEach(x=>{ if(x.dataset.sv!==VIEW){ x.classList.remove('on'); x.removeAttribute('aria-current'); } });
+  const L=NAV_SUB[v]; if(!L) return; const cur=subCur(v);
+  L.forEach(d=>{ const c=$(d.id); if(c) c.classList.toggle('subhide', d.k!==cur.k); });
+  document.querySelectorAll(`#navBox .nav.nsub[data-sv="${v}"]`).forEach(x=>{ const on=x.dataset.sub===cur.k && VIEW===v; x.classList.toggle('on', on); if(on) x.setAttribute('aria-current','page'); else x.removeAttribute('aria-current'); });
+  if(VIEW===v) $('title').textContent=TITLES[v]+' · '+cur.label; }
+function subGo(v, k){ SUB_CUR[v]=k; try{ localStorage.setItem('dc_sub_cur', JSON.stringify(SUB_CUR)); }catch(e){}
+  if(VIEW!==v){ show(v); return; }
+  toggleNav(false); subApply(v); navSubSet(v, true); const sc=document.querySelector('.content'); if(sc) sc.scrollTo({top:0});
+  try{ buildSubTabs(v); }catch(e){} }
 function renderNav(){
   const h=[];
-  const item=i=>{ const dev=i.state==='dev', bid=NAV_BADGE[i.code];
-    return `<div class="nav${dev?' dev':''}" data-v="${i.code}"${dev?' title="개발 중입니다"':''}>`
+  const item=i=>{ const dev=i.state==='dev', bid=NAV_BADGE[i.code], sub=!dev&&NAV_SUB[i.code];
+    const row=`<div class="nav${dev?' dev':''}" data-v="${i.code}"${dev?' title="개발 중입니다"':''}${sub?` aria-expanded="${NAV_OPEN['sub:'+i.code]===true}" aria-controls="nsb_${i.code}"`:''}>`
       +`<span class="ic">${NAV_ICON[i.code]||NAV_ICON.settings}</span>${esc(i.label||TITLES[i.code])}`
-      +(dev?'<span class="devtag">개발중</span>':(bid?`<span class="badge hidden" id="${bid}"></span>`:''))+`</div>`; };
+      +(dev?'<span class="devtag">개발중</span>':(bid?`<span class="badge hidden" id="${bid}"></span>`:''))
+      +(sub?'<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></span>':'')+`</div>`;
+    if(!sub) return row;
+    return `<div class="nsg${NAV_OPEN['sub:'+i.code]===true?' open':''}" data-sv="${i.code}">${row}<div class="nsb" id="nsb_${i.code}">`
+      +sub.map(d=>`<div class="nav nsub" role="link" tabindex="0" data-sv="${i.code}" data-sub="${d.k}">${esc(d.label)}</div>`).join('')+`</div></div>`; };
   MENU.forEach(g=>{
     const items=(g.items||[]).filter(i=>i.state!=='off' && TITLES[i.code]);
     if(!items.length) return;
@@ -5063,7 +5101,7 @@ function renderNav(){
       +`<div class="ngb" id="${gid}">${items.map(item).join('')}</div></div>`);
   });
   $('navBox').innerHTML=h.join('');
-  try{ if(VIEW) navReveal(VIEW); }catch(e){}
+  try{ if(VIEW){ navReveal(VIEW); subApply(VIEW); } }catch(e){}
   navBadgeSync();
 }
 new MutationObserver(()=>navBadgeSync()).observe(document.getElementById('navBox')||document.body, {subtree:true, attributes:true, attributeFilter:['class'], childList:true, characterData:true});
@@ -5120,7 +5158,7 @@ function show(v, opt){ if(!TITLES[v]) v='home';
   $('title').textContent=TITLES[v]; renderTitleLink(v);
   if(!opt.fromHistory) pushView(v, !!opt.replace);
   if(dev){ $('periodBar').classList.add('hidden'); $('pageIntro').classList.add('hidden'); renderUnderConstruction(v); return; }
-  placePeriodBar(v); placeCbar(v); renderIntro(v); { const b=$('subTabs'); if(b){ b.classList.add('hidden'); b.innerHTML=''; } } refreshView(); }
+  placePeriodBar(v); placeCbar(v); renderIntro(v); { const b=$('subTabs'); if(b){ b.classList.add('hidden'); b.innerHTML=''; } } subApply(v); refreshView(); }
 /* 기간 바는 그 페이지의 첫 카드 맨 위(필터 바로 위)로 옮겨 붙인다 */
 const PERIOD_VIEWS=['exec','orders','daily','consults','log','moves','inbox','flow','cdash'];
 
@@ -5302,7 +5340,13 @@ function placePeriodBar(v){
   const card=document.querySelector('#v-'+v+' .card'); if(card && pb.parentNode!==card){ card.insertBefore(pb, card.firstChild); }
   pb.classList.remove('hidden');
 }
-$('navBox').addEventListener('click',e=>{ const hd=e.target.closest('.ngh'); if(hd){ const g=hd.closest('.navg'); navGroupSet(g, !g.classList.contains('open')); return; } const n=e.target.closest('.nav[data-v]'); if(n) show(n.dataset.v); });
+$('navBox').addEventListener('click',e=>{ const hd=e.target.closest('.ngh'); if(hd){ const g=hd.closest('.navg'); navGroupSet(g, !g.classList.contains('open')); return; }
+  const sb=e.target.closest('.nav.nsub'); if(sb){ subGo(sb.dataset.sv, sb.dataset.sub); return; }
+  const n=e.target.closest('.nav[data-v]'); if(!n) return; const v=n.dataset.v;
+  /* 하위 메뉴가 있는 메뉴 : 이 화면에 있을 때 다시 누르면 하위 메뉴만 접고 편다 */
+  if(NAV_SUB[v] && VIEW===v && n.parentElement.classList.contains('nsg')){ const g=n.parentElement; navSubSet(v, !g.classList.contains('open')); return; }
+  show(v); });
+$('navBox').addEventListener('keydown',e=>{ const sb=e.target.closest&&e.target.closest('.nav.nsub'); if(sb && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); subGo(sb.dataset.sv, sb.dataset.sub); } });
 
 /* 표 칸 자동 줄바꿈 (2026-09-21 "테이블 텍스트가 넘어가는 현상") — td 는 기본 nowrap 이라 주소·상품명·긴 이름이
    표를 옆으로 늘려 가로 스크롤이 생기고, 그 줄의 다른 칸(.wrap)은 좁아져 세로로 길어졌다.
@@ -7365,7 +7409,7 @@ async function smsSendTargets(close){
     catch(e){ failed+=chunk.length; prog.innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; if(/권한|설정|상한|꺼져/.test(e.message)) stop=true; }
     done+=chunk.length; if(!stop) prog.textContent=`${n(done)} / ${n(all.length)} 처리 … ${live?`보냄 ${n(sent)}`:`테스트 ${n(test)}`} · 차단 ${n(blocked)} · 실패 ${n(failed)}`;
     if(live && i+CH<all.length) await new Promise(r=>setTimeout(r,300)); }
-  prog.innerHTML=`<b>끝</b> — ${live?`보냄 ${n(sent)}`:`테스트 기록 ${n(test)} (실제 발송 없음)`} · 차단 ${n(blocked)} · 실패 ${n(failed)} · <a href="javascript:void 0" onclick="show('sms')">발송 내역 보기 →</a>`;
+  prog.innerHTML=`<b>끝</b> — ${live?`보냄 ${n(sent)}`:`테스트 기록 ${n(test)} (실제 발송 없음)`} · 차단 ${n(blocked)} · 실패 ${n(failed)} · <a href="javascript:void 0" onclick="document.getElementById('smsMask')?.remove();subGo('sms','result')">발송 결과 보기 →</a>`;
   ok.textContent='닫기'; ok.disabled=false; ok.className='btn ghost'; ok.onclick=close; toast('문자 보내기 끝','ok');
 }
 /* ── 캠페인 코드 고르기 — datalist 대신 우리 목록. (크롬이 datalist 칸을 로그인 칸으로 보고 저장된 비밀번호를 띄웠다 · readonly 였다가 누르면 풀리는 것도 그 때문) ── */
