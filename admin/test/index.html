@@ -766,6 +766,8 @@ tr.utm-link td{background:var(--bg2);border-top:0;white-space:normal}
 .seg2 button i{font-style:normal;font-family:var(--mono);font-size:11px;opacity:.75;margin-left:4px}
 /* 자동 발송 설정 (mvp_214·215) — 규칙 표: 줄 = 켜짐 스위치 · 분류 · 이름+조건 · 보내는 때 · 대상 수 · 수단 · [열기] / 펼치면 편집(이름·분류·조건 칸·문구·명단·테스트·저장·보관). 새 규칙은 [+ 규칙 추가] 창(.arform 공유) */
 .arbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:10px 0 6px} .arbar .lbl{color:var(--muted);font-size:calc(12px * var(--font-scale));font-weight:600} .arbar .sum{margin-left:auto;color:var(--muted);font-size:calc(12px * var(--font-scale))}
+.arrun{margin-top:14px;border-top:1px solid var(--line);padding-top:12px} .arrun .hd{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:6px} .arrun .hd b{font-size:calc(14px * var(--font-scale))}
+.arrun .st{font-size:calc(12px * var(--font-scale));color:var(--muted)} .arrun .st.ok{color:var(--ok)} .arrun .st.bad{color:var(--bad);font-weight:600} .arrun td .why{display:block;color:var(--muted);font-size:calc(11.5px * var(--font-scale));white-space:normal;max-width:340px}
 .arlist .ar{border:1px solid var(--line);border-radius:12px;margin:8px 0;background:#fff} .arlist .ar.off{background:var(--surface-2)} .arlist .ar.arch{opacity:.65}
 .ar .arrow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 14px}
 .ar .arname{flex:1 1 260px;min-width:0} .ar .arname b{font-size:calc(14px * var(--font-scale))} .ar .cond{color:var(--muted);font-size:calc(12px * var(--font-scale));margin-top:2px}
@@ -1933,6 +1935,7 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
           <datalist id="arCatList"><option value="구독"><option value="견적"><option value="소모품"><option value="케어"><option value="기타"></datalist>
           <div class="arbar" id="arBar"></div>
           <div class="arlist" id="arList"></div>
+          <div class="arrun" id="arRun"></div>
         </div>
         <div class="card" id="fuSubCard">
           <h3>구독 만료 예정 <span>DPS 구독 전표 기준 · 취소·해지·미가입은 뺐습니다 · 올인원 만료일은 총 구독료 ÷ 월 요금으로 되살린 기간</span></h3>
@@ -2609,7 +2612,7 @@ function rpcBar(d){
 }
 /* ── 진행 카드 — 호출마다 [기다림 → 받는 중(받은 바이트) → 끝] 을 적어 두고 250ms 마다 그린다 ── */
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
-const FN_LABEL={fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
+const FN_LABEL={fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
@@ -4805,7 +4808,36 @@ function arKindTag(body){ const b=smsBytes(body||''); return (b>90?'LMS':'SMS')+
 function arSetF(k,v){ AR_F[k]=v; try{ localStorage.setItem('dc_ar_f',JSON.stringify(AR_F)); }catch(e){} arRender(); }
 function arVisible(){ return AR.filter(r=> (AR_F.arch ? !!r.archived : !r.archived) && (AR_F.st==='all' || (AR_F.st==='on')===!!r.enabled) && (AR_F.cat==='all' || (r.category||'기타')===AR_F.cat)); }
 async function arGroupsLoad(){ if(AR_GROUPS) return; try{ const d=await rpc('fn_product_suggest',{p_q:null}); AR_GROUPS=((d&&d.groups)||[]).map(g=>g.label).filter(Boolean); }catch(e){ AR_GROUPS=[]; } }
-async function arLoad(fresh){ const box=$('arList'); if(!box) return;
+/* 자동 발송 실행 기록 (mvp_234) — 규칙·날짜마다 대상 · 보냄 · 대기 · 차단 · 실패, [발송결과 보기]는 그날 묶음 하나(클릭률 포함) · 보내는 중이면 20초마다 새로 */
+let AR_RUN=null, AR_RUN_T=null;
+function arNextAt(rule, now, ran){ const wd=String(rule.weekday||''), t=rule.time||'10:00', D=['sun','mon','tue','wed','thu','fri','sat'];
+  for(let i=0;i<8;i++){ const d=new Date(now.getTime()+i*86400000); const k=D[d.getDay()];
+    const ok=wd==='daily'||(wd==='weekdays'&&d.getDay()>=1&&d.getDay()<=5)||wd.replace(/\s/g,'').split(',').includes(k);
+    const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    const ymd=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(ok && (i>0 || (hm<t && !ran.has(rule.rule+'|'+ymd)))) return `${d.getMonth()+1}/${d.getDate()}(${'일월화수목금토'[d.getDay()]}) ${t}`; }
+  return '—'; }
+async function arRunLoad(){ const box=$('arRun'); if(!box) return; clearTimeout(AR_RUN_T);
+  try{ AR_RUN=await rpc('fn_auto_runs',{p_days:14},{fresh:true}); }catch(e){ box.innerHTML=`<div class="note" style="color:var(--bad)">실행 기록: ${esc(e.message)}</div>`; return; }
+  const R=AR_RUN||{}, runs=R.runs||[]; /* 다음 발송일은 서버의 한국 시각 기준 (브라우저 시간대와 무관) */
+  const now=R.now?new Date(String(R.now).replace(' ','T')):new Date(); const ran=new Set(runs.map(x=>x.rule+'|'+x.date));
+  const eng=R.engine?`<span class="st ${R.tick_fail_24h?'bad':'ok'}">● 엔진 켜짐 · 마지막 확인 ${esc(R.last_tick||'—')} · 24시간 오류 ${n(R.tick_fail_24h||0)}</span>`:'<span class="st bad">● 엔진 꺼짐 (cron auto-send 없음)</span>';
+  const nxt=(R.next||[]).map(x=>`${esc(x.label||x.rule)} — ${esc(AR_WD[x.weekday]||x.weekday)} ${esc(x.time||'')} · 다음 <b>${arNextAt(x,now,ran)}</b>`).join(' · ')||'켜진 규칙 없음';
+  const row=x=>{ const bad=(x.failed||0)+(x.error||0); const busy=x.pending>0;
+    const why=Object.entries(x.reasons||{}).map(([k,c])=>`${esc(k)} ${n(c)}`).join(' · ');
+    return `<tr><td>${esc(String(x.date).slice(5).replace('-','/'))}</td><td><b>${esc(x.label||x.rule)}</b><span class="why">계획 ${esc(x.planned_at||'')}${x.note?' · '+esc(x.note):''}</span></td>
+      <td class="num">${n(x.n)}</td><td class="num" style="color:var(--ok);font-weight:700">${n(x.sent)}</td><td class="num">${busy?`<b style="color:var(--navy)">${n(x.pending)}</b>`:'0'}</td>
+      <td class="num">${n(x.blocked)}</td><td class="num">${bad?`<b style="color:var(--bad)">${n(bad)}</b>`:'0'}</td>
+      <td>${x.first_at?esc(x.first_at)+(x.last_at&&x.last_at!==x.first_at?' ~ '+esc(x.last_at):''):'—'}${busy?' <span class="tag">보내는 중</span>':''}${why?`<span class="why">${why}</span>`:''}</td>
+      <td>${x.msgs?`<button class="btn sm ghost" onclick="smsBatchOpen('${esc(x.batch_id)}',null)">발송결과 보기</button>`:''}</td></tr>`; };
+  const tests=(R.tests||[]).slice(0,5).map(x=>`<span class="tag">${esc(x.at)} 테스트 ${esc(x.status==='sent'?'보냄':x.status)}</span>${x.batch_id?` <a href="javascript:void 0" onclick="smsBatchOpen('${esc(x.batch_id)}',null)">보기</a>`:''}`).join(' ');
+  box.innerHTML=`<div class="hd"><b>실행 기록</b>${eng}<button class="btn sm ghost" style="margin-left:auto" onclick="arRunLoad()">새로고침</button></div>
+    <div class="note" style="margin:0 0 8px">${nxt} · 그날 계획 직전에 센드온 080 수신거부를 받아오고, 1분에 20통씩 보냅니다(09~20시) · 실패한 줄은 다시 보내지 않습니다</div>
+    ${runs.length?`<div class="tw"><table><thead><tr><th>날짜</th><th>규칙</th><th class="num">대상</th><th class="num">보냄</th><th class="num">대기</th><th class="num">차단</th><th class="num">실패·오류</th><th>발송 시각 · 사유</th><th></th></tr></thead><tbody>${runs.map(row).join('')}</tbody></table></div>`
+      :'<div class="note">아직 실행된 날이 없습니다 — 첫 실행은 위 [다음] 시각입니다</div>'}
+    ${tests?`<div class="note" style="margin-top:6px">테스트 발송: ${tests}</div>`:''}`;
+  if(runs.some(x=>x.pending>0)) AR_RUN_T=setTimeout(()=>{ if(VIEW==='followup' && document.visibilityState!=='hidden') arRunLoad(); }, 20000); }
+async function arLoad(fresh){ const box=$('arList'); if(!box) return; arRunLoad();
   try{ const sv=localStorage.getItem('dc_sms_self'); if(sv && $('arSelf') && !$('arSelf').value) $('arSelf').value=sv; }catch(e){}
   if(!AR.length) box.innerHTML='<div class="note">불러오는 중…</div>';
   try{ const [r]=await Promise.all([rpc('fn_auto_rules',{},{fresh:!!fresh}), arGroupsLoad()]); AR=(r&&r.rules)||[]; if(fresh) AR_PV={}; arRender(); AR.filter(x=>!x.archived).forEach(x=>arCount(x.code)); }
