@@ -1064,6 +1064,16 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 
 .ifflags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .ifflags button{min-height:40px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface,#fff);padding:4px 12px;font-weight:700;cursor:pointer;font-family:inherit;font-size:calc(12.5px * var(--font-scale));color:var(--ink-2)}
+.ifch .mixcell{min-width:260px;white-space:normal}
+.ifmix .r{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:1px 0}
+.ifmix .r small{color:var(--muted);font-weight:700;font-size:calc(11.5px * var(--font-scale));min-width:28px}
+.ifmix .r.nn{color:var(--muted);font-size:calc(11.5px * var(--font-scale))}
+.ifc{display:inline-flex;gap:3px;align-items:baseline;border-radius:999px;padding:1px 8px;font-size:calc(12px * var(--font-scale));font-weight:600;border:1px solid transparent;white-space:nowrap}
+.ifc b{font-weight:800}
+.ifc.ty{background:#F1ECFB;color:#4B2F94;border-color:#DCD0F5}
+.ifc.it{background:#E6F4F2;color:#0B5550;border-color:#C5E4E0}
+.ifc.none{background:#F3F4F7;color:var(--muted);border-color:var(--line)}
+.ifc.more{background:none;color:var(--muted);border-color:var(--line)}
 .ifflags button.warn{border-color:#E7C27A;background:#FFF8E8;color:#6E4700}
 .ifflags button.on{background:var(--ink-2);border-color:var(--ink-2);color:#fff}
 #tbCust tr{cursor:pointer} #tbCust tr:hover td{background:var(--surface-2,#F7F8FA)}
@@ -1202,6 +1212,8 @@ th{background:var(--zone-head);color:var(--ink-2)}
 .fgrid .fk-hid+.fk-radio{margin-top:2px;display:flex;width:100%} .fgrid .fk-radio button{flex:1 1 auto;text-align:center}   /* 조건 칸 안에서는 알약이 칸 폭을 나눠 쓴다(세로로 안 쌓이게) */
 @media(max-width:640px){ .fk-range:not(.dual){flex-wrap:wrap} .fk-range:not(.dual) .fk-out{width:100%;text-align:left;min-width:0}   /* 폰: 값 글자는 슬라이더 아래 줄로 (옆에 두면 잘린다) */ .fk-radio button,.fk-chk{min-height:40px} .fk-chk input{width:20px;height:20px} .fk-range input[type=range]{height:8px} .fk-range input[type=range]::-webkit-slider-thumb{width:28px;height:28px} .fk-range input[type=range]::-moz-range-thumb{width:28px;height:28px} .fk-range.dual{height:36px} .fk-range.dual .trk,.fk-range.dual input[type=range]{top:14px} .fk-range.dual .fk-out{top:8px} .fk-row .in.num{max-width:none;flex:1} }
 @media(max-width:999px){ .navg>.ngh,.navg>.ngb .nav,.nav.nsub{min-height:40px} }   /* 폰: 메뉴 묶음 머리·하위 메뉴 40px (v223) */
+.ifch .mixm{display:none}
+@media(max-width:640px){ .ifch .mixm{display:block;margin-top:6px} .ifch th:last-child,.ifch td.mixcell{display:none} .ifch td:first-child{min-width:220px;white-space:normal} }   /* 폰: 많이 들어온 문의는 옆으로 넘기지 않게 채널 이름 아래로 (v229) */
 </style>
 </head>
 <body>
@@ -1737,7 +1749,9 @@ th{background:var(--zone-head);color:var(--ink-2)}
         <div class="card" id="ifCard">
           <h3>문의 → 구매 흐름 <span>문의 고객의 실제 구매 여부 — 상담 상태가 아닌 주문(매장·온라인·VMS·DPS) 기준 · 행을 선택하면 고객 흐름</span></h3>
           <div class="filters">
-            <div class="seg2" id="ifSpan" role="group" aria-label="문의 기간"><button type="button" data-v="30" onclick="ifSeg(this,'span')">최근 30일</button><button type="button" data-v="90" class="on" onclick="ifSeg(this,'span')">90일</button><button type="button" data-v="365" onclick="ifSeg(this,'span')">1년</button></div>
+            <div class="seg2" id="ifSpan" role="group" aria-label="문의 기간"><button type="button" data-v="tm" class="on" onclick="ifSeg(this,'span')">이번 달</button><button type="button" data-v="lm" onclick="ifSeg(this,'span')">지난달</button><button type="button" data-v="m3" onclick="ifSeg(this,'span')">3개월</button><button type="button" data-v="m6" onclick="ifSeg(this,'span')">6개월</button><button type="button" data-v="m12" onclick="ifSeg(this,'span')">1년</button></div>
+            <select class="in" id="ifMonth" aria-label="월 선택" onchange="ifMonthPick(this.value)" style="width:auto"></select>
+            <span class="note" id="ifRange" style="align-self:center"></span>
             <div class="seg2" id="ifScope" role="group" aria-label="범위"><button type="button" data-v="" class="on" onclick="ifSeg(this,'scope')">전체</button><button type="button" data-v="store" onclick="ifSeg(this,'scope')">매장</button><button type="button" data-v="out" onclick="ifSeg(this,'scope')">매장 외</button></div>
             <div class="seg2" id="ifWin" role="group" aria-label="구매 인정 기간"><button type="button" data-v="30" onclick="ifSeg(this,'win')">30일 내 구매</button><button type="button" data-v="90" class="on" onclick="ifSeg(this,'win')">90일 내</button><button type="button" data-v="180" onclick="ifSeg(this,'win')">180일 내</button></div>
             <span style="flex:1"></span>
@@ -4733,7 +4747,7 @@ let EX={d:null, flow:null, camps:null, seq:0, first:true};
 const EX_CMP_NM={tm:'전월 같은 기간',lm:'전월',tw:'전주',lw:'전전주',yd:'전주 같은 요일',y:'전년 같은 기간',ly:'전전년'};
 function exCmpLbl(){ return EX_CMP_NM[PRESET]||'직전 같은 기간'; }
 async function loadExec(fresh){
-  if(EX.first){ EX.first=false; if(PRESET==='30') setPreset('tm', true); }   /* 처음 열 때 기본 기간을 안 골랐으면 이번 달 */
+  if(EX.first){ EX.first=false; if(PRESET!=='tm') setPreset('tm', true); }   /* 처음 열 때는 늘 이번 달 (v229 — 월별이 기본) · 그 뒤 바꾼 기간은 그대로 */
   const seq=++EX.seq; const [cf,ct]=cmpRange(P.from,P.to,PRESET);
   if(!EX.d) $('exHero').innerHTML='<div class="note">불러오는 중…</div>';
   if(fresh) UTM_CAMPS=null;
@@ -4775,9 +4789,7 @@ function exFlowRender(){ const box=$('exFlow'), fl=EX.flow, d=EX.d; if(!box||!d)
     <div class="st buy"><small>${n(fl.window)}일 내 구매</small><b>${n(s.bought)}명 · ${pct(s.bought,s.people)}</b><i>신규 ${n(s.bought_new)} · 당일 구매 ${n(s.same_day)} · 소요일 중앙값 ${s.median_days==null?'-':s.median_days+'일'} · ${wonK(s.amount)}</i></div><span class="ar" aria-hidden="true">→</span>
     <div class="st"><small>재구매</small><b>${n(sa.repeat_buyers)}명 · ${exPctS(sa.repeat_rate)}</b><i>기간 안 구매 고객 ${n(sa.buyers)}명 중 전에도 산 사람 · 매출 비중 ${exPctS(sa.repeat_net_share)}</i></div>
   </div>
-  <div class="tw"><table><thead><tr><th>문의 채널</th><th class="num">문의 고객</th><th class="num">기존 고객</th><th class="num">견적</th><th class="num">구매</th><th class="num">전환율</th><th class="num">구매 금액</th><th class="num">소요일(중앙값)</th></tr></thead><tbody>${
-    (fl.by_channel||[]).map(c=>`<tr><td>${esc(c.channel||'-')}</td><td class="num">${n(c.people)}</td><td class="num">${n(c.known)}</td><td class="num">${n(c.quoted)}</td><td class="num"><b>${n(c.bought)}</b></td><td class="num">${pct(c.bought,c.people)}</td><td class="num">${wonK(c.amount)}</td><td class="num">${c.median_days==null?'-':c.median_days+'일'}</td></tr>`).join('')
-    ||'<tr><td colspan="8" class="note">해당 기간에 문의가 없습니다</td></tr>'}</tbody></table></div>
+  ${ifChanTable(fl.by_channel, pct)}
   <p class="note" style="margin:8px 0 0">구매완료로 적었는데 주문이 없는 사람 ${n(s.mark_no_order)} · 진행 중인데 이미 산 사람 ${n(s.open_but_bought)} — <a href="#customers" onclick="subSet('customers','list');show('customers');return false">고객 통합 › 문의 → 구매 흐름</a>에서 사람별로 봅니다</p>`; }
 function exFmtP(p, grain){ p=String(p||''); return grain==='day'?p.slice(5).replace('-','/'):p.slice(2).replace('-','.'); }
 /* 기간별 순매출 막대 (진한) — 안쪽 연한 부분은 그 기간 구매 고객 중 신규 비율만큼 */
@@ -7008,17 +7020,37 @@ async function cjLoad(){ const b=$('cjBody'); if(!b) return; const un=!!($('cjUn
   const top=()=>{ for(let el=b; el && el!==document.body; el=el.parentElement) if(el.scrollTop) el.scrollTop=0; }; top(); setTimeout(top,80); }
 
 /* 문의 → 구매 흐름 (고객 통합 위 카드) — 기간 안 문의한 사람이 실제로 샀는지, 주문(원장·DPS)으로 대조 */
-const IF={span:90, scope:'', win:90, flt:'all', page:0, d:null, seq:0};
+const IF={span:'tm', scope:'', win:90, flt:'all', page:0, d:null, seq:0};
+/* 문의 기간은 달 단위 (v229) — 이번 달(기본) · 지난달 · 최근 N개월(그 달 1일부터) · 고른 달. 날짜는 KST */
+function ifRange(sp){ const [y,m]=ifDay(0).split('-').map(Number), ymd=(Y,M,D)=>new Date(Date.UTC(Y,M-1,D)).toISOString().slice(0,10);
+  if(sp==='tm') return [ymd(y,m,1), ifDay(0)];
+  if(sp==='lm') return [ymd(y,m-1,1), ymd(y,m,0)];
+  if(/^m\d+$/.test(sp)) return [ymd(y,m-(Number(sp.slice(1))-1),1), ifDay(0)];
+  if(/^\d{4}-\d{2}$/.test(sp)){ const [Y,M]=sp.split('-').map(Number); const to=ymd(Y,M+1,0); return [ymd(Y,M,1), to<ifDay(0)?to:ifDay(0)]; }
+  return [ifDay(-(Number(sp)-1)), ifDay(0)]; }
+function ifMonthOpts(){ const el=$('ifMonth'); if(!el||el.options.length) return; const [y,m]=ifDay(0).split('-').map(Number);
+  el.innerHTML='<option value="">월 선택</option>'+Array.from({length:24},(_,i)=>{ const d=new Date(Date.UTC(y,m-1-i,1)), v=d.toISOString().slice(0,7); return `<option value="${v}">${d.getUTCFullYear()}년 ${d.getUTCMonth()+1}월</option>`; }).join(''); }
+function ifMonthPick(v){ if(!v) return; IF.span=v; IF.page=0; $('ifSpan').querySelectorAll('button').forEach(x=>x.classList.remove('on')); loadIflow(); }
+/* 채널별 표 — 경영 지표와 같은 표. 줄마다 그 채널에 많이 들어온 문의 유형(구매 목적)·관심 품목 (fn_inquiry_flow by_channel purposes·interests · 문의 건 기준) */
+function ifMixHtml(c){ const chip=(x,cls)=>`<span class="ifc ${cls}${/^\(/.test(x.label)?' none':''}">${esc(x.label)} <b>${n(x.n)}</b></span>`;
+  const pu=c.purposes||[], it=c.interests||[], P=pu.slice(0,3), I=it.slice(0,5), more=pu.length-P.length+it.length-I.length;
+  const tip=[pu.length?'유형: '+pu.map(x=>x.label+' '+x.n).join(', '):'', it.length?'관심 품목: '+it.map(x=>x.label+' '+x.n).join(', '):'', c.interest_none?`품목 미기록 ${c.interest_none}건`:''].filter(Boolean).join('\n');
+  if(!P.length&&!I.length) return '<span class="note">—</span>';
+  return `<div class="ifmix" title="${esc(tip)}">${P.length?`<div class="r"><small>유형</small>${P.map(x=>chip(x,'ty')).join('')}</div>`:''}${I.length?`<div class="r"><small>품목</small>${I.map(x=>chip(x,'it')).join('')}${more>0?`<span class="ifc more">외 ${n(more)}</span>`:''}</div>`:''}${c.interest_none?`<div class="r nn">품목 미기록 ${n(c.interest_none)}건</div>`:''}</div>`; }
+function ifChanTable(list, pct){ return `<div class="tw"><table class="ifch"><thead><tr><th>문의 채널</th><th class="num">문의 고객</th><th class="num">기존 고객</th><th class="num">견적</th><th class="num">구매</th><th class="num">전환율</th><th class="num">구매 금액</th><th class="num">소요일(중앙값)</th><th>많이 들어온 문의 <span class="note">유형 · 관심 품목 (건)</span></th></tr></thead><tbody>${
+    (list||[]).map(c=>`<tr><td>${esc(c.channel||'-')}${c.inquiries&&Number(c.inquiries)!==Number(c.people)?`<div class="note">문의 ${n(c.inquiries)}건</div>`:''}<div class="mixm">${ifMixHtml(c)}</div></td><td class="num">${n(c.people)}</td><td class="num">${n(c.known)}</td><td class="num">${n(c.quoted)}</td><td class="num"><b>${n(c.bought)}</b></td><td class="num">${pct(c.bought,c.people)}</td><td class="num">${wonK(c.amount)}</td><td class="num">${c.median_days==null?'-':c.median_days+'일'}</td><td class="mixcell">${ifMixHtml(c)}</td></tr>`).join('')
+    ||'<tr><td colspan="9" class="note">해당 기간에 문의가 없습니다</td></tr>'}</tbody></table></div>`; }
 const ifDay=off=>new Date(Date.now()+off*864e5).toLocaleDateString('sv-SE',{timeZone:'Asia/Seoul'});
 const IF_OPEN=['진행전','진행중','보류'];
 const IF_FLT={all:()=>true, buy:r=>!!r.buy_at, nobuy:r=>!r.buy_at, open:r=>IF_OPEN.includes(r.result)&&!r.buy_at,
   mark:r=>r.result==='구매완료'&&!r.buy_at, obb:r=>IF_OPEN.includes(r.result)&&!!r.buy_at, known:r=>r.before_n>0};
-function ifSeg(b,k){ b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); IF[k]=k==='scope'?b.dataset.v:Number(b.dataset.v); IF.page=0; loadIflow(); }
+function ifSeg(b,k){ b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); IF[k]=k==='win'?Number(b.dataset.v):b.dataset.v; if(k==='span'&&$('ifMonth')) $('ifMonth').value=''; IF.page=0; loadIflow(); }
 function ifSet(k,v){ IF[k]=v; IF.page=0; ifRender(); }
 function ifGo(p){ IF.page=p; ifRender(); }
 async function loadIflow(){ const box=$('ifBody'); if(!box) return; const seq=++IF.seq;
   if(!IF.d) box.innerHTML='<div class="note">불러오는 중…</div>';
-  try{ const d=await rpc('fn_inquiry_flow',{p_from:ifDay(-(IF.span-1)),p_to:ifDay(0),p_scope:IF.scope||null,p_window:IF.win,p_unmask:$('ifUnmask').classList.contains('on')},{fresh:true});
+  try{ ifMonthOpts(); const [rf,rt]=ifRange(IF.span); if($('ifRange')) $('ifRange').textContent=`${rf.slice(2).replace(/-/g,'.')} ~ ${rt.slice(2).replace(/-/g,'.')}`;
+    const d=await rpc('fn_inquiry_flow',{p_from:rf,p_to:rt,p_scope:IF.scope||null,p_window:IF.win,p_unmask:$('ifUnmask').classList.contains('on')},{fresh:true});
     if(seq!==IF.seq) return; IF.d=d; ifRender(); }
   catch(e){ if(seq===IF.seq) box.innerHTML=`<div class="note" style="color:var(--red)">${esc(e.message)}</div>`; } }
 function ifRender(){ const box=$('ifBody'), d=IF.d; if(!box||!d) return; const s=d.summary||{};
@@ -7035,9 +7067,7 @@ function ifRender(){ const box=$('ifBody'), d=IF.d; if(!box||!d) return; const s
   </div>
   <div class="ifflags" role="group" aria-label="고객 구분">${[['all','전체'],['buy','구매'],['nobuy','미구매'],['open','상담 진행 중'],['mark','구매완료 · 주문 없음','warn'],['obb','진행 중 · 주문 있음','warn'],['known','기존 구매 고객']]
      .map(([k,l,w])=>`<button type="button" class="${w||''}${IF.flt===k?' on':''}" onclick="ifSet('flt','${k}')">${l} ${n(cnt(k))}</button>`).join('')}</div>
-  <div class="tw"><table><thead><tr><th>문의 채널</th><th class="num">문의 고객</th><th class="num">기존 고객</th><th class="num">견적</th><th class="num">구매</th><th class="num">전환율</th><th class="num">구매 금액</th><th class="num">소요일(중앙값)</th></tr></thead><tbody>${
-    (d.by_channel||[]).map(c=>`<tr><td>${esc(c.channel||'-')}</td><td class="num">${n(c.people)}</td><td class="num">${n(c.known)}</td><td class="num">${n(c.quoted)}</td><td class="num"><b>${n(c.bought)}</b></td><td class="num">${pct(c.bought,c.people)}</td><td class="num">${wonK(c.amount)}</td><td class="num">${c.median_days==null?'-':c.median_days+'일'}</td></tr>`).join('')
-    ||'<tr><td colspan="8" class="note">해당 기간에 문의가 없습니다</td></tr>'}</tbody></table></div>
+  ${ifChanTable(d.by_channel, pct)}
   <div class="tw" style="margin-top:10px"><table><thead><tr><th>문의일</th><th>고객</th><th>채널 · 유형</th><th>담당 · 상태</th><th class="num">견적</th><th>${n(d.window)}일 내 구매</th><th></th></tr></thead><tbody id="tbIflow">${
     P.rows.map(r=>`<tr onclick="cjOpenRow(event,'${esc(r.key||'')}',${Number(r.consult)||0})" style="cursor:pointer">
       <td class="mono">${esc(String(r.at||'').slice(5))}${Number(r.n_inq)>1?`<div class="note">문의 ${n(r.n_inq)}회</div>`:''}</td>
