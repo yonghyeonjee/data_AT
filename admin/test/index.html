@@ -1302,7 +1302,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
       </div>
       <div class="period">
         <div class="preset">
-          <button data-p="yd">어제</button><button data-p="tw">이번 주</button><button data-p="lw">지난 주</button><button data-p="tm">이번 달</button><button data-p="lm">지난 달</button><button data-p="30" class="on">30일</button><button data-p="90">90일</button><button data-p="y">올해</button><button data-p="ly">작년</button>
+          <button data-p="yd">어제</button><button data-p="tw">이번 주</button><button data-p="lw">지난 주</button><button data-p="tm" class="on">이번 달</button><button data-p="lm">지난 달</button><button data-p="30">30일</button><button data-p="90">90일</button><button data-p="y">올해</button><button data-p="ly">작년</button>
         </div>
         <input type="date" id="pFrom" aria-label="시작일"><span style="color:var(--faint)">~</span><input type="date" id="pTo" aria-label="종료일">
         <button class="btn sm" onclick="applyPeriod()">적용</button>
@@ -2835,7 +2835,7 @@ async function boot(){
     setFontScale(savedScale);
   }catch(e){}
 
-  loadStamp(); setPreset('30', true); show(location.hash.replace('#','')||'home', {replace:true});
+  loadStamp(); setPreset('tm', true);   /* 기본 기간 = 이번 달 (v230 · 월별이 기본) */ show(location.hash.replace('#','')||'home', {replace:true});
   /* 첫 화면이 뜬 뒤 한가할 때 엑셀 모듈을 미리 받아 둔다 */
   (window.requestIdleCallback||(f=>setTimeout(f,3000)))(()=>{ needXLSX().catch(()=>{}); });
 }
@@ -4704,7 +4704,7 @@ async function testNt(code){
 }
 
 /* ═══════════════ 기간 ═══════════════ */
-let P={from:null,to:null}, PRESET='30';
+let P={from:null,to:null}, PRESET='tm';
 function setPreset(p, quiet){
   const t=new Date(); let f,to=new Date(t);
   const monStart=d=>{const x=new Date(d);x.setDate(x.getDate()-((x.getDay()+6)%7));return x;};
@@ -4743,11 +4743,11 @@ async function fuLoad(k){ const seq=++FU_SEQ[k]; const S=FU[k], ids=FU_IDS[k]; c
   catch(e){ if(seq!==FU_SEQ[k]) return; if(tb) tb.innerHTML=`<tr><td colspan="${ids.cols}" class="note">${esc(e.message)}</td></tr>`; toast(e.message,'bad'); } }
 function loadFollowup(){ arLoad(); fuLoad('sub'); fuLoad('quote'); fuLoad('product'); }
 /* ═══ 경영 지표 (mvp_221 · 2026-10-16) — fn_exec_kpi(매출·고객·문의·유입·링크 · 서버 10분 캐시) + fn_inquiry_flow(문의 → 구매) + fn_utm_campaigns(캠페인) 를 기간 하나로 한 화면에 ═══ */
-let EX={d:null, flow:null, camps:null, seq:0, first:true};
+let EX={d:null, flow:null, camps:null, seq:0};
 const EX_CMP_NM={tm:'전월 같은 기간',lm:'전월',tw:'전주',lw:'전전주',yd:'전주 같은 요일',y:'전년 같은 기간',ly:'전전년'};
 function exCmpLbl(){ return EX_CMP_NM[PRESET]||'직전 같은 기간'; }
 async function loadExec(fresh){
-  if(EX.first){ EX.first=false; if(PRESET!=='tm') setPreset('tm', true); }   /* 처음 열 때는 늘 이번 달 (v229 — 월별이 기본) · 그 뒤 바꾼 기간은 그대로 */
+  /* 기간은 공통 기간 바 그대로 — 기본이 이번 달(v230) */
   const seq=++EX.seq; const [cf,ct]=cmpRange(P.from,P.to,PRESET);
   if(!EX.d) $('exHero').innerHTML='<div class="note">불러오는 중…</div>';
   if(fresh) UTM_CAMPS=null;
