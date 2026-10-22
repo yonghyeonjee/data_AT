@@ -7238,6 +7238,8 @@ async function scTplSave(){ const body=$('scBody').value.trim(); if(!body) retur
   const ex=SMS_TPL.find(t=>t.code===r.code && !t._del); if(ex){ ex.body=body; ex.label=r.label; ex.is_ad=SC_AD; } else SMS_TPL.push({code:r.code,label:r.label,body,scope:'admin',is_ad:SC_AD,active:true,sort:100,_new:true});
   smsTplRender(); await smsSave(); scInit(); $('scTpl').value=r.code; }
 function scSendOpt(){ const s=$('scSender').value; return s?{sender:s}:{}; }
+/* 한 번의 [발송하기] = 묶음 하나 (mvp_235) — 조각(20·150명씩)을 같은 batch_id 로 보내 발송 결과 한 줄 · 잔디 완료 카드 한 장 */
+function smsBatchId(){ try{ if(crypto.randomUUID) return crypto.randomUUID(); }catch(e){} const h=[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,'0')).join(''); return `${h.slice(0,8)}-${h.slice(8,12)}-4${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`; }
 async function scTestSelf(){ const inp=$('scSelf'); const ph=scNorm(inp.value); if(!scIsPh(ph)){ inp.focus(); return toast('[내 번호] 칸에 휴대폰 번호를 적어주세요','bad'); }
   const body=$('scBody').value.trim(); if(!body) return toast('본문을 적어주세요','bad'); try{ await smsCfgEnsure(); }catch(e){ return toast(e.message,'bad'); } if(!SMS_CFG.enabled) return toast('문자 기능이 꺼져 있습니다 — 아래 설정에서 켜세요','bad');
   const first=(scParseRows().rows[0])||{}; const vars=Object.assign({},SMS_TPL_SAMPLE,first.vars||{});
@@ -7255,9 +7257,9 @@ async function scSendNow(){ try{ await smsCfgEnsure(); }catch(e){ return toast(e
   if(live){ if(!(await modal({title:'실제 발송',html:`<b>${n(rows.length)}명</b>에게 실제 문자가 나갑니다 (포인트 차감). 되돌릴 수 없습니다.${sum}`,ok:'발송하기',danger:true,requireText:'발송'}))) return; }
   else if(!(await modal({title:'테스트 기록',html:`지금은 <b>테스트 모드</b>라 실제로 나가지 않고 발송 결과에 기록만 남습니다.${sum}`,ok:'기록하기'}))) return;
   const btn=$('scSendBtn'); btn.disabled=true; const res=$('scResult'); res.textContent='보내는 중…';
-  const personal=/\{[^{}\n]+\}/.test(body) || rows.some(r=>r.vars) || SMS_LINK_RX.test(body); const CH = live ? (personal?20:150) : 200; let sent=0,test=0,blocked=0,failed=0,done=0,stop=false; const batches=[]; let items=[];
+  const personal=/\{[^{}\n]+\}/.test(body) || rows.some(r=>r.vars) || SMS_LINK_RX.test(body); const CH = live ? (personal?20:150) : 200; let sent=0,test=0,blocked=0,failed=0,done=0,stop=false; const batches=[]; let items=[]; const bid=smsBatchId();
   for(let i=0;i<rows.length && !stop;i+=CH){ const chunk=rows.slice(i,i+CH);
-    try{ const r=await rpc('fn_sms_send',{p_rows:chunk,p_body:body,p_title:title,p_campaign:camp,p_kind:'manual',p_is_ad:SC_AD,p_opt:scSendOpt()}); sent+=r.sent||0; test+=r.test||0; blocked+=r.blocked||0; failed+=r.failed||0; if(r.batch_id) batches.push(r.batch_id); if(items.length<30) items=items.concat(r.items||[]); }
+    try{ const r=await rpc('fn_sms_send',{p_rows:chunk,p_body:body,p_title:title,p_campaign:camp,p_kind:'manual',p_is_ad:SC_AD,p_opt:{...scSendOpt(),batch_id:bid}}); sent+=r.sent||0; test+=r.test||0; blocked+=r.blocked||0; failed+=r.failed||0; if(r.batch_id) batches.push(r.batch_id); if(items.length<30) items=items.concat(r.items||[]); }
     catch(e){ failed+=chunk.length; res.innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; if(/권한|설정|상한|꺼져|발신번호/.test(e.message)) stop=true; }
     done+=chunk.length; if(!stop) res.textContent=`${n(done)} / ${n(rows.length)} 처리 … ${live?`성공 ${n(sent)}`:`테스트 ${n(test)}`} · 차단 ${n(blocked)} · 실패 ${n(failed)}`;
     if(live && i+CH<rows.length) await new Promise(r=>setTimeout(r,300)); }
@@ -7435,9 +7437,9 @@ async function smsSendTargets(close){
   let all; try{ const d=await rpc('fn_crm_targets_v2',{...p,p_unmask:true,p_limit:100000,p_offset:0,p_export:true}); all=(d.rows||[]).map(r=>({phone:r.phone,name:r.name,key:r.key})); }
   catch(e){ prog.textContent=e.message; ok.disabled=false; return; }
   const personal=/\{[^{}\n]+\}/.test(body) || SMS_LINK_RX.test(body); const CH= live ? (personal?20:150) : 200;   /* 개인화 본문(자리 글자 · 단축 링크 = 사람별 토큰)은 사람마다 센드온 호출 한 번 — 8초 안에 들게 작게 */
-  let sent=0,test=0,blocked=0,failed=0,done=0,stop=false;
+  let sent=0,test=0,blocked=0,failed=0,done=0,stop=false; const bid=smsBatchId();
   for(let i=0;i<all.length && !stop;i+=CH){ const chunk=all.slice(i,i+CH);
-    try{ const r=await rpc('fn_sms_send',{p_rows:chunk,p_body:body,p_title:title||null,p_campaign:camp,p_kind:'campaign',p_is_ad:isAd,p_opt:{}}); sent+=r.sent||0; test+=r.test||0; blocked+=r.blocked||0; failed+=r.failed||0; }
+    try{ const r=await rpc('fn_sms_send',{p_rows:chunk,p_body:body,p_title:title||null,p_campaign:camp,p_kind:'campaign',p_is_ad:isAd,p_opt:{batch_id:bid}}); sent+=r.sent||0; test+=r.test||0; blocked+=r.blocked||0; failed+=r.failed||0; }
     catch(e){ failed+=chunk.length; prog.innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; if(/권한|설정|상한|꺼져/.test(e.message)) stop=true; }
     done+=chunk.length; if(!stop) prog.textContent=`${n(done)} / ${n(all.length)} 처리 … ${live?`보냄 ${n(sent)}`:`테스트 ${n(test)}`} · 차단 ${n(blocked)} · 실패 ${n(failed)}`;
     if(live && i+CH<all.length) await new Promise(r=>setTimeout(r,300)); }
