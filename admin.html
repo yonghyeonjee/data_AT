@@ -1417,7 +1417,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
           <span style="font-size:calc(12.5px * var(--font-scale));color:var(--muted)">출처</span>
           <div class="seg2"><button class="on" id="ds-dc" onclick="setDashSrc('dc')">현행 시스템</button><button id="ds-gas" onclick="setDashSrc('gas')">대시보드 v4 (기존 app)</button></div>
           <span style="font-size:calc(12.5px * var(--font-scale));color:var(--muted);margin-left:8px">집계 기준</span>
-          <div class="seg2" id="segBasis" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커·매장 입력·DPS 매장 전표) · DPS = DPS 전표 전체(B2C · 매장·온라인 모두 DPS 판매일 기준)"><button class="on" id="db-ledger" onclick="setDashBasis('ledger')">원장</button><button id="db-dps" onclick="setDashBasis('dps')">DPS</button><button id="db-manual" onclick="setDashBasis('manual')">수기입력</button></div>
+          <div class="seg2" id="segBasis" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커·매장 입력·DPS 매장 전표) · DPS = DPS 사원별목표/실적 기준(실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계)"><button class="on" id="db-ledger" onclick="setDashBasis('ledger')">원장</button><button id="db-dps" onclick="setDashBasis('dps')">DPS</button><button id="db-manual" onclick="setDashBasis('manual')">수기입력</button></div>
           <span style="flex:1"></span>
           <span class="note" id="dashNote">Datacenter 데이터 · 최근 12개월 · 기간·채널·지표는 아래 대시보드 안에서 고릅니다</span>
           <button class="btn sm hidden" id="dashFreshBtn" onclick="dashApplyFresh()">새 자료 보기</button>
@@ -5784,7 +5784,7 @@ async function dashFetch(args, up){
 }
 function dashArgs(){ const to=new Date(), from=new Date(to.getFullYear(), to.getMonth()-11, 1); return {p_from:iso(from),p_to:iso(to),p_mode:DASH_BASIS}; }
 function dashHM(ts){ const d=new Date(ts); if(!ts || isNaN(d)) return String(ts||''); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
-function dashNoteSet(){ if(!DASH_PAY) return; const a=dashArgs(), b=DASH_BASIS==='ledger'?'원장(주문 원천)':DASH_BASIS==='dps'?'DPS 전표(B2C · DPS 판매일)':'담당자 수기입력';
+function dashNoteSet(){ if(!DASH_PAY) return; const a=dashArgs(), b=DASH_BASIS==='ledger'?'원장(주문 원천)':DASH_BASIS==='dps'?'DPS 사원별 실적(실적일 기준)':'담당자 수기입력';
   const at=DASH_PAY.built_at ? dashHM(DASH_PAY.built_at) : (DASH_PAY.updated||'');
   $('dashNote').textContent=`현행 시스템 · ${b} 기준 · ${a.p_from} ~ ${a.p_to} · ${at} 집계`
     + (DASH_WANT ? ' · 서버에서 다시 집계하는 중' : DASH_PAY.stale ? ' · 새 자료 반영 중 (몇 분 안에)' : ''); }
