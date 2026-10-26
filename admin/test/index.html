@@ -2821,10 +2821,13 @@ async function boot(){
   let menuP=rpc('fn_menu',{p_env:DC_ENV}).catch(()=>null), staffP=rpc('fn_staff_list').catch(()=>[]);
   try{ ME = await rpc('fn_me'); }catch(e){ ME=null; }
   if(!ME){ $('lErr').textContent='프로필이 없습니다. 관리자에게 문의하세요.'; await sb.auth.signOut(); reveal('login'); return; }
+  /* 업로드 전용 계정(이카운트·DPS 자동 프로그램)은 창을 새로 열면 항상 로그인 화면부터 — 잠금 화면이나 이미 열린 화면에서는 프로그램이 멈춘다 (v234) */
+  { let f0=false; try{ f0=!sessionStorage.getItem('dc_open'); }catch(e){}
+    if(f0 && !JUST_LOGGED_IN && ME.role==='uploader'){ await sb.auth.signOut(); localStorage.removeItem('dc_login_at'); reveal('login'); return; } }
   reveal('app');
   $('uEmail').textContent=ME.email.replace(ID_DOMAIN,''); $('uRole').textContent=ME.role.toUpperCase();
   let fresh=false; try{ fresh=!sessionStorage.getItem('dc_open'); }catch(e){}
-  if(fresh && !JUST_LOGGED_IN && ME.role!=='uploader') lockScreen(   /* 업로드 전용 계정은 자동 프로그램(이카운트·DPS 수집기)이 쓴다 — 다시 열 때 잠그면 적재가 멈춘다 (v233) */ '창을 다시 열어 잠겨 있습니다. 비밀번호를 입력하면 이어서 쓸 수 있습니다.');
+  if(fresh && !JUST_LOGGED_IN) lockScreen('창을 다시 열어 잠겨 있습니다. 비밀번호를 입력하면 이어서 쓸 수 있습니다.');
   try{ sessionStorage.setItem('dc_open','1'); }catch(e){} JUST_LOGGED_IN=false; lockTouch();
   staffP.then(x=>{ STAFF=x||[]; fillHandlerOptions(); });
   await loadMenu(await menuP);
