@@ -2824,7 +2824,7 @@ async function boot(){
   reveal('app');
   $('uEmail').textContent=ME.email.replace(ID_DOMAIN,''); $('uRole').textContent=ME.role.toUpperCase();
   let fresh=false; try{ fresh=!sessionStorage.getItem('dc_open'); }catch(e){}
-  if(fresh && !JUST_LOGGED_IN) lockScreen('창을 다시 열어 잠겨 있습니다. 비밀번호를 입력하면 이어서 쓸 수 있습니다.');
+  if(fresh && !JUST_LOGGED_IN && ME.role!=='uploader') lockScreen(   /* 업로드 전용 계정은 자동 프로그램(이카운트·DPS 수집기)이 쓴다 — 다시 열 때 잠그면 적재가 멈춘다 (v233) */ '창을 다시 열어 잠겨 있습니다. 비밀번호를 입력하면 이어서 쓸 수 있습니다.');
   try{ sessionStorage.setItem('dc_open','1'); }catch(e){} JUST_LOGGED_IN=false; lockTouch();
   staffP.then(x=>{ STAFF=x||[]; fillHandlerOptions(); });
   await loadMenu(await menuP);
