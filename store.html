@@ -242,6 +242,34 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .btn.sm{width:auto;padding:8px 14px;font-size:calc(13px * var(--font-scale));margin:0}
 .total{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px;background:var(--surface-2);border-radius:10px;margin-bottom:12px}
 .total b{font-size:calc(20px * var(--font-scale));font-variant-numeric:tabular-nums}
+/* v233 상담 입력 안 판매 — 스위치를 켜면 판매 칸이 열린다 */
+.toggle.buytg{margin:4px 0 12px;background:#fff}
+.toggle.buytg.on{border-color:var(--accent);background:var(--accent-soft)}
+.toggle.buytg.on b{color:var(--accent)}
+.nextbox.salebox{border:1.5px solid var(--accent);background:#fff;padding-top:12px}
+/* v233 상담 현황 거르개 — 줄마다 이름표 · 고른 것만 진한 청록, 나머지는 흰 바탕 */
+.stf{border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:10px 12px;margin:0 0 14px;display:grid;gap:8px}
+.stf-r{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;min-width:0}
+.stf-l{flex:0 0 40px;font-size:calc(12px * var(--font-scale));font-weight:800;color:var(--muted)}
+.stf .seg{gap:0;border:1.5px solid var(--line-2);border-radius:10px;overflow:hidden;background:#fff;flex-wrap:nowrap}
+.stf .seg button{flex:0 0 auto;border:0;border-radius:0;border-left:1px solid var(--line);background:#fff;color:var(--ink-2);padding:7px 14px;font-weight:700}
+.stf .seg button:first-child{border-left:0}
+.stf .seg button.on{background:var(--navy);color:#fff}
+.stf .chips{gap:6px}
+.stf .chips .chip{background:#fff;border:1.5px solid var(--line-2);color:var(--ink-2);padding:6px 12px}
+.stf .chips .chip:hover{border-color:var(--navy)}
+.stf .chips .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.stf .prow{margin:0;flex:1 1 300px;min-width:0}
+.stf .stf-x{margin-left:auto}
+#st_preset{display:none}   /* 기간 칩(이 달·지난달·…)이 같은 일을 한다 */
+/* v233 상담 현황 표 — 아래 접힌 글 대신 위에 탭 */
+.st-dt{display:flex;align-items:baseline;gap:8px;margin:16px 0 6px;font-size:calc(15px * var(--font-scale));font-weight:800;color:var(--ink)}
+.st-dt small{font-weight:500;color:var(--muted);font-size:calc(12px * var(--font-scale))}
+.sttabs{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 10px;padding:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
+.sttabs button{flex:0 0 auto;border:0;background:transparent;padding:8px 14px;border-radius:9px;font-weight:700;color:var(--ink-2);cursor:pointer;font-size:calc(13px * var(--font-scale));min-height:40px;white-space:nowrap}
+.sttabs button:hover{background:#fff}
+.sttabs button.on{background:var(--navy);color:#fff}
+.sttabs button i{font-style:normal;font-weight:600;opacity:.8;margin-left:4px}
 
 .list{display:flex;flex-direction:column;gap:8px}
 /* 내 고객 아코디언 */
@@ -1156,6 +1184,15 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 }
 .cuitem .cj{margin:6px 0 4px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff)}
 .cudet{margin-top:8px} .cudet summary{min-height:40px;display:flex;align-items:center;cursor:pointer;font-weight:700;color:var(--ink-2);font-size:calc(13px * var(--font-scale))}
+/* v233 상담 현황 거르개 — 폰: 글자가 크면 이름표를 윗줄로, 세그는 칸이 모자라면 버튼째 다음 줄 (360px·글자 1.6 에서 '매장 외' 가 잘렸다) */
+#stFilters #st_months{margin:0}
+@media(max-width:640px){
+  .stf{padding:10px}
+  .stf .seg{flex-wrap:wrap;max-width:100%}
+  .stf .seg button{flex:1 1 auto;padding:7px 11px}
+  .fs-big .stf-l{flex-basis:100%}
+  .sttabs button{padding:8px 11px}
+}
 </style>
 </head>
 <body>
@@ -1410,14 +1447,17 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="card" id="stCard">
       <h2>상담 현황 <span id="stSub"></span></h2>
       <p class="note-in" style="margin-top:0">문의가 얼마나 들어와서 얼마나 구매로 이어졌는지. <b>매장</b> = 구독 문의 · 매장 직접 방문 · 홈페이지 문의 · 네이버톡 · 카카오채널, <b>매장 외</b> = B2B · 소모품 · 렌탈 · VMS. <b>삭제한 상담은 빠집니다.</b> [＋ 새 상담]으로 이어진 상담은 <b>한 건</b>으로 셉니다 — 문의 날짜·채널은 처음 들어온 건, 결과는 마지막 건 기준.</p>
-      <div class="daterow">
-        <div class="seg sm" id="st_grain"><button type="button" data-v="day">일</button><button type="button" class="on" data-v="month">월</button><button type="button" data-v="year">연</button></div>
-        <div class="seg sm hidden" id="st_who"><button type="button" class="on" data-v="me">내 것</button><button type="button" data-v="">전체</button></div>
-        <div class="seg sm" id="st_scope" title="B2B · 소모품 · 렌탈 · VMS 는 매장 외입니다"><button type="button" class="on" data-v="store">매장</button><button type="button" data-v="out">매장 외</button><button type="button" data-v="">전체</button></div>
-        <button class="btn ghost sm" onclick="loadStats()">새로고침</button>
+      <!-- v233 거르개 — 줄마다 이름표(보기·범위·기간). 기본 = 일 · 전체 · 이 달 -->
+      <div class="stf" id="stFilters">
+        <div class="stf-r"><span class="stf-l">보기</span>
+          <div class="seg sm" id="st_grain" role="group" aria-label="보기 단위"><button type="button" class="on" data-v="day">일별</button><button type="button" data-v="month">월별</button><button type="button" data-v="year">연별</button></div>
+          <button class="btn ghost sm stf-x" onclick="loadStats()">새로고침</button></div>
+        <div class="stf-r"><span class="stf-l">범위</span>
+          <div class="seg sm" id="st_scope" role="group" aria-label="매장 범위" title="B2B · 소모품 · 렌탈 · VMS 는 매장 외입니다"><button type="button" class="on" data-v="">전체</button><button type="button" data-v="store">매장</button><button type="button" data-v="out">매장 외</button></div>
+          <div class="seg sm hidden" id="st_who" role="group" aria-label="담당"><button type="button" class="on" data-v="">전체 담당</button><button type="button" data-v="me">내 것</button></div></div>
+        <div class="stf-r"><span class="stf-l">기간</span><div class="chips" id="st_months" aria-label="기간 빠른 선택"></div></div>
+        <div class="stf-r"><span class="stf-l"></span><div class="prow" id="st_period"></div></div>
       </div>
-      <div class="chips" id="st_months" aria-label="기간 빠른 선택"></div>
-      <div class="prow" id="st_period"></div>
       <div id="stBody"><div class="empty">불러오는 중…</div></div>
     </div>
   </section>
@@ -1704,17 +1744,29 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <div class="f"><label>예상 금액</label><input class="in num" inputmode="numeric" id="c_amount" placeholder="0" oninput="comma(this)"></div>
         <div class="f"><label>구매 예정일</label><input class="in" type="date" id="c_expect"></div>
       </div>
-      <div class="nextbox" id="c_buybox">
-        <div class="nb-t">구매한 제품 <span class="hint">상태가 <b>구매함</b>일 때만 — 금액을 넣으면 판매로 함께 올라갑니다 (판매 입력을 따로 하지 않아도 됩니다)</span></div>
+      <!-- v233: 상담 입력에서 바로 판매 입력 — 스위치를 켜면(= 상태 구매함) 판매 입력 탭과 같은 칸이 열리고, 저장 한 번에 상담 + 판매가 같이 올라간다 -->
+      <div class="toggle buytg" id="c_buytg" role="switch" aria-checked="false" tabindex="0" onclick="cBuyToggle()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cBuyToggle()}">
+        <div><b>🛒 판매도 같이 입력</b><small>샀으면 켜세요 — 저장 한 번에 상담과 판매가 같이 올라갑니다 (판매 입력 탭에 다시 넣지 않아도 됩니다)</small></div><div class="sw"></div>
+      </div>
+      <div class="nextbox salebox hidden" id="c_buybox">
+        <div class="nb-t">판매 입력 <span class="hint">판매 입력 탭과 같은 내용으로 올라가고 이 상담에 자동으로 연결됩니다</span></div>
         <div class="grid2">
-          <div class="f"><label>구매한 제품 <span class="hint">두 글자만 쳐도 제품명이 뜹니다</span></label><input class="in" id="c_purchase" placeholder="제품명 또는 모델코드" autocomplete="off"></div>
-          <div class="f"><label>구매 금액 <span class="hint">실제 결제 금액</span></label><input class="in num" inputmode="numeric" id="c_buy_amt" placeholder="0" oninput="comma(this)"></div>
-        </div>
-        <div class="grid2">
-          <div class="f"><label>구매 구분</label>
+          <div class="f"><label>구분 <span class="req">*</span></label>
             <div class="seg" id="c_kind"><button type="button" data-v="일시불" class="on">일시불</button><button type="button" data-v="구독">구독</button><button type="button" data-v="직판">직판</button></div></div>
-          <div class="f"><label>모델코드 <span class="hint">알면 적기</span></label><input class="in" id="c_buy_model" placeholder="RQ33DB7411AP" style="text-transform:uppercase" autocomplete="off"></div>
+          <div class="f"><label>단계 <span class="req">*</span><span class="hint">매출 = 아직 미확정(설치·배송 전)</span></label>
+            <div class="seg" id="c_stage"><button type="button" data-v="매출" class="on open">매출</button><button type="button" data-v="판매완료">판매완료</button></div></div>
         </div>
+        <div class="f"><label>상품명 <span class="req">*</span><span class="hint">두 글자만 쳐도 제품명이 뜹니다</span></label><input class="in" id="c_purchase" placeholder="제품명 또는 모델코드" autocomplete="off"></div>
+        <div class="grid3">
+          <div class="f"><label>모델코드</label><input class="in" id="c_buy_model" placeholder="RQ33DB7411AP" style="text-transform:uppercase" autocomplete="off"></div>
+          <div class="f"><label>수량</label><input class="in num" type="number" id="c_buy_qty" aria-label="수량" value="1" min="1"></div>
+          <div class="f"><label>판매가 <span class="req">*</span></label><input class="in num" inputmode="numeric" id="c_buy_amt" placeholder="0" oninput="comma(this);cBuyTotal()"></div>
+        </div>
+        <div id="c_items"></div>
+        <button type="button" class="btn ghost sm" onclick="cAddItem()" style="margin:2px 0 10px">+ 상품 추가</button>
+        <div class="total"><span style="color:var(--muted);font-size:calc(13px * var(--font-scale))">합계 (VAT 포함) <small id="c_totalN" style="color:var(--faint)"></small></span><b id="c_total">0원</b></div>
+        <div class="f"><label>결제</label>
+          <select class="in" id="c_pay" aria-label="결제"><option value="">선택 안 함</option><option>삼성카드</option><option>타사카드</option><option>현금</option><option>구독(월납)</option><option>기타</option></select></div>
       </div>
       </div>
       <div class="fgrp b"><div class="fgrp-t">다음에 살 것</div>
@@ -3439,7 +3491,7 @@ function goTab(name, fromHistory){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
   ['home','inbox','assign','quote','customer','alerts','stats','leave','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='leave' && !LV_LOADED){ LV_LOADED=true; loadLeave(); }
-  if(name==='stats' && !ST_LOADED){ ST_LOADED=true; loadStats(); }
+  if(name==='stats' && !ST_LOADED){ ST_LOADED=true; stPick(todayStr().slice(0,8)+'01', todayStr()); }   /* 처음 열면 이 달 · 일별 (v233) */
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
   if(name==='report' && !REPORT_LOADED) loadReport();
   if(name==='online' && !OC_LOADED) loadOnlineDay();
@@ -3649,13 +3701,41 @@ function cResSync(){ const seg=$('c_res_seg'); if(!seg) return; const v=$('c_res
   if(!seg.querySelector(`button[data-v="${v}"]`)){ const b=document.createElement('button'); b.type='button'; b.dataset.v=v; b.className='tmp'; b.textContent=(RES_UI[v]||[0,v])[1]; seg.appendChild(b); }
   seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===v)); }
 document.addEventListener('click', e=>{ const b=e.target.closest('#c_res_seg button'); if(!b) return; $('c_result').value=b.dataset.v; cResultChanged(); });
+var C_PREV_RES='진행중';
 function cResultChanged(){
   cResSync();
   const buy = $('c_result').value === '구매완료';
+  if(!buy) C_PREV_RES=$('c_result').value;
   $('c_buybox').classList.toggle('hidden', !buy);
+  const tg=$('c_buytg'); if(tg){ tg.classList.toggle('on', buy); tg.setAttribute('aria-checked', buy?'true':'false'); }
+  const cb=$('c_btn'); if(cb && !cb.disabled) cb.textContent = buy ? '상담 + 판매 저장' : '저장';
   if(buy) setTimeout(()=>$('c_purchase').focus(), 60);
-  else { $('c_purchase').value=''; $('c_buy_amt').value=''; $('c_buy_model').value=''; }
+  else { $('c_purchase').value=''; $('c_buy_amt').value=''; $('c_buy_model').value=''; $('c_buy_qty').value=1; $('c_pay').value='';
+    $('c_items').innerHTML=''; segPickCls('c_stage','매출'); }
+  cBuyTotal();
 }
+/* 스위치 = 상태 '구매함' 과 같은 것. 끄면 그 전에 고른 상태로 돌아간다 */
+function cBuyToggle(){ const on=$('c_result').value==='구매완료'; $('c_result').value = on ? (C_PREV_RES||'진행중') : '구매완료'; cResultChanged(); }
+function segPickCls(id,v){ const el=$(id); if(!el) return; el.querySelectorAll('button').forEach(x=>x.className = x.dataset.v===v ? 'on '+(v==='판매완료'?'done':'open') : ''); }
+$('c_stage').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; segPickCls('c_stage', b.dataset.v); });
+/* 상담 입력 안 판매 — 상품 여러 줄. 첫 줄은 본 칸(c_purchase…), 나머지는 #c_items (판매 입력의 saleItems 와 같은 모양) */
+function cBuyItems(){
+  const out=[{product_name:$('c_purchase').value.trim(), model_code:$('c_buy_model').value.trim().toUpperCase(), qty:Number($('c_buy_qty').value)||1, amount:num($('c_buy_amt'))}];
+  document.querySelectorAll('#c_items .si').forEach(r=>{ const pn=r.querySelector('.ci-name').value.trim(); const amt=num(r.querySelector('.ci-amt')); if(!pn&&!amt) return;
+    out.push({product_name:pn, model_code:r.querySelector('.ci-model').value.trim().toUpperCase(), qty:Number(r.querySelector('.ci-qty').value)||1, amount:amt}); });
+  return out;
+}
+function cBuyTotal(){ const t=$('c_total'); if(!t) return; const it=cBuyItems(); t.textContent=won(it.reduce((a,x)=>a+(x.amount||0),0)); $('c_totalN').textContent=it.length>1?`· ${it.length}개 상품`:''; }
+function cAddItem(){ const r=document.createElement('div'); r.className='si';
+  r.innerHTML=`<div class="f"><label>상품명 <span class="req">*</span></label><div style="display:flex;gap:6px"><input class="in ci-name" placeholder="상품명" list="productList" autocomplete="off"><button type="button" class="x" title="줄 삭제" aria-label="줄 삭제" onclick="this.closest('.si').remove();cBuyTotal()">×</button></div></div>
+    <div class="grid3"><div class="f"><label>모델코드</label><input class="in ci-model" placeholder="모델" style="text-transform:uppercase" autocomplete="off"></div>
+    <div class="f"><label>수량</label><input class="in num ci-qty" type="number" min="1" value="1" aria-label="수량"></div>
+    <div class="f"><label>판매가 <span class="req">*</span></label><input class="in num ci-amt" inputmode="numeric" placeholder="0" oninput="comma(this);cBuyTotal()"></div></div>`;
+  $('c_items').appendChild(r);
+  const nm=r.querySelector('.ci-name'), md=r.querySelector('.ci-model');
+  itemSuggest(nm, x=>{ nm.value=x.name; if(!md.value.trim()) md.value=x.model||x.code; r.querySelector('.ci-amt').focus(); });
+  itemSuggest(md, x=>{ md.value=x.model||x.code; if(!nm.value.trim()) nm.value=x.name; });
+  nm.focus(); cBuyTotal(); }
 $('c_kind').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
   $('c_kind').querySelectorAll('button').forEach(x=>x.className='');
   b.className='on '+(b.dataset.v==='구독'?'sub':b.dataset.v==='직판'?'direct':''); });
@@ -3769,15 +3849,12 @@ function stHBars(C){
    무엇이 매장 외인지는 서버가 정한다 (core.inq_channel.scope · 출처 web_b2b·web_supply·vms) */
 let ST_SCOPE=null;
 function stScope(){
-  if(ST_SCOPE===null){
-    try{ const v=localStorage.getItem('dc_st_scope'); if(v!==null) ST_SCOPE=v; }catch(e){}
-    if(ST_SCOPE===null) ST_SCOPE = /개발|온라인/.test((STATUS&&STATUS.dept)||'') ? '' : 'store';
-  }
+  if(ST_SCOPE===null) ST_SCOPE='';   /* v233: 기본 = 전체 (사용자 결정 10-26 "default는 일, 전체, 이달") — 탭을 열 때마다 전체로 시작 */
   const seg=$('st_scope'); if(seg) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===ST_SCOPE));
   return ST_SCOPE;
 }
 document.addEventListener('click', e=>{ const b=e.target.closest('#st_scope button'); if(!b) return;
-  ST_SCOPE=b.dataset.v; try{ localStorage.setItem('dc_st_scope', ST_SCOPE); }catch(e2){} loadStats(); });
+  ST_SCOPE=b.dataset.v; loadStats(); });
 async function loadStats(){
   if(!ST_LOADED) return;   /* 상담 현황 탭을 아직 안 열었다 — 시작할 때 그리느라 폰에서 216ms 를 썼다 */
   const box=$('stBody'); if(!box) return;
@@ -3793,7 +3870,7 @@ async function loadStats(){
   $('stSub').textContent = `${d.from} ~ ${d.to} · ${who===''?'전체':'내 것'} · ${scLbl}`;
   { const seg=$('st_scope'); if(seg) seg.querySelectorAll('button').forEach(b=>{
       const k=b.dataset.v, cnt = k==='store' ? (SN.store||0) : k==='out' ? (SN.out||0) : ((SN.store||0)+(SN.out||0));
-      b.textContent = (k==='store'?'매장':k==='out'?'매장 외':'전체') + ' ' + cnt; }); }
+      b.innerHTML = (k==='store'?'매장':k==='out'?'매장 외':'전체') + ` <i style="font-style:normal;opacity:.8">${cnt}</i>`; }); }
   const pl=v=>v==='day'?'일':v==='year'?'연':'월';
   const fmtP=x=> grain==='day'? x.slice(5).replace('-','/') : grain==='month'? x.slice(2).replace('-','.') : x;
   const nonbuy=(Number(t.hold)||0)+(Number(t.done)||0)+(Number(t.reject)||0);
@@ -3802,20 +3879,36 @@ async function loadStats(){
   const graphs=`<div class="stg"><div class="g"><div class="gt">${pl(grain)}별 문의 → 구매<span class="lg"><span><i style="background:#B7DDD8"></i>문의</span><span><i style="background:#0F766E"></i>구매</span></span></div>${stBars(P,fmtP)}</div><div class="g"><div class="gt">채널별</div>${stHBars(C)}</div></div>`;
   const th='<th>구분</th><th class="num">문의</th><th class="num">진행중</th><th class="num">보류</th><th class="num">완료</th><th class="num">거절</th><th class="num">구매</th><th class="num">성공률</th>';
   const row=(k,x)=>`<tr><td>${esc(k)}</td><td class="num">${x.total}</td><td class="num">${x.open}</td><td class="num">${x.hold}</td><td class="num">${x.done}</td><td class="num">${x.reject}</td><td class="num"><b>${x.bought}</b></td><td class="num">${x.rate!=null?x.rate+'%':(x.total?Math.round(100*x.bought/x.total)+'%':'-')}</td></tr>`;
-  const t1=`<div class="tw"><table class="slt"><thead><tr>${th.replace('구분',pl(grain)+'별')}</tr></thead><tbody>${P.slice().reverse().map(x=>row(fmtP(x.p),x)).join('')||'<tr><td colspan="8" class="empty">없음</td></tr>'}</tbody></table></div>`;
-  const t2=`<div class="tw" style="margin-top:12px"><table class="slt"><thead><tr>${th.replace('구분','채널별')}</tr></thead><tbody>${C.map(x=>row(x.ch,x)).join('')||'<tr><td colspan="8" class="empty">없음</td></tr>'}</tbody></table></div>`;
-  /* 담당자별 — 점장님이 [전체]로 볼 때 (원본 시트의 '상담사별 성과' 표) */
-  const tH=(who===''&&HD.length>1)?`<div class="tw" style="margin-top:12px"><table class="slt"><thead><tr>${th.replace('구분','담당자별')}</tr></thead><tbody>${HD.map(x=>row(x.h,x)).join('')}</tbody></table></div>`:'';
-  /* 채널 × 기간 (최근 6개 기간만) */
-  const ps=P.slice(window.innerWidth<=640?-4:-6).map(x=>x.p); const CP=d.channel_periods||[];   /* 폰은 최근 4개 기간만 (표가 옆으로 넘치지 않게) */
+  /* v233: 표는 아래 접힌 글(▶ …) 대신 위에 탭 — 무엇을 더 볼 수 있는지 한눈에 보이게 */
+  const rate=x=>x.rate!=null?x.rate+'%':(x.total?Math.round(100*x.bought/x.total)+'%':'-');
+  const tbl=(head,body)=>`<div class="tw"><table class="slt"><thead><tr>${head}</tr></thead><tbody>${body||'<tr><td colspan="8" class="empty">없음</td></tr>'}</tbody></table></div>`;
+  const panes=[];
+  panes.push({k:'period', l:pl(grain)+'별', n:P.length, h:tbl(th.replace('구분',pl(grain)+'별'), P.slice().reverse().map(x=>row(fmtP(x.p),x)).join(''))});
+  panes.push({k:'channel', l:'채널별', n:C.length, h:tbl(th.replace('구분','채널'), C.map(x=>row(x.ch,x)).join(''))});
+  /* 담당자별 — 점장님이 [전체 담당]으로 볼 때 (원본 시트의 '상담사별 성과' 표) */
+  if(who===''&&HD.length>1) panes.push({k:'handler', l:'담당자별', n:HD.length, h:tbl(th.replace('구분','담당자'), HD.map(x=>row(x.h,x)).join(''))});
+  /* 채널 × 기간 (최근 기간만 — 폰은 4개, 넓은 화면은 8개) */
+  const ps=P.slice(window.innerWidth<=640?-4:-8).map(x=>x.p); const CP=d.channel_periods||[];
   const chs=[...new Set(CP.filter(x=>ps.includes(x.p)).map(x=>x.ch))];
-  const t3=chs.length?`<details style="margin-top:12px"><summary style="cursor:pointer;font-size:calc(12.5px * var(--font-scale));color:var(--muted)">채널 × ${pl(grain)} 상세 (문의 / 구매)</summary><div class="tw" style="margin-top:8px"><table class="slt"><thead><tr><th>채널</th>${ps.map(x=>`<th class="num">${fmtP(x)}</th>`).join('')}</tr></thead><tbody>${chs.map(ch=>`<tr><td>${esc(ch)}</td>${ps.map(p=>{ const x=CP.find(y=>y.p===p&&y.ch===ch); return `<td class="num">${x?`${x.total} / <b>${x.bought}</b>`:'-'}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div></details>`:'';
+  if(chs.length) panes.push({k:'chper', l:`채널 × ${pl(grain)}`, n:null,
+    h:`<div class="note-in" style="margin:0 0 6px">칸 = 문의 / <b>구매</b> · 최근 ${ps.length}개 ${pl(grain)}</div>`+tbl(`<th>채널</th>${ps.map(x=>`<th class="num">${fmtP(x)}</th>`).join('')}`, chs.map(ch=>`<tr><td>${esc(ch)}</td>${ps.map(p=>{ const x=CP.find(y=>y.p===p&&y.ch===ch); return `<td class="num">${x?`${x.total} / <b>${x.bought}</b>`:'-'}</td>`; }).join('')}</tr>`).join(''))});
   const R=(d.routes||[]);
-  const t3b=R.length?`<details style="margin-top:12px"><summary style="cursor:pointer;font-size:calc(12.5px * var(--font-scale));color:var(--muted)">채널 안에서 유입경로별로 (홈페이지 문의 → 네이버·블로그·카페…)</summary><div class="tw" style="margin-top:8px"><table class="slt"><thead><tr><th>채널</th><th>유입경로</th><th class="num">문의</th><th class="num">구매</th><th class="num">성공률</th></tr></thead><tbody>${R.map(x=>`<tr><td>${esc(x.ch)}</td><td>${esc(x.r)}</td><td class="num">${x.total}</td><td class="num"><b>${x.bought}</b></td><td class="num">${x.rate}%</td></tr>`).join('')}</tbody></table></div></details>`:'';
+  if(R.length) panes.push({k:'route', l:'유입경로', n:R.length,
+    h:`<div class="note-in" style="margin:0 0 6px">채널 안에서 어디서 보고 왔는지 (홈페이지 문의 → 네이버·블로그·카페…)</div>`+tbl('<th>채널</th><th>유입경로</th><th class="num">문의</th><th class="num">구매</th><th class="num">성공률</th>', R.map(x=>`<tr><td>${esc(x.ch)}</td><td>${esc(x.r)}</td><td class="num">${x.total}</td><td class="num"><b>${x.bought}</b></td><td class="num">${x.rate}%</td></tr>`).join(''))});
   const M=(d.methods||[]).filter(x=>x.m!=='미기록');
-  const t4=M.length?`<div class="meta" style="margin-top:10px;color:var(--muted)">상담 방법 · ${M.map(x=>`${esc(x.m)} ${x.total}건(구매 ${x.bought})`).join(' · ')}</div>`:'';
-  box.innerHTML=kpi+graphs+t1+t2+tH+t3+t3b+t4;
+  if(M.length) panes.push({k:'method', l:'상담 방법', n:M.length,
+    h:tbl('<th>상담 방법</th><th class="num">문의</th><th class="num">구매</th><th class="num">성공률</th>', M.map(x=>`<tr><td>${esc(x.m)}</td><td class="num">${x.total}</td><td class="num"><b>${x.bought}</b></td><td class="num">${rate(x)}</td></tr>`).join(''))});
+  ST_PANES=panes; if(!panes.some(x=>x.k===ST_TAB)) ST_TAB=panes[0].k;
+  box.innerHTML=kpi+graphs+`<div class="st-dt">자세히 보기 <small>탭을 누르면 표가 바뀝니다</small></div><div class="sttabs" id="stTabs" role="tablist" aria-label="상담 현황 표"></div><div id="stPane" role="tabpanel"></div>`;
+  stTabPaint();
 }
+let ST_TAB='period', ST_PANES=[];
+function stTabPaint(){
+  const tb=$('stTabs'), pn=$('stPane'); if(!tb||!pn) return;
+  tb.innerHTML=ST_PANES.map(x=>`<button type="button" role="tab" data-k="${x.k}" aria-selected="${x.k===ST_TAB}" class="${x.k===ST_TAB?'on':''}" onclick="stTab('${x.k}')">${esc(x.l)}${x.n!=null?`<i>${x.n}</i>`:''}</button>`).join('');
+  const cur=ST_PANES.find(x=>x.k===ST_TAB); pn.innerHTML=cur?cur.h:'';
+}
+function stTab(k){ ST_TAB=k; stTabPaint(); }
 /* ═══ 휴가 (점장님·대표님) ═══ */
 let LV=null;
 /* ═══ 휴가 — 달력으로 본다. 날짜를 누르면 시작일, 한 번 더 누르면 종료일. 목록은 이 달 · 앞으로 · 전체 ═══ */
@@ -4887,7 +4980,8 @@ function consultCollect(){
   const res = $('c_result').value;
   const buy = res==='구매완료';
   const buyName = $('c_purchase').value.trim();
-  const buyAmt  = num($('c_buy_amt'));
+  const buyItems = buy ? cBuyItems() : [];
+  const buyAmt  = buyItems.reduce((a,x)=>a+(x.amount||0),0);
   const p = { consult_at:$('c_date').value, handler:$('c_handler').value, customer_name:$('c_name').value.trim(), customer_phone:$('c_phone').value.trim(), buyer_key: LINK.c||null,
     interest_category: cats.join(', '), interest_detail:$('c_detail').value.trim()||null,
     interest_model_code:[...cModels(), ...$('c_model').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean)].filter((v,i,a)=>a.indexOf(v)===i).join(', '),
@@ -4911,8 +5005,10 @@ function consultCollect(){
     if(C_TYS.includes('wedding') && !C_EV.deliv) return cGo('c_deliv','혼수는 희망 배송일이 필수입니다'); }
   if(p.extra_dates.some(x=>!x.label||!x.date)) return cGo('c_xd_rows','추가 날짜는 이름과 날짜를 둘 다 적어 주세요');
   if(buy && !buyName) return cGo('c_purchase','구매한 제품을 적어 주세요');
-  if(buy && !buyAmt)  return cGo('c_buy_amt','구매 금액을 적어 주세요 — 이 금액이 판매로 올라갑니다');
-  return { p, buy, buyName, buyAmt, buyModel:$('c_buy_model').value.trim().toUpperCase()||null,
+  if(buy && !num($('c_buy_amt'))) return cGo('c_buy_amt','판매가를 적어 주세요 — 이 금액이 판매로 올라갑니다');
+  if(buy){ const bad=buyItems.findIndex((x,i)=>i>0 && (!x.product_name || !x.amount)); if(bad>0) return toast(`${bad+1}번째 상품의 상품명과 판매가를 적어 주세요`,'bad'); }
+  return { p, buy, buyName, buyAmt, buyModel:$('c_buy_model').value.trim().toUpperCase()||null, items:buyItems,
+           stage:(($('c_stage').querySelector('button.on')||{}).dataset||{}).v || '매출', pay:$('c_pay').value||null,
            kind:(($('c_kind').querySelector('button.on')||{}).dataset||{}).v || '일시불' };
 }
 /* 상담 한 건 보내기. 구매까지 갔으면 같은 자리에서 판매로 올린다 — 판매 입력을 따로 하지 않는다 */
@@ -4924,10 +5020,11 @@ async function consultSend(x){
     try{
       sale = await rpc('fn_store_sale_submit',{p_code:CODE,p_data:{
         sale_date:p.consult_at, handler:p.handler, sale_kind:x.kind,
-        stage:'매출', consult_ref:r.ref, buyer_key: p.buyer_key||null,
+        stage:x.stage||'매출', consult_ref:r.ref, buyer_key: p.buyer_key||null,
         customer_name:p.customer_name, customer_phone:p.customer_phone,
-        consent_marketing:p.consent_marketing,
-        items:[{product_name:x.buyName, model_code:x.buyModel, qty:1, amount:String(x.buyAmt)}],
+        consent_marketing:p.consent_marketing, payment_method:x.pay||'',
+        product_name:x.buyName, model_code:x.buyModel||'', gross_amount:x.buyAmt,
+        items:(x.items&&x.items.length ? x.items : [{product_name:x.buyName, model_code:x.buyModel, qty:1, amount:x.buyAmt}]).map(i=>({...i, amount:String(i.amount)})),
         gift_name:p.gift_name, gift_amount:p.gift_amount,
         notes:'상담 '+r.ref+' 에서 바로 등록' }});
     }catch(e){ saleErr=e.message; }
@@ -4942,19 +5039,19 @@ async function submitConsult(){
     const { r, sale, saleErr } = await consultSend(x);
     if(saleErr) toast('상담은 저장됐지만 판매 등록에 실패했습니다: '+saleErr,'bad');
     const closedN=(r.closed||[]).length;
-    toast((sale ? `상담 저장 · 판매 ${won(buyAmt)} 함께 등록됨`
+    toast((sale ? `상담 저장 · 판매 ${won(buyAmt)}${(x.items||[]).length>1?` (${x.items.length}개 상품)`:''} 함께 등록됨 · ${x.stage||'매출'}`
                : (r.callback_at?`상담 저장됨 · 콜백 ${fmtWhen(r.callback_at).join(' ')} 예약`:'상담 저장됨'))
           + (closedN?` · 이전 진행 중 상담 ${closedN}건은 상담완료로 정리됨`:''),'ok');
     $('c_ref').classList.remove('hidden');
     $('c_ref').innerHTML = `상담번호 <b style="color:var(--ink);font-size:calc(15px * var(--font-scale))">${r.ref}</b>`
-      + (sale?`<br>판매도 함께 등록됐습니다 (주문번호 ${esc(sale.order_no)}) — 배송·설치가 끝나면 <b>판매 입력 › 확정 대기</b>에서 판매완료로 바꾸세요`
+      + (sale?`<br>판매도 함께 등록됐습니다 (주문번호 ${esc(sale.order_no)})`+(x.stage==='판매완료'?' — 판매완료로 올라갔습니다':' — 배송·설치가 끝나면 <b>판매 입력 › 확정 대기</b>에서 판매완료로 바꾸세요')
              :`<br>나중에 구매로 이어지면 '상담' 탭에서 <b>구매 확정</b>을 누르면 됩니다`)
       + (r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '상담' 탭에서 알려드립니다`:'')
       + (closedN?`<br>같은 고객의 이전 진행 중 상담 <b>${r.closed.map(esc).join(', ')}</b> 은 <b>상담완료</b>로 정리됐습니다 (기록은 남아 있고, 상세 보기에서 볼 수 있습니다)`:'');
     consultClearForm();
     await loadStatus(); render(); if(MC_LOADED) loadMyConsults(0);
   }catch(e){ cGoByMsg(e.message); }
-  b.disabled=false; b.textContent='저장';
+  b.disabled=false; b.textContent = $('c_result').value==='구매완료' ? '상담 + 판매 저장' : '저장';
 }
 
 /* ═══ 받은 문의 접수 · 담당자 넘기기 (수기 상담 배정) ═══
