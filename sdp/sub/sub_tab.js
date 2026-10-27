@@ -166,11 +166,13 @@
   function joinCare(type, cycle) {
     if (type === '무상수리') return '무상수리';
     if ((type === '방문케어' || type === '방문케어 라이트') && cycle === 12) return type;
+    if (!cycle) return type;               // 주기 없는 유형(갤럭시 파손보험·보증 등)은 이름 그대로
     return type + '(' + cycle + '개월주기)';
   }
   function careLabel(c) {
     var s = splitCare(c);
-    return s[0] === '무상수리' ? TYPE_LABEL['무상수리'] : TYPE_LABEL[s[0]] + ' (' + s[1] + '개월)';
+    if (s[0] === '무상수리' || !s[1]) return TYPE_LABEL[s[0]] || s[0];
+    return (TYPE_LABEL[s[0]] || s[0]) + ' (' + s[1] + '개월)';
   }
 
   /* ---------- 모델번호 결정 ---------- */
@@ -353,12 +355,13 @@
     var inYear = plansOf(info, state.year);
     var types = [];
     inYear.forEach(function (p) { var t = splitCare(p[1])[0]; if (types.indexOf(t) < 0) types.push(t); });
-    types.sort(function (a, b) { return TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b); });
+    var ord = function (t) { var i = TYPE_ORDER.indexOf(t); return i < 0 ? 99 : i; };   // 표에 없는 유형(갤럭시)은 뒤로
+    types.sort(function (a, b) { return ord(a) - ord(b); });
     if (types.indexOf(state.type) < 0) state.type = types[0];
     var cycles = [];
     inYear.forEach(function (p) { var s = splitCare(p[1]); if (s[0] === state.type && s[1] && cycles.indexOf(s[1]) < 0) cycles.push(s[1]); });
     cycles.sort(function (a, b) { return a - b; });
-    if (state.type === '무상수리') state.cycle = 0;
+    if (state.type === '무상수리' || !cycles.length) state.cycle = 0;   // 주기가 없는 유형은 0
     else if (cycles.indexOf(state.cycle) < 0) state.cycle = cycles.indexOf(12) >= 0 ? 12 : cycles[0];
     var maxR = prepayMax(info);
     if (state.prepay > maxR + 1e-9) state.prepay = 0;
@@ -440,7 +443,7 @@
     h += '<fieldset class="subtab-field"><legend>구독 케어 유형</legend><div class="subtab-grid subtab-grid--1">';
     sel.types.forEach(function (t) {
       var low = Math.min.apply(null, sel.inYear.filter(function (p) { return splitCare(p[1])[0] === t; }).map(function (p) { return p[3]; }));
-      h += optBtn('data-type="' + t + '"', t === state.type, '<b>' + TYPE_LABEL[t] + '</b><span>월 ' + fmt(low) + '원~</span>', 'subtab-opt--row');
+      h += optBtn('data-type="' + t + '"', t === state.type, '<b>' + (TYPE_LABEL[t] || t) + '</b><span>월 ' + fmt(low) + '원~</span>', 'subtab-opt--row');
     });
     h += '</div></fieldset>';
 
