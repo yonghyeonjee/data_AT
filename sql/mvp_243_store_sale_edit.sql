@@ -1,0 +1,18 @@
+-- mvp_243 (2026-10-27) 담당자 판매 입력 — 지난 판매 목록 · 수정 ("판매입력된 데이터 확인 방법과 수정방법" → "수정안되면 되게 하고")
+-- 전엔 담당자 화면에서 단계(매출↔판매완료)·취소·환불·되돌리기만 됐고 상품·금액·고객은 관리자 통합 원장 [수정]뿐이었다.
+--
+-- public.fn_store_sales(p_code, p_q, p_from, p_to, p_mine, p_limit=300)  anon·authenticated·service_role
+--   매장(source 'store', 테스트 제외, 400일 안) 판매를 주문번호 하나 = 한 줄로. 담당자는 내 건, 점장님·대표님은 전체(p_mine 이면 내 건)
+--   p_q: 상품·모델·고객 이름·주문번호·메모·번호 뒷자리(3자리↑) · '#<줄 id>' 면 그 줄이 든 주문 (화면의 [수정] 이 이걸로 연다)
+--   줄: id(첫 줄) · order_no · date · handler · mine · kind · pay · customer · phone(가림) · notes · amount(취소 줄 빼고 순액) · stage · lines[]
+--       editable · why_not(다른 프로님 판매 / 취소·환불 / 환불 들어감 / 60일 지남) · closed(그날 그 담당 일 마감 저장됨)
+--
+-- public.fn_store_sale_update(p_code, p_id, p_data)  anon·authenticated·service_role
+--   주문 통째로: sale_date · sale_kind(일시불·구독·직판 → channel_type 직판/매장) · payment_method · handler(점장님만, 활성 직원) · customer_name
+--   · customer_phone(적었을 때만 → f_buyer_key 다시 · crm.customer upsert) · notes · items[{id|null, product_name, model_code, qty, amount}]
+--   담당자 = 내 건 60일 안 · 점장님·대표님 = 전부 · 환불 줄이 있거나 살아 있는 줄이 없으면 거절([되돌리기] 뒤)
+--   items 에 없는 살아 있는 줄은 status '취소'(stage_log '판매 수정에서 뺀 상품 줄') — 지우지 않는다 · 새 줄은 다음 line_no 로 insert(지금 단계)
+--   모든 줄 raw_payload.edit_log 에 고치기 전 값 · core.f_dash_mark_dirty(false) · 응답 daily_closed = 그날 일 마감 저장된 날짜들(다시 저장 안내)
+--
+-- 확인(롤백): 차효범 목록 16건 17ms · 이수혁 코드로 차효범 판매 수정 → 거절 · 구분·결제·금액·줄 추가 → 1,050,000 · 줄 빼기 → 취소로 남음 · edit_log 2
+-- 본문은 서버에 있다 (create 문을 MCP 로 보냄 — 이 파일은 기록).

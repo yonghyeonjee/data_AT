@@ -188,6 +188,11 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .item .m.nx{color:var(--navy)} .item .m.nx b{font-weight:600}
 .sheet-bg{position:fixed;inset:0;background:rgba(14,17,22,.45);z-index:60;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:80vh;overflow:auto;padding:18px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet.se{position:relative;max-width:680px;max-height:90vh} .sheet.se .sh-t{padding-right:44px}
+.se-it{display:grid;grid-template-columns:1fr 130px 64px 130px 40px;gap:6px;margin-bottom:6px;align-items:center} .se-it .in{min-width:0}
+.se-it .mini.x{width:40px;height:40px;padding:0} .se-total{text-align:right;margin:4px 0 10px;color:var(--muted)} .se-total b{color:var(--ink);font-size:calc(17px * var(--font-scale))}
+.se-btns{display:flex;justify-content:space-between;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)} .se-btns .btn{width:auto;min-width:112px}
+.item.ps .psno{font-size:calc(12px * var(--font-scale));color:var(--muted);max-width:120px;text-align:right}
 .sh-t{font-size:calc(16px * var(--font-scale));font-weight:800;margin-bottom:4px} .sh-t small{display:block;font-size:calc(12.5px * var(--font-scale));font-weight:500;color:var(--muted);margin-top:3px}
 .sh-list{display:flex;flex-direction:column;gap:6px;margin:12px 0 14px}
 .sh-list button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line-2);border-radius:12px;padding:12px 14px;font-size:calc(15px * var(--font-scale));font-weight:600;color:var(--ink);cursor:pointer}
@@ -1196,6 +1201,9 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
   .fs-big .stf-l{flex-basis:100%}
   .sttabs button{padding:8px 11px}
 }
+@media(max-width:640px){ .se-it{grid-template-columns:1fr 1fr 40px;padding:8px;border:1px solid var(--line);border-radius:10px}
+  .se-it .se-n{grid-column:1 / span 2} .se-it .se-m{grid-column:1 / span 2} .se-it .mini.x{grid-column:3;grid-row:1}
+  .se-it .se-q{grid-column:1} .se-it .se-a{grid-column:2} .sheet.se .grid2{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -1619,6 +1627,15 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <div class="seg sm cflt" id="op_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="opFlt('all')">전체 <i>0</i></button><button type="button" data-v="mine" onclick="opFlt('mine')">내 건 <i>0</i></button><button type="button" data-v="일시불" onclick="opFlt('일시불')">일시불 <i>0</i></button><button type="button" data-v="구독" onclick="opFlt('구독')">구독 <i>0</i></button><button type="button" data-v="직판" onclick="opFlt('직판')">직판 <i>0</i></button></div>
       <div class="list" id="openList"><div class="empty">확정 대기 건이 없습니다</div></div>
       <div id="op_pg"></div>
+    </div>
+    <div class="card" id="psCard">
+      <h2>지난 판매 · 수정 <span id="psSum"></span></h2>
+      <p class="note-in" style="margin:0 0 10px">넣은 판매를 찾아 <b>[수정]</b>으로 상품·모델·수량·금액·구분·결제·고객·판매일을 고칩니다. 내 건은 <b>60일 안</b>까지 (점장님·대표님은 전부). 취소·환불된 건은 [되돌리기] 뒤에 고칩니다.</p>
+      <div class="cbar"><div class="csearchbox"><input class="in" id="ps_q" placeholder="상품 · 모델 · 고객 이름 · 번호 뒷자리 · 메모로 찾기" autocomplete="off" onkeydown="if(event.key==='Enter')loadPastSales()"><button type="button" class="go" onclick="loadPastSales()" aria-label="찾기">⌕</button></div></div>
+      <div class="prow" id="ps_period"></div>
+      <div class="seg sm cflt hidden" id="ps_who" role="group" aria-label="누구 판매"><button type="button" data-v="all" class="on" onclick="psWho('all')">전체</button><button type="button" data-v="mine" onclick="psWho('mine')">내 건</button></div>
+      <div class="list" id="psList"><div class="empty">판매 입력 탭을 열면 불러옵니다</div></div>
+      <div id="ps_pg"></div>
     </div>
   </section>
 
@@ -2080,6 +2097,28 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <button class="btn ghost" onclick="cxClose()">닫기</button>
   </div>
 </div>
+<div class="sheet-bg hidden" id="seBg" onclick="if(event.target===this)seClose()">
+  <div class="sheet se" role="dialog" aria-modal="true" aria-labelledby="se_t">
+    <button type="button" class="lvx" onclick="seClose()" aria-label="닫기" title="닫기">✕</button>
+    <div class="sh-t" id="se_t">판매 수정 <small id="se_no"></small></div>
+    <div class="grid2" style="margin-top:10px">
+      <div class="f"><label for="se_date">판매일</label><input class="in" type="date" id="se_date"></div>
+      <div class="f"><label for="se_handler">담당 프로님 <span class="hint" id="se_hHint"></span></label><select class="in" id="se_handler"></select></div>
+    </div>
+    <div class="f"><label>구분</label><div class="seg" id="se_kind" role="radiogroup" aria-label="구분"><button type="button" role="radio" data-v="일시불" onclick="seKind('일시불')">일시불</button><button type="button" role="radio" data-v="구독" onclick="seKind('구독')">구독</button><button type="button" role="radio" data-v="직판" onclick="seKind('직판')">직판</button></div></div>
+    <div class="f"><label>상품 <span class="hint">상품명 · 모델 · 수량 · 판매가 — 줄을 빼면 그 상품만 취소로 남습니다</span></label><div id="se_items"></div>
+      <button type="button" class="btn sm ghost" style="width:auto;min-height:40px" onclick="seAddItem()">+ 상품 추가</button></div>
+    <div class="se-total">합계 <b id="se_total">0원</b></div>
+    <div class="grid2">
+      <div class="f"><label for="se_pay">결제</label><select class="in" id="se_pay"><option value="">선택 안 함</option><option>삼성카드</option><option>타사카드</option><option>현금</option><option>구독(월납)</option><option>기타</option></select></div>
+      <div class="f"><label for="se_name">고객명</label><input class="in" id="se_name" autocomplete="off"></div>
+    </div>
+    <div class="f"><label for="se_phone">휴대폰 <span class="hint" id="se_phHint">바꿀 때만 적기</span></label><input class="in" id="se_phone" inputmode="tel" autocomplete="off" placeholder="바꿀 때만 적기"></div>
+    <div class="f"><label for="se_notes">메모</label><input class="in" id="se_notes" autocomplete="off"></div>
+    <div class="note-in hidden" id="se_closed"></div>
+    <div class="se-btns"><button type="button" class="btn ghost" onclick="seClose()">닫기</button><button type="button" class="btn" id="se_go" onclick="seSave()">저장</button></div>
+  </div>
+</div>
 <datalist id="giftList"></datalist>
 
 <script>
@@ -2225,7 +2264,7 @@ async function start(){
   }catch(e){}
   $('s_date').value = todayStr(); $('c_date').value = todayStr(); $('d_date').value = todayStr(-1);
   cResultChanged();
-  periodBar('mc',()=>loadMyConsults(0)); periodBar('all',()=>loadAllConsults()); periodBar('qt',()=>quoteFilter()); periodBar('st',()=>loadStats()); periodBar('cu',()=>loadMyCustomers());
+  periodBar('mc',()=>loadMyConsults(0)); periodBar('ps',()=>loadPastSales()); psThisMonth(); periodBar('all',()=>loadAllConsults()); periodBar('qt',()=>quoteFilter()); periodBar('st',()=>loadStats()); periodBar('cu',()=>loadMyCustomers());
   render();
   if(!MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
   REQ_SEEN=null; loadRequests(); reqPoll(); loadGifts(); askNotify();
@@ -2246,6 +2285,7 @@ function renderSales(s){
   const cxBtn = x => canCx(x) ? `<span class="cxw"><button class="mini bad" onclick="cancelOpen(${x.id})">취소·환불</button></span>` : '';   /* 파괴적 버튼은 떼어 둔다 (.cxw) */
   /* 개발·온라인사업부만: 테스트로 넣은 판매를 집계에서 뺀다 (관리자 주문·판매·매출 흐름 › 테스트 카드에서 해제) */
   const tsBtn = x => /개발|온라인/.test((STATUS&&STATUS.dept)||'') ? `<button class="mini" style="opacity:.8" onclick="saleTest(${x.id},'${esc(x.product||'')}')" title="테스트로 넣은 판매 — 확정 대기·현황·일 마감에서 뺍니다">테스트로</button>` : '';
+  const edBtn = x => (canCx(x) && x.stage!=='취소' && x.stage!=='환불') ? `<button class="mini" onclick="saleEditOpen(${x.id})">수정</button>` : '';
   const stageBtn = x => (x.stage==='취소'||x.stage==='환불')
                         ? (canCx(x) ? `<button class="mini" onclick="cancelUndo(${x.id})">되돌리기</button>` : '')
                       : x.stage==='매출' ? `<button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료로</button>`+cxBtn(x)
@@ -2256,7 +2296,7 @@ function renderSales(s){
   $('todayList').innerHTML = T.rows.length ? T.rows.map(x=>`
     <div class="item"><div class="t">${x.time}</div>
       <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span><span class="tag ${x.stage||''}">${x.stage||''}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}</div></div>
-      <div class="act"><div class="a">${won(x.amount)}</div>${stageBtn(x)}${tsBtn(x)}</div></div>`).join('') : `<div class="empty">${tsAll.length?'이 조건에 맞는 판매가 없습니다':'아직 없습니다'}</div>`;
+      <div class="act"><div class="a">${won(x.amount)}</div>${edBtn(x)}${stageBtn(x)}${tsBtn(x)}</div></div>`).join('') : `<div class="empty">${tsAll.length?'이 조건에 맞는 판매가 없습니다':'아직 없습니다'}</div>`;
   const opAll = s.open_sales || [], op = opAll.filter(x=>saleMatch(x,OP_FLT));
   segCount('op_flt',{all:opAll.length, mine:opAll.filter(x=>x.mine).length, '일시불':opAll.filter(x=>(x.kind||'일시불')==='일시불').length, '구독':opAll.filter(x=>x.kind==='구독').length, '직판':opAll.filter(x=>x.kind==='직판').length});
   const O=pgCut('op',OP_PG,op,'opGo'); OP_PG=O.page; { const pg=$('op_pg'); if(pg) pg.innerHTML=O.bar; }
@@ -2264,7 +2304,7 @@ function renderSales(s){
   $('openList').innerHTML = O.rows.length ? O.rows.map(x=>`
     <div class="item"><div class="t">${String(x.date).slice(5).replace('-','/')}</div>
       <div><div class="p"><span class="tag ${x.kind||'일시불'}">${x.kind||'일시불'}</span>${x.product}</div><div class="m">${x.customer} · ${x.handler||''}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}</div></div>
-      <div class="act"><div class="a">${won(x.amount)}</div><button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료</button>${cxBtn(x)}${tsBtn(x)}</div></div>`).join('') : `<div class="empty">${opAll.length?'이 조건에 맞는 건이 없습니다':'확정 대기 건이 없습니다'}</div>`;
+      <div class="act"><div class="a">${won(x.amount)}</div><button class="mini ok" onclick="setStage(${x.id},'판매완료')">판매완료</button>${edBtn(x)}${cxBtn(x)}${tsBtn(x)}</div></div>`).join('') : `<div class="empty">${opAll.length?'이 조건에 맞는 건이 없습니다':'확정 대기 건이 없습니다'}</div>`;
 }
 function render(){
   initSuggest(); setTimeout(syncNav,0);
@@ -3498,6 +3538,7 @@ function goTab(name, fromHistory){
   if(name==='leave' && !LV_LOADED){ LV_LOADED=true; loadLeave(); }
   if(name==='stats' && !ST_LOADED){ ST_LOADED=true; stPick(todayStr().slice(0,8)+'01', todayStr()); }   /* 처음 열면 이 달 · 일별 (v233) */
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
+  if(name==='sale' && !PS_LOADED){ PS_LOADED=true; loadPastSales(); }
   if(name==='report' && !REPORT_LOADED) loadReport();
   if(name==='online' && !OC_LOADED) loadOnlineDay();
   if(name==='stock' && !STK_LOADED) loadStk();
@@ -4875,6 +4916,81 @@ async function saleTest(id, product){
   catch(e){ toast(e.message,'bad'); }
 }
 /* ═══ 단계 변경 ═══ */
+/* ═══ 지난 판매 · 수정 (mvp_243) — 목록 fn_store_sales(주문 하나 = 한 줄) · 고치기 fn_store_sale_update(주문 통째로) ═══ */
+var PS_LOADED=false, PS_ROWS=[], PS_PG=0, PS_WHO='all', SE=null;
+function psThisMonth(){ const F=$('ps_from'), T=$('ps_to'), P=$('ps_preset'); if(!F) return; F.value=todayStr().slice(0,8)+'01'; T.value=todayStr();
+  P.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.d==='m')); }
+async function loadPastSales(){
+  const box=$('psList'); if(!box) return; box.innerHTML='<div class="empty">불러오는 중…</div>';
+  const pr=periodOf('ps');
+  try{ const d=await rpc('fn_store_sales',{p_code:CODE, p_q:($('ps_q').value.trim()||null), p_from:pr.from, p_to:pr.to, p_mine:PS_WHO==='mine', p_limit:300});
+    PS_ROWS=d.rows||[]; $('ps_who').classList.toggle('hidden', !d.is_mgr); PS_PG=0; renderPastSales();
+  }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; $('ps_pg').innerHTML=''; }
+}
+function psWho(v){ PS_WHO=v; $('ps_who').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); loadPastSales(); }
+function psGo(p){ PS_PG=p; renderPastSales(); }
+/* 수정에서 뺀 줄('취소')은 보이지 않게 — 판매 전체가 취소면 그대로 */
+const psLive = x => { const L=x.lines||[]; const live=L.filter(l=>l.status!=='취소'); return live.length?live:L; };
+const psStage = x => { const st=[...new Set(psLive(x).map(l=>l.status))]; return st.join('·'); };
+function renderPastSales(){
+  const R=pgCut('ps',PS_PG,PS_ROWS,'psGo'); PS_PG=R.page; $('ps_pg').innerHTML=R.bar;
+  $('psSum').textContent = PS_ROWS.length ? `${PS_ROWS.length}건 · ${won(PS_ROWS.reduce((a,x)=>a+Number(x.amount||0),0))}${R.range?' · '+R.range.replace(/^\d+건 중 /,''):''}` : '';
+  $('psList').innerHTML = R.rows.length ? R.rows.map(x=>{
+    const st=psStage(x), kind=x.kind||'일시불';
+    const prod=psLive(x).map(l=>`${l.model?`<span class="mono" style="font-weight:700">${esc(l.model)}</span> `:''}${esc(l.product||'')}${Number(l.qty)>1?` <b>×${Number(l.qty)}</b>`:''}`).join('<br>');
+    const why=x.why_not?String(x.why_not).split(' — ')[0]:'';
+    return `<div class="item ps"><div class="t">${String(x.date).slice(5).replace('-','/')}</div>
+      <div><div class="p"><span class="tag ${esc(kind)}">${esc(kind)}</span><span class="tag ${esc(st)}">${esc(st)}</span>${prod}</div>
+        <div class="m">${esc(x.customer||'(고객 없음)')}${x.phone?' '+esc(x.phone):''} · ${esc(x.handler||'')}${x.mine?' <b style="color:var(--accent)">· 내 건</b>':''}${x.pay?' · '+esc(x.pay):''}${x.closed?' · <span title="이 날 일 마감이 저장돼 있습니다">마감 저장됨</span>':''}</div></div>
+      <div class="act"><div class="a">${won(x.amount)}</div>${x.editable?`<button class="mini" onclick="saleEditOpen(${x.id})">수정</button>`:`<span class="psno" title="${esc(x.why_not||'')}">${esc(why)}</span>`}</div></div>`; }).join('')
+    : `<div class="empty">${$('ps_q').value.trim()?'찾는 판매가 없습니다':'이 기간에 넣은 판매가 없습니다'}</div>`;
+}
+async function saleEditOpen(id){
+  let row=null;
+  try{ const d=await rpc('fn_store_sales',{p_code:CODE, p_q:'#'+id, p_from:null, p_to:null, p_mine:false, p_limit:5}); row=(d.rows||[])[0]; }catch(e){ return toast(e.message,'bad'); }
+  if(!row) return toast('판매를 찾지 못했습니다','bad');
+  if(!row.editable) return toast(row.why_not||'고칠 수 없는 판매입니다','bad');
+  SE={id:row.id, row, ids:new Set(psLive(row).map(l=>l.id))};
+  $('se_no').textContent=`${row.order_no} · ${String(row.date).replace(/-/g,'.')} · ${row.handler||''}`;
+  $('se_date').value=row.date; $('se_date').max=todayStr();
+  const hs=$('se_handler'), src=$('s_handler'); hs.innerHTML=src?src.innerHTML:'';
+  if(![...hs.options].some(o=>o.value===row.handler)){ const o=document.createElement('option'); o.value=o.textContent=row.handler||''; hs.appendChild(o); }
+  hs.value=row.handler||''; const mgr=!!(STATUS&&STATUS.is_mgr); hs.disabled=!mgr; $('se_hHint').textContent=mgr?'':'점장님만 바꿀 수 있습니다';
+  seKind(row.kind||'일시불');
+  $('se_pay').value=row.pay||''; if($('se_pay').value!==(row.pay||'')){ const o=document.createElement('option'); o.textContent=row.pay; $('se_pay').appendChild(o); $('se_pay').value=row.pay; }
+  $('se_name').value=row.customer||''; $('se_phone').value=''; $('se_phHint').textContent = row.phone ? `지금 ${row.phone} · 바꿀 때만 적기` : '없음 · 적으면 고객과 이어집니다';
+  $('se_notes').value=row.notes||'';
+  $('se_items').innerHTML=''; psLive(row).forEach(l=>seAddItem(l)); seTotal();
+  const cl=$('se_closed'); cl.classList.toggle('hidden', !row.closed); cl.textContent = row.closed ? '이 날 일 마감이 저장돼 있습니다 — 금액을 고치면 일 마감 탭에서 그날 마감을 다시 저장해 주세요.' : '';
+  $('se_go').disabled=false; $('seBg').classList.remove('hidden'); setTimeout(()=>{ const f=$('se_items').querySelector('.se-n'); if(f) f.focus(); },60);
+}
+function seClose(){ $('seBg').classList.add('hidden'); SE=null; }
+function seKind(v){ $('se_kind').querySelectorAll('button').forEach(b=>{ const on=b.dataset.v===v; b.classList.toggle('on',on); b.setAttribute('aria-checked',on); }); }
+function seAddItem(l){ const r=document.createElement('div'); r.className='se-it'; if(l&&l.id) r.dataset.id=l.id;
+  const a=l&&l.amount!=null?Number(l.amount).toLocaleString('ko-KR'):'';
+  r.innerHTML=`<input class="in se-n" placeholder="상품명" aria-label="상품명" value="${esc((l&&l.product)||'')}"><input class="in se-m" placeholder="모델" aria-label="모델" value="${esc((l&&l.model)||'')}" autocomplete="off"><input class="in se-q" inputmode="numeric" aria-label="수량" value="${l&&l.qty?Number(l.qty):1}"><input class="in se-a num" inputmode="numeric" placeholder="판매가" aria-label="판매가" value="${a}" oninput="comma(this);seTotal()"><button type="button" class="mini x" aria-label="이 상품 빼기" onclick="seDelItem(this)">×</button>`;
+  $('se_items').appendChild(r); if(!l) r.querySelector('.se-n').focus(); seTotal(); }
+function seDelItem(b){ const its=$('se_items').querySelectorAll('.se-it'); if(its.length<=1) return toast('상품은 한 줄 이상 있어야 합니다 — 판매 전체를 없애려면 [취소·환불]','bad'); b.closest('.se-it').remove(); seTotal(); }
+function seTotal(){ const t=[...$('se_items').querySelectorAll('.se-a')].reduce((a,e)=>a+num(e),0); $('se_total').textContent=won(t); return t; }
+async function seSave(){
+  if(!SE) return;
+  const items=[...$('se_items').querySelectorAll('.se-it')].map(r=>({id:r.dataset.id?Number(r.dataset.id):null, product_name:r.querySelector('.se-n').value.trim(), model_code:r.querySelector('.se-m').value.trim(), qty:r.querySelector('.se-q').value||'1', amount:String(num(r.querySelector('.se-a')))}));
+  const bad=items.findIndex(x=>!x.product_name||!Number(x.amount));
+  if(bad>=0){ const r=$('se_items').querySelectorAll('.se-it')[bad]; const f=!items[bad].product_name?r.querySelector('.se-n'):r.querySelector('.se-a'); f.focus(); f.classList.add('need'); setTimeout(()=>f.classList.remove('need'),1600); return toast(`${bad+1}번째 상품의 상품명과 판매가를 적어 주세요`,'bad'); }
+  const ph=$('se_phone').value.replace(/\D/g,''); if(ph && ph.length<10){ $('se_phone').focus(); return toast('휴대폰 번호를 확인해 주세요','bad'); }
+  const gone=[...SE.ids].filter(id=>!items.some(x=>x.id===id)).length;
+  if(gone && !confirm(`상품 ${gone}줄을 뺍니다 — 그 줄은 '취소'로 남고 매출에서 빠집니다. 계속할까요?`)) return;
+  const p={sale_date:$('se_date').value, sale_kind:(($('se_kind').querySelector('button.on')||{}).dataset||{}).v||'일시불', payment_method:$('se_pay').value,
+    handler:$('se_handler').value, customer_name:$('se_name').value.trim(), notes:$('se_notes').value.trim(), items};
+  if(ph) p.customer_phone=ph;
+  const b=$('se_go'); b.disabled=true; b.textContent='저장 중…';
+  try{ const r=await rpc('fn_store_sale_update',{p_code:CODE, p_id:SE.id, p_data:p});
+    seClose(); const cl=(r.daily_closed||[]).map(d=>String(d).slice(5).replace('-','/'));
+    toast(`고쳤습니다 · ${won(r.amount)}${cl.length?` — ${cl.join('·')} 일 마감을 다시 저장해 주세요`:''}`,'ok');
+    REPORT_LOADED=false; await loadStatus(); render(); if(PS_LOADED) loadPastSales();
+  }catch(e){ toast(e.message,'bad'); }
+  finally{ b.disabled=false; b.textContent='저장'; }
+}
 async function setStage(id, stage){
   try{ const r = await rpc('fn_store_sale_stage',{p_code:CODE,p_id:id,p_stage:stage});
     toast(stage==='판매완료'?'판매완료로 확정됨':'매출 단계로 되돌림','ok'); REPORT_LOADED=false; await loadStatus(); render();
