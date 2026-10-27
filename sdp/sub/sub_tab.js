@@ -1,7 +1,7 @@
-/* ===== 상품상세 일시불/구독 탭 | goods_view.html 에서 SUB_TAB_CONFIG 설정 후 로드 =====
+/* ===== 상품상세 일시불/구독 탭 | 모듈 goods/_sub_tab.html 에서 SUB_TAB_CONFIG 설정 후 로드 =====
    동작 순서
    1) 모델번호 결정: 옵션의 자체옵션코드 → 추가항목 "구독모델" → 상품 모델번호 → 자체상품코드
-   2) SUB_INDEX(모델→카테고리) 에 있으면 탭 표시, 없으면 아무것도 하지 않음 (일반 상품 영향 없음)
+   2) SUB_INDEX(모델→카테고리) 에 있으면 탭 표시(자리 #subTabRoot 가 없으면 가격 박스 위에 만든다), 없으면 아무것도 하지 않음 (일반 상품 영향 없음)
    3) 구독 모델이면 해당 카테고리 요금표(sub_plans_<키>.js)와 카드표(sub_cards.js)를 추가 로드
    4) 추가항목 "구독요금" 이 있으면 파일 요금보다 우선 적용
         구독요금            = 6년 무상수리 13420 / 6년 방문케어 20,020 / 6년 방문케어36 15840 / 3년 무상수리 0
@@ -368,7 +368,13 @@
   /* ---------- 렌더 ---------- */
   function build() {
     root = document.getElementById('subTabRoot');
-    if (!root) return false;
+    if (!root) {                      // 스킨에 자리를 안 만들었으면 가격 박스(lumpOnly 첫 선택자) 바로 위에 만든다
+      var anchor = null, sels = CFG.lumpOnly || ['.price-box'];
+      for (var a = 0; a < sels.length && !anchor; a++) { try { anchor = document.querySelector(sels[a]); } catch (e) {} }
+      if (!anchor) return false;
+      root = document.createElement('div'); root.id = 'subTabRoot'; root.hidden = true;
+      anchor.parentNode.insertBefore(root, anchor);
+    }
     root.innerHTML =
       '<div class="subtab-head" role="tablist" aria-label="구매방식">' +
       '<button type="button" role="tab" class="subtab-btn" data-tab="lump"><span>일시불</span><strong data-slot="lump-price"></strong></button>' +
@@ -537,7 +543,7 @@
       '<div class="subtab-bar-row"><span>월 납부 예상금액</span><s' + (discounted ? '' : ' hidden') + '>월 ' + fmt(r.monthly) + '원</s></div>' +
       '<div class="subtab-bar-row is-main"><span>' + (r.cardTotal ? '제휴카드 적용가' : '혜택 적용가') + '</span><strong>월 ' + fmt(r.finalMonthly) + '원~</strong></div>' +
       '<div class="subtab-cta">' +
-      '<a class="subtab-cta-main" data-cta="consult" href="' + esc((CFG.consultUrl || '/service/SamSungSubscription.php') + '?' + q) + '">' +
+      '<a class="subtab-cta-main" data-cta="consult" href="' + esc(consultBase() + q) + '">' +
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>' +
       '상담하고 구독하기</a>' +
       (CFG.tel ? '<a class="subtab-cta-sub" data-cta="tel" href="tel:' + esc(CFG.tel.replace(/[^0-9]/g, '')) + '">' + esc(CFG.tel) + '</a>' : '') +
@@ -608,6 +614,12 @@
       var t = dts[i].textContent.replace(/^\s+/, '');
       if (t.indexOf(titles[0]) === 0 || t.indexOf(titles[1]) === 0) dts[i].parentNode.style.display = 'none';
     }
+  }
+
+  // 상담 신청 페이지 주소 — 이미 ?htmid=… 가 붙어 있으면 & 로 잇는다. 관심 모델·품목·메모는 그 뒤의 from/product/model/memo 로 넘어가 자동 채움된다
+  function consultBase() {
+    var u = CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html';
+    return u + (u.indexOf('?') >= 0 ? '&' : '?');
   }
 
   // 단계적 오픈 스위치
