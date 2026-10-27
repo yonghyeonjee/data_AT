@@ -21,8 +21,8 @@
   var IDX = window.SUB_INDEX;
   if (!IDX || !IDX.m) return;
 
-  var TYPE_ORDER = ['무상수리', '셀프케어', '방문케어'];
-  var TYPE_LABEL = { '무상수리': '무상수리 서비스', '셀프케어': '무상수리 + 셀프케어', '방문케어': '무상수리 + 방문케어' };
+  var TYPE_ORDER = ['무상수리', '셀프케어', '방문케어 라이트', '방문케어'];
+  var TYPE_LABEL = { '무상수리': '무상수리 서비스', '셀프케어': '무상수리 + 셀프케어', '방문케어 라이트': '무상수리 + 방문케어 라이트', '방문케어': '무상수리 + 방문케어' };
   // sub_policy.js 를 못 불러왔을 때 쓰는 기본 정책 (tools/sub_policy.json 과 같은 구조)
   var DEFAULT_POLICY = {
     autopay: { rate: 0.05, label: '구독료 {rate} 할인 (자동납부)' },
@@ -159,13 +159,13 @@
   /* ---------- 케어 유형 / 주기 ---------- */
   function splitCare(c) {
     if (c === '무상수리') return ['무상수리', 0];
-    var m = String(c).match(/^(방문케어|셀프케어)(?:\((\d+)개월주기\))?$/);
+    var m = String(c).match(/^(방문케어 라이트|방문케어|셀프케어)(?:\((\d+)개월주기\))?$/);
     if (!m) return [c, 0];
     return [m[1], m[2] ? +m[2] : 12];
   }
   function joinCare(type, cycle) {
     if (type === '무상수리') return '무상수리';
-    if (type === '방문케어' && cycle === 12) return '방문케어';
+    if ((type === '방문케어' || type === '방문케어 라이트') && cycle === 12) return type;
     return type + '(' + cycle + '개월주기)';
   }
   function careLabel(c) {
@@ -210,9 +210,9 @@
   function normCare(raw) {
     var s = String(raw).replace(/\s+/g, '').replace(/^무상수리\+/, '').replace(/[()]/g, '').replace(/개월|주기/g, '');
     if (s === '무상수리' || s === '무상수리서비스') return '무상수리';
-    var m = s.match(/^(방문케어|셀프케어)(\d*)$/);
+    var m = s.match(/^(방문케어라이트|방문케어|셀프케어)(\d*)$/);
     if (!m) return '';
-    return joinCare(m[1], m[2] ? +m[2] : 12);
+    return joinCare(m[1] === '방문케어라이트' ? '방문케어 라이트' : m[1], m[2] ? +m[2] : 12);
   }
   function parseFees(text, model, into) {
     var o = into || { set: [], del: [] };
@@ -527,17 +527,19 @@
     if (POL.texts.notice) h += '<p class="subtab-note">' + esc(POL.texts.notice) + '</p>';
 
     // 하단 고정 바 — 상담 신청만
-    var memo = '[상품상세 구독탭] ' + r.years + '년 · ' + careLabel(r.care) + ' · 월 ' + fmt(r.monthly) + '원' +
+    // CFG.source('goods'|'view'|…)·CFG.sourceName·CFG.utmSource 로 상담서에 남는 출처를 바꿀 수 있다 (구독 상품 페이지 sub_view 가 같은 파일을 쓴다)
+    var srcName = CFG.sourceName || '상품상세 구독탭';
+    var memo = '[' + srcName + '] ' + r.years + '년 · ' + careLabel(r.care) + ' · 월 ' + fmt(r.monthly) + '원' +
       (r.prepay ? ' · 선납 ' + Math.round(r.prepay * 100) + '%' : '') +
       (r.cardTotal ? ' · ' + state.card + ' ' + tierLabel(state.tier) : '') +
       ' → 월 납부 예상 ' + fmt(r.finalMonthly) + '원';
-    var q = 'from=goods' +
+    var q = 'from=' + encodeURIComponent(CFG.source || 'goods') +
       '&product=' + encodeURIComponent((IDX.m[state.model] && IDX.cats[IDX.m[state.model][0]]) || CFG.productCat || '') +
       '&purpose=' + encodeURIComponent('신규구독') +
       '&model=' + encodeURIComponent(state.model) +
       '&memo=' + encodeURIComponent(memo) +
-      '&src=' + encodeURIComponent('상품상세 구독탭' + (CFG.goodsNo ? ' #' + CFG.goodsNo : '')) +
-      '&utm_source=goods_view&utm_medium=subtab&utm_campaign=' + encodeURIComponent(state.model);
+      '&src=' + encodeURIComponent(srcName + (CFG.goodsNo ? ' #' + CFG.goodsNo : '')) +
+      '&utm_source=' + encodeURIComponent(CFG.utmSource || 'goods_view') + '&utm_medium=subtab&utm_campaign=' + encodeURIComponent(state.model);
     var discounted = r.finalMonthly < r.monthly - 0.5;
     h += '<div class="subtab-bar">' +
       '<div class="subtab-bar-row"><span>월 납부 예상금액</span><s' + (discounted ? '' : ' hidden') + '>월 ' + fmt(r.monthly) + '원</s></div>' +
