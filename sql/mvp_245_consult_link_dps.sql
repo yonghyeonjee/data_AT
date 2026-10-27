@@ -1,0 +1,15 @@
+-- mvp_245 · 2026-10-27 · 상담 '구매함' 은 판매 칸을 비워도 된다 — DPS 판매가 이어 준다
+-- 요청: "DPS에서 판매내역가져오니 그것으로 채우면 될 것 같아 · 제품 추가는 필수로 두지 말고 접어둔 상태에서 열어서 추가"
+-- 적용됨(DB). 본문은 서버 pg_get_functiondef 로 읽을 것.
+
+-- ① core.f_consult_link_sales(p_days int default 400) → jsonb {consult_linked}
+--    result='구매완료' · linked_order_id 없음 · 삭제 안 된 상담을 core.orders(source dps·store, 테스트 아님, net>0,
+--    다른 상담에 아직 안 이어진 주문)에 잇는다. 같은 사람 = 고객키 또는 휴대폰 뒤 8자리(같은 숫자 8개 제외),
+--    주문일 ∈ [상담일 − 7일, 상담일 + 45일], 가장 가까운 주문 하나(한 주문은 한 상담에만).
+--    linked_order_id · purchase_item(비어 있을 때 상품명) · notes '+ DPS 판매 YYYY-MM-DD 에 이어짐'.
+--    권한: public·anon·authenticated 없음(내부 함수). 60일 창 49ms.
+-- ② core.f_dps_ledger_sync 끝 return 에 || core.f_consult_link_sales(120)  — DPS 업로드 때마다
+-- ③ public.fn_store_consult_submit 끝: 구매함이고 p_data.sale_follows 가 true 가 아니면 perform core.f_consult_link_sales(60)
+--    (화면이 판매를 같이 올릴 땐 sale_follows=true → fn_store_sale_submit 의 consult_ref 연결이 먼저 잡도록)
+--    응답에 'linked_order'(이 상담이 이어진 주문 id 또는 null).
+-- 첫 실행(2026-10-27): 구매함인데 주문 없는 상담 51 중 24 를 DPS 판매에 이음(걸린 날 중앙 0일 · 최대 23일).
