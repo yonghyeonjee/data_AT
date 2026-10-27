@@ -1,7 +1,17 @@
-# 상품상세 구독탭 데이터 — 데이터센터에서 관리·배포 (mvp_246 · 2026-10-27)
+# 상품상세 구독탭 데이터 — 데이터센터에서 관리·배포 (mvp_246 · mvp_249 · 2026-10-27)
 
 고도몰 상품상세(`goods/goods_view.html`)의 **일시불/구독 탭**이 읽는 파일을 데이터센터가 만들어 **`https://db.samsungat.co.kr/sdp/sub/`** 에 올린다.
-요금표·카드 금액은 SDP 판(`sdp.release` · mvp_245)에서, 정책·문구는 `sub.policy` 표에서 온다. 고도몰에는 HTML 과 예비 사본만 둔다.
+요금표는 **DPS 올인원구독모델조회 수집분(`dps.sub_model` · mvp_240 · 매일)** 에서(mvp_249 · 2026-10-27부터), 카드 금액·정수기 본사 할인값은 SDP 판(`sdp.release` · mvp_245)에서, 정책·문구는 `sub.policy` 표에서 온다. 고도몰에는 HTML 과 예비 사본만 둔다.
+
+## 요금표 원본 = DPS (mvp_249)
+- `fn_sub_dps_export()`(service_role) 가 `dps.sub_model` 의 active 행 전부를 주고, `build_sub.mjs` 가 수집기 `export_products_js.mjs` 와 같은 규칙으로 요금표로 바꾼다.
+  - 품목: 에어컨 중 세부유형이 천장형 실내기·전열교환기면 **시스템에어컨**, 세탁기·건조기·에어드레서 → 의류케어, 전기레인지·식기세척기·후드 → 조리기기.
+  - 요금제 이름: SDP 엑셀판 표기 그대로 — `무상수리(재설치포함)`→`무상수리`, 방문케어 12개월 주기는 `방문케어`(그 밖은 `방문케어(36개월주기)`), 셀프케어는 항상 주기 표기, 갤럭시는 `파손보험+무상보증(36개월)` 꼴.
+  - 선납 불가(`np`) = DPS 호버 표에 0% 말고 선납 비율이 없는 모델. 세부유형(`s`)은 DPS 원문.
+  - DPS 목록에서 빠진 모델(active=false)은 자연히 빠진다 → 주문 불가 모델이 상세페이지에 안 나온다. SDP 엑셀판에만 있던 208개(묶음코드·B2B 코드 등)는 2026-10-27 전환 때 제외됐다.
+- 안전장치(`publish.mjs`): 최신 수집이 **24시간** 넘게 없거나, 모델 수가 직전 배포판(`version.js` 의 `SUB_MODELS`)보다 **10% 넘게 줄거나 500 미만**이면 구독탭 파일을 안 바꾸고(이전 판 유지) `sdp.publish_log` 에 `sub_skipped` 로 남긴다. 이때는 정책 변경도 다음 정상 수집 뒤에 반영된다. DPS 를 아예 못 받으면 SDP 판 `DATA` 로 만든다(이전 방식).
+- 판 번호: `SUB_VER = "<SDP 판>+<정책 판>+d<수집시각 YYMMDD-HHMM>"`, `version.js` 에 `SUB_DPS_VER`·`SUB_MODELS`, `sub_index.js` 에 `src: "dps"`.
+- PC 에서 시험: `node tools/sub/build_sub.mjs <data_*.js 폴더> <출력> [sub_policy.json] --dps-rows <수집기 outputs/playwriter/구독모델/sub_model.json>`
 
 ```
 SDP 판 (DATA · PREPAY_NO · CARD · WATER_POLICY) ─┐
@@ -12,8 +22,8 @@ sub.policy · sub.card_policy · sub.promo ──────────┘    
 | 파일 (`sdp/sub/`) | 무엇 | 원본 |
 |---|---|---|
 | `version.js` | `SUB_VER = "<SDP 판>+<정책 판>"` — 상세페이지가 5분 단위로 읽어 바뀌면 아래 파일을 새로 받는다 | 자동 |
-| `sub_index.js` | 모델번호 → [품목 키, 최저 월구독료, 최저 총구독료] (모든 상품상세가 받음 · 약 40KB) | SDP `DATA` |
-| `sub_plans_<품목키>.js` | 품목별 요금표 + 선납 미운영 + 정수기 본사 할인값 (구독 모델일 때 1개) | SDP `DATA` · `PREPAY_NO` · `WATER_POLICY` |
+| `sub_index.js` | 모델번호 → [품목 키, 최저 월구독료, 최저 총구독료] (모든 상품상세가 받음 · 약 35KB) | DPS `dps.sub_model` (못 받으면 SDP `DATA`) |
+| `sub_plans_<품목키>.js` | 품목별 요금표 + 선납 미운영 + 정수기 본사 할인값 (구독 모델일 때 1개) | DPS (요금·선납 불가) · SDP `WATER_POLICY` |
 | `sub_cards.js` | 제휴카드 청구할인 표 | SDP `CARD` |
 | `sub_policy.js` | 자동납부·선납 할인율, 품목별 선납 한도, 카드 유의사항·노출 기간, 행사 문구, 안내 문구 | `fn_sub_policy_export()` |
 | `sub_tab.js` · `sub_tab.css` | 탭 화면 코드 (손으로 커밋 · 생성 아님) | 이 저장소 |
@@ -24,7 +34,8 @@ sub.policy · sub.card_policy · sub.promo ──────────┘    
 
 | 바뀐 것 | 어디서 | 누가 |
 |---|---|---|
-| 모델별 월요금·신모델, 정수기 본사 할인값, 선납 미운영 모델, 카드 금액표 | SDP 판 (`tools/sdp/README_release.md`) | 온라인사업부 |
+| 모델별 월요금·신모델·선납 미운영 모델 | DPS 올인원구독모델조회 (수집기가 매일 올림 · `dps.sub_model`) | 자동 |
+| 정수기 본사 할인값, 카드 금액표 | SDP 판 (`tools/sdp/README_release.md`) | 온라인사업부 |
 | 자동납부 할인율, 선납 비율별 할인율·품목별 한도·이름 규칙, 기본 문구 | 관리자 › 품목 › **구독 혜택 정책** | 관리자 |
 | 카드 유의사항·노출 기간·숨김, 행사 문구(기간·대상 품목/모델/상품번호) | 관리자 › 구독 혜택 정책 **또는** 매장 › 견적서 › **구독 혜택 안내** | 관리자 · 점장님·대표님 |
 | 한 상품만 급히 요금 수정 | 고도몰 상품 추가항목 `구독요금` | 쇼핑몰 담당 |
