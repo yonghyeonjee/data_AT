@@ -159,6 +159,14 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .oo-on{background:var(--navy);color:#fff}
 .oo-off{background:var(--teal);color:#fff;justify-content:flex-end}
 .oostrip .nums{display:flex;gap:15px;flex-wrap:wrap}
+/* 매장 칸 기준 토글 · 사원별 실적 표 (mvp_248) */
+.kpi .k .stb{display:inline-flex;margin-left:6px;vertical-align:middle;border:1px solid var(--rule);border-radius:6px;overflow:hidden;text-transform:none;letter-spacing:0}
+.kpi .k .stb button{font-family:var(--sans);font-size:11.5px;font-weight:650;border:0;background:#fff;color:var(--ink-2);padding:3px 8px;min-height:24px;cursor:pointer}
+.kpi .k .stb button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.sttbl tbody tr{cursor:default}.sttbl tbody tr:hover{background:transparent}
+.sttbl{min-width:640px}.sttbl td{white-space:nowrap}.sttbl tr.stsub td{font-weight:700;background:#F4F6F9}.sttbl tr.tot td{font-weight:800;background:#E9EDF5}
+.sttbl td.neg{color:#B3261E}.sttbl td small{color:var(--muted);font-weight:500;margin-left:4px}
+.sttbl tr.grp td{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted);padding-top:14px;border-bottom:0}
 .oostrip .nums span{font-size:13px;color:var(--ink-2);white-space:nowrap}
 .oostrip .nums b{font-family:var(--mono);font-weight:700;color:var(--ink);margin-left:5px}
 .oostrip .nums u{text-decoration:none;font-family:var(--mono);font-size:11.5px;margin-left:5px}
@@ -394,6 +402,8 @@ body.pres .stepbar{display:flex}
   .stepbar .title{display:none}
   .abar .clr{margin-left:0;width:100%}
   .oostrip .nums{width:100%}
+  .kpi .k .stb button{min-height:40px;padding:4px 12px;font-size:13px}
+  .kpi .k .stb{display:flex;margin:6px 0 0;width:max-content}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media print{.controls,.stepbar,.rangebar{display:none!important}body{background:#fff}.card{break-inside:avoid}body.pres .step{display:block!important}}
@@ -591,6 +601,15 @@ body{background:
     </div>
   </section>
 
+  <section class="step" data-title="사원" id="st-sec">
+    <div class="grid"><div class="card sp12">
+      <div class="card-h"><h2>사원별 실적</h2><span class="note" id="st-note"></span></div>
+      <div class="card-b"><div class="mx-scroll"><table class="tbl sttbl"><thead><tr>
+        <th class="l">사원</th><th>실적</th><th>매장 일반</th><th>매장 구독</th><th>그 밖 채널</th><th class="hide-s">비중</th><th class="hide-s">전기</th><th>전기 대비</th>
+      </tr></thead><tbody id="strows"></tbody></table></div></div>
+    </div></div>
+  </section>
+
   <section class="step" data-title="패턴">
     <div class="grid">
       <div class="card sp6">
@@ -751,6 +770,9 @@ const PAL=['#1428A0','#3E5BC9','#7A8CE8','#0F7B6C','#5AAFA4','#8A5D00','#8E6FD8'
 const GREY='#AEB5BF';
 let metric='n', focus=null, a=0, b=ND-1, preset='all', view='o', scope='all';
 let cmpMode='auto'; try{ if(sessionStorage.getItem('dash_cmp')==='yoy') cmpMode='yoy'; }catch(e){}   /* 비교: auto=전기(전주·전월·직전 N일) · yoy=전년 동기 */
+const ST=(DATA.staff&&DATA.staff.names&&DATA.staff.names.length)?DATA.staff:null;   /* DPS 기준 사원별 실적 [일, 사원, 구분 0 매장(시흥)·1 매장구독(시흥)·2 그 밖 채널, 매출, 환불] · store[i] = 매장 사원 (mvp_248) */
+let stBasis='staff'; try{ if(sessionStorage.getItem('dash_stb')==='ch') stBasis='ch'; }catch(e){}   /* 매장 칸: staff = 매장 사원 실적(DPS 사원별목표/실적과 같은 합) · ch = 판매번호의 DPS 채널 */
+if(!ST){const se=document.querySelector('#st-sec'); if(se) se.remove();}
 const CC=DATA.ccells||[];   /* 고객 셀 [일, 채널, 구매 고객(고객×일), 그중 첫 구매] (2026-09-19) */
 let pMall=-1, pCat=null, pQ='', pLimit=30, pTab='p', wfTab='ch';
 let pSort='n'; try{ if(sessionStorage.getItem('dash_psort')==='q') pSort='q'; }catch(e){}   /* 상품 목록 정렬: n 금액 · q 수량 */
@@ -829,8 +851,22 @@ function agg(lo,hi,all){
     byCh[c[1]].b+=c[2];byCh[c[1]].nb+=c[3];
     if(all||inScope(c[1])){B+=c[2];NB+=c[3];}
   }
-  return {g:G,r:R,n:G-R,o:O,b:B,nb:NB,byCh:byCh,byDay:byDay,lo:lo,hi:hi,days:hi-lo+1};
+  return {g:G,r:R,n:G-R,o:O,b:B,nb:NB,byCh:byCh,byDay:byDay,lo:lo,hi:hi,days:hi-lo+1,st:stAgg(lo,hi)};
 }
+/* 사원별 실적 (DPS 기준일 때만) — 사원마다 합계와 구분(매장·매장구독·그 밖 채널)별 매출·환불·순액 */
+function stAgg(lo,hi){
+  if(!ST)return null;
+  const S=ST.names.map(()=>({g:0,r:0,n:0,k:[0,1,2].map(()=>({g:0,r:0,n:0}))}));
+  for(let i=0;i<ST.rows.length;i++){const c=ST.rows[i];if(c[0]<lo||c[0]>hi)continue;
+    const s=S[c[1]],x=s.k[c[2]];s.g+=c[3];s.r+=c[4];s.n+=c[3]-c[4];x.g+=c[3];x.r+=c[4];x.n+=c[3]-c[4];}
+  return S;}
+/* 매장 사원 합 — t 합계 · a0 일반(매장 + 그 밖 채널) · a1 구독 · a2 그중 그 밖 채널 · m 사람 수 */
+function stStore(S,key){if(!S)return null;let t=0,a0=0,a1=0,a2=0,m=0;
+  S.forEach((s,i)=>{if(!ST.store[i])return;if(s.g||s.r)m++;t+=s[key];a0+=s.k[0][key]+s.k[2][key];a1+=s.k[1][key];a2+=s.k[2][key];});
+  return {t:t,a0:a0,a1:a1,a2:a2,m:m};}
+const useStaff=()=>!!ST&&stBasis==='staff';
+function stbHtml(){return ST?'<span class="stb" role="group" aria-label="매장 집계 기준"><button data-stb="staff" aria-pressed="'+(stBasis==='staff')+'" title="DPS 사원별목표/실적처럼 매장 사원 실적으로">사원</button><button data-stb="ch" aria-pressed="'+(stBasis==='ch')+'" title="판매번호의 DPS 채널(매장(시흥)·매장구독(시흥))로">채널</button></span>':'';}
+function setStBasis(v){stBasis=v;try{sessionStorage.setItem('dash_stb',v);}catch(e){}drawKpis();drawOO();}
 let cur=null,prv=null,cmp=null;
 
 /* ===== 날짜 ===== */
@@ -1116,10 +1152,18 @@ function drawKpis(){
   // 6 매장 = 매장(시흥) 일반 + 매장구독(시흥) 구독 — 둘 다 매장 매출, 일반/구독은 따로 (2026-10-08)
   const stv=STORE_CH>=0&&inScope(STORE_CH)?cur.byCh[STORE_CH][key]:0, stp=(prv&&STORE_CH>=0&&inScope(STORE_CH))?prv.byCh[STORE_CH][key]:0;
   const svp=(prv&&SUBS_CH>=0&&inScope(SUBS_CH))?prv.byCh[SUBS_CH][key]:0;
-  if(stv+sv>0){
+  const stIn=(STORE_CH>=0&&inScope(STORE_CH))||(SUBS_CH>=0&&inScope(SUBS_CH));
+  if(useStaff()&&stIn){
+    /* 사원 기준 (mvp_248): 매장 사원 실적 합 = DPS 사원별목표/실적의 매장 사원 줄 합. 구독 = 매장구독(시흥) 판매번호, 나머지는 일반 */
+    const c1=stStore(cur.st,key), c0=prv?stStore(prv.st,key):null;
+    d=dOf(c1.t,c0?c0.t:null);
+    K.push({k:'매장 (일반 · 구독)'+stbHtml(),v:won(c1.t)+'<span class="v2">'+wonS(c1.a0)+' · '+wonS(c1.a1)+'</span>',cls:'',d:d[0],dc:d[1],
+      sub:'매장 사원 '+c1.m+'명 기준 · 일반 '+wonS(c1.a0)+(c0?' (전기 '+wonS(c0.a0)+')':'')+' · 구독 '+wonS(c1.a1)+(c0?' (전기 '+wonS(c0.a1)+')':'')
+        +(c1.a2?' · 일반 중 다른 채널 판매번호 '+(c1.a2<0?'−'+wonS(-c1.a2):wonS(c1.a2)):'')});
+  }else if(stv+sv>0){
     d=dOf(stv+sv,prv?stp+svp:null);
-    K.push({k:'매장 (일반 · 구독)',v:won(stv+sv)+'<span class="v2">'+wonS(stv)+' · '+wonS(sv)+'</span>',cls:'',d:d[0],dc:d[1],
-      sub:'일반 '+wonS(stv)+(prv?' (전기 '+wonS(stp)+')':'')+' · 구독 '+wonS(sv)+(prv?' (전기 '+wonS(svp)+')':'')});
+    K.push({k:'매장 (일반 · 구독)'+stbHtml(),v:won(stv+sv)+'<span class="v2">'+wonS(stv)+' · '+wonS(sv)+'</span>',cls:'',d:d[0],dc:d[1],
+      sub:'일반 '+wonS(stv)+(prv?' (전기 '+wonS(stp)+')':'')+' · 구독 '+wonS(sv)+(prv?' (전기 '+wonS(svp)+')':'')+(ST?' · 판매번호의 DPS 채널 기준':'')});
   }
   // 7 VMS · 렌탈 중 값이 있는 것을 한 칸에
   const ex=[];
@@ -1136,6 +1180,33 @@ function drawKpis(){
     return '<div class="kpi"><span class="k">'+x.k+'</span><span class="v '+(x.cls||'')+'">'+x.v+'</span>'
       +'<span class="d '+(x.dc||'flat')+'">'+(x.d||(cmp===null?'비교 기간 없음':''))+'</span>'
       +(x.sub?'<span class="sub2">'+x.sub+'</span>':'')+sp+'</div>';}).join('');
+  $('#kpis').querySelectorAll('[data-stb]').forEach(el=>el.onclick=()=>setStBasis(el.dataset.stb));
+  drawStaff();
+}
+/* ===== 사원별 실적 표 (DPS 기준일 때만 · mvp_248) — DPS 사원별목표/실적과 같은 합계, 구분은 판매번호의 DPS 채널 ===== */
+function drawStaff(){
+  const tb=$('#strows'); if(!ST||!tb)return;
+  const key=mkey(), S=cur.st, P=prv?prv.st:null;
+  let tot=0;S.forEach(s=>tot+=s[key]);
+  const sg=v=>v===0?'–':(v<0?'−'+wonS(-v):wonS(v));
+  const td=(v,cls)=>'<td'+(v<0?' class="neg'+(cls?' '+cls:'')+'"':(cls?' class="'+cls+'"':''))+'>'+sg(v)+'</td>';
+  const dlt=(v,p)=>{if(!P||!p)return '<td>–</td>';const x=(v-p)/Math.abs(p)*100;return '<td class="'+(x>=0?'':'neg')+'">'+(x>=0?'▲ +':'▼ ')+x.toFixed(1)+'%</td>';};
+  const row=(nm,s,p,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><td class="l">'+nm+'</td>'+td(s[key])+td(s.k[0][key])+td(s.k[1][key])+td(s.k[2][key])
+    +'<td class="hide-s">'+(tot?pct(s[key],tot).toFixed(1)+'%':'–')+'</td>'+(P?td(p?p[key]:0,'hide-s'):'<td class="hide-s">–</td>')+dlt(s[key],p?p[key]:0)+'</tr>';
+  const zero=()=>({g:0,r:0,n:0,k:[0,1,2].map(()=>({g:0,r:0,n:0}))});
+  const add=(t,s)=>{['g','r','n'].forEach(m=>{t[m]+=s[m];for(let j=0;j<3;j++)t.k[j][m]+=s.k[j][m];});};
+  let h='';const all=zero(),allP=zero();
+  [[true,'매장 사원'],[false,'그 밖 (온라인·대표)']].forEach(([st,lbl])=>{
+    const ids=ST.names.map((_,i)=>i).filter(i=>!!ST.store[i]===st&&(S[i].g||S[i].r||(P&&(P[i].g||P[i].r))));
+    if(!ids.length)return;
+    ids.sort((x,y)=>S[y][key]-S[x][key]);
+    const sub=zero(),subP=zero();
+    h+='<tr class="grp"><td class="l" colspan="8">'+lbl+' · '+ids.length+'명</td></tr>';
+    ids.forEach(i=>{h+=row(esc(ST.names[i]),S[i],P?P[i]:null);add(sub,S[i]);if(P)add(subP,P[i]);});
+    h+=row(lbl+' 소계',sub,P?subP:null,'stsub');add(all,sub);if(P)add(allP,subP);});
+  h+=row('합계',all,P?allP:null,'tot');
+  tb.innerHTML=h;
+  $('#st-note').textContent=mname()+' · DPS 사원별목표/실적과 같은 기준(실적일 · 판매번호별 순액) · 매장 일반/구독/그 밖 = 판매번호의 DPS 채널';
 }
 
 /* ===== 온·오프 축약 스트립 (범위=전체일 때만) ===== */
@@ -1155,7 +1226,9 @@ function drawOO(){
     const x=(v-p)/Math.abs(p)*100;
     return '<u class="'+(x>=0?'up':'down')+'">'+(x>=0?'+':'')+x.toFixed(0)+'%</u>';};
   /* 매장 = 매장(시흥) 일반 + 매장구독(시흥) 구독 — 둘 다 매장 매출이고 일반/구독은 따로 보인다 (2026-10-08) */
-  const st1=STORE_CH>=0?cur.byCh[STORE_CH][key]:0, st2=SUBS_CH>=0?cur.byCh[SUBS_CH][key]:0, st=st1+st2;
+  let st1=STORE_CH>=0?cur.byCh[STORE_CH][key]:0, st2=SUBS_CH>=0?cur.byCh[SUBS_CH][key]:0, st=st1+st2;
+  const stTitle=useStaff()?'매장 사원 실적 합 (DPS 사원별목표/실적 기준) · 일반 = 매장 사원의 구독 아닌 판매번호':'매장(시흥) 일반 + 매장구독(시흥) 구독';
+  if(useStaff()){const c=stStore(cur.st,key);st1=c.a0;st2=c.a1;st=c.t;}
   const rv=RENT_CH>=0?cur.byCh[RENT_CH][key]:0;
   const vms=CH.findIndex(c=>c.name==='통신판매(VMS)');
   const vv=vms>=0?cur.byCh[vms][key]:0;
@@ -1176,7 +1249,7 @@ function drawOO(){
     +'<span class="nums">'
     +'<span>온라인<b>'+wonS(on)+'</b>'+dd(on,onP)+'</span>'
     +'<span>오프라인<b>'+wonS(off)+'</b>'+dd(off,offP)+'</span>'
-    +(st>0?'<span title="매장(시흥) 일반 + 매장구독(시흥) 구독">매장<b>'+wonS(st)+'</b><em>일반 '+wonS(st1)+' · 구독 '+wonS(st2)+'</em></span>':'')
+    +(st>0?'<span title="'+stTitle+'">매장<b>'+wonS(st)+'</b><em>일반 '+wonS(st1)+' · 구독 '+wonS(st2)+'</em></span>':'')
     +(rv>0?'<span>렌탈<b>'+wonS(rv)+'</b></span>':'')
     +(vv>0?'<span>VMS<b>'+wonS(vv)+'</b></span>':'')
     +'</span>';

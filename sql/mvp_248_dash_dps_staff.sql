@@ -1,0 +1,31 @@
+-- mvp_248 (2026-10-27) 대시보드 [DPS] — 매장 칸을 매장 사원 기준으로 · 사원별 실적 표
+-- 이유: 이번 달 매장 실적을 DPS 사원별목표/실적은 매장 사원 6명 합 2.81억(10/1~27)으로 보는데,
+--   대시보드 매장 칸은 판매번호의 DPS 채널(매장(시흥)+매장구독(시흥)) 합이라 2.87억으로 달랐다.
+--   차이 = 매장 사원 실적 중 'DPS 소모품(대량)' 판매번호의 해약(권혁찬 −227만 · 최태웅 −439만, 10/1~26).
+--   대표님 말씀대로 DPS 판매 메뉴는 일반(매장(시흥))과 구독(매장구독(시흥))을 따로 보고, 사원별 실적의 '매장' 은 둘을 합친 값.
+--
+-- core.f_dash_payload: DPS 기준(v_dps)일 때만 payload 에 'staff' 를 더한다 (원장·수기입력은 null).
+--   원본을 pg_get_functiondef 로 읽어 "'products', (select coalesce(jsonb_agg(jsonb_build_array(model, name, cat) order by pi)" 앞에
+--   아래 조각을 끼움 (지점 1곳 검증). 기존 DPS payload 는 staff 를 뺀 md5 가 바꾸기 전과 같음.
+--
+--   'staff', case when v_dps then (with sl as (
+--       select (l.perf_date - p_from) di, l.staff_name nm,
+--              case dl.channel when '매장(시흥)' then 0 when '매장구독(시흥)' then 1 else 2 end k,
+--              l.sale_no, sum(l.amount) net
+--         from dps.perf_line l join _dl dl on dl.d = l.perf_date and dl.sale_no = l.sale_no
+--        where l.perf_date between p_from and p_to
+--        group by 1, 2, 3, 4),
+--     nm as (select sl.nm, row_number() over (order by sum(greatest(sl.net, 0)) desc, sl.nm) - 1 si from sl group by sl.nm)
+--     select jsonb_build_object(
+--       'names', coalesce((select jsonb_agg(nm.nm order by nm.si) from nm), '[]'::jsonb),
+--       'store', coalesce((select jsonb_agg(exists (select 1 from core.staff s where s.name = nm.nm and s.dept = '매장') order by nm.si) from nm), '[]'::jsonb),
+--       'rows', coalesce((select jsonb_agg(jsonb_build_array(z.di, z.si, z.k, round(z.g), round(z.r)) order by z.di, z.si, z.k) from (
+--           select sl.di, nm.si, sl.k, sum(greatest(sl.net, 0)) g, sum(greatest(-sl.net, 0)) r
+--             from sl join nm on nm.nm = sl.nm group by 1, 2, 3) z), '[]'::jsonb))) else null end,
+--
+--   매장 사원 = core.staff.dept '매장' (이름 일치). 10/1~26: 매장 사원 합 279,979,018 = DPS 화면 매장 사원 줄 합(같은 날까지).
+--   24개월 DPS payload 1.48MB 중 staff 181KB · 빌드 6.3초(워머).
+-- 적용 뒤 core.f_dash_mark_dirty(true) 로 다시 굽게 함 (캐시는 지우지 않음).
+--
+-- 화면(dash/index.html · dash/test · admin DASH_V 243): 매장 KPI 칸 [사원|채널] 토글(기본 사원 · sessionStorage dash_stb)
+--   · 온·오프 띠 '매장' 도 같은 기준 · 개요 '사원별 실적' 표(매장 사원 / 그 밖(온라인·대표) · 매장 일반 · 매장 구독 · 그 밖 채널 · 비중 · 전기 대비).
