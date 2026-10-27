@@ -1,0 +1,8 @@
+-- mvp_242 (2026-10-27) 담당자 내 상담 [어떤 문의] — fn_store_consults_my 에 p_kind
+-- 'c:<문의 채널 이름>' = 목록의 채널 글자(core.inq_channel.label · 없으면 f_consult_src)와 같은 것
+-- 't:<문의 유형 코드>' = type_codes 에 있거나 type_code 가 그것 (상품 문의 + 혼수처럼 여러 개면 어느 쪽으로도 걸림)
+-- 상태 칩 건수(counts)·total 도 그 안에서 센다 (base → bf CTE · cnt·pageq 가 bf 를 읽음)
+-- 서명이 바뀌어: 옛 판은 이름만 fn_store_consults_my_old241 로 비켜 anon·authenticated 권한을 뺐다 (MCP 는 DROP 이 60초로 끊김)
+--   → SQL 편집기에서: drop function public.fn_store_consults_my_old241(text,text,text,integer,integer,text,date,date);
+-- 새 판 = 옛 본문 부분 치환(지점 3개 각 1 검증) + p_kind text default null · grant anon, authenticated, service_role
+-- 확인(롤백): 차효범 전체 57 · 카카오채널 2 · 할 일 중 상품 문의 9 · 혼수 3 · 첫 호출 481ms(계획 컴파일)
