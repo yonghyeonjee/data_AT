@@ -1,0 +1,38 @@
+<!-- ═══ SDP 데이터 (mvp_245) — 데이터센터 db.samsungat.co.kr/sdp 에서 받는다 · 못 받으면 고도몰 /data/js 예비 사본 ═══
+     계산기 HTML 의 data_products · data_cards · data_discounts · data_appeals · data_extras <script> 다섯 줄을 이 블록으로 바꾼다.
+     INC(판매 인센티브)는 공개하지 않으므로 고도몰 /data/js/data_inc.js 에서만 읽는다.
+     고도몰 템플릿 규칙: 여는 중괄호 뒤에는 늘 공백. -->
+<script>
+window.SDP_DC = 'https://db.samsungat.co.kr/sdp/';
+window.SDP_LOCAL = '/data/js/';
+window.SDP_SRC = 'datacenter';
+window.__sdpW = function (u) { document.write('<script src="' + u + '"><\/script>'); };
+__sdpW(SDP_DC + 'version.js?t=' + Math.floor(Date.now() / 300000));
+</script>
+<script>
+(function () {
+  var V = window.SDP_VER, L = window.SDP_LOCAL;
+  var F = [['data_products', 'DATA'], ['data_cards', 'CARD'], ['data_discounts', 'POLICY_LABELS'], ['data_appeals', 'CUST_MAP'], ['data_extras', 'TV_TYPE_MAP']];
+  for (var i = 0; i < F.length; i++) {
+    if (V) {
+      __sdpW(SDP_DC + F[i][0] + '.js?v=' + encodeURIComponent(V));
+      document.write('<script>if (typeof ' + F[i][1] + ' === "undefined") { SDP_SRC = "local"; __sdpW("' + L + F[i][0] + '.js"); }<\/script>');
+    } else {
+      window.SDP_SRC = 'local';
+      __sdpW(L + F[i][0] + '.js');
+    }
+  }
+  __sdpW(L + 'data_inc.js');
+})();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var b = document.querySelector('.hd-badge'); if (!b) { return; }
+  var local = window.SDP_SRC !== 'datacenter';
+  var s = document.createElement('span');
+  s.textContent = local ? '⚠ 예비 데이터(고도몰) — 최신 가격이 아닐 수 있음' : '데이터 ' + window.SDP_VER;
+  s.style.cssText = 'display:block;font-size:10px;font-weight:700;margin-top:2px;' + (local ? 'color:#ffd166' : 'opacity:.8');
+  s.title = local ? '데이터센터(db.samsungat.co.kr)를 읽지 못해 고도몰 /data/js 사본을 씁니다' : '데이터센터 배포판 · ' + (window.SDP_PUBLISHED_AT || '');
+  b.appendChild(s);
+});
+</script>

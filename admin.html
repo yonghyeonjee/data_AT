@@ -1397,7 +1397,29 @@ th{background:var(--zone-head);color:var(--ink-2)}
           <div class="tw"><table><thead><tr><th>모델</th><th>품목</th><th class="num">계약</th><th class="num">서비스 주기</th><th>케어</th><th class="num">월 구독료</th><th class="num">총 구독료</th><th>구성</th></tr></thead><tbody id="tbSub"><tr><td colspan="8" class="note">-</td></tr></tbody></table></div>
           <div class="pager"><span id="subRange"></span><div class="btns" id="subPg"></div></div>
         </div>
-        <div class="callout">이카운트 <b>품목 내보내기</b>(품목코드·상품명·규격·단위·재고관리여부·안전재고·매입가) 파일을 <b>데이터 가져오기</b>에 올리면 자동 인식되어 이 목록이 갱신됩니다. 개별 수정은 행 끝 편집.</div>
+        <div class="card" id="spolCard">
+    <style>
+      #spolCard .spol-sec{padding:14px 0 16px;border-top:1px solid var(--line)} #spolCard .spol-sec:first-child{border-top:0;padding-top:0}
+      #spolCard .spol-sec h4{font-size:calc(13px * var(--font-scale));font-weight:800;margin:0 0 10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+      #spolCard .spol-sec h4 small{font-size:calc(11px * var(--font-scale));color:var(--faint);font-weight:500}
+      #spolCard .spol-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+      #spolCard .spol-row label{display:flex;align-items:center;gap:6px;font-size:calc(12.5px * var(--font-scale));color:var(--muted)}
+      #spolCard .spol-row .in.num{width:72px;text-align:right}
+      #spolCard table.spol-t{width:100%;border-collapse:collapse;font-size:calc(12.5px * var(--font-scale))}
+      #spolCard table.spol-t th{text-align:left;font-weight:600;color:var(--faint);padding:4px 6px;border-bottom:1px solid var(--line)}
+      #spolCard table.spol-t td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+      #spolCard table.spol-t .in{min-height:0;padding:5px 8px}
+      #spolCard textarea.in{width:100%;box-sizing:border-box;min-height:54px;font-family:inherit;font-size:calc(12.5px * var(--font-scale));line-height:1.5}
+      #spolCard .spol-hint{font-size:calc(11.5px * var(--font-scale));color:var(--faint);margin:6px 0 0;line-height:1.5}
+      #spolCard .spol-chip{display:inline-block;padding:2px 7px;border-radius:5px;background:var(--surface-3);color:var(--muted);font-size:calc(11px * var(--font-scale));margin:1px 3px 1px 0}
+      #spolCard .spol-log{font-size:calc(11.5px * var(--font-scale));color:var(--faint);line-height:1.7;columns:2;column-gap:24px}
+    </style>
+    <h3>구독 혜택 정책 <span>상품상세 <b>일시불/구독 탭</b>과 계산기가 읽는 값 — 자동납부 할인율 · 선납 할인율·품목별 한도 · 카드 유의사항·노출 기간 · 행사 문구. 저장하면 <b>10분 안에</b> db.samsungat.co.kr/sdp/sub/ 로 배포됩니다. 요금표·카드 금액은 SDP 판에서, 여기는 정책·문구만</span>
+      <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="loadSubPolicy(true)">새로고침</button><button class="btn sm" onclick="spPromoEdit(null)">+ 행사 문구</button></span></h3>
+    <div class="qmeta" id="spolMeta"></div>
+    <div id="spolBody"><div class="note">불러오는 중…</div></div>
+  </div>
+  <div class="callout">이카운트 <b>품목 내보내기</b>(품목코드·상품명·규격·단위·재고관리여부·안전재고·매입가) 파일을 <b>데이터 가져오기</b>에 올리면 자동 인식되어 이 목록이 갱신됩니다. 개별 수정은 행 끝 편집.</div>
         <div id="nsc-items-2" class="card">
           <div class="filters">
             <input class="in" id="itQ" placeholder="품목코드 · 상품명 · 모델 · 분류" style="min-width:240px" onkeydown="if(event.key==='Enter')loadItems(0)">
@@ -2641,7 +2663,7 @@ let toastT; function toast(m,c=''){ const t=$('toast'); t.textContent=m; t.class
 /* 같은 화면을 왔다갔다 할 때 같은 질의를 다시 던지지 않게 45초만 담아둔다.
    저장·수정 계열(fn_*_save 등)은 담지 않고, 실행되면 캐시를 통째로 비운다. */
 const RPC_CACHE=new Map(), RPC_TTL=45000;
-const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle|void|to_order|rollback|auto_run|unlock|hide|exclude|check|pull)/i;
+const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle|void|to_order|rollback|auto_run|unlock|hide|exclude|check|pull|remove)/i;
 function rpcClear(){ RPC_CACHE.clear(); }
 let RPC_BUSY=0, RPC_T=null;
 let RPC_PILL=null, RPC_T0=0;
@@ -2662,7 +2684,7 @@ function rpcBar(d){
 }
 /* ── 진행 카드 — 호출마다 [기다림 → 받는 중(받은 바이트) → 끝] 을 적어 두고 250ms 마다 그린다 ── */
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
-const FN_LABEL={fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
+const FN_LABEL={fn_sub_policy:'구독 혜택 정책',fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
@@ -2983,6 +3005,126 @@ async function subPasteSave(){
   try{ const r=await rpc('fn_sub_plan_upsert',{p_rows:rows}); toast(`구독 상품 플랜 ${n(r.plans)}개 · 케어 구성 ${n(r.items)}줄 등록${r.skipped?` · ${n(r.skipped)}줄 건너뜀`:''}`,'ok'); closeModal('subPasteModal'); loadSubPlans(); }
   catch(e){ $('subPasteMsg').innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; }
 }
+/* ═══ 구독 혜택 정책 (sub.policy · sub.card_policy · sub.promo) — 상품상세 구독탭·계산기가 읽는 sub_policy.js 의 원본 (mvp_246) ═══
+   수치는 화면에서 % 로 보이고 저장할 때 소수(0.05)로 바꾼다. 검사(비율 범위·날짜·선납 단계마다 할인율)는 DB sub.f_policy_check 가 하고 틀리면 그 문장을 그대로 띄운다 */
+let SPOL=null;
+const spPct=v=>v==null||v===''?'':String(Math.round(Number(v)*1000)/10);                      // 0.05 → "5"
+const spRate=v=>{ const t=String(v??'').replace(/[^0-9.]/g,''); return t===''?null:Math.round(Number(t)*10)/1000; };  // "5" → 0.05
+const spLines=t=>String(t||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+const spCsv=t=>String(t||'').split(/[,\n]/).map(x=>x.trim()).filter(Boolean);
+async function loadSubPolicy(fresh){
+  let d; try{ d=await rpc('fn_sub_policy',{},{fresh:!!fresh}); }catch(e){ $('spolBody').innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
+  if(!d){ $('spolBody').innerHTML='<div class="note">권한이 없습니다</div>'; return; }
+  SPOL=d; renderSubPolicy();
+}
+function spStamp(u){ return u?`<small>${esc(u.at||'')}${u.by?' · '+esc(u.by):''}</small>`:''; }
+function renderSubPolicy(){
+  const d=SPOL, P=d.policy||{}, A=P.autopay||{}, R=P.prepay||{}, T=P.texts||{}, up=d.updated||{};
+  const promos=d.promos||[], on=promos.filter(p=>p.state==='on').length;
+  $('spolMeta').innerHTML=`<span>정책 판 ${esc(d.ver||'-')}</span><span>마지막 배포 ${d.deployed?esc(d.deployed.ver)+' · '+esc(d.deployed.at):'아직 없음'}</span><span>행사 ${n(on)}건 진행 중</span>`;
+  const h=[];
+  /* 1 자동납부 */
+  h.push(`<div class="spol-sec"><h4>자동납부 할인 ${spStamp(up.autopay)}</h4>
+    <div class="spol-row"><label>할인율 <input class="in num" id="sp_auto_rate" value="${esc(spPct(A.rate))}"> %</label>
+      <label style="flex:1;min-width:260px">표시 문구 <input class="in" id="sp_auto_label" value="${esc(A.label||'')}" style="flex:1"></label>
+      <button class="btn sm" onclick="spSave('autopay',()=>({rate:spRate($('sp_auto_rate').value),label:$('sp_auto_label').value.trim()}))">저장</button></div>
+    <p class="spol-hint">문구의 {rate} 자리에 할인율이 들어갑니다. 정수기는 본사 사전계산값(WATER_POLICY)을 쓰므로 할인율을 바꿔도 정수기 금액은 SDP 판을 새로 넣어야 바뀝니다.</p></div>`);
+  /* 2 선납 */
+  const steps=(R.steps||[]).map(s=>[s,(R.rates||{})[String(s)]]);
+  const cats=[...new Set([...(d.cats||[]),...Object.keys(R.maxByCat||{})])];
+  h.push(`<div class="spol-sec"><h4>선납 ${spStamp(up.prepay)}</h4>
+    <div style="display:grid;grid-template-columns:minmax(220px,1fr) minmax(260px,2fr);gap:16px">
+      <div><div class="spol-hint" style="margin:0 0 6px">선납 비율 → 선납 할인율 (고객에게 보이는 버튼 순서대로)</div>
+        <table class="spol-t"><thead><tr><th>선납</th><th>할인</th><th></th></tr></thead><tbody id="sp_steps">${steps.map(([s,r])=>spStepRow(s,r)).join('')}</tbody></table>
+        <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_steps').insertAdjacentHTML('beforeend',spStepRow('',''))">+ 단계</button>
+        <div class="spol-row" style="margin-top:10px"><label>규칙에 없는 품목의 최대 선납 <input class="in num" id="sp_defmax" value="${esc(spPct(R.defaultMax??0.5))}"> %</label></div></div>
+      <div><div class="spol-hint" style="margin:0 0 6px">품목별 최대 선납 비율 (비우면 기본값) · 아래 이름 규칙이 먼저 적용됩니다</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px" id="sp_maxcat">${cats.map(c=>`<label style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:calc(12px * var(--font-scale))"><span>${esc(c)}</span><span><input class="in num" data-cat="${esc(c)}" value="${esc(spPct((R.maxByCat||{})[c]))}" style="width:56px"> %</span></label>`).join('')}</div>
+        <div class="spol-hint" style="margin:10px 0 6px">이름 규칙: 품목 안에서 모델 이름에 이 글자가 들어가면 (예: 의류케어 › 에어드레서 50%)</div>
+        <table class="spol-t"><thead><tr><th>품목</th><th>이름에 포함</th><th>최대</th><th></th></tr></thead><tbody id="sp_byname">${(R.maxByName||[]).map(m=>spNameRow(m,cats)).join('')}</tbody></table>
+        <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_byname').insertAdjacentHTML('beforeend',spNameRow({},${JSON.stringify(cats).replace(/"/g,'&quot;')}))">+ 규칙</button></div></div>
+    <div class="spol-hint" style="margin-top:10px">선납금 아래 안내 (한 줄에 한 문장)</div><textarea class="in" id="sp_prenotes">${esc((R.notes||[]).join('\n'))}</textarea>
+    <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSavePrepay()">선납 정책 저장</button></div></div>`);
+  /* 3 카드 */
+  const names=[...new Set([...(d.card_names||[]),...(d.cards||[]).map(c=>c.card)])], byCard={}; (d.cards||[]).forEach(c=>byCard[c.card]=c);
+  h.push(`<div class="spol-sec"><h4>제휴카드 유의사항 · 노출 기간 <small>카드 금액표는 SDP 판(data_cards) · 여기는 문구와 기간만</small></h4>
+    <table class="spol-t"><thead><tr><th style="width:110px">카드</th><th>유의사항 (한 줄에 한 문장)</th><th style="width:130px">시작</th><th style="width:130px">종료</th><th>숨김</th><th></th></tr></thead><tbody>
+    ${names.map(nm=>{ const c=byCard[nm]||{}; const k=nm.replace(/[^A-Za-z0-9가-힣]/g,'');
+      return `<tr data-card="${esc(nm)}"><td><b>${esc(nm)}</b>${c.updated?`<div class="spol-hint" style="margin:0">${esc(c.updated)}</div>`:''}</td>
+        <td><textarea class="in" data-k="notes" rows="2">${esc((c.notes||[]).join('\n'))}</textarea></td>
+        <td><input class="in" type="date" data-k="from" value="${esc(c.from||'')}"></td><td><input class="in" type="date" data-k="to" value="${esc(c.to||'')}"></td>
+        <td><input type="checkbox" data-k="hidden" ${c.hidden?'checked':''}></td>
+        <td><button class="btn sm ghost" onclick="spSaveCard(this.closest('tr'))">저장</button></td></tr>`; }).join('')}</tbody></table>
+    <div class="spol-hint">기간을 적으면 그 기간에만 카드 목록에 나오고, 숨김을 켜면 바로 빠집니다 (카드 금액표에서 지우지 않아도 됩니다).</div>
+    <div class="spol-hint" style="margin-top:10px">모든 카드 공통 유의사항 (한 줄에 한 문장) ${spStamp(up.card_notes)}</div><textarea class="in" id="sp_cardnotes">${esc((P.card_notes||[]).join('\n'))}</textarea>
+    <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSave('card_notes',()=>spLines($('sp_cardnotes').value))">공통 유의사항 저장</button></div></div>`);
+  /* 4 행사 */
+  const ST={on:['진행 중','y'],soon:['예정','n'],ended:['끝남','n'],off:['꺼짐','n']};
+  h.push(`<div class="spol-sec"><h4>행사 문구 <small>기간·대상이 맞을 때만 구독탭 혜택 목록에 한 줄로 나갑니다 (금액 계산에는 들어가지 않음)</small></h4>
+    <table class="spol-t"><thead><tr><th>상태</th><th>문구</th><th>기간</th><th>대상</th><th class="num">순서</th><th></th></tr></thead><tbody>
+    ${promos.length?promos.map(p=>`<tr><td><span class="tag ${ST[p.state][1]}">${ST[p.state][0]}</span></td><td>${esc(p.text)}${p.note?`<div class="spol-hint" style="margin:0">${esc(p.note)}</div>`:''}</td>
+      <td style="white-space:nowrap">${esc(p.from||'')}${p.from||p.to?' ~ ':'상시'}${esc(p.to||'')}</td>
+      <td>${(p.cats||[]).map(c=>`<span class="spol-chip">${esc(c)}</span>`).join('')}${(p.models||[]).map(c=>`<span class="spol-chip mono">${esc(c)}</span>`).join('')}${(p.goods||[]).map(c=>`<span class="spol-chip">#${esc(c)}</span>`).join('')}${!(p.cats||[]).length&&!(p.models||[]).length&&!(p.goods||[]).length?'<span class="spol-chip">전체</span>':''}</td>
+      <td class="num">${n(p.sort)}</td>
+      <td style="white-space:nowrap"><button class="btn sm ghost" onclick="spPromoEdit(${p.id})">고치기</button> <button class="btn sm ghost" onclick="spPromoToggle(${p.id},${p.active?'false':'true'})">${p.active?'끄기':'켜기'}</button></td></tr>`).join('')
+      :'<tr><td colspan="6" class="note">등록된 행사 문구가 없습니다. 오른쪽 위 [+ 행사 문구]</td></tr>'}</tbody></table></div>`);
+  /* 5 문구 */
+  h.push(`<div class="spol-sec"><h4>기본 문구 ${spStamp(up.texts)}</h4>
+    <div class="spol-hint" style="margin:0 0 4px">혜택 목록 기본 문장 (한 줄에 한 문장 · 행사 문구는 이 아래에 붙습니다)</div><textarea class="in" id="sp_points">${esc((T.points||[]).join('\n'))}</textarea>
+    <div class="spol-hint" style="margin:8px 0 4px">맨 아래 안내문</div><textarea class="in" id="sp_notice" style="min-height:72px">${esc(T.notice||'')}</textarea>
+    <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSave('texts',()=>({points:spLines($('sp_points').value),notice:$('sp_notice').value.trim()}))">문구 저장</button></div></div>`);
+  /* 6 기록 */
+  if((d.log||[]).length) h.push(`<div class="spol-sec"><h4>최근 바뀐 것 <small>20건</small></h4><div class="spol-log">${d.log.map(l=>`<div>${esc(l.at)} · ${esc({policy:'정책',card:'카드',promo:'행사'}[l.kind]||l.kind)} <b>${esc(l.key)}</b> · ${esc(l.by||'')}</div>`).join('')}</div></div>`);
+  $('spolBody').innerHTML=h.join('');
+}
+function spStepRow(s,r){ return `<tr><td><input class="in num" data-k="step" value="${esc(spPct(s))}" style="width:56px"> %</td><td><input class="in num" data-k="rate" value="${esc(spPct(r))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
+function spNameRow(m,cats){ return `<tr><td><select class="in" data-k="cat">${cats.map(c=>`<option ${c===m.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></td><td><input class="in" data-k="contains" value="${esc(m.contains||'')}"></td><td><input class="in num" data-k="max" value="${esc(spPct(m.max))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
+async function spSave(key, make){
+  let v; try{ v=make(); }catch(e){ return toast(e.message,'bad'); }
+  try{ await rpc('fn_sub_policy_save',{p_key:key,p_value:v}); toast('저장했습니다 · 10분 안에 배포됩니다','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+function spSavePrepay(){
+  spSave('prepay',()=>{
+    const steps=[], rates={};
+    $('sp_steps').querySelectorAll('tr').forEach(tr=>{ const s=spRate(tr.querySelector('[data-k=step]').value), r=spRate(tr.querySelector('[data-k=rate]').value); if(s==null) return; steps.push(s); if(r!=null) rates[String(s)]=r; });
+    const maxByCat={}; $('sp_maxcat').querySelectorAll('input[data-cat]').forEach(i=>{ const r=spRate(i.value); if(r!=null) maxByCat[i.dataset.cat]=r; });
+    const maxByName=[]; $('sp_byname').querySelectorAll('tr').forEach(tr=>{ const c=tr.querySelector('[data-k=cat]').value, t=tr.querySelector('[data-k=contains]').value.trim(), m=spRate(tr.querySelector('[data-k=max]').value); if(!t && m==null) return; maxByName.push({cat:c,contains:t,max:m}); });
+    return {steps, rates, defaultMax:spRate($('sp_defmax').value)??0.5, maxByCat, maxByName, notes:spLines($('sp_prenotes').value)};
+  });
+}
+async function spSaveCard(tr){
+  const g=k=>tr.querySelector(`[data-k=${k}]`);
+  const data={card:tr.dataset.card, notes:spLines(g('notes').value), from:g('from').value||null, to:g('to').value||null, hidden:g('hidden').checked};
+  try{ await rpc('fn_sub_card_policy_save',{p_data:data}); toast(`${data.card} 저장했습니다`,'ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+async function spPromoEdit(id){
+  const p=(id!=null && (SPOL&&SPOL.promos||[]).find(x=>x.id===id))||{cats:[],models:[],goods:[],sort:100,active:true};
+  const cats=(SPOL&&SPOL.cats)||[];
+  const data=await modal({title:id!=null?'행사 문구 고치기':'행사 문구 추가', ok:'저장', wide:true,
+    html:`<div class="spol-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">문구 (고객에게 그대로 보입니다)</div><input class="in" id="pm_text" value="${esc(p.text||'')}" style="width:100%;box-sizing:border-box" placeholder="예: 11월 구독 확정 시 신세계 상품권 10만원"></label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><label><div class="spol-hint" style="margin:0 0 3px">시작일 (비우면 바로)</div><input class="in" type="date" id="pm_from" value="${esc(p.from||'')}"></label>
+        <label><div class="spol-hint" style="margin:0 0 3px">종료일 (비우면 계속)</div><input class="in" type="date" id="pm_to" value="${esc(p.to||'')}"></label>
+        <label><div class="spol-hint" style="margin:0 0 3px">순서</div><input class="in num" id="pm_sort" value="${esc(p.sort??100)}" style="width:70px"></label></div>
+      <div><div class="spol-hint" style="margin:0 0 3px">대상 품목 (아무것도 안 고르면 전체)</div><div id="pm_cats" style="display:flex;flex-wrap:wrap;gap:4px">${cats.map(c=>`<label class="tag ${(p.cats||[]).includes(c)?'y':'n'}" style="cursor:pointer"><input type="checkbox" value="${esc(c)}" ${(p.cats||[]).includes(c)?'checked':''} style="display:none" onchange="this.parentNode.className='tag '+(this.checked?'y':'n')">${esc(c)}</label>`).join('')}</div></div>
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 모델번호 (쉼표로 여러 개 · 비우면 전체)</div><input class="in mono" id="pm_models" value="${esc((p.models||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 고도몰 상품번호 (쉼표 · 비우면 전체)</div><input class="in mono" id="pm_goods" value="${esc((p.goods||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용)</div><input class="in" id="pm_note" value="${esc(p.note||'')}" style="width:100%;box-sizing:border-box"></label></div>`,
+    collect:()=>{ const t=$('pm_text').value.trim(); if(!t) throw new Error('문구를 적어 주세요');
+      return {id:p.id, text:t, from:$('pm_from').value||null, to:$('pm_to').value||null, sort:Number($('pm_sort').value)||100, active:p.active!==false,
+              cats:[...$('pm_cats').querySelectorAll('input:checked')].map(i=>i.value), models:spCsv($('pm_models').value), goods:spCsv($('pm_goods').value), note:$('pm_note').value.trim()}; }});
+  if(!data) return;
+  try{ await rpc('fn_sub_promo_save',{p_data:data}); toast('행사 문구를 저장했습니다 · 10분 안에 배포됩니다','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+async function spPromoToggle(id,on){
+  const p=(SPOL&&SPOL.promos||[]).find(x=>x.id===id); if(!p) return;
+  try{
+    if(on) await rpc('fn_sub_promo_save',{p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,sort:p.sort,note:p.note,active:true}});
+    else await rpc('fn_sub_promo_remove',{p_id:id});
+    toast(on?'다시 켰습니다':'껐습니다 (기록은 남습니다)','ok'); loadSubPolicy(true);
+  }catch(e){ toast(e.message,'bad'); }
+}
+
 async function loadSets(){
   SETS_LOADED=true; let d; try{ d=await rpc('fn_inv_sets',{p_q:$('setQ').value.trim()||null},{fresh:true}); }catch(e){ $('tbSets').innerHTML=`<tr><td colspan="4" class="note">${esc(e.message)}</td></tr>`; return; }
   $('tbSets').innerHTML=(d||[]).map(x=>`<tr><td><b>${esc(x.set_name)}</b><div class="mono" style="font-size:calc(11px * var(--font-scale));color:var(--faint)">${esc(x.set_code)}</div></td>
@@ -5506,7 +5648,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,exec:loadExec,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_TG){ tgApplyPending(); } else if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
+const LOADERS={home:loadHome,exec:loadExec,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();loadSubPolicy();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_TG){ tgApplyPending(); } else if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
