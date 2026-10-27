@@ -1398,6 +1398,19 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel hidden" id="tab-quote">
     <div class="intro"><b>견적서</b>는 홈페이지 견적서 페이지에서 만들고, 여기서 찾아 고객에게 보냅니다. 상담 줄의 <b>견적서 만들기</b>를 누르면 고객 정보가 채워진 채 열립니다.</div>
     <div class="cta2"><button onclick="openQuote()">견적서 발행 ↗</button><button class="alt" onclick="openCalc()">구독료 계산기 ↗</button></div>
+    <div class="card" id="spCard">
+      <h2>구독 혜택 안내 <span id="spSub">상세페이지 구독탭에 나가는 혜택·행사 문구</span></h2>
+      <div id="spBody"><div class="empty">불러오는 중…</div></div>
+      <div class="lvmask hidden" id="spDlg" onclick="if(event.target===this)spDlgClose()">
+        <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="spDlgTitle">
+          <button type="button" class="lvx" onclick="spDlgClose()" aria-label="닫기" title="닫기">✕</button>
+          <h3 id="spDlgTitle">행사 문구</h3>
+          <div class="lvform" id="spDlgForm"></div>
+          <p class="note-in" id="spDlgErr" style="color:var(--bad);min-height:18px;margin:6px 0 0"></p>
+          <div class="btns" style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button type="button" class="btn ghost" onclick="spDlgClose()">취소</button><button type="button" class="btn" id="spDlgOk" onclick="spDlgSave()">저장</button></div>
+        </div>
+      </div>
+    </div>
     <div class="card" id="qtCard">
       <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
     <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
@@ -3535,6 +3548,7 @@ function goTab(name, fromHistory){
   if($('cdDlg') && !$('cdDlg').classList.contains('hidden')) cdClose();   /* 상세 팝업이 떠 있으면 탭을 옮길 때 닫는다 */
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
   ['home','inbox','assign','quote','customer','alerts','stats','leave','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  if(name==='quote' && !SP_LOADED){ SP_LOADED=true; loadSubPolicy(); }   /* 구독 혜택 안내 (mvp_246) */
   if(name==='leave' && !LV_LOADED){ LV_LOADED=true; loadLeave(); }
   if(name==='stats' && !ST_LOADED){ ST_LOADED=true; stPick(todayStr().slice(0,8)+'01', todayStr()); }   /* 처음 열면 이 달 · 일별 (v233) */
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
@@ -5787,6 +5801,79 @@ function renderAllConsults(){
     + (ALL_ROWS.length ? `<div class="note-in" style="text-align:center;margin-top:6px">${ALL_ROWS.length}건 중 ${ALL_PG*per+1}–${ALL_PG*per+rows.length} 표시</div>` : '');
 }
 async function asgTo2(id){ ASG_IDS=[id]; await asgTo(ME); }
+
+/* ═══ 구독 혜택 안내 : 상세페이지 구독탭이 읽는 정책(fn_store_sub_policy) — 보기는 누구나, 행사 문구·카드 유의사항은 점장님·대표님이 바로 고친다 (mvp_246)
+   할인율·선납 한도 같은 수치는 관리자 화면에서만 바꾼다. 저장하면 10분 안에 db.samsungat.co.kr/sdp/sub 로 배포된다 */
+let SP_LOADED=false, SP=null, SP_DLG=null;
+const spPct=v=>v==null?'-':String(Math.round(Number(v)*1000)/10)+'%';
+async function loadSubPolicy(){
+  if(!CODE) return;
+  try{ SP=await rpc('fn_store_sub_policy',{p_code:CODE}); }catch(e){ $('spBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  renderSubPolicy();
+}
+function renderSubPolicy(){
+  const d=SP, P=d.policy||{}, A=P.autopay||{}, R=P.prepay||{}, can=!!d.can_edit;
+  const ST={on:['진행 중','ok'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
+  const promos=(d.promos||[]).filter(p=>can || p.state==='on' || p.state==='soon');
+  $('spSub').textContent=(can?'점장님·대표님은 행사 문구·카드 유의사항을 여기서 바로 고칠 수 있습니다':'상세페이지 구독탭에 나가는 혜택·행사 문구')+(d.deployed?` · 배포 ${d.deployed.at}`:'');
+  const steps=(R.steps||[]).map(s=>`선납 ${spPct(s)} → 할인 ${spPct((R.rates||{})[String(s)])}`).join(' · ');
+  let h=`<div class="chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"><span class="pill">자동납부 할인 <b>${spPct(A.rate)}</b></span><span class="pill" title="${esc(steps)}">선납 ${(R.steps||[]).map(spPct).join(' · ')}</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px"><b style="font-size:calc(14px * var(--font-scale))">행사 문구</b>${can?'<button type="button" class="btn sm" onclick="spDlgOpen(\'promo\',null)">＋ 행사 추가</button>':''}</div>`;
+  h+=promos.length?`<div class="list">${promos.map(p=>`<div class="item" style="grid-template-columns:1fr auto">
+      <div><div style="font-weight:700">${esc(p.text)}</div><div class="note-in" style="margin:2px 0 0">${p.from||p.to?esc(p.from||'')+' ~ '+esc(p.to||''):'상시'} · ${(p.cats||[]).length?esc(p.cats.join(', ')):'전체 품목'}${(p.models||[]).length?' · '+esc(p.models.join(', ')):''}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[p.state][1]}">${ST[p.state][0]}</span>${can?`<span style="display:flex;gap:6px"><button type="button" class="btn sm ghost" onclick="spDlgOpen('promo',${p.id})">고치기</button><button type="button" class="btn sm ghost" onclick="spPromoToggle(${p.id},${p.active?'false':'true'})">${p.active?'끄기':'켜기'}</button></span>`:''}</div></div>`).join('')}</div>`
+    :`<div class="empty">진행 중인 행사 문구가 없습니다</div>`;
+  const cards=d.cards||[], names=[...new Set([...(d.card_names||[]),...cards.map(c=>c.card)])], by={}; cards.forEach(c=>by[c.card]=c);
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:16px 0 8px"><b style="font-size:calc(14px * var(--font-scale))">제휴카드 유의사항</b></div><div class="list">`;
+  h+=names.map(nm=>{ const c=by[nm]||{}; const off=c.hidden || (c.to && c.to < todayStr()) || (c.from && c.from > todayStr());
+    return `<div class="item" style="grid-template-columns:1fr auto;opacity:${off?.55:1}"><div><div style="font-weight:700">${esc(nm)}${off?' <span class="pill">숨김</span>':''}${c.from||c.to?` <span class="note-in" style="margin:0">${esc(c.from||'')} ~ ${esc(c.to||'')}</span>`:''}</div>
+      <div class="note-in" style="margin:2px 0 0;white-space:normal">${(c.notes||[]).length?c.notes.map(esc).join('<br>'):'<span style="color:var(--faint)">유의사항 없음</span>'}</div></div>
+      ${can?`<button type="button" class="btn sm ghost" onclick="spDlgOpen('card',${JSON.stringify(nm).replace(/"/g,'&quot;')})">고치기</button>`:''}</div>`; }).join('')+'</div>';
+  if((P.card_notes||[]).length) h+=`<p class="note-in" style="margin-top:8px">공통: ${P.card_notes.map(esc).join(' · ')}</p>`;
+  h+=`<p class="note-in">할인율·선납 한도 같은 수치와 요금표는 관리자 화면에서 바꿉니다. 문의: 온라인사업부</p>`;
+  $('spBody').innerHTML=h;
+}
+function spDlgOpen(kind,key){
+  if(!(SP&&SP.can_edit)) return;
+  const F=$('spDlgForm'); $('spDlgErr').textContent='';
+  if(kind==='promo'){
+    const p=(key!=null && (SP.promos||[]).find(x=>x.id===key))||{cats:[],models:[],goods:[],sort:100,active:true};
+    SP_DLG={kind,p}; $('spDlgTitle').textContent=key!=null?'행사 문구 고치기':'행사 문구 추가';
+    F.innerHTML=`<div><label for="spf_text">문구 (고객에게 그대로 보입니다)</label><input class="in" id="spf_text" value="${esc(p.text||'')}" placeholder="예: 11월 구독 확정 시 신세계 상품권 10만원"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="spf_from">시작일 (비우면 바로)</label><input class="in" type="date" id="spf_from" value="${esc(p.from||'')}"></div><div><label for="spf_to">종료일 (비우면 계속)</label><input class="in" type="date" id="spf_to" value="${esc(p.to||'')}"></div></div>
+      <div><label>대상 품목 (아무것도 안 고르면 전체)</label><div style="display:flex;flex-wrap:wrap;gap:6px" id="spf_cats">${(SP.cats||[]).map(c=>`<span class="chip ${(p.cats||[]).includes(c)?'on':''}" data-v="${esc(c)}" onclick="this.classList.toggle('on')">${esc(c)}</span>`).join('')}</div></div>
+      <div><label for="spf_models">대상 모델번호 (쉼표로 여러 개 · 비우면 전체)</label><input class="in" id="spf_models" value="${esc((p.models||[]).join(', '))}" autocapitalize="characters"></div>`;
+  } else {
+    const c=(SP.cards||[]).find(x=>x.card===key)||{card:key,notes:[]};
+    SP_DLG={kind,c}; $('spDlgTitle').textContent=key+' 유의사항';
+    F.innerHTML=`<div><label for="spf_notes">유의사항 (한 줄에 한 문장 · 카드사 원문대로)</label><textarea class="in" id="spf_notes" rows="4" style="width:100%;box-sizing:border-box;font-family:inherit">${esc((c.notes||[]).join('\n'))}</textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="spf_from">노출 시작 (비우면 계속)</label><input class="in" type="date" id="spf_from" value="${esc(c.from||'')}"></div><div><label for="spf_to">노출 종료</label><input class="in" type="date" id="spf_to" value="${esc(c.to||'')}"></div></div>
+      <div><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="spf_hidden" ${c.hidden?'checked':''} style="width:18px;height:18px"> 이 카드를 구독탭 카드 목록에서 숨김</label></div>`;
+  }
+  $('spDlg').classList.remove('hidden'); setTimeout(()=>{ const f=F.querySelector('input,textarea'); if(f) f.focus(); },50);
+}
+function spDlgClose(){ $('spDlg').classList.add('hidden'); SP_DLG=null; }
+async function spDlgSave(){
+  if(!SP_DLG) return; const b=$('spDlgOk'); b.disabled=true;
+  try{
+    if(SP_DLG.kind==='promo'){
+      const p=SP_DLG.p, text=$('spf_text').value.trim(); if(!text) throw new Error('문구를 적어 주세요');
+      await rpc('fn_store_sub_promo_save',{p_code:CODE,p_data:{id:p.id,text,from:$('spf_from').value||null,to:$('spf_to').value||null,sort:p.sort,note:p.note,active:p.active!==false,
+        cats:[...$('spf_cats').querySelectorAll('.chip.on')].map(x=>x.dataset.v),models:$('spf_models').value.split(/[,\n]/).map(x=>x.trim()).filter(Boolean),goods:p.goods||[]}});
+    } else {
+      const c=SP_DLG.c;
+      await rpc('fn_store_sub_card_policy_save',{p_code:CODE,p_data:{card:c.card,notes:$('spf_notes').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),from:$('spf_from').value||null,to:$('spf_to').value||null,hidden:$('spf_hidden').checked}});
+    }
+    spDlgClose(); toast('저장했습니다 · 10분 안에 상세페이지에 반영됩니다'); loadSubPolicy();
+  }catch(e){ $('spDlgErr').textContent=e.message; }
+  finally{ b.disabled=false; }
+}
+async function spPromoToggle(id,on){
+  const p=(SP&&SP.promos||[]).find(x=>x.id===id); if(!p) return;
+  if(!on && !confirm(`"${p.text}" 행사 문구를 끌까요? (기록은 남고 다시 켤 수 있습니다)`)) return;
+  try{ await rpc('fn_store_sub_promo_save',{p_code:CODE,p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,sort:p.sort,note:p.note,active:!!on}}); toast(on?'다시 켰습니다':'껐습니다'); loadSubPolicy(); }
+  catch(e){ toast(e.message); }
+}
 
 /* ═══ 사은품 : 한 번 쓴 사은품은 칩으로, 링크(문의 시트·오피스콘)는 버튼으로 ═══ */
 let GIFTS=null;

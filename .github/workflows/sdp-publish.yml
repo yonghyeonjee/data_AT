@@ -2,6 +2,7 @@ name: SDP 계산기 데이터 배포
 
 # 데이터센터(sdp.release)에서 '반영'한 판을 db.samsungat.co.kr/sdp/*.js 로 만들어 올린다 (mvp_245).
 # 고도몰 계산기(service/calc_subscribe.php)·견적서 페이지가 이 파일을 읽는다. 바뀐 게 없으면 커밋하지 않는다.
+# 같은 판 + 구독 혜택 정책(sub.policy)으로 상품상세 구독탭 파일 sdp/sub/*.js 도 만든다 (mvp_246) — 정책을 고치면 다음 실행에 배포된다.
 on:
   schedule:
     - cron: "*/10 * * * *"   # 10분마다 확인 (GitHub 사정으로 몇 분 늦을 수 있음)
@@ -37,6 +38,6 @@ jobs:
           git config user.name  "sdp-publish[bot]"
           git config user.email "sdp-publish@users.noreply.github.com"
           git add sdp
-          git commit -m "SDP 계산기 데이터 배포 ${{ steps.pub.outputs.ver }}"
+          git commit -m "SDP 계산기 데이터 배포 ${{ steps.pub.outputs.ver }} · 구독탭 ${{ steps.pub.outputs.subver }}"
           for i in 1 2 3; do git pull --rebase -q origin main && git push origin HEAD:main && break; sleep 5; done
-          node tools/sdp/publish.mjs --deployed "${{ steps.pub.outputs.ver }}" "$(git rev-parse --short HEAD)"
+          node tools/sdp/publish.mjs --deployed "${{ steps.pub.outputs.ver }}" "${{ steps.pub.outputs.subver }}" "$(git rev-parse --short HEAD)"
