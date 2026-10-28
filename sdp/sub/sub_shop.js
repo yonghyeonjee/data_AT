@@ -1,4 +1,4 @@
-/* ===== 구독센터 공용 화면 | service/sub_home.html · sub_c_<품목>.html · sub_card.html · sub_guide.html =====
+/* ===== 구독센터 공용 화면 | subscribe/sub_home.html · sub_c_<품목>.html · sub_card.html · sub_guide.html =====
    고도몰에는 얇은 html(검색용 제목·소개·FAQ 글 + SUB_SHOP_CONFIG)만 두고, 목록·가격·메뉴는 이 파일이 그린다.
    html 안의 자리 표시를 채운다 (없는 자리는 건너뛴다)
      data-ss="nav"      구독센터 메뉴 (홈 · 품목 · 카드 혜택 · 구독 안내 · 상품 찾기 · 상담 신청)
@@ -26,7 +26,7 @@ window.SUB_SHOP_READY = true;
   if (!root) return;
 
   /* ---------- 품목 페이지 정의 — 메뉴·목록·주소가 모두 이 표를 따른다 ----------
-     cats: 요금 데이터의 품목 키 / seg: 그 안의 세부유형만 (없으면 전체) / file: service/sub_c_<key>.html */
+     cats: 요금 데이터의 품목 키 / seg: 그 안의 세부유형만 (없으면 전체) / file: subscribe/sub_c_<key>.html */
   var PAGES = [
     { key: 'ref', name: '냉장고', icon: '🧊', cats: ['ref'] },
     { key: 'kimchi', name: '김치냉장고', icon: '🥬', cats: ['kimchi'] },
@@ -50,13 +50,15 @@ window.SUB_SHOP_READY = true;
   var PAGE_BY = {};
   PAGES.forEach(function (p) { PAGE_BY[p.key] = p; });
 
+  // 구독센터 페이지 폴더: 지금 페이지 주소(htmid=<폴더>/sub_…)를 따른다 — 웹FTP subscribe/ · 예전 service/ 모두 동작
+  var PAGE_DIR = CFG.pageDir || (/[?&]htmid=([\w-]+\/)sub_/.exec(location.search) || [])[1] || 'subscribe/';
   var LINK = {
-    home: CFG.homeUrl || '/main/html.php?htmid=service/sub_home.html',
-    cat: CFG.catUrl || '/main/html.php?htmid=service/sub_c_',
-    card: CFG.cardUrl || '/main/html.php?htmid=service/sub_card.html',
-    guide: CFG.guideUrl || '/main/html.php?htmid=service/sub_guide.html',
-    find: CFG.findUrl || '/main/html.php?htmid=service/sub_find.html',
-    view: CFG.viewUrl || '/main/html.php?htmid=service/sub_view.html&model=',
+    home: CFG.homeUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_home.html',
+    cat: CFG.catUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_c_',
+    card: CFG.cardUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_card.html',
+    guide: CFG.guideUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_guide.html',
+    find: CFG.findUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_find.html',
+    view: CFG.viewUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_view.html&model=',
     consult: CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html'
   };
   var SITE = CFG.site || location.protocol + '//' + location.host;

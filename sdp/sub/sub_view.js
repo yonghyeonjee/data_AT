@@ -1,5 +1,5 @@
-/* ===== 구독 상품 페이지 | service/sub_view.html 에서 SUB_VIEW_CONFIG 설정 후 로드 =====
-   주소: /main/html.php?htmid=service/sub_view.html&model=RM80F91H1X
+/* ===== 구독 상품 페이지 | subscribe/sub_view.html 에서 SUB_VIEW_CONFIG 설정 후 로드 =====
+   주소: /main/html.php?htmid=subscribe/sub_view.html&model=RM80F91H1X
    동작 순서
    1) 주소의 model 로 SUB_INDEX(모델→[품목, 최저 월구독료]) 에서 모델을 찾는다 (없으면 안내 + 구독상품 찾기로)
    2) 상품 머리(이미지·이름·세부유형·월 X원~)를 그리고, 그 아래 #subTabRoot 에 상품상세 구독탭과
@@ -37,8 +37,10 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     l.rel = 'stylesheet'; l.href = href;
     document.head.appendChild(l);
   }
-  function findUrl(q) { return (CFG.findUrl || '/main/html.php?htmid=service/sub_find.html') + (q ? '&' + q : ''); }
-  function viewUrl(model) { return (CFG.viewUrl || '/main/html.php?htmid=service/sub_view.html&model=') + encodeURIComponent(model); }
+  // 구독센터 페이지 폴더: 지금 페이지 주소(htmid=<폴더>/sub_…)를 따른다 — 웹FTP subscribe/ · 예전 service/ 모두 동작
+  var PAGE_DIR = CFG.pageDir || (/[?&]htmid=([\w-]+\/)sub_/.exec(location.search) || [])[1] || 'subscribe/';
+  function findUrl(q) { return (CFG.findUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_find.html') + (q ? '&' + q : ''); }
+  function viewUrl(model) { return (CFG.viewUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_view.html&model=') + encodeURIComponent(model); }
   function track(name, extra) {
     var ev = { event: name, sub_model: model };
     for (var k in extra) ev[k] = extra[k];
@@ -84,8 +86,8 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     if (cat === 'laundry' || cat === 'cooking') return null;
     return { key: cat, name: catName };
   }
-  function homeUrl() { return CFG.homeUrl || '/main/html.php?htmid=service/sub_home.html'; }
-  function catUrl(key) { return (CFG.catUrl || '/main/html.php?htmid=service/sub_c_') + key + '.html'; }
+  function homeUrl() { return CFG.homeUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_home.html'; }
+  function catUrl(key) { return (CFG.catUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_c_') + key + '.html'; }
   function cleanName(s) { return String(s || '').replace(/\s*\*+\s*$/, '').replace(/\s*(삼성본사직배송|본사직배송)\s*/g, ' ').replace(/\s{2,}/g, ' ').replace(/^\s|\s$/g, ''); }
   // 이름 없는 TV·모니터는 모델명에서 크기·라인업을 읽는다 (sub_shop.js 의 modelHint 와 같은 규칙)
   function modelHint() {

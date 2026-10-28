@@ -1,4 +1,4 @@
-/* ===== 구독상품 찾기 | service/sub_find.html 에서 SUB_FIND_CONFIG 설정 후 로드 =====
+/* ===== 구독상품 찾기 | subscribe/sub_find.html 에서 SUB_FIND_CONFIG 설정 후 로드 =====
    동작 순서
    1) SUB_INDEX(모델→[카테고리, 최저 월구독료, 자동납부 최저 총액]) 로 목록을 만든다
    2) 카테고리를 고르거나 검색어를 넣으면 그때 sub_plans_<키>.js 를 받아 세부유형(양문형·로봇청소기 등)까지 찾는다
