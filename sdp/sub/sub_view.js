@@ -85,7 +85,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
       '<p class="sv-model">모델명 <b>' + esc(model) + '</b></p>' +
       '<p class="sv-price"><small>구독 월</small> ' + fmt(entry[1]) + '<small>원~</small></p>' +
       '<p class="sv-badge">삼성전자 AI 구독클럽 공식 파트너 · 무상수리 포함</p>' +
-      (goods ? '<a class="sv-goods" data-cta="goods" href="' + esc((CFG.goodsUrl || '/goods/goods_view.php?goodsNo=') + encodeURIComponent(goods[0]) + '&utm_source=sub_view&utm_medium=goods&utm_campaign=' + encodeURIComponent(model)) + '">쇼핑몰 상품 페이지에서 보기 (일시불 구매)</a>' : '') +
+      (goods ? '<a class="sv-goods" data-cta="goods" href="' + esc(lumpHref()) + '">시흥몰 가격 확인하기' + (goods[3] > 0 ? ' · 일시불 ' + fmt(goods[3]) + '원' : '') + '</a>' : '') +
       '</div></div>';
   }
   function renderHead() {
@@ -122,18 +122,42 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     if (a) track('sub_view_click', { sv_cta: a.getAttribute('data-cta') });
   });
 
+  /* ---------- 하단 버튼 2개: "시흥몰 가격 확인하기" + "구독 문의하기" ----------
+     sub_tab.js 가 CFG.cta='lump+consult' 를 지원하면 그쪽이 그린다(data-cta="lump" 가 있으면 손대지 않음).
+     지원 전 판이면 여기서 버튼 칸만 바꿔 끼운다 — 상담 링크(선택한 약정·케어·카드가 담긴 메모)는 원래 버튼 주소를 그대로 쓴다 */
+  function lumpHref() {
+    return goods ? (CFG.goodsUrl || '/goods/goods_view.php?goodsNo=') + encodeURIComponent(goods[0]) +
+      '&utm_source=sub_view&utm_medium=lump&utm_campaign=' + encodeURIComponent(model) : '';
+  }
+  function fixCta() {
+    var cta = root.querySelector('#subTabRoot .subtab-cta');
+    if (!cta || cta.getAttribute('data-sv') || cta.querySelector('[data-cta="lump"]')) return;
+    var main = cta.querySelector('.subtab-cta-main');
+    var consult = main ? main.getAttribute('href') : '';
+    var lu = lumpHref();
+    cta.setAttribute('data-sv', '1');
+    cta.innerHTML = (lu ? '<a class="subtab-cta-sub sv-cta-lump" data-cta="lump" href="' + esc(lu) + '">시흥몰 가격 확인하기</a>' : '') +
+      '<a class="subtab-cta-main" data-cta="consult" href="' + esc(consult) + '">구독 문의하기</a>';
+  }
+
   /* ---------- 계산 화면: 상품상세 구독탭(sub_tab.js) 을 구독 모드로 ---------- */
   var base = CFG.dataBase || '/data/js/sub/', ver = CFG.ver || IDX.ver;
+  function startCalc() {
   window.SUB_TAB_CONFIG = {
     ver: ver, dataBase: base,
-    models: [model], goodsNo: '', lumpPrice: 0,
+    models: [model], goodsNo: goods ? String(goods[0]) : '',
+    lumpPrice: goods && goods[3] > 0 ? goods[3] : 0,   // 시흥몰 일시불 판매가 → "일시불보다 ○원 저렴"·"일시불 구매가" 비교가 함께 나온다
     defaultTab: 'sub', enabled: true, lumpOnly: [],
     consultUrl: CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html',
-    tel: CFG.tel || '', defaultCard: CFG.defaultCard || '', defaultTier: '', cardGuideUrl: CFG.cardGuideUrl || '',
+    tel: '', defaultCard: CFG.defaultCard || '', defaultTier: '', cardGuideUrl: CFG.cardGuideUrl || '',
     productCat: catName, extraPoints: CFG.extraPoints || [],
     // 상담 신청서에 "구독 상품 페이지"에서 온 것으로 남긴다 (sub_tab.js 의 CFG.source / sourceName / utmSource)
-    source: 'view', sourceName: '구독 상품 페이지', utmSource: 'sub_view'
+    source: 'view', sourceName: '구독 상품 페이지', utmSource: 'sub_view',
+    // 하단 버튼 2개 (sub_tab.js 가 지원하는 판부터 적용, 그 전엔 fixCta 가 대신)
+    cta: 'lump+consult', lumpUrl: lumpHref(), lumpLabel: '시흥몰 가격 확인하기', consultLabel: '구독 문의하기'
   };
+  var tabRoot = root.querySelector('#subTabRoot');
+  if (tabRoot && window.MutationObserver) new MutationObserver(fixCta).observe(tabRoot, { childList: true, subtree: true });
   loadCss(base + 'sub_tab.css?v=' + encodeURIComponent(ver));
   loadScript(base + 'sub_plans_' + cat + '.js?v=' + encodeURIComponent(ver), function () {
     var P = (window.SUB_PLANS || {})[cat] || {};
@@ -158,10 +182,16 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
       }, 2500);
     }, calcFailed);
   });
+  }
 
-  /* ---------- 고도몰 상품 연결 (있으면 이미지·상품명) ---------- */
+  /* ---------- 고도몰 상품 연결 (이미지·상품명·일시불 판매가) → 받은 뒤 계산 화면 시작 ----------
+     연결표: 모델 → [상품번호, 상품명, 목록이미지, 일시불 판매가] — "[구독]" 전용 상품보다 일반 상품을 먼저 고른 값.
+     데이터센터가 늦거나 실패해도 2.5초 뒤엔 계산 화면을 띄운다 (그때는 일시불 비교·시흥몰 가격 버튼 없이) */
+  var started = false;
+  function go() { if (started) return; started = true; startCalc(); }
   var api = CFG.goodsApi;
   if (api && api.url && window.fetch) {
+    setTimeout(go, 2500);
     fetch(api.url, { method: 'POST', headers: { apikey: api.key, 'Content-Type': 'application/json' }, body: '{}' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (G) {
@@ -169,7 +199,8 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
         var m = (G && G.m) || {};
         for (var k in m) if (m.hasOwnProperty(k) && norm(k) === model) { goods = m[k]; break; }
         if (goods) renderHead();
+        go();
       })
-      .catch(function (e) { if (window.console) console.warn('[구독상품] 상품 연결표를 못 읽음', e); });
-  }
+      .catch(function (e) { if (window.console) console.warn('[구독상품] 상품 연결표를 못 읽음', e); go(); });
+  } else go();
 })();

@@ -547,12 +547,7 @@
     h += '<div class="subtab-bar">' +
       '<div class="subtab-bar-row"><span>월 납부 예상금액</span><s' + (discounted ? '' : ' hidden') + '>월 ' + fmt(r.monthly) + '원</s></div>' +
       '<div class="subtab-bar-row is-main"><span>' + (r.cardTotal ? '제휴카드 적용가' : '혜택 적용가') + '</span><strong>월 ' + fmt(r.finalMonthly) + '원~</strong></div>' +
-      '<div class="subtab-cta">' +
-      '<a class="subtab-cta-main" data-cta="consult" href="' + esc(consultBase() + q) + '">' +
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>' +
-      '상담하고 구독하기</a>' +
-      (CFG.tel ? '<a class="subtab-cta-sub" data-cta="tel" href="tel:' + esc(CFG.tel.replace(/[^0-9]/g, '')) + '">' + esc(CFG.tel) + '</a>' : '') +
-      '</div></div>';
+      ctaHtml(consultBase() + q) + '</div>';
 
     els.panel.innerHTML = h;
   }
@@ -563,6 +558,34 @@
     state.tab = 'sub';
     renderHead();
     renderPanel();
+  }
+
+  /* ---------- 하단 버튼 ----------
+     CFG.cta: 'consult'(기본) = [상담하고 구독하기] + 전화 버튼(CFG.tel)
+              'lump+consult'  = [시흥몰 가격 확인하기] + [구독 문의하기] 두 개 (전화 버튼 없음)
+     시흥몰 가격 확인하기: CFG.lumpUrl 이 있으면 그 주소로(구독 상품 페이지 → 일반 상품), 없으면 일시불 탭으로 전환해 가격 영역으로 스크롤.
+                           lumpUrl 도 없고 일시불 탭도 없으면(일시불가 0) 버튼을 숨긴다.
+     라벨: CFG.lumpLabel · CFG.consultLabel */
+  var PHONE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
+  function ctaHtml(consultHref) {
+    if (CFG.cta === 'lump+consult') {
+      var lumpOk = !!CFG.lumpUrl || (CFG.lumpPrice > 0);
+      return '<div class="subtab-cta subtab-cta--two">' +
+        (lumpOk ? '<a class="subtab-cta-lump" data-cta="lump" href="' + esc(CFG.lumpUrl || '#') + '">' + esc(CFG.lumpLabel || '시흥몰 가격 확인하기') + '</a>' : '') +
+        '<a class="subtab-cta-main" data-cta="consult" href="' + esc(consultHref) + '">' + PHONE_SVG + esc(CFG.consultLabel || '구독 문의하기') + '</a>' +
+        '</div>';
+    }
+    return '<div class="subtab-cta">' +
+      '<a class="subtab-cta-main" data-cta="consult" href="' + esc(consultHref) + '">' + PHONE_SVG + esc(CFG.consultLabel || '상담하고 구독하기') + '</a>' +
+      (CFG.tel ? '<a class="subtab-cta-sub" data-cta="tel" href="tel:' + esc(CFG.tel.replace(/[^0-9]/g, '')) + '">' + esc(CFG.tel) + '</a>' : '') +
+      '</div>';
+  }
+  // 일시불 탭으로 전환하고 가격 영역을 보여준다
+  function openLump() {
+    state.tab = 'lump'; render();
+    var target = null, sels = CFG.lumpOnly || ['.price-box'];
+    for (var i = 0; i < sels.length && !target; i++) { try { target = document.querySelector(sels[i]); } catch (e) {} }
+    if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   // 구독요금을 전부 0 으로 막은 경우 등 → 일시불로 되돌리고 탭 숨김
@@ -587,6 +610,7 @@
       state.prepay = +t.getAttribute('data-prepay'); renderPanel(); track('sub_tab_prepay', { sub_prepay: state.prepay });
     } else if (t.hasAttribute('data-cta')) {
       track('sub_tab_cta', { sub_cta: t.getAttribute('data-cta'), sub_year: state.year, sub_care: joinCare(state.type, state.cycle) });
+      if (t.getAttribute('data-cta') === 'lump' && !CFG.lumpUrl) { ev.preventDefault(); openLump(); }
     }
   }
   function onChange(ev) {
