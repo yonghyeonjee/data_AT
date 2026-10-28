@@ -77,6 +77,8 @@ window.SUB_SHOP_READY = true;
     s.src = src; s.onload = ok; s.onerror = fail || ok;
     document.head.appendChild(s);
   }
+  // 주소에 ? 가 없으면 ? 로, 있으면 & 로 잇는다 (고도몰 html.php?htmid=… · /data/gudok/find.html 모두)
+  function withQ(u, q) { return q ? u + (u.indexOf('?') < 0 ? '?' : '&') + q : u; }
   function catHref(key) { return LINK.cat + key + '.html'; }
   function viewHref(model, medium) {
     return LINK.view + encodeURIComponent(model) + '&utm_source=' + UTM + '&utm_medium=' + (medium || 'list');
@@ -247,7 +249,7 @@ window.SUB_SHOP_READY = true;
       ev.preventDefault();
       var q = this.q.value.replace(/^\s+|\s+$/g, '');
       track('ss_search', { ss_q: q });
-      location.href = LINK.find + (q ? '&q=' + encodeURIComponent(q) : '');
+      location.href = withQ(LINK.find, q ? 'q=' + encodeURIComponent(q) : '');
     });
   }
   function drawCats(el) {

@@ -39,7 +39,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   }
   // 구독센터 페이지 폴더: 지금 페이지 주소(htmid=<폴더>/sub_…)를 따른다 — 웹FTP subscribe/ · 예전 service/ 모두 동작
   var PAGE_DIR = CFG.pageDir || (/[?&]htmid=([\w-]+\/)sub_/.exec(location.search) || [])[1] || 'subscribe/';
-  function findUrl(q) { return (CFG.findUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_find.html') + (q ? '&' + q : ''); }
+  function findUrl(q) { var u = CFG.findUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_find.html'; return q ? u + (u.indexOf('?') < 0 ? '?' : '&') + q : u; }
   function viewUrl(model) { return (CFG.viewUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_view.html&model=') + encodeURIComponent(model); }
   function track(name, extra) {
     var ev = { event: name, sub_model: model };
@@ -192,7 +192,8 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     var nav = document.createElement('div');
     nav.id = 'subShopNav';
     root.parentNode.insertBefore(nav, root.parentNode.firstChild);   // 페이지 맨 위 (머리글보다 먼저)
-    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl };
+    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl,
+      homeUrl: CFG.homeUrl, catUrl: CFG.catUrl, cardUrl: CFG.cardUrl, guideUrl: CFG.guideUrl };
     var b = CFG.dataBase || '/data/js/sub/', v = encodeURIComponent(CFG.ver || (IDX && IDX.ver) || '');
     var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = b + 'sub_shop.css?v=' + v; document.head.appendChild(l);
     var s = document.createElement('script'); s.src = b + 'sub_shop.js?v=' + v; document.head.appendChild(s);
