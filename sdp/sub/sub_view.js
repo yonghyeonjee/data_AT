@@ -69,7 +69,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     return;
   }
   var cat = entry[0], catName = IDX.cats[cat] || '';
-  var goods = null, seg = '', pname = '', img = '';   // goods: 고도몰 연결 [상품번호, 상품명, 이미지, 일시불가] · pname/img: 구독센터 카탈로그
+  var goods = null, seg = '', pname = '', img = '', imgRep = false;   // goods: 고도몰 연결 [상품번호, 상품명, 이미지, 일시불가] · pname/img: 구독센터 카탈로그
 
   /* 구독센터(sub_shop.js) 품목 페이지 — 경로·검색엔진 이동 경로에 쓴다 (sub_shop.js 의 PAGES 와 같은 규칙) */
   var CENTER = [['aicombo', 'AI 콤보', 'laundry', /콤보/], ['washer', '세탁기', 'laundry', /^(드럼|전자동|세탁기\+건조기)/],
@@ -113,7 +113,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
       (cp ? '<a href="' + esc(catUrl(cp.key)) + '">' + esc(cp.name) + ' 구독</a>' : '<a href="' + esc(findUrl('cat=' + cat)) + '">' + esc(catName) + '</a>') +
       (seg ? ' › <a href="' + esc(findUrl('cat=' + cat + '&seg=' + encodeURIComponent(seg))) + '">' + esc(segLabel(seg)) + '</a>' : '') + '</nav>' +
       '<div class="sv-head">' +
-      '<div class="sv-img">' + (img ? '<img src="' + esc(img) + '" alt="' + esc(title) + '">' : '<span class="sv-icon">' + (CAT_ICON[cat] || '📦') + '</span>') + '</div>' +
+      '<div class="sv-img">' + (img ? '<img src="' + esc(img) + '" alt="' + esc(title) + '">' + (imgRep ? '<span class="sv-imgnote">대표 이미지 · 색상·구성은 모델마다 다를 수 있습니다</span>' : '') : '<span class="sv-icon">' + (CAT_ICON[cat] || '📦') + '</span>') + '</div>' +
       '<div class="sv-info">' +
       '<p class="sv-cat">' + esc(catName) + (seg ? ' · ' + esc(segLabel(seg)) : '') + '</p>' +
       '<h1 class="sv-title">' + esc(title) + '</h1>' +
@@ -292,6 +292,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
           goods = c[0] ? c : null;
           pname = cleanName(c[1]);
           img = c[2] ? (/^https?:/.test(c[2]) ? c[2] : (CFG.imgBase || '') + c[2]) : '';
+          imgRep = /^[sgc]$/.test(c[4] || '');   // 같은 세부유형·품목의 다른 모델 사진
           renderHead();
         }
         go();

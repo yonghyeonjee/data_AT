@@ -119,7 +119,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       if (!e || !(e[1] > 0) || !cats[e[0]]) continue;
       var g = GOODS[norm(m)];
       var r = { model: m, cat: e[0], min: e[1], minNet: e[2] || 0, seg: '', name: g ? g[1] || '' : '', goodsNo: g && g[0] ? String(g[0]) : '',
-        img: g && g[2] ? (/^https?:/.test(g[2]) ? g[2] : IMG_BASE + g[2]) : '' };
+        img: g && g[2] ? (/^https?:/.test(g[2]) ? g[2] : IMG_BASE + g[2]) : '', imgRep: !!(g && /^[sgc]$/.test(g[4] || '')) };
       rows.push(r); byModel[m] = r;
     }
     rows.forEach(setHay);
@@ -365,7 +365,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     var href = kind === 'view' ? viewHref(r) : kind === 'goods' ? goodsHref(r) : consultHref(r);
     return '<li class="sf-card">' +
       '<a class="sf-card-link' + (r.img ? ' has-img' : '') + '" href="' + esc(href) + '" data-cta="' + kind + '" data-model="' + esc(r.model) + '">' +
-      (r.img ? '<span class="sf-img"><img src="' + esc(r.img) + '" alt="" loading="lazy"></span>' : '') +
+      (r.img ? '<span class="sf-img"><img src="' + esc(r.img) + '" alt="" loading="lazy">' + (r.imgRep ? '<span class="sf-imgnote">대표 이미지</span>' : '') + '</span>' : '') +
       '<span class="sf-cat">' + (CAT_ICON[r.cat] || '') + ' ' + esc(IDX.cats[r.cat]) + (r.seg ? ' · ' + esc(r.segLabel || r.seg) : '') + '</span>' +
       '<strong class="sf-title">' + esc(title) + '</strong>' +
       (r.name ? '<span class="sf-model">' + esc(r.model) + '</span>' : '') +

@@ -152,7 +152,8 @@ window.SUB_SHOP_READY = true;
       if (!e || !(e[1] > 0) || !IDX.cats[e[0]]) continue;
       var c = CAT.m[m];
       var r = { model: m, cat: e[0], min: e[1], seg: '', name: c ? cleanName(c[1]) : '', goodsNo: c && c[0] ? String(c[0]) : '',
-        img: c && c[2] ? (/^https?:/.test(c[2]) ? c[2] : CAT.img + c[2]) : '', lump: c ? c[3] || 0 : 0 };
+        img: c && c[2] ? (/^https?:/.test(c[2]) ? c[2] : CAT.img + c[2]) : '', lump: c ? c[3] || 0 : 0,
+        imgRep: !!(c && /^[sgc]$/.test(c[4] || '')) };   // s·g·c = 같은 세부유형·품목의 다른 모델 사진
       rows.push(r); byModel[m] = r;
     }
   }
@@ -209,7 +210,8 @@ window.SUB_SHOP_READY = true;
   function card(r, medium) {
     var p = pageOf(r);
     return '<li class="ss-card"><a class="ss-card-link" href="' + esc(viewHref(r.model, medium)) + '" data-cta="view" data-model="' + esc(r.model) + '">' +
-      '<span class="ss-img">' + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' : '<span class="ss-icon" aria-hidden="true">' + (p ? p.icon : '📦') + '</span>') + '</span>' +
+      '<span class="ss-img">' + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
+        (r.imgRep ? '<span class="ss-imgnote">대표 이미지</span>' : '') : '<span class="ss-icon" aria-hidden="true">' + (p ? p.icon : '📦') + '</span>') + '</span>' +
       '<span class="ss-meta">' + esc(p ? p.name : IDX.cats[r.cat]) + (r.seg ? ' · ' + esc(segShort(r.seg)) : '') + '</span>' +
       '<strong class="ss-name">' + esc(displayName(r)) + '</strong>' +
       '<span class="ss-model">' + esc(r.model) + '</span>' +
@@ -256,10 +258,9 @@ window.SUB_SHOP_READY = true;
     }).join('') + '</ul>';
   }
   // 대표 모델: 이름 있는(고도몰·상품 마스터) 모델을 먼저, 그다음 낮은 월 구독료
+  function score(r) { return (r.img ? (r.imgRep ? 1 : 3) : 0) + (r.name ? 1 : 0); }
   function picks(list, n) {
-    return list.slice().sort(function (a, b) {
-      return (b.img ? 2 : 0) + (b.name ? 1 : 0) - ((a.img ? 2 : 0) + (a.name ? 1 : 0)) || a.min - b.min;
-    }).slice(0, n);
+    return list.slice().sort(function (a, b) { return score(b) - score(a) || a.min - b.min; }).slice(0, n);
   }
   function drawPick(el) {
     var p = PAGE_BY[el.getAttribute('data-key')]; if (!p) return;
@@ -327,7 +328,7 @@ window.SUB_SHOP_READY = true;
       var b = BANDS.filter(function (x) { return x[0] === LIST.band; })[0];
       return !b || !b[0] || (r.min >= b[2] && r.min <= b[3]);
     }).sort(function (a, b) {
-      if (LIST.sort === 'rec') return (b.img ? 2 : 0) + (b.name ? 1 : 0) - ((a.img ? 2 : 0) + (a.name ? 1 : 0)) || a.min - b.min;
+      if (LIST.sort === 'rec') return score(b) - score(a) || a.min - b.min;
       return LIST.sort === 'high' ? b.min - a.min : LIST.sort === 'model' ? (a.model < b.model ? -1 : 1) : a.min - b.min;
     });
     el.innerHTML = '<p class="ss-summary"><b>' + esc(p.name) + '</b> 구독 모델 <b>' + fmt(all.length) + '</b>개 · 월 <b>' + fmt(minOf(all)) + '원</b>부터' +
