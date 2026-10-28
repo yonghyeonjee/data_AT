@@ -118,7 +118,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       var e = IDX.m[m];
       if (!e || !(e[1] > 0) || !cats[e[0]]) continue;
       var g = GOODS[norm(m)];
-      var r = { model: m, cat: e[0], min: e[1], minNet: e[2] || 0, seg: '', name: g ? g[1] || '' : '', goodsNo: g ? String(g[0]) : '',
+      var r = { model: m, cat: e[0], min: e[1], minNet: e[2] || 0, seg: '', name: g ? g[1] || '' : '', goodsNo: g && g[0] ? String(g[0]) : '',
         img: g && g[2] ? (/^https?:/.test(g[2]) ? g[2] : IMG_BASE + g[2]) : '' };
       rows.push(r); byModel[m] = r;
     }
@@ -391,7 +391,21 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     }
   }
 
+
+  /* 구독센터 메뉴 — 데이터센터 sub_shop.js 를 메뉴 전용으로 불러와 페이지 위에 붙인다 (CFG.centerNav === false 면 끔) */
+  function centerNav(page, key) {
+    if (CFG.centerNav === false || document.getElementById('subShopNav')) return;
+    var nav = document.createElement('div');
+    nav.id = 'subShopNav';
+    root.parentNode.insertBefore(nav, root.parentNode.firstChild);   // 페이지 맨 위 (머리글보다 먼저)
+    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl };
+    var b = CFG.dataBase || '/data/js/sub/', v = encodeURIComponent(CFG.ver || (IDX && IDX.ver) || '');
+    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = b + 'sub_shop.css?v=' + v; document.head.appendChild(l);
+    var s = document.createElement('script'); s.src = b + 'sub_shop.js?v=' + v; document.head.appendChild(s);
+  }
+
   function start() {
+    centerNav('find', '');
     readUrl();
     buildRows();
     build();
@@ -422,7 +436,9 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     if (!api || !api.url || !window.fetch) return fail();
     var settled = false;
     var timer = setTimeout(function () { if (!settled) { settled = true; fail(); } }, api.timeout || 4000);
-    fetch(api.url, { method: 'POST', headers: { apikey: api.key, 'Content-Type': 'application/json' }, body: '{}' })
+    // 구독센터 카탈로그(fn_sub_catalog) — 연결표와 같은 모양 + 고도몰에 없는 모델의 상품명까지 (상품번호 0 = 고도몰 미등록)
+    var url = CFG.catalogApi && CFG.catalogApi.url ? CFG.catalogApi.url : api.url.replace(/fn_sub_goods_map$/, 'fn_sub_catalog');
+    fetch(url, { method: 'POST', headers: { apikey: api.key, 'Content-Type': 'application/json' }, body: '{}' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (G) { if (settled) return; settled = true; clearTimeout(timer); useGoods(G); ok(); })
       .catch(function (e) { if (settled) return; settled = true; clearTimeout(timer); if (window.console) console.warn('[구독찾기] 상품 연결표 데이터센터 실패 → 파일 사용', e); fail(); });

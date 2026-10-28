@@ -69,13 +69,48 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     return;
   }
   var cat = entry[0], catName = IDX.cats[cat] || '';
-  var goods = null, seg = '';
+  var goods = null, seg = '', pname = '', img = '';   // goods: 고도몰 연결 [상품번호, 상품명, 이미지, 일시불가] · pname/img: 구독센터 카탈로그
+
+  /* 구독센터(sub_shop.js) 품목 페이지 — 경로·검색엔진 이동 경로에 쓴다 (sub_shop.js 의 PAGES 와 같은 규칙) */
+  var CENTER = [['aicombo', 'AI 콤보', 'laundry', /콤보/], ['washer', '세탁기', 'laundry', /^(드럼|전자동|세탁기\+건조기)/],
+    ['dryer', '건조기', 'laundry', /^건조기/], ['airdresser', '에어드레서', 'laundry', /벌식/],
+    ['dishwasher', '식기세척기', 'cooking', /인용|카운터탑/], ['induction', '인덕션·후드', 'cooking', /전기레인지|인덕션|후드/],
+    ['galaxy', '갤럭시 탭·북', 'tab'], ['galaxy', '갤럭시 탭·북', 'book']];
+  function centerPage() {
+    for (var i = 0; i < CENTER.length; i++) {
+      var c = CENTER[i];
+      if (c[2] === cat && (!c[3] || (seg && c[3].test(seg)))) return { key: c[0], name: c[1] };
+    }
+    if (cat === 'laundry' || cat === 'cooking') return null;
+    return { key: cat, name: catName };
+  }
+  function homeUrl() { return CFG.homeUrl || '/main/html.php?htmid=service/sub_home.html'; }
+  function catUrl(key) { return (CFG.catUrl || '/main/html.php?htmid=service/sub_c_') + key + '.html'; }
+  function cleanName(s) { return String(s || '').replace(/\s*\*+\s*$/, '').replace(/\s*(삼성본사직배송|본사직배송)\s*/g, ' ').replace(/\s{2,}/g, ' ').replace(/^\s|\s$/g, ''); }
+  // 이름 없는 TV·모니터는 모델명에서 크기·라인업을 읽는다 (sub_shop.js 의 modelHint 와 같은 규칙)
+  function modelHint() {
+    var m;
+    if (cat === 'tv' && (m = model.match(/^(KMR|KQ|KU)(\d{2,3})([A-Z]+)/))) {
+      var line = m[1] === 'KMR' ? 'Micro RGB' : m[1] === 'KU' ? (/^MH/.test(m[3]) ? 'Mini LED' : /^LS/.test(m[3]) ? '더 무빙스타일' : 'UHD') :
+        /^QN/.test(m[3]) ? 'Neo QLED' : /^S/.test(m[3]) ? 'OLED' : 'QLED';
+      return '삼성 ' + line + ' ' + m[2] + '형 TV' + (/보조|\+/.test(seg) ? ' 세트' : '');
+    }
+    if (cat === 'monitor' && (m = model.match(/^L[SC](\d{2})/))) return '삼성 ' + m[1] + '형 모니터';
+    return '';
+  }
+  function productName() {
+    if (pname) return pname;
+    var h = modelHint(); if (h) return h;
+    var cp = centerPage(), kind = cp && cp.key !== 'galaxy' ? cp.name : catName, s = segLabel(seg).replace(/\s*공통$/, '');
+    if (s && s.indexOf(kind) >= 0) kind = '';
+    return ('삼성 ' + kind + (s ? ' ' + s : '')).replace(/\s+/g, ' ');
+  }
 
   /* ---------- 머리 ---------- */
   function headHtml() {
-    var title = goods && goods[1] ? goods[1] : '삼성 ' + catName + (seg ? ' ' + segLabel(seg) : '') + ' ' + model;
-    var img = goods && goods[2] ? (/^https?:/.test(goods[2]) ? goods[2] : (CFG.imgBase || '') + goods[2]) : '';
-    return '<nav class="sv-crumb"><a href="' + esc(findUrl('')) + '">구독상품 찾기</a> › <a href="' + esc(findUrl('cat=' + cat)) + '">' + esc(catName) + '</a>' +
+    var title = productName(), cp = centerPage();
+    return '<nav class="sv-crumb"><a href="' + esc(homeUrl()) + '">구독센터</a> › ' +
+      (cp ? '<a href="' + esc(catUrl(cp.key)) + '">' + esc(cp.name) + ' 구독</a>' : '<a href="' + esc(findUrl('cat=' + cat)) + '">' + esc(catName) + '</a>') +
       (seg ? ' › <a href="' + esc(findUrl('cat=' + cat + '&seg=' + encodeURIComponent(seg))) + '">' + esc(segLabel(seg)) + '</a>' : '') + '</nav>' +
       '<div class="sv-head">' +
       '<div class="sv-img">' + (img ? '<img src="' + esc(img) + '" alt="' + esc(title) + '">' : '<span class="sv-icon">' + (CAT_ICON[cat] || '📦') + '</span>') + '</div>' +
@@ -91,10 +126,46 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   function renderHead() {
     var h = root.querySelector('[data-slot="head"]');
     if (h) h.innerHTML = headHtml();
-    var title = (goods && goods[1]) || ('삼성 ' + catName + ' ' + model);
-    document.title = title + ' 구독 · 월 ' + fmt(entry[1]) + '원~ | 삼성스토어 시흥';
-    var md = document.querySelector('meta[name="description"]');
-    if (md) md.setAttribute('content', title + ' (' + model + ') 삼성 AI 구독 월 ' + fmt(entry[1]) + '원부터. 약정·케어·제휴카드별 월 구독료를 바로 확인하고 구독 상담을 신청하세요.');
+    var title = productName();
+    document.title = title + ' 구독 가격 월 ' + fmt(entry[1]) + '원~ (' + model + ') | 삼성스토어 시흥 구독센터';
+    var desc = title + ' (' + model + ') 삼성 AI 구독 월 ' + fmt(entry[1]) + '원부터. 약정 기간·방문케어 주기·선납 할인·제휴카드 할인별 월 구독료를 바로 계산하고 구독 상담을 신청하세요.';
+    setMeta('name', 'description', desc);
+    setMeta('property', 'og:title', document.title);
+    setMeta('property', 'og:description', desc);
+    if (img) setMeta('property', 'og:image', img);
+    // 같은 모델 페이지가 utm 같은 꼬리표로 여러 주소가 되지 않게 대표 주소를 박는다
+    var canon = (CFG.site || location.protocol + '//' + location.host) + viewUrl(model);
+    var link = document.querySelector('link[rel="canonical"]');
+    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
+    link.href = canon;
+    setMeta('property', 'og:url', canon);
+    addLd(title, canon);
+  }
+  function setMeta(attr, key, val) {
+    var m = document.querySelector('meta[' + attr + '="' + key + '"]');
+    if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); document.head.appendChild(m); }
+    m.setAttribute('content', val);
+  }
+  // 검색엔진용 상품(월 구독료) · 이동 경로 구조화 데이터
+  var ldEl = null;
+  function addLd(title, canon) {
+    var site = CFG.site || location.protocol + '//' + location.host, cp = centerPage();
+    var data = [{
+      '@context': 'https://schema.org', '@type': 'Product', name: title, sku: model, mpn: model, url: canon,
+      brand: { '@type': 'Brand', name: 'Samsung' }, category: catName + (seg ? ' > ' + segLabel(seg) : ''),
+      description: title + ' 삼성 AI 구독 · 월 ' + fmt(entry[1]) + '원부터 (약정·케어·제휴카드 조건에 따라 달라집니다)',
+      offers: { '@type': 'Offer', url: canon, priceCurrency: 'KRW', price: entry[1], availability: 'https://schema.org/InStock',
+        seller: { '@type': 'Organization', name: '삼성스토어 시흥' },
+        priceSpecification: { '@type': 'UnitPriceSpecification', price: entry[1], priceCurrency: 'KRW',
+          referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' } } }
+    }, {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: '구독센터', item: site + homeUrl() }]
+        .concat(cp ? [{ '@type': 'ListItem', position: 2, name: cp.name + ' 구독', item: site + catUrl(cp.key) }] : [])
+        .concat([{ '@type': 'ListItem', position: cp ? 3 : 2, name: title, item: canon }])
+    }];
+    if (img) data[0].image = img;
+    if (!ldEl) { ldEl = document.createElement('script'); ldEl.type = 'application/ld+json'; document.head.appendChild(ldEl); }
+    ldEl.text = JSON.stringify(data);
   }
 
   /* ---------- 같은 세부유형 다른 모델 ---------- */
@@ -108,6 +179,21 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     box.innerHTML = '<h2 class="sv-h2">같은 유형의 다른 구독 모델</h2><ul class="sv-more">' + list.map(function (m) {
       return '<li><a href="' + esc(viewUrl(m)) + '" data-cta="sibling"><b>' + esc(m) + '</b><span>월 ' + fmt(IDX.m[m][1]) + '원~</span></a></li>';
     }).join('') + '</ul><p class="sv-more-all"><a href="' + esc(findUrl('cat=' + cat + (seg ? '&seg=' + encodeURIComponent(seg) : ''))) + '">' + esc(catName) + ' 구독 모델 전체 보기 →</a></p>';
+    var cp = centerPage(), all = box.querySelector('.sv-more-all a');
+    if (cp && all) { all.setAttribute('href', catUrl(cp.key)); all.textContent = cp.name + ' 구독 모델 전체 보기 →'; }
+  }
+
+
+  /* 구독센터 메뉴 — 데이터센터 sub_shop.js 를 메뉴 전용으로 불러와 페이지 위에 붙인다 (CFG.centerNav === false 면 끔) */
+  function centerNav(page, key) {
+    if (CFG.centerNav === false || document.getElementById('subShopNav')) return;
+    var nav = document.createElement('div');
+    nav.id = 'subShopNav';
+    root.parentNode.insertBefore(nav, root.parentNode.firstChild);   // 페이지 맨 위 (머리글보다 먼저)
+    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl };
+    var b = CFG.dataBase || '/data/js/sub/', v = encodeURIComponent(CFG.ver || (IDX && IDX.ver) || '');
+    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = b + 'sub_shop.css?v=' + v; document.head.appendChild(l);
+    var s = document.createElement('script'); s.src = b + 'sub_shop.js?v=' + v; document.head.appendChild(s);
   }
 
   /* ---------- 골격 ---------- */
@@ -117,6 +203,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     '<p class="sv-loading" data-slot="loading">요금 정보를 불러오는 중…</p></section>' +
     '<section data-slot="more"></section>';
   renderHead();
+  centerNav('view', centerPage() ? centerPage().key : cat);
   root.addEventListener('click', function (ev) {
     var a = ev.target.closest ? ev.target.closest('a[data-cta]') : null;
     if (a) track('sub_view_click', { sv_cta: a.getAttribute('data-cta') });
@@ -192,13 +279,21 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   var api = CFG.goodsApi;
   if (api && api.url && window.fetch) {
     setTimeout(go, 2500);
-    fetch(api.url, { method: 'POST', headers: { apikey: api.key, 'Content-Type': 'application/json' }, body: '{}' })
+    // 구독센터 카탈로그(fn_sub_catalog)를 쓴다 — 연결표와 같은 모양 + 고도몰에 없는 모델의 상품명까지 (상품번호 0 = 고도몰 미등록)
+    var url = CFG.catalogApi && CFG.catalogApi.url ? CFG.catalogApi.url : api.url.replace(/fn_sub_goods_map$/, 'fn_sub_catalog');
+    fetch(url, { method: 'POST', headers: { apikey: api.key, 'Content-Type': 'application/json' }, body: '{}' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (G) {
         CFG.imgBase = G.img || '';
         var m = (G && G.m) || {};
-        for (var k in m) if (m.hasOwnProperty(k) && norm(k) === model) { goods = m[k]; break; }
-        if (goods) renderHead();
+        var c = null;
+        for (var k in m) if (m.hasOwnProperty(k) && norm(k) === model) { c = m[k]; break; }
+        if (c) {
+          goods = c[0] ? c : null;
+          pname = cleanName(c[1]);
+          img = c[2] ? (/^https?:/.test(c[2]) ? c[2] : (CFG.imgBase || '') + c[2]) : '';
+          renderHead();
+        }
         go();
       })
       .catch(function (e) { if (window.console) console.warn('[구독상품] 상품 연결표를 못 읽음', e); go(); });
