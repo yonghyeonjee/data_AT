@@ -156,6 +156,32 @@
   }
   function opts() { return { prepay: state.prepay, card: state.card, tier: state.tier, cardOn: state.cardOn }; }
 
+  /* ---------- 세부유형 표시 이름 ---------- */
+  // DPS 세부유형 원문(Entry_75-79 · Premium_4K_-49 · SD Sound Device (4,5,6) …) → 고객용 (sub_find.js · sub_view.js 의 SEG_LABEL_RULES 와 같아야 한다)
+  var SEG_LABEL_RULES = [
+    [/^Entry_-(\d+)_더무빙$/, '$1형 이하 · 더 무빙스타일'],
+    [/ \+ 4K_-(\d+)$/, ' + 보조 TV $1형 이하'],
+    [/\(2인\)/, '(2인 설치)'],
+    [/^Premium_4K_/, '프리미엄 4K '],
+    [/^Premium_/, '프리미엄 '],
+    [/^Entry_/, ''],
+    [/^일반모니터 /, '일반 '],
+    [/(\d+)이하/, '$1형 이하'],
+    [/(\d+)이상 \((\d+)-(\d+)\)/, '$2~$3형'],
+    [/(^|[ (])(\d{2,3})-(\d{2,3})(?=$|[ )(])/, '$1$2~$3형'],
+    [/(^|[ _])-(\d{2,3})$/, '$1$2형 이하'],
+    [/_M1\/M7$/, ' · 스마트 M1/M7'],
+    [/_OLED$/, ' · OLED'],
+    [/^SD Sound Device /, '사운드바 '],
+    [/^AI로봇청소기_26신제품/, 'AI 로봇청소기 2026'],
+    [/_/g, ' ']
+  ];
+  function segLabel(seg) {
+    var t = String(seg || '');
+    for (var i = 0; i < SEG_LABEL_RULES.length; i++) t = t.replace(SEG_LABEL_RULES[i][0], SEG_LABEL_RULES[i][1]);
+    return t.replace(/\s+/g, ' ').replace(/^\s|\s$/g, '');
+  }
+
   /* ---------- 케어 유형 / 주기 ---------- */
   function splitCare(c) {
     if (c === '무상수리') return ['무상수리', 0];
@@ -429,7 +455,7 @@
     var lump = CFG.lumpPrice || 0, maxYear = sel.years[sel.years.length - 1];
     var h = '';
 
-    h += '<p class="subtab-model">구독 모델 <b>' + esc(state.model) + '</b>' + (info.s ? ' · ' + esc(info.s) : '') + '</p>';
+    h += '<p class="subtab-model">구독 모델 <b>' + esc(state.model) + '</b>' + (info.s ? ' · ' + esc(segLabel(info.s)) : '') + '</p>';
 
     // 약정 기간
     h += '<fieldset class="subtab-field"><legend>약정 기간</legend><div class="subtab-grid">';
