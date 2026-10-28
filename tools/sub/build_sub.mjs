@@ -106,6 +106,41 @@ export function checkPolicy(pol) {
   return pol;
 }
 
+/* 구독 요금 직접 관리(sub.price_override · mvp_251) 를 요금표 DATA 에 덧씌운다
+   ov: [{ model, action 'set'|'hide', term(년 · 없으면 모든 약정), care(요금제 이름 · 없으면 모든 케어), cat, seg, monthly, total }]
+   set  : 맞는 요금제의 월·총구독료를 바꾼다 (총구독료가 없으면 월 × 약정개월). 약정·케어를 둘 다 정했는데 그런 요금제가 없으면 새로 넣는다
+          — DPS 에 없는 모델은 cat(품목)이 있어야 새로 만든다
+   hide : 약정·케어를 안 정하면 모델 전체를, 정하면 맞는 요금제만 뺀다
+   → { applied, added, hidden, skipped: [이유] } */
+export function applyOverrides(DATA, ov) {
+  const st = { applied: 0, added: 0, hidden: 0, skipped: [] };
+  const where = m => { for (const [cat, models] of Object.entries(DATA)) for (const k of Object.keys(models || {})) if (norm(k) === m) return [cat, k]; return null; };
+  const hit = (o, p) => (o.term == null || p[0] === Number(o.term)) && (o.care == null || p[1] === o.care);
+  for (const o of ov || []) {
+    const m = norm(o.model || ''); if (!m) continue;
+    let at = where(m);
+    if (o.action === 'hide') {
+      if (!at) { st.skipped.push(`${m} 숨김: 요금표에 없는 모델`); continue; }
+      const rec = DATA[at[0]][at[1]];
+      if (o.term == null && o.care == null) { delete DATA[at[0]][at[1]]; st.hidden++; continue; }
+      const n = rec.p.length; rec.p = rec.p.filter(p => !hit(o, p)); st.hidden += n - rec.p.length;
+      if (!rec.p.length) delete DATA[at[0]][at[1]];
+      continue;
+    }
+    const mon = Number(o.monthly); if (!(mon > 0)) { st.skipped.push(`${m}: 월 구독료 없음`); continue; }
+    if (!at) {
+      if (!o.cat || o.term == null || !o.care) { st.skipped.push(`${m}: 요금표에 없는 모델은 품목·약정·케어가 있어야 새로 넣습니다`); continue; }
+      (DATA[o.cat] ||= {})[m] = { s: o.seg || '', p: [] }; at = [o.cat, m];
+    }
+    const rec = DATA[at[0]][at[1]], hits = rec.p.filter(p => hit(o, p));
+    if (hits.length) { for (const p of hits) { p[3] = mon; p[2] = Number(o.total) > 0 && o.term != null ? Number(o.total) : mon * p[0] * 12; } st.applied += hits.length; }
+    else if (o.term != null && o.care) { rec.p.push([Number(o.term), o.care, Number(o.total) > 0 ? Number(o.total) : mon * o.term * 12, mon]); st.added++; }
+    else st.skipped.push(`${m}: 맞는 요금제가 없음 (약정 ${o.term ?? '전체'} · ${o.care ?? '모든 케어'})`);
+    rec.p.sort((a, b) => b[0] - a[0] || careRank(a[1]) - careRank(b[1]) || a[1].localeCompare(b[1]));
+  }
+  return st;
+}
+
 /* rel: fn_sdp_export 응답 (CARD·WATER_POLICY 를 쓴다 · dps 가 없으면 DATA·PREPAY_NO 도)
    policy: fn_sub_policy_export 응답 (없으면 sub_policy.js 를 만들지 않는다 — 화면은 기본값으로 계산)
    dps: fn_sub_dps_export 응답 (있으면 요금표 원본 · 없으면 SDP 판의 DATA 로)
@@ -116,6 +151,9 @@ export function buildSubFiles(rel, policy, dps) {
   if (dps && dps.items) { ({ DATA, PREPAY_NO, dup } = dpsToData(dps)); src = `DPS 수집 ${dps.fetch_id || ''}`; }
   else { DATA = varOf(rel, 'DATA'); PREPAY_NO = varOf(rel, 'PREPAY_NO') || []; src = `SDP 판 ${rel.ver}`; }
   if (!DATA) throw new Error('요금표가 없습니다 (DPS 도 SDP 판 DATA 도 없음)');
+  // 구독 요금 직접 관리(mvp_251) — 정책 응답의 overrides 를 요금표에 덧씌우고 sub_policy.js 에는 남기지 않는다
+  let ovStats = null;
+  if (policy && policy.overrides) { ovStats = applyOverrides(DATA, policy.overrides); policy = { ...policy }; delete policy.overrides; }
   if (policy) checkPolicy(policy);
   const autopay = policy?.autopay?.rate ?? 0.05;
   const ver = rel.ver + (policy?.ver ? '+' + policy.ver : '') + (dps ? '+' + dpsVer(dps) : '');
@@ -147,7 +185,7 @@ export function buildSubFiles(rel, policy, dps) {
   out['sub_cards.js'] = head + `window.SUB_CARDS=${JSON.stringify(CARD)};\n`;
   if (policy) out['sub_policy.js'] = head + `window.SUB_POLICY=${JSON.stringify(policy)};\n`;
   out['version.js'] = `/* 상품상세 구독탭 데이터 판 — goods_view 가 5분마다 이 파일로 최신 판을 확인합니다 */\nvar SUB_VER = ${JSON.stringify(ver)};\nvar SUB_SDP_VER = ${JSON.stringify(rel.ver)};\nvar SUB_POLICY_VER = ${JSON.stringify(policy?.ver || '')};\nvar SUB_PUBLISHED_AT = ${JSON.stringify(rel.published_at || '')};\nvar SUB_DPS_VER = ${JSON.stringify(dps ? dpsVer(dps) : '')};\nvar SUB_MODELS = ${Object.keys(index).length};\n`;
-  out.__stats = { models: Object.keys(index).length, cats: Object.keys(cats).length, cards: Object.keys(CARD).length, missing, src: dps ? 'dps' : 'sdp', dup, prepayNo: PREPAY_NO.length };
+  out.__stats = { models: Object.keys(index).length, cats: Object.keys(cats).length, cards: Object.keys(CARD).length, missing, src: dps ? 'dps' : 'sdp', dup, prepayNo: PREPAY_NO.length, overrides: ovStats };
   return out;
 }
 

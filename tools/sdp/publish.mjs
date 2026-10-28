@@ -60,6 +60,9 @@ else {
   subVer = (sub['version.js'].match(/SUB_VER = "([^"]+)"/) || [])[1];
   console.log(`구독탭 판 ${subVer} (지금 ${subCur || '없음'}) · 원본 ${sub.__stats.src} · 모델 ${sub.__stats.models} · 선납불가 ${sub.__stats.prepayNo} · 바뀐 파일 ${subChanged}` + (sub.__stats.missing.length ? ` · CAT_KEYS 에 없는 품목: ${sub.__stats.missing.join(', ')}` : ''));
   if (sub.__stats.missing.length) await log('sub_warn', subVer, `CAT_KEYS 에 없는 품목이라 제외됨: ${sub.__stats.missing.join(', ')}`);
+  const ov = sub.__stats.overrides;   // 구독 요금 직접 관리 (mvp_251)
+  if (ov) console.log(`요금 직접 관리: 바꿈 ${ov.applied} · 새로 ${ov.added} · 숨김 ${ov.hidden} · 못 넣음 ${ov.skipped.length}`);
+  if (ov && ov.skipped.length) await log('sub_warn', subVer, `요금 직접 관리 중 반영 못 한 것: ${ov.skipped.join(' / ')}`);
   if (prevModels && sub.__stats.models < prevModels) console.log(`모델 수 ${prevModels} → ${sub.__stats.models} (${prevModels - sub.__stats.models}개 감소)`);
 }
 
