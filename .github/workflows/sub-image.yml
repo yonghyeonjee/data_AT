@@ -1,0 +1,38 @@
+name: 구독센터 제품 사진 (삼성닷컴)
+
+# 구독 모델(dps.sub_model active)의 대표 사진을 삼성닷컴 고객지원 모델 페이지에서 받아 core.sub_model_image 에 넣는다 (mvp_252).
+# 구독센터 상세·목록(fn_sub_catalog)이 고도몰 작은 썸네일 대신 이 사진을 먼저 쓴다. 매일 1번 · 미확인·오래된 모델만 (전부 다시는 수동 실행에서 all).
+# Secrets: SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY
+on:
+  schedule:
+    - cron: "40 20 * * *"   # 매일 05:40 KST (DPS 수집 뒤)
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "활성 모델 전부 다시 확인"
+        type: boolean
+        default: false
+  push:                      # 수집기나 이 파일이 바뀌면 바로 한 번 돈다 (미확인·오래된 모델만)
+    branches: [main]
+    paths: ['.github/workflows/sub-image.yml', 'tools/subimg/**']
+
+concurrency:
+  group: sub-image
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: 수집 · 저장
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          ARGS=""
+          [ "${{ inputs.all }}" = "true" ] && ARGS="--all"
+          node tools/subimg/collect.mjs $ARGS
