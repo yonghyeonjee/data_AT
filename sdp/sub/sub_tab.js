@@ -60,7 +60,8 @@
   var state = {
     tab: 'lump', model: '', info: null, min: 0, best: 0,
     year: 0, type: '', cycle: 0, prepay: 0,
-    card: '', tier: '', cardOn: true
+    card: '', tier: '', cardOn: true,
+    open: false    // [조건별 구독가 확인하기] 펼침 — 처음엔 요약만
   };
   var root, els = {};
   var OVR = {};      // 모델 → 추가항목 "구독요금" 파싱 결과 { set: [[y,care,total,monthly]], del: ['y|care'] }
@@ -456,6 +457,8 @@
     var h = '';
 
     h += '<p class="subtab-model">구독 모델 <b>' + esc(state.model) + '</b>' + (info.s ? ' · ' + esc(segLabel(info.s)) : '') + '</p>';
+    // 요약(저렴한 금액 또는 월 구독료)만 먼저 보여주고, 약정·케어·선납·카드 선택과 결제 예상 내역은 [조건별 구독가 확인하기] 안에 접어 둔다
+    var top = h; h = '';
 
     // 약정 기간
     h += '<fieldset class="subtab-field"><legend>약정 기간</legend><div class="subtab-grid">';
@@ -530,14 +533,6 @@
     if (notes.length) h += '<ul class="subtab-cardnotes">' + notes.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
     h += '</div></section>';
 
-    // 일시불보다 저렴하면 강조
-    if (r.saving) {
-      h += '<div class="subtab-savebox" role="note"><span class="subtab-savebox-label">선택한 혜택 적용 시 일시불 구매보다</span>' +
-        '<strong>' + fmt(r.saving) + '원 저렴해요</strong>' +
-        '<span class="subtab-savebox-sub">' + r.years + '년 결제 예상액 ' + fmt(r.expected) + '원 · 일시불 ' + fmt(lump) + '원 · ' +
-        Math.floor(r.saving / lump * 100) + '% 절약</span></div>';
-    }
-
     // 결제 예상 내역
     h += '<section class="subtab-field"><div class="subtab-legend">결제 예상 내역</div><dl class="subtab-sum">';
     h += row('총 구독금액 (' + r.years + '년)', fmt(r.total) + '원');
@@ -549,6 +544,21 @@
     var cmp = CFG.lumpCompare || 'auto';
     if (lump > 0 && (cmp === 'always' || (cmp === 'auto' && r.saving))) h += row('일시불 구매가', fmt(lump) + '원', 'is-muted');
     h += '</dl></section>';
+
+    var cond = r.years + '년 약정 · ' + careLabel(r.care) + (r.prepay ? ' · 선납 ' + Math.round(r.prepay * 100) + '%' : '') +
+      (r.cardTotal ? ' · ' + state.card + ' 적용' : '');
+    var sum = r.saving ?
+      // 일시불보다 저렴하면 얼마나 저렴한지
+      '<div class="subtab-savebox" role="note"><span class="subtab-savebox-label">선택한 혜택 적용 시 일시불 구매보다</span>' +
+        '<strong>' + fmt(r.saving) + '원 저렴해요</strong>' +
+        '<span class="subtab-savebox-sub">' + r.years + '년 결제 예상액 ' + fmt(r.expected) + '원 · 일시불 ' + fmt(lump) + '원 · ' +
+        Math.floor(r.saving / lump * 100) + '% 절약</span></div>' :
+      // 아니면 월 구독료만
+      '<div class="subtab-monthbox" role="note"><span class="subtab-monthbox-label">선택한 혜택 적용 시 월 구독료</span>' +
+        '<strong>월 ' + fmt(r.finalMonthly) + '원</strong></div>';
+    h = top + sum + '<p class="subtab-cond">기준: ' + esc(cond) + '</p>' +
+      '<button type="button" class="subtab-acc" data-acc aria-expanded="' + state.open + '">조건별 구독가 확인하기<i aria-hidden="true"></i></button>' +
+      '<div class="subtab-acc-body"' + (state.open ? '' : ' hidden') + '>' + h + '</div>';
 
     // 혜택 문구: 정책 기본 문구 + 기간 중인 행사 + 스킨 설정 extraPoints
     var points = (POL.texts.points || []).concat(promoTexts(info), CFG.extraPoints || []);
@@ -623,7 +633,9 @@
   function onClick(ev) {
     var t = ev.target.closest ? ev.target.closest('button, a') : null;
     if (!t || !root.contains(t) || t.disabled) return;
-    if (t.hasAttribute('data-tab')) {
+    if (t.hasAttribute('data-acc')) {
+      state.open = !state.open; renderPanel(); track('sub_tab_conditions', { sub_open: state.open });
+    } else if (t.hasAttribute('data-tab')) {
       if (t.getAttribute('data-tab') === 'sub') { openSub(); track('sub_tab_open'); }
       else { state.tab = 'lump'; render(); }
     } else if (t.hasAttribute('data-year')) {
