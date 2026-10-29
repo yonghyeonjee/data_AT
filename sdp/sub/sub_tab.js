@@ -7,8 +7,8 @@
         구독요금            = 6년 무상수리 13420 / 6년 방문케어 20,020 / 6년 방문케어36 15840 / 3년 무상수리 0
         구독요금 RP20C3111S9 = (옵션 모델별로 따로 지정할 때)
       같은 약정+케어는 덮어쓰고, 없던 조합은 추가, 0 은 그 요금제를 숨김
-   5) 할인율·선납 한도·카드 유의사항·행사 문구는 sub_policy.js(SUB_POLICY) 에서 읽는다
-      파일이 없거나 못 불러오면 아래 DEFAULT_POLICY(현재 정책값)로 계산한다
+   5) 할인율·선납 한도·카드 유의사항·행사 문구·공통 기준값(처음 선택 카드·실적 구간, 상담 주소, 전화 = defaults)은 sub_policy.js(SUB_POLICY) 에서 읽는다
+      파일이 없거나 못 불러오면 아래 DEFAULT_POLICY(현재 정책값)로 계산한다. 스킨 SUB_TAB_CONFIG 에 같은 항목이 있으면 스킨 값이 먼저다
    ※ 금액 계산은 calc_subscribe.html 과 같은 식을 쓴다
       - 구독료 할인(자동납부)·선납 할인: calcDiscount  (정수기는 본사 사전계산값 WATER_POLICY)
       - 선납금: ROUND(총구독료 × 선납비율 / 1.1 / 개월, -2) × 개월 × 1.1
@@ -37,6 +37,8 @@ function main() {
       maxByName: [{ cat: '의류케어', contains: '에어드레서', max: 0.5 }, { cat: '조리기기', contains: '후드', max: 0.3 }],
       notes: ['선납금은 구독 신청 시에만 선택할 수 있으며, 구독 기간 중에는 변경이 어렵습니다.']
     },
+    // 공통 기준값 — 처음 선택되는 카드·실적 구간, 상담 신청 주소, 전화 (관리자 › 구독 혜택 정책 › 기본 기준·상담 연락처 · mvp_253). 스킨 CFG 가 비어 있을 때 쓴다
+    defaults: { card: '삼성카드', tier: '30만↑', consultUrl: '/main/html.php?htmid=service/SamSungSubscription.html', tel: '' },
     cards: {}, cardNotes: [], promos: [],
     texts: {
       points: ['목돈 없이 월 납부 · 약정 기간 동안 무상수리'],
@@ -339,18 +341,18 @@ function main() {
   }
   // 기본 카드 혜택만 적용했을 때(선납 없음) 일시불 대비 최대 절감액 — 탭 배지용
   function bestSaving(info) {
-    var dc = cardNames().indexOf(CFG.defaultCard) >= 0 ? CFG.defaultCard : '';
+    var dc = cardNames().indexOf(defaultCard()) >= 0 ? defaultCard() : '';
     var o = { prepay: 0, card: dc, tier: defaultTier(dc), cardOn: !!dc }, best = 0;
     info.p.forEach(function (p) { best = Math.max(best, calc(info, p, o).saving); });
     return best;
   }
-  // 처음 선택된 카드·실적 구간 (스킨 SUB_TAB_CONFIG 의 defaultCard · defaultTier 가 비어 있으면 이 값)
-  var DEFAULT_CARD = '삼성카드', DEFAULT_TIER = '30만↑';
+  // 처음 선택된 카드·실적 구간 — 스킨 SUB_TAB_CONFIG 의 defaultCard · defaultTier 가 비어 있으면 데이터센터 정책 SUB_POLICY.defaults (관리자 › 구독 혜택 정책 › 기본 기준)
+  function defaultCard() { return CFG.defaultCard || (POL.defaults && POL.defaults.card) || ''; }
   function defaultTier(name) {
     var cd = window.SUB_CARDS && window.SUB_CARDS[name];
     if (!cd) return '';
     var tiers = Object.keys(cd.t);
-    var want = CFG.defaultTier || DEFAULT_TIER;
+    var want = CFG.defaultTier || (POL.defaults && POL.defaults.tier) || '';
     return tiers.indexOf(want) >= 0 ? want : tiers[0];
   }
   function setModel(m, cb) {
@@ -366,7 +368,7 @@ function main() {
           state.best = bestSaving(info);
         } else state.min = 0;
         if (state.card && cardNames().indexOf(state.card) < 0) state.card = '';
-        var defCard = CFG.defaultCard || DEFAULT_CARD;
+        var defCard = defaultCard();
         if (!state.card && cardNames().indexOf(defCard) >= 0) { state.card = defCard; state.tier = defaultTier(defCard); }
         if (cb) cb();
       }); });
@@ -640,6 +642,7 @@ function main() {
      라벨: CFG.lumpLabel · CFG.consultLabel */
   var PHONE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
   function ctaHtml(consultHref) {
+    var tel = CFG.tel || (POL.defaults && POL.defaults.tel) || '';   // 스킨에 없으면 데이터센터 정책의 전화
     if (CFG.cta === 'lump+consult') {
       var lumpOk = !!CFG.lumpUrl || (CFG.lumpPrice > 0);
       return '<div class="subtab-cta subtab-cta--two">' +
@@ -649,7 +652,7 @@ function main() {
     }
     return '<div class="subtab-cta">' +
       '<a class="subtab-cta-main" data-cta="consult" href="' + esc(consultHref) + '">' + PHONE_SVG + esc(CFG.consultLabel || '상담하고 구독하기') + '</a>' +
-      (CFG.tel ? '<a class="subtab-cta-sub" data-cta="tel" href="tel:' + esc(CFG.tel.replace(/[^0-9]/g, '')) + '">' + esc(CFG.tel) + '</a>' : '') +
+      (tel ? '<a class="subtab-cta-sub" data-cta="tel" href="tel:' + esc(tel.replace(/[^0-9]/g, '')) + '">' + esc(tel) + '</a>' : '') +
       '</div>';
   }
   // 일시불 탭으로 전환하고 가격 영역을 보여준다
@@ -721,7 +724,7 @@ function main() {
 
   // 상담 신청 페이지 주소 — 이미 ?htmid=… 가 붙어 있으면 & 로 잇는다. 관심 모델·품목·메모는 그 뒤의 from/product/model/memo 로 넘어가 자동 채움된다
   function consultBase() {
-    var u = CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html';
+    var u = CFG.consultUrl || (POL.defaults && POL.defaults.consultUrl) || '/main/html.php?htmid=service/SamSungSubscription.html';
     return u + (u.indexOf('?') >= 0 ? '&' : '?');
   }
 

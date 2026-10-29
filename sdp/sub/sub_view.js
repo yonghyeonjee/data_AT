@@ -243,7 +243,8 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     models: [model], goodsNo: goods ? String(goods[0]) : '',
     lumpPrice: goods && goods[3] > 0 ? goods[3] : 0,   // 시흥몰 일시불 판매가 → "일시불보다 ○원 저렴"·"일시불 구매가" 비교가 함께 나온다
     defaultTab: 'sub', enabled: true, lumpOnly: [],
-    consultUrl: CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html',
+    // 상담 주소·전화·기본 카드는 비워 두면 sub_tab.js 가 데이터센터 정책(SUB_POLICY.defaults · 관리자 › 구독 혜택 정책 › 기본 기준)을 쓴다 — 구독탭과 같은 기준
+    consultUrl: CFG.consultUrl || '',
     tel: '', defaultCard: CFG.defaultCard || '', defaultTier: '', cardGuideUrl: CFG.cardGuideUrl || '',
     productCat: catName, extraPoints: CFG.extraPoints || [],
     // 상담 신청서에 "구독 상품 페이지"에서 온 것으로 남긴다 (sub_tab.js 의 CFG.source / sourceName / utmSource)
@@ -261,7 +262,8 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     function calcFailed() {
       var ld = root.querySelector('[data-slot="loading"]');
       if (!ld) { ld = document.createElement('p'); ld.className = 'sv-loading'; ld.setAttribute('data-slot', 'loading'); root.querySelector('.sv-calc').appendChild(ld); }
-      var href = (CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html') + '&from=view&purpose=' + encodeURIComponent('신규구독') +
+      var pd = window.SUB_POLICY && window.SUB_POLICY.defaults;
+      var href = (CFG.consultUrl || (pd && pd.consultUrl) || '/main/html.php?htmid=service/SamSungSubscription.html') + '&from=view&purpose=' + encodeURIComponent('신규구독') +
         '&product=' + encodeURIComponent(catName) + '&model=' + encodeURIComponent(model) + '&src=' + encodeURIComponent('구독 상품 페이지') + '&utm_source=sub_view&utm_medium=fallback';
       ld.innerHTML = '이 모델은 요금 계산 화면을 준비 중입니다. 약정·케어별 요금은 <a href="' + esc(href) + '">구독 상담 신청</a>으로 바로 안내해 드립니다.';
       track('sub_view_calc_fail', { sv_cat: cat });

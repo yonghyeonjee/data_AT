@@ -183,12 +183,13 @@ window.SUB_SHOP_READY = true;
     return rows.filter(function (r) { return p.cats.indexOf(r.cat) >= 0 && (!p.seg || (r.seg && p.seg.test(r.seg))); });
   }
 
-  // 제휴카드 할인 — 기본 카드의 가장 낮은 실적 구간 (sub_tab.js 의 cardMonthly 와 같은 규칙)
+  // 제휴카드 할인 — 기본 카드·실적 구간은 데이터센터 정책 SUB_POLICY.defaults (구독탭·상세와 같은 기준 · mvp_253). CFG.defaultCard 가 있으면 그게 먼저, 정책에 없는 구간이면 가장 낮은 구간
   function cardInfo() {
     if (!CARDS) return null;
-    var name = CFG.defaultCard && CARDS[CFG.defaultCard] ? CFG.defaultCard : Object.keys(CARDS)[0];
+    var df = (POL && POL.defaults) || {}, want = CFG.defaultCard || df.card || '';
+    var name = want && CARDS[want] ? want : Object.keys(CARDS)[0];
     var cd = CARDS[name]; if (!cd || !cd.t) return null;
-    var tier = Object.keys(cd.t)[0];
+    var tiers = Object.keys(cd.t), tier = df.tier && tiers.indexOf(df.tier) >= 0 ? df.tier : tiers[0];
     return { name: name, tier: tier, off: cd.t[tier] || 0, base: cd.base ? cd.base[tier] || cd.t[tier] : cd.t[tier],
       minMonthly: cd.minMonthly ? cd.minMonthly[tier] || 0 : 0 };
   }

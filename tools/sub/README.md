@@ -25,7 +25,7 @@ sub.policy · sub.card_policy · sub.promo ──────────┘    
 | `sub_index.js` | 모델번호 → [품목 키, 최저 월구독료, 최저 총구독료] (모든 상품상세가 받음 · 약 35KB) | DPS `dps.sub_model` (못 받으면 SDP `DATA`) |
 | `sub_plans_<품목키>.js` | 품목별 요금표 + 선납 미운영 + 정수기 본사 할인값 (구독 모델일 때 1개) | DPS (요금·선납 불가) · SDP `WATER_POLICY` |
 | `sub_cards.js` | 제휴카드 청구할인 표 | SDP `CARD` |
-| `sub_policy.js` | 자동납부·선납 할인율, 품목별 선납 한도, 카드 유의사항·노출 기간, 행사 문구, 안내 문구 | `fn_sub_policy_export()` |
+| `sub_policy.js` | 자동납부·선납 할인율, 품목별 선납 한도, 카드 유의사항·노출 기간, 행사 문구, 안내 문구, **공통 기준값 `defaults`**(처음 선택 카드·실적 구간 · 상담 신청 주소 · 전화 — 구독탭·구독센터 상세·목록이 같이 읽는다 · mvp_253) | `fn_sub_policy_export()` |
 | `sub_tab.js` · `sub_tab.css` | 탭 화면 코드 (손으로 커밋 · 생성 아님) | 이 저장소 |
 
 **공개 파일이다** — 제품 일시불가(`v`)·SPECS·인센티브·포인트 표는 넣지 않는다 (`build_sub.mjs` 가 애초에 읽지 않는다). 상세페이지 일시불가는 고도몰 판매가를 쓴다.

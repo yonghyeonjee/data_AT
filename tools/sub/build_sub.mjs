@@ -102,6 +102,12 @@ export function checkPolicy(pol) {
   (pp.maxByName || []).forEach((m, i) => { if (!m.cat || !m.contains) err.push(`prepay.maxByName[${i}]: cat, contains 가 필요합니다`); rate(m.max, `prepay.maxByName[${i}].max`); });
   for (const [name, c] of Object.entries(pol.cards || {})) period(c, 'cards.' + name);
   (pol.promos || []).forEach((p, i) => { if (!p.text) err.push(`promos[${i}]: text 가 필요합니다`); period(p, `promos[${i}]`); });
+  const df = pol.defaults;   // 공통 기준값 (mvp_253) — 기본 카드·실적 구간 · 상담 주소 · 전화
+  if (df != null) {
+    if (typeof df !== 'object' || !String(df.card || '').trim()) err.push('defaults.card: 기본 제휴카드 이름이 필요합니다');
+    if (df.consultUrl != null && !/^(\/|https:\/\/)/.test(String(df.consultUrl))) err.push('defaults.consultUrl: / 또는 https:// 로 시작해야 합니다');
+    if (df.tel != null && !/^[0-9-]*$/.test(String(df.tel))) err.push('defaults.tel: 숫자와 - 만 적을 수 있습니다');
+  }
   if (err.length) throw new Error('정책 오류\n  - ' + err.join('\n  - '));
   return pol;
 }

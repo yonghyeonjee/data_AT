@@ -3023,6 +3023,15 @@ function renderSubPolicy(){
   const promos=d.promos||[], on=promos.filter(p=>p.state==='on').length;
   $('spolMeta').innerHTML=`<span>정책 판 ${esc(d.ver||'-')}</span><span>마지막 배포 ${d.deployed?esc(d.deployed.ver)+' · '+esc(d.deployed.at):'아직 없음'}</span><span>행사 ${n(on)}건 진행 중</span>`;
   const h=[];
+  /* 0 기본 기준 · 상담 연락처 (mvp_253) — 구독탭·구독센터 상세·목록이 모두 같은 값을 읽는다. 고도몰 스킨 SUB_TAB_CONFIG 의 같은 항목은 비워 둔다 */
+  const D=P.defaults||{}, cardOpts=[...new Set([...(d.card_names||[]),...(D.card?[D.card]:[])])];
+  h.push(`<div class="spol-sec"><h4>기본 기준 · 상담 연락처 ${spStamp(up.defaults)}</h4>
+    <div class="spol-row"><label>처음 선택되는 제휴카드 <select class="in" id="sp_def_card">${cardOpts.map(c=>`<option ${c===D.card?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+      <label>실적 구간 <input class="in" id="sp_def_tier" value="${esc(D.tier||'')}" placeholder="30만↑" style="width:90px"></label>
+      <label>전화 <input class="in" id="sp_def_tel" value="${esc(D.tel||'')}" placeholder="031-8042-3166" style="width:140px"></label></div>
+    <div class="spol-row"><label style="flex:1;min-width:300px">상담 신청 주소 <input class="in" id="sp_def_consult" value="${esc(D.consultUrl||'')}" style="flex:1"></label>
+      <button class="btn sm" onclick="spSave('defaults',()=>({card:$('sp_def_card').value,tier:$('sp_def_tier').value.trim(),consultUrl:$('sp_def_consult').value.trim(),tel:$('sp_def_tel').value.trim()}))">저장</button></div>
+    <p class="spol-hint">상품상세 구독탭 머리의 금액·"카드 적용 시 최대 ○원 저렴" 배지, 구독센터 목록의 "카드 할인 시" 금액, 상세의 처음 선택값이 모두 이 카드·실적 구간으로 계산됩니다. 실적 구간은 카드 금액표의 구간 이름 그대로 (없는 이름이면 가장 낮은 구간). 전화를 비우면 전화 버튼이 빠집니다.</p></div>`);
   /* 1 자동납부 */
   h.push(`<div class="spol-sec"><h4>자동납부 할인 ${spStamp(up.autopay)}</h4>
     <div class="spol-row"><label>할인율 <input class="in num" id="sp_auto_rate" value="${esc(spPct(A.rate))}"> %</label>

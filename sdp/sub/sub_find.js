@@ -352,7 +352,8 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       '&src=' + encodeURIComponent('구독상품 찾기') +
       '&utm_source=sub_find&utm_medium=' + (r ? 'consult' : 'empty') + (r ? '&utm_campaign=' + encodeURIComponent(r.model) : '');
     // 상담 주소에 이미 ? 가 있을 수 있다 (예: /main/html.php?htmid=service/SamSungSubscription.html) → & 로 잇는다
-    var u = CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html';
+    var pd = window.SUB_POLICY && window.SUB_POLICY.defaults;   // 데이터센터 정책의 상담 주소 (구독탭과 같은 기준)
+    var u = CFG.consultUrl || (pd && pd.consultUrl) || '/main/html.php?htmid=service/SamSungSubscription.html';
     return u + (u.indexOf('?') >= 0 ? '&' : '?') + q;
   }
   // 모든 모델은 구독 상품 페이지(sub_view)로 — 설정이 없으면 예전처럼 상품상세 구독탭/상담 신청으로
