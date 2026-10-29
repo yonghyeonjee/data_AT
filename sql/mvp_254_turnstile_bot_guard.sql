@@ -72,3 +72,11 @@ revoke all on function core.f_turnstile_verify(text) from public, anon, authenti
 -- 롤백 시험 5경우: log·토큰 없음 → 기록만 / enforce·토큰 없음 → 숨김 no_token / enforce·가짜 토큰 → 숨김 invalid-input-response /
 --   enforce·재전송 → 검사 안 함 / enforce·Cloudflare 응답 없음 → 정상 접수(ok null)
 -- 켜기: update core.turnstile_config set mode = 'enforce' where id = 1;
+
+-- ④ 2026-10-29 16:00 — 막는 모드 켬 · 인스타그램 규칙 풀기 (사용자 결정: 본 페이지 SUB v1.6.3 반영 확인 뒤)
+--   fn_submit_inquiry 부분 치환: 자급제 스팸 조건에서 "pageUrl ~* 'utm_source=meta|instagram' or" 를 뺌
+--     (남은 규칙 = 3분 안 자급제 2건 이상 · 페이지 botCheck · Turnstile)
+--   update core.turnstile_config set mode = 'enforce' where id = 1;
+--   롤백 시험: 인스타 주소 자급제·토큰 없음 → '봇 확인 실패 (no_token)' / 인스타 주소·Cloudflare 응답 없음 → 정상 접수(송희봉 배정)
+--             일반 구독·가짜 토큰 → '봇 확인 실패 (invalid-input-response)'
+--   미리보기 페이지 https://db.samsungat.co.kr/tools/godo/ts_demo.html?mode=check|pass|block (Cloudflare 테스트 키)
