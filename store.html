@@ -1408,6 +1408,19 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel hidden" id="tab-quote">
     <div class="intro"><b>견적서</b>는 홈페이지 견적서 페이지에서 만들고, 여기서 찾아 고객에게 보냅니다. 상담 줄의 <b>견적서 만들기</b>를 누르면 고객 정보가 채워진 채 열립니다.</div>
     <div class="cta2"><button onclick="openQuote()">견적서 발행 ↗</button><button class="alt" onclick="openCalc()">구독료 계산기 ↗</button></div>
+    <div class="card" id="prCard">
+      <h2>구독 요금 직접 관리 <span id="prSub">상세페이지 구독탭·구독센터에 나가는 월 구독료를 손으로 바꿉니다</span></h2>
+      <div id="prBody"><div class="empty">불러오는 중…</div></div>
+      <div class="lvmask hidden" id="prDlg" onclick="if(event.target===this)prDlgClose()">
+        <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="prDlgTitle" style="max-height:92vh;overflow:auto">
+          <button type="button" class="lvx" onclick="prDlgClose()" aria-label="닫기" title="닫기">✕</button>
+          <h3 id="prDlgTitle">구독 요금</h3>
+          <div class="lvform" id="prDlgForm"></div>
+          <p class="note-in" id="prDlgErr" style="color:var(--bad);min-height:18px;margin:6px 0 0"></p>
+          <div class="btns" style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button type="button" class="btn ghost" onclick="prDlgClose()">취소</button><button type="button" class="btn" id="prDlgOk" onclick="prDlgSave()">저장</button></div>
+        </div>
+      </div>
+    </div>
     <div class="card" id="spCard">
       <h2>구독 혜택 안내 <span id="spSub">상세페이지 구독탭에 나가는 혜택·행사 문구</span></h2>
       <div id="spBody"><div class="empty">불러오는 중…</div></div>
@@ -3560,6 +3573,7 @@ function goTab(name, fromHistory){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
   ['home','inbox','assign','quote','customer','alerts','stats','leave','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='quote' && !SP_LOADED){ SP_LOADED=true; loadSubPolicy(); }   /* 구독 혜택 안내 (mvp_246) */
+  if(name==='quote' && !PR_LOADED){ PR_LOADED=true; loadSubPrice(); }   /* 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) */
   if(name==='leave' && !LV_LOADED){ LV_LOADED=true; loadLeave(); }
   if(name==='stats' && !ST_LOADED){ ST_LOADED=true; stPick(todayStr().slice(0,8)+'01', todayStr()); }   /* 처음 열면 이 달 · 일별 (v233) */
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
@@ -5820,6 +5834,102 @@ function renderAllConsults(){
     + (ALL_ROWS.length ? `<div class="note-in" style="text-align:center;margin-top:6px">${ALL_ROWS.length}건 중 ${ALL_PG*per+1}–${ALL_PG*per+rows.length} 표시</div>` : '');
 }
 async function asgTo2(id){ ASG_IDS=[id]; await asgTo(ME); }
+
+/* ═══ 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) : DPS 요금표 위에 손으로 덮어쓰는 월 구독료 · 숨김 — 보기는 누구나, 고치기는 점장님·대표님 또는 [구독가 지정] 권한(관리자 › 옵션·권한)
+   저장하면 sub.price_override 에 들어가고 10분 안에 db.samsungat.co.kr/sdp/sub 로 배포돼 상세페이지 구독탭·구독센터에 나간다.
+   지금 나가는 요금은 배포된 sdp/sub/sub_index.js · sub_plans_<품목>.js 를 그대로 읽어 보여 준다 (이미 덮어쓴 값 포함) */
+let PR_LOADED=false, PR=null, PR_DLG=null;
+const PR_BASE=(location.pathname.includes('/test/')?'../../':'./')+'sdp/sub/';
+const prLoadJs=src=>new Promise(r=>{ const s=document.createElement('script'); s.src=src; s.onload=s.onerror=()=>r(); document.head.appendChild(s); });
+async function prPlans(model){   /* 배포된 요금표에서 이 모델의 [품목키, 품목명, 세부유형, 요금제들] */
+  const m=String(model||'').replace(/\s/g,'').toUpperCase(); if(!m) return null;
+  if(!window.SUB_INDEX) await prLoadJs(PR_BASE+'sub_index.js?t='+Date.now());
+  const ix=window.SUB_INDEX; if(!ix) return {err:'배포된 요금표를 못 읽었습니다'};
+  const e=(ix.m||{})[m]; if(!e) return {m, none:true, cats:ix.cats||{}};
+  const key=e[0]; if(!(window.SUB_PLANS||{})[key]) await prLoadJs(PR_BASE+'sub_plans_'+key+'.js?v='+encodeURIComponent(ix.ver||''));
+  const rec=((window.SUB_PLANS||{})[key]||{})[m]||{};
+  return {m, key, cat:(ix.cats||{})[key]||key, seg:rec.s||'', plans:rec.p||[], cats:ix.cats||{}};
+}
+async function loadSubPrice(){
+  if(!CODE) return;
+  try{ PR=await rpc('fn_store_sub_price_list',{p_code:CODE}); }catch(e){ $('prBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  renderSubPrice();
+}
+function prWhat(r){
+  const scope=(r.term?r.term+'년':'모든 약정')+' · '+(r.care||'모든 케어');
+  return r.action==='hide' ? `${scope} — <b>상세페이지에서 숨김</b>` : `${scope} — 월 <b>${won(r.monthly)}</b>${r.total?` <span style="color:var(--muted)">(총 ${won(r.total)})</span>`:''}`;
+}
+function renderSubPrice(){
+  const d=PR, can=!!d.can_edit, rows=d.rows||[];
+  const ST={on:['적용 중','ok'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
+  $('prSub').textContent=(can?'점장님·대표님은 여기서 바로 고칩니다':'상세페이지 구독탭·구독센터에 나가는 월 구독료를 손으로 바꾼 내역')+(d.deployed?` · 마지막 배포 ${d.deployed.at}`:'');
+  let h=`<p class="note-in" style="margin:0 0 10px">요금은 매일 DPS 에서 자동으로 들어옵니다. DPS 값이 틀렸거나 행사가로 잠깐 바꿔야 할 때만 여기에 넣으세요. 저장하면 <b>10분 안에</b> 상세페이지에 반영되고, 끄면 다시 DPS 값으로 돌아갑니다.</p>`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px"><b style="font-size:calc(14px * var(--font-scale))">바꾼 요금 <span style="color:var(--muted);font-weight:400">${rows.filter(r=>r.state==='on').length}건 적용 중</span></b>${can?'<button type="button" class="btn sm" onclick="prDlgOpen(null)">＋ 요금 넣기</button>':''}</div>`;
+  h+=rows.length?`<div class="list">${rows.map(r=>`<div class="item" style="grid-template-columns:1fr auto;opacity:${r.state==='on'||r.state==='soon'?1:.55}">
+      <div><div style="font-weight:700">${esc(r.model)}${r.cat?` <span class="pill">${esc(r.cat)}</span>`:''}</div>
+        <div style="margin:2px 0 0">${prWhat(r)}</div>
+        <div class="note-in" style="margin:2px 0 0">${r.from||r.to?esc(r.from||'')+' ~ '+esc(r.to||''):'기간 없음'}${r.note?' · '+esc(r.note):''} · ${esc(r.updated_by||'')} ${esc(r.updated_at||'')}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[r.state][1]}">${ST[r.state][0]}</span>${can?`<span style="display:flex;gap:6px"><button type="button" class="btn sm ghost" onclick="prDlgOpen(${r.id})">고치기</button><button type="button" class="btn sm ghost" onclick="prToggle(${r.id},${r.active?'false':'true'})">${r.active?'끄기':'켜기'}</button></span>`:''}</div></div>`).join('')}</div>`
+    :`<div class="empty">손으로 바꾼 요금이 없습니다 — 지금은 전부 DPS 요금 그대로입니다</div>`;
+  $('prBody').innerHTML=h;
+}
+function prDlgOpen(id){
+  if(!(PR&&PR.can_edit)) return;
+  const r=(id!=null && (PR.rows||[]).find(x=>x.id===id))||{action:'set',active:true};
+  PR_DLG={r, info:null}; $('prDlgErr').textContent='';
+  $('prDlgTitle').textContent=id!=null?'구독 요금 고치기':'구독 요금 넣기';
+  $('prDlgForm').innerHTML=`<div><label for="prf_model">모델번호</label><div style="display:flex;gap:6px"><input class="in" id="prf_model" value="${esc(r.model||'')}" autocapitalize="characters" placeholder="예: KQ55QNH80AFXKR" onkeydown="if(event.key==='Enter'){event.preventDefault();prLookup()}"><button type="button" class="btn sm ghost" onclick="prLookup()">요금 보기</button></div></div>
+    <div id="prf_now" class="note-in" style="margin:0"></div>
+    <div><label>할 일</label><div class="seg" id="prf_act" role="radiogroup"><button type="button" data-v="set" class="${r.action!=='hide'?'on':''}" onclick="prAct('set')">요금 바꾸기</button><button type="button" data-v="hide" class="${r.action==='hide'?'on':''}" onclick="prAct('hide')">상세페이지에서 숨김</button></div></div>
+    <div class="two"><div><label for="prf_term">약정</label><select class="in" id="prf_term"><option value="">모든 약정</option>${[1,2,3,4,5,6,7].map(y=>`<option value="${y}" ${Number(r.term)===y?'selected':''}>${y}년</option>`).join('')}</select></div>
+      <div><label for="prf_care">케어 <small>(요금제 이름 그대로)</small></label><input class="in" id="prf_care" list="prf_cares" value="${esc(r.care||'')}" placeholder="비우면 모든 케어"><datalist id="prf_cares"></datalist></div></div>
+    <div class="two" id="prf_fees"><div><label for="prf_mon">월 구독료 (원)</label><input class="in num" id="prf_mon" inputmode="numeric" oninput="$('prf_tot').value=''" value="${r.monthly!=null?Number(r.monthly):''}"></div>
+      <div><label for="prf_tot">총 구독료 <small>(비우면 월 × 개월)</small></label><input class="in num" id="prf_tot" inputmode="numeric" value="${r.total!=null?Number(r.total):''}"></div></div>
+    <div class="two" id="prf_newcat" style="display:none"><div><label for="prf_cat">품목 <small>(요금표에 없는 모델)</small></label><select class="in" id="prf_cat"><option value="">고르기</option></select></div>
+      <div><label for="prf_seg">세부유형 <small>(선택)</small></label><input class="in" id="prf_seg" value="${esc(r.seg||'')}"></div></div>
+    <div class="two"><div><label for="prf_from">시작일 (비우면 바로)</label><input class="in" type="date" id="prf_from" value="${esc(r.from||'')}"></div><div><label for="prf_to">종료일 (비우면 계속)</label><input class="in" type="date" id="prf_to" value="${esc(r.to||'')}"></div></div>
+    <div><label for="prf_note">메모 <small>(왜 바꿨는지 — 다른 분이 보고 판단)</small></label><input class="in" id="prf_note" value="${esc(r.note||'')}" placeholder="예: DPS 11월 단가 반영 전 · 본사 공문 1105"></div>`;
+  prAct(r.action==='hide'?'hide':'set');
+  $('prDlg').classList.remove('hidden');
+  if(r.model) prLookup(r.cat); else setTimeout(()=>$('prf_model').focus(),50);
+}
+function prAct(v){ $('prf_act').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); $('prf_fees').style.display=v==='hide'?'none':''; }
+async function prLookup(keepCat){
+  const box=$('prf_now'); box.textContent='요금표를 읽는 중…';
+  const info=await prPlans($('prf_model').value); PR_DLG.info=info;
+  if(!info){ box.textContent=''; return; }
+  if(info.err){ box.textContent=info.err; return; }
+  const catSel=$('prf_cat');
+  catSel.innerHTML='<option value="">고르기</option>'+Object.values(info.cats||{}).map(c=>`<option ${c===(keepCat||PR_DLG.r.cat)?'selected':''}>${esc(c)}</option>`).join('');
+  if(info.none){ $('prf_newcat').style.display=''; box.innerHTML='<b>지금 상세페이지 요금표에 없는 모델입니다.</b> 품목·약정·케어·월 구독료를 모두 넣으면 새로 올라갑니다.'; $('prf_cares').innerHTML=''; return; }
+  $('prf_newcat').style.display='none';
+  const cares=[...new Set(info.plans.map(p=>p[1]))];
+  $('prf_cares').innerHTML=cares.map(c=>`<option value="${esc(c)}">`).join('');
+  box.innerHTML=`<b>${esc(info.cat)}</b>${info.seg?' · '+esc(info.seg):''} · 지금 나가는 요금 <span style="color:var(--muted)">(눌러서 채우기)</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">`+
+    info.plans.map((p,i)=>`<span class="chip" onclick="prPick(${i})">${p[0]}년 ${esc(p[1])} · 월 ${won(p[3])}</span>`).join('')+'</div>';
+}
+function prPick(i){ const p=PR_DLG.info.plans[i]; $('prf_term').value=String(p[0]); $('prf_care').value=p[1]; $('prf_mon').value=p[3]; $('prf_tot').value=''; $('prf_mon').focus(); }
+function prDlgClose(){ $('prDlg').classList.add('hidden'); PR_DLG=null; }
+async function prDlgSave(){
+  if(!PR_DLG) return; const b=$('prDlgOk'), r=PR_DLG.r, info=PR_DLG.info;
+  const act=($('prf_act').querySelector('button.on')||{}).dataset?.v||'set', num=v=>String(v||'').replace(/[^\d.]/g,'');
+  const data={id:r.id, model:$('prf_model').value, action:act, term:$('prf_term').value||null, care:$('prf_care').value.trim()||null,
+    monthly:act==='set'?num($('prf_mon').value)||null:null, total:act==='set'?num($('prf_tot').value)||null:null,
+    cat:(info&&info.none)?$('prf_cat').value||null:(r.cat||null), seg:(info&&info.none)?$('prf_seg').value.trim()||null:(r.seg||null),
+    from:$('prf_from').value||null, to:$('prf_to').value||null, note:$('prf_note').value.trim()||null, active:r.active!==false};
+  if(info&&info.none&&act==='set'&&!(data.cat&&data.term&&data.care)){ $('prDlgErr').textContent='요금표에 없는 모델은 품목·약정·케어를 모두 골라 주세요'; return; }
+  if(info&&info.none&&act==='hide'){ $('prDlgErr').textContent='요금표에 없는 모델은 숨길 것이 없습니다'; return; }
+  b.disabled=true;
+  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:data}); prDlgClose(); toast('저장했습니다 · 10분 안에 상세페이지에 반영됩니다'); loadSubPrice(); }
+  catch(e){ $('prDlgErr').textContent=e.message; }
+  finally{ b.disabled=false; }
+}
+async function prToggle(id,on){
+  const r=(PR&&PR.rows||[]).find(x=>x.id===id); if(!r) return;
+  if(!on && !confirm(`${r.model} ${r.term?r.term+'년 ':''}${r.care||''} 바꾼 요금을 끌까요? 다시 DPS 요금으로 돌아갑니다 (기록은 남고 다시 켤 수 있습니다)`)) return;
+  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:{...r,active:!!on}}); toast(on?'다시 켰습니다':'껐습니다 · 10분 안에 DPS 요금으로 돌아갑니다'); loadSubPrice(); }
+  catch(e){ toast(e.message); }
+}
 
 /* ═══ 구독 혜택 안내 : 상세페이지 구독탭이 읽는 정책(fn_store_sub_policy) — 보기는 누구나, 행사 문구·카드 유의사항은 점장님·대표님이 바로 고친다 (mvp_246)
    할인율·선납 한도 같은 수치는 관리자 화면에서만 바꾼다. 저장하면 10분 안에 db.samsungat.co.kr/sdp/sub 로 배포된다 */
