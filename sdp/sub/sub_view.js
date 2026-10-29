@@ -243,6 +243,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     models: [model], goodsNo: goods ? String(goods[0]) : '',
     lumpPrice: goods && goods[3] > 0 ? goods[3] : 0,   // 시흥몰 일시불 판매가 → "일시불보다 ○원 저렴"·"일시불 구매가" 비교가 함께 나온다
     defaultTab: 'sub', enabled: true, lumpOnly: [],
+    openConditions: true,   // 구독 전용 페이지는 [조건별 구독가] 를 처음부터 펼쳐 둔다 (상품상세 구독탭은 요약만)
     // 상담 주소·전화·기본 카드는 비워 두면 sub_tab.js 가 데이터센터 정책(SUB_POLICY.defaults · 관리자 › 구독 혜택 정책 › 기본 기준)을 쓴다 — 구독탭과 같은 기준
     consultUrl: CFG.consultUrl || '',
     tel: '', defaultCard: CFG.defaultCard || '', defaultTier: '', cardGuideUrl: CFG.cardGuideUrl || '',

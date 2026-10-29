@@ -67,7 +67,7 @@ function main() {
     tab: 'lump', model: '', info: null, min: 0, best: 0,
     year: 0, type: '', cycle: 0, prepay: 0,
     card: '', tier: '', cardOn: true,
-    open: false    // [조건별 구독가 확인하기] 펼침 — 처음엔 요약만
+    open: !!CFG.openConditions    // [조건별 구독가 확인하기] 펼침 — 상품상세는 요약만, 구독 전용 페이지(sub_view)는 CFG.openConditions 로 처음부터 펼침
   };
   var root, els = {};
   var OVR = {};      // 모델 → 추가항목 "구독요금" 파싱 결과 { set: [[y,care,total,monthly]], del: ['y|care'] }
@@ -431,16 +431,17 @@ function main() {
   }
 
   // 탭 머리: 총 구독액(결제 예상액)을 크게, 월 납부액은 작게
+  // 탭 머리는 "총 ○○○원 (○○만원 저렴)" 만 — 월 납부액·조건은 패널에서 (2026-10-29)
+  function shortWon(v) { return v >= 10000 ? fmt(Math.floor(v / 10000)) + '만원' : fmt(v) + '원'; }
   function setHeadPrice(r) {
-    els.subPrice.textContent = r.years + '년 총 ' + fmt(r.expected) + '원';
-    els.subMonth.textContent = '월 ' + fmt(r.finalMonthly) + '원';
+    els.subPrice.textContent = '총 ' + fmt(r.expected) + '원';
+    els.subMonth.textContent = r.saving > 0 ? '(' + shortWon(r.saving) + ' 저렴)' : '';
   }
   function renderHead() {
     var cur = current();   // 선택한 조건(약정·케어·선납·카드) 그대로의 월 납부 예상금액 — 아래 요약·하단 바와 같은 값
     if (cur) setHeadPrice(cur);
     else { els.subPrice.textContent = state.min ? '월 ' + fmt(state.min) + '원~' : ''; els.subMonth.textContent = ''; }
-    els.subSave.hidden = !state.best;
-    els.subSave.textContent = state.best ? '카드 적용 시 최대 ' + fmt(state.best) + '원 저렴' : '';
+    els.subSave.hidden = true;   // 빨간 배지는 쓰지 않는다 — 절감액은 총액 옆 "(○○만원 저렴)" 으로
     root.classList.toggle('is-cheaper', !!state.best);
     var btns = root.querySelectorAll('.subtab-btn');
     for (var i = 0; i < btns.length; i++) {
