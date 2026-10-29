@@ -1,17 +1,19 @@
-<!-- SUB v1.6.3 / 2026-10-29 : 봇 차단 — Cloudflare Turnstile(사람 확인) + 숨은 칸 · 제출 시간 · 사람 입력 흔적 · 같은 브라우저 10분 3건
-     v1.6.2 블록을 붙였다면 그 블록을 지우고 이것으로 바꾼다 (두 개 같이 두지 말 것). 붙이는 곳·확인 방법은 sub_turnstile.md -->
+<!-- SUB v1.6.4 / 2026-10-29 : 봇 차단 — Cloudflare Turnstile(사람 확인) + 숨은 칸 · 제출 시간 · 사람 입력 흔적 · 같은 브라우저 10분 3건
+     사람 확인을 못 받으면 보내지 않고 "접수되지 않았습니다" 안내 (v1.6.3 은 보내고 서버가 숨겼다 — 고객은 접수된 줄 알았다)
+     v1.6.2·v1.6.3 블록이 있으면 지우고 이것으로 바꾼다 (두 개 같이 두지 말 것). 붙이는 곳·확인 방법은 sub_turnstile.md -->
 <script>
 (function () {
   if (window.__samBot) return;
   window.__samBot = 1;
   var SITEKEY = window.SAM_TS_KEY || '0x4AAAAAAFqp7LFwZAAhjdVD';
+  var TEL = '031-8042-3166';
   var T0 = Date.now();
   var human = 0;
 
   /* ── 1. 사람 확인 (Cloudflare Turnstile) ─────────────────────────
      평소엔 안 보이고, Cloudflare 가 의심할 때만 화면 아래에 체크 상자가 뜬다.
      토큰은 한 번만 쓸 수 있고 5분 유효 — 첫 터치 때 미리 받아 두고, 쓰면 새로 받는다. */
-  var box = null, wid = null, tok = '', tokAt = 0, state = 'loading', waiters = [];
+  var box = null, wid = null, tok = '', tokAt = 0, state = 'loading', waiters = [], nextT = null;
   function boxEl() {
     if (box) return box;
     box = document.createElement('div');
@@ -29,6 +31,7 @@
     w.forEach(function (f) { f(); });
   }
   function run() {
+    clearTimeout(nextT);
     if (wid === null || !window.turnstile) return;
     tok = ''; state = 'running';
     try { window.turnstile.reset(wid); window.turnstile.execute(wid); } catch (e) { settle('', 'error:exec'); }
@@ -54,24 +57,56 @@
   s.onerror = function () { settle('', 'noscript'); };
   document.head.appendChild(s);
 
-  /* 쓸 토큰 하나 — 미리 받아 둔 게 있으면 바로, 없으면 받을 때까지(사람 확인이 뜨면 최대 90초) */
+  /* 쓸 토큰 하나 — 미리 받아 둔 게 있으면 바로, 없으면 받을 때까지(사람 확인이 뜨면 최대 90초).
+     한 번에 여러 건을 보내면(렌탈 여러 품목) 하나씩 차례로 새 토큰을 받는다. */
+  var WAIT = { loading: 1, ready: 1, running: 1, pending: 1, expired: 1 };
   function getToken() {
     return new Promise(function (res) {
-      function take() { var t = tok, st = state; tok = ''; setTimeout(run, 300); res({ t: t, st: st }); }
+      var done = false, limit = null;
+      function finish(r) { if (done) return; done = true; clearTimeout(limit); res(r); }
+      function take() {
+        var t = tok, st = state;
+        tok = ''; state = 'pending';
+        clearTimeout(nextT); nextT = setTimeout(run, 300);
+        finish({ t: t, st: st });
+      }
+      function waiter() {
+        if (done) return;
+        if (tok) return take();
+        if (WAIT[state]) { waiters.push(waiter); return; }
+        finish({ t: '', st: state });
+      }
       if (tok && Date.now() - tokAt < 270000) return take();
-      if (state === 'noscript' || /^error:(render|exec)/.test(state)) return res({ t: '', st: state });
-      var done = false;
-      var limit = setTimeout(function () {
+      if (state === 'noscript' || /^error:(render|exec)/.test(state)) return finish({ t: '', st: state });
+      limit = setTimeout(function () {
         if (done) return;
         if (box && box.style.display === 'block') {           /* 체크 상자가 떠 있으면 더 기다린다 */
-          setTimeout(function () { if (!done) { done = true; res({ t: '', st: 'timeout' }); } }, 75000);
+          limit = setTimeout(function () { finish({ t: '', st: 'timeout' }); }, 75000);
           return;
         }
-        done = true; res({ t: '', st: state === 'loading' ? 'noscript' : 'timeout' });
+        finish({ t: '', st: state === 'loading' ? 'noscript' : 'timeout' });
       }, 15000);
-      waiters.push(function () { if (done) return; done = true; clearTimeout(limit); if (tok) take(); else res({ t: '', st: state }); });
-      if (state !== 'running') run();
+      waiters.push(waiter);
+      if (state !== 'running' && state !== 'pending') run();
     });
+  }
+
+  /* 확인을 못 받았을 때 고객에게 알린다 — 페이지의 '일시적인 오류' 창은 한 번 건너뛴다(창이 두 번 뜨지 않게) */
+  var quietUntil = 0, lastNotice = 0, oalert = window.alert;
+  window.alert = function (m) {
+    if (Date.now() < quietUntil && /일시적인 오류/.test(String(m))) return;
+    return oalert.apply(window, arguments);
+  };
+  function blockedNotice(st) {
+    if (Date.now() - lastNotice > 3000) {
+      lastNotice = Date.now();
+      var msg = st === 'noscript'
+        ? '보안 확인 화면을 불러오지 못해 접수되지 않았습니다.\n광고 차단 기능을 끄고 다시 눌러 주시거나 ' + TEL + ' 으로 전화 주시면 바로 도와드립니다.'
+        : '사람인지 확인을 마치지 못해 접수되지 않았습니다.\n잠시 뒤 다시 눌러 주세요. 계속 안 되면 ' + TEL + ' 으로 전화 주시면 바로 도와드립니다.';
+      try { oalert.call(window, msg); } catch (e) { }
+    }
+    quietUntil = Date.now() + 1500;
+    if (state !== 'noscript') run();                       /* 다시 누르면 새로 확인 */
   }
 
   ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
@@ -99,20 +134,23 @@
     catch (e) { return []; }
   }
 
-  /* ── 3. GAS 로 가는 접수에 토큰·검사값을 싣는다. 봇이면 보내지 않고 '완료' 화면만 ── */
+  /* ── 3. GAS 로 가는 접수에 토큰·검사값을 싣는다.
+     봇 흔적(숨은 칸 · 4초 안 · 입력 0 · 반복)이면 보내지 않고 '완료' 화면만 (봇이 눈치채지 못하게)
+     사람 확인을 못 받으면 보내지 않고 안내 → 고객은 다시 누르거나 전화 ── */
   var ofetch = window.fetch;
   window.fetch = function (url, opt) {
     try {
       if (String(url).indexOf('script.google.com') > -1 && opt && typeof opt.body === 'string') {
         var d = JSON.parse(opt.body);
         var ms = Date.now() - T0, log = readLog(), hp = hpFilled();
-        d.botCheck = { hp: hp ? 1 : 0, ms: ms, human: human, recent: log.length, v: '1.6.3' };
+        d.botCheck = { hp: hp ? 1 : 0, ms: ms, human: human, recent: log.length, v: '1.6.4' };
         if (hp || ms < 4000 || !human || log.length >= 3) {
           return Promise.resolve(new Response(null, { status: 200 }));
         }
-        log.push(Date.now());
-        try { localStorage.setItem('sam_sub_log', JSON.stringify(log)); } catch (e) { }
         return getToken().then(function (r) {
+          if (!r.t) { blockedNotice(r.st); throw new Error('bot-check ' + r.st); }
+          log.push(Date.now());
+          try { localStorage.setItem('sam_sub_log', JSON.stringify(log)); } catch (e) { }
           d.cfToken = r.t;
           d.botCheck.ts = r.st;
           return ofetch.call(window, url, Object.assign({ }, opt, { body: JSON.stringify(d) }));
