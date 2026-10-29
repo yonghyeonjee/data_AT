@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>사람 확인 미리보기</title>
+<style>
+  :root{ --ink:#0f172a; --sub:#55607a; --line:#e2e8f0; --blue:#0057ff; }
+  body{ margin:0; font:16px/1.6 -apple-system,BlinkMacSystemFont,'Malgun Gothic','Apple SD Gothic Neo',sans-serif; color:var(--ink); background:#f6f8fc; word-break:keep-all; }
+  .wrap{ max-width:560px; margin:0 auto; padding:24px 16px 160px; }
+  h1{ font-size:21px; margin:0 0 6px; } p{ margin:0 0 12px; color:var(--sub); font-size:14.5px; }
+  .modes{ display:grid; gap:8px; margin:16px 0; }
+  .modes a{ display:block; border:1.5px solid var(--line); background:#fff; border-radius:12px; padding:12px 14px; text-decoration:none; color:var(--ink); min-height:40px; }
+  .modes a b{ display:block; font-size:15.5px; } .modes a span{ font-size:13px; color:var(--sub); }
+  .modes a.on{ border-color:var(--blue); background:#eef4ff; }
+  .card{ background:#fff; border:1.5px solid var(--line); border-radius:16px; padding:18px 16px; }
+  label{ display:block; font-weight:700; font-size:15px; margin:0 0 6px; }
+  input{ width:100%; box-sizing:border-box; min-height:48px; border:1.5px solid var(--line); border-radius:8px; padding:12px 14px; font-size:16px; }
+  button{ width:100%; margin-top:14px; min-height:52px; border:0; border-radius:99px; background:var(--blue); color:#fff; font-size:17px; font-weight:800; }
+  button:disabled{ background:#cbd5e1; }
+  #out{ margin-top:14px; font-size:14px; white-space:pre-wrap; background:#f1f5f9; border-radius:10px; padding:12px; display:none; }
+</style>
+<script>
+  /* 미리보기 전용: Cloudflare 공식 테스트 키 (아무 주소에서나 동작 · 토큰은 실제 검증을 통과하지 않음) */
+  (function () {
+    var m = (location.search.match(/[?&]mode=(\w+)/) || [])[1] || 'check';
+    window.SAM_DEMO_MODE = m;
+    window.SAM_TS_KEY = { check: '3x00000000000000000000FF', pass: '1x00000000000000000000AA', block: '2x00000000000000000000AB' }[m] || '3x00000000000000000000FF';
+    /* 실제 GAS 로 나가지 않게 가짜 접수 주소를 가로챈다 */
+    var real = window.fetch;
+    window.fetch = function (url, opt) {
+      if (String(url).indexOf('script.google.com/macros/s/DEMO') > -1) {
+        window.SAM_DEMO_SENT = opt && opt.body;
+        return Promise.resolve(new Response('{}', { status: 200 }));
+      }
+      return real.apply(window, arguments);
+    };
+  })();
+</script>
+</head><body>
+<div class="wrap">
+  <h1>사람 확인 미리보기</h1>
+  <p>구독 상담 페이지(SUB v1.6.3)와 같은 코드입니다. 여기서 [신청하기]를 눌러도 실제로 접수되지 않습니다.</p>
+  <div class="modes" id="modes">
+    <a href="?mode=check" data-m="check"><b>① 체크 상자가 뜨는 경우</b><span>Cloudflare 가 의심할 때 — 화면 아래에 상자가 뜹니다</span></a>
+    <a href="?mode=pass" data-m="pass"><b>② 대부분의 고객</b><span>아무것도 안 뜨고 뒤에서 통과합니다</span></a>
+    <a href="?mode=block" data-m="block"><b>③ 막힌 경우</b><span>통과하지 못하면 확인 없이 보내고 서버가 숨깁니다</span></a>
+  </div>
+  <div class="card">
+    <label for="d-name">이름</label>
+    <input id="d-name" value="미리보기" autocomplete="off">
+    <button id="d-go" disabled>4초 뒤 누를 수 있어요</button>
+    <div id="out"></div>
+  </div>
+</div>
+<script>
+  (function () {
+    Array.prototype.forEach.call(document.querySelectorAll('#modes a'), function (a) { a.classList.toggle('on', a.getAttribute('data-m') === window.SAM_DEMO_MODE); });
+    var go = document.getElementById('d-go'), out = document.getElementById('out');
+    setTimeout(function () { go.disabled = false; go.textContent = '신청하기'; }, 4300);
+    go.addEventListener('click', function () {
+      go.disabled = true; go.textContent = '확인 중…';
+      fetch('https://script.google.com/macros/s/DEMO/exec', { method: 'POST', mode: 'no-cors', body: JSON.stringify({ customerName: document.getElementById('d-name').value }) })
+        .then(function () {
+          var d = { }; try { d = JSON.parse(window.SAM_DEMO_SENT || '{}'); } catch (e) { }
+          out.style.display = 'block';
+          out.textContent = d.cfToken ? '✅ 사람 확인 통과 — 접수에 확인 표식이 실려 나갑니다.\n(결과: ' + (d.botCheck && d.botCheck.ts) + ')'
+            : (window.SAM_DEMO_SENT ? '⛔ 확인을 받지 못해 표식 없이 나갑니다 — 막는 모드에서는 서버가 숨깁니다.\n(결과: ' + (d.botCheck && d.botCheck.ts) + ')'
+            : '⛔ 봇으로 보여 보내지 않았습니다 (숨은 칸 · 4초 안 제출 · 같은 브라우저 반복).');
+          go.disabled = false; go.textContent = '다시 신청하기';
+        });
+    });
+  })();
+</script>
+<!-- SUB v1.6.3 / 2026-10-29 : 봇 차단 — Cloudflare Turnstile(사람 확인) + 숨은 칸 · 제출 시간 · 사람 입력 흔적 · 같은 브라우저 10분 3건
+     v1.6.2 블록을 붙였다면 그 블록을 지우고 이것으로 바꾼다 (두 개 같이 두지 말 것). 붙이는 곳·확인 방법은 sub_turnstile.md -->
+<script>
+(function () {
+  if (window.__samBot) return;
+  window.__samBot = 1;
+  var SITEKEY = window.SAM_TS_KEY || '0x4AAAAAAFqp7LFwZAAhjdVD';
+  var T0 = Date.now();
+  var human = 0;
+
+  /* ── 1. 사람 확인 (Cloudflare Turnstile) ─────────────────────────
+     평소엔 안 보이고, Cloudflare 가 의심할 때만 화면 아래에 체크 상자가 뜬다.
+     토큰은 한 번만 쓸 수 있고 5분 유효 — 첫 터치 때 미리 받아 두고, 쓰면 새로 받는다. */
+  var box = null, wid = null, tok = '', tokAt = 0, state = 'loading', waiters = [];
+  function boxEl() {
+    if (box) return box;
+    box = document.createElement('div');
+    box.id = 'sam-ts';
+    box.style.cssText = 'display:none;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483000;'
+      + 'background:#fff;border:1px solid #d5dbe5;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:14px 14px 10px;max-width:calc(100vw - 24px);';
+    box.innerHTML = '<div style="font:600 14px/1.4 sans-serif;color:#1f2937;margin:0 0 8px;">문의 접수 전에 사람인지 확인해 주세요</div><div id="sam-ts-w"></div>';
+    document.body.appendChild(box);
+    return box;
+  }
+  function settle(t, st) {
+    if (t) { tok = t; tokAt = Date.now(); }
+    state = st;
+    var w = waiters; waiters = [];
+    w.forEach(function (f) { f(); });
+  }
+  function run() {
+    if (wid === null || !window.turnstile) return;
+    tok = ''; state = 'running';
+    try { window.turnstile.reset(wid); window.turnstile.execute(wid); } catch (e) { settle('', 'error:exec'); }
+  }
+  window.samTsReady = function () {
+    try {
+      wid = window.turnstile.render(boxEl().querySelector('#sam-ts-w'), {
+        sitekey: SITEKEY, language: 'ko', appearance: 'interaction-only', execution: 'execute',
+        callback: function (t) { box.style.display = 'none'; settle(t, 'ok'); },
+        'error-callback': function (c) { box.style.display = 'none'; settle('', 'error:' + c); return true; },
+        'expired-callback': function () { tok = ''; state = 'expired'; },
+        'timeout-callback': function () { box.style.display = 'none'; settle('', 'timeout'); },
+        'before-interactive-callback': function () { box.style.display = 'block'; },
+        'after-interactive-callback': function () { box.style.display = 'none'; }
+      });
+      state = 'ready';
+      if (human) run();
+    } catch (e) { settle('', 'error:render'); }
+  };
+  var s = document.createElement('script');
+  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=samTsReady';
+  s.async = true; s.defer = true;
+  s.onerror = function () { settle('', 'noscript'); };
+  document.head.appendChild(s);
+
+  /* 쓸 토큰 하나 — 미리 받아 둔 게 있으면 바로, 없으면 받을 때까지(사람 확인이 뜨면 최대 90초) */
+  function getToken() {
+    return new Promise(function (res) {
+      function take() { var t = tok, st = state; tok = ''; setTimeout(run, 300); res({ t: t, st: st }); }
+      if (tok && Date.now() - tokAt < 270000) return take();
+      if (state === 'noscript' || /^error:(render|exec)/.test(state)) return res({ t: '', st: state });
+      var done = false;
+      var limit = setTimeout(function () {
+        if (done) return;
+        if (box && box.style.display === 'block') {           /* 체크 상자가 떠 있으면 더 기다린다 */
+          setTimeout(function () { if (!done) { done = true; res({ t: '', st: 'timeout' }); } }, 75000);
+          return;
+        }
+        done = true; res({ t: '', st: state === 'loading' ? 'noscript' : 'timeout' });
+      }, 15000);
+      waiters.push(function () { if (done) return; done = true; clearTimeout(limit); if (tok) take(); else res({ t: '', st: state }); });
+      if (state !== 'running') run();
+    });
+  }
+
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+    document.addEventListener(ev, function () {
+      human++;
+      if (human === 1 && state === 'ready') run();      /* 첫 터치 때 미리 받아 둔다 → 제출이 안 늦어진다 */
+    }, { passive: true, capture: true });
+  });
+
+  /* ── 2. 숨은 칸 · 제출 시간 · 같은 브라우저 반복 (v1.6.2 그대로) ── */
+  function addHp(el) {
+    if (!el || el.querySelector('.sam-hp')) return;
+    var w = document.createElement('div');
+    w.setAttribute('aria-hidden', 'true');
+    w.style.cssText = 'position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden;';
+    w.innerHTML = '<label>홈페이지 주소<input type="text" name="company_website" class="sam-hp" tabindex="-1" autocomplete="off"></label>';
+    el.appendChild(w);
+  }
+  ['sub-form', 'simple-form', 'b2b-form', 's-form', 'b2b-rental-body'].forEach(function (id) { addHp(document.getElementById(id)); });
+  function hpFilled() {
+    return Array.prototype.some.call(document.querySelectorAll('.sam-hp'), function (i) { return !!i.value; });
+  }
+  function readLog() {
+    try { return JSON.parse(localStorage.getItem('sam_sub_log') || '[]').filter(function (t) { return Date.now() - t < 600000; }); }
+    catch (e) { return []; }
+  }
+
+  /* ── 3. GAS 로 가는 접수에 토큰·검사값을 싣는다. 봇이면 보내지 않고 '완료' 화면만 ── */
+  var ofetch = window.fetch;
+  window.fetch = function (url, opt) {
+    try {
+      if (String(url).indexOf('script.google.com') > -1 && opt && typeof opt.body === 'string') {
+        var d = JSON.parse(opt.body);
+        var ms = Date.now() - T0, log = readLog(), hp = hpFilled();
+        d.botCheck = { hp: hp ? 1 : 0, ms: ms, human: human, recent: log.length, v: '1.6.3' };
+        if (hp || ms < 4000 || !human || log.length >= 3) {
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        log.push(Date.now());
+        try { localStorage.setItem('sam_sub_log', JSON.stringify(log)); } catch (e) { }
+        return getToken().then(function (r) {
+          d.cfToken = r.t;
+          d.botCheck.ts = r.st;
+          return ofetch.call(window, url, Object.assign({ }, opt, { body: JSON.stringify(d) }));
+        });
+      }
+    } catch (e) { }
+    return ofetch.call(window, url, opt);
+  };
+})();
+</script>
+
+</body></html>
