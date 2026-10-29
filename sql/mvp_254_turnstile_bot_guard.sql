@@ -80,3 +80,8 @@ revoke all on function core.f_turnstile_verify(text) from public, anon, authenti
 --   롤백 시험: 인스타 주소 자급제·토큰 없음 → '봇 확인 실패 (no_token)' / 인스타 주소·Cloudflare 응답 없음 → 정상 접수(송희봉 배정)
 --             일반 구독·가짜 토큰 → '봇 확인 실패 (invalid-input-response)'
 --   미리보기 페이지 https://db.samsungat.co.kr/tools/godo/ts_demo.html?mode=check|pass|block (Cloudflare 테스트 키)
+
+-- ⑤ 2026-10-29 — 자급제 몰림 규칙(3분 안 자급제 2건 이상이면 스팸) 뺌 (사용자: "실제 고객도 그럴 수 있다")
+--   fn_submit_inquiry 부분 치환: "v_spam := v_type like '자급제%' and ((select count(*) … 3 minutes …) >= 2);" → "v_spam := false;"
+--   남은 거르기 = 페이지 botCheck(숨은 칸·4초·입력 0 — 페이지를 안 거친 요청용) · Turnstile(enforce)
+--   본 페이지 SUB v1.6.4 반영 확인(실제 사이트를 DB http_get 으로 읽음 · 블록 1개 · v1.6.3 없음)
