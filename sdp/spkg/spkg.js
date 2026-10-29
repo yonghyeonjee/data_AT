@@ -40,6 +40,7 @@
     var gno=(q.match(/goodsNo=(\d+)/)||[])[1];if(!type&&gno&&EXTRA_GOODSNO.indexOf(gno)>-1)type='n';
     if(preview&&!type)type=(q.match(/sp_type=([nsp])/)||[])[1]||'n';
     if(!type)return;
+    if(/정수기?\s*필터|정수필터/.test(((document.querySelector('meta[property="og:title"]')||{}).content||document.title||'')))return; /* 냉장고 정수 필터 상품은 호환 모델명이 적혀 있어 제외 */
     var price=first(PRICE_SEL,scope);if(!price)return;
     var title=((document.querySelector('meta[property="og:title"]')||{}).content||document.title||'');
     var isSub=/\[\s*구독\s*\]/.test(title);
