@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>스마트 패키지 · 데이터센터</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://wdahskrcpjooqhwwxjiu.supabase.co" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--navy:#1428A0;--ink:#141a2b;--sub:#5B6474;--line:#D5DBE5;--zone:#F3F6FB;--ground:#E7EBF2;--ok:#0f7a52;--warn:#8A5D00;--bad:#c0392b}
+*{box-sizing:border-box}body{margin:0;background:var(--ground);color:var(--ink);font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif;letter-spacing:-.02em;word-break:keep-all}
+header{background:linear-gradient(120deg,#0d1b6b,#1428A0 60%,#2f5aa8);color:#fff;padding:20px 16px 52px}
+.wrap{max-width:1100px;margin:0 auto}
+header a.bk{color:#cdd6ff;font-size:13px;text-decoration:none}header h1{margin:8px 0 4px;font-size:22px}header p{margin:0;font-size:13.5px;opacity:.85}
+main{max-width:1100px;margin:-36px auto 40px;padding:0 16px;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 4px 16px rgba(20,40,160,.05)}
+.card h2{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.card h2 small{font-weight:500;color:var(--sub);font-size:12.5px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media(max-width:760px){.kpis{grid-template-columns:1fr 1fr}}
+.k{background:var(--zone);border:1px solid #E1E6F0;border-radius:10px;padding:10px 12px}.k span{display:block;font-size:12px;color:var(--sub)}.k b{font-size:17px;color:var(--navy)}.k em{display:block;font-style:normal;font-size:12px;color:var(--sub);margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th{background:#E8EDF6;text-align:left;padding:8px 10px;font-weight:700;color:#333c52}td{padding:9px 10px;border-top:1px solid #EEF1F6;vertical-align:middle}
+.tw{overflow-x:auto}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:#EEF1F6;color:var(--sub)}.tag.live{background:#e3f5ec;color:var(--ok)}.tag.on{background:#e8edfb;color:var(--navy)}.tag.wait{background:#fff4dc;color:var(--warn)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:#fff;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer}
+.btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}.btn.pri:hover{background:#0f1f80}.btn.dng{color:var(--bad);border-color:#e7b4ae}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{min-height:34px;padding:0 10px;font-size:12.5px}
+.drop{border:2px dashed #c3cfea;border-radius:12px;padding:22px;text-align:center;cursor:pointer;background:#f8faff}.drop.on,.drop:hover{border-color:var(--navy);background:#eef2fd}.drop b{display:block}.drop span{font-size:12.5px;color:var(--sub)}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}@media(max-width:760px){.grid{grid-template-columns:1fr 1fr}}
+label.f{display:block;font-size:12px;color:var(--sub);font-weight:600;margin:0 0 5px}
+input[type=text],input[type=date],input[type=email],input[type=password]{width:100%;height:40px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font:inherit;font-size:16px;background:#fff}
+.msg{font-size:13px;padding:10px 12px;border-radius:9px;margin-top:10px;display:none}.msg.on{display:block}.msg.ok{background:#e9f7f1;color:var(--ok)}.msg.err{background:#fff1ee;color:var(--bad)}.msg.info{background:#eef2fd;color:var(--navy)}
+.cats{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.cat{font-size:12px;background:#eef2fd;color:var(--navy);border-radius:999px;padding:3px 9px;font-weight:600}.cat.x{background:#fff1ee;color:var(--bad)}
+.ladder{display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:5px;margin-top:10px}.st{border:1px solid #E1E6F0;border-radius:8px;padding:4px;text-align:center;font-size:11px;color:var(--sub)}.st b{display:block;font-size:12.5px;color:var(--navy)}
+.diff{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}@media(max-width:760px){.diff{grid-template-columns:1fr}}
+.dbox{border:1px solid #E1E6F0;border-radius:10px;padding:10px 12px;background:var(--zone);font-size:12.5px}.dbox b{font-size:13px}.dbox .ms{margin-top:6px;max-height:110px;overflow:auto;font-family:ui-monospace,monospace;font-size:11.5px;color:#444;line-height:1.5}
+.acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+iframe{width:100%;height:300px;border:1px solid #E1E6F0;border-radius:10px;background:#fff}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;min-height:34px;padding:0 12px;font:inherit;font-size:12.5px;cursor:pointer}.tab.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.note{font-size:12.5px;color:var(--sub);line-height:1.6;margin:8px 0 0}code{background:#f1f4fa;border:1px solid #E1E6F0;border-radius:5px;padding:1px 5px;font-size:12px;word-break:break-all}
+#login{max-width:380px;margin:0 auto}.hidden{display:none!important}
+:focus-visible{outline:2px solid var(--navy)!important;outline-offset:2px}
+</style></head><body>
+<header><div class="wrap"><a class="bk" href="/admin.html">← 관리자 화면</a><h1>스마트 패키지</h1><p>상품상세 가격 아래 안내 카드의 대상 모델·포인트를 판(월) 단위로 관리합니다. 반영하면 10분 안팎에 고도몰 상품상세에 나갑니다.</p></div></header>
+<main>
+<section class="card hidden" id="login"><h2>관리자 로그인</h2>
+  <label class="f" for="lId">아이디(이메일)</label><input type="email" id="lId" autocomplete="username">
+  <label class="f" for="lPw" style="margin-top:10px">비밀번호</label><input type="password" id="lPw" autocomplete="current-password">
+  <div class="acts"><button class="btn pri" id="lGo">로그인</button></div><div class="msg" id="lMsg"></div></section>
+
+<div id="app" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+<section class="card"><h2>지금 상태 <small id="stNote"></small></h2>
+  <div class="kpis"><div class="k"><span>지금 상세페이지 노출</span><b id="kLive">—</b><em id="kLiveP"></em></div><div class="k"><span>다음 판</span><b id="kNext">—</b><em id="kNextP"></em></div><div class="k"><span>배포 상태</span><b id="kDep">—</b><em id="kDepP"></em></div><div class="k"><span>확인용 상품</span><b style="font-size:13px"><a id="kTest" target="_blank" href="#">미리보기 ↗</a></b><em>URL 뒤 &amp;sp_preview=1</em></div></div>
+</section>
+
+<section class="card"><h2>판 목록 <small>한 달에 한 판 · 같은 기간 판을 반영하면 옛 판은 내려갑니다</small></h2>
+  <div class="tw"><table><thead><tr><th>판</th><th>기간</th><th>모델</th><th>상태</th><th>올림</th><th style="text-align:right">작업</th></tr></thead><tbody id="rows"><tr><td colspan="6">불러오는 중…</td></tr></tbody></table></div>
+  <div class="msg" id="rMsg"></div>
+</section>
+
+<section class="card"><h2>새 판 올리기 <small>본사에서 받은 월별 엑셀 (SDP 시트)</small></h2>
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="엑셀 파일 고르기"><b>엑셀을 끌어놓거나 눌러서 고르기</b><span>예: 12월 스마트 패키지.xlsx</span><input type="file" id="file" accept=".xlsx,.xls" hidden></div>
+  <div class="msg" id="uMsg"></div>
+  <div id="up" class="hidden">
+    <div class="grid" style="margin-top:14px">
+      <div><label class="f" for="uFrom">시작일</label><input type="date" id="uFrom"></div>
+      <div><label class="f" for="uTo">종료일 (이 날까지)</label><input type="date" id="uTo"></div>
+      <div><label class="f" for="uBonus">3만 혜택 문구 금액</label><input type="text" id="uBonus" value="3만"></div>
+      <div><label class="f" for="uLabel">판 이름</label><input type="text" id="uLabel"></div>
+    </div>
+    <div class="kpis" style="margin-top:12px"><div class="k"><span>품목 수 혜택 모델</span><b id="sN">0</b></div><div class="k"><span>그중 구독 한정</span><b id="sS">0</b></div><div class="k"><span>3만 혜택 모델</span><b id="sP">0</b></div><div class="k"><span>품목 수별 포인트</span><b id="sL">—</b></div></div>
+    <div class="cats" id="cats"></div>
+    <div class="ladder" id="ladder"></div>
+    <h2 style="margin-top:16px;font-size:14px">지금 판과 비교 <small id="dRef"></small></h2>
+    <div class="diff" id="diff"></div>
+    <h2 style="margin-top:16px;font-size:14px">미리보기 <small>실제 상세페이지 모듈(spkg.js)로 그립니다</small></h2>
+    <div class="tabs" id="tabs"><button class="tab on" data-k="n">일반 대상</button><button class="tab" data-k="s">구독 한정 · 일반 상품</button><button class="tab" data-k="ss">구독 한정 · [구독]</button><button class="tab" data-k="p">3만 모델</button></div>
+    <iframe id="pv" title="미리보기"></iframe>
+    <div class="acts"><button class="btn" id="bSave">저장만</button><button class="btn pri" id="bPub">저장하고 반영</button></div>
+  </div>
+</section>
+<p class="note">고도몰 상품상세(goods_view.html)에는 <code>&lt;script src="https://db.samsungat.co.kr/sdp/spkg/spkg.js"&gt;&lt;/script&gt;</code> 한 줄만 있습니다. 화면 로직은 <code>sdp/spkg/spkg.js</code>, 데이터는 Actions 가 만드는 <code>sdp/spkg/data.js</code> 입니다.</p>
+</div>
+</main>
+<script>
+const SUPABASE_URL="https://wdahskrcpjooqhwwxjiu.supabase.co", SUPABASE_KEY="sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=i=>document.getElementById(i), esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>n<10?'0'+n:''+n, fmt=v=>(Math.round(v*10)/10)+'만';
+function msg(id,t,k){const e=$(id);e.className='msg on '+(k||'info');e.innerHTML=t}
+async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args||{});if(error)throw new Error(error.message);return data}
+let REL=[], UP=null, CUR=null, PK='n';
+async function start(){
+  let s=null;try{({data:{session:s}}=await sb.auth.getSession())}catch(e){}
+  if(!s){$('login').classList.remove('hidden');return}
+  $('app').classList.remove('hidden');load();
+}
+$('lGo').onclick=async()=>{const {error}=await sb.auth.signInWithPassword({email:$('lId').value.trim(),password:$('lPw').value});if(error)return msg('lMsg','로그인 실패: '+esc(error.message),'err');$('login').classList.add('hidden');start()};
+$('lPw').onkeydown=e=>{if(e.key==='Enter')$('lGo').click()};
+function kst(){return new Date(Date.now()+324e5).toISOString().slice(0,10)}
+function md(d){const x=d.split('-');return +x[1]+'/'+(+x[2])}
+function when(t){if(!t)return '';const d=new Date(t);return (d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes())}
+async function load(){
+  try{REL=await rpc('fn_spkg_releases')}catch(e){$('rows').innerHTML='<tr><td colspan="6">'+esc(e.message)+'</td></tr>';return}
+  const t=kst(), live=REL.find(r=>r.live), next=REL.filter(r=>r.active&&r.from>t).sort((a,b)=>a.from<b.from?-1:1)[0];
+  $('kLive').textContent=live?live.label:'없음';$('kLiveP').textContent=live?md(live.from)+'~'+md(live.to)+' · '+live.ver:'오늘 기간의 반영 판이 없습니다';
+  $('kNext').textContent=next?next.label:'없음';$('kNextP').textContent=next?md(next.from)+' 0시에 자동 전환':'다음 달 엑셀을 미리 올려 두세요';
+  const act=REL.filter(r=>r.active), pend=act.filter(r=>!r.deployed_at||r.deployed_at<r.published_at);
+  $('kDep').textContent=pend.length?'배포 대기':'배포 완료';$('kDep').style.color=pend.length?'var(--warn)':'var(--ok)';
+  $('kDepP').textContent=pend.length?'반영 뒤 10분 안팎 (Actions)':(act.length?'마지막 '+when(act.map(r=>r.deployed_at).sort().pop()):'');
+  $('kTest').href='https://samsungsh.co.kr/goods/goods_view.php?goodsNo=1000000891&sp_preview=1';
+  $('rows').innerHTML=REL.length?REL.map(r=>{const st=r.stats||{};
+    const tag=r.live?'<span class="tag live">노출 중</span>':r.active?(r.from>t?'<span class="tag on">반영 · '+md(r.from)+'부터</span>':'<span class="tag">반영 · 지남</span>'):'<span class="tag">저장만</span>';
+    const dep=r.active&&(!r.deployed_at||r.deployed_at<r.published_at)?' <span class="tag wait">배포 대기</span>':'';
+    return '<tr><td><b>'+esc(r.label)+'</b><br><span style="color:var(--sub);font-size:12px">'+esc(r.ver)+(r.src?' · '+esc(r.src):'')+'</span></td><td>'+r.from+' ~ '+r.to+'</td><td>'+(st.n||0).toLocaleString()+' · 구독 '+(st.s||0)+' · 3만 '+(st.p||0)+'</td><td>'+tag+dep+'</td><td style="font-size:12px;color:var(--sub)">'+esc((r.created_by||'').split('@')[0])+'<br>'+when(r.created_at)+'</td><td style="text-align:right;white-space:nowrap">'+
+      (r.active?'<button class="btn sm dng" onclick="pub('+r.id+',false)">내리기</button>':'<button class="btn sm pri" onclick="pub('+r.id+',true)">반영</button>')+'</td></tr>'}).join(''):'<tr><td colspan="6">아직 판이 없습니다</td></tr>';
+}
+async function pub(id,on){const r=REL.find(x=>x.id===id);
+  if(!confirm(on?r.label+' ('+r.from+'~'+r.to+') 을 반영합니다. 같은 기간의 다른 판은 내려갑니다.':r.label+' 을 내립니다. 그 기간엔 카드가 안 보입니다.'))return;
+  try{await rpc('fn_spkg_publish',{p_id:id,p_active:on});msg('rMsg',on?'반영했습니다 · 10분 안팎에 상세페이지에 나갑니다':'내렸습니다','ok');load()}catch(e){msg('rMsg',esc(e.message),'err')}}
+/* ---------- 엑셀 읽기 ---------- */
+const CH={'TV':'TV','2nd TV':'TV','모니터':'기타','오디오':'기타','냉장고':'냉장고','냉동고':'냉장고','와인':'냉장고','와인 냉장고':'냉장고','변온':'냉장고','변온 냉장고':'냉장고','김치냉장고':'김치냉장고','에어컨':'에어컨','공기청정기':'공기청정기','세탁건조기':'세탁건조기','세탁기':'세탁건조기','건조기':'세탁건조기','전기레인지':'조리기기','인덕션':'조리기기','후드':'조리기기','빌트인오븐':'조리기기','오븐':'조리기기','의류청정기':'의류케어','식기세척기':'식기세척기','청소기(스틱)':'청소기','청소기(로봇)':'청소기','청소기':'청소기','정수기':'정수기'};
+function chipOf(c){c=String(c).trim();if(CH[c])return CH[c];const b=c.replace(/\(.*?\)/g,'').trim();if(CH[b])return CH[b];for(const k in CH)if(b.indexOf(k)>-1)return CH[k];return '기타'}
+const subOnly=c=>/구독/.test(c)||/^(정수기|PC|태블릿)/.test(String(c).trim());
+const drop=$('drop');drop.onclick=()=>$('file').click();drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')$('file').click()};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('on')};drop.ondragleave=()=>drop.classList.remove('on');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('on');if(e.dataTransfer.files[0])read(e.dataTransfer.files[0])};
+$('file').onchange=function(){if(this.files[0])read(this.files[0])};
+function read(f){const r=new FileReader();r.onload=()=>{try{parse(XLSX.read(new Uint8Array(r.result),{type:'array'}),f.name)}catch(e){msg('uMsg','엑셀을 읽지 못했어요: '+esc(e.message),'err')}};r.readAsArrayBuffer(f)}
+function parse(wb,name){
+  const sh=wb.Sheets['SDP']||wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(sh,{header:1,defval:null,raw:true});
+  const cell=(r,c)=>rows[r]&&rows[r][c]!=null?String(rows[r][c]).trim():'';
+  let hdr=-1,mc=[],lad=null;
+  for(let r=0;r<Math.min(rows.length,30);r++){const cs=[];for(let c=0;c<(rows[r]||[]).length;c++){const v=cell(r,c);if(v==='모델명')cs.push(c);if(v==='품목수'&&!lad)lad={r,c}}if(cs.length&&hdr<0){hdr=r;mc=cs}}
+  if(hdr<0)return msg('uMsg','“모델명” 제목 칸을 찾지 못했어요. 양식이 바뀌었으면 엑셀을 개발 담당에게 보내 주세요.','err');
+  const catCol=m=>{for(let c=m-1;c>=0&&c>=m-4;c--)if(cell(hdr,c)==='품목')return c;return m-2};
+  const D={n:{},s:{},p:{}},cnt={n:0,s:0,p:0},seen={},unk={};
+  mc.forEach((m,idx)=>{const cc=catCol(m);for(let r=hdr+1;r<rows.length;r++){const md=cell(r,m).toUpperCase().replace(/\s+/g,''),cat=cell(r,cc);
+    if(!md||md==='필터'||!/[A-Z]/.test(md)||!/\d/.test(md)||seen[md])continue;seen[md]=1;
+    const t=idx===0?(subOnly(cat)?'s':'n'):'p',ch=chipOf(cat);if(ch==='기타'&&!/모니터|오디오|PC|태블릿/.test(cat))unk[cat]=1;(D[t][ch]=D[t][ch]||[]).push(md);cnt[t]++}});
+  const L=[];if(lad)for(let r=lad.r+1;r<rows.length;r++){const a=parseInt(cell(r,lad.c),10),b=parseFloat(cell(r,lad.c+1));if(!a||isNaN(b))break;L.push([a,b])}
+  if(!L.length)return msg('uMsg','품목수/혜택 표를 찾지 못했어요.','err');
+  const data={n:{},s:{},p:{},ladder:L};for(const t of ['n','s','p'])for(const k in D[t])data[t][k]=D[t][k].join(' ');
+  const cats={};for(const t of ['n','s','p'])for(const k in D[t])cats[k]=(cats[k]||0)+D[t][k].length;
+  UP={data,name,stats:{n:cnt.n+cnt.s,s:cnt.s,p:cnt.p,cats},unk:Object.keys(unk)};
+  $('sN').textContent=UP.stats.n.toLocaleString();$('sS').textContent=cnt.s;$('sP').textContent=cnt.p;$('sL').textContent=L[0][0]+'품목 '+fmt(L[0][1])+' ~ '+fmt(L[L.length-1][1]);
+  $('cats').innerHTML=Object.keys(cats).map(k=>'<span class="cat">'+esc(k)+' '+cats[k]+'</span>').join('')+UP.unk.map(k=>'<span class="cat x">'+esc(k)+' → 기타</span>').join('');
+  $('ladder').innerHTML=L.map(x=>'<div class="st">'+x[0]+'품목<b>'+fmt(x[1])+'</b></div>').join('');
+  const mm=+((name.match(/(\d{1,2})월/)||[])[1]||0);let y=+kst().slice(0,4),m=mm;
+  if(!m){m=+kst().slice(5,7)+1;if(m>12){m=1;y++}}else if(m<+kst().slice(5,7)-1)y++;
+  $('uFrom').value=y+'-'+pad(m)+'-01';$('uTo').value=y+'-'+pad(m)+'-'+pad(new Date(y,m,0).getDate());$('uLabel').value=y+'년 '+m+'월 스마트 패키지';
+  $('up').classList.remove('hidden');msg('uMsg','✓ '+esc(name)+' 읽기 완료 — 기간과 비교·미리보기를 확인한 뒤 저장하세요.','ok');diff();preview();
+}
+async function diff(){
+  const t=kst(),ref=REL.find(r=>r.live)||REL.filter(r=>r.active).sort((a,b)=>a.from<b.from?1:-1)[0];
+  if(!ref){$('dRef').textContent='비교할 반영 판이 없습니다';$('diff').innerHTML='';return}
+  $('dRef').textContent='기준: '+ref.label+' ('+ref.ver+')';
+  try{CUR=(await rpc('fn_spkg_get',{p_id:ref.id})).data}catch(e){$('diff').innerHTML='<div class="dbox">'+esc(e.message)+'</div>';return}
+  const set=(d,ts)=>{const s=new Set();for(const t of ts)for(const k in (d[t]||{}))d[t][k].split(' ').forEach(m=>s.add(m));return s};
+  const box=(title,ts)=>{const a=set(CUR,ts),b=set(UP.data,ts),add=[...b].filter(m=>!a.has(m)),rem=[...a].filter(m=>!b.has(m));
+    return '<div class="dbox"><b>'+title+'</b> · 더해짐 <b style="color:var(--ok)">'+add.length+'</b> · 빠짐 <b style="color:var(--bad)">'+rem.length+'</b>'+(add.length?'<div class="ms">+ '+add.slice(0,60).join(' ')+(add.length>60?' …':'')+'</div>':'')+(rem.length?'<div class="ms">− '+rem.slice(0,60).join(' ')+(rem.length>60?' …':'')+'</div>':'')+'</div>'};
+  const lc=JSON.stringify(CUR.ladder)===JSON.stringify(UP.data.ladder);
+  $('diff').innerHTML=box('품목 수 혜택 모델',['n','s'])+box('3만 혜택 모델',['p'])+'<div class="dbox"><b>품목 수별 포인트</b> · '+(lc?'같음':'<span style="color:var(--warn)">바뀜</span>')+'</div>';
+}
+let SPKG_SRC=null;
+async function preview(){
+  if(!UP)return;if(!SPKG_SRC){try{SPKG_SRC=await (await fetch('/sdp/spkg/spkg.js',{cache:'no-store'})).text()}catch(e){SPKG_SRC=''}}
+  const t=PK==='ss'?'s':PK,d=UP.data[t]||{};let m='';for(const k in d){m=d[k].split(' ')[0];break}
+  if(!m){$('pv').srcdoc='<p style="font-family:sans-serif;color:#888;padding:20px">이 유형의 모델이 없습니다</p>';return}
+  const title=(PK==='ss'?'[구독] ':'')+'삼성 예시 상품 '+m;
+  const rel={ver:'미리보기',from:$('uFrom').value,to:$('uTo').value,n:UP.data.n,s:UP.data.s,p:UP.data.p,ladder:UP.data.ladder,bonus:$('uBonus').value.trim()||'3만'};
+  const js=SPKG_SRC.replace("preview=/sp_preview=1/.test(q)","preview=true").replace(/<\/script/gi,'<\\/script');
+  $('pv').srcdoc='<html><head><meta charset="utf-8"><meta property="og:title" content="'+esc(title)+'"><style>body{font-family:Pretendard,Noto Sans KR,sans-serif;padding:14px 18px;margin:0}</style></head><body><form id="frmView"><div style="font-size:17px;font-weight:700">'+esc(title)+'</div><div class="price-box"><strong style="font-size:22px;display:block;margin-top:8px">1,990,000원</strong></div><div style="font-size:13px;color:#666;margin-top:6px">브랜드 삼성전자</div></form><script>window.SPKG_DATA={releases:['+JSON.stringify(rel).replace(/</g,'\\u003c')+']};<\/script><script>'+js+'<\/script></body></html>';
+}
+$('tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;PK=b.dataset.k;[...document.querySelectorAll('.tab')].forEach(x=>x.classList.toggle('on',x===b));preview()};
+['uFrom','uTo','uBonus'].forEach(i=>$(i).addEventListener('change',preview));
+async function save(publish){
+  if(!UP)return;const f=$('uFrom').value,t=$('uTo').value;if(!f||!t||t<f)return msg('uMsg','기간을 확인해 주세요','err');
+  const over=REL.filter(r=>r.active&&!(r.to<f||r.from>t));
+  if(publish&&!confirm($('uLabel').value+' ('+f+'~'+t+')을 저장하고 반영합니다.'+(over.length?'\n겹치는 반영 판('+over.map(r=>r.ver).join(', ')+')은 내려갑니다.':'')))return;
+  const data=Object.assign({},UP.data,{bonus:$('uBonus').value.trim()||'3만'});
+  $('bSave').disabled=$('bPub').disabled=true;
+  try{const r=await rpc('fn_spkg_save',{p_label:$('uLabel').value.trim(),p_from:f,p_to:t,p_data:data,p_stats:UP.stats,p_src:UP.name,p_note:null,p_publish:publish});
+    msg('uMsg','✓ '+esc(r.ver)+' 저장'+(publish?' · 반영했습니다 — 10분 안팎에 상세페이지에 나갑니다':' (반영은 판 목록에서)'),'ok');UP=null;$('up').classList.add('hidden');load();
+  }catch(e){msg('uMsg','저장 실패: '+esc(e.message),'err')}finally{$('bSave').disabled=$('bPub').disabled=false}
+}
+$('bSave').onclick=()=>save(false);$('bPub').onclick=()=>save(true);
+start();
+</script></body></html>

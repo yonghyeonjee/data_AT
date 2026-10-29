@@ -1,0 +1,45 @@
+name: 스마트 패키지 데이터 배포
+
+# 데이터센터(spkg.release)에서 반영한 판을 db.samsungat.co.kr/sdp/spkg/data.js 로 만든다 (mvp_255).
+# 고도몰 상품상세(goods_view)가 sdp/spkg/spkg.js 를 부르고, spkg.js 가 이 파일을 읽어 가격 아래 안내 카드를 띄운다.
+on:
+  schedule:
+    - cron: "3,13,23,33,43,53 * * * *"   # 10분마다 (sdp-publish 와 3분 어긋나게)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/spkg-publish.yml', 'tools/spkg/**']
+
+concurrency:
+  group: spkg-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: 반영된 판 받기
+        id: pub
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node tools/spkg/publish.mjs
+      - name: 커밋 · 푸시
+        if: steps.pub.outputs.changed == '1'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          git config user.name  "spkg-publish[bot]"
+          git config user.email "spkg-publish@users.noreply.github.com"
+          git add sdp/spkg/data.js
+          git commit -m "스마트 패키지 데이터 배포 ${{ steps.pub.outputs.vers }}"
+          for i in 1 2 3; do git pull --rebase -q origin main && git push origin HEAD:main && break; sleep 5; done
+          node tools/spkg/publish.mjs --deployed "${{ steps.pub.outputs.vers }}" "$(git rev-parse --short HEAD)"
