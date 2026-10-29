@@ -437,6 +437,16 @@
       var nodes = document.querySelectorAll(sel);
       for (var j = 0; j < nodes.length; j++) nodes[j].classList.toggle('subtab-hide', state.tab === 'sub');
     });
+    // 상품 정보(브랜드·상품코드·배송비·카드 할인 문구·옵션 선택)도 구독 탭에선 숨긴다 — CFG.subHide 로 바꿀 수 있다
+    // 옵션 선택은 고를 옵션이 2개 이상이면 남긴다 (옵션마다 구독 모델이 다를 수 있음)
+    (CFG.subHide || ['.item_detail_list > dl', '.item_detail_list > .item_add_option_box']).forEach(function (sel) {
+      var nodes = []; try { nodes = document.querySelectorAll(sel); } catch (e) {}
+      for (var j = 0; j < nodes.length; j++) {
+        var s = nodes[j].querySelector('select');
+        if (s && s.options.length > 2) continue;
+        nodes[j].classList.toggle('subtab-hide', state.tab === 'sub');
+      }
+    });
     els.panel.hidden = state.tab !== 'sub';
   }
 
