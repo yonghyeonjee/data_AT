@@ -5842,7 +5842,7 @@ function renderAllConsults(){
 async function asgTo2(id){ ASG_IDS=[id]; await asgTo(ME); }
 
 /* ═══ 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) : DPS 요금표 위에 손으로 덮어쓰는 월 구독료 · 숨김 — 보기는 누구나, 고치기는 점장님·대표님 또는 [구독가 지정] 권한(관리자 › 옵션·권한)
-   저장하면 sub.price_override 에 들어가고 10분 안에 db.samsungat.co.kr/sdp/sub 로 배포돼 상세페이지 구독탭·구독센터에 나간다.
+   저장하면 sub.price_override 에 들어가고 1~3분 안에 db.samsungat.co.kr/sdp/sub 로 배포돼 상세페이지 구독탭·구독센터에 나간다.
    지금 나가는 요금은 배포된 sdp/sub/sub_index.js · sub_plans_<품목>.js 를 그대로 읽어 보여 준다 (이미 덮어쓴 값 포함) */
 let PR_LOADED=false, PR=null, PR_DLG=null;
 const PR_BASE=(location.pathname.includes('/test/')?'../../':'./')+'sdp/sub/';
@@ -5869,7 +5869,7 @@ function renderSubPrice(){
   const d=PR, can=!!d.can_edit, rows=d.rows||[];
   const ST={on:['적용 중','ok'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
   $('prSub').textContent=(can?'점장님·대표님은 여기서 바로 고칩니다':'상세페이지 구독탭·구독센터에 나가는 월 구독료를 손으로 바꾼 내역')+(d.deployed?` · 마지막 배포 ${d.deployed.at}`:'');
-  let h=`<p class="note-in" style="margin:0 0 10px">요금은 매일 DPS 에서 자동으로 들어옵니다. DPS 값이 틀렸거나 행사가로 잠깐 바꿔야 할 때만 여기에 넣으세요. 저장하면 <b>10분 안에</b> 상세페이지에 반영되고, 끄면 다시 DPS 값으로 돌아갑니다.</p>`;
+  let h=`<p class="note-in" style="margin:0 0 10px">요금은 매일 DPS 에서 자동으로 들어옵니다. DPS 값이 틀렸거나 행사가로 잠깐 바꿔야 할 때만 여기에 넣으세요. 저장하면 <b>1~3분 안에</b> 상세페이지에 반영되고, 끄면 다시 DPS 값으로 돌아갑니다.</p>`;
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px"><b style="font-size:calc(14px * var(--font-scale))">바꾼 요금 <span style="color:var(--muted);font-weight:400">${rows.filter(r=>r.state==='on').length}건 적용 중</span></b>${can?'<button type="button" class="btn sm" onclick="prDlgOpen(null)">＋ 요금 넣기</button>':''}</div>`;
   h+=rows.length?`<div class="list">${rows.map(r=>`<div class="item" style="grid-template-columns:1fr auto;opacity:${r.state==='on'||r.state==='soon'?1:.55}">
       <div><div style="font-weight:700">${esc(r.model)}${r.cat?` <span class="pill">${esc(r.cat)}</span>`:''}</div>
@@ -5926,19 +5926,19 @@ async function prDlgSave(){
   if(info&&info.none&&act==='set'&&!(data.cat&&data.term&&data.care)){ $('prDlgErr').textContent='요금표에 없는 모델은 품목·약정·케어를 모두 골라 주세요'; return; }
   if(info&&info.none&&act==='hide'){ $('prDlgErr').textContent='요금표에 없는 모델은 숨길 것이 없습니다'; return; }
   b.disabled=true;
-  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:data}); prDlgClose(); toast('저장했습니다 · 10분 안에 상세페이지에 반영됩니다'); loadSubPrice(); }
+  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:data}); prDlgClose(); toast('저장했습니다 · 1~3분 안에 상세페이지에 반영됩니다'); loadSubPrice(); }
   catch(e){ $('prDlgErr').textContent=e.message; }
   finally{ b.disabled=false; }
 }
 async function prToggle(id,on){
   const r=(PR&&PR.rows||[]).find(x=>x.id===id); if(!r) return;
   if(!on && !confirm(`${r.model} ${r.term?r.term+'년 ':''}${r.care||''} 바꾼 요금을 끌까요? 다시 DPS 요금으로 돌아갑니다 (기록은 남고 다시 켤 수 있습니다)`)) return;
-  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:{...r,active:!!on}}); toast(on?'다시 켰습니다':'껐습니다 · 10분 안에 DPS 요금으로 돌아갑니다'); loadSubPrice(); }
+  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:{...r,active:!!on}}); toast(on?'다시 켰습니다':'껐습니다 · 1~3분 안에 DPS 요금으로 돌아갑니다'); loadSubPrice(); }
   catch(e){ toast(e.message); }
 }
 
 /* ═══ 구독 혜택 안내 : 상세페이지 구독탭이 읽는 정책(fn_store_sub_policy) — 보기는 누구나, 행사 문구·카드 유의사항은 점장님·대표님이 바로 고친다 (mvp_246)
-   할인율·선납 한도 같은 수치는 관리자 화면에서만 바꾼다. 저장하면 10분 안에 db.samsungat.co.kr/sdp/sub 로 배포된다 */
+   할인율·선납 한도 같은 수치는 관리자 화면에서만 바꾼다. 저장하면 1~3분 안에 db.samsungat.co.kr/sdp/sub 로 배포된다 */
 let SP_LOADED=false, SP=null, SP_DLG=null;
 const spPct=v=>v==null?'-':String(Math.round(Number(v)*1000)/10)+'%';
 async function loadSubPolicy(){
@@ -6000,7 +6000,7 @@ async function spDlgSave(){
       const c=SP_DLG.c;
       await rpc('fn_store_sub_card_policy_save',{p_code:CODE,p_data:{card:c.card,notes:$('spf_notes').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),from:$('spf_from').value||null,to:$('spf_to').value||null,hidden:$('spf_hidden').checked}});
     }
-    spDlgClose(); toast('저장했습니다 · 10분 안에 상세페이지에 반영됩니다'); loadSubPolicy();
+    spDlgClose(); toast('저장했습니다 · 1~3분 안에 상세페이지에 반영됩니다'); loadSubPolicy();
   }catch(e){ $('spDlgErr').textContent=e.message; }
   finally{ b.disabled=false; }
 }

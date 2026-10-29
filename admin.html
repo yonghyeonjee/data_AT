@@ -1414,7 +1414,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
       #spolCard .spol-chip{display:inline-block;padding:2px 7px;border-radius:5px;background:var(--surface-3);color:var(--muted);font-size:calc(11px * var(--font-scale));margin:1px 3px 1px 0}
       #spolCard .spol-log{font-size:calc(11.5px * var(--font-scale));color:var(--faint);line-height:1.7;columns:2;column-gap:24px}
     </style>
-    <h3>구독 혜택 정책 <span>상품상세 <b>일시불/구독 탭</b>과 계산기가 읽는 값 — 자동납부 할인율 · 선납 할인율·품목별 한도 · 카드 유의사항·노출 기간 · 행사 문구. 저장하면 <b>10분 안에</b> db.samsungat.co.kr/sdp/sub/ 로 배포됩니다. 요금표·카드 금액은 SDP 판에서, 여기는 정책·문구만</span>
+    <h3>구독 혜택 정책 <span>상품상세 <b>일시불/구독 탭</b>과 계산기가 읽는 값 — 자동납부 할인율 · 선납 할인율·품목별 한도 · 카드 유의사항·노출 기간 · 행사 문구. 저장하면 <b>1~3분 안에</b> db.samsungat.co.kr/sdp/sub/ 로 배포됩니다. 요금표·카드 금액은 SDP 판에서, 여기는 정책·문구만</span>
       <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="loadSubPolicy(true)">새로고침</button><button class="btn sm" onclick="spPromoEdit(null)">+ 행사 문구</button></span></h3>
     <div class="qmeta" id="spolMeta"></div>
     <div id="spolBody"><div class="note">불러오는 중…</div></div>
@@ -3090,7 +3090,7 @@ function spStepRow(s,r){ return `<tr><td><input class="in num" data-k="step" val
 function spNameRow(m,cats){ return `<tr><td><select class="in" data-k="cat">${cats.map(c=>`<option ${c===m.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></td><td><input class="in" data-k="contains" value="${esc(m.contains||'')}"></td><td><input class="in num" data-k="max" value="${esc(spPct(m.max))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
 async function spSave(key, make){
   let v; try{ v=make(); }catch(e){ return toast(e.message,'bad'); }
-  try{ await rpc('fn_sub_policy_save',{p_key:key,p_value:v}); toast('저장했습니다 · 10분 안에 배포됩니다','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+  try{ await rpc('fn_sub_policy_save',{p_key:key,p_value:v}); toast('저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
 }
 function spSavePrepay(){
   spSave('prepay',()=>{
@@ -3123,7 +3123,7 @@ async function spPromoEdit(id){
       return {id:p.id, text:t, from:$('pm_from').value||null, to:$('pm_to').value||null, sort:Number($('pm_sort').value)||100, active:p.active!==false,
               cats:[...$('pm_cats').querySelectorAll('input:checked')].map(i=>i.value), models:spCsv($('pm_models').value), goods:spCsv($('pm_goods').value), note:$('pm_note').value.trim()}; }});
   if(!data) return;
-  try{ await rpc('fn_sub_promo_save',{p_data:data}); toast('행사 문구를 저장했습니다 · 10분 안에 배포됩니다','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+  try{ await rpc('fn_sub_promo_save',{p_data:data}); toast('행사 문구를 저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
 }
 async function spPromoToggle(id,on){
   const p=(SPOL&&SPOL.promos||[]).find(x=>x.id===id); if(!p) return;
