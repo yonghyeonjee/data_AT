@@ -15,7 +15,11 @@
       - 제휴카드: 월 혜택 × 계약 개월 (삼성카드 70만↑ 구간은 월구독료 7만원 미만이면 기본할인만)
         단, 고객 화면에서는 월 납부액을 넘는 카드 할인은 월 납부액까지만 반영한다 (카드사 약관)
 ===== */
-(function () {
+/* 부르는 방법 두 가지
+   1) 데이터를 먼저 넣고 부른다 (sub_view.js · 구독센터): window.SUB_INDEX 가 있으면 바로 시작
+   2) 고도몰 상품상세(_sub_tab.html): SUB_TAB_CONFIG 만 두고 이 파일을 부르면 아래 부트가 데이터센터(dcBase)의 version.js → sub_index.js 를
+      읽고 시작한다. 데이터센터를 못 읽으면 dataBase(고도몰 예비 사본)로 돌아간다 — 화면 파일은 고도몰에, 요금·정책은 데이터센터에 */
+function main() {
   'use strict';
   var CFG = window.SUB_TAB_CONFIG || {};
   var IDX = window.SUB_INDEX;
@@ -759,4 +763,26 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+}
+
+(function () {
+  if (window.SUB_INDEX && window.SUB_INDEX.m) return main();          // 1) 데이터가 이미 있다
+  var CFG = window.SUB_TAB_CONFIG = window.SUB_TAB_CONFIG || {};
+  var dc = CFG.dcBase || '', local = CFG.dataBase || '/data/js/sub/', q = function (v) { return encodeURIComponent(v || ''); };
+  function add(src, ok, fail) {
+    var s = document.createElement('script'); s.charset = 'utf-8'; s.src = src;
+    s.onload = ok; s.onerror = fail || ok; document.head.appendChild(s);
+  }
+  function run() { if (window.SUB_INDEX && window.SUB_INDEX.m) main(); }
+  function fromLocal() {                                              // 데이터센터를 못 읽음 → 고도몰 예비 사본
+    if (CFG.dcFailed) return;
+    CFG.dcFailed = !!dc; CFG.dataBase = local; CFG.ver = CFG.localVer || CFG.ver || '';
+    add(local + 'sub_index.js?v=' + q(CFG.ver), run);
+  }
+  if (!dc) return fromLocal();
+  add(dc + 'version.js?t=' + Math.floor(Date.now() / 300000), function () {   // 판 번호는 5분 단위로 새로 읽는다
+    if (!window.SUB_VER) return fromLocal();
+    CFG.localBase = local; CFG.localVer = CFG.ver; CFG.dataBase = dc; CFG.ver = window.SUB_VER;
+    add(dc + 'sub_index.js?v=' + q(window.SUB_VER), run, fromLocal);
+  }, fromLocal);
 })();
