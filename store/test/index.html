@@ -490,6 +490,7 @@ details.salebox>summary .hint{margin-left:0;flex-basis:100%;padding-left:18px}
 .cta2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .cta2 button{padding:14px;border-radius:12px;border:0;font-weight:800;font-size:calc(15px * var(--font-scale));cursor:pointer;background:var(--navy);color:#fff}
 .cta2 button.alt{background:var(--surface);color:var(--navy);border:1.5px solid var(--navy)}
+.cta2.one{grid-template-columns:1fr}
 .item.oc{grid-template-columns:1fr auto} .item.oc .act{display:grid;grid-template-columns:auto auto;gap:4px;justify-items:end;align-self:start}
 .item.oc .ocpick{grid-column:1/-1;border-top:1px dashed var(--line);padding-top:8px;margin-top:2px}
 .ocpick .q{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px} .ocpick .q button{border:1.5px solid var(--line-2);background:#fff;border-radius:7px;padding:5px 9px;font-size:calc(11.5px * var(--font-scale));font-weight:600;cursor:pointer}
@@ -1308,7 +1309,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel" id="tab-home">
     <div class="flow" id="homeFlow" aria-label="일의 흐름"></div>
     <div class="alert hidden" id="homeAlert"></div>
-    <div class="cta2"><button onclick="goTab('consult')">＋ 상담 입력</button><button class="alt" onclick="goTab('sale')">＋ 판매 입력</button></div>
+    <div class="cta2 one"><button onclick="goTab('consult')">＋ 상담 입력</button></div>
     <div class="card" id="findCard">
       <h2>찾기 <span>상담 · 견적서 한 번에</span></h2>
       <div class="cbar"><div class="csearchbox"><input class="in" id="home_q" placeholder="이름 · 번호 뒷자리 · 견적번호 · 모델" autocomplete="off" onkeydown="if(event.key==='Enter')homeFind()"><button type="button" class="go" onclick="homeFind()" aria-label="찾기">⌕</button></div></div>
@@ -3502,6 +3503,8 @@ NAV_ICON.stats   ='<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d
 NAV_ICON.assign  ='<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 8h6M19 5l3 3-3 3"/></svg>';
 NAV_ICON.alerts  ='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
 /* 배정은 미배정·일괄 넘기기 같은 예외 처리 자리라 '현황' 맨 아래로 (v201 · 상담 탭 [넘기기]가 평소 쓰는 길) */
+/* 메뉴(서랍·하단 탭바)에서 가린 탭 — 2026-10-29 판매 입력·일 마감. 탭 자체는 살아 있어 [구매 확정]·흐름 띠 링크로는 열린다 */
+const NAV_HIDE=new Set(['sale','daily']);
 const NAV_GROUPS=[['상담',['home','inbox','consult','quote','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
 const NAV_LABEL={home:'홈', inbox:'상담', consult:'상담 입력', quote:'견적서', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'휴가'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
@@ -3533,11 +3536,11 @@ function tabInfo(t){ const b=document.querySelector(`.tab[data-tab="${t}"]`); if
     badge:n?n.textContent:'', alarm:!!(n&&n.classList.contains('alarm'))}; }
 function syncNav(){
   const side=$('sideNav'), bn=$('bnav'); if(!side||!bn) return;
-  side.innerHTML=NAV_GROUPS.map(([g,ts])=>{ const items=ts.map(tabInfo).filter(x=>x&&!x.hidden); if(!items.length) return '';
+  side.innerHTML=NAV_GROUPS.map(([g,ts])=>{ const items=ts.filter(t=>!NAV_HIDE.has(t)).map(tabInfo).filter(x=>x&&!x.hidden); if(!items.length) return '';
     return `<div class="grp">${g}</div>`+items.map(x=>`<button class="it${x.active?' active':''}" onclick="goTab('${x.t}');sideClose()">${NAV_ICON[x.t]||''}<span>${esc(x.label)}</span>${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join(''); }).join('');
   /* 하단 탭바 : 앞 4개 + 더보기(서랍) */
   /* 하단 4칸은 매장에서 손이 가장 많이 가는 순서 — 판매 입력이 [더보기] 안에 숨지 않게 */
-  const vis=['home','inbox','consult','sale','assign','stock','order','daily','report','online','quote','customer','alerts','stats'].map(tabInfo).filter(x=>x&&!x.hidden);
+  const vis=['home','inbox','consult','sale','assign','stock','order','daily','report','online','quote','customer','alerts','stats'].filter(t=>!NAV_HIDE.has(t)).map(tabInfo).filter(x=>x&&!x.hidden);
   const first=vis.slice(0,4), rest=vis.slice(4);
   const restBadge=rest.reduce((a,x)=>a+(Number(x.badge)||0),0), restActive=rest.some(x=>x.active);
   bn.innerHTML=first.map(x=>`<button class="${x.active?'active':''}" onclick="goTab('${x.t}')">${NAV_ICON[x.t]||''}${esc(x.label)}${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join('')
