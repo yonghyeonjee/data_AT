@@ -414,11 +414,12 @@ function main() {
     root.innerHTML =
       '<div class="subtab-head" role="tablist" aria-label="구매방식">' +
       '<button type="button" role="tab" class="subtab-btn" data-tab="lump"><span>일시불</span><strong data-slot="lump-price"></strong></button>' +
-      '<button type="button" role="tab" class="subtab-btn" data-tab="sub"><span>구독<em class="subtab-badge">혜택</em></span><strong data-slot="sub-price"></strong>' +
+      '<button type="button" role="tab" class="subtab-btn" data-tab="sub"><span>구독<em class="subtab-badge">혜택</em></span><strong data-slot="sub-price"></strong><small data-slot="sub-month"></small>' +
       '<em class="subtab-save" data-slot="sub-save" hidden></em></button>' +
       '</div><div class="subtab-panel" data-slot="panel" hidden></div>';
     els.lumpPrice = root.querySelector('[data-slot="lump-price"]');
     els.subPrice = root.querySelector('[data-slot="sub-price"]');
+    els.subMonth = root.querySelector('[data-slot="sub-month"]');
     els.subSave = root.querySelector('[data-slot="sub-save"]');
     els.panel = root.querySelector('[data-slot="panel"]');
     els.lumpPrice.textContent = CFG.lumpPrice > 0 ? fmt(CFG.lumpPrice) + '원' : '';
@@ -427,9 +428,15 @@ function main() {
     return true;
   }
 
+  // 탭 머리: 총 구독액(결제 예상액)을 크게, 월 납부액은 작게
+  function setHeadPrice(r) {
+    els.subPrice.textContent = r.years + '년 총 ' + fmt(r.expected) + '원';
+    els.subMonth.textContent = '월 ' + fmt(r.finalMonthly) + '원';
+  }
   function renderHead() {
     var cur = current();   // 선택한 조건(약정·케어·선납·카드) 그대로의 월 납부 예상금액 — 아래 요약·하단 바와 같은 값
-    els.subPrice.textContent = cur ? '월 ' + fmt(cur.finalMonthly) + '원' : state.min ? '월 ' + fmt(state.min) + '원~' : '';
+    if (cur) setHeadPrice(cur);
+    else { els.subPrice.textContent = state.min ? '월 ' + fmt(state.min) + '원~' : ''; els.subMonth.textContent = ''; }
     els.subSave.hidden = !state.best;
     els.subSave.textContent = state.best ? '카드 적용 시 최대 ' + fmt(state.best) + '원 저렴' : '';
     root.classList.toggle('is-cheaper', !!state.best);
@@ -573,13 +580,17 @@ function main() {
       (r.cardTotal ? ' · ' + state.card + ' 적용' : '');
     var sum = r.saving ?
       // 일시불보다 저렴하면 얼마나 저렴한지
+      // 일시불가와 구독 총액을 크게 나란히 — 얼마나 저렴한지가 한눈에
       '<div class="subtab-savebox" role="note"><span class="subtab-savebox-label">선택한 혜택 적용 시 일시불 구매보다</span>' +
         '<strong>' + fmt(r.saving) + '원 저렴해요</strong>' +
-        '<span class="subtab-savebox-sub">' + r.years + '년 결제 예상액 ' + fmt(r.expected) + '원 · 일시불 ' + fmt(lump) + '원 · ' +
-        Math.floor(r.saving / lump * 100) + '% 절약</span></div>' :
-      // 아니면 월 구독료만
+        '<div class="subtab-cmp"><div><em>일시불 구매가</em><b>' + fmt(lump) + '원</b></div><i aria-hidden="true"></i>' +
+        '<div class="is-sub"><em>' + r.years + '년 구독 총액</em><b>' + fmt(r.expected) + '원</b></div></div>' +
+        '<span class="subtab-savebox-sub">' + Math.floor(r.saving / lump * 100) + '% 절약 · 월 ' + fmt(r.finalMonthly) + '원 × ' + r.months + '개월' +
+        (r.prepay ? ' (선납금 포함)' : '') + '</span></div>' :
+      // 아니면 월 구독료 + 총액
       '<div class="subtab-monthbox" role="note"><span class="subtab-monthbox-label">선택한 혜택 적용 시 월 구독료</span>' +
-        '<strong>월 ' + fmt(r.finalMonthly) + '원</strong></div>';
+        '<strong>월 ' + fmt(r.finalMonthly) + '원</strong>' +
+        '<span class="subtab-savebox-sub">' + r.years + '년 구독 총액 ' + fmt(r.expected) + '원' + (lump > 0 ? ' · 일시불 ' + fmt(lump) + '원' : '') + '</span></div>';
     h = top + sum + '<p class="subtab-cond">기준: ' + esc(cond) + '</p>' +
       '<button type="button" class="subtab-acc" data-acc aria-expanded="' + state.open + '">조건별 구독가 확인하기<i aria-hidden="true"></i></button>' +
       '<div class="subtab-acc-body"' + (state.open ? '' : ' hidden') + '>' + h + '</div>';
@@ -610,7 +621,7 @@ function main() {
       ctaHtml(consultBase() + q) + '</div>';
 
     els.panel.innerHTML = h;
-    els.subPrice.textContent = '월 ' + fmt(r.finalMonthly) + '원';   // 조건을 바꾸면 탭 머리 가격도 같이
+    setHeadPrice(r);   // 조건을 바꾸면 탭 머리 가격도 같이
   }
 
   function render() { renderHead(); if (state.tab === 'sub') renderPanel(); }
