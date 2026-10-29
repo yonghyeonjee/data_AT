@@ -1423,6 +1423,23 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <!-- ── 구독 관리 (mvp_254): 모델별 구독가 지정·숨김 + 혜택·행사 문구 — 상세페이지 구독탭·구독센터에 나가는 값 ── -->
   <section class="panel hidden" id="tab-sub">
     <div class="intro"><b>구독 관리</b>는 상세페이지 <b>일시불/구독 탭</b>과 구독센터에 나가는 값을 매장에서 바로 손보는 곳입니다. 요금은 매일 DPS에서 오고, 여기서 넣은 값이 그 위에 덮입니다. 고치는 사람: 점장님·대표님, 그리고 관리자가 <b>[구독가 지정]</b> 권한을 켜 준 담당자.</div>
+    <!-- 구독료 계산기 (mvp_256): 상품상세 구독탭(sub_tab.js · 데이터센터 배포본)을 매장 화면 안에서 모델만 바꿔 가며 띄운다 — 고객과 상담하며 약정·케어·선납·카드를 바꿔 보여 준다 -->
+    <div class="card" id="scCard">
+      <style>
+        #scCard .sc-row{display:flex;gap:8px;align-items:center} #scCard .sc-row .in{flex:1;min-width:0;font-size:calc(15px * var(--font-scale));text-transform:uppercase}
+        #scCard .sc-list{display:grid;gap:4px;margin-top:8px;max-height:280px;overflow:auto}
+        #scCard .sc-it{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface,#fff);cursor:pointer;font:inherit;color:inherit}
+        #scCard .sc-it:hover{border-color:var(--brand,#0b6e5f)} #scCard .sc-it b{font-family:ui-monospace,monospace} #scCard .sc-it span{color:var(--muted);font-size:calc(12.5px * var(--font-scale))} #scCard .sc-it em{font-style:normal;white-space:nowrap;font-weight:700}
+        #scCard #scHead{margin:10px 0 6px;min-height:0} #scCard #scHead:empty{display:none}
+        #scCard #subTabRoot{margin-top:4px;max-width:720px}
+      </style>
+      <h2>구독료 계산기 <span>고객과 상담하며 모델만 고르면 상세페이지 <b>구독 탭과 똑같은 계산 화면</b>이 열립니다 — 약정·케어·선납·제휴카드를 바꿔 가며 월·총 구독료와 일시불 비교까지. 지금 나가는 요금(직접 바꾼 값 포함) 그대로입니다</span></h2>
+      <div class="sc-row"><input class="in" id="scQ" placeholder="모델번호 또는 상품명 (예: DF80H24R1D · 에어드레서)" autocomplete="off" autocapitalize="characters" oninput="scType()" onkeydown="if(event.key==='Enter'){event.preventDefault();scGo();}"><button type="button" class="btn" onclick="scGo()">계산</button></div>
+      <div id="scList" class="sc-list hidden"></div>
+      <div id="scHead" class="note-in"></div>
+      <div id="subTabRoot" hidden></div>
+      <div id="scEmpty" class="empty">모델번호나 상품명을 넣으면 여기 계산 화면이 열립니다</div>
+    </div>
     <div class="card" id="prCard">
       <h2>구독 요금 직접 관리 <span id="prSub">상세페이지 구독탭·구독센터에 나가는 월 구독료를 손으로 바꿉니다</span></h2>
       <div id="prBody"><div class="empty">불러오는 중…</div></div>
@@ -5841,6 +5858,47 @@ function renderAllConsults(){
 }
 async function asgTo2(id){ ASG_IDS=[id]; await asgTo(ME); }
 
+/* ═══ 구독료 계산기 (mvp_256) — 상품상세 구독탭(sub_tab.js · 데이터센터 배포본 ./sdp/sub/)을 매장 화면 안에서 띄운다.
+   모델 검색: 배포된 sub_index.js(모델→[품목키, 최저 월구독료]) + 구독센터 카탈로그 fn_sub_catalog(모델→[고도몰 상품번호, 상품명, 사진, 일시불가]).
+   고르면 window.SUB_TAB_CONFIG 를 그 모델로 다시 채우고 sub_tab.js 의 main() 을 다시 부른다 (#subTabRoot 안에 그려진다). 금액 규칙은 상세페이지와 같은 코드라 항상 같다.
+   버튼: [시흥몰 상품 보기](고도몰 상품이 있을 때) · [견적서 만들기](견적서 발행 페이지 새 창) */
+let SC_CAT=null, SC_CSS=false;
+const scNorm=s=>String(s||'').replace(/\s/g,'').toUpperCase();
+const scFmt=v=>Number(v||0).toLocaleString('ko-KR');
+async function scInit(){
+  if(!window.SUB_INDEX) await prLoadJs(PR_BASE+'sub_index.js?t='+Date.now());
+  if(!SC_CAT){ try{ SC_CAT=await rpc('fn_sub_catalog',{}); }catch(e){ SC_CAT={m:{}}; } }
+  return !!(window.SUB_INDEX&&window.SUB_INDEX.m);
+}
+function scFind(q){
+  const ix=window.SUB_INDEX||{m:{}}, cats=ix.cats||{}, cm=(SC_CAT&&SC_CAT.m)||{}; const n=scNorm(q), lq=String(q||'').trim().toLowerCase(); if(!n) return [];
+  const out=[]; for(const k in ix.m){ const c=cm[k]||[], name=c[1]||'';
+    if(k.indexOf(n)>=0 || (lq.length>=2 && name.toLowerCase().indexOf(lq)>=0)) out.push({m:k,cat:cats[ix.m[k][0]]||ix.m[k][0],name,min:ix.m[k][1],goods:c[0]||0,price:c[3]||0});
+    if(out.length>=40) break; }
+  out.sort((a,b)=>(a.m===n?-1:b.m===n?1:0)||(a.m.indexOf(n)===0?-1:b.m.indexOf(n)===0?1:0)||a.m.localeCompare(b.m)); return out;
+}
+function scRender(list){ const el=$('scList'); if(!list.length){ el.classList.add('hidden'); return; }
+  el.innerHTML=list.map(x=>`<button type="button" class="sc-it" onclick="scPick('${esc(x.m)}')"><b>${esc(x.m)}</b><span>${esc(x.cat)}${x.name?' · '+esc(x.name):''}</span><em>${x.min?'월 '+scFmt(x.min)+'원~':''}</em></button>`).join(''); el.classList.remove('hidden'); }
+async function scType(){ if(!await scInit()) return; const q=$('scQ').value; if(scNorm(q).length<2){ $('scList').classList.add('hidden'); return; } scRender(scFind(q)); }
+async function scGo(){ if(!await scInit()) return toast('배포된 요금표를 못 읽었습니다','bad'); const q=$('scQ').value, list=scFind(q); const exact=list.find(x=>x.m===scNorm(q)); if(exact) return scPick(exact.m); if(list.length===1) return scPick(list[0].m); scRender(list); if(!list.length) toast('요금표에 없는 모델입니다 — 구독 요금표(DPS)에 없는 모델은 계산할 수 없습니다','bad'); }
+async function scPick(model){
+  if(!await scInit()) return; $('scList').classList.add('hidden'); $('scQ').value=model;
+  const ix=window.SUB_INDEX, e=ix.m[model]; if(!e) return toast('요금표에 없는 모델입니다','bad');
+  const cm=(SC_CAT&&SC_CAT.m)||{}, c=cm[model]||[], catName=(ix.cats||{})[e[0]]||e[0];
+  const goodsUrl=c[0]?`https://www.samsungsh.co.kr/goods/goods_view.php?goodsNo=${encodeURIComponent(c[0])}`:'';
+  $('scHead').innerHTML=`<b>${esc(model)}</b> · ${esc(catName)}${c[1]?' · '+esc(c[1]):''}${c[3]>0?` · 시흥몰 일시불 ${scFmt(c[3])}원`:' · 고도몰 미등록(일시불 비교 없음)'}${goodsUrl?` · <a href="${goodsUrl}" target="_blank" rel="noopener">상품 페이지 ↗</a>`:''}`;
+  $('scEmpty').classList.add('hidden');
+  const root=$('subTabRoot'); root.innerHTML=''; root.hidden=false;
+  window.SUB_TAB_CONFIG={ ver: ix.ver||'', dataBase: PR_BASE, models:[model], goodsNo: c[0]?String(c[0]):'', lumpPrice: c[3]>0?Number(c[3]):0,
+    defaultTab:'sub', enabled:true, lumpOnly:[], subHide:[],
+    cta:'lump+consult', lumpUrl: goodsUrl, lumpLabel:'시흥몰 상품 보기', consultUrl: QUOTE_URL, consultLabel:'견적서 만들기',
+    tel:'', defaultCard:'', defaultTier:'', cardGuideUrl:'', productCat: catName, extraPoints:[],
+    source:'store', sourceName:'매장 계산기', utmSource:'store_calc' };
+  if(!SC_CSS){ SC_CSS=true; const l=document.createElement('link'); l.rel='stylesheet'; l.href=PR_BASE+'sub_tab.css?v='+encodeURIComponent(ix.ver||''); document.head.appendChild(l); }
+  if(typeof main==='function') main(); else await prLoadJs(PR_BASE+'sub_tab.js?v='+encodeURIComponent(ix.ver||''));   /* 첫 로드는 sub_tab.js 가 스스로 main() 을 부른다 */
+  root.querySelectorAll('a[data-cta]').forEach(a=>a.setAttribute('target','_blank'));
+  setTimeout(()=>root.querySelectorAll('a[data-cta]').forEach(a=>a.setAttribute('target','_blank')),1500);
+}
 /* ═══ 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) : DPS 요금표 위에 손으로 덮어쓰는 월 구독료 · 숨김 — 보기는 누구나, 고치기는 점장님·대표님 또는 [구독가 지정] 권한(관리자 › 옵션·권한)
    저장하면 sub.price_override 에 들어가고 1~3분 안에 db.samsungat.co.kr/sdp/sub 로 배포돼 상세페이지 구독탭·구독센터에 나간다.
    지금 나가는 요금은 배포된 sdp/sub/sub_index.js · sub_plans_<품목>.js 를 그대로 읽어 보여 준다 (이미 덮어쓴 값 포함) */
