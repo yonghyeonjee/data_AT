@@ -717,6 +717,9 @@
     var en = CFG.enabled === undefined ? true : CFG.enabled;
     if (en === false || en === 'false') return false;
     if (CFG.onlyGoods && CFG.onlyGoods.length && CFG.onlyGoods.indexOf(String(CFG.goodsNo)) < 0) return false;
+    // 대표 카테고리가 구독상품(012)·그 하위인 상품은 이미 구독 전용 상품이라 탭을 띄우지 않는다 — CFG.skipCate 로 바꿀 수 있다
+    var cate = document.querySelector('#frmView input[name="cateCd"]'), cc = cate ? String(cate.value || '') : '';
+    if (cc && (CFG.skipCate || ['012']).some(function (c) { return cc.indexOf(c) === 0; })) return false;
     if (en !== 'test') return true;
     var qs = location.search, on = /[?&]subtab=on(&|$)/.test(qs);
     try {
