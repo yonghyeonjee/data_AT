@@ -15,6 +15,11 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   var IDX = window.SUB_INDEX;
   var root = document.getElementById('subViewRoot');
   if (!root) return;
+  // 고도몰 목록용 작은 사진(240px 미만)은 늘리지 않는다 — 300px 로 확대돼 깨져 보이던 것
+  document.addEventListener('load', function (e) {
+    var t = e.target;
+    if (t && t.tagName === 'IMG' && t.closest && t.closest('.sv-img') && t.naturalWidth && t.naturalWidth < 240) t.className = 'is-small';
+  }, true);
 
   var CAT_ICON = { ref: '🧊', kimchi: '🥬', water: '💧', tv: '📺', monitor: '🖥️', audio: '🔊', laundry: '👕', cleaner: '🧹',
     aircon: '❄️', sysaircon: '🌬️', cooking: '🍳', airpurifier: '🍃', dehumid: '💨', tab: '📱', book: '💻' };
