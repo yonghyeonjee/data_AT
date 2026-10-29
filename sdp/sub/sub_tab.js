@@ -340,11 +340,14 @@
     info.p.forEach(function (p) { best = Math.max(best, calc(info, p, o).saving); });
     return best;
   }
+  // 처음 선택된 카드·실적 구간 (스킨 SUB_TAB_CONFIG 의 defaultCard · defaultTier 가 비어 있으면 이 값)
+  var DEFAULT_CARD = '삼성카드', DEFAULT_TIER = '30만↑';
   function defaultTier(name) {
     var cd = window.SUB_CARDS && window.SUB_CARDS[name];
     if (!cd) return '';
     var tiers = Object.keys(cd.t);
-    return tiers.indexOf(CFG.defaultTier) >= 0 ? CFG.defaultTier : tiers[0];
+    var want = CFG.defaultTier || DEFAULT_TIER;
+    return tiers.indexOf(want) >= 0 ? want : tiers[0];
   }
   function setModel(m, cb) {
     state.model = m; state.info = null; state.year = 0; state.type = ''; state.cycle = 0;
@@ -359,9 +362,8 @@
           state.best = bestSaving(info);
         } else state.min = 0;
         if (state.card && cardNames().indexOf(state.card) < 0) state.card = '';
-        if (!state.card && CFG.defaultCard && cardNames().indexOf(CFG.defaultCard) >= 0) {
-          state.card = CFG.defaultCard; state.tier = defaultTier(CFG.defaultCard);
-        }
+        var defCard = CFG.defaultCard || DEFAULT_CARD;
+        if (!state.card && cardNames().indexOf(defCard) >= 0) { state.card = defCard; state.tier = defaultTier(defCard); }
         if (cb) cb();
       }); });
     });
@@ -422,7 +424,8 @@
   }
 
   function renderHead() {
-    els.subPrice.textContent = state.min ? '월 ' + fmt(state.min) + '원~' : '';
+    var cur = current();   // 선택한 조건(약정·케어·선납·카드) 그대로의 월 납부 예상금액 — 아래 요약·하단 바와 같은 값
+    els.subPrice.textContent = cur ? '월 ' + fmt(cur.finalMonthly) + '원' : state.min ? '월 ' + fmt(state.min) + '원~' : '';
     els.subSave.hidden = !state.best;
     els.subSave.textContent = state.best ? '카드 적용 시 최대 ' + fmt(state.best) + '원 저렴' : '';
     root.classList.toggle('is-cheaper', !!state.best);
@@ -455,6 +458,13 @@
   }
   function row(label, value, cls) {
     return '<div' + (cls ? ' class="' + cls + '"' : '') + '><dt>' + label + '</dt><dd>' + value + '</dd></div>';
+  }
+
+  function current() {
+    var info = state.info;
+    if (!info) return null;
+    normalizeSelection(info);
+    return calc(info, findPlan(info, state.year, joinCare(state.type, state.cycle)), opts());
   }
 
   function renderPanel() {
@@ -592,10 +602,11 @@
     var discounted = r.finalMonthly < r.monthly - 0.5;
     h += '<div class="subtab-bar">' +
       '<div class="subtab-bar-row"><span>월 납부 예상금액</span><s' + (discounted ? '' : ' hidden') + '>월 ' + fmt(r.monthly) + '원</s></div>' +
-      '<div class="subtab-bar-row is-main"><span>' + (r.cardTotal ? '제휴카드 적용가' : '혜택 적용가') + '</span><strong>월 ' + fmt(r.finalMonthly) + '원~</strong></div>' +
+      '<div class="subtab-bar-row is-main"><span>' + (r.cardTotal ? '제휴카드 적용가' : '혜택 적용가') + '</span><strong>월 ' + fmt(r.finalMonthly) + '원</strong></div>' +
       ctaHtml(consultBase() + q) + '</div>';
 
     els.panel.innerHTML = h;
+    els.subPrice.textContent = '월 ' + fmt(r.finalMonthly) + '원';   // 조건을 바꾸면 탭 머리 가격도 같이
   }
 
   function render() { renderHead(); if (state.tab === 'sub') renderPanel(); }
