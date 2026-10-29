@@ -55,7 +55,7 @@
     var ask=ASK_URL+'&src=smartpackage_detail'+(hit?'&product='+encodeURIComponent(hit[1]):'')+(isSub?'':'&ask=both')+'&memo='+encodeURIComponent(memo);
     var lad=(type==='p'&&!isSub)?'':'<div class="sp26-ladder">'+L.map(function(x){return '<div class="sp26-step'+(hl[x[0]]?' hl':'')+'"><span>'+x[0]+'품목</span><strong>'+x[1]+'</strong></div>'}).join('')+'</div>';
     var box=document.createElement('div');box.className='sp26';
-    box.innerHTML='<div class="sp26-card"><div class="sp26-top"><span class="sp26-tag"><i>P</i>삼성전자 스마트 패키지</span><span class="sp26-period">'+PERIOD+'</span></div>'+
+    box.innerHTML='<div class="sp26-card"><div class="sp26-top"><span class="sp26-tag"><i>P</i>삼성전자 스마트 패키지</span></div>'+
       '<p class="sp26-msg">'+msg+'</p><p class="sp26-sub">'+sub+'</p>'+(tip?'<p class="sp26-tip">'+tip+'</p>':'')+
       '<div class="sp26-cta"><a class="sp26-btn sp26-ask" href="'+ask+'">스마트 패키지 상담 문의</a><a class="sp26-btn sp26-tel" href="tel:'+TEL.replace(/-/g,'')+'"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>'+TEL+'</a></div>'+
       (lad?'<button type="button" class="sp26-more">품목 수별 포인트 보기</button>':'')+lad+
