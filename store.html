@@ -5950,7 +5950,7 @@ function renderSubPolicy(){
   const d=SP, P=d.policy||{}, A=P.autopay||{}, R=P.prepay||{}, can=!!d.can_edit;
   const ST={on:['진행 중','ok'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
   const promos=(d.promos||[]).filter(p=>can || p.state==='on' || p.state==='soon');
-  $('spSub').textContent=(can?'점장님·대표님은 행사 문구·카드 유의사항을 여기서 바로 고칠 수 있습니다':'상세페이지 구독탭에 나가는 혜택·행사 문구')+(d.deployed?` · 배포 ${d.deployed.at}`:'');
+  $('spSub').textContent=can?'행사 문구·카드 유의사항을 여기서 바로 고칠 수 있습니다':'상세페이지 구독탭에 나가는 혜택·행사 문구';
   const steps=(R.steps||[]).map(s=>`선납 ${spPct(s)} → 할인 ${spPct((R.rates||{})[String(s)])}`).join(' · ');
   const DF=P.defaults||{};   // 공통 기준 (mvp_253) — 보기만, 바꾸는 건 관리자 화면
   let h=`<div class="chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${DF.card?`<span class="pill" title="구독탭·구독센터가 처음 보여 주는 카드 혜택 기준">기본 카드 <b>${esc(DF.card)}${DF.tier?' '+esc(DF.tier):''}</b></span>`:''}${DF.tel?`<span class="pill">상담 전화 <b>${esc(DF.tel)}</b></span>`:''}<span class="pill">자동납부 할인 <b>${spPct(A.rate)}</b></span><span class="pill" title="${esc(steps)}">선납 ${(R.steps||[]).map(spPct).join(' · ')}</span></div>`;
