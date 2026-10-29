@@ -85,3 +85,12 @@ revoke all on function core.f_turnstile_verify(text) from public, anon, authenti
 --   fn_submit_inquiry 부분 치환: "v_spam := v_type like '자급제%' and ((select count(*) … 3 minutes …) >= 2);" → "v_spam := false;"
 --   남은 거르기 = 페이지 botCheck(숨은 칸·4초·입력 0 — 페이지를 안 거친 요청용) · Turnstile(enforce)
 --   본 페이지 SUB v1.6.4 반영 확인(실제 사이트를 DB http_get 으로 읽음 · 블록 1개 · v1.6.3 없음)
+
+-- ⑥ 2026-10-29 18:10 — 자급제 문의 잔디 카드 다시 켬 (사용자 결정: 16시 v1.6.4 뒤 인스타그램 링크 접수 0건 확인)
+--   fn_submit_inquiry 부분 치환(지점 1개):
+--     " and v_type not like '자급제%' then   /* 자급제 문의는 잔디로 안 보낸다 (2026-10-29) */"
+--     → " and not v_spam then   /* 자급제 잔디 다시 켬 · 봇으로 걸린 건(v_spam)만 카드 안 보냄 (2026-10-29) */"
+--   봇으로 걸린 건(botCheck · Turnstile 실패)은 이제 테스트 방 카드도 안 간다.
+--   롤백 시험(채널 주소를 127.0.0.1:9 로 바꿔 실제로는 안 나감): 정상 자급제 → inquiry_subscription · jandi_crm 1장 / 숨은 칸 채운 자급제 → 0장
+-- 같은 날 구독 페이지 SUB v1.6.5: v1.6.1 패치 주석에 고도몰 footer 템플릿 태그가 적혀 있어
+--   고도몰이 주석 안에서 그 태그를 하단 HTML 로 바꿔 → 주석이 깨져 설명 글이 화면에 보이고 하단이 두 번 나왔다. 주석 글만 고침.
