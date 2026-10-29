@@ -1288,6 +1288,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <button class="tab" data-tab="inbox">상담</button>
       <button class="tab" data-tab="consult" data-perm="consult">＋ 상담 입력</button>
       <button class="tab" data-tab="quote">견적서</button>
+      <button class="tab" data-tab="sub">구독 관리</button>
       <button class="tab" data-tab="customer">내 고객</button>
       <button class="tab" data-tab="alerts">CRM</button>
       <button class="tab" data-tab="stock" data-perm="stock">재고</button>
@@ -1408,6 +1409,20 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel hidden" id="tab-quote">
     <div class="intro"><b>견적서</b>는 홈페이지 견적서 페이지에서 만들고, 여기서 찾아 고객에게 보냅니다. 상담 줄의 <b>견적서 만들기</b>를 누르면 고객 정보가 채워진 채 열립니다.</div>
     <div class="cta2"><button onclick="openQuote()">견적서 발행 ↗</button><button class="alt" onclick="openCalc()">구독료 계산기 ↗</button></div>
+    <div class="card" id="qtCard">
+      <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
+    <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
+    <div class="prow" id="qt_period"></div>
+      <div class="seg sm cflt" id="qt_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="qtFlt('all')">전체 <i>0</i></button><button type="button" data-v="live" onclick="qtFlt('live')" title="마감일이 아직 안 지난 견적서">유효 <i>0</i></button><button type="button" data-v="over" onclick="qtFlt('over')" title="유효기한이 지난 견적서 — 다시 발행하거나 고객에게 연락">마감 지남 <i>0</i></button><button type="button" data-v="none" onclick="qtFlt('none')">마감 없음 <i>0</i></button></div>
+      <div class="list" id="qtList" style="margin-top:12px"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
+      <div id="qt_pg"></div>
+    </div>
+  </section>
+
+  <!-- ── 내 고객 ── -->
+  <!-- ── 구독 관리 (mvp_254): 모델별 구독가 지정·숨김 + 혜택·행사 문구 — 상세페이지 구독탭·구독센터에 나가는 값 ── -->
+  <section class="panel hidden" id="tab-sub">
+    <div class="intro"><b>구독 관리</b>는 상세페이지 <b>일시불/구독 탭</b>과 구독센터에 나가는 값을 매장에서 바로 손보는 곳입니다. 요금은 매일 DPS에서 오고, 여기서 넣은 값이 그 위에 덮입니다. 고치는 사람: 점장님·대표님, 그리고 관리자가 <b>[구독가 지정]</b> 권한을 켜 준 담당자.</div>
     <div class="card" id="prCard">
       <h2>구독 요금 직접 관리 <span id="prSub">상세페이지 구독탭·구독센터에 나가는 월 구독료를 손으로 바꿉니다</span></h2>
       <div id="prBody"><div class="empty">불러오는 중…</div></div>
@@ -1434,17 +1449,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         </div>
       </div>
     </div>
-    <div class="card" id="qtCard">
-      <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
-    <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
-    <div class="prow" id="qt_period"></div>
-      <div class="seg sm cflt" id="qt_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="qtFlt('all')">전체 <i>0</i></button><button type="button" data-v="live" onclick="qtFlt('live')" title="마감일이 아직 안 지난 견적서">유효 <i>0</i></button><button type="button" data-v="over" onclick="qtFlt('over')" title="유효기한이 지난 견적서 — 다시 발행하거나 고객에게 연락">마감 지남 <i>0</i></button><button type="button" data-v="none" onclick="qtFlt('none')">마감 없음 <i>0</i></button></div>
-      <div class="list" id="qtList" style="margin-top:12px"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
-      <div id="qt_pg"></div>
-    </div>
   </section>
-
-  <!-- ── 내 고객 ── -->
   <section class="panel hidden" id="tab-customer">
     <div class="intro"><b>내 고객</b>은 내가 상담하거나 판매한 고객 전부입니다. 판매·상담에 고객명과 번호를 남기면 자동으로 생깁니다. 줄을 누르면 상담·구매 이력이 아래로 펼쳐집니다.</div>
     <div class="card" id="mcuFind">
@@ -3509,14 +3514,15 @@ const NAV_ICON={
 };
 NAV_ICON.inbox   ='<svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 13h5l2 3h4l2-3h5"/></svg>';
 NAV_ICON.quote   ='<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 12h6M10 16h4"/></svg>';
+NAV_ICON.sub     ='<svg viewBox="0 0 24 24"><path d="M4 4h16v6H4zM4 14h16v6H4z"/><path d="M8 7h.01M8 17h.01M12 7h4M12 17h4"/></svg>';   /* 구독 관리 (mvp_254) */
 NAV_ICON.customer='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 NAV_ICON.leave   ='<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15h2M13 15h2M9 18h2"/></svg>';
 NAV_ICON.stats   ='<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>';
 NAV_ICON.assign  ='<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 8h6M19 5l3 3-3 3"/></svg>';
 NAV_ICON.alerts  ='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
 /* 배정은 미배정·일괄 넘기기 같은 예외 처리 자리라 '현황' 맨 아래로 (v201 · 상담 탭 [넘기기]가 평소 쓰는 길) */
-const NAV_GROUPS=[['상담',['home','inbox','consult','quote','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
-const NAV_LABEL={home:'홈', inbox:'상담', consult:'상담 입력', quote:'견적서', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'휴가'};
+const NAV_GROUPS=[['상담',['home','inbox','consult','quote','sub','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
+const NAV_LABEL={home:'홈', inbox:'상담', consult:'상담 입력', quote:'견적서', sub:'구독 관리', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'휴가'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
 const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
 const CALC_URL ='https://www.samsungsh.co.kr/main/html.php?htmid=service/calc_subscribe.html';
@@ -3550,7 +3556,7 @@ function syncNav(){
     return `<div class="grp">${g}</div>`+items.map(x=>`<button class="it${x.active?' active':''}" onclick="goTab('${x.t}');sideClose()">${NAV_ICON[x.t]||''}<span>${esc(x.label)}</span>${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join(''); }).join('');
   /* 하단 탭바 : 앞 4개 + 더보기(서랍) */
   /* 하단 4칸은 매장에서 손이 가장 많이 가는 순서 — 판매 입력이 [더보기] 안에 숨지 않게 */
-  const vis=['home','inbox','consult','sale','assign','stock','order','daily','report','online','quote','customer','alerts','stats'].map(tabInfo).filter(x=>x&&!x.hidden);
+  const vis=['home','inbox','consult','sale','assign','stock','order','daily','report','online','quote','sub','customer','alerts','stats'].map(tabInfo).filter(x=>x&&!x.hidden);
   const first=vis.slice(0,4), rest=vis.slice(4);
   const restBadge=rest.reduce((a,x)=>a+(Number(x.badge)||0),0), restActive=rest.some(x=>x.active);
   bn.innerHTML=first.map(x=>`<button class="${x.active?'active':''}" onclick="goTab('${x.t}')">${NAV_ICON[x.t]||''}${esc(x.label)}${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join('')
@@ -3571,9 +3577,9 @@ function goTab(name, fromHistory){
   const b=document.querySelector(`.tab[data-tab="${name}"]`); if(!b || b.classList.contains('hidden')) return;
   if($('cdDlg') && !$('cdDlg').classList.contains('hidden')) cdClose();   /* 상세 팝업이 떠 있으면 탭을 옮길 때 닫는다 */
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  ['home','inbox','assign','quote','customer','alerts','stats','leave','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
-  if(name==='quote' && !SP_LOADED){ SP_LOADED=true; loadSubPolicy(); }   /* 구독 혜택 안내 (mvp_246) */
-  if(name==='quote' && !PR_LOADED){ PR_LOADED=true; loadSubPrice(); }   /* 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) */
+  ['home','inbox','assign','quote','sub','customer','alerts','stats','leave','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  if(name==='sub' && !SP_LOADED){ SP_LOADED=true; loadSubPolicy(); }   /* 구독 혜택 안내 (mvp_246) */
+  if(name==='sub' && !PR_LOADED){ PR_LOADED=true; loadSubPrice(); }   /* 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) */
   if(name==='leave' && !LV_LOADED){ LV_LOADED=true; loadLeave(); }
   if(name==='stats' && !ST_LOADED){ ST_LOADED=true; stPick(todayStr().slice(0,8)+'01', todayStr()); }   /* 처음 열면 이 달 · 일별 (v233) */
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
