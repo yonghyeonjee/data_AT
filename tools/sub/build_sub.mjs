@@ -6,7 +6,7 @@
      sub_plans_<키>.js     카테고리별 요금표 + 선납 미운영 표시 + 정수기 본사 할인값           (구독 모델일 때 1개 로드)
      sub_cards.js          제휴카드 청구할인 표 (CARD 그대로)
      sub_policy.js         정책값 (자동납부·선납·카드 유의사항·행사 문구) — 데이터센터 sub.policy 가 원본
-     version.js            SUB_VER = "<SDP 판>+<정책 판>" — goods_view 가 5분마다 읽어 바뀌면 파일을 새로 받는다
+     version.js            SUB_VER = "<SDP 판>+<정책 판>+<DPS 수집>+u<화면 파일 해시>" — goods_view 가 5분마다 읽어 바뀌면 파일을 새로 받는다
    ※ 공개 파일: 제품 일시불가(v)·SPECS·인센티브·포인트 표는 넣지 않는다 (상세페이지 일시불가는 고도몰 판매가)
    import { buildSubFiles } from './build_sub.mjs' — publish.mjs 와 테스트가 같이 쓴다 */
 
@@ -144,8 +144,9 @@ export function applyOverrides(DATA, ov) {
 /* rel: fn_sdp_export 응답 (CARD·WATER_POLICY 를 쓴다 · dps 가 없으면 DATA·PREPAY_NO 도)
    policy: fn_sub_policy_export 응답 (없으면 sub_policy.js 를 만들지 않는다 — 화면은 기본값으로 계산)
    dps: fn_sub_dps_export 응답 (있으면 요금표 원본 · 없으면 SDP 판의 DATA 로)
+   ui: 화면 파일(sub_tab.js 등) 해시 — 판 번호 끝에 '+u<해시>' 로 붙여 화면만 고쳐도 상세페이지가 새 파일을 받게 한다 (?v=판 번호)
    → { 'sub_index.js': '…', 'sub_plans_tv.js': '…', …, 'sub_cards.js', 'sub_policy.js', 'version.js' } */
-export function buildSubFiles(rel, policy, dps) {
+export function buildSubFiles(rel, policy, dps, ui) {
   const CARD = varOf(rel, 'CARD') || {}, WATER = varOf(rel, 'WATER_POLICY') || {};
   let DATA, PREPAY_NO, src, dup = 0;
   if (dps && dps.items) { ({ DATA, PREPAY_NO, dup } = dpsToData(dps)); src = `DPS 수집 ${dps.fetch_id || ''}`; }
@@ -156,7 +157,7 @@ export function buildSubFiles(rel, policy, dps) {
   if (policy && policy.overrides) { ovStats = applyOverrides(DATA, policy.overrides); policy = { ...policy }; delete policy.overrides; }
   if (policy) checkPolicy(policy);
   const autopay = policy?.autopay?.rate ?? 0.05;
-  const ver = rel.ver + (policy?.ver ? '+' + policy.ver : '') + (dps ? '+' + dpsVer(dps) : '');
+  const ver = rel.ver + (policy?.ver ? '+' + policy.ver : '') + (dps ? '+' + dpsVer(dps) : '') + (ui ? '+u' + ui : '');
   const head = `/* 상품상세 구독탭 데이터 | 데이터센터 배포판 ${ver} (db.samsungat.co.kr/sdp/sub · 요금표 원본 ${src} · 카드표 SDP 판 ${rel.ver} · 정책 sub.policy — 직접 고치지 마세요) */\n`;
   const out = {}, index = {}, cats = {}, missing = [];
   const noPre = new Set(PREPAY_NO.map(norm));

@@ -5,6 +5,7 @@
    SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY 가 있어야 한다. 바뀐 게 없으면 아무것도 안 쓰고 끝낸다.
    --deployed <ver> <sub_ver> [커밋] : 커밋·푸시가 끝난 뒤 fn_sdp_deployed · fn_sub_policy_deployed 로 알린다 */
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import { buildFiles } from './release_to_js.mjs';
 import { buildSubFiles } from '../sub/build_sub.mjs';
 const URL_ = process.env.SUPABASE_URL, KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -55,7 +56,10 @@ if (dps) {
 let subChanged = 0, subVer = subCur || '';
 if (skip) await log('sub_skipped', subCur || '', skip + ' (수집기 점검 필요 · 정책 변경도 다음 정상 수집 뒤에 반영됨)');
 else {
-  const sub = buildSubFiles(rel, policy, dps);
+  // 화면 파일이 바뀌면 판 번호도 바뀌게 (상세페이지·구독센터는 ?v=판 번호 로 화면 파일을 부른다 — 안 바꾸면 캐시에 예전 화면이 남는다)
+  const UI_FILES = ['sub_tab.js', 'sub_tab.css', 'sub_view.js', 'sub_view.css', 'sub_shop.js', 'sub_shop.css', 'sub_find.js', 'sub_find.css'];
+  const h = createHash('md5'); for (const f of UI_FILES) if (fs.existsSync(`sdp/sub/${f}`)) h.update(fs.readFileSync(`sdp/sub/${f}`));
+  const sub = buildSubFiles(rel, policy, dps, h.digest('hex').slice(0, 4));
   subChanged = writeAll('sdp/sub', sub);
   subVer = (sub['version.js'].match(/SUB_VER = "([^"]+)"/) || [])[1];
   console.log(`구독탭 판 ${subVer} (지금 ${subCur || '없음'}) · 원본 ${sub.__stats.src} · 모델 ${sub.__stats.models} · 선납불가 ${sub.__stats.prepayNo} · 바뀐 파일 ${subChanged}` + (sub.__stats.missing.length ? ` · CAT_KEYS 에 없는 품목: ${sub.__stats.missing.join(', ')}` : ''));
