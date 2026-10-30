@@ -8770,18 +8770,24 @@ async function addStaffRow(){
   try{ await rpc('fn_staff_save',{p_id:null,p_name:name,p_code:code,p_active:true,p_role_note:null}); toast('추가됨','ok'); loadSettings(); }
   catch(e){ toast(e.message,'bad'); }
 }
+/* 휴대폰 칸은 fn_staff_save 가 받지 않는다 — 번호가 바뀌었으면 fn_store_pass_reset 이 번호 저장 + 비밀번호(번호!) 를 함께 다시 만든다 */
+async function saveStaffMobile(x){ const mob=($('sm_'+x.id).value||'').trim(); if(mob===(x.mobile||'').trim()) return false;
+  if(!mob){ toast(x.name+': 휴대폰 번호를 비울 수는 없습니다 (번호가 비밀번호입니다)','bad'); return false; }
+  if(!/^01[0-9][-\s]?\d{3,4}[-\s]?\d{4}$/.test(mob)){ toast(x.name+': 휴대폰 번호를 010-0000-0000 꼴로 넣으세요','bad'); return false; }
+  const r=await rpc('fn_store_pass_reset',{p_id:x.id,p_mobile:mob}); toast(`${r.name} 번호 저장 · 비밀번호 = ${r.mobile}!`,'ok'); return true; }
 async function saveStaff(id){
   try{ await rpc('fn_staff_save',{p_id:id,p_name:$('sn_'+id).value,p_code:$('sc_'+id).value,p_active:$('sa_'+id).checked,p_role_note:$('sr_'+id).value||null});
+    const x=STAFF.find(s=>s.id===id); if(x) await saveStaffMobile(x);
     toast('저장됨','ok'); loadSettings(); }catch(e){ toast(e.message,'bad'); }
 }
 async function saveStaffAll(){
-  const dirty=STAFF.filter(x=> $('sn_'+x.id).value!==x.name || $('sc_'+x.id).value!==x.code || ($('sr_'+x.id).value||null)!==(x.role_note||null) || $('sa_'+x.id).checked!==!!x.active);
+  const dirty=STAFF.filter(x=> $('sn_'+x.id).value!==x.name || $('sc_'+x.id).value!==x.code || ($('sr_'+x.id).value||null)!==(x.role_note||null) || $('sa_'+x.id).checked!==!!x.active || ($('sm_'+x.id).value||'').trim()!==(x.mobile||'').trim());
   if(!dirty.length){ toast('변경된 행이 없습니다'); return; }
   const codes=STAFF.map(x=>$('sc_'+x.id).value); const dup=codes.find((c,i)=>codes.indexOf(c)!==i);
   if(dup){ toast('코드가 중복됩니다: '+dup,'bad'); return; }
   let ok=0, bad=[];
   for(const x of dirty){
-    try{ await rpc('fn_staff_save',{p_id:x.id,p_name:$('sn_'+x.id).value,p_code:$('sc_'+x.id).value,p_active:$('sa_'+x.id).checked,p_role_note:$('sr_'+x.id).value||null}); ok++; }
+    try{ await rpc('fn_staff_save',{p_id:x.id,p_name:$('sn_'+x.id).value,p_code:$('sc_'+x.id).value,p_active:$('sa_'+x.id).checked,p_role_note:$('sr_'+x.id).value||null}); await saveStaffMobile(x); ok++; }
     catch(e){ bad.push($('sn_'+x.id).value+': '+e.message); }
   }
   toast(ok+'명 저장'+(bad.length?' · 실패 '+bad.length+'명':''), bad.length?'bad':'ok');
