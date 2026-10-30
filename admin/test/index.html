@@ -2478,10 +2478,21 @@ th{background:var(--zone-head);color:var(--ink-2)}
           </div>
         </div>
         <div class="grid g32">
-          <div id="nsc-settings-1" class="card"><h3>담당자 · 매장 입력 코드 <span>매장 화면은 이 4자리로 로그인합니다</span>
+          <div id="nsc-settings-1" class="card"><h3>담당자 · 로그인 <span id="saMode">매장 화면은 이름 + 비밀번호(휴대폰 번호 뒤에 !)로 로그인합니다</span>
             <div class="actions"><button class="btn sm ghost" onclick="addStaffRow()">+ 담당자 추가</button><button class="btn sm" onclick="saveStaffAll()">일괄 저장</button></div></h3>
-            <div class="tw"><table><thead><tr><th>이름</th><th>코드</th><th>비고</th><th>활성</th><th></th></tr></thead><tbody id="tbStaff"></tbody></table></div>
-            <p class="note" style="margin-top:10px">코드는 숫자 4자리, 중복 불가. 담당자가 매장 화면에서 코드를 넣으면 <b>판매·상담의 담당자가 자동으로 본인</b>이 됩니다. 비활성으로 바꾸면 로그인만 막히고 기존 원장 기록은 그대로 남습니다.</p>
+            <div class="tw"><table><thead><tr><th>이름</th><th>코드</th><th>휴대폰</th><th>비밀번호</th><th>비고</th><th>활성</th><th></th></tr></thead><tbody id="tbStaff"></tbody></table></div>
+            <p class="note" style="margin-top:10px"><b>비밀번호는 담당자 휴대폰 번호 숫자 뒤에 ! 를 붙인 것</b>입니다 (예: 010-1234-5678 → 01012345678!). 번호를 넣고 <span class="k">비번 초기화</span>를 누르면 그 번호로 비밀번호가 만들어지고, 그 담당자의 기기는 다시 로그인하게 됩니다. 번호가 없는 담당자는 로그인할 수 없습니다.
+            코드 4자리는 옛 로그인 방식이며 아래 모드를 <b>이름+비밀번호만</b>으로 바꾸면 더 이상 쓰이지 않습니다.</p>
+            <div id="storeAuth" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+              <h4 style="margin:0 0 8px;font-size:calc(13.5px * var(--font-scale));font-weight:800;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">로그인 모드 · 접속 중인 기기 <span class="note" id="saState" style="font-weight:500">불러오는 중…</span></h4>
+              <div class="filters" style="margin-bottom:8px">
+                <button class="btn sm" id="saModeBtn" onclick="storeAuthToggle()">…</button>
+                <button class="btn sm ghost" onclick="storeSessionsRevoke(null)" title="접속 중인 모든 담당자 기기를 끊습니다 · 다음 호출에서 이름+비밀번호를 다시 넣게 됩니다">모든 기기 끊기</button>
+              </div>
+              <div class="tw"><table><thead><tr><th>담당자</th><th>기기</th><th>IP</th><th>로그인</th><th>마지막 사용</th><th>재인증</th><th></th></tr></thead><tbody id="tbSessions"><tr><td colspan="7" class="note">불러오는 중…</td></tr></tbody></table></div>
+              <p class="note" style="margin-top:8px">로그인하면 12시간짜리 세션을 받습니다. 고객 상세·고객 찾기·내 고객·상담 찾기·전체 상담·문자 보내기는 <b>10분 안에 비밀번호를 다시 넣은</b> 기기만 열리고, 누가 언제 봤는지 접근 기록에 남습니다. <b>코드 로그인도 허용</b>은 옛 화면이 남아 있는 전환 기간용입니다 — 새 화면을 배포하고 모든 담당자의 번호를 넣은 뒤 <b>이름+비밀번호만</b>으로 바꾸세요.</p>
+            </div>
+            <p class="note" style="margin-top:10px">담당자가 매장 화면에서 로그인하면 <b>판매·상담의 담당자가 자동으로 본인</b>이 됩니다. 비활성으로 바꾸면 로그인만 막히고 기존 원장 기록은 그대로 남습니다.</p>
           </div>
           <div id="nsc-settings-2" class="card"><h3>계정 · 권한 <span>아이디 로그인 가능</span></h3>
             <div class="tw"><table><thead><tr><th>아이디 / 이메일</th><th>권한</th><th>담당명</th><th>활성</th><th></th></tr></thead><tbody id="tbProfiles"></tbody></table></div>
@@ -2669,7 +2680,7 @@ let toastT; function toast(m,c=''){ const t=$('toast'); t.textContent=m; t.class
 /* 같은 화면을 왔다갔다 할 때 같은 질의를 다시 던지지 않게 45초만 담아둔다.
    저장·수정 계열(fn_*_save 등)은 담지 않고, 실행되면 캐시를 통째로 비운다. */
 const RPC_CACHE=new Map(), RPC_TTL=45000;
-const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle|void|to_order|rollback|auto_run|unlock|hide|exclude|check|pull|remove)/i;
+const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle|void|to_order|rollback|auto_run|unlock|hide|exclude|check|pull|remove|revoke)/i;
 function rpcClear(){ RPC_CACHE.clear(); }
 let RPC_BUSY=0, RPC_T=null;
 let RPC_PILL=null, RPC_T0=0;
@@ -8706,14 +8717,51 @@ async function loadSettings(){
       <td style="white-space:nowrap"><button class="btn sm ghost" onclick="maOpen('${p.id}')">메뉴</button> <button class="btn sm" onclick="saveProfile('${p.id}')">저장</button></td></tr>`).join('');
   }catch(e){ $('tbProfiles').innerHTML=`<tr><td colspan="5" class="note">${ME.role==='admin'?esc(e.message):'관리자만 볼 수 있습니다'}</td></tr>`; }
 }
-function renderStaff(){
-  $('tbStaff').innerHTML=STAFF.map(x=>`<tr>
+/* ── 담당자 로그인 · 세션 (mvp_256) ── */
+let STAFF_AUTH={};
+async function loadStoreAuth(){
+  if(!$('saState')) return;
+  try{ const a=await rpc('fn_store_auth_info',{},{fresh:true});
+    STAFF_AUTH={}; (a.staff||[]).forEach(x=>STAFF_AUTH[x.id]=x);
+    const ago=t=>{ const m=Math.round((Date.now()-new Date(t).getTime())/60000); return m<1?'방금':m<60?m+'분 전':m<1440?Math.round(m/60)+'시간 전':Math.round(m/1440)+'일 전'; };
+    const sess=a.mode==='session';
+    $('saState').innerHTML = `${sess?'<span class="tag ok">이름+비밀번호만</span>':'<span class="tag bad">코드 로그인도 허용 (전환 기간)</span>'} 접속 중 ${a.sessions.length}대 · 오늘 고객정보 조회 ${a.reads_today}건 · 1시간 실패 ${a.fails_1h}회`;
+    $('saModeBtn').textContent = sess ? '코드 로그인도 허용으로 되돌리기' : '이름+비밀번호만 허용으로 바꾸기'; $('saModeBtn').dataset.next = sess?'code':'session';
+    $('tbSessions').innerHTML = a.sessions.map(x=>`<tr><td><b>${esc(x.staff)}</b></td><td class="mono" title="${esc(x.ua||'')}">${esc(x.device||'-')}</td><td class="mono">${esc(x.ip||'-')}</td>
+      <td title="${esc(x.created_at)}">${ago(x.created_at)}</td><td title="${esc(x.last_seen)}">${ago(x.last_seen)}</td><td>${x.elevated?'<span class="tag ok">10분 안</span>':'<span class="note">만료</span>'}</td>
+      <td><button class="btn sm ghost" onclick="storeSessionsRevoke(${x.id})">끊기</button></td></tr>`).join('') || '<tr><td colspan="7" class="note">접속 중인 기기가 없습니다</td></tr>';
+    renderStaffRows();
+  }catch(e){ $('saState').textContent=e.message; $('tbSessions').innerHTML=`<tr><td colspan="7" class="note">${esc(e.message)}</td></tr>`; }
+}
+async function storePassReset(id){
+  const mob=($('sm_'+id).value||'').trim(), nm=$('sn_'+id).value;
+  if(!/^01[0-9][-\s]?\d{3,4}[-\s]?\d{4}$/.test(mob)) return toast('휴대폰 번호를 010-0000-0000 꼴로 넣으세요','bad');
+  if(!confirm(`${nm} 담당자의 비밀번호를 이 번호(${mob})로 다시 만들까요?\n\n비밀번호 = 번호 숫자 + !  ·  이 담당자가 쓰던 기기는 다시 로그인하게 됩니다.`)) return;
+  try{ const r=await rpc('fn_store_pass_reset',{p_id:id,p_mobile:mob}); toast(`${r.name} 비밀번호를 ${r.mobile}! 로 만들었습니다`,'ok'); loadSettings(); }
+  catch(e){ toast(e.message,'bad'); }
+}
+async function storeAuthToggle(){
+  const next=$('saModeBtn').dataset.next||'session';
+  const nopass=STAFF.filter(x=>x.active && STAFF_AUTH[x.id] && !STAFF_AUTH[x.id].has_pass).map(x=>x.name);
+  if(next==='session' && nopass.length && !confirm('비밀번호가 없는 활성 담당자가 있습니다: '+nopass.join(', ')+'\n이들은 로그인할 수 없게 됩니다. 그래도 바꿀까요?')) return;
+  if(!confirm(next==='session' ? '코드 4자리 로그인을 끄고 이름+비밀번호만 허용할까요?\n옛 화면으로 접속 중인 기기는 다음 호출에서 다시 로그인하게 됩니다.' : '코드 4자리 로그인을 다시 허용할까요? (보안 점검에서 권장하지 않는 상태)')) return;
+  try{ await rpc('fn_store_auth_set',{p_mode:next}); toast('로그인 모드를 바꿨습니다','ok'); loadStoreAuth(); }catch(e){ toast(e.message,'bad'); }
+}
+async function storeSessionsRevoke(id){
+  if(!confirm(id?'이 기기를 끊을까요? 다음 호출에서 다시 로그인하게 됩니다.':'접속 중인 모든 기기를 끊을까요? 전원이 이름+비밀번호를 다시 넣게 됩니다.')) return;
+  try{ const n=await rpc('fn_store_sessions_revoke',{p_id:id}); toast(n+'대 끊었습니다','ok'); loadStoreAuth(); }catch(e){ toast(e.message,'bad'); }
+}
+function renderStaff(){ renderStaffRows(); loadStoreAuth(); }
+function renderStaffRows(){
+  $('tbStaff').innerHTML=STAFF.map(x=>{ const au=STAFF_AUTH[x.id]; return `<tr>
     <td><input class="in" style="padding:4px 8px;width:90px" id="sn_${x.id}" value="${esc(x.name)}"></td>
     <td><input class="in mono" style="padding:4px 8px;width:72px;text-align:center;letter-spacing:.12em" id="sc_${x.id}" value="${esc(x.code)}" maxlength="4" inputmode="numeric"></td>
+    <td><input class="in mono" style="padding:4px 8px;width:130px" id="sm_${x.id}" value="${esc(x.mobile||'')}" placeholder="010-0000-0000" inputmode="tel"></td>
+    <td style="white-space:nowrap">${au ? (au.has_pass ? `<span class="tag ok" title="${esc(au.pass_set_at||'')}">있음</span>` : '<span class="tag bad">없음</span>') : ''} <button class="btn sm ghost" onclick="storePassReset(${x.id})" title="번호 저장 + 비밀번호를 번호! 로">비번 초기화</button></td>
     <td><input class="in" style="padding:4px 8px;width:110px" id="sr_${x.id}" value="${esc(x.role_note||'')}" placeholder="예: 점장"></td>
     <td><input type="checkbox" id="sa_${x.id}" ${x.active?'checked':''}></td>
-    <td><button class="btn sm" onclick="saveStaff(${x.id})">저장</button></td></tr>`).join('')
-    || '<tr><td colspan="5" class="note">담당자가 없습니다</td></tr>';
+    <td><button class="btn sm" onclick="saveStaff(${x.id})">저장</button></td></tr>`; }).join('')
+    || '<tr><td colspan="7" class="note">담당자가 없습니다</td></tr>';
 }
 async function addStaffRow(){
   const name=prompt('담당자 이름'); if(!name) return;

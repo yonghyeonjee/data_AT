@@ -1099,6 +1099,7 @@ end $outer$;
   멈추면 수집 미도착 감시(09:10 잔디)에 잡힌다.
 
 ### 즉시 할 일
+- **담당자 로그인 개편 (mvp_258 · v250 · 2026-10-30) 마무리**: ① 관리자 설정 › 담당자에서 휴대폰 없는 활성 담당자 6명 번호 넣고 [비번 초기화] ② `store/test` 에서 본인 이름+번호! 로 로그인·고객 상세 재인증 확인 ③ `store/test/index.html` → `store.html` 승격 ④ 전원 새 화면이면 [이름+비밀번호만 허용] (fn_store_auth_set). 비밀번호 = 휴대폰 숫자 + `!` · 세션 12시간(core.staff_session · 헤더 x-dc-session · core.f_staff 가 토큰을 신원으로 · p_code 는 안 본다) · 고객정보 6함수는 core.f_store_pii 10분 재인증 + crm.access_log. 대시보드 Authentication 에서 회원가입 끄기·유출 비밀번호 차단·관리자 MFA 는 아직 사용자 작업.
 1. ~~저장소 루트 정리~~ — 완료 (v98)
 2. ~~노출된 키 교체~~ — 완료 (2026-09-12). `gas_forward` · `gmail_inquiry` 둘 다 새 값으로 바꿨고
    GAS 4개(견적내역·구독문의·소모품렌탈·VMS) 재배포까지 확인했다.

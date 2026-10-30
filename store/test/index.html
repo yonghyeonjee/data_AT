@@ -39,6 +39,14 @@ html.resuming body::after{content:'이어서 여는 중…';position:fixed;inset
 .pin-card input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 .pin-card button{width:100%;margin-top:14px;padding:14px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:calc(16px * var(--font-scale));cursor:pointer}
 .pin-card .err{color:var(--bad);font-size:calc(13px * var(--font-scale));margin-top:10px;min-height:18px;line-height:1.5}
+.pin-card .pin-f{text-align:left;margin-top:10px}
+.pin-card .pin-f label{display:block;font-size:calc(12.5px * var(--font-scale));font-weight:700;color:var(--muted);margin:0 0 5px 2px}
+.pin-card .pin-f input{font-size:calc(18px * var(--font-scale));letter-spacing:.01em;text-align:left;padding:12px 14px}
+.pin-card .pin-save{display:flex;align-items:center;gap:8px;margin-top:10px;min-height:40px;font-size:calc(13.5px * var(--font-scale));color:var(--muted);text-align:left;cursor:pointer;user-select:none}
+.pin-card .pin-save input{width:20px;height:20px;margin:0;accent-color:var(--accent);padding:0;border-radius:4px}
+.radlg p.sub{font-size:calc(13.5px * var(--font-scale));color:var(--muted);margin:0 0 12px;line-height:1.5}
+.radlg .err{color:var(--bad);font-size:calc(13px * var(--font-scale));min-height:18px;margin-top:8px;line-height:1.5}
+.radlg .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .pin-card button.busy{opacity:.75;cursor:progress}
 .pin-card button.busy::before{content:'';display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:pinspin .7s linear infinite}
 @keyframes pinspin{to{transform:rotate(360deg)}}
@@ -1226,8 +1234,10 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <div class="pin-card">
     <div class="logo">SAMSUNG&amp;TECH · 시흥점<span class="envtag hidden" title="테스트 환경 · /store/test">TEST</span></div>
     <h1>판매·상담 입력</h1>
-    <p class="sub">담당자 코드 4자리를 입력하세요</p>
-    <input id="pinInput" type="tel" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
+    <p class="sub">이름과 비밀번호를 입력하세요</p>
+    <div class="pin-f"><label for="pinInput">이름</label><input id="pinInput" type="text" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="next"></div>
+    <div class="pin-f"><label for="pinPass">비밀번호</label><input id="pinPass" type="password" maxlength="64" autocomplete="current-password" enterkeyhint="go"></div>
+    <label class="pin-save"><input type="checkbox" id="pinSave" checked> 아이디 저장</label>
     <button id="pinBtn" onclick="enterPin()">시작하기</button>
     <div class="pin-meter hidden" id="pinMeter" aria-label="틀린 횟수"><i></i><i></i><i></i><i></i><i></i><span id="pinMeterTxt"></span></div>
     <div class="err" id="pinErr"></div>
@@ -1239,8 +1249,18 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <h3>이 화면의 QR</h3>
     <div class="qrbox" id="qrBox"></div>
     <div class="qrurl" id="qrUrl"></div>
-    <p class="note-in" style="margin:8px 0 0">폰 카메라로 찍으면 이 주소가 바로 열립니다. 담당자 코드는 각자 넣습니다.</p>
+    <p class="note-in" style="margin:8px 0 0">폰 카메라로 찍으면 이 주소가 바로 열립니다. 이름과 비밀번호는 각자 넣습니다.</p>
     <div class="btns" style="margin-top:12px"><button class="btn" onclick="qrClose()">닫기</button></div>
+  </div>
+</div>
+
+<div class="lvmask hidden" id="raDlg" onclick="if(event.target===this)raCancel()">
+  <div class="lvdlg radlg" role="dialog" aria-modal="true" aria-labelledby="raTitle">
+    <h3 id="raTitle">비밀번호 확인</h3>
+    <p class="sub">고객 정보를 보려면 <b>비밀번호</b>를 다시 입력하세요. 확인한 뒤 10분 동안은 다시 묻지 않습니다.</p>
+    <input class="in" id="raPass" type="password" maxlength="64" autocomplete="current-password" aria-label="비밀번호">
+    <div class="err" id="raErr"></div>
+    <div class="btns"><button type="button" class="btn ghost" onclick="raCancel()">취소</button><button type="button" class="btn" id="raBtn" onclick="raOk()">확인</button></div>
   </div>
 </div>
 
@@ -1263,7 +1283,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <button class="font-btn" data-scale="1.6" onclick="setFontScale(1.6)">크게</button>
       </div>
     </div>
-    <div class="foot"><button onclick="lockStore('잠갔습니다. 담당자 코드를 입력하면 이어서 씁니다.')">잠그기</button><button onclick="location.reload()">새로고침</button><button onclick="window.open('/store/guide/','_blank','noopener')">사용 안내</button></div>
+    <div class="foot"><button onclick="lockStore('잠갔습니다. 비밀번호를 입력하면 이어서 씁니다.')">잠그기</button><button onclick="location.reload()">새로고침</button><button onclick="window.open('/store/guide/','_blank','noopener')">사용 안내</button></div>
   </aside>
   <nav class="bnav" id="bnav"></nav>
   <div class="topbar">
@@ -1289,6 +1309,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <button class="tab" data-tab="inbox">상담</button>
       <button class="tab" data-tab="consult" data-perm="consult">＋ 상담 입력</button>
       <button class="tab" data-tab="quote">견적서</button>
+      <button class="tab" data-tab="sub">구독 관리</button>
       <button class="tab" data-tab="customer">내 고객</button>
       <button class="tab" data-tab="alerts">CRM</button>
       <button class="tab" data-tab="stock" data-perm="stock">재고</button>
@@ -1409,6 +1430,37 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   <section class="panel hidden" id="tab-quote">
     <div class="intro"><b>견적서</b>는 홈페이지 견적서 페이지에서 만들고, 여기서 찾아 고객에게 보냅니다. 상담 줄의 <b>견적서 만들기</b>를 누르면 고객 정보가 채워진 채 열립니다.</div>
     <div class="cta2"><button onclick="openQuote()">견적서 발행 ↗</button><button class="alt" onclick="openCalc()">구독료 계산기 ↗</button></div>
+    <div class="card" id="qtCard">
+      <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
+    <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
+    <div class="prow" id="qt_period"></div>
+      <div class="seg sm cflt" id="qt_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="qtFlt('all')">전체 <i>0</i></button><button type="button" data-v="live" onclick="qtFlt('live')" title="마감일이 아직 안 지난 견적서">유효 <i>0</i></button><button type="button" data-v="over" onclick="qtFlt('over')" title="유효기한이 지난 견적서 — 다시 발행하거나 고객에게 연락">마감 지남 <i>0</i></button><button type="button" data-v="none" onclick="qtFlt('none')">마감 없음 <i>0</i></button></div>
+      <div class="list" id="qtList" style="margin-top:12px"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
+      <div id="qt_pg"></div>
+    </div>
+  </section>
+
+  <!-- ── 내 고객 ── -->
+  <!-- ── 구독 관리 (mvp_254): 모델별 구독가 지정·숨김 + 혜택·행사 문구 — 상세페이지 구독탭·구독센터에 나가는 값 ── -->
+  <section class="panel hidden" id="tab-sub">
+    <div class="intro"><b>구독 관리</b>는 상세페이지 <b>일시불/구독 탭</b>과 구독센터에 나가는 값을 매장에서 바로 손보는 곳입니다. 요금은 매일 DPS에서 오고, 여기서 넣은 값이 그 위에 덮입니다. 고치는 사람: 점장님·대표님, 그리고 관리자가 <b>[구독가 지정]</b> 권한을 켜 준 담당자.</div>
+    <!-- 구독료 계산기 (mvp_256): 상품상세 구독탭(sub_tab.js · 데이터센터 배포본)을 매장 화면 안에서 모델만 바꿔 가며 띄운다 — 고객과 상담하며 약정·케어·선납·카드를 바꿔 보여 준다 -->
+    <div class="card" id="scCard">
+      <style>
+        #scCard .sc-row{display:flex;gap:8px;align-items:stretch} #scCard .sc-row .in{flex:1 1 auto;width:100%;min-width:0;box-sizing:border-box;font-size:calc(15px * var(--font-scale));text-transform:uppercase} #scCard .sc-row .btn{flex:0 0 auto;width:auto;min-width:88px}
+        #scCard .sc-list{display:grid;gap:4px;margin-top:8px;max-height:280px;overflow:auto}
+        #scCard .sc-it{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface,#fff);cursor:pointer;font:inherit;color:inherit}
+        #scCard .sc-it:hover{border-color:var(--brand,#0b6e5f)} #scCard .sc-it b{font-family:ui-monospace,monospace} #scCard .sc-it span{color:var(--muted);font-size:calc(12.5px * var(--font-scale))} #scCard .sc-it em{font-style:normal;white-space:nowrap;font-weight:700}
+        #scCard #scHead{margin:10px 0 6px;min-height:0} #scCard #scHead:empty{display:none}
+        #scCard #subTabRoot{margin-top:4px;max-width:720px}
+      </style>
+      <h2>구독료 계산기 <span>고객과 상담하며 모델만 고르면 상세페이지 <b>구독 탭과 똑같은 계산 화면</b>이 열립니다 — 약정·케어·선납·제휴카드를 바꿔 가며 월·총 구독료와 일시불 비교까지. 지금 나가는 요금(직접 바꾼 값 포함) 그대로입니다</span></h2>
+      <div class="sc-row"><input class="in" id="scQ" placeholder="모델번호 또는 상품명 (예: DF80H24R1D · 에어드레서)" autocomplete="off" autocapitalize="characters" oninput="scType()" onkeydown="if(event.key==='Enter'){event.preventDefault();scGo();}"><button type="button" class="btn" onclick="scGo()">계산</button></div>
+      <div id="scList" class="sc-list hidden"></div>
+      <div id="scHead" class="note-in"></div>
+      <div id="subTabRoot" hidden></div>
+      <div id="scEmpty" class="empty">모델번호나 상품명을 넣으면 여기 계산 화면이 열립니다</div>
+    </div>
     <div class="card" id="prCard">
       <h2>구독 요금 직접 관리 <span id="prSub">상세페이지 구독탭·구독센터에 나가는 월 구독료를 손으로 바꿉니다</span></h2>
       <div id="prBody"><div class="empty">불러오는 중…</div></div>
@@ -1422,17 +1474,20 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         </div>
       </div>
     </div>
-    <div class="card" id="qtCard">
-      <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
-    <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
-    <div class="prow" id="qt_period"></div>
-      <div class="seg sm cflt" id="qt_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="qtFlt('all')">전체 <i>0</i></button><button type="button" data-v="live" onclick="qtFlt('live')" title="마감일이 아직 안 지난 견적서">유효 <i>0</i></button><button type="button" data-v="over" onclick="qtFlt('over')" title="유효기한이 지난 견적서 — 다시 발행하거나 고객에게 연락">마감 지남 <i>0</i></button><button type="button" data-v="none" onclick="qtFlt('none')">마감 없음 <i>0</i></button></div>
-      <div class="list" id="qtList" style="margin-top:12px"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
-      <div id="qt_pg"></div>
+    <div class="card" id="spCard">
+      <h2>구독 혜택 안내 <span id="spSub">상세페이지 구독탭에 나가는 혜택·행사 문구</span></h2>
+      <div id="spBody"><div class="empty">불러오는 중…</div></div>
+      <div class="lvmask hidden" id="spDlg" onclick="if(event.target===this)spDlgClose()">
+        <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="spDlgTitle">
+          <button type="button" class="lvx" onclick="spDlgClose()" aria-label="닫기" title="닫기">✕</button>
+          <h3 id="spDlgTitle">행사 문구</h3>
+          <div class="lvform" id="spDlgForm"></div>
+          <p class="note-in" id="spDlgErr" style="color:var(--bad);min-height:18px;margin:6px 0 0"></p>
+          <div class="btns" style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button type="button" class="btn ghost" onclick="spDlgClose()">취소</button><button type="button" class="btn" id="spDlgOk" onclick="spDlgSave()">저장</button></div>
+        </div>
+      </div>
     </div>
   </section>
-
-  <!-- ── 내 고객 ── -->
   <section class="panel hidden" id="tab-customer">
     <div class="intro"><b>내 고객</b>은 내가 상담하거나 판매한 고객 전부입니다. 판매·상담에 고객명과 번호를 남기면 자동으로 생깁니다. 줄을 누르면 상담·구매 이력이 아래로 펼쳐집니다.</div>
     <div class="card" id="mcuFind">
@@ -2082,7 +2137,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     </div>
   </section>
 
-  <div class="foot">삼성앤텍 시흥점 · 입력 문의 온라인사업부 · <a href="#" onclick="localStorage.removeItem('staff_code');location.reload();return false">담당자 변경</a></div>
+  <div class="foot">삼성앤텍 시흥점 · 입력 문의 온라인사업부 · <a href="#" onclick="changeStaff();return false">담당자 변경</a></div>
 </div>
 
     <div class="lvmask hidden" id="cdDlg" onclick="if(event.target===this)cdClose()">
@@ -2154,7 +2209,11 @@ const SUPABASE_URL = "https://wdahskrcpjooqhwwxjiu.supabase.co";
 const SUPABASE_KEY = "sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW";
 /* 기기 식별자 : 사무실처럼 여러 기기가 한 IP를 쓰는 곳에서 잠금이 기기별로 걸리도록 서버에 함께 보낸다 (개인정보 아님, 무작위 문자열) */
 const DEVICE_ID = (()=>{ try{ let d=localStorage.getItem('dc_device'); if(!d){ d=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem('dc_device',d); } return d; }catch(e){ return 'nostore'; } })();
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global:{ headers:{ 'x-dc-device': DEVICE_ID } } });
+/* 세션 토큰 (mvp_256): 이름+비밀번호 로그인 때 서버가 준 값. 매 요청 x-dc-session 헤더로 보내고 서버 core.f_staff 가 신원으로 쓴다 (p_code 는 더 이상 보지 않는다) */
+let SESSION=''; try{ SESSION=localStorage.getItem('dc_session')||''; }catch(e){}
+let ELEVATED_UNTIL=0;
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global:{ headers:{ 'x-dc-device': DEVICE_ID },
+  fetch:(url,opt)=>{ opt=opt||{}; const h=new Headers(opt.headers||{}); if(SESSION) h.set('x-dc-session',SESSION); return fetch(url, Object.assign({}, opt, {headers:h})); } } });
 
 /* ═══ 유틸 ═══ */
 const $ = id => document.getElementById(id);
@@ -2219,10 +2278,14 @@ let toastT; function toast(msg, cls=''){ const t=$('toast'); t.textContent=msg; 
 const RPC_WRITE=/submit|update|assign|delete|restore|save|method|leave_(save|delete)|close|confirm|mark|toggle|set_|add|create|insert|log|purchase|share|sale/i;
 const RPC_NO_RETRY=/order_send|sms_send/i;   /* 바깥(이카운트·센드온)으로 나가는 호출 — 끊겨도 절대 자동 재시도하지 않는다 */
 async function rpc(fn, args, tries=2){
+  let reauthed=false;
   for(let i=0;;i++){
     const {data,error} = await sb.rpc(fn, args);
     if(!error) return data;
     const raw=String(error.message||''), code=String(error.code||'');
+    /* 세션 (mvp_256): 서버가 세션을 모르면 로그인 화면으로. 고객 정보 문턱이면 비밀번호를 다시 받아 같은 호출을 한 번 더 보낸다 */
+    if(/\[RELOGIN\]/.test(raw)){ const m=raw.replace(/^.*\[RELOGIN\]\s*/,''); sessionLost(m); throw new Error(m); }
+    if(/\[REAUTH\]/.test(raw)){ if(!reauthed && await reauthAsk()){ reauthed=true; i--; continue; } throw new Error('비밀번호 확인이 필요합니다'); }
     const timeout=/statement timeout|canceling statement/i.test(raw) || code==='57014';
     const net=/Failed to fetch|Load failed|NetworkError|Bad Gateway|upstream|<html/i.test(raw) || /^5\d\d$/.test(code) || /\b50[234]\b/.test(raw);
     /* 이카운트 전송(order_send)은 HTTP 부수효과가 롤백되지 않는다 — 타임아웃이어도 다시 보내면 전표가 겹친다 (mvp_151) */
@@ -2240,10 +2303,39 @@ if(DC_ENV==='test'){ document.title='[TEST] '+document.title; document.querySele
 /* ═══ PIN ═══ */
 let CODE = localStorage.getItem('staff_code') || '';
 let ME = '', STATUS = null;
-let enterPin=async function(){ const v=$('pinInput').value.trim(); if(v.length!==4) return $('pinErr').textContent='4자리를 입력하세요';
-  $('pinErr').textContent=''; try{ await loadStatus(v); CODE=v; localStorage.setItem('staff_code',v); start(); }catch(e){ $('pinErr').textContent=e.message; } };
-$('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') enterPin(); });
-$('pinInput').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/\D/g,''); if(!PIN_UNTIL && e.target.value.length<4) $('pinErr').textContent=''; if(e.target.value.length===4) enterPin(); });
+let enterPin=async function(){};   /* 아래 부팅 구역에서 다시 정의한다 (mvp_256: 이름+비밀번호 → fn_store_login) */
+$('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('pinPass').focus(); } });
+$('pinPass').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); enterPin(); } });
+$('pinInput').addEventListener('input', ()=>{ if(!PIN_UNTIL) $('pinErr').textContent=''; });
+/* 아이디 저장: 체크하면 이름을 이 기기에 기억해 다음부터 비밀번호만 넣는다 */
+try{ const nm=localStorage.getItem('dc_login_name')||''; $('pinInput').value=nm; $('pinSave').checked=!!nm || localStorage.getItem('dc_login_name')===null; }catch(e){}
+function sessionSet(tok, el){ SESSION=tok||''; ELEVATED_UNTIL=el?new Date(el).getTime():0; try{ if(SESSION) localStorage.setItem('dc_session',SESSION); else localStorage.removeItem('dc_session'); }catch(e){} }
+/* 서버가 세션을 모른다(만료·관리자가 끊음·비밀번호 바뀜) → 이름과 비밀번호를 다시 받는다 */
+function sessionLost(msg){ sessionSet('',0); LOCKED=false;
+  try{ stopRealtimeSubscription(); }catch(e){}
+  LOCK_MSG=msg||'로그인이 만료되었습니다. 이름과 비밀번호를 다시 입력하세요'; document.querySelector('#pinScreen .sub').textContent=LOCK_MSG;
+  $('pinPass').value=''; $('pinErr').textContent='';
+  $('pinScreen').classList.remove('hidden'); $('app').classList.add('hidden'); setTimeout(()=>($('pinInput').value?$('pinPass'):$('pinInput')).focus(),50); }
+let LOCK_MSG='';
+/* 재인증 창: 여러 호출이 동시에 걸려도 창은 하나, 결과는 함께 받는다 */
+let RA_P=null, RA_RES=null;
+function reauthAsk(){ if(RA_P) return RA_P;
+  RA_P=new Promise(res=>{ RA_RES=res; $('raErr').textContent=''; $('raPass').value=''; $('raDlg').classList.remove('hidden'); setTimeout(()=>$('raPass').focus(),50); });
+  return RA_P; }
+function raDone(ok){ $('raDlg').classList.add('hidden'); const r=RA_RES; RA_P=null; RA_RES=null; if(r) r(ok); }
+function raCancel(){ raDone(false); }
+async function raOk(){ const pw=$('raPass').value; if(!pw){ $('raErr').textContent='비밀번호를 입력하세요'; $('raPass').focus(); return; }
+  const b=$('raBtn'); b.disabled=true; b.textContent='확인 중…';
+  try{ const {data,error}=await sb.rpc('fn_store_reauth',{p_pass:pw});
+    if(error){ const m=String(error.message||'').replace(/^.*?: /,''); if(/\[RELOGIN\]/.test(m)){ raDone(false); sessionLost(m.replace(/^.*\[RELOGIN\]\s*/,'')); return; } $('raErr').textContent=m; $('raPass').value=''; $('raPass').focus(); return; }
+    ELEVATED_UNTIL=data&&data.elevated_until?new Date(data.elevated_until).getTime():0; toast('확인됐습니다','ok'); raDone(true); }
+  catch(e){ $('raErr').textContent=e.message; }
+  finally{ b.disabled=false; b.textContent='확인'; } }
+$('raPass').addEventListener('keydown', e=>{ if(e.key==='Enter') raOk(); });
+/* 담당자 변경 = 세션을 끊고 저장한 이름도 지운다. 로그아웃(logoutStore)은 저장한 이름은 둔다 */
+async function changeStaff(){ await sessionEnd(); try{ localStorage.removeItem('dc_login_name'); }catch(e){} location.reload(); }
+async function sessionEnd(){ try{ if(SESSION) await Promise.race([sb.rpc('fn_store_logout',{}), new Promise(r=>setTimeout(r,900))]); }catch(e){}
+  sessionSet('',0); try{ localStorage.removeItem('staff_code'); sessionStorage.removeItem('st_open'); }catch(e){} }
 async function loadStatus(code){
   /* 코드 확인은 status 하나로만 — 병렬로 두 개를 보내면 틀린 코드 한 번이 실패 두 번으로 잡힌다.
      이미 확인된 코드(새로고침)면 견적서 목록을 같이 보내고, 처음 로그인이면 status 뒤에 보내되 기다리지 않는다 (왕복 한 번을 아낀다) */
@@ -3497,6 +3589,7 @@ const NAV_ICON={
 };
 NAV_ICON.inbox   ='<svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 13h5l2 3h4l2-3h5"/></svg>';
 NAV_ICON.quote   ='<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 12h6M10 16h4"/></svg>';
+NAV_ICON.sub     ='<svg viewBox="0 0 24 24"><path d="M4 4h16v6H4zM4 14h16v6H4z"/><path d="M8 7h.01M8 17h.01M12 7h4M12 17h4"/></svg>';   /* 구독 관리 (mvp_254) */
 NAV_ICON.customer='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 NAV_ICON.leave   ='<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15h2M13 15h2M9 18h2"/></svg>';
 NAV_ICON.stats   ='<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>';
@@ -3505,8 +3598,8 @@ NAV_ICON.alerts  ='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 
 /* 배정은 미배정·일괄 넘기기 같은 예외 처리 자리라 '현황' 맨 아래로 (v201 · 상담 탭 [넘기기]가 평소 쓰는 길) */
 /* 메뉴(서랍·하단 탭바)에서 가린 탭 — 2026-10-29 판매 입력·일 마감. 탭 자체는 살아 있어 [구매 확정]·흐름 띠 링크로는 열린다 */
 const NAV_HIDE=new Set(['sale','daily']);
-const NAV_GROUPS=[['상담',['home','inbox','consult','quote','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
-const NAV_LABEL={home:'홈', inbox:'상담', consult:'상담 입력', quote:'견적서', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'휴가'};
+const NAV_GROUPS=[['상담',['home','inbox','consult','quote','sub','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
+const NAV_LABEL={home:'홈', inbox:'상담', consult:'상담 입력', quote:'견적서', sub:'구독 관리', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'휴가'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
 const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
 const CALC_URL ='https://www.samsungsh.co.kr/main/html.php?htmid=service/calc_subscribe.html';
@@ -3540,7 +3633,7 @@ function syncNav(){
     return `<div class="grp">${g}</div>`+items.map(x=>`<button class="it${x.active?' active':''}" onclick="goTab('${x.t}');sideClose()">${NAV_ICON[x.t]||''}<span>${esc(x.label)}</span>${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join(''); }).join('');
   /* 하단 탭바 : 앞 4개 + 더보기(서랍) */
   /* 하단 4칸은 매장에서 손이 가장 많이 가는 순서 — 판매 입력이 [더보기] 안에 숨지 않게 */
-  const vis=['home','inbox','consult','sale','assign','stock','order','daily','report','online','quote','customer','alerts','stats'].filter(t=>!NAV_HIDE.has(t)).map(tabInfo).filter(x=>x&&!x.hidden);
+  const vis=['home','inbox','consult','sale','assign','stock','order','daily','report','online','quote','sub','customer','alerts','stats'].filter(t=>!NAV_HIDE.has(t)).map(tabInfo).filter(x=>x&&!x.hidden);
   const first=vis.slice(0,4), rest=vis.slice(4);
   const restBadge=rest.reduce((a,x)=>a+(Number(x.badge)||0),0), restActive=rest.some(x=>x.active);
   bn.innerHTML=first.map(x=>`<button class="${x.active?'active':''}" onclick="goTab('${x.t}')">${NAV_ICON[x.t]||''}${esc(x.label)}${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join('')
@@ -3561,12 +3654,13 @@ function goTab(name, fromHistory){
   const b=document.querySelector(`.tab[data-tab="${name}"]`); if(!b || b.classList.contains('hidden')) return;
   if($('cdDlg') && !$('cdDlg').classList.contains('hidden')) cdClose();   /* 상세 팝업이 떠 있으면 탭을 옮길 때 닫는다 */
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  ['home','inbox','assign','quote','customer','alerts','stats','leave','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  ['home','inbox','assign','quote','sub','customer','alerts','stats','leave','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  if(name==='sub' && !SP_LOADED){ SP_LOADED=true; loadSubPolicy(); }   /* 구독 혜택 안내 (mvp_246) */
+  if(name==='sub' && !PR_LOADED){ PR_LOADED=true; loadSubPrice(); }   /* 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) */
   if(name==='leave' && !LV_LOADED){ LV_LOADED=true; loadLeave(); }
   if(name==='stats' && !ST_LOADED){ ST_LOADED=true; stPick(todayStr().slice(0,8)+'01', todayStr()); }   /* 처음 열면 이 달 · 일별 (v233) */
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
   if(name==='sale' && !PS_LOADED){ PS_LOADED=true; loadPastSales(); }
-  if(name==='quote' && !PR_LOADED){ PR_LOADED=true; loadSubPrice(); }   /* 구독 요금 직접 관리 (mvp_251) */
   if(name==='report' && !REPORT_LOADED) loadReport();
   if(name==='online' && !OC_LOADED) loadOnlineDay();
   if(name==='stock' && !STK_LOADED) loadStk();
@@ -4269,102 +4363,6 @@ function smsPcHint(copyText, what){
 }
 function smsApp(tel, body){ if(!QS_CAN_SMS){ smsPcHint(body||'', '내용'); return; }
   location.href = smsAppUrl(tel, body); }
-/* ═══ 구독 요금 직접 관리 (mvp_251) : DPS 요금표 위에 손으로 덮어쓰는 월 구독료 · 숨김 — 보기는 누구나, 고치기는 점장님·대표님
-   저장하면 sub.price_override 에 들어가고 10분 안에 db.samsungat.co.kr/sdp/sub 로 배포돼 상세페이지 구독탭·구독센터에 나간다.
-   지금 나가는 요금은 배포된 sdp/sub/sub_index.js · sub_plans_<품목>.js 를 그대로 읽어 보여 준다 (이미 덮어쓴 값 포함) */
-let PR_LOADED=false, PR=null, PR_DLG=null;
-const PR_BASE=(location.pathname.includes('/test/')?'../../':'./')+'sdp/sub/';
-const prLoadJs=src=>new Promise(r=>{ const s=document.createElement('script'); s.src=src; s.onload=s.onerror=()=>r(); document.head.appendChild(s); });
-async function prPlans(model){   /* 배포된 요금표에서 이 모델의 [품목키, 품목명, 세부유형, 요금제들] */
-  const m=String(model||'').replace(/\s/g,'').toUpperCase(); if(!m) return null;
-  if(!window.SUB_INDEX) await prLoadJs(PR_BASE+'sub_index.js?t='+Date.now());
-  const ix=window.SUB_INDEX; if(!ix) return {err:'배포된 요금표를 못 읽었습니다'};
-  const e=(ix.m||{})[m]; if(!e) return {m, none:true, cats:ix.cats||{}};
-  const key=e[0]; if(!(window.SUB_PLANS||{})[key]) await prLoadJs(PR_BASE+'sub_plans_'+key+'.js?v='+encodeURIComponent(ix.ver||''));
-  const rec=((window.SUB_PLANS||{})[key]||{})[m]||{};
-  return {m, key, cat:(ix.cats||{})[key]||key, seg:rec.s||'', plans:rec.p||[], cats:ix.cats||{}};
-}
-async function loadSubPrice(){
-  if(!CODE) return;
-  try{ PR=await rpc('fn_store_sub_price_list',{p_code:CODE}); }catch(e){ $('prBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
-  renderSubPrice();
-}
-function prWhat(r){
-  const scope=(r.term?r.term+'년':'모든 약정')+' · '+(r.care||'모든 케어');
-  return r.action==='hide' ? `${scope} — <b>상세페이지에서 숨김</b>` : `${scope} — 월 <b>${won(r.monthly)}</b>${r.total?` <span style="color:var(--muted)">(총 ${won(r.total)})</span>`:''}`;
-}
-function renderSubPrice(){
-  const d=PR, can=!!d.can_edit, rows=d.rows||[];
-  const ST={on:['적용 중','ok'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
-  $('prSub').textContent=(can?'점장님·대표님은 여기서 바로 고칩니다':'상세페이지 구독탭·구독센터에 나가는 월 구독료를 손으로 바꾼 내역')+(d.deployed?` · 마지막 배포 ${d.deployed.at}`:'');
-  let h=`<p class="note-in" style="margin:0 0 10px">요금은 매일 DPS 에서 자동으로 들어옵니다. DPS 값이 틀렸거나 행사가로 잠깐 바꿔야 할 때만 여기에 넣으세요. 저장하면 <b>10분 안에</b> 상세페이지에 반영되고, 끄면 다시 DPS 값으로 돌아갑니다.</p>`;
-  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px"><b style="font-size:calc(14px * var(--font-scale))">바꾼 요금 <span style="color:var(--muted);font-weight:400">${rows.filter(r=>r.state==='on').length}건 적용 중</span></b>${can?'<button type="button" class="btn sm" onclick="prDlgOpen(null)">＋ 요금 넣기</button>':''}</div>`;
-  h+=rows.length?`<div class="list">${rows.map(r=>`<div class="item" style="grid-template-columns:1fr auto;opacity:${r.state==='on'||r.state==='soon'?1:.55}">
-      <div><div style="font-weight:700">${esc(r.model)}${r.cat?` <span class="pill">${esc(r.cat)}</span>`:''}</div>
-        <div style="margin:2px 0 0">${prWhat(r)}</div>
-        <div class="note-in" style="margin:2px 0 0">${r.from||r.to?esc(r.from||'')+' ~ '+esc(r.to||''):'기간 없음'}${r.note?' · '+esc(r.note):''} · ${esc(r.updated_by||'')} ${esc(r.updated_at||'')}</div></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[r.state][1]}">${ST[r.state][0]}</span>${can?`<span style="display:flex;gap:6px"><button type="button" class="btn sm ghost" onclick="prDlgOpen(${r.id})">고치기</button><button type="button" class="btn sm ghost" onclick="prToggle(${r.id},${r.active?'false':'true'})">${r.active?'끄기':'켜기'}</button></span>`:''}</div></div>`).join('')}</div>`
-    :`<div class="empty">손으로 바꾼 요금이 없습니다 — 지금은 전부 DPS 요금 그대로입니다</div>`;
-  $('prBody').innerHTML=h;
-}
-function prDlgOpen(id){
-  if(!(PR&&PR.can_edit)) return;
-  const r=(id!=null && (PR.rows||[]).find(x=>x.id===id))||{action:'set',active:true};
-  PR_DLG={r, info:null}; $('prDlgErr').textContent='';
-  $('prDlgTitle').textContent=id!=null?'구독 요금 고치기':'구독 요금 넣기';
-  $('prDlgForm').innerHTML=`<div><label for="prf_model">모델번호</label><div style="display:flex;gap:6px"><input class="in" id="prf_model" value="${esc(r.model||'')}" autocapitalize="characters" placeholder="예: KQ55QNH80AFXKR" onkeydown="if(event.key==='Enter'){event.preventDefault();prLookup()}"><button type="button" class="btn sm ghost" onclick="prLookup()">요금 보기</button></div></div>
-    <div id="prf_now" class="note-in" style="margin:0"></div>
-    <div><label>할 일</label><div class="seg" id="prf_act" role="radiogroup"><button type="button" data-v="set" class="${r.action!=='hide'?'on':''}" onclick="prAct('set')">요금 바꾸기</button><button type="button" data-v="hide" class="${r.action==='hide'?'on':''}" onclick="prAct('hide')">상세페이지에서 숨김</button></div></div>
-    <div class="two"><div><label for="prf_term">약정</label><select class="in" id="prf_term"><option value="">모든 약정</option>${[1,2,3,4,5,6,7].map(y=>`<option value="${y}" ${Number(r.term)===y?'selected':''}>${y}년</option>`).join('')}</select></div>
-      <div><label for="prf_care">케어 <small>(요금제 이름 그대로)</small></label><input class="in" id="prf_care" list="prf_cares" value="${esc(r.care||'')}" placeholder="비우면 모든 케어"><datalist id="prf_cares"></datalist></div></div>
-    <div class="two" id="prf_fees"><div><label for="prf_mon">월 구독료 (원)</label><input class="in num" id="prf_mon" inputmode="numeric" oninput="$('prf_tot').value=''" value="${r.monthly!=null?Number(r.monthly):''}"></div>
-      <div><label for="prf_tot">총 구독료 <small>(비우면 월 × 개월)</small></label><input class="in num" id="prf_tot" inputmode="numeric" value="${r.total!=null?Number(r.total):''}"></div></div>
-    <div class="two" id="prf_newcat" style="display:none"><div><label for="prf_cat">품목 <small>(요금표에 없는 모델)</small></label><select class="in" id="prf_cat"><option value="">고르기</option></select></div>
-      <div><label for="prf_seg">세부유형 <small>(선택)</small></label><input class="in" id="prf_seg" value="${esc(r.seg||'')}"></div></div>
-    <div class="two"><div><label for="prf_from">시작일 (비우면 바로)</label><input class="in" type="date" id="prf_from" value="${esc(r.from||'')}"></div><div><label for="prf_to">종료일 (비우면 계속)</label><input class="in" type="date" id="prf_to" value="${esc(r.to||'')}"></div></div>
-    <div><label for="prf_note">메모 <small>(왜 바꿨는지 — 다른 분이 보고 판단)</small></label><input class="in" id="prf_note" value="${esc(r.note||'')}" placeholder="예: DPS 11월 단가 반영 전 · 본사 공문 1105"></div>`;
-  prAct(r.action==='hide'?'hide':'set');
-  $('prDlg').classList.remove('hidden');
-  if(r.model) prLookup(r.cat); else setTimeout(()=>$('prf_model').focus(),50);
-}
-function prAct(v){ $('prf_act').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); $('prf_fees').style.display=v==='hide'?'none':''; }
-async function prLookup(keepCat){
-  const box=$('prf_now'); box.textContent='요금표를 읽는 중…';
-  const info=await prPlans($('prf_model').value); PR_DLG.info=info;
-  if(!info){ box.textContent=''; return; }
-  if(info.err){ box.textContent=info.err; return; }
-  const catSel=$('prf_cat');
-  catSel.innerHTML='<option value="">고르기</option>'+Object.values(info.cats||{}).map(c=>`<option ${c===(keepCat||PR_DLG.r.cat)?'selected':''}>${esc(c)}</option>`).join('');
-  if(info.none){ $('prf_newcat').style.display=''; box.innerHTML='<b>지금 상세페이지 요금표에 없는 모델입니다.</b> 품목·약정·케어·월 구독료를 모두 넣으면 새로 올라갑니다.'; $('prf_cares').innerHTML=''; return; }
-  $('prf_newcat').style.display='none';
-  const cares=[...new Set(info.plans.map(p=>p[1]))];
-  $('prf_cares').innerHTML=cares.map(c=>`<option value="${esc(c)}">`).join('');
-  box.innerHTML=`<b>${esc(info.cat)}</b>${info.seg?' · '+esc(info.seg):''} · 지금 나가는 요금 <span style="color:var(--muted)">(눌러서 채우기)</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">`+
-    info.plans.map((p,i)=>`<span class="chip" onclick="prPick(${i})">${p[0]}년 ${esc(p[1])} · 월 ${won(p[3])}</span>`).join('')+'</div>';
-}
-function prPick(i){ const p=PR_DLG.info.plans[i]; $('prf_term').value=String(p[0]); $('prf_care').value=p[1]; $('prf_mon').value=p[3]; $('prf_tot').value=''; $('prf_mon').focus(); }
-function prDlgClose(){ $('prDlg').classList.add('hidden'); PR_DLG=null; }
-async function prDlgSave(){
-  if(!PR_DLG) return; const b=$('prDlgOk'), r=PR_DLG.r, info=PR_DLG.info;
-  const act=($('prf_act').querySelector('button.on')||{}).dataset?.v||'set', num=v=>String(v||'').replace(/[^\d.]/g,'');
-  const data={id:r.id, model:$('prf_model').value, action:act, term:$('prf_term').value||null, care:$('prf_care').value.trim()||null,
-    monthly:act==='set'?num($('prf_mon').value)||null:null, total:act==='set'?num($('prf_tot').value)||null:null,
-    cat:(info&&info.none)?$('prf_cat').value||null:(r.cat||null), seg:(info&&info.none)?$('prf_seg').value.trim()||null:(r.seg||null),
-    from:$('prf_from').value||null, to:$('prf_to').value||null, note:$('prf_note').value.trim()||null, active:r.active!==false};
-  if(info&&info.none&&act==='set'&&!(data.cat&&data.term&&data.care)){ $('prDlgErr').textContent='요금표에 없는 모델은 품목·약정·케어를 모두 골라 주세요'; return; }
-  if(info&&info.none&&act==='hide'){ $('prDlgErr').textContent='요금표에 없는 모델은 숨길 것이 없습니다'; return; }
-  b.disabled=true;
-  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:data}); prDlgClose(); toast('저장했습니다 · 10분 안에 상세페이지에 반영됩니다'); loadSubPrice(); }
-  catch(e){ $('prDlgErr').textContent=e.message; }
-  finally{ b.disabled=false; }
-}
-async function prToggle(id,on){
-  const r=(PR&&PR.rows||[]).find(x=>x.id===id); if(!r) return;
-  if(!on && !confirm(`${r.model} ${r.term?r.term+'년 ':''}${r.care||''} 바꾼 요금을 끌까요? 다시 DPS 요금으로 돌아갑니다 (기록은 남고 다시 켤 수 있습니다)`)) return;
-  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:{...r,active:!!on}}); toast(on?'다시 켰습니다':'껐습니다 · 10분 안에 DPS 요금으로 돌아갑니다'); loadSubPrice(); }
-  catch(e){ toast(e.message); }
-}
-
 /* ═══ 고객 흐름 (mvp_198) — "고객들의 문의, 구매 흐름이 명료하게". 한 사람의 문의·상담·견적(열람)·문자·구매·환불·DPS 구독을
    한 줄 타임라인으로. 관리자(fn_customer_journey)와 담당자(fn_store_customer_journey)가 같은 그리기(cjHtml)를 쓴다 ═══ */
 const CJ_K={seen:['처음 확인','#555E6C','#EEF1F5'],inq:['문의','#1D4FB8','#EAF0FC'],consult:['상담','#0B5E57','#E6F4F2'],quote:['견적','#7A4F00','#FBF1DC'],
@@ -5920,6 +5918,217 @@ function renderAllConsults(){
 }
 async function asgTo2(id){ ASG_IDS=[id]; await asgTo(ME); }
 
+/* ═══ 구독료 계산기 (mvp_256) — 상품상세 구독탭(sub_tab.js · 데이터센터 배포본 ./sdp/sub/)을 매장 화면 안에서 띄운다.
+   모델 검색: 배포된 sub_index.js(모델→[품목키, 최저 월구독료]) + 구독센터 카탈로그 fn_sub_catalog(모델→[고도몰 상품번호, 상품명, 사진, 일시불가]).
+   고르면 window.SUB_TAB_CONFIG 를 그 모델로 다시 채우고 sub_tab.js 의 main() 을 다시 부른다 (#subTabRoot 안에 그려진다). 금액 규칙은 상세페이지와 같은 코드라 항상 같다.
+   버튼: [시흥몰 상품 보기](고도몰 상품이 있을 때) · [견적서 만들기](견적서 발행 페이지 새 창) */
+let SC_CAT=null, SC_CSS=false;
+const scNorm=s=>String(s||'').replace(/\s/g,'').toUpperCase();
+const scFmt=v=>Number(v||0).toLocaleString('ko-KR');
+async function scInit(){
+  if(!window.SUB_INDEX) await prLoadJs(PR_BASE+'sub_index.js?t='+Date.now());
+  if(!SC_CAT){ try{ SC_CAT=await rpc('fn_sub_catalog',{}); }catch(e){ SC_CAT={m:{}}; } }
+  return !!(window.SUB_INDEX&&window.SUB_INDEX.m);
+}
+function scFind(q){
+  const ix=window.SUB_INDEX||{m:{}}, cats=ix.cats||{}, cm=(SC_CAT&&SC_CAT.m)||{}; const n=scNorm(q), lq=String(q||'').trim().toLowerCase(); if(!n) return [];
+  const out=[]; for(const k in ix.m){ const c=cm[k]||[], name=c[1]||'';
+    if(k.indexOf(n)>=0 || (lq.length>=2 && name.toLowerCase().indexOf(lq)>=0)) out.push({m:k,cat:cats[ix.m[k][0]]||ix.m[k][0],name,min:ix.m[k][1],goods:c[0]||0,price:c[3]||0});
+    if(out.length>=40) break; }
+  out.sort((a,b)=>(a.m===n?-1:b.m===n?1:0)||(a.m.indexOf(n)===0?-1:b.m.indexOf(n)===0?1:0)||a.m.localeCompare(b.m)); return out;
+}
+function scRender(list){ const el=$('scList'); if(!list.length){ el.classList.add('hidden'); return; }
+  el.innerHTML=list.map(x=>`<button type="button" class="sc-it" onclick="scPick('${esc(x.m)}')"><b>${esc(x.m)}</b><span>${esc(x.cat)}${x.name?' · '+esc(x.name):''}</span><em>${x.min?'월 '+scFmt(x.min)+'원~':''}</em></button>`).join(''); el.classList.remove('hidden'); }
+async function scType(){ if(!await scInit()) return; const q=$('scQ').value; if(scNorm(q).length<2){ $('scList').classList.add('hidden'); return; } scRender(scFind(q)); }
+async function scGo(){ if(!await scInit()) return toast('배포된 요금표를 못 읽었습니다','bad'); const q=$('scQ').value, list=scFind(q); const exact=list.find(x=>x.m===scNorm(q)); if(exact) return scPick(exact.m); if(list.length===1) return scPick(list[0].m); scRender(list); if(!list.length) toast('요금표에 없는 모델입니다 — 구독 요금표(DPS)에 없는 모델은 계산할 수 없습니다','bad'); }
+async function scPick(model){
+  if(!await scInit()) return; $('scList').classList.add('hidden'); $('scQ').value=model;
+  const ix=window.SUB_INDEX, e=ix.m[model]; if(!e) return toast('요금표에 없는 모델입니다','bad');
+  const cm=(SC_CAT&&SC_CAT.m)||{}, c=cm[model]||[], catName=(ix.cats||{})[e[0]]||e[0];
+  const goodsUrl=c[0]?`https://www.samsungsh.co.kr/goods/goods_view.php?goodsNo=${encodeURIComponent(c[0])}`:'';
+  $('scHead').innerHTML=`<b>${esc(model)}</b> · ${esc(catName)}${c[1]?' · '+esc(c[1]):''}${c[3]>0?` · 시흥몰 일시불 ${scFmt(c[3])}원`:' · 고도몰 미등록(일시불 비교 없음)'}${goodsUrl?` · <a href="${goodsUrl}" target="_blank" rel="noopener">상품 페이지 ↗</a>`:''}`;
+  $('scEmpty').classList.add('hidden');
+  const root=$('subTabRoot'); root.innerHTML=''; root.hidden=false;
+  window.SUB_TAB_CONFIG={ ver: ix.ver||'', dataBase: PR_BASE, models:[model], goodsNo: c[0]?String(c[0]):'', lumpPrice: c[3]>0?Number(c[3]):0,
+    defaultTab:'sub', enabled:true, lumpOnly:[], subHide:[], openConditions:true,   /* 매장에서는 조건(약정·케어·선납·카드)을 처음부터 펼쳐 둔다 */
+    cta:'lump+consult', lumpUrl: goodsUrl, lumpLabel:'시흥몰 상품 보기', consultUrl: QUOTE_URL, consultLabel:'견적서 만들기',
+    tel:'', defaultCard:'', defaultTier:'', cardGuideUrl:'', productCat: catName, extraPoints:[],
+    source:'store', sourceName:'매장 계산기', utmSource:'store_calc' };
+  if(!SC_CSS){ SC_CSS=true; const l=document.createElement('link'); l.rel='stylesheet'; l.href=PR_BASE+'sub_tab.css?v='+encodeURIComponent(ix.ver||''); document.head.appendChild(l); }
+  if(typeof main==='function') main(); else await prLoadJs(PR_BASE+'sub_tab.js?v='+encodeURIComponent(ix.ver||''));   /* 첫 로드는 sub_tab.js 가 스스로 main() 을 부른다 */
+  root.querySelectorAll('a[data-cta]').forEach(a=>a.setAttribute('target','_blank'));
+  setTimeout(()=>root.querySelectorAll('a[data-cta]').forEach(a=>a.setAttribute('target','_blank')),1500);
+}
+/* ═══ 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) : DPS 요금표 위에 손으로 덮어쓰는 월 구독료 · 숨김 — 보기는 누구나, 고치기는 점장님·대표님 또는 [구독가 지정] 권한(관리자 › 옵션·권한)
+   저장하면 sub.price_override 에 들어가고 1~3분 안에 db.samsungat.co.kr/sdp/sub 로 배포돼 상세페이지 구독탭·구독센터에 나간다.
+   지금 나가는 요금은 배포된 sdp/sub/sub_index.js · sub_plans_<품목>.js 를 그대로 읽어 보여 준다 (이미 덮어쓴 값 포함) */
+let PR_LOADED=false, PR=null, PR_DLG=null;
+const PR_BASE=(location.pathname.includes('/test/')?'../../':'./')+'sdp/sub/';
+const prLoadJs=src=>new Promise(r=>{ const s=document.createElement('script'); s.src=src; s.onload=s.onerror=()=>r(); document.head.appendChild(s); });
+async function prPlans(model){   /* 배포된 요금표에서 이 모델의 [품목키, 품목명, 세부유형, 요금제들] */
+  const m=String(model||'').replace(/\s/g,'').toUpperCase(); if(!m) return null;
+  if(!window.SUB_INDEX) await prLoadJs(PR_BASE+'sub_index.js?t='+Date.now());
+  const ix=window.SUB_INDEX; if(!ix) return {err:'배포된 요금표를 못 읽었습니다'};
+  const e=(ix.m||{})[m]; if(!e) return {m, none:true, cats:ix.cats||{}};
+  const key=e[0]; if(!(window.SUB_PLANS||{})[key]) await prLoadJs(PR_BASE+'sub_plans_'+key+'.js?v='+encodeURIComponent(ix.ver||''));
+  const rec=((window.SUB_PLANS||{})[key]||{})[m]||{};
+  return {m, key, cat:(ix.cats||{})[key]||key, seg:rec.s||'', plans:rec.p||[], cats:ix.cats||{}};
+}
+async function loadSubPrice(){
+  if(!CODE) return;
+  try{ PR=await rpc('fn_store_sub_price_list',{p_code:CODE}); }catch(e){ $('prBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  renderSubPrice();
+}
+function prWhat(r){
+  const scope=(r.term?r.term+'년':'모든 약정')+' · '+(r.care||'모든 케어');
+  return r.action==='hide' ? `${scope} — <b>상세페이지에서 숨김</b>` : `${scope} — 월 <b>${won(r.monthly)}</b>${r.total?` <span style="color:var(--muted)">(총 ${won(r.total)})</span>`:''}`;
+}
+function renderSubPrice(){
+  const d=PR, can=!!d.can_edit, rows=d.rows||[];
+  const ST={on:['적용 중','ok'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
+  $('prSub').textContent=(can?'점장님·대표님은 여기서 바로 고칩니다':'상세페이지 구독탭·구독센터에 나가는 월 구독료를 손으로 바꾼 내역')+(d.deployed?` · 마지막 배포 ${d.deployed.at}`:'');
+  let h=`<p class="note-in" style="margin:0 0 10px">요금은 매일 DPS 에서 자동으로 들어옵니다. DPS 값이 틀렸거나 행사가로 잠깐 바꿔야 할 때만 여기에 넣으세요. 저장하면 <b>1~3분 안에</b> 상세페이지에 반영되고, 끄면 다시 DPS 값으로 돌아갑니다.</p>`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px"><b style="font-size:calc(14px * var(--font-scale))">바꾼 요금 <span style="color:var(--muted);font-weight:400">${rows.filter(r=>r.state==='on').length}건 적용 중</span></b>${can?'<button type="button" class="btn sm" onclick="prDlgOpen(null)">＋ 요금 넣기</button>':''}</div>`;
+  h+=rows.length?`<div class="list">${rows.map(r=>`<div class="item" style="grid-template-columns:1fr auto;opacity:${r.state==='on'||r.state==='soon'?1:.55}">
+      <div><div style="font-weight:700">${esc(r.model)}${r.cat?` <span class="pill">${esc(r.cat)}</span>`:''}</div>
+        <div style="margin:2px 0 0">${prWhat(r)}</div>
+        <div class="note-in" style="margin:2px 0 0">${r.from||r.to?esc(r.from||'')+' ~ '+esc(r.to||''):'기간 없음'}${r.note?' · '+esc(r.note):''} · ${esc(r.updated_by||'')} ${esc(r.updated_at||'')}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[r.state][1]}">${ST[r.state][0]}</span>${can?`<span style="display:flex;gap:6px"><button type="button" class="btn sm ghost" onclick="prDlgOpen(${r.id})">고치기</button><button type="button" class="btn sm ghost" onclick="prToggle(${r.id},${r.active?'false':'true'})">${r.active?'끄기':'켜기'}</button></span>`:''}</div></div>`).join('')}</div>`
+    :`<div class="empty">손으로 바꾼 요금이 없습니다 — 지금은 전부 DPS 요금 그대로입니다</div>`;
+  $('prBody').innerHTML=h;
+}
+function prDlgOpen(id){
+  if(!(PR&&PR.can_edit)) return;
+  const r=(id!=null && (PR.rows||[]).find(x=>x.id===id))||{action:'set',active:true};
+  PR_DLG={r, info:null}; $('prDlgErr').textContent='';
+  $('prDlgTitle').textContent=id!=null?'구독 요금 고치기':'구독 요금 넣기';
+  $('prDlgForm').innerHTML=`<div><label for="prf_model">모델번호</label><div style="display:flex;gap:6px"><input class="in" id="prf_model" value="${esc(r.model||'')}" autocapitalize="characters" placeholder="예: KQ55QNH80AFXKR" onkeydown="if(event.key==='Enter'){event.preventDefault();prLookup()}"><button type="button" class="btn sm ghost" onclick="prLookup()">요금 보기</button></div></div>
+    <div id="prf_now" class="note-in" style="margin:0"></div>
+    <div><label>할 일</label><div class="seg" id="prf_act" role="radiogroup"><button type="button" data-v="set" class="${r.action!=='hide'?'on':''}" onclick="prAct('set')">요금 바꾸기</button><button type="button" data-v="hide" class="${r.action==='hide'?'on':''}" onclick="prAct('hide')">상세페이지에서 숨김</button></div></div>
+    <div class="two"><div><label for="prf_term">약정</label><select class="in" id="prf_term"><option value="">모든 약정</option>${[1,2,3,4,5,6,7].map(y=>`<option value="${y}" ${Number(r.term)===y?'selected':''}>${y}년</option>`).join('')}</select></div>
+      <div><label for="prf_care">케어 <small>(요금제 이름 그대로)</small></label><input class="in" id="prf_care" list="prf_cares" value="${esc(r.care||'')}" placeholder="비우면 모든 케어"><datalist id="prf_cares"></datalist></div></div>
+    <div class="two" id="prf_fees"><div><label for="prf_mon">월 구독료 (원)</label><input class="in num" id="prf_mon" inputmode="numeric" oninput="$('prf_tot').value=''" value="${r.monthly!=null?Number(r.monthly):''}"></div>
+      <div><label for="prf_tot">총 구독료 <small>(비우면 월 × 개월)</small></label><input class="in num" id="prf_tot" inputmode="numeric" value="${r.total!=null?Number(r.total):''}"></div></div>
+    <div class="two" id="prf_newcat" style="display:none"><div><label for="prf_cat">품목 <small>(요금표에 없는 모델)</small></label><select class="in" id="prf_cat"><option value="">고르기</option></select></div>
+      <div><label for="prf_seg">세부유형 <small>(선택)</small></label><input class="in" id="prf_seg" value="${esc(r.seg||'')}"></div></div>
+    <div class="two"><div><label for="prf_from">시작일 (비우면 바로)</label><input class="in" type="date" id="prf_from" value="${esc(r.from||'')}"></div><div><label for="prf_to">종료일 (비우면 계속)</label><input class="in" type="date" id="prf_to" value="${esc(r.to||'')}"></div></div>
+    <div><label for="prf_note">메모 <small>(왜 바꿨는지 — 다른 분이 보고 판단)</small></label><input class="in" id="prf_note" value="${esc(r.note||'')}" placeholder="예: DPS 11월 단가 반영 전 · 본사 공문 1105"></div>`;
+  prAct(r.action==='hide'?'hide':'set');
+  $('prDlg').classList.remove('hidden');
+  if(r.model) prLookup(r.cat); else setTimeout(()=>$('prf_model').focus(),50);
+}
+function prAct(v){ $('prf_act').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); $('prf_fees').style.display=v==='hide'?'none':''; }
+async function prLookup(keepCat){
+  const box=$('prf_now'); box.textContent='요금표를 읽는 중…';
+  const info=await prPlans($('prf_model').value); PR_DLG.info=info;
+  if(!info){ box.textContent=''; return; }
+  if(info.err){ box.textContent=info.err; return; }
+  const catSel=$('prf_cat');
+  catSel.innerHTML='<option value="">고르기</option>'+Object.values(info.cats||{}).map(c=>`<option ${c===(keepCat||PR_DLG.r.cat)?'selected':''}>${esc(c)}</option>`).join('');
+  if(info.none){ $('prf_newcat').style.display=''; box.innerHTML='<b>지금 상세페이지 요금표에 없는 모델입니다.</b> 품목·약정·케어·월 구독료를 모두 넣으면 새로 올라갑니다.'; $('prf_cares').innerHTML=''; return; }
+  $('prf_newcat').style.display='none';
+  const cares=[...new Set(info.plans.map(p=>p[1]))];
+  $('prf_cares').innerHTML=cares.map(c=>`<option value="${esc(c)}">`).join('');
+  box.innerHTML=`<b>${esc(info.cat)}</b>${info.seg?' · '+esc(info.seg):''} · 지금 나가는 요금 <span style="color:var(--muted)">(눌러서 채우기)</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">`+
+    info.plans.map((p,i)=>`<span class="chip" onclick="prPick(${i})">${p[0]}년 ${esc(p[1])} · 월 ${won(p[3])}</span>`).join('')+'</div>';
+}
+function prPick(i){ const p=PR_DLG.info.plans[i]; $('prf_term').value=String(p[0]); $('prf_care').value=p[1]; $('prf_mon').value=p[3]; $('prf_tot').value=''; $('prf_mon').focus(); }
+function prDlgClose(){ $('prDlg').classList.add('hidden'); PR_DLG=null; }
+async function prDlgSave(){
+  if(!PR_DLG) return; const b=$('prDlgOk'), r=PR_DLG.r, info=PR_DLG.info;
+  const act=($('prf_act').querySelector('button.on')||{}).dataset?.v||'set', num=v=>String(v||'').replace(/[^\d.]/g,'');
+  const data={id:r.id, model:$('prf_model').value, action:act, term:$('prf_term').value||null, care:$('prf_care').value.trim()||null,
+    monthly:act==='set'?num($('prf_mon').value)||null:null, total:act==='set'?num($('prf_tot').value)||null:null,
+    cat:(info&&info.none)?$('prf_cat').value||null:(r.cat||null), seg:(info&&info.none)?$('prf_seg').value.trim()||null:(r.seg||null),
+    from:$('prf_from').value||null, to:$('prf_to').value||null, note:$('prf_note').value.trim()||null, active:r.active!==false};
+  if(info&&info.none&&act==='set'&&!(data.cat&&data.term&&data.care)){ $('prDlgErr').textContent='요금표에 없는 모델은 품목·약정·케어를 모두 골라 주세요'; return; }
+  if(info&&info.none&&act==='hide'){ $('prDlgErr').textContent='요금표에 없는 모델은 숨길 것이 없습니다'; return; }
+  b.disabled=true;
+  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:data}); prDlgClose(); toast('저장했습니다 · 1~3분 안에 상세페이지에 반영됩니다'); loadSubPrice(); }
+  catch(e){ $('prDlgErr').textContent=e.message; }
+  finally{ b.disabled=false; }
+}
+async function prToggle(id,on){
+  const r=(PR&&PR.rows||[]).find(x=>x.id===id); if(!r) return;
+  if(!on && !confirm(`${r.model} ${r.term?r.term+'년 ':''}${r.care||''} 바꾼 요금을 끌까요? 다시 DPS 요금으로 돌아갑니다 (기록은 남고 다시 켤 수 있습니다)`)) return;
+  try{ await rpc('fn_store_sub_price_save',{p_code:CODE,p_data:{...r,active:!!on}}); toast(on?'다시 켰습니다':'껐습니다 · 1~3분 안에 DPS 요금으로 돌아갑니다'); loadSubPrice(); }
+  catch(e){ toast(e.message); }
+}
+
+/* ═══ 구독 혜택 안내 : 상세페이지 구독탭이 읽는 정책(fn_store_sub_policy) — 보기는 누구나, 행사 문구·카드 유의사항은 점장님·대표님이 바로 고친다 (mvp_246)
+   할인율·선납 한도 같은 수치는 관리자 화면에서만 바꾼다. 저장하면 1~3분 안에 db.samsungat.co.kr/sdp/sub 로 배포된다 */
+let SP_LOADED=false, SP=null, SP_DLG=null;
+const spPct=v=>v==null?'-':String(Math.round(Number(v)*1000)/10)+'%';
+async function loadSubPolicy(){
+  if(!CODE) return;
+  try{ SP=await rpc('fn_store_sub_policy',{p_code:CODE}); }catch(e){ $('spBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  renderSubPolicy();
+}
+function renderSubPolicy(){
+  const d=SP, P=d.policy||{}, A=P.autopay||{}, R=P.prepay||{}, can=!!d.can_edit;
+  const ST={on:['진행 중','ok'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
+  const promos=(d.promos||[]).filter(p=>can || p.state==='on' || p.state==='soon');
+  $('spSub').textContent=can?'행사 문구·카드 유의사항을 여기서 바로 고칠 수 있습니다':'상세페이지 구독탭에 나가는 혜택·행사 문구';
+  const steps=(R.steps||[]).map(s=>`선납 ${spPct(s)} → 할인 ${spPct((R.rates||{})[String(s)])}`).join(' · ');
+  const DF=P.defaults||{};   // 공통 기준 (mvp_253) — 보기만, 바꾸는 건 관리자 화면
+  let h=`<div class="chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${DF.card?`<span class="pill" title="구독탭·구독센터가 처음 보여 주는 카드 혜택 기준">기본 카드 <b>${esc(DF.card)}${DF.tier?' '+esc(DF.tier):''}</b></span>`:''}${DF.tel?`<span class="pill">상담 전화 <b>${esc(DF.tel)}</b></span>`:''}<span class="pill">자동납부 할인 <b>${spPct(A.rate)}</b></span><span class="pill" title="${esc(steps)}">선납 ${(R.steps||[]).map(spPct).join(' · ')}</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px"><b style="font-size:calc(14px * var(--font-scale))">행사 문구</b>${can?'<button type="button" class="btn sm" onclick="spDlgOpen(\'promo\',null)">＋ 행사 추가</button>':''}</div>`;
+  h+=promos.length?`<div class="list">${promos.map(p=>`<div class="item" style="grid-template-columns:1fr auto">
+      <div><div style="font-weight:700">${esc(p.text)}</div><div class="note-in" style="margin:2px 0 0">${p.from||p.to?esc(p.from||'')+' ~ '+esc(p.to||''):'상시'} · ${(p.cats||[]).length?esc(p.cats.join(', ')):'전체 품목'}${(p.models||[]).length?' · '+esc(p.models.join(', ')):''}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[p.state][1]}">${ST[p.state][0]}</span>${can?`<span style="display:flex;gap:6px"><button type="button" class="btn sm ghost" onclick="spDlgOpen('promo',${p.id})">고치기</button><button type="button" class="btn sm ghost" onclick="spPromoToggle(${p.id},${p.active?'false':'true'})">${p.active?'끄기':'켜기'}</button></span>`:''}</div></div>`).join('')}</div>`
+    :`<div class="empty">진행 중인 행사 문구가 없습니다</div>`;
+  const cards=d.cards||[], names=[...new Set([...(d.card_names||[]),...cards.map(c=>c.card)])], by={}; cards.forEach(c=>by[c.card]=c);
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:16px 0 8px"><b style="font-size:calc(14px * var(--font-scale))">제휴카드 유의사항</b></div><div class="list">`;
+  h+=names.map(nm=>{ const c=by[nm]||{}; const off=c.hidden || (c.to && c.to < todayStr()) || (c.from && c.from > todayStr());
+    return `<div class="item" style="grid-template-columns:1fr auto;opacity:${off?.55:1}"><div><div style="font-weight:700">${esc(nm)}${off?' <span class="pill">숨김</span>':''}${c.from||c.to?` <span class="note-in" style="margin:0">${esc(c.from||'')} ~ ${esc(c.to||'')}</span>`:''}</div>
+      <div class="note-in" style="margin:2px 0 0;white-space:normal">${(c.notes||[]).length?c.notes.map(esc).join('<br>'):'<span style="color:var(--faint)">유의사항 없음</span>'}</div></div>
+      ${can?`<button type="button" class="btn sm ghost" onclick="spDlgOpen('card',${JSON.stringify(nm).replace(/"/g,'&quot;')})">고치기</button>`:''}</div>`; }).join('')+'</div>';
+  if((P.card_notes||[]).length) h+=`<p class="note-in" style="margin-top:8px">공통: ${P.card_notes.map(esc).join(' · ')}</p>`;
+  h+=`<p class="note-in">할인율·선납 한도 같은 수치와 요금표는 관리자 화면에서 바꿉니다. 문의: 온라인사업부</p>`;
+  $('spBody').innerHTML=h;
+}
+function spDlgOpen(kind,key){
+  if(!(SP&&SP.can_edit)) return;
+  const F=$('spDlgForm'); $('spDlgErr').textContent='';
+  if(kind==='promo'){
+    const p=(key!=null && (SP.promos||[]).find(x=>x.id===key))||{cats:[],models:[],goods:[],sort:100,active:true};
+    SP_DLG={kind,p}; $('spDlgTitle').textContent=key!=null?'행사 문구 고치기':'행사 문구 추가';
+    F.innerHTML=`<div><label for="spf_text">문구 (고객에게 그대로 보입니다)</label><input class="in" id="spf_text" value="${esc(p.text||'')}" placeholder="예: 11월 구독 확정 시 신세계 상품권 10만원"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="spf_from">시작일 (비우면 바로)</label><input class="in" type="date" id="spf_from" value="${esc(p.from||'')}"></div><div><label for="spf_to">종료일 (비우면 계속)</label><input class="in" type="date" id="spf_to" value="${esc(p.to||'')}"></div></div>
+      <div><label>대상 품목 (아무것도 안 고르면 전체)</label><div style="display:flex;flex-wrap:wrap;gap:6px" id="spf_cats">${(SP.cats||[]).map(c=>`<span class="chip ${(p.cats||[]).includes(c)?'on':''}" data-v="${esc(c)}" onclick="this.classList.toggle('on')">${esc(c)}</span>`).join('')}</div></div>
+      <div><label for="spf_models">대상 모델번호 (쉼표로 여러 개 · 비우면 전체)</label><input class="in" id="spf_models" value="${esc((p.models||[]).join(', '))}" autocapitalize="characters"></div>`;
+  } else {
+    const c=(SP.cards||[]).find(x=>x.card===key)||{card:key,notes:[]};
+    SP_DLG={kind,c}; $('spDlgTitle').textContent=key+' 유의사항';
+    F.innerHTML=`<div><label for="spf_notes">유의사항 (한 줄에 한 문장 · 카드사 원문대로)</label><textarea class="in" id="spf_notes" rows="4" style="width:100%;box-sizing:border-box;font-family:inherit">${esc((c.notes||[]).join('\n'))}</textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="spf_from">노출 시작 (비우면 계속)</label><input class="in" type="date" id="spf_from" value="${esc(c.from||'')}"></div><div><label for="spf_to">노출 종료</label><input class="in" type="date" id="spf_to" value="${esc(c.to||'')}"></div></div>
+      <div><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="spf_hidden" ${c.hidden?'checked':''} style="width:18px;height:18px"> 이 카드를 구독탭 카드 목록에서 숨김</label></div>`;
+  }
+  $('spDlg').classList.remove('hidden'); setTimeout(()=>{ const f=F.querySelector('input,textarea'); if(f) f.focus(); },50);
+}
+function spDlgClose(){ $('spDlg').classList.add('hidden'); SP_DLG=null; }
+async function spDlgSave(){
+  if(!SP_DLG) return; const b=$('spDlgOk'); b.disabled=true;
+  try{
+    if(SP_DLG.kind==='promo'){
+      const p=SP_DLG.p, text=$('spf_text').value.trim(); if(!text) throw new Error('문구를 적어 주세요');
+      await rpc('fn_store_sub_promo_save',{p_code:CODE,p_data:{id:p.id,text,from:$('spf_from').value||null,to:$('spf_to').value||null,sort:p.sort,note:p.note,active:p.active!==false,
+        cats:[...$('spf_cats').querySelectorAll('.chip.on')].map(x=>x.dataset.v),models:$('spf_models').value.split(/[,\n]/).map(x=>x.trim()).filter(Boolean),goods:p.goods||[]}});
+    } else {
+      const c=SP_DLG.c;
+      await rpc('fn_store_sub_card_policy_save',{p_code:CODE,p_data:{card:c.card,notes:$('spf_notes').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),from:$('spf_from').value||null,to:$('spf_to').value||null,hidden:$('spf_hidden').checked}});
+    }
+    spDlgClose(); toast('저장했습니다 · 1~3분 안에 상세페이지에 반영됩니다'); loadSubPolicy();
+  }catch(e){ $('spDlgErr').textContent=e.message; }
+  finally{ b.disabled=false; }
+}
+async function spPromoToggle(id,on){
+  const p=(SP&&SP.promos||[]).find(x=>x.id===id); if(!p) return;
+  if(!on && !confirm(`"${p.text}" 행사 문구를 끌까요? (기록은 남고 다시 켤 수 있습니다)`)) return;
+  try{ await rpc('fn_store_sub_promo_save',{p_code:CODE,p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,sort:p.sort,note:p.note,active:!!on}}); toast(on?'다시 켰습니다':'껐습니다'); loadSubPolicy(); }
+  catch(e){ toast(e.message); }
+}
+
 /* ═══ 사은품 : 한 번 쓴 사은품은 칩으로, 링크(문의 시트·오피스콘)는 버튼으로 ═══ */
 let GIFTS=null;
 async function loadGifts(){
@@ -6190,26 +6399,32 @@ function reqToOrder(id){
 /* ═══ 부팅 ═══ */
 /* ── 잠금 : 코드는 기억하되, 자리 비움(30분)·탭을 닫았다 열면 코드를 다시 친다 ── */
 const LOCK_IDLE_MIN=30; let LOCK_T=null, LOCKED=false;
-function lockTouch(){ if(LOCKED || !CODE || $('app').classList.contains('hidden')) return; clearTimeout(LOCK_T); LOCK_T=setTimeout(()=>lockStore('자리를 비운 지 '+LOCK_IDLE_MIN+'분이 지나 잠겼습니다. 담당자 코드를 다시 입력하세요.'), LOCK_IDLE_MIN*60e3); }
+function lockTouch(){ if(LOCKED || !CODE || $('app').classList.contains('hidden')) return; clearTimeout(LOCK_T); LOCK_T=setTimeout(()=>lockStore('자리를 비운 지 '+LOCK_IDLE_MIN+'분이 지나 잠겼습니다. 비밀번호를 다시 입력하세요.'), LOCK_IDLE_MIN*60e3); }
 ['mousemove','keydown','click','touchstart','scroll'].forEach(ev=>document.addEventListener(ev, lockTouch, {passive:true}));
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') lockTouch(); });
 /* 로그아웃 = 담당자 코드를 지우고 처음 화면으로 (아래 '담당자 변경'과 같다) */
-function logoutStore(){ if(!confirm('로그아웃할까요? 다시 쓰려면 담당자 코드를 입력합니다.')) return;
-  try{ localStorage.removeItem('staff_code'); sessionStorage.removeItem('st_open'); }catch(e){} location.reload(); }
+async function logoutStore(){ if(!confirm('로그아웃할까요? 다시 쓰려면 이름과 비밀번호를 입력합니다.')) return;
+  await sessionEnd(); location.reload(); }
 function lockStore(why){ if(LOCKED) return; LOCKED=true;
-  document.querySelector('#pinScreen .sub').textContent = why || '담당자 코드 4자리를 입력하세요';
-  $('pinInput').value=''; $('pinErr').textContent=''; $('pinScreen').classList.remove('hidden'); $('app').classList.add('hidden'); setTimeout(()=>$('pinInput').focus(),50); }
+  LOCK_MSG = why || ''; document.querySelector('#pinScreen .sub').textContent = why || '이름과 비밀번호를 입력하세요';
+  if(!$('pinInput').value && CODE) $('pinInput').value=CODE;
+  $('pinPass').value=''; $('pinErr').textContent=''; $('pinScreen').classList.remove('hidden'); $('app').classList.add('hidden'); setTimeout(()=>$('pinPass').focus(),50); }
 const _enterPin=enterPin;
 let PIN_BUSY=false;
-enterPin=async function(){ const v=$('pinInput').value.trim(); if(v.length!==4) return $('pinErr').textContent='4자리를 입력하세요';
-  if(PIN_BUSY) return; PIN_BUSY=true;   /* 입력 이벤트와 Enter 가 겹쳐 두 번 나가는 것 방지 — 응답이 오면 바로 푼다 */
+enterPin=async function(){ const v=$('pinInput').value.trim(), pw=$('pinPass').value;
+  if(!v){ $('pinErr').textContent='이름을 입력하세요'; $('pinInput').focus(); return; }
+  if(!pw){ $('pinErr').textContent='비밀번호를 입력하세요'; $('pinPass').focus(); return; }
+  if(PIN_BUSY) return; PIN_BUSY=true;   /* 버튼과 Enter 가 겹쳐 두 번 나가는 것 방지 — 응답이 오면 바로 푼다 */
   if(!PIN_UNTIL) $('pinErr').textContent='';
-  if(LOCKED && v===CODE){ LOCKED=false; PIN_BUSY=false; $('pinScreen').classList.add('hidden'); $('app').classList.remove('hidden'); try{ sessionStorage.setItem('st_open','1'); }catch(e){} lockTouch(); toast('잠금 해제','ok'); return; }
-  if(LOCKED && v!==CODE){ /* 다른 사람이면 그 사람으로 새로 시작 */ LOCKED=false; }
   pinBusy(true);
-  try{ await loadStatus(v); pinUnlocked(); CODE=v; localStorage.setItem('staff_code',v); try{ sessionStorage.setItem('st_open','1'); }catch(e){} start(); lockTouch(); toast(`${ME}님, 확인됐습니다`,'ok'); }
+  try{
+    const a = await rpc('fn_store_login', {p_name:v, p_pass:pw});   /* 잠금 해제·다른 사람·새 로그인 모두 같은 길 — 서버가 새 세션을 주고 같은 기기의 이전 세션은 끊는다 */
+    sessionSet(a.token, a.elevated_until); LOCKED=false; LOCK_MSG='';
+    pinUnlocked(); CODE=a.me; localStorage.setItem('staff_code',CODE);
+    try{ if($('pinSave').checked) localStorage.setItem('dc_login_name',CODE); else localStorage.removeItem('dc_login_name'); }catch(e){}
+    await loadStatus(CODE); try{ sessionStorage.setItem('st_open','1'); }catch(e){} $('pinPass').value=''; start(); lockTouch(); toast(`${ME}님, 확인됐습니다`,'ok'); }
   catch(e){ pinFail(e.message); } finally{ PIN_BUSY=false; pinBusy(false); } };
-function pinBusy(on){ const b=$('pinBtn'), i=$('pinInput'); if(!b) return; b.classList.toggle('busy',on); b.textContent=on?'확인 중…':'시작하기'; i.disabled=on; if(!on) setTimeout(()=>i.focus(),0); }
+function pinBusy(on){ const b=$('pinBtn'), i=$('pinInput'), q=$('pinPass'); if(!b) return; b.classList.toggle('busy',on); b.textContent=on?'확인 중…':'시작하기'; i.disabled=on; q.disabled=on; if(!on) setTimeout(()=>q.focus(),0); }
 /* ── 코드 5회 오입력 → 15분 잠금 (서버 core.f_staff 가 기기별로 센다).
    화면은 남은 시간을 보여줄 뿐 입력을 막지는 않는다 — 관리자가 풀어주면 바로 다시 들어갈 수 있어야 하므로 판단은 늘 서버가 한다 ── */
 let PIN_UNTIL=0, PIN_T=null;
@@ -6219,22 +6434,22 @@ function pinMeter(n, lock){ const m=$('pinMeter'); if(!m) return; n=Math.max(0,M
   $('pinMeterTxt').textContent = lock ? '5/5 잠김' : `틀린 횟수 ${n}/5`; }
 function pinFail(msg){
   const m=/잠겼습니다/.test(msg||'') && ((msg.match(/(\d+)분/)||[])[1]);
-  if(m){ PIN_UNTIL=Date.now()+Number(m)*60e3; try{ localStorage.setItem('dc_pin_until',String(PIN_UNTIL)); }catch(e){} pinLockTick(); $('pinInput').value=''; return; }
+  if(m){ PIN_UNTIL=Date.now()+Number(m)*60e3; try{ localStorage.setItem('dc_pin_until',String(PIN_UNTIL)); }catch(e){} pinLockTick(); $('pinPass').value=''; return; }
   pinUnlocked();
   const c=(msg.match(/(\d)\s*\/\s*5/)||[])[1];
-  if(c){ pinMeter(Number(c)); $('pinErr').textContent = '등록되지 않은 담당자 코드입니다' + (Number(c)>=3 ? ` · ${5-Number(c)}번 더 틀리면 15분 잠깁니다` : ''); }
-  else if(/다시 시도해 주세요/.test(msg||'')){ $('pinErr').textContent=msg+' · 입력한 코드는 그대로 두었습니다'; $('pinInput').focus(); return; }
+  if(c){ pinMeter(Number(c)); $('pinErr').textContent = String(msg).replace(/\s*\(\d\s*\/\s*5\)\s*$/,'') + (Number(c)>=3 ? ` · ${5-Number(c)}번 더 틀리면 15분 잠깁니다` : ''); }
+  else if(/다시 시도해 주세요/.test(msg||'')){ $('pinErr').textContent=msg+' · 입력한 내용은 그대로 두었습니다'; $('pinPass').focus(); return; }
   else $('pinErr').textContent=msg;
-  $('pinInput').value=''; $('pinInput').focus(); }
+  $('pinPass').value=''; $('pinPass').focus(); }
 function pinUnlocked(){
   clearTimeout(PIN_T); PIN_UNTIL=0; try{ localStorage.removeItem('dc_pin_until'); }catch(e){}
   pinMeter(0);
   stopRealtimeSubscription();
 }
 function pinLockTick(){ clearTimeout(PIN_T); const left=PIN_UNTIL-Date.now();
-  if(left<=0){ pinUnlocked(); $('pinErr').textContent='이제 다시 입력할 수 있습니다'; $('pinInput').focus(); return; }
+  if(left<=0){ pinUnlocked(); $('pinErr').textContent='이제 다시 입력할 수 있습니다'; $('pinPass').focus(); return; }
   const mm=Math.floor(left/60e3), ss=Math.floor(left%60e3/1e3); pinMeter(5,true);
-  $('pinErr').textContent='코드를 5번 틀려 잠겼습니다 · '+mm+'분 '+String(ss).padStart(2,'0')+'초 뒤에 풀립니다 (관리자가 풀어주면 바로 다시 입력 가능)';
+  $('pinErr').textContent='5번 틀려 잠겼습니다 · '+mm+'분 '+String(ss).padStart(2,'0')+'초 뒤에 풀립니다 (관리자가 풀어주면 바로 다시 입력 가능)';
   PIN_T=setTimeout(pinLockTick,1000); }
 try{ const u=Number(localStorage.getItem('dc_pin_until')||0); if(u>Date.now()){ PIN_UNTIL=u; pinLockTick(); } }catch(e){}
 (async()=>{
@@ -6242,8 +6457,8 @@ try{ const u=Number(localStorage.getItem('dc_pin_until')||0); if(u>Date.now()){ 
   if(CODE && !fresh){ /* 같은 탭 새로고침 : 잠금 화면을 거치지 않고 바로 이어간다 (화면 깜빡임 없음) */
     try{ await loadStatus(); start(); lockTouch(); document.documentElement.classList.remove('resuming'); return; }catch(e){ localStorage.removeItem('staff_code'); CODE=''; } }
   document.documentElement.classList.remove('resuming');
-  if(CODE && fresh) document.querySelector('#pinScreen .sub').textContent='창을 다시 열었습니다. 담당자 코드를 입력하면 이어서 쓸 수 있습니다';
-  $('pinInput').focus(); })();
+  if(CODE && fresh){ if(!$('pinInput').value) $('pinInput').value=CODE; document.querySelector('#pinScreen .sub').textContent='창을 다시 열었습니다. 비밀번호를 입력하면 이어서 쓸 수 있습니다'; }
+  ($('pinInput').value ? $('pinPass') : $('pinInput')).focus(); })();
 
 /* ═══ 표 정렬 : 어떤 표든 머리글을 누르면 그 열로 오름/내림차순 (지금 화면에 보이는 행 기준) ═══ */
 (function(){
