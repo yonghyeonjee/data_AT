@@ -105,10 +105,10 @@ class Site:
         return '''</main>
 <footer class="gd-foot"><div class="in">
     삼성스토어 시흥 · 삼성전자 공식 판매점 · 구독 상담 <a href="tel:%(tel)s">%(tel)s</a><br>
-    <a href="%(shop)s/">쇼핑몰 홈</a> · <a href="%(home)s">구독센터</a> · <a href="%(bundle)s">다품목 계산기</a> · <a href="%(consult)s">구독 상담 신청</a><br>
+    <a href="%(shop)s/">쇼핑몰 홈</a> · <a href="%(home)s">구독센터</a> · <a href="%(bundle)s">다품목 계산기</a> · <a href="%(consult)s">구독 상담 신청</a> · <a href="%(sitemap)s">전체 페이지</a><br>
     표시된 월 구독료는 약정·케어·카드 조건에 따라 달라지며, 실제 납부액은 상담 때 안내해 드립니다.
 </div></footer>
-''' % dict(tel=B.TEL, home=self.dir + 'index.html', bundle=self.dir + 'bundle.html', consult=CONSULT, shop=SHOP)
+''' % dict(tel=B.TEL, home=self.dir + 'index.html', bundle=self.dir + 'bundle.html', consult=CONSULT, shop=SHOP, sitemap=self.dir + 'sitemap.html')
 
     def loader(self, name, cfg_var, ready_var, page, key='', cats=None, preload=None, before_ui=''):
         """데이터센터 version.js → 요금표·카탈로그·카드표·정책·화면 파일을 한꺼번에 (동시 다운로드), 실패하면 /data/js/sub/ 예비 사본
@@ -292,6 +292,26 @@ class Site:
 </section>
 ''' + self.foot() + self.loader('bundle', 'SUB_BUNDLE_CONFIG', 'SUB_BUNDLE_READY', 'bundle', preload=['sub_tab.js']) + '</body>\n</html>\n')
 
+    def sitemap_html(self, pages, models_by_cat, cat_names):
+        css = """  .sm h1 { font-size:26px; margin:16px 0 6px; }
+  .sm .lead { color:#666; font-size:14px; margin:0 0 24px; }
+  .sm h2 { font-size:17px; margin:28px 0 8px; padding-top:16px; border-top:1px solid #eee; }
+  .sm ul { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:4px 16px; font-size:13.5px; }
+  .sm a { color:#333; text-decoration:none; }
+  .sm a:hover { color:#1d6fe8; text-decoration:underline; }
+  .sm .top ul { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); font-size:14px; font-weight:600; }
+"""
+        body = ['<div class="sm"><h1>삼성스토어 시흥 구독센터 전체 페이지</h1><p class="lead">구독센터의 모든 페이지와 구독 가능한 삼성 가전 모델별 상품 페이지 목록입니다. 모델을 누르면 약정·케어·제휴카드별 월 구독료를 바로 계산할 수 있습니다.</p>']
+        body.append('<section class="top"><h2>구독센터</h2><ul>' + ''.join('<li><a href="%s">%s</a></li>' % (self.dir + f, e(n)) for f, n in pages) + '</ul></section>')
+        for cat, models in models_by_cat:
+            body.append('<section><h2>삼성 %s 구독 모델 <small>(%d개)</small></h2><ul>' % (e(cat_names.get(cat, cat)), len(models)) +
+                        ''.join('<li><a href="%sview.html?model=%s">%s</a></li>' % (self.dir, m, m) for m in models) + '</ul></section>')
+        body.append('</div>')
+        return (self.head('삼성 가전 구독 전체 페이지 · 모델별 구독 상품 목록 | 삼성스토어 시흥 구독센터',
+                          '삼성스토어 시흥 구독센터의 모든 페이지와 구독 가능한 삼성 가전 모델 전체 목록. 냉장고·세탁기·TV·에어컨 등 모델별 월 구독료 페이지로 바로 이동하세요.',
+                          '삼성 구독 모델 목록, 삼성 가전 구독 전체, 삼성스토어 시흥 구독센터', self.url + 'sitemap.html', css) +
+                chr(10).join(body) + chr(10) + self.foot() + '</body>' + chr(10) + '</html>' + chr(10))
+
     # ---------- 전체 ----------
     def build(self, index_js):
         os.makedirs(self.out, exist_ok=True)
@@ -303,6 +323,17 @@ class Site:
         pages.append(('bundle.html', self.bundle_page(), ('0.8', 'weekly')))
         pages.append(('find.html', self.find_page(), ('0.6', 'daily')))
         pages.append(('view.html', self.view_page(), None))
+        # HTML 사이트맵 — 웹FTP 가 .xml 을 못 받으므로 링크 목록 페이지도 같이 (검색엔진이 링크를 따라온다)
+        models_by_cat, cat_names = [], {}
+        if index_js and os.path.exists(index_js):
+            idx0 = json.loads(re.search(r'=\s*(\{.*\})\s*;?\s*$', open(index_js, encoding='utf-8').read(), re.S).group(1))
+            cat_names = idx0.get('cats', {})
+            grp = {}
+            for m, ent in idx0['m'].items():
+                grp.setdefault(ent[0], []).append(m)
+            models_by_cat = [(c, sorted(ms)) for c, ms in sorted(grp.items(), key=lambda kv: -len(kv[1]))]
+        page_links = [(f, t_.split(' | ')[0]) for f, t_, *_ in [(p[0], re.search(r'<title>([^<]*)</title>', p[1]).group(1)) for p in pages if p[2]]]
+        pages.append(('sitemap.html', self.sitemap_html(page_links, models_by_cat, cat_names), ('0.4', 'weekly')))
         for fname, html_, _ in pages:
             assert '{' + '=' not in html_ and '{ #' not in html_, fname   # 고도몰 템플릿 문법이 남지 않게
             with open(os.path.join(self.out, fname), 'w', encoding='utf-8', newline='\n') as f:
