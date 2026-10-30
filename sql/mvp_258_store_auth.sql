@@ -93,13 +93,13 @@ begin
     v_me := core.f_staff(coalesce(s.code, ''));        -- 기기·IP·전체 잠금 + (이름이 없으면) 실패 기록은 f_staff 가 맡는다 (코드는 DB 에서 꺼낸 것 · 화면이 보내지 않는다)
   exception when sqlstate '28000' then
     if sqlerrm like '%잠%' then raise; end if;          -- 잠금 안내는 그대로
-    raise exception '이름 또는 비밀번호가 맞지 않습니다 %', coalesce(substring(sqlerrm from '\(\d+/\d+\)'), '') using errcode = '28000';
+    raise exception '아이디 또는 비밀번호가 맞지 않습니다 %', coalesce(substring(sqlerrm from '\(\d+/\d+\)'), '') using errcode = '28000';
   end;
   if s.pass_hash is null or nullif(p_pass,'') is null or extensions.crypt(p_pass, s.pass_hash) <> s.pass_hash then
     select * into r from core.f_req_ident();
     n_after := coalesce(core.f_pin_fail_post(jsonb_build_object('key', r.key, 'ip', r.ip, 'device', r.device, 'code', '(pw)', 'ua', r.ua)), 1);
     if n_after >= LIM then raise exception '%번 틀려 15분 동안 잠겼습니다', LIM using errcode = '28000'; end if;
-    raise exception '이름 또는 비밀번호가 맞지 않습니다 (%/%)', n_after, LIM using errcode = '28000';
+    raise exception '아이디 또는 비밀번호가 맞지 않습니다 (%/%)', n_after, LIM using errcode = '28000';
   end if;
   select * into r from core.f_req_ident();
   v_tok := encode(extensions.gen_random_bytes(32), 'hex');
@@ -228,13 +228,13 @@ declare v_src text; v_args text; v_n int; v_secdef text;
                 || E'      select ss.id, ss.staff into v_sid, v_sname from core.staff_session ss\n'
                 || E'       where ss.token_hash = core.f_store_tok_hash() and ss.revoked_at is null and ss.expires_at > now();\n'
                 || E'      if v_sid is null or not exists (select 1 from core.staff s where s.name = v_sname and s.active) then\n'
-                || E'        raise exception ''[RELOGIN] 로그인이 만료되었거나 끊겼습니다. 이름과 비밀번호를 다시 입력하세요'' using errcode = ''28000'';\n'
+                || E'        raise exception ''[RELOGIN] 로그인이 만료되었거나 끊겼습니다. 아이디와 비밀번호를 다시 입력하세요'' using errcode = ''28000'';\n'
                 || E'      end if;\n'
                 || E'      update core.staff_session set last_seen = now() where id = v_sid and last_seen < now() - interval ''1 minute'';\n'
                 || E'      perform set_config(''dc.sid'', v_sid::text, true);\n'
                 || E'      return v_sname;\n'
                 || E'    elsif core.f_store_session_mode() then\n'
-                || E'      raise exception ''[RELOGIN] 로그인이 필요합니다. 이름과 비밀번호를 입력하세요'' using errcode = ''28000'';\n'
+                || E'      raise exception ''[RELOGIN] 로그인이 필요합니다. 아이디와 비밀번호를 입력하세요'' using errcode = ''28000'';\n'
                 || E'    end if;\n'
                 || E'  end if;\n';
 begin
