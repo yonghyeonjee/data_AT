@@ -10,6 +10,8 @@
      data-ss="list"     품목 페이지 전체 목록 (세부유형·금액대·정렬)  — CFG.key 품목
      data-ss="related"  다른 품목 바로가기
      data-ss="cta"      상담 띠 (전화 · 구독 문의)
+     data-ss="persona"  생활 유형별 추천 묶음 (신혼·입주·이사…) → 다품목 계산기 프리셋 (2026-10-30)
+   공용: window.SUB_CART (다품목 계산기 담기 · localStorage) · window.SUB_FAMILY (색상만 다른 모델 묶기)
    검색엔진용: 품목 목록(ItemList) · 경로(BreadcrumbList) · FAQ(FAQPage, html 의 .ss-faq 글에서) 구조화 데이터를 넣는다.
    ※ 요금 = sub_index.js / sub_plans_<품목>.js (상품상세 구독탭·구독상품 찾기와 같은 파일)
    ※ 상품명·이미지 = 데이터센터 fn_sub_catalog (고도몰 상품명 → 상품 마스터 이름 → 없으면 "삼성 품목 세부유형")
@@ -59,9 +61,51 @@ window.SUB_SHOP_READY = true;
     guide: CFG.guideUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_guide.html',
     find: CFG.findUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_find.html',
     view: CFG.viewUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_view.html&model=',
+    bundle: CFG.bundleUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_bundle.html',
     consult: CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html'
   };
   var SITE = CFG.site || location.protocol + '//' + location.host;
+
+  /* ---------- 공용: 다품목 계산기 담기 (localStorage) — 구독센터 모든 화면이 같은 바구니를 쓴다 (2026-10-30) ---------- */
+  var CART_KEY = 'ss_bundle_v1', CART_MAX = 10;
+  window.SUB_CART = window.SUB_CART || {
+    get: function () { try { var v = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); return v instanceof Array ? v : []; } catch (e) { return []; } },
+    set: function (items) { try { localStorage.setItem(CART_KEY, JSON.stringify(items.slice(0, CART_MAX))); } catch (e) {} this.changed(); },
+    has: function (model) { return this.get().some(function (it) { return it.m === model; }); },
+    add: function (model, opt) {
+      var items = this.get(), i = -1;
+      items.forEach(function (it, k) { if (it.m === model) i = k; });
+      var it = { m: model };
+      if (opt) for (var k in opt) if (opt[k] !== undefined && opt[k] !== '') it[k] = opt[k];
+      if (i >= 0) items[i] = it; else { if (items.length >= CART_MAX) return false; items.push(it); }
+      this.set(items); return true;
+    },
+    remove: function (model) { this.set(this.get().filter(function (it) { return it.m !== model; })); },
+    clear: function () { this.set([]); },
+    count: function () { return this.get().length; },
+    changed: function () { try { document.dispatchEvent(new CustomEvent('ss-cart')); } catch (e) {} }
+  };
+  /* ---------- 공용: 색상만 다른 모델 묶기 ----------
+     삼성 모델명은 마지막 숫자 뒤 글자가 색상이다 (RM80F91H1X · RM80F91H1W · RM70F64Q1XJ · RM70F90M1DD / 콤보 WD90H25AHY → AH 모델 + Y 색상, 수납장 세트 N1 은 유지).
+     규칙: 마지막 숫자 뒤 영문이 1~2자면 전부 색상, 3자 이상이면 마지막 1자만 색상. 같은 품목·세부유형 안에서만 묶는다 */
+  window.SUB_FAMILY = window.SUB_FAMILY || function (model) {
+    var m = /^(.*\d)([A-Z]+?)(N\d)?$/.exec(String(model || '').toUpperCase());
+    if (!m) return model;
+    var letters = m[2], keep = letters.length >= 3 ? letters.slice(0, -1) : '';
+    return m[1] + keep + (m[3] || '');
+  };
+  function toast(msg, href, label) {
+    var t = document.getElementById('ssToast');
+    if (!t) { t = document.createElement('div'); t.id = 'ssToast'; t.className = 'ss-toast'; document.body.appendChild(t); }
+    t.innerHTML = '<span>' + esc(msg) + '</span>' + (href ? '<a href="' + esc(href) + '">' + esc(label || '보기') + '</a>' : '');
+    t.classList.add('is-on');
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('is-on'); }, 3500);
+  }
+  function addToCart(model) {
+    if (!window.SUB_CART.add(model)) { toast('묶음 계산기에는 최대 ' + CART_MAX + '개까지 담을 수 있습니다', LINK.bundle, '계산기 보기'); return; }
+    toast('묶음 계산기에 담았습니다 · ' + window.SUB_CART.count() + '개', LINK.bundle, '계산하기');
+    track('ss_cart_add', { ss_model: model });
+  }
   var UTM = 'sub_' + (CFG.page || 'home') + (CFG.key ? '_' + CFG.key : '');
 
   function fmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
@@ -213,26 +257,45 @@ window.SUB_SHOP_READY = true;
       (CARD1 && net < r.min ? '<span class="ss-net">' + esc(CARD1.name) + ' 할인 시 <b>월 ' + fmt(net) + '원~</b></span>' : '');
   }
   function card(r, medium) {
-    var p = pageOf(r);
-    return '<li class="ss-card"><a class="ss-card-link" href="' + esc(viewHref(r.model, medium)) + '" data-cta="view" data-model="' + esc(r.model) + '">' +
+    var p = pageOf(r), fam = r.variants && r.variants.length > 1 ? r.variants : null;
+    return '<li class="ss-card' + (window.SUB_CART.has(r.model) ? ' in-cart' : '') + '"><a class="ss-card-link" href="' + esc(viewHref(r.model, medium)) + '" data-cta="view" data-model="' + esc(r.model) + '">' +
+      (fam ? '<span class="ss-fam">색상 ' + fam.length + '종</span>' : '') +
       '<span class="ss-img">' + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
         (r.imgRep ? '<span class="ss-imgnote">대표 이미지</span>' : '') : '<span class="ss-icon" aria-hidden="true">' + (p ? p.icon : '📦') + '</span>') + '</span>' +
       '<span class="ss-meta">' + esc(p ? p.name : IDX.cats[r.cat]) + (r.seg ? ' · ' + esc(segShort(r.seg)) : '') + '</span>' +
       '<strong class="ss-name">' + esc(displayName(r)) + '</strong>' +
       '<span class="ss-model">' + esc(r.model) + '</span>' +
       priceHtml(r) +
-      '</a></li>';
+      (fam ? '<span class="ss-fam-list">' + fam.map(function (v) { return esc(v.model); }).join(' · ') + '</span>' : '') +
+      '</a><button type="button" class="ss-add" data-add="' + esc(r.model) + '" aria-label="묶음 계산기에 담기">' + (window.SUB_CART.has(r.model) ? '담김 ✓' : '+ 담기') + '</button></li>';
+  }
+  // 색상만 다른 모델을 하나로 — 대표는 가장 저렴한 모델(사진 있는 것 우선), variants 에 전부 (월 구독료 낮은순)
+  function groupColors(list) {
+    var fam = {}, order = [];
+    list.forEach(function (r) {
+      var k = r.cat + '|' + r.seg + '|' + window.SUB_FAMILY(r.model);
+      if (!fam[k]) { fam[k] = []; order.push(k); }
+      fam[k].push(r);
+    });
+    return order.map(function (k) {
+      var vs = fam[k].slice().sort(function (a, b) { return a.min - b.min || score(b) - score(a); });
+      var rep = vs.filter(function (v) { return v.img && !v.imgRep; })[0] || vs[0];
+      var o = {}; for (var key in rep) o[key] = rep[key];
+      o.variants = vs; o.min = vs[0].min;
+      return o;
+    });
   }
   function minOf(list) { var m = 0; list.forEach(function (r) { if (!m || r.min < m) m = r.min; }); return m; }
 
   /* ---------- 자리별 그리기 ---------- */
   function drawNav(el) {
     var cur = CFG.page === 'cat' || CFG.page === 'view' ? CFG.key : CFG.page;
-    var top = [['home', '구독 홈', LINK.home], ['card', '카드 혜택', LINK.card], ['guide', '구독 안내', LINK.guide], ['find', '상품 찾기', LINK.find]];
+    var top = [['home', '구독 홈', LINK.home], ['bundle', '다품목 계산기', LINK.bundle, true], ['card', '카드 혜택', LINK.card], ['guide', '구독 안내', LINK.guide], ['find', '상품 찾기', LINK.find]];
     var h = '<nav class="ss-nav" aria-label="구독센터 메뉴"><div class="ss-nav-top">' +
       '<a class="ss-brand" href="' + esc(LINK.home) + '">삼성스토어 시흥 <b>구독센터</b></a>' +
       '<div class="ss-nav-links">' + top.map(function (t) {
-        return '<a href="' + esc(t[2]) + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + t[1] + '</a>';
+        var n = t[3] ? window.SUB_CART.count() : 0;
+        return '<a href="' + esc(t[2]) + '"' + (cur === t[0] ? ' aria-current="page"' : '') + (t[3] ? ' data-nav="bundle"' : '') + '>' + t[1] + (n ? ' <b class="ss-nav-n">' + n + '</b>' : '') + '</a>';
       }).join('') + '</div>' +
       '<a class="ss-nav-cta" href="' + esc(consultHref(null, 'nav')) + '" data-cta="consult">구독 상담 신청</a></div>' +
       '<div class="ss-nav-cats">' + PAGES.map(function (p) {
@@ -309,17 +372,59 @@ window.SUB_SHOP_READY = true;
       return '<li><a href="' + esc(catHref(p.key)) + '">' + esc(p.name) + ' 구독 가격</a></li>';
     }).join('') + '</ul>';
   }
+  // 생활 유형별 추천 묶음 — 누르면 다품목 계산기가 각 품목의 대표 모델로 채운다 (sub_bundle.js 의 preset)
+  var PERSONAS = [
+    { key: 'newlywed', name: '신혼집', icon: '💑', desc: '냉장고 · AI 콤보 · TV · 청소기', keys: ['ref', 'aicombo', 'tv', 'cleaner'] },
+    { key: 'movein', name: '새 아파트 입주', icon: '🏢', desc: '냉장고 · 김치냉장고 · 에어컨 · 세탁기 · 건조기', keys: ['ref', 'kimchi', 'aircon', 'washer', 'dryer'] },
+    { key: 'moving', name: '이사 · 교체', icon: '🚚', desc: '냉장고 · 세탁기 · TV', keys: ['ref', 'washer', 'tv'] },
+    { key: 'dualincome', name: '맞벌이 · 1인 가구', icon: '⏱️', desc: 'AI 콤보 · 식기세척기 · 로봇청소기 · 에어드레서', keys: ['aicombo', 'dishwasher', 'cleaner', 'airdresser'] },
+    { key: 'family', name: '3~4인 가족', icon: '👨‍👩‍👧', desc: '대용량 냉장고 · 김치냉장고 · 식기세척기 · 인덕션', keys: ['ref', 'kimchi', 'dishwasher', 'induction'] },
+    { key: 'kitchen', name: '주방 리모델링', icon: '🍳', desc: '키친핏 냉장고 · 식기세척기 · 인덕션 · 정수기', keys: ['ref', 'dishwasher', 'induction', 'water'] }
+  ];
+  function drawPersona(el) {
+    el.innerHTML = '<ul class="ss-persona">' + PERSONAS.map(function (p) {
+      return '<li><a href="' + esc(withQ(LINK.bundle, 'preset=' + p.key)) + '" data-cta="persona" data-model="' + p.key + '">' +
+        '<span class="ss-persona-icon" aria-hidden="true">' + p.icon + '</span><strong>' + esc(p.name) + '</strong><span>' + esc(p.desc) + '</span>' +
+        '<em>묶음 월 구독료 계산 →</em></a></li>';
+    }).join('') + '</ul>';
+  }
+  window.SUB_PERSONAS = PERSONAS;
+  /* ---------- 문의 유도 말풍선 (모든 구독센터 화면 · 2026-10-30) ----------
+     문구는 데이터센터 정책 SUB_POLICY.texts.bubble / bubbleGift 가 있으면 그것을, 없으면 기본 문구. 닫으면 이 브라우저 세션 동안 안 뜬다 */
+  function bubbleTexts() {
+    var t = (POL && POL.texts) || {};
+    return { main: t.bubble || '보시는 가격보다 더 저렴하게 가능한지 꼭 문의해 주세요!', gift: t.bubbleGift || '상담 완료 시 문의 감사 상품 제공 (현재: 네이버페이 1만원)' };
+  }
+  function drawBubble() {
+    if (CFG.bubble === false || document.getElementById('ssBubble')) return;
+    try { if (sessionStorage.getItem('ss_bubble_off')) return; } catch (e) {}
+    var t = bubbleTexts(), tel = CFG.tel || (POL && POL.defaults && POL.defaults.tel) || '';
+    var b = document.createElement('div'); b.id = 'ssBubble'; b.className = 'ss-bubble'; b.setAttribute('role', 'complementary');
+    b.innerHTML = '<button type="button" class="ss-bubble-x" aria-label="닫기">×</button>' +
+      '<p class="ss-bubble-main">💬 ' + esc(t.main) + '</p><p class="ss-bubble-gift">🎁 ' + esc(t.gift) + '</p>' +
+      '<div class="ss-bubble-btns"><a class="ss-btn" href="' + esc(consultHref(null, 'bubble')) + '" data-cta="consult">구독 문의하기</a>' +
+      (tel ? '<a class="ss-btn-line" href="tel:' + esc(tel.replace(/[^0-9]/g, '')) + '" data-cta="tel">📞 ' + esc(tel) + '</a>' : '') + '</div>';
+    document.body.appendChild(b);
+    setTimeout(function () { b.classList.add('is-on'); track('ss_bubble_view'); }, 1500);
+    b.addEventListener('click', function (ev) {
+      var x = ev.target.closest ? ev.target.closest('.ss-bubble-x, a[data-cta]') : null;
+      if (!x) return;
+      if (x.classList.contains('ss-bubble-x')) { b.classList.remove('is-on'); try { sessionStorage.setItem('ss_bubble_off', '1'); } catch (e) {} track('ss_bubble_close'); }
+      else track('ss_bubble_click', { ss_cta: x.getAttribute('data-cta') });
+    });
+  }
   function drawCta(el) {
-    var tel = CFG.tel || '';
+    var tel = CFG.tel || '', t = bubbleTexts();
     el.innerHTML = '<div class="ss-cta"><div><strong>내 조건에 맞는 구독료가 궁금하신가요?</strong>' +
-      '<p>약정 기간·케어 주기·선납·제휴카드까지 맞춰 실제 월 납부액을 계산해 드립니다.</p></div>' +
+      '<p>약정 기간·케어 주기·선납·제휴카드까지 맞춰 실제 월 납부액을 계산해 드립니다.</p>' +
+      '<p class="ss-cta-nudge">💬 ' + esc(t.main) + '<br>🎁 ' + esc(t.gift) + '</p></div>' +
       '<div class="ss-cta-btns">' + (tel ? '<a class="ss-btn-line" href="tel:' + esc(tel.replace(/[^0-9]/g, '')) + '" data-cta="tel">' + esc(tel) + '</a>' : '') +
       '<a class="ss-btn" href="' + esc(consultHref(null, 'cta')) + '" data-cta="consult">구독 문의하기</a></div></div>';
   }
 
   /* 품목 페이지 목록 — 세부유형 · 금액대 · 정렬 */
   var BANDS = [['', '전체'], ['30000', '월 3만원 이하', 0, 30000], ['50000', '월 5만원 이하', 0, 50000], ['100000', '월 10만원 이하', 0, 100000], ['over', '월 10만원 초과', 100001, 1e12]];
-  var LIST = { seg: '', band: '', sort: 'rec' };
+  var LIST = { seg: '', band: '', sort: 'rec', group: true };   // group: 색상만 다른 모델은 하나로 (2026-10-30)
   function drawList(el) {
     var p = PAGE_BY[CFG.key];
     if (!p) { el.innerHTML = '<p class="ss-empty">품목 설정(CFG.key)이 없습니다.</p>'; return; }
@@ -328,7 +433,7 @@ window.SUB_SHOP_READY = true;
     var segs = {};
     all.forEach(function (r) { var s = segShort(r.seg); if (s) segs[s] = (segs[s] || 0) + 1; });
     var segKeys = Object.keys(segs).sort();
-    var list = all.filter(function (r) {
+    var list = (LIST.group ? groupColors(all) : all).filter(function (r) {
       if (LIST.seg && segShort(r.seg) !== LIST.seg) return false;
       var b = BANDS.filter(function (x) { return x[0] === LIST.band; })[0];
       return !b || !b[0] || (r.min >= b[2] && r.min <= b[3]);
@@ -343,6 +448,7 @@ window.SUB_SHOP_READY = true;
       '<div class="ss-filter ss-filter-sub" role="group" aria-label="금액대">' + BANDS.map(function (b) {
         return '<button type="button" data-band="' + b[0] + '"' + (LIST.band === b[0] ? ' aria-pressed="true"' : '') + '>' + b[1] + '</button>';
       }).join('') +
+      '<label class="ss-group"><input type="checkbox" data-group' + (LIST.group ? ' checked' : '') + '> 색상만 다른 모델은 하나로</label>' +
       '<select data-sort aria-label="정렬"><option value="rec"' + (LIST.sort === 'rec' ? ' selected' : '') + '>추천순</option><option value="low"' + (LIST.sort === 'low' ? ' selected' : '') + '>월 구독료 낮은순</option><option value="high"' + (LIST.sort === 'high' ? ' selected' : '') + '>월 구독료 높은순</option><option value="model"' + (LIST.sort === 'model' ? ' selected' : '') + '>모델명순</option></select></div>' +
       (list.length ? '<ul class="ss-grid">' + list.map(function (r) { return card(r, 'list'); }).join('') + '</ul>'
         : '<p class="ss-empty">조건에 맞는 모델이 없습니다.</p>');
@@ -393,7 +499,7 @@ window.SUB_SHOP_READY = true;
   }
 
   /* ---------- 시작 ---------- */
-  var DRAW = { nav: drawNav, search: drawSearch, cats: drawCats, pick: drawPick, popular: drawPopular, cards: drawCards,
+  var DRAW = { nav: drawNav, search: drawSearch, cats: drawCats, pick: drawPick, popular: drawPopular, cards: drawCards, persona: drawPersona,
     cardtable: drawCardTable, list: drawList, related: drawRelated, cta: drawCta };
   function draw(kinds) {
     $all('[data-ss]').forEach(function (el) {
@@ -404,12 +510,13 @@ window.SUB_SHOP_READY = true;
   function onClick(ev) {
     var t = ev.target.closest ? ev.target.closest('button, a') : null;
     if (!t || !root.contains(t)) return;
-    if (t.hasAttribute('data-seg')) { LIST.seg = t.getAttribute('data-seg'); draw(['list']); track('ss_seg', { ss_seg: LIST.seg }); }
+    if (t.hasAttribute('data-add')) { ev.preventDefault(); var m = t.getAttribute('data-add'); if (window.SUB_CART.has(m)) { window.SUB_CART.remove(m); toast('묶음 계산기에서 뺐습니다'); } else addToCart(m); }
+    else if (t.hasAttribute('data-seg')) { LIST.seg = t.getAttribute('data-seg'); draw(['list']); track('ss_seg', { ss_seg: LIST.seg }); }
     else if (t.hasAttribute('data-band')) { LIST.band = t.getAttribute('data-band'); draw(['list']); }
     else if (t.hasAttribute('data-cta')) track('ss_click', { ss_cta: t.getAttribute('data-cta'), ss_model: t.getAttribute('data-model') || '' });
   }
   function start() {
-    if (navOnly) { drawNav(root); return; }
+    if (navOnly) { drawNav(root); ensureCards(drawBubble); return; }
     if (!IDX || !IDX.m) {
       $all('[data-ss="list"],[data-ss="cats"]').forEach(function (el) { el.innerHTML = '<p class="ss-empty">구독 요금 정보를 불러오지 못했습니다. 잠시 후 다시 시도하시거나 상담으로 문의해 주세요.</p>'; });
       draw(['nav', 'cta']);
@@ -417,7 +524,8 @@ window.SUB_SHOP_READY = true;
     }
     CARD1 = cardInfo();
     buildRows();
-    draw(['nav', 'search', 'cta', 'cards', 'cardtable']);   // 요금표 없이 그릴 수 있는 것 먼저
+    draw(['nav', 'search', 'cta', 'cards', 'cardtable', 'persona']);   // 요금표 없이 그릴 수 있는 것 먼저
+    drawBubble();
     // 세부유형 이름은 요금표(sub_plans_<품목>.js)에 있다 — 품목 페이지는 그 품목만,
     // 홈은 세부유형으로 나뉘는 품목(의류케어·조리기기)만 받는다 (전부 받으면 400KB)
     var p = PAGE_BY[CFG.key], cats = [];
@@ -432,12 +540,18 @@ window.SUB_SHOP_READY = true;
     root.addEventListener('click', onClick);
     root.addEventListener('change', function (ev) {
       if (ev.target.hasAttribute && ev.target.hasAttribute('data-sort')) { LIST.sort = ev.target.value; draw(['list']); }
+      else if (ev.target.hasAttribute && ev.target.hasAttribute('data-group')) { LIST.group = ev.target.checked; draw(['list']); track('ss_group', { ss_on: LIST.group }); }
+    });
+    document.addEventListener('ss-cart', function () {   // 담기 상태가 바뀌면 버튼 글자·메뉴 숫자만 갱신
+      $all('.ss-add').forEach(function (b) { var on = window.SUB_CART.has(b.getAttribute('data-add')); b.textContent = on ? '담김 ✓' : '+ 담기'; b.parentNode.classList.toggle('in-cart', on); });
+      var nav = root.querySelector('[data-nav="bundle"]'); if (nav) { var n = window.SUB_CART.count(); nav.innerHTML = '다품목 계산기' + (n ? ' <b class="ss-nav-n">' + n + '</b>' : ''); }
     });
   }
 
   /* 상품명·이미지 — 데이터센터 fn_sub_catalog (느리면 이름 없이 먼저 그린다) */
   function fromApi(done) {
     var api = CFG.catalogApi;
+    if (window.SUB_CATALOG && window.SUB_CATALOG.m) { CAT = { m: window.SUB_CATALOG.m, img: window.SUB_CATALOG.img || '' }; return done(); }   // 배포본(sub_catalog.js) 이 있으면 바로 (2026-10-30)
     if (!api || !api.url || !window.fetch) return done();
     var settled = false;
     var timer = setTimeout(function () { if (!settled) { settled = true; done(); } }, api.timeout || 3000);

@@ -1,0 +1,107 @@
+/* ===== 다품목 구독 계산기 (sub_bundle.js) — 색·모서리는 sub_shop.css 와 맞춤 (2026-10-30) ===== */
+#subBundleRoot{--sb-blue:#1d6fe8;--sb-blue-d:#1556b8;--sb-ink:#111;--sb-text:#333;--sb-sub:#6b7280;--sb-line:#e3e6eb;--sb-soft:#f5f7fa;--sb-hot:#e8501d;color:var(--sb-text);line-height:1.6;word-break:keep-all}
+#subBundleRoot *{box-sizing:border-box}
+#subBundleRoot [hidden]{display:none!important}
+.sb-wrap{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:28px;align-items:start}
+.sb-h2{margin:0 0 12px;font-size:19px;font-weight:800;color:var(--sb-ink)}
+.sb-h2 small{margin-left:6px;font-size:13px;font-weight:600;color:var(--sb-sub)}
+
+/* 상품 고르기 */
+.sb-search{display:flex;gap:8px;margin:0 0 12px}
+.sb-search input{flex:1;min-width:0;height:46px;border:2px solid var(--sb-blue);border-radius:10px;padding:0 14px;font-size:15px;font-family:inherit;outline:none}
+.sb-search button{height:46px;padding:0 18px;border:0;border-radius:10px;background:var(--sb-blue);color:#fff;font-weight:700;font-size:14px;font-family:inherit;cursor:pointer}
+.sb-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.sb-chip{height:32px;padding:0 12px;border:1px solid var(--sb-line);border-radius:16px;background:#fff;font-size:13px;font-family:inherit;color:#444;cursor:pointer;white-space:nowrap}
+.sb-chip em{font-style:normal;font-size:11px;color:#999;margin-left:2px}
+.sb-chip.is-active{background:var(--sb-ink);border-color:var(--sb-ink);color:#fff}
+.sb-chip.is-active em{color:#cbd5e1}
+.sb-presets{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 14px;padding:10px 12px;border-radius:12px;background:var(--sb-soft);font-size:13px}
+.sb-presets>span{font-weight:700;color:var(--sb-ink);margin-right:4px}
+.sb-preset{height:30px;padding:0 11px;border:1px solid #cfdcf5;border-radius:15px;background:#fff;color:var(--sb-blue);font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.sb-preset:hover{background:var(--sb-blue);color:#fff}
+.sb-count{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 10px;font-size:13px;color:#666}
+.sb-count b{color:var(--sb-blue)}
+.sb-group{display:inline-flex;align-items:center;gap:6px;margin-left:auto;cursor:pointer}
+.sb-group input{margin:0;accent-color:var(--sb-blue)}
+.sb-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sb-card{position:relative}
+.sb-card .ss-card-link{padding-bottom:52px}
+.sb-add{position:absolute;left:12px;right:12px;bottom:12px;height:36px;border:1px solid var(--sb-blue);border-radius:9px;background:#fff;color:var(--sb-blue);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+.sb-add:hover{background:#eef4ff}
+.sb-add.is-on{background:var(--sb-blue);color:#fff}
+.sb-more-wrap{text-align:center;margin:14px 0 0}
+.sb-more{height:42px;padding:0 24px;border:1px solid var(--sb-line);border-radius:10px;background:#fff;font-size:14px;font-family:inherit;cursor:pointer}
+.sb-empty{grid-column:1/-1;padding:32px 16px;text-align:center;color:var(--sb-sub);font-size:14px;line-height:1.8}
+
+/* 내 묶음 */
+.sb-cart{position:sticky;top:12px;padding:18px;border:1px solid var(--sb-line);border-radius:16px;background:#fff;box-shadow:0 6px 24px rgba(17,17,17,.06)}
+.sb-cardsel{margin:0 0 12px;padding:12px;border-radius:12px;background:var(--sb-soft)}
+.sb-cardon{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--sb-ink);cursor:pointer}
+.sb-cardon input{margin:0;accent-color:var(--sb-blue)}
+.sb-cardrow{display:grid;grid-template-columns:1fr 1.4fr;gap:6px;margin-top:8px}
+.sb-cardrow.is-off{opacity:.45;pointer-events:none}
+.sb-cardrow select,.sb-item-opts select{height:36px;min-width:0;border:1px solid var(--sb-line);border-radius:8px;padding:0 8px;font-size:13px;font-family:inherit;background:#fff}
+.sb-cardnote{margin:8px 0 0;font-size:11.5px;line-height:1.6;color:var(--sb-sub)}
+.sb-items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.sb-item{padding:12px;border:1px solid var(--sb-line);border-radius:12px}
+.sb-item.is-na{opacity:.6}
+.sb-item-head{display:flex;gap:10px;align-items:flex-start}
+.sb-item-head img{width:52px;height:52px;object-fit:contain;border-radius:8px;background:var(--sb-soft);flex:0 0 auto}
+.sb-item-icon{width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:26px;border-radius:8px;background:var(--sb-soft);flex:0 0 auto}
+.sb-item-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.sb-item-cat{font-size:11.5px;color:var(--sb-sub)}
+.sb-item-t a{text-decoration:none;color:inherit}
+.sb-item-t b{font-size:14px;line-height:1.4;color:var(--sb-ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sb-item-model{font-size:11.5px;color:#999;word-break:break-all}
+.sb-del{flex:0 0 auto;width:28px;height:28px;border:0;border-radius:50%;background:var(--sb-soft);color:#666;font-size:18px;line-height:1;cursor:pointer;font-family:inherit}
+.sb-del:hover{background:#fde8e3;color:var(--sb-hot)}
+.sb-item-opts{display:grid;grid-template-columns:1fr 1.3fr 1.2fr;gap:6px;margin:10px 0 8px}
+.sb-item-price{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sb-item-price span{font-size:12px;color:#999}
+.sb-item-price b{font-size:18px;font-weight:900;color:var(--sb-blue);letter-spacing:-.02em}
+.sb-item-price small{font-size:11.5px;color:var(--sb-sub)}
+.sb-sum{margin-top:14px}
+.sb-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.sb-table th{text-align:left;font-weight:600;color:var(--sb-text);padding:7px 0}
+.sb-table th small{font-weight:400;color:var(--sb-sub);margin-left:4px;font-size:12px}
+.sb-table td{text-align:right;padding:7px 0;white-space:nowrap}
+.sb-table tr.is-off td{color:var(--sb-hot)}
+.sb-table tfoot th,.sb-table tfoot td{border-top:2px solid var(--sb-ink);padding-top:10px;font-size:15px;font-weight:800;color:var(--sb-ink)}
+.sb-table tfoot b{font-size:22px;color:var(--sb-blue);letter-spacing:-.02em}
+.sb-sumnote{margin:6px 0 0;font-size:12px;color:var(--sb-sub)}
+.sb-cmp{display:flex;flex-direction:column;gap:4px;margin:12px 0;padding:12px;border-radius:12px;background:var(--sb-soft);font-size:13px}
+.sb-cmp div{display:flex;justify-content:space-between;gap:10px}
+.sb-cmp b{color:var(--sb-ink)}
+.sb-cmp .is-save b{color:var(--sb-hot);font-size:15px}
+.sb-ctas{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.sb-btn,.sb-btn-line{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 16px;border-radius:11px;font-weight:700;font-size:14px;text-decoration:none;font-family:inherit;cursor:pointer}
+.sb-btn{flex:1 0 100%;background:var(--sb-blue);color:#fff!important;border:0}
+.sb-btn:hover{background:var(--sb-blue-d)}
+.sb-btn-line{flex:1 1 auto;border:1px solid var(--sb-line);background:#fff;color:var(--sb-text)}
+.sb-btn-line:hover{border-color:var(--sb-blue);color:var(--sb-blue)}
+.sb-link{flex:1 0 100%;border:0;background:none;color:#999;font-size:12.5px;text-decoration:underline;cursor:pointer;font-family:inherit;padding:4px}
+.sb-note{margin:12px 0 0;font-size:11.5px;line-height:1.6;color:var(--sb-sub)}
+
+/* 모바일 하단 띠 */
+.sb-bar{display:none}
+@media (max-width:980px){
+  .sb-wrap{grid-template-columns:1fr}
+  .sb-cart{position:static;box-shadow:none}
+  .sb-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sb-bar{display:block;position:fixed;left:0;right:0;bottom:0;z-index:50;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--sb-line);box-shadow:0 -6px 20px rgba(0,0,0,.08)}
+  .sb-bar-in{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1080px;margin:0 auto;font-size:14px}
+  .sb-bar-in b{color:var(--sb-blue);font-size:17px}
+  .sb-bar-btn{padding:10px 16px;border-radius:10px;background:var(--sb-blue);color:#fff;font-weight:700;text-decoration:none;white-space:nowrap}
+  #subBundleRoot{padding-bottom:70px}
+}
+@media (max-width:560px){
+  .sb-item-opts{grid-template-columns:1fr}
+  .sb-cardrow{grid-template-columns:1fr}
+  .sb-group{margin-left:0}
+}
+@media print{
+  #subShopNav,.sb-pick,.sb-bar,.sb-ctas,.gd-top,.gd-foot,.ss-toast{display:none!important}
+  .sb-wrap{display:block}
+  .sb-cart{border:0;box-shadow:none;padding:0}
+  .sb-item-opts select{border:0;padding:0;appearance:none;-webkit-appearance:none;background:none}
+}

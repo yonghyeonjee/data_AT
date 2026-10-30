@@ -60,7 +60,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
   var SORTS = [['low', '월 구독료 낮은순'], ['high', '월 구독료 높은순'], ['model', '모델명순']];
   var PAGE = CFG.pageSize || 24;
 
-  var state = { q: '', cat: '', seg: '', band: '', sort: 'low', shown: PAGE };
+  var state = { q: '', cat: '', seg: '', band: '', sort: 'low', shown: PAGE, group: true };   // group: 색상만 다른 모델은 하나로 (2026-10-30)
   var rows = [];       // { model, cat, min, minNet, seg, name, goodsNo, hay }
   var byModel = {};
   var GOODS = {};      // 모델 → [상품번호, 상품명]
@@ -93,6 +93,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       else if (k === 'seg') state.seg = v;
       else if (k === 'max' || k === 'band') state.band = v;
       else if (k === 'sort' && /^(low|high|model)$/.test(v)) state.sort = v;
+      else if (k === 'all' && v === '1') state.group = false;
     }
     if (!BANDS.some(function (b) { return b.k === state.band; })) state.band = '';
   }
@@ -104,6 +105,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     if (state.seg) p.push('seg=' + encodeURIComponent(state.seg));
     if (state.band) p.push('max=' + state.band);
     if (state.sort !== 'low') p.push('sort=' + state.sort);
+    if (!state.group) p.push('all=1');
     // 고도몰 추가 페이지는 /main/html.php?htmid=… 로 열린다 → htmid 는 남겨 둔다
     var htmid = location.search.match(/[?&](htmid=[^&]*)/);
     if (htmid) p.unshift(htmid[1]);
@@ -283,6 +285,8 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     els.sort.addEventListener('change', function () { state.sort = els.sort.value; state.shown = PAGE; update(); });
     els.more.addEventListener('click', function () { state.shown += PAGE; render(); });
     root.addEventListener('click', onClick);
+    root.addEventListener('change', function (ev) { if (ev.target.hasAttribute && ev.target.hasAttribute('data-group')) { state.group = ev.target.checked; state.shown = PAGE; update(); } });
+    document.addEventListener('ss-cart', function () { root.querySelectorAll('.sf-add').forEach(function (b) { var on = cartHas(b.getAttribute('data-add')); b.textContent = on ? '담김 ✓' : '+ 담기'; b.parentNode.classList.toggle('in-cart', on); }); });
   }
 
   function chip(attr, value, label, on, count) {
@@ -318,12 +322,15 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
         segList.map(function (s) { return chip('data-seg', s, esc(segLabel(s)), state.seg === s, segCnt[s]); }).join('');
     }
 
-    els.bands.innerHTML = BANDS.map(function (b) { return chip('data-band', b.k, b.label, state.band === b.k); }).join('');
+    els.bands.innerHTML = BANDS.map(function (b) { return chip('data-band', b.k, b.label, state.band === b.k); }).join('') +
+      '<label class="sf-group"><input type="checkbox" data-group' + (state.group ? ' checked' : '') + '> 색상만 다른 모델은 하나로</label>';
 
     var list = sorted(filtered({}));
+    var total = list.length;
+    if (state.group) list = sorted(groupColors(list));
     var waiting = (state.cat && planState[state.cat] === 'loading') || (state.q && Object.keys(planState).some(function (k) { return planState[k] === 'loading'; }));
     els.count.innerHTML = waiting && !list.length ? '세부 유형까지 찾는 중…'
-      : '구독 가능 모델 <b>' + fmt(list.length) + '</b>개' + (state.q ? ' · "' + esc(state.q) + '" 검색 결과' : '');
+      : '구독 가능 모델 <b>' + fmt(list.length) + '</b>개' + (state.group && total > list.length ? ' <small>(색상만 다른 모델 ' + fmt(total - list.length) + '개는 묶음)</small>' : '') + (state.q ? ' · "' + esc(state.q) + '" 검색 결과' : '');
 
     if (!list.length && !waiting) {
       els.grid.innerHTML = '<li class="sf-empty">조건에 맞는 구독 모델이 없습니다.<br>' +
@@ -334,6 +341,30 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     els.more.hidden = list.length <= state.shown;
     els.more.textContent = '더 보기 (' + fmt(Math.min(PAGE, list.length - state.shown)) + '개 / 남은 ' + fmt(Math.max(0, list.length - state.shown)) + '개)';
   }
+
+  /* ---------- 색상만 다른 모델 묶기 (규칙은 sub_shop.js 의 SUB_FAMILY 와 같다) ---------- */
+  function familyKey(model) {
+    if (window.SUB_FAMILY) return window.SUB_FAMILY(model);
+    var m = /^(.*\d)([A-Z]+?)(N\d)?$/.exec(String(model || '').toUpperCase());
+    if (!m) return model;
+    return m[1] + (m[2].length >= 3 ? m[2].slice(0, -1) : '') + (m[3] || '');
+  }
+  function groupColors(list) {
+    var fam = {}, order = [];
+    list.forEach(function (r) {
+      var k = r.cat + '|' + r.seg + '|' + familyKey(r.model);
+      if (!fam[k]) { fam[k] = []; order.push(k); }
+      fam[k].push(r);
+    });
+    return order.map(function (k) {
+      var vs = fam[k].slice().sort(function (a, b) { return a.min - b.min; });
+      var rep = vs.filter(function (v) { return v.img && !v.imgRep; })[0] || vs[0];
+      var o = {}; for (var key in rep) o[key] = rep[key];
+      o.variants = vs; o.min = vs[0].min;
+      return o;
+    });
+  }
+  function cartHas(m) { return !!(window.SUB_CART && window.SUB_CART.has(m)); }
 
   function goodsHref(r) {
     return (CFG.goodsUrl || '/goods/goods_view.php?goodsNo=') + encodeURIComponent(r.goodsNo) + '&buy=sub' +
@@ -364,15 +395,18 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     var title = r.name || r.model;
     var kind = CFG.viewUrl ? 'view' : r.goodsNo ? 'goods' : 'consult';
     var href = kind === 'view' ? viewHref(r) : kind === 'goods' ? goodsHref(r) : consultHref(r);
-    return '<li class="sf-card">' +
+    var fam = r.variants && r.variants.length > 1 ? r.variants : null;
+    return '<li class="sf-card' + (cartHas(r.model) ? ' in-cart' : '') + '">' +
       '<a class="sf-card-link' + (r.img ? ' has-img' : '') + '" href="' + esc(href) + '" data-cta="' + kind + '" data-model="' + esc(r.model) + '">' +
+      (fam ? '<span class="sf-fam">색상 ' + fam.length + '종</span>' : '') +
       (r.img ? '<span class="sf-img"><img src="' + esc(r.img) + '" alt="" loading="lazy">' + (r.imgRep ? '<span class="sf-imgnote">대표 이미지</span>' : '') + '</span>' : '') +
       '<span class="sf-cat">' + (CAT_ICON[r.cat] || '') + ' ' + esc(IDX.cats[r.cat]) + (r.seg ? ' · ' + esc(r.segLabel || r.seg) : '') + '</span>' +
       '<strong class="sf-title">' + esc(title) + '</strong>' +
       (r.name ? '<span class="sf-model">' + esc(r.model) + '</span>' : '') +
       '<span class="sf-price"><small>월</small> ' + fmt(r.min) + '<small>원~</small></span>' +
+      (fam ? '<span class="sf-fam-list">' + fam.map(function (v) { return esc(v.model); }).join(' · ') + '</span>' : '') +
       '<span class="sf-go">' + (kind === 'consult' ? '구독 상담으로 요금 받기' : '구독 요금 자세히 보기') + '</span>' +
-      '</a></li>';
+      '</a>' + (window.SUB_CART ? '<button type="button" class="sf-add" data-add="' + esc(r.model) + '" aria-label="묶음 계산기에 담기">' + (cartHas(r.model) ? '담김 ✓' : '+ 담기') + '</button>' : '') + '</li>';
   }
 
   function update() { writeUrl(); render(); ensurePlans(); }
@@ -380,7 +414,13 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
   function onClick(ev) {
     var t = ev.target.closest ? ev.target.closest('button, a') : null;
     if (!t || !root.contains(t)) return;
-    if (t.hasAttribute('data-cat')) {
+    if (t.hasAttribute('data-add')) {
+      ev.preventDefault(); var m = t.getAttribute('data-add');
+      if (!window.SUB_CART) return;
+      if (window.SUB_CART.has(m)) window.SUB_CART.remove(m);
+      else if (!window.SUB_CART.add(m)) alert('묶음 계산기에는 최대 10개까지 담을 수 있습니다');
+      track('sub_find_cart', { sf_model: m });
+    } else if (t.hasAttribute('data-cat')) {
       state.cat = t.getAttribute('data-cat'); state.seg = ''; state.shown = PAGE; update();
       track('sub_find_cat');
     } else if (t.hasAttribute('data-seg')) {
@@ -435,6 +475,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
   }
   function fromApi(ok, fail) {
     var api = CFG.goodsApi;
+    if (window.SUB_CATALOG && window.SUB_CATALOG.m) { useGoods(window.SUB_CATALOG); return ok(); }   // 배포본(sub_catalog.js) 이 있으면 바로 (2026-10-30)
     if (!api || !api.url || !window.fetch) return fail();
     var settled = false;
     var timer = setTimeout(function () { if (!settled) { settled = true; fail(); } }, api.timeout || 4000);
