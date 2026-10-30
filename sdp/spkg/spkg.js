@@ -64,7 +64,7 @@
     price.parentNode.insertBefore(box,price.nextSibling);
     var b=box.querySelector('.sp26-more');if(b)b.onclick=function(){box.classList.toggle('open');b.textContent=box.classList.contains('open')?'접기':'품목 수별 포인트 보기'};
   }
-  function boot(){if(!init())return;if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();window.addEventListener('load',run)}
+  function boot(){if(!init())return;if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();window.addEventListener('load',run);var n=0,iv=setInterval(function(){run();if(++n>=20)clearInterval(iv)},500)} /* 가격 영역을 늦게 그리거나 다시 그리는 상품에서도 카드가 남도록 10초간 다시 확인 */
   if(window.SPKG_DATA)boot();
   else{var sc=document.createElement('script');sc.src=DC+'data.js?t='+Math.floor(Date.now()/6e5);sc.async=true;sc.onload=boot;(document.head||document.documentElement).appendChild(sc)}
 })();
