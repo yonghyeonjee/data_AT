@@ -215,6 +215,11 @@ header h2{font-size:calc(16px * var(--font-scale));font-weight:800;letter-spacin
 .home-hero .h .d.up{color:#9BE8C4}.home-hero .h .d.down{color:#FFB4AE}
 .home-hero .h.light{background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:none}
 .home-hero .h.light small{color:var(--muted)} .home-hero .h.light .d{color:var(--muted)} .home-hero .h.light::after{display:none}
+.home-hero .h .ld{position:relative;z-index:1;margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.18);font-size:calc(12px * var(--font-scale));color:rgba(255,255,255,.82);font-variant-numeric:tabular-nums}
+.home-hero .h .ld em{font-style:normal;font-weight:700;color:#fff}
+.chseg{display:inline-flex;gap:2px;margin-left:8px;vertical-align:middle}
+.chseg button{border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:calc(11.5px * var(--font-scale));padding:2px 9px;border-radius:7px;cursor:pointer}
+.chseg button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .home-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
 .home-grid>.card{grid-column:span 6;margin:0}
 .home-grid>.card.home-todo,.home-grid>.card.home-data{grid-column:span 6}
@@ -1214,6 +1219,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
 @media(max-width:999px){ .navg>.ngh,.navg>.ngb .nav,.nav.nsub{min-height:40px} }   /* 폰: 메뉴 묶음 머리·하위 메뉴 40px (v223) */
 .ifch .mixm{display:none}
 @media(max-width:640px){ .ifch .mixm{display:block;margin-top:6px} .ifch th:last-child,.ifch td.mixcell{display:none} .ifch td:first-child{min-width:220px;white-space:normal} }   /* 폰: 많이 들어온 문의는 옆으로 넘기지 않게 채널 이름 아래로 (v229) */
+@media(max-width:640px){ .chseg button{min-height:40px;min-width:52px} #exBasis button{min-height:40px} }   /* 폰: 홈 채널 상위 · 경영 지표 [DPS|원장] 40px (v248) */
 </style>
 </head>
 <body>
@@ -1317,7 +1323,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
         <div class="home-grid">
           <div class="card home-todo"><h3>오늘 할 일 <span class="sub" id="todoSub"></span></h3><div id="todoList" class="todo"></div></div>
           <div class="card home-data"><h3>데이터 상태 <span class="sub" id="dsSub"></span></h3><div id="dataList" class="dlist"></div></div>
-          <div class="card"><h3>이번 달 채널 상위 <span class="sub">원장 순매출</span></h3><div id="chanList" class="barlist"></div></div>
+          <div class="card"><h3>이번 달 채널 상위 <span class="chseg" id="chanSeg" role="radiogroup" aria-label="집계 기준"><button type="button" role="radio" data-b="dps" onclick="homeChan('dps')">DPS</button><button type="button" role="radio" data-b="ledger" onclick="homeChan('ledger')">원장</button></span> <span class="sub" id="chanSub"></span></h3><div id="chanList" class="barlist"></div></div>
           <div class="card"><h3>최근 상담 <span class="sub">6건</span></h3><div class="tw"><table><thead><tr><th>일시</th><th>고객</th><th>관심</th><th>유입</th><th>담당</th><th>결과</th></tr></thead><tbody id="tbHomeConsults"></tbody></table></div></div>
           <div class="card"><h3>최근 적재 <span class="sub">파일 업로드</span></h3><div class="tw"><table><thead><tr><th>일시</th><th>원천</th><th>파일</th><th class="num">행</th><th>담당</th></tr></thead><tbody id="tbHomeUploads"></tbody></table></div></div>
           <div class="card home-links"><h3>바로가기</h3><div class="links" id="homeLinks"></div></div>
@@ -1328,14 +1334,14 @@ th{background:var(--zone-head);color:var(--ink-2)}
       <div class="view hidden" id="v-exec">
         <div class="card" id="exHead">
           <h3>경영 지표 <span id="exSub">기간을 고르면 매출·고객·문의 → 구매 흐름·유입을 한 화면에서 봅니다 · 비교는 직전 같은 기간과 전년 같은 기간</span>
-            <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="note" id="exBuilt"></span><button class="btn sm ghost" onclick="loadExec(true)">새로고침</button></span></h3>
+            <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="seg2" id="exBasis" role="radiogroup" aria-label="매출 기준" title="DPS = DPS 사원별 실적(매장·온라인 전체 판매 전표) · 원장 = 통합 원장(샵링커·매장 판매 입력·이카운트·렌탈)"><button type="button" role="radio" data-b="dps" onclick="exBasisSet('dps')">DPS</button><button type="button" role="radio" data-b="ledger" onclick="exBasisSet('ledger')">원장</button></span><span class="note" id="exBuilt"></span><button class="btn sm ghost" onclick="loadExec(true)">새로고침</button></span></h3>
           <div class="qstat" data-view="exec"></div>
           <div class="home-hero exhero" id="exHero"></div>
         </div>
         <div class="card" id="exFlowCard"><h3>고객 흐름 · 문의 → 견적 → 구매 → 재구매 <span>기간 안에 문의한 사람이 실제로 샀는지를 상담 상태가 아니라 주문으로 맞춥니다 (문의일부터 90일 창) · 사람별 목록은 고객 통합 › 문의 → 구매 흐름</span></h3><div id="exFlow"></div></div>
         <div class="grid g2">
           <div class="card"><h3>매출 · 고객 추이 <span id="exSerSub"></span></h3><div id="exSeries"></div></div>
-          <div class="card"><h3>채널 묶음별 <span>순매출 · 비중 · 직전 기간 대비 · 주문 · 식별 고객 (오픈마켓은 안심번호라 고객을 셀 수 없음)</span></h3><div id="exGroups"></div></div>
+          <div class="card"><h3>채널 묶음별 <span id="exGrpBasis"></span> <span>순매출 · 비중 · 직전 기간 대비 · 주문 · 식별 고객 (오픈마켓은 안심번호라 고객을 셀 수 없음)</span></h3><div id="exGroups"></div></div>
         </div>
         <div class="grid g2">
           <div class="card" id="exTrafficCard"><h3>유입 · GA4 <span id="exTrSub"></span></h3><div id="exTraffic"></div></div>
@@ -1397,7 +1403,29 @@ th{background:var(--zone-head);color:var(--ink-2)}
           <div class="tw"><table><thead><tr><th>모델</th><th>품목</th><th class="num">계약</th><th class="num">서비스 주기</th><th>케어</th><th class="num">월 구독료</th><th class="num">총 구독료</th><th>구성</th></tr></thead><tbody id="tbSub"><tr><td colspan="8" class="note">-</td></tr></tbody></table></div>
           <div class="pager"><span id="subRange"></span><div class="btns" id="subPg"></div></div>
         </div>
-        <div class="callout">이카운트 <b>품목 내보내기</b>(품목코드·상품명·규격·단위·재고관리여부·안전재고·매입가) 파일을 <b>데이터 가져오기</b>에 올리면 자동 인식되어 이 목록이 갱신됩니다. 개별 수정은 행 끝 편집.</div>
+        <div class="card" id="spolCard">
+    <style>
+      #spolCard .spol-sec{padding:14px 0 16px;border-top:1px solid var(--line)} #spolCard .spol-sec:first-child{border-top:0;padding-top:0}
+      #spolCard .spol-sec h4{font-size:calc(13px * var(--font-scale));font-weight:800;margin:0 0 10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+      #spolCard .spol-sec h4 small{font-size:calc(11px * var(--font-scale));color:var(--faint);font-weight:500}
+      #spolCard .spol-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+      #spolCard .spol-row label{display:flex;align-items:center;gap:6px;font-size:calc(12.5px * var(--font-scale));color:var(--muted)}
+      #spolCard .spol-row .in.num{width:72px;text-align:right}
+      #spolCard table.spol-t{width:100%;border-collapse:collapse;font-size:calc(12.5px * var(--font-scale))}
+      #spolCard table.spol-t th{text-align:left;font-weight:600;color:var(--faint);padding:4px 6px;border-bottom:1px solid var(--line)}
+      #spolCard table.spol-t td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+      #spolCard table.spol-t .in{min-height:0;padding:5px 8px}
+      #spolCard textarea.in{width:100%;box-sizing:border-box;min-height:54px;font-family:inherit;font-size:calc(12.5px * var(--font-scale));line-height:1.5}
+      #spolCard .spol-hint{font-size:calc(11.5px * var(--font-scale));color:var(--faint);margin:6px 0 0;line-height:1.5}
+      #spolCard .spol-chip{display:inline-block;padding:2px 7px;border-radius:5px;background:var(--surface-3);color:var(--muted);font-size:calc(11px * var(--font-scale));margin:1px 3px 1px 0}
+      #spolCard .spol-log{font-size:calc(11.5px * var(--font-scale));color:var(--faint);line-height:1.7;columns:2;column-gap:24px}
+    </style>
+    <h3>구독 혜택 정책 <span>상품상세 <b>일시불/구독 탭</b>과 계산기가 읽는 값 — 자동납부 할인율 · 선납 할인율·품목별 한도 · 카드 유의사항·노출 기간 · 행사 문구. 저장하면 <b>1~3분 안에</b> db.samsungat.co.kr/sdp/sub/ 로 배포됩니다. 요금표·카드 금액은 SDP 판에서, 여기는 정책·문구만</span>
+      <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="loadSubPolicy(true)">새로고침</button><button class="btn sm" onclick="spPromoEdit(null)">+ 행사 문구</button></span></h3>
+    <div class="qmeta" id="spolMeta"></div>
+    <div id="spolBody"><div class="note">불러오는 중…</div></div>
+  </div>
+  <div class="callout">이카운트 <b>품목 내보내기</b>(품목코드·상품명·규격·단위·재고관리여부·안전재고·매입가) 파일을 <b>데이터 가져오기</b>에 올리면 자동 인식되어 이 목록이 갱신됩니다. 개별 수정은 행 끝 편집.</div>
         <div id="nsc-items-2" class="card">
           <div class="filters">
             <input class="in" id="itQ" placeholder="품목코드 · 상품명 · 모델 · 분류" style="min-width:240px" onkeydown="if(event.key==='Enter')loadItems(0)">
@@ -1414,9 +1442,9 @@ th{background:var(--zone-head);color:var(--ink-2)}
       <!-- ═══ 대시보드 ═══ -->
       <div class="view hidden" id="v-dash">
         <div class="filters" style="margin-bottom:12px;align-items:center;row-gap:8px">
-          <span style="font-size:calc(12.5px * var(--font-scale));color:var(--muted)">출처</span>
-          <div class="seg2"><button class="on" id="ds-dc" onclick="setDashSrc('dc')">현행 시스템</button><button id="ds-gas" onclick="setDashSrc('gas')">대시보드 v4 (기존 app)</button></div>
-          <span style="font-size:calc(12.5px * var(--font-scale));color:var(--muted);margin-left:8px">집계 기준</span>
+          <!-- 출처 [현행 시스템 | 기존 app] 은 2026-10-30 가림 — 늘 현행 시스템 -->
+          <div class="seg2 hidden" aria-hidden="true"><button class="on" id="ds-dc" onclick="setDashSrc('dc')">현행 시스템</button><button id="ds-gas" onclick="setDashSrc('gas')">대시보드 v4 (기존 app)</button></div>
+          <span style="font-size:calc(12.5px * var(--font-scale));color:var(--muted)">집계 기준</span>
           <div class="seg2" id="segBasis" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커·매장 입력·DPS 매장 전표) · DPS = DPS 사원별목표/실적 기준(실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계)"><button class="on" id="db-ledger" onclick="setDashBasis('ledger')">원장</button><button id="db-dps" onclick="setDashBasis('dps')">DPS</button><button id="db-manual" onclick="setDashBasis('manual')">수기입력</button></div>
           <span style="flex:1"></span>
           <span class="note" id="dashNote">Datacenter 데이터 · 최근 12개월 · 기간·채널·지표는 아래 대시보드 안에서 고릅니다</span>
@@ -2641,7 +2669,7 @@ let toastT; function toast(m,c=''){ const t=$('toast'); t.textContent=m; t.class
 /* 같은 화면을 왔다갔다 할 때 같은 질의를 다시 던지지 않게 45초만 담아둔다.
    저장·수정 계열(fn_*_save 등)은 담지 않고, 실행되면 캐시를 통째로 비운다. */
 const RPC_CACHE=new Map(), RPC_TTL=45000;
-const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle|void|to_order|rollback|auto_run|unlock|hide|exclude|check|pull)/i;
+const RPC_NOCACHE=/(save|_set|_del|delete|update|submit|sync|login|refresh|import|make|link|adjust|close|reopen|stocktake|send|test|reset|toggle|void|to_order|rollback|auto_run|unlock|hide|exclude|check|pull|remove)/i;
 function rpcClear(){ RPC_CACHE.clear(); }
 let RPC_BUSY=0, RPC_T=null;
 let RPC_PILL=null, RPC_T0=0;
@@ -2662,7 +2690,7 @@ function rpcBar(d){
 }
 /* ── 진행 카드 — 호출마다 [기다림 → 받는 중(받은 바이트) → 끝] 을 적어 두고 250ms 마다 그린다 ── */
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
-const FN_LABEL={fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
+const FN_LABEL={fn_sub_policy:'구독 혜택 정책',fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
@@ -2855,13 +2883,27 @@ async function logout(){ await sb.auth.signOut(); localStorage.removeItem('dc_lo
 /* ═══════════════ 홈 ═══════════════ */
 const HOME_DS_HIDE=new Set(['ec_stock','channel_daily']);   // 홈 데이터 상태에서 감춤 — 이카운트 재고 동기화 · 온라인 채널 일매출 (데이터 가져오기 화면에서 본다)
 function pct(a,b){ if(!b) return null; return Math.round((a-b)/b*1000)/10; }
+let HOME_CH={dps:[],ledger:[]};
+function homeChan(b){
+  if(b){ try{ sessionStorage.setItem('dc_home_ch',b); }catch(e){} }
+  let k='dps'; try{ k=sessionStorage.getItem('dc_home_ch')||'dps'; }catch(e){}
+  document.querySelectorAll('#chanSeg button').forEach(x=>{ const on=x.dataset.b===k; x.classList.toggle('on',on); x.setAttribute('aria-checked',on?'true':'false'); });
+  if($('chanSub')) $('chanSub').textContent=k==='dps'?'DPS 실적 순매출':'원장 순매출';
+  const tc=HOME_CH[k]||[]; const mx=Math.max(1,...tc.map(x=>Number(x.net)||0));
+  $('chanList').innerHTML=tc.map(x=>`<div><span>${esc(x.k||'-')}</span><span class="bar"><i style="width:${Math.round(Math.max(0,Number(x.net)||0)/mx*100)}%"></i></span><b>${wonK(x.net)}</b></div>`).join('')||'<div class="note">이번 달 데이터 없음</div>';
+}
 async function loadHome(){
   let h, st; try{ [h,st]=await Promise.all([rpc('fn_home'), rpc('fn_data_stamp')]); }catch(e){ $('homeHero').innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
   const S=h.sales||{}, T=h.todo||{}, C=h.counts||{};
-  const mom=pct(S.month_net, S.pm_same_net);
+  /* 매출 숫자는 DPS 기준이 크게, 원장은 아래 작은 글씨 (2026-10-30) · 날마다 DPS 를 아침에 받으므로 '어제' 를 본다 */
+  const D=h.sales_dps||{}, mom=pct(D.month_net, D.pm_same_net), lmom=pct(S.month_net, S.pm_same_net);
+  const md=x=>x?String(x).slice(5).replace('-','/'):'';
+  const dpsNote=D.fetched?`DPS ${esc(D.fetched)} 수집`:'DPS 자료 없음';
   $('homeHero').innerHTML=`
-    <div class="h"><small>오늘 순매출 · 원장</small><b>${wonK(S.today_net||0)}</b><div class="d">주문 ${n(S.today_orders||0)}건</div></div>
-    <div class="h"><small>이번 달 순매출 · 원장</small><b>${wonK(S.month_net||0)}</b><div class="d ${mom==null?'':mom>=0?'up':'down'}">${mom==null?'전월 동기 없음':(mom>=0?'▲':'▼')+' '+Math.abs(mom)+'% 전월 동기 '+wonK(S.pm_same_net||0)} · 주문 ${n(S.month_orders||0)}건</div></div>
+    <div class="h"><small>어제 순매출 · DPS${D.yday?` (${md(D.yday)})`:''}</small><b>${wonK(D.yday_net||0)}</b><div class="d">주문 ${n(D.yday_orders||0)}건 · ${dpsNote}</div>
+      <div class="ld">원장 <em>${wonK(S.yday_net||0)}</em> · 주문 ${n(S.yday_orders||0)}건</div></div>
+    <div class="h"><small>이번 달 순매출 · DPS${D.last?` (${md(D.last)}까지)`:''}</small><b>${wonK(D.month_net||0)}</b><div class="d ${mom==null?'':mom>=0?'up':'down'}">${mom==null?'전월 동기 없음':(mom>=0?'▲':'▼')+' '+Math.abs(mom)+'% 전월 동기 '+wonK(D.pm_same_net||0)} · 주문 ${n(D.month_orders||0)}건</div>
+      <div class="ld">원장 <em>${wonK(S.month_net||0)}</em> · ${lmom==null?'전월 동기 없음':(lmom>=0?'▲':'▼')+' '+Math.abs(lmom)+'%'} · 주문 ${n(S.month_orders||0)}건</div></div>
     <div class="h light"><small>이번 달 신규 고객</small><b>${n(S.new_customers_month||0)}<i>명</i></b><div class="d">고객 마스터 발송 가능 <b style="font-size:calc(13px * var(--font-scale))">${n(C.cust_sendable||0)}</b> (전체 ${n(C.customers||0)})<br>개인 ${n(C.cust_personal_sendable||0)} (${n(C.cust_personal||0)}) · 기업 ${n(C.cust_business_sendable||0)} (${n(C.cust_business||0)})</div></div>
     <div class="h light"><small>진행중 상담</small><b>${n(T.consult_open||0)}<i>건</i></b><div class="d">오늘 신규 ${n(T.consult_new_today||0)}건 · 콜백 지연 ${n(T.callback_due||0)}건</div></div>`;
   const todo=[
@@ -2870,8 +2912,6 @@ async function loadHome(){
     ['consult', T.consult_open, '진행중 상담', '결과 입력 대기', 'consults', false],
     ['stock', T.stock_low, '안전재고 미달 품목', '발주 검토', 'stock', true],
     ['settle', T.settle_pending, '정산 예정 도래', '온라인 채널 → 정산내역', 'online', false],
-    ['chmiss', T.channel_missing_days, '온라인 채널 미입력', '최근 14일 중 비어 있는 날', 'online', true],
-    ['stmiss', T.store_missing_days, '매장 일마감 미입력', '최근 14일 중 비어 있는 날', 'daily', true],
   ];
   const open=todo.filter(x=>x[1]>0).length; $('todoSub').textContent=open?`${open}건 처리 필요`:'모두 처리됨';
   $('todoList').innerHTML=todo.map(([k,v,t,d,view,bad])=>`<a href="#${view}" onclick="show('${view}');return false" class="${v?'':'zero'} ${v&&bad?'bad':''}"><span class="n">${n(v||0)}</span><span class="t"><b>${t}</b><span>${d}</span></span><span class="go">열기 ›</span></a>`).join('');
@@ -2882,8 +2922,7 @@ async function loadHome(){
   rows.push(`<div><span class="dot none"></span><span class="lb">총량</span><b>원장 ${n(C.orders||0)} · 고객 ${n(C.customers||0)} · 상담 ${n(C.consults||0)} · 견적 ${n(C.quotes||0)} · 품목 ${n(C.items||0)}</b></div>`);
   $('dataList').innerHTML=rows.join(''); $('dsSub').textContent=`${esc(h.now||'')} 기준`;
   // 채널 상위
-  const tc=h.top_channels_month||[]; const mx=Math.max(1,...tc.map(x=>Number(x.net)||0));
-  $('chanList').innerHTML=tc.map(x=>`<div><span>${esc(x.k||'-')}</span><span class="bar"><i style="width:${Math.round((Number(x.net)||0)/mx*100)}%"></i></span><b>${wonK(x.net)}</b></div>`).join('')||'<div class="note">이번 달 데이터 없음</div>';
+  HOME_CH={dps:D.top_channels||[], ledger:h.top_channels_month||[]}; homeChan();
   $('tbHomeConsults').innerHTML=(h.recent_consults||[]).map(c=>`<tr><td class="mono">${esc(c.at)}</td><td><b>${esc(c.name||'-')}</b></td><td>${esc(c.cat||'')}</td><td style="font-size:calc(12px * var(--font-scale))">${esc(c.route||'')}</td><td>${esc(c.handler||'')}</td><td><span class="tag ${c.result}">${esc(c.result||'')}</span></td></tr>`).join('')||'<tr><td colspan="6" class="note">없음</td></tr>';
   $('tbHomeUploads').innerHTML=(h.uploads||[]).map(u=>`<tr><td class="mono">${esc(u.at)}</td><td>${esc(u.source||'')}</td><td class="wrap" style="font-size:calc(12px * var(--font-scale))">${esc(u.file||'')}${u.chunks>1?` <span class="tag" title="큰 파일이라 ${n(u.chunks)}번에 나눠 올라왔습니다">${n(u.chunks)}조각</span>`:''}${u.rolled_back?' <span class="tag n">되돌림</span>':''}</td><td class="num">${n(u.rows||0)}${u.skipped?`<span style="color:var(--muted);font-size:calc(11px * var(--font-scale))"> / 제외 ${n(u.skipped)}</span>`:''}</td><td style="font-size:calc(12px * var(--font-scale))">${esc((u.by||'').replace(ID_DOMAIN,''))}</td></tr>`).join('')||'<tr><td colspan="5" class="note">없음</td></tr>';
   $('homeLinks').innerHTML=`<a href="#exec" onclick="show('exec');return false">경영 지표 ›</a>`+[[ST,'매장 화면 ↗'],['/stock.html','재고 화면 ↗'],['/visit/?fs=1','방문 접수(태블릿) ↗'],[DASH_DIR,'외부 공유 대시보드 ↗'],['/','고객센터 ↗']].map(([u,t])=>`<a href="${u}" target="_blank">${t}</a>`).join('');
@@ -2983,6 +3022,135 @@ async function subPasteSave(){
   try{ const r=await rpc('fn_sub_plan_upsert',{p_rows:rows}); toast(`구독 상품 플랜 ${n(r.plans)}개 · 케어 구성 ${n(r.items)}줄 등록${r.skipped?` · ${n(r.skipped)}줄 건너뜀`:''}`,'ok'); closeModal('subPasteModal'); loadSubPlans(); }
   catch(e){ $('subPasteMsg').innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; }
 }
+/* ═══ 구독 혜택 정책 (sub.policy · sub.card_policy · sub.promo) — 상품상세 구독탭·계산기가 읽는 sub_policy.js 의 원본 (mvp_246) ═══
+   수치는 화면에서 % 로 보이고 저장할 때 소수(0.05)로 바꾼다. 검사(비율 범위·날짜·선납 단계마다 할인율)는 DB sub.f_policy_check 가 하고 틀리면 그 문장을 그대로 띄운다 */
+let SPOL=null;
+const spPct=v=>v==null||v===''?'':String(Math.round(Number(v)*1000)/10);                      // 0.05 → "5"
+const spRate=v=>{ const t=String(v??'').replace(/[^0-9.]/g,''); return t===''?null:Math.round(Number(t)*10)/1000; };  // "5" → 0.05
+const spLines=t=>String(t||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+const spCsv=t=>String(t||'').split(/[,\n]/).map(x=>x.trim()).filter(Boolean);
+async function loadSubPolicy(fresh){
+  let d; try{ d=await rpc('fn_sub_policy',{},{fresh:!!fresh}); }catch(e){ $('spolBody').innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
+  if(!d){ $('spolBody').innerHTML='<div class="note">권한이 없습니다</div>'; return; }
+  SPOL=d; renderSubPolicy();
+}
+function spStamp(u){ return u?`<small>${esc(u.at||'')}${u.by?' · '+esc(u.by):''}</small>`:''; }
+function renderSubPolicy(){
+  const d=SPOL, P=d.policy||{}, A=P.autopay||{}, R=P.prepay||{}, T=P.texts||{}, up=d.updated||{};
+  const promos=d.promos||[], on=promos.filter(p=>p.state==='on').length;
+  $('spolMeta').innerHTML=`<span>정책 판 ${esc(d.ver||'-')}</span><span>마지막 배포 ${d.deployed?esc(d.deployed.ver)+' · '+esc(d.deployed.at):'아직 없음'}</span><span>행사 ${n(on)}건 진행 중</span>`;
+  const h=[];
+  /* 0 기본 기준 · 상담 연락처 (mvp_253) — 구독탭·구독센터 상세·목록이 모두 같은 값을 읽는다. 고도몰 스킨 SUB_TAB_CONFIG 의 같은 항목은 비워 둔다 */
+  const D=P.defaults||{}, cardOpts=[...new Set([...(d.card_names||[]),...(D.card?[D.card]:[])])];
+  h.push(`<div class="spol-sec"><h4>기본 기준 · 상담 연락처 ${spStamp(up.defaults)}</h4>
+    <div class="spol-row"><label>처음 선택되는 제휴카드 <select class="in" id="sp_def_card">${cardOpts.map(c=>`<option ${c===D.card?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+      <label>실적 구간 <input class="in" id="sp_def_tier" value="${esc(D.tier||'')}" placeholder="30만↑" style="width:90px"></label>
+      <label>전화 <input class="in" id="sp_def_tel" value="${esc(D.tel||'')}" placeholder="031-8042-3166" style="width:140px"></label></div>
+    <div class="spol-row"><label style="flex:1;min-width:300px">상담 신청 주소 <input class="in" id="sp_def_consult" value="${esc(D.consultUrl||'')}" style="flex:1"></label>
+      <button class="btn sm" onclick="spSave('defaults',()=>({card:$('sp_def_card').value,tier:$('sp_def_tier').value.trim(),consultUrl:$('sp_def_consult').value.trim(),tel:$('sp_def_tel').value.trim()}))">저장</button></div>
+    <p class="spol-hint">상품상세 구독탭 머리의 금액·"카드 적용 시 최대 ○원 저렴" 배지, 구독센터 목록의 "카드 할인 시" 금액, 상세의 처음 선택값이 모두 이 카드·실적 구간으로 계산됩니다. 실적 구간은 카드 금액표의 구간 이름 그대로 (없는 이름이면 가장 낮은 구간). 전화를 비우면 전화 버튼이 빠집니다.</p></div>`);
+  /* 1 자동납부 */
+  h.push(`<div class="spol-sec"><h4>자동납부 할인 ${spStamp(up.autopay)}</h4>
+    <div class="spol-row"><label>할인율 <input class="in num" id="sp_auto_rate" value="${esc(spPct(A.rate))}"> %</label>
+      <label style="flex:1;min-width:260px">표시 문구 <input class="in" id="sp_auto_label" value="${esc(A.label||'')}" style="flex:1"></label>
+      <button class="btn sm" onclick="spSave('autopay',()=>({rate:spRate($('sp_auto_rate').value),label:$('sp_auto_label').value.trim()}))">저장</button></div>
+    <p class="spol-hint">문구의 {rate} 자리에 할인율이 들어갑니다. 정수기는 본사 사전계산값(WATER_POLICY)을 쓰므로 할인율을 바꿔도 정수기 금액은 SDP 판을 새로 넣어야 바뀝니다.</p></div>`);
+  /* 2 선납 */
+  const steps=(R.steps||[]).map(s=>[s,(R.rates||{})[String(s)]]);
+  const cats=[...new Set([...(d.cats||[]),...Object.keys(R.maxByCat||{})])];
+  h.push(`<div class="spol-sec"><h4>선납 ${spStamp(up.prepay)}</h4>
+    <div style="display:grid;grid-template-columns:minmax(220px,1fr) minmax(260px,2fr);gap:16px">
+      <div><div class="spol-hint" style="margin:0 0 6px">선납 비율 → 선납 할인율 (고객에게 보이는 버튼 순서대로)</div>
+        <table class="spol-t"><thead><tr><th>선납</th><th>할인</th><th></th></tr></thead><tbody id="sp_steps">${steps.map(([s,r])=>spStepRow(s,r)).join('')}</tbody></table>
+        <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_steps').insertAdjacentHTML('beforeend',spStepRow('',''))">+ 단계</button>
+        <div class="spol-row" style="margin-top:10px"><label>규칙에 없는 품목의 최대 선납 <input class="in num" id="sp_defmax" value="${esc(spPct(R.defaultMax??0.5))}"> %</label></div></div>
+      <div><div class="spol-hint" style="margin:0 0 6px">품목별 최대 선납 비율 (비우면 기본값) · 아래 이름 규칙이 먼저 적용됩니다</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px" id="sp_maxcat">${cats.map(c=>`<label style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:calc(12px * var(--font-scale))"><span>${esc(c)}</span><span><input class="in num" data-cat="${esc(c)}" value="${esc(spPct((R.maxByCat||{})[c]))}" style="width:56px"> %</span></label>`).join('')}</div>
+        <div class="spol-hint" style="margin:10px 0 6px">이름 규칙: 품목 안에서 모델 이름에 이 글자가 들어가면 (예: 의류케어 › 에어드레서 50%)</div>
+        <table class="spol-t"><thead><tr><th>품목</th><th>이름에 포함</th><th>최대</th><th></th></tr></thead><tbody id="sp_byname">${(R.maxByName||[]).map(m=>spNameRow(m,cats)).join('')}</tbody></table>
+        <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_byname').insertAdjacentHTML('beforeend',spNameRow({},${JSON.stringify(cats).replace(/"/g,'&quot;')}))">+ 규칙</button></div></div>
+    <div class="spol-hint" style="margin-top:10px">선납금 아래 안내 (한 줄에 한 문장)</div><textarea class="in" id="sp_prenotes">${esc((R.notes||[]).join('\n'))}</textarea>
+    <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSavePrepay()">선납 정책 저장</button></div></div>`);
+  /* 3 카드 */
+  const names=[...new Set([...(d.card_names||[]),...(d.cards||[]).map(c=>c.card)])], byCard={}; (d.cards||[]).forEach(c=>byCard[c.card]=c);
+  h.push(`<div class="spol-sec"><h4>제휴카드 유의사항 · 노출 기간 <small>카드 금액표는 SDP 판(data_cards) · 여기는 문구와 기간만</small></h4>
+    <table class="spol-t"><thead><tr><th style="width:110px">카드</th><th>유의사항 (한 줄에 한 문장)</th><th style="width:130px">시작</th><th style="width:130px">종료</th><th>숨김</th><th></th></tr></thead><tbody>
+    ${names.map(nm=>{ const c=byCard[nm]||{}; const k=nm.replace(/[^A-Za-z0-9가-힣]/g,'');
+      return `<tr data-card="${esc(nm)}"><td><b>${esc(nm)}</b>${c.updated?`<div class="spol-hint" style="margin:0">${esc(c.updated)}</div>`:''}</td>
+        <td><textarea class="in" data-k="notes" rows="2">${esc((c.notes||[]).join('\n'))}</textarea></td>
+        <td><input class="in" type="date" data-k="from" value="${esc(c.from||'')}"></td><td><input class="in" type="date" data-k="to" value="${esc(c.to||'')}"></td>
+        <td><input type="checkbox" data-k="hidden" ${c.hidden?'checked':''}></td>
+        <td><button class="btn sm ghost" onclick="spSaveCard(this.closest('tr'))">저장</button></td></tr>`; }).join('')}</tbody></table>
+    <div class="spol-hint">기간을 적으면 그 기간에만 카드 목록에 나오고, 숨김을 켜면 바로 빠집니다 (카드 금액표에서 지우지 않아도 됩니다).</div>
+    <div class="spol-hint" style="margin-top:10px">모든 카드 공통 유의사항 (한 줄에 한 문장) ${spStamp(up.card_notes)}</div><textarea class="in" id="sp_cardnotes">${esc((P.card_notes||[]).join('\n'))}</textarea>
+    <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSave('card_notes',()=>spLines($('sp_cardnotes').value))">공통 유의사항 저장</button></div></div>`);
+  /* 4 행사 */
+  const ST={on:['진행 중','y'],soon:['예정','n'],ended:['끝남','n'],off:['꺼짐','n']};
+  h.push(`<div class="spol-sec"><h4>행사 문구 <small>기간·대상이 맞을 때만 구독탭 혜택 목록에 한 줄로 나갑니다 (금액 계산에는 들어가지 않음)</small></h4>
+    <table class="spol-t"><thead><tr><th>상태</th><th>문구</th><th>기간</th><th>대상</th><th class="num">순서</th><th></th></tr></thead><tbody>
+    ${promos.length?promos.map(p=>`<tr><td><span class="tag ${ST[p.state][1]}">${ST[p.state][0]}</span></td><td>${esc(p.text)}${p.note?`<div class="spol-hint" style="margin:0">${esc(p.note)}</div>`:''}</td>
+      <td style="white-space:nowrap">${esc(p.from||'')}${p.from||p.to?' ~ ':'상시'}${esc(p.to||'')}</td>
+      <td>${(p.cats||[]).map(c=>`<span class="spol-chip">${esc(c)}</span>`).join('')}${(p.models||[]).map(c=>`<span class="spol-chip mono">${esc(c)}</span>`).join('')}${(p.goods||[]).map(c=>`<span class="spol-chip">#${esc(c)}</span>`).join('')}${!(p.cats||[]).length&&!(p.models||[]).length&&!(p.goods||[]).length?'<span class="spol-chip">전체</span>':''}</td>
+      <td class="num">${n(p.sort)}</td>
+      <td style="white-space:nowrap"><button class="btn sm ghost" onclick="spPromoEdit(${p.id})">고치기</button> <button class="btn sm ghost" onclick="spPromoToggle(${p.id},${p.active?'false':'true'})">${p.active?'끄기':'켜기'}</button></td></tr>`).join('')
+      :'<tr><td colspan="6" class="note">등록된 행사 문구가 없습니다. 오른쪽 위 [+ 행사 문구]</td></tr>'}</tbody></table></div>`);
+  /* 5 문구 */
+  h.push(`<div class="spol-sec"><h4>기본 문구 ${spStamp(up.texts)}</h4>
+    <div class="spol-hint" style="margin:0 0 4px">혜택 목록 기본 문장 (한 줄에 한 문장 · 행사 문구는 이 아래에 붙습니다)</div><textarea class="in" id="sp_points">${esc((T.points||[]).join('\n'))}</textarea>
+    <div class="spol-hint" style="margin:8px 0 4px">맨 아래 안내문</div><textarea class="in" id="sp_notice" style="min-height:72px">${esc(T.notice||'')}</textarea>
+    <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSave('texts',()=>({points:spLines($('sp_points').value),notice:$('sp_notice').value.trim()}))">문구 저장</button></div></div>`);
+  /* 6 기록 */
+  if((d.log||[]).length) h.push(`<div class="spol-sec"><h4>최근 바뀐 것 <small>20건</small></h4><div class="spol-log">${d.log.map(l=>`<div>${esc(l.at)} · ${esc({policy:'정책',card:'카드',promo:'행사'}[l.kind]||l.kind)} <b>${esc(l.key)}</b> · ${esc(l.by||'')}</div>`).join('')}</div></div>`);
+  $('spolBody').innerHTML=h.join('');
+}
+function spStepRow(s,r){ return `<tr><td><input class="in num" data-k="step" value="${esc(spPct(s))}" style="width:56px"> %</td><td><input class="in num" data-k="rate" value="${esc(spPct(r))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
+function spNameRow(m,cats){ return `<tr><td><select class="in" data-k="cat">${cats.map(c=>`<option ${c===m.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></td><td><input class="in" data-k="contains" value="${esc(m.contains||'')}"></td><td><input class="in num" data-k="max" value="${esc(spPct(m.max))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
+async function spSave(key, make){
+  let v; try{ v=make(); }catch(e){ return toast(e.message,'bad'); }
+  try{ await rpc('fn_sub_policy_save',{p_key:key,p_value:v}); toast('저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+function spSavePrepay(){
+  spSave('prepay',()=>{
+    const steps=[], rates={};
+    $('sp_steps').querySelectorAll('tr').forEach(tr=>{ const s=spRate(tr.querySelector('[data-k=step]').value), r=spRate(tr.querySelector('[data-k=rate]').value); if(s==null) return; steps.push(s); if(r!=null) rates[String(s)]=r; });
+    const maxByCat={}; $('sp_maxcat').querySelectorAll('input[data-cat]').forEach(i=>{ const r=spRate(i.value); if(r!=null) maxByCat[i.dataset.cat]=r; });
+    const maxByName=[]; $('sp_byname').querySelectorAll('tr').forEach(tr=>{ const c=tr.querySelector('[data-k=cat]').value, t=tr.querySelector('[data-k=contains]').value.trim(), m=spRate(tr.querySelector('[data-k=max]').value); if(!t && m==null) return; maxByName.push({cat:c,contains:t,max:m}); });
+    return {steps, rates, defaultMax:spRate($('sp_defmax').value)??0.5, maxByCat, maxByName, notes:spLines($('sp_prenotes').value)};
+  });
+}
+async function spSaveCard(tr){
+  const g=k=>tr.querySelector(`[data-k=${k}]`);
+  const data={card:tr.dataset.card, notes:spLines(g('notes').value), from:g('from').value||null, to:g('to').value||null, hidden:g('hidden').checked};
+  try{ await rpc('fn_sub_card_policy_save',{p_data:data}); toast(`${data.card} 저장했습니다`,'ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+async function spPromoEdit(id){
+  const p=(id!=null && (SPOL&&SPOL.promos||[]).find(x=>x.id===id))||{cats:[],models:[],goods:[],sort:100,active:true};
+  const cats=(SPOL&&SPOL.cats)||[];
+  const data=await modal({title:id!=null?'행사 문구 고치기':'행사 문구 추가', ok:'저장', wide:true,
+    html:`<div class="spol-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">문구 (고객에게 그대로 보입니다)</div><input class="in" id="pm_text" value="${esc(p.text||'')}" style="width:100%;box-sizing:border-box" placeholder="예: 11월 구독 확정 시 신세계 상품권 10만원"></label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><label><div class="spol-hint" style="margin:0 0 3px">시작일 (비우면 바로)</div><input class="in" type="date" id="pm_from" value="${esc(p.from||'')}"></label>
+        <label><div class="spol-hint" style="margin:0 0 3px">종료일 (비우면 계속)</div><input class="in" type="date" id="pm_to" value="${esc(p.to||'')}"></label>
+        <label><div class="spol-hint" style="margin:0 0 3px">순서</div><input class="in num" id="pm_sort" value="${esc(p.sort??100)}" style="width:70px"></label></div>
+      <div><div class="spol-hint" style="margin:0 0 3px">대상 품목 (아무것도 안 고르면 전체)</div><div id="pm_cats" style="display:flex;flex-wrap:wrap;gap:4px">${cats.map(c=>`<label class="tag ${(p.cats||[]).includes(c)?'y':'n'}" style="cursor:pointer"><input type="checkbox" value="${esc(c)}" ${(p.cats||[]).includes(c)?'checked':''} style="display:none" onchange="this.parentNode.className='tag '+(this.checked?'y':'n')">${esc(c)}</label>`).join('')}</div></div>
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 모델번호 (쉼표로 여러 개 · 비우면 전체)</div><input class="in mono" id="pm_models" value="${esc((p.models||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 고도몰 상품번호 (쉼표 · 비우면 전체)</div><input class="in mono" id="pm_goods" value="${esc((p.goods||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용)</div><input class="in" id="pm_note" value="${esc(p.note||'')}" style="width:100%;box-sizing:border-box"></label></div>`,
+    collect:()=>{ const t=$('pm_text').value.trim(); if(!t) throw new Error('문구를 적어 주세요');
+      return {id:p.id, text:t, from:$('pm_from').value||null, to:$('pm_to').value||null, sort:Number($('pm_sort').value)||100, active:p.active!==false,
+              cats:[...$('pm_cats').querySelectorAll('input:checked')].map(i=>i.value), models:spCsv($('pm_models').value), goods:spCsv($('pm_goods').value), note:$('pm_note').value.trim()}; }});
+  if(!data) return;
+  try{ await rpc('fn_sub_promo_save',{p_data:data}); toast('행사 문구를 저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+async function spPromoToggle(id,on){
+  const p=(SPOL&&SPOL.promos||[]).find(x=>x.id===id); if(!p) return;
+  try{
+    if(on) await rpc('fn_sub_promo_save',{p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,sort:p.sort,note:p.note,active:true}});
+    else await rpc('fn_sub_promo_remove',{p_id:id});
+    toast(on?'다시 켰습니다':'껐습니다 (기록은 남습니다)','ok'); loadSubPolicy(true);
+  }catch(e){ toast(e.message,'bad'); }
+}
+
 async function loadSets(){
   SETS_LOADED=true; let d; try{ d=await rpc('fn_inv_sets',{p_q:$('setQ').value.trim()||null},{fresh:true}); }catch(e){ $('tbSets').innerHTML=`<tr><td colspan="4" class="note">${esc(e.message)}</td></tr>`; return; }
   $('tbSets').innerHTML=(d||[]).map(x=>`<tr><td><b>${esc(x.set_name)}</b><div class="mono" style="font-size:calc(11px * var(--font-scale));color:var(--faint)">${esc(x.set_code)}</div></td>
@@ -4747,16 +4915,20 @@ async function fuLoad(k){ const seq=++FU_SEQ[k]; const S=FU[k], ids=FU_IDS[k]; c
 function loadFollowup(){ arLoad(); fuLoad('sub'); fuLoad('quote'); fuLoad('product'); }
 /* ═══ 경영 지표 (mvp_221 · 2026-10-16) — fn_exec_kpi(매출·고객·문의·유입·링크 · 서버 10분 캐시) + fn_inquiry_flow(문의 → 구매) + fn_utm_campaigns(캠페인) 를 기간 하나로 한 화면에 ═══ */
 let EX={d:null, flow:null, camps:null, seq:0};
+/* 매출 기준 — DPS 가 기본 (2026-10-30). 고른 기준은 그 탭 안에서만 기억 */
+function exBasis(){ let b='dps'; try{ b=sessionStorage.getItem('dc_ex_basis')||'dps'; }catch(e){} return b==='ledger'?'ledger':'dps'; }
+function exBasisSync(){ const b=exBasis(); document.querySelectorAll('#exBasis button').forEach(x=>{ const on=x.dataset.b===b; x.classList.toggle('on',on); x.setAttribute('aria-checked',on?'true':'false'); }); }
+function exBasisSet(b){ try{ sessionStorage.setItem('dc_ex_basis',b); }catch(e){} exBasisSync(); EX.d=null; loadExec(); }
 const EX_CMP_NM={tm:'전월 같은 기간',lm:'전월',tw:'전주',lw:'전전주',yd:'전주 같은 요일',y:'전년 같은 기간',ly:'전전년'};
 function exCmpLbl(){ return EX_CMP_NM[PRESET]||'직전 같은 기간'; }
 async function loadExec(fresh){
   /* 기간은 공통 기간 바 그대로 — 기본이 이번 달(v230) */
-  const seq=++EX.seq; const [cf,ct]=cmpRange(P.from,P.to,PRESET);
+  const seq=++EX.seq; const [cf,ct]=cmpRange(P.from,P.to,PRESET); exBasisSync();
   if(!EX.d) $('exHero').innerHTML='<div class="note">불러오는 중…</div>';
   if(fresh) UTM_CAMPS=null;
   let d, fl, camps;
   try{ [d, fl, camps]=await Promise.all([
-      rpc('fn_exec_kpi',{p_from:P.from,p_to:P.to,p_cfrom:cf,p_cto:ct},{fresh:!!fresh}),
+      rpc('fn_exec_kpi',{p_from:P.from,p_to:P.to,p_cfrom:cf,p_cto:ct,p_basis:exBasis()},{fresh:!!fresh}),
       rpc('fn_inquiry_flow',{p_from:P.from,p_to:P.to,p_scope:null,p_window:90,p_unmask:false}).catch(()=>null),
       utmCampsEnsure() ]); }
   catch(e){ if(seq!==EX.seq) return; $('exHero').innerHTML=`<div class="note" style="color:var(--bad)">${esc(e.message)}</div>`; throw e; }
@@ -4769,11 +4941,13 @@ function exCmp(cur, prev, fmt, lbl){ cur=Number(cur)||0; prev=Number(prev)||0; i
 function exCmpTxt(c,p,lbl){ c=Number(c)||0; p=Number(p)||0; lbl=lbl||'직전 기간'; if(!p) return `${lbl} 자료 없음`; const v=Math.round((c-p)/p*1000)/10; return `${v>=0?'▲':'▼'} ${Math.abs(v)}% · ${lbl} ${n(p)}`; }
 function exTile(cls, small, big, unit, lines){ return `<div class="h ${cls}"><small>${small}</small><b>${big}${unit?`<i>${unit}</i>`:''}</b>${lines.map(l=>`<div class="d${l[1]?' '+l[1]:''}">${l[0]}</div>`).join('')}</div>`; }
 function exRender(){ const d=EX.d; if(!d) return; const s=d.sales||{}, pv=d.sales_prev||{}, yy=d.sales_yoy||{}, iq=d.inquiry||{}, iqp=d.inquiry_prev||{}, tr=d.traffic||{}, lk=d.links||{}, fs=(EX.flow&&EX.flow.summary)||null; const L=exCmpLbl();
-  $('exBuilt').textContent=`${d.built_at||''} 집계${d.cached?' (캐시)':''} · 원장 ${d.orders_last||''}까지`;
+  const BN=d.basis==='dps'?'DPS':'원장';
+  $('exBuilt').textContent=`${d.built_at||''} 집계${d.cached?' (캐시)':''} · ${d.basis==='dps'?`DPS 실적 ${d.orders_last||''}까지${d.dps_fetched?` (${d.dps_fetched} 수집)`:''}`:`원장 ${d.orders_last||''}까지`}`;
+  if($('exGrpBasis')) $('exGrpBasis').textContent=BN+' 기준';
   $('exSub').textContent=`${d.from} ~ ${d.to} · 비교 ${(d.prev||{}).from} ~ ${(d.prev||{}).to} (${L}) · 전년 ${(d.yoy||{}).from} ~ ${(d.yoy||{}).to}`;
   const om=(s.groups||[]).find(g=>g.ct==='오픈마켓');
   $('exHero').innerHTML=[
-    exTile('', '순매출 · 원장', wonK(s.net), '', [exCmp(s.net,pv.net,wonK,L), exCmp(s.net,yy.net,wonK,'전년 동기'), [`주문 ${n(s.orders)}건 · 환불 ${wonK(s.refund)}`,'']]),
+    exTile('', '순매출 · '+BN, wonK(s.net), '', [exCmp(s.net,pv.net,wonK,L), exCmp(s.net,yy.net,wonK,'전년 동기'), [`주문 ${n(s.orders)}건 · 환불 ${wonK(s.refund)}`,'']]),
     exTile('', '객단가 · 주문당 순매출', wonK(s.avg_order), '', [exCmp(s.avg_order,pv.avg_order,wonK,L), exCmp(s.orders,pv.orders,x=>n(x)+'건',L+' 주문'), [`전년 동기 객단가 ${wonK(yy.avg_order)}`,'']]),
     exTile('light', '구매 고객 · 식별', n(s.buyers), '명', [[`신규 ${n(s.new_buyers)} · 재구매 ${n(s.repeat_buyers)}`,''], exCmp(s.buyers,pv.buyers,x=>n(x)+'명',L), [`오픈마켓 주문 ${n(om?om.orders:0)}건은 안심번호라 고객을 셀 수 없음`,'']]),
     exTile('light', '재구매율 · 구매 고객 중 전에도 산 사람', exPctS(s.repeat_rate), '', [[`${L} ${exPctS(pv.repeat_rate)} · 전년 동기 ${exPctS(yy.repeat_rate)}`,''], [`재구매 고객의 매출 비중 ${exPctS(s.repeat_net_share)} (전년 ${exPctS(yy.repeat_net_share)})`,''], [`식별 고객 순매출 ${wonK(s.ident_net)}`,'']]),
@@ -5506,7 +5680,7 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,exec:loadExec,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_TG){ tgApplyPending(); } else if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
+const LOADERS={home:loadHome,exec:loadExec,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();loadSubPolicy();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_TG){ tgApplyPending(); } else if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
@@ -5688,11 +5862,12 @@ document.querySelectorAll('#segTrend button').forEach(b=>b.addEventListener('cli
 document.querySelectorAll('#segWf button').forEach(b=>b.addEventListener('click',()=>{
   WFMODE=b.dataset.k; document.querySelectorAll('#segWf button').forEach(x=>x.classList.toggle('on',x===b)); if(DK) drawWf(); }));
 
-let DASH_SRC=localStorage.getItem('dash_src2')||'dc';          // dc=현행 시스템(Datacenter) / gas=기존 app
+let DASH_SRC='dc';          // dc=현행 시스템(Datacenter) · 기존 app(gas)은 2026-10-30 가림 — 남아 있던 선택도 지운다
+try{ localStorage.removeItem('dash_src2'); }catch(e){}
 let DASH_BASIS='ledger';   // 열 때마다 원장(주문 원천, 자동 수집)으로 시작 — 고른 기준은 이 탭 안에서만(sessionStorage) · 2026-10-16 "default 원장으로" (전엔 localStorage 에 남아 DPS 를 골랐던 사람은 다음에도 DPS 로 열렸다)
 try{ localStorage.removeItem('dash_basis'); const _sb=sessionStorage.getItem('dash_basis'); if(_sb==='manual'||_sb==='dps') DASH_BASIS=_sb; }catch(e){}
 let GAS_DASH_URL=localStorage.getItem('gas_dash_url')||'';
-function setDashSrc(v){ DASH_SRC=v; localStorage.setItem('dash_src2',v); DASH_PAY=null; DASH_READY=false; $('dashFrame').src='about:blank'; loadDash(); }
+function setDashSrc(v){ v='dc'; DASH_SRC=v; localStorage.setItem('dash_src2',v); DASH_PAY=null; DASH_READY=false; $('dashFrame').src='about:blank'; loadDash(); }
 function setDashBasis(v){ DASH_BASIS=v; try{ sessionStorage.setItem('dash_basis',v); }catch(e){} DASH_PAY=null; loadDash(); }
 async function setGasUrl(){
   window.__gasUrl=GAS_DASH_URL;
@@ -8074,7 +8249,7 @@ const PAGE_INFO={
   online:{d:'온라인 담당자가 쓰던 "삼성앤텍_상품_주문관리 파일"의 역할을 이어받는 페이지입니다. 채널별 일별 매출을 직접 입력하고, 샵링커로 들어온 원장과 같은 달을 나란히 대사합니다.',
     s:['일별 매출 표에 숫자를 넣고 "일괄 저장"을 누르면 바뀐 칸만 저장됩니다. 환불은 "환불 입력" 스위치를 켜고 넣습니다.','칸에 마우스를 올리면 그 날·채널의 원장 합계가 보입니다. 20% 이상 차이 나면 주황으로 표시되니 마켓 관리자 화면과 다시 맞춰보세요.','기존 시트(온라인 매출_YYYY년 · _raw)는 [데이터 가져오기]에 그대로 올리면 이 표로 들어옵니다.','정산내역은 SSG·쿠팡·롯데온 시트를 올리거나 직접 추가하고, 지급여부·지급일을 여기서 갱신합니다.','상품 등록 요청(시흥·가전시장·B2B 시트)은 요청자·상태·모델·가격을 그대로 가져와서 상태를 바꿔가며 관리합니다.']},
   home:{d:'이 시스템의 상태를 한 화면에서 보는 첫 페이지입니다. 오늘·이번 달 실적, 처리할 일, 원천별 데이터 적재 상태, 수집 상태를 모아 보여줍니다.',
-    s:['위 4장은 원장 기준 오늘·이번 달 순매출과 전월 동기 대비, 신규 고객, 진행중 상담입니다.','오늘 할 일의 숫자를 누르면 해당 페이지로 이동합니다. 0이면 흐리게 표시됩니다.','데이터 상태의 점 색: 초록=정상, 주황=지연, 빨강=오류, 회색=없음. 샵링커 수집은 마지막 실행 결과와 24시간 내 오류 수를 보여줍니다.']},
+    s:['위 4장은 어제·이번 달 순매출(큰 숫자 = DPS 실적, 아래 작은 글씨 = 원장)과 전월 동기 대비, 신규 고객, 진행중 상담입니다. DPS 는 아침에 전날까지 수집합니다.','오늘 할 일의 숫자를 누르면 해당 페이지로 이동합니다. 0이면 흐리게 표시됩니다.','데이터 상태의 점 색: 초록=정상, 주황=지연, 빨강=오류, 회색=없음. 샵링커 수집은 마지막 실행 결과와 24시간 내 오류 수를 보여줍니다.']},
   stock:{d:'품목별 현재고를 보는 페이지입니다. 현재고 = 입고 − 출고 ± 조정 (창고이동은 창고 간 이동만). 이카운트 연동이 붙으면 창고별재고현황이 동기화(sync)로 같은 원장에 들어옵니다.',
     s:['검색·창고·분류로 좁히고, 안전재고 미달만 켜면 발주가 필요한 품목만 남습니다.','창고별 칸은 창고코드:수량. 행 끝 [입출고]로 그 품목의 이동을 바로 등록합니다.','품목이 없으면 [품목] 메뉴에서 추가하거나 데이터 가져오기에 이카운트 품목 파일을 올리세요.']},
   moves:{d:'입고·출고·창고이동·재고조정 원장입니다. 담당자 화면(stock.html)에서 등록한 건도 여기에 모입니다.',
