@@ -46,11 +46,11 @@
     var isSub=/\[\s*구독\s*\]/.test(title);
     var msg,sub,tip='',bonus='';
     if(type==='p'){
-      if(isSub){msg='<b>스마트 패키지</b> 제품, 다른 제품과 함께면 <b>추가 할인</b>이 제공됩니다.';sub='삼성 AI 구독 가입 시 품목 수에 포함 · '+MINTXT+'부터, <em>최대 '+MAX+' 포인트</em>';}
-      else{msg='<b>스마트 패키지</b> 대상 제품과 함께 구매하면 <b>추가 혜택</b>이 제공됩니다.';sub='';bonus='<div class="sp26-bonus"><div class="sp26-bamt"><small>추가 적립</small><strong>+'+BONUS+'<i>P</i></strong></div><div class="sp26-btxt"><b>스마트 패키지 대상 제품과<br>함께 구매하면</b><span>삼성전자 멤버십 포인트 '+BONUS+'P 추가 · 일반 구매 시</span></div></div>';tip='<b>구독으로 가입하면</b> 스마트 패키지 <b>품목 수에 포함</b>돼 품목 수별 포인트(최대 '+MAX+'P)를 받을 수 있어요.';}
+      if(isSub){msg='스마트 패키지 대상 제품을 <b>2개 이상 함께 구매</b>하면 <b>멤버십 포인트</b>를 드립니다.';sub='이 제품 1개만 구매하면 적용되지 않아요 · 구독도 품목 수에 포함 · '+MINTXT+'부터, <em>최대 '+MAX+'P</em>';}
+      else{msg='다른 스마트 패키지 대상 제품과 <b>함께 구매</b>하면 <b>'+BONUS+'P를 추가 적립</b>해 드립니다.';sub='';bonus='<div class="sp26-bonus"><div class="sp26-bamt"><small>추가 적립</small><strong>+'+BONUS+'<i>P</i></strong></div><div class="sp26-btxt"><b>다른 대상 제품과<br>함께 구매할 때만</b><span>삼성전자 멤버십 포인트 '+BONUS+'P · 이 제품만 단독 구매 시 미적용</span></div></div>';tip='<b>구독으로 가입하면</b> 스마트 패키지 <b>품목 수에 포함</b>돼 품목 수별 포인트(최대 '+MAX+'P)를 받을 수 있어요.';}
     }else if(type==='s'&&!isSub){
-      msg='<b>삼성 AI 구독</b>으로 가입하면 <b>스마트 패키지 품목</b>이 됩니다.';sub='일반 구매 시에는 품목 수 혜택 대상이 아닙니다 · 구독 시 '+MINTXT+'부터, <em>최대 '+MAX+' 포인트</em>';
-    }else{msg='<b>스마트 패키지</b> 제품, 다른 제품과 함께면 <b>추가 할인</b>이 제공됩니다.';sub=(type==='s'?'삼성 AI 구독 가입 시 적용 · ':'')+''+MINTXT+'부터, 품목 수에 따라 <em>최대 '+MAX+' 포인트</em>';}
+      msg='<b>삼성 AI 구독</b>으로 가입하면 스마트 패키지 <b>품목으로 인정</b>됩니다.';sub='일반 구매는 품목 수에 들어가지 않아요 · 구독 포함 대상 제품 <b>2개 이상</b> 함께 구매 시 '+MINTXT+'부터, <em>최대 '+MAX+'P</em>';
+    }else{msg='스마트 패키지 대상 제품을 <b>2개 이상 함께 구매</b>하면 <b>멤버십 포인트</b>를 드립니다.';sub='이 제품 1개만 구매하면 적용되지 않아요 · '+MINTXT+'부터, 함께 사는 품목이 많을수록 <em>최대 '+MAX+'P</em>';}
     var gtitle=title.replace(/\s*[-|]\s*삼성스토어.*$/,'').trim();
     var memo='[스마트 패키지 문의] '+gtitle+(hit&&gtitle.toUpperCase().indexOf(hit[2].split('/')[0])<0?' / 모델 '+hit[2]:'')+(gno?' / 상품번호 '+gno:'')+' / '+(isSub?'구독 상품':'일반 구매 상품')+'\n다른 제품과 함께 구매 시 스마트 패키지 혜택 상담 희망';
     var ask=ASK_URL+'&src=smartpackage_detail'+(hit?'&product='+encodeURIComponent(hit[1]):'')+(isSub?'':'&ask=both')+'&memo='+encodeURIComponent(memo);
