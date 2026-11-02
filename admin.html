@@ -2730,7 +2730,7 @@ function rpcBar(d){
 }
 /* ── 진행 카드 — 호출마다 [기다림 → 받는 중(받은 바이트) → 끝] 을 적어 두고 250ms 마다 그린다 ── */
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
-const FN_LABEL={fn_sub_policy:'구독 혜택 정책',fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
+const FN_LABEL={fn_sub_policy:'구독 혜택 정책',fn_sub_point_list:'모델 포인트',fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
@@ -3134,13 +3134,22 @@ function renderSubPolicy(){
       <td class="num">${n(p.sort)}</td>
       <td style="white-space:nowrap"><button class="btn sm ghost" onclick="spPromoEdit(${p.id})">고치기</button> <button class="btn sm ghost" onclick="spPromoToggle(${p.id},${p.active?'false':'true'})">${p.active?'끄기':'켜기'}</button></td></tr>`).join('')
       :'<tr><td colspan="6" class="note">등록된 행사 문구가 없습니다. 오른쪽 위 [+ 행사 문구]</td></tr>'}</tbody></table></div>`);
+  /* 4b 모델 포인트 (mvp_258) — 삼성닷컴 "적립 예정 멤버십 포인트" · 수집기(tools/subpoint · 매주 월요일)가 채우고 여기서 손 입력·되돌리기 */
+  const PT=d.points||{}, PL=PT.last;
+  h.push(`<div class="spol-sec" id="spPtSec"><h4>모델 포인트 <small>삼성닷컴 "적립 예정 멤버십 포인트"(정률 + 기본 0.1% + 상품별 추가) — 구독탭·구독센터가 결제 예상액 × 정률 + 추가 포인트로 보여 주고 실제 구독료에서 뺍니다. 위 행사 포인트와는 별도로 둘 다 적용</small></h4>
+    <div class="spol-row"><span class="spol-chip">마지막 수집 ${PL?esc(PL.at)+' · 대상 '+n(PL.targets||0)+' · 찾음 '+n(PL.found||0)+' · 못 찾음 '+n(PL.missed||0)+' · 오류 '+n(PL.errors||0)+(PL.kept_manual?' · 손 입력 보호 '+n(PL.kept_manual):''):'아직 없음 (매주 월요일 09:00 자동 · 또는 [지금 수집])'}</span>
+      <span class="spol-chip">모델 ${n(PT.n||0)} / 활성 ${n(PT.n_active||0)} · 추가 포인트 있는 모델 ${n(PT.n_add||0)} · 손 입력 ${n(PT.n_manual||0)} · 못 찾은 모델 ${n(PT.n_missed||0)}</span>
+      <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="spPointCollect()">지금 수집</button><button class="btn sm" onclick="spPointEdit(null)">+ 손 입력</button></span></div>
+    <div class="spol-row"><input class="in" id="spPtQ" placeholder="모델번호 · 품목 검색" style="min-width:200px" onkeydown="if(event.key==='Enter')spPointLoad()"><button class="btn sm ghost" onclick="spPointLoad()">찾기</button>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="spPtMiss" onchange="spPointLoad()"> 못 찾은 모델 보기</label></div>
+    <div id="spPtBody"><div class="spol-hint">[찾기] 를 누르면 표가 나옵니다 (손 입력·최근 바뀐 것 먼저 · 300건)</div></div></div>`);
   /* 5 문구 */
   h.push(`<div class="spol-sec"><h4>기본 문구 ${spStamp(up.texts)}</h4>
     <div class="spol-hint" style="margin:0 0 4px">혜택 목록 기본 문장 (한 줄에 한 문장 · 행사 문구는 이 아래에 붙습니다)</div><textarea class="in" id="sp_points">${esc((T.points||[]).join('\n'))}</textarea>
     <div class="spol-hint" style="margin:8px 0 4px">맨 아래 안내문</div><textarea class="in" id="sp_notice" style="min-height:72px">${esc(T.notice||'')}</textarea>
     <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSave('texts',()=>({points:spLines($('sp_points').value),notice:$('sp_notice').value.trim()}))">문구 저장</button></div></div>`);
   /* 6 기록 */
-  if((d.log||[]).length) h.push(`<div class="spol-sec"><h4>최근 바뀐 것 <small>20건</small></h4><div class="spol-log">${d.log.map(l=>`<div>${esc(l.at)} · ${esc({policy:'정책',card:'카드',promo:'행사'}[l.kind]||l.kind)} <b>${esc(l.key)}</b> · ${esc(l.by||'')}</div>`).join('')}</div></div>`);
+  if((d.log||[]).length) h.push(`<div class="spol-sec"><h4>최근 바뀐 것 <small>20건</small></h4><div class="spol-log">${d.log.map(l=>`<div>${esc(l.at)} · ${esc({policy:'정책',card:'카드',promo:'행사',point:'모델 포인트'}[l.kind]||l.kind)} <b>${esc(l.key)}</b> · ${esc(l.by||'')}</div>`).join('')}</div></div>`);
   $('spolBody').innerHTML=h.join('');
 }
 function spStepRow(s,r){ return `<tr><td><input class="in num" data-k="step" value="${esc(spPct(s))}" style="width:56px"> %</td><td><input class="in num" data-k="rate" value="${esc(spPct(r))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
@@ -3197,6 +3206,56 @@ function spPointChip(p){
   if(!(p.months>0||p.amount>0||(p.amounts&&Object.keys(p.amounts).length))) return '';
   const n=p.amounts?Object.keys(p.amounts).length:0;
   return `<div style="margin-top:2px"><span class="spol-chip" style="background:#fff3e8;border-color:#f3c7a0;color:#b4480b">★ 포인트 ${p.months?p.months+'개월':''}${p.amount?' 공통 '+fmt(p.amount)+'원':''}${n?' 모델별 '+n+'개':''}${p.maxTerm===false?' · 모든 약정':' · 최장 약정만'}</span></div>`;
+}
+/* ── 모델 포인트 (mvp_258) : fn_sub_point_list · fn_sub_point_save · [지금 수집] = Edge Function sub-deploy?wf=sub-point → GitHub Actions sub-point.yml ── */
+let SPT=null;
+async function spPointLoad(){
+  const box=$('spPtBody'); if(!box) return; const q=$('spPtQ').value.trim(); box.innerHTML='<div class="note">불러오는 중…</div>';
+  try{ SPT=await rpc('fn_sub_point_list',{p_q:q||null,p_limit:300},{fresh:true}); }catch(e){ box.innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
+  if(!SPT){ box.innerHTML='<div class="note">권한이 없습니다</div>'; return; }
+  spPointRender();
+}
+function spPointRender(){
+  const box=$('spPtBody'), d=SPT||{rows:[],missed:[]}, J=s=>JSON.stringify(s).replace(/"/g,'&quot;');
+  if($('spPtMiss').checked){
+    box.innerHTML=(d.missed||[]).length?`<table class="spol-t"><thead><tr><th>모델</th><th>마지막 확인</th><th class="num">실패</th><th>이유</th><th></th></tr></thead><tbody>${d.missed.map(m=>`<tr><td class="mono">${esc(m.model)}</td><td>${esc(m.at)}</td><td class="num">${n(m.n)}</td><td>${esc(m.err||'')}</td><td><button class="btn sm ghost" onclick="spPointEdit(${J(m.model)})">손 입력</button></td></tr>`).join('')}</tbody></table>
+      <p class="spol-hint">삼성닷컴에 구독 상품 페이지가 없는 모델(매장 전용·단종 등)입니다. 포인트가 있다면 손 입력하세요. 7~30일 뒤 자동으로 다시 확인합니다.</p>`:'<div class="note">못 찾은 모델이 없습니다</div>'; return; }
+  const rows=d.rows||[];
+  box.innerHTML=rows.length?`<table class="spol-t"><thead><tr><th>모델</th><th>품목</th><th class="num">정률</th><th class="num">기본</th><th class="num">추가 포인트</th><th class="num">기준 총액 → 총 포인트</th><th>출처</th><th>수집·수정</th><th></th></tr></thead><tbody>
+    ${rows.map(r=>`<tr${r.active?'':' style="opacity:.55" title="지금 DPS 구독 목록에 없는 모델"'}><td class="mono"><b>${esc(r.model)}</b>${r.goods_id?`<div class="spol-hint" style="margin:0">${esc(r.goods_id)}</div>`:''}</td><td>${esc(r.cat||'')}${r.seg?` <small style="color:var(--faint)">${esc(r.seg)}</small>`:''}</td>
+      <td class="num">${r.rate!=null?Number(r.rate)+'%':'-'}</td><td class="num">${r.base!=null?Number(r.base)+'%':'-'}</td><td class="num">${r.add?fmt(r.add)+'P':'-'}</td>
+      <td class="num">${r.price?fmt(r.price)+'원 → '+(r.total!=null?fmt(r.total)+'P':'-'):'-'}</td>
+      <td>${r.src==='manual'?'<span class="tag y">손 입력</span>':'<span class="tag n">삼성닷컴</span>'}${r.note?`<div class="spol-hint" style="margin:0">${esc(r.note)}</div>`:''}</td>
+      <td style="white-space:nowrap">${esc(r.src==='manual'?(r.updated||''):(r.fetched||r.updated||''))}${r.by?`<div class="spol-hint" style="margin:0">${esc(r.by)}</div>`:''}</td>
+      <td style="white-space:nowrap"><button class="btn sm ghost" onclick="spPointEdit(${J(r.model)})">고치기</button>${r.src==='manual'?` <button class="btn sm ghost" onclick="spPointRelease(${J(r.model)})">수집값으로</button> <button class="btn sm ghost" onclick="spPointRemove(${J(r.model)})">지우기</button>`:''}</td></tr>`).join('')}</tbody></table>`
+    :'<div class="note">해당하는 모델이 없습니다 (아직 수집 전이면 [지금 수집])</div>';
+}
+async function spPointEdit(model){
+  const r=(model&&(SPT&&SPT.rows||[]).find(x=>x.model===model))||{model:model||''};
+  const data=await modal({title:model?model+' 포인트 손 입력':'모델 포인트 손 입력', ok:'저장',
+    html:`<div class="spol-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">모델번호</div><input class="in mono" id="pt_model" value="${esc(r.model||'')}" ${model?'readonly':''} style="width:100%;box-sizing:border-box" placeholder="WD90H25AHW"></label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><label><div class="spol-hint" style="margin:0 0 3px">상품별 추가 포인트 (P)</div><input class="in num" id="pt_add" value="${esc(r.add??'')}" style="width:120px" placeholder="50000"></label>
+        <label><div class="spol-hint" style="margin:0 0 3px">정률 % (비우면 수집값 유지)</div><input class="in num" id="pt_rate" value="${esc(r.rate??'')}" style="width:80px" placeholder="6"></label>
+        <label><div class="spol-hint" style="margin:0 0 3px">기본 %</div><input class="in num" id="pt_base" value="${esc(r.base??'0.1')}" style="width:80px"></label></div>
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용 · 출처·기간)</div><input class="in" id="pt_note" value="${esc(r.note||'')}" style="width:100%;box-sizing:border-box"></label>
+      <p class="spol-hint" style="margin:0">저장하면 '손 입력' 이 되어 매주 수집이 덮지 않습니다. 삼성닷컴 값으로 되돌리려면 표에서 [수집값으로]. 화면 계산 = 결제 예상액 × (정률+기본)% + 추가 포인트.</p></div>`,
+    collect:()=>{ const m=$('pt_model').value.trim().toUpperCase(); if(!m) throw new Error('모델번호를 적어 주세요');
+      const o={model:m, add:$('pt_add').value.trim()===''?null:Number($('pt_add').value.replace(/[^0-9]/g,'')), note:$('pt_note').value.trim()};
+      if($('pt_rate').value.trim()!=='') o.rate=Number($('pt_rate').value); if($('pt_base').value.trim()!=='') o.base=Number($('pt_base').value); return o; }});
+  if(!data) return;
+  try{ await rpc('fn_sub_point_save',{p_data:data}); toast('저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); spPointLoad(); }catch(e){ toast(e.message,'bad'); }
+}
+async function spPointRelease(model){ if(!confirm(model+' 을 삼성닷컴 수집값으로 되돌릴까요? (다음 수집에서 덮어씁니다)')) return; try{ await rpc('fn_sub_point_save',{p_data:{model,release:true}}); toast('되돌렸습니다','ok'); loadSubPolicy(true); spPointLoad(); }catch(e){ toast(e.message,'bad'); } }
+async function spPointRemove(model){ if(!confirm(model+' 포인트를 지울까요? (다음 수집에서 삼성닷컴 값이 있으면 다시 들어옵니다)')) return; try{ await rpc('fn_sub_point_save',{p_data:{model,remove:true}}); toast('지웠습니다','ok'); loadSubPolicy(true); spPointLoad(); }catch(e){ toast(e.message,'bad'); } }
+async function spPointCollect(){
+  if(!confirm('삼성닷컴에서 모델 포인트를 지금 수집할까요? (GitHub Actions 에서 10~20분 · 끝나면 자동 배포)')) return;
+  let tok=null; try{ const {data}=await sb.auth.getSession(); tok=data&&data.session&&data.session.access_token; }catch(e){}
+  if(!tok) return toast('로그인이 필요합니다','bad');
+  try{ const res=await fetch(SUPABASE_URL+'/functions/v1/sub-deploy?by=admin&wf=sub-point',{method:'POST',headers:{Authorization:'Bearer '+tok,apikey:SUPABASE_KEY,'Content-Type':'application/json'},body:'{}'});
+    const j=await res.json().catch(()=>({})); if(!res.ok||!j.ok) throw new Error(j.error||('HTTP '+res.status));
+    toast(j.skipped?'이미 수집이 돌고 있습니다 · '+j.reason:'수집을 시작했습니다 · 10~20분 뒤 [새로고침]','ok'); }
+  catch(e){ toast('수집 요청 실패: '+e.message+' — GitHub › Actions › 구독 멤버십 포인트 › Run workflow 로 직접 실행하세요','bad'); }
 }
 async function spPromoToggle(id,on){
   const p=(SPOL&&SPOL.promos||[]).find(x=>x.id===id); if(!p) return;

@@ -6227,9 +6227,33 @@ function renderSubPolicy(){
       <div class="note-in" style="margin:2px 0 0;white-space:normal">${(c.notes||[]).length?c.notes.map(esc).join('<br>'):'<span style="color:var(--faint)">유의사항 없음</span>'}</div></div>
       ${can?`<button type="button" class="btn sm ghost" onclick="spDlgOpen('card',${JSON.stringify(nm).replace(/"/g,'&quot;')})">고치기</button>`:''}</div>`; }).join('')+'</div>';
   if((P.card_notes||[]).length) h+=`<p class="note-in" style="margin-top:8px">공통: ${P.card_notes.map(esc).join(' · ')}</p>`;
+  /* 모델 포인트 (mvp_258) — 삼성닷컴 "적립 예정 멤버십 포인트" : 정률·기본은 매주 자동 수집, 상품별 추가 포인트는 점장님·대표님이 여기서 더한다 */
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:16px 0 8px"><b style="font-size:calc(14px * var(--font-scale))">모델 포인트 <small style="font-weight:400;color:var(--faint)">삼성닷컴 적립 예정 멤버십 포인트</small></b></div>
+    ${can?`<div style="display:grid;grid-template-columns:1.2fr 1fr 1.4fr auto;gap:6px;margin-bottom:8px"><input class="in" id="spPtModel" placeholder="모델번호" autocapitalize="characters" autocomplete="off"><input class="in" id="spPtAdd" inputmode="numeric" placeholder="추가 포인트(P)"><input class="in" id="spPtNote" placeholder="메모 (출처·기간)"><button type="button" class="btn sm" onclick="spPointSave()">저장</button></div>`:''}
+    <div class="csearch" style="margin-bottom:6px"><input class="in" id="spPtQ" placeholder="모델번호 · 품목 찾기" autocomplete="off" onkeydown="if(event.key==='Enter')spPointLoad()"><button type="button" class="go" onclick="spPointLoad()" aria-label="찾기">⌕</button></div>
+    <div id="spPtList" class="list"><div class="empty">불러오는 중…</div></div>
+    <p class="note-in">정률(보통 6%)·기본 0.1% 는 매주 월요일 삼성닷컴에서 자동으로 받아 오고, 여기서는 상품별 추가 포인트를 손으로 더합니다. 손 입력한 모델은 자동 수집이 덮지 않습니다. 구독탭은 결제 예상액 × 정률 + 추가 포인트를 "적립 예정 멤버십 포인트" 로 보여 줍니다.</p>`;
   h+=`<p class="note-in">할인율·선납 한도 같은 수치와 요금표는 관리자 화면에서 바꿉니다. 문의: 온라인사업부</p>`;
   $('spBody').innerHTML=h;
+  spPointLoad();
 }
+async function spPointLoad(){
+  const box=$('spPtList'); if(!box) return; const q=($('spPtQ')&&$('spPtQ').value.trim())||null;
+  let d; try{ d=await rpc('fn_store_sub_point_list',{p_code:CODE,p_q:q,p_limit:q?100:30}); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  const rows=(d&&d.rows)||[], can=!!(d&&d.can_edit), J=s=>JSON.stringify(s).replace(/"/g,'&quot;');
+  box.innerHTML=rows.length?rows.map(r=>`<div class="item" style="grid-template-columns:1fr auto"><div><div style="font-weight:700">${esc(r.model)} <small style="font-weight:400;color:var(--faint)">${esc(r.cat||'')}</small></div>
+      <div class="note-in" style="margin:2px 0 0">정률 ${r.rate!=null?Number(r.rate)+'%':'-'}${r.base?' + 기본 '+Number(r.base)+'%':''}${r.add?' · 추가 '+Number(r.add).toLocaleString('ko-KR')+'P':''} · ${r.src==='manual'?'손 입력 '+esc(r.updated||'')+(r.by?' '+esc(r.by):''):'삼성닷컴 '+esc(r.fetched||'')}${r.note?' · '+esc(r.note):''}</div></div>
+      ${can?`<span style="display:flex;gap:6px"><button type="button" class="btn sm ghost" onclick="spPointPick(${J(r.model)},${r.add||0},${J(r.note||'')})">고치기</button>${r.src==='manual'?`<button type="button" class="btn sm ghost" onclick="spPointRelease(${J(r.model)})">수집값으로</button>`:''}</span>`:''}</div>`).join('')
+    :`<div class="empty">${q?'해당하는 모델이 없습니다':'아직 수집된 포인트가 없습니다 (매주 월요일 자동 수집)'}</div>`;
+}
+function spPointPick(m,add,note){ if(!$('spPtModel')) return; $('spPtModel').value=m; $('spPtAdd').value=add||''; $('spPtNote').value=note||''; $('spPtModel').focus(); }
+async function spPointSave(){
+  const m=$('spPtModel').value.trim().toUpperCase(); if(!m) return toast('모델번호를 적어 주세요');
+  const add=$('spPtAdd').value.replace(/[^0-9]/g,'');
+  try{ await rpc('fn_store_sub_point_save',{p_code:CODE,p_data:{model:m,add:add===''?null:Number(add),note:$('spPtNote').value.trim()}}); toast('저장했습니다 · 1~3분 안에 상세페이지에 반영됩니다'); $('spPtModel').value='';$('spPtAdd').value='';$('spPtNote').value=''; spPointLoad(); }
+  catch(e){ toast(e.message); }
+}
+async function spPointRelease(m){ if(!confirm(m+' 을 삼성닷컴 수집값으로 되돌릴까요? (다음 수집에서 덮어씁니다)')) return; try{ await rpc('fn_store_sub_point_save',{p_code:CODE,p_data:{model:m,release:true}}); toast('되돌렸습니다'); spPointLoad(); }catch(e){ toast(e.message); } }
 function spDlgOpen(kind,key){
   if(!(SP&&SP.can_edit)) return;
   const F=$('spDlgForm'); $('spDlgErr').textContent='';

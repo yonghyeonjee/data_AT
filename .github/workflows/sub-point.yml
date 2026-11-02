@@ -1,0 +1,46 @@
+name: 구독 멤버십 포인트 (삼성닷컴)
+
+# 구독 모델(dps.sub_model active)의 "적립 예정 멤버십 포인트"(정률·추가 포인트)를 삼성닷컴 구독 상품 페이지·membershipPolicy API 에서 받아 sub.model_point 에 넣는다 (mvp_258).
+# 구독탭·구독센터가 sub_policy.js 의 points[모델] 로 포인트 줄을 보여 준다. 저장되면 트리거가 데이터센터 배포(sdp-publish.yml)를 바로 건다.
+# 매주 월요일 09:00 KST · 수동 실행(전부 다시 / 지정 모델) 가능 · 관리자 화면 [지금 수집] 은 Edge Function sub-deploy?wf=sub-point 로 이 워크플로를 건다.
+# Secrets: SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY (또는 SUPABASE_ANON_KEY + SUB_POINT_KEY)
+on:
+  schedule:
+    - cron: "0 0 * * 1"   # 매주 월요일 09:00 KST
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "활성 모델 전부 다시 확인 (기본은 처음 보는 것·6일 지난 것·못 찾은 것만)"
+        type: boolean
+        default: false
+      models:
+        description: "지정 모델만 (쉼표로 여러 개 · 비우면 전체)"
+        type: string
+        default: ""
+  push:                      # 수집기나 이 파일이 바뀌면 바로 한 번 돈다
+    branches: [main]
+    paths: ['.github/workflows/sub-point.yml', 'tools/subpoint/**']
+
+concurrency:
+  group: sub-point
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: 수집 · 저장
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUB_POINT_KEY: ${{ secrets.SUB_POINT_KEY }}
+        run: |
+          ARGS=""
+          [ "${{ inputs.all }}" = "true" ] && ARGS="--all"
+          [ -n "${{ inputs.models }}" ] && ARGS="$ARGS --models ${{ inputs.models }}"
+          node tools/subpoint/collect.mjs $ARGS

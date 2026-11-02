@@ -39,7 +39,7 @@ function main() {
     },
     // 공통 기준값 — 처음 선택되는 카드·실적 구간, 상담 신청 주소, 전화 (관리자 › 구독 혜택 정책 › 기본 기준·상담 연락처 · mvp_253). 스킨 CFG 가 비어 있을 때 쓴다
     defaults: { card: '삼성카드', tier: '30만↑', consultUrl: '/main/html.php?htmid=service/SamSungSubscription.html', tel: '' },
-    cards: {}, cardNotes: [], promos: [],
+    cards: {}, cardNotes: [], promos: [], points: {},   // points: 모델 → {rate, base, add, total} 적립 예정 멤버십 포인트 (mvp_258)
     texts: {
       points: ['목돈 없이 월 납부 · 약정 기간 동안 무상수리'],
       notice: '* 월 구독료는 VAT 포함 기준이며, 카드 혜택은 카드사 조건(전월 실적·정기결제 등)에 따라 달라질 수 있습니다. ' +
@@ -156,6 +156,16 @@ function main() {
     });
     return best;
   }
+  /* 적립 예정 멤버십 포인트 (mvp_258) — 삼성닷컴 구독 상품의 정률(rate %) + 기본(base %) 을 결제 예상액에 곱하고 상품별 추가 포인트(add)를 더한다.
+     원본은 sub.model_point (수집기 tools/subpoint/collect.mjs 가 매주 월요일 삼성닷컴에서 받아 온다 · 관리자·매장에서 손 입력 가능) → sub_policy.js points[모델]
+     행사 포인트(pointsOf · N개월 구독료 상당)와는 중복 지급이라 둘 다 보여 주고 둘 다 뺀다. 결제 예상액(선납·자동납부·카드 할인 뒤 실제 결제액) 기준 */
+  function modelPointOf(model) { var pts = POL.points || {}; return pts[norm(model)] || null; }
+  function memberPoints(model, expected) {
+    var mp = modelPointOf(model); if (!mp) return null;
+    var rate = (+mp.rate || 0) + (+mp.base || 0), add = +mp.add || 0;
+    var amt = Math.floor(Math.max(0, expected || 0) * rate / 100) + add;
+    return amt > 0 ? { amt: amt, rate: rate, add: add, pct: Math.round(rate * 100) / 100 } : null;
+  }
   // 일시불 비교에 쓸 가격 — 상품 페이지의 모델일 때만 (같은 모델 다른 색상·구독 전용 모델로 바꾸면 이 상품의 일시불가와 비교하지 않는다)
   function lumpFor(model) { return (pageModel && model && model !== pageModel) ? 0 : (CFG.lumpPrice || 0); }
 
@@ -182,7 +192,11 @@ function main() {
     // N개월 구독료 상당 포인트 지원 (mvp_257) — 결제 총액에서 빼서 "실제 구독료" 로 보여준다 (포인트는 결제 뒤 지급되므로 월 납부액은 그대로)
     var pt = pointsOf(info, plan);
     r.points = pt ? pt.amt : 0; r.pointsInfo = pt;
-    r.expectedNet = r.expected - r.points;
+    // 적립 예정 멤버십 포인트 (mvp_258) — 행사 포인트와 별도로 더 뺀다
+    var mpt = memberPoints(info && info.model, r.expected);
+    r.mpoints = mpt ? mpt.amt : 0; r.mpointsInfo = mpt;
+    r.pointsAll = r.points + r.mpoints;
+    r.expectedNet = r.expected - r.pointsAll;
     var lump = lumpFor(info && info.model);
     r.saving = (lump > 0 && r.expectedNet < lump && CFG.lumpCompare !== 'never') ? lump - r.expectedNet : 0;
     return r;
@@ -412,7 +426,7 @@ function main() {
     prepayMax: prepayMax, prepayRate: prepayRate, cardNames: cardNames, cardMonthly: cardMonthly,
     splitCare: splitCare, joinCare: joinCare, typeOrder: TYPE_ORDER, typeLabel: TYPE_LABEL,
     defaultCard: function () { return defaultCard(); }, defaultTier: function (c) { return defaultTier(c); },
-    autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt, pointsOf: pointsOf, pointPromos: pointPromos, siblings: siblings,
+    autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt, pointsOf: pointsOf, pointPromos: pointPromos, memberPoints: memberPoints, modelPointOf: modelPointOf, siblings: siblings,
     ready: function (cb) { loadCards(function () { loadPolicy(cb); }); }   // 카드표·정책을 받은 뒤 계산해야 금액이 구독탭과 같다
   };
   if (CFG.apiOnly) return;
@@ -489,7 +503,7 @@ function main() {
       btns[i].classList.toggle('is-active', on);
       btns[i].setAttribute('aria-selected', on ? 'true' : 'false');
     }
-    if (state.subPage) return;   // 구독 전용 페이지: 페이지의 가격·신청 영역은 건드리지 않는다
+    if (!state.subPage) {   // 구독 전용 페이지에선 페이지의 가격·신청 영역을 건드리지 않는다
     // 구독 탭일 때는 일시불 전용 영역(가격·장바구니·간편결제)을 숨긴다
     (CFG.lumpOnly || []).forEach(function (sel) {
       var nodes = document.querySelectorAll(sel);
@@ -505,6 +519,7 @@ function main() {
         nodes[j].classList.toggle('subtab-hide', state.tab === 'sub');
       }
     });
+    }
     els.panel.hidden = state.tab !== 'sub';
   }
 
@@ -620,11 +635,10 @@ function main() {
     if (r.prepay) h += row('선납 할인 (선납 ' + Math.round(r.prepay * 100) + '% · ' + Math.round(r.prepayRate * 100) + '%)', '-' + fmt(r.prepayDisc) + '원', 'is-blue');
     h += row(esc(autopayLabel()), '-' + fmt(r.autoDisc) + '원', 'is-blue');
     if (r.cardTotal) h += row('제휴카드 혜택 (' + esc(state.card) + ')', '-' + fmt(r.cardTotal) + '원', 'is-blue');
-    h += row('결제 예상액', fmt(r.expected) + '원', r.points ? '' : 'is-total');
-    if (r.points) {
-      h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', '-' + fmt(r.points) + '원', 'is-blue is-point');
-      h += row('포인트 반영 실제 구독료', fmt(r.expectedNet) + '원', 'is-total');
-    }
+    h += row('결제 예상액', fmt(r.expected) + '원', r.pointsAll ? '' : 'is-total');
+    if (r.points) h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', '-' + fmt(r.points) + '원', 'is-blue is-point');
+    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + '</small>', '-' + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
+    if (r.pointsAll) h += row('포인트 반영 실제 구독료', fmt(r.expectedNet) + '원', 'is-total');
     if (r.prepay) h += row('└ 선납금 (신청 시 1회)', fmt(r.prepayAmt) + '원', 'is-muted');
     var cmp = CFG.lumpCompare || 'auto';
     if (lump > 0 && (cmp === 'always' || (cmp === 'auto' && r.saving))) h += row('일시불 구매가', fmt(lump) + '원', 'is-muted');
@@ -638,13 +652,13 @@ function main() {
       '<div class="subtab-savebox" role="note"><span class="subtab-savebox-label">선택한 혜택 적용 시 일시불 구매보다</span>' +
         '<strong>' + fmt(r.saving) + '원 저렴해요</strong>' +
         '<div class="subtab-cmp"><div><em>일시불 구매가</em><b>' + fmt(lump) + '원</b></div><i aria-hidden="true"></i>' +
-        '<div class="is-sub"><em>' + r.years + (r.points ? '년 실제 구독료<small>포인트 반영</small>' : '년 구독 총액') + '</em><b>' + fmt(r.expectedNet) + '원</b></div></div>' +
+        '<div class="is-sub"><em>' + r.years + (r.pointsAll ? '년 실제 구독료<small>포인트 반영</small>' : '년 구독 총액') + '</em><b>' + fmt(r.expectedNet) + '원</b></div></div>' +
         '<span class="subtab-savebox-sub">' + Math.floor(r.saving / lump * 100) + '% 절약 · 월 ' + fmt(r.finalMonthly) + '원 × ' + r.months + '개월' +
         (r.prepay ? ' (선납금 포함)' : '') + '</span></div>' :
       // 아니면 월 구독료 + 총액
       '<div class="subtab-monthbox" role="note"><span class="subtab-monthbox-label">선택한 혜택 적용 시 월 구독료</span>' +
         '<strong>월 ' + fmt(r.finalMonthly) + '원</strong>' +
-        '<span class="subtab-savebox-sub">' + r.years + (r.points ? '년 실제 구독료 ' : '년 구독 총액 ') + fmt(r.expectedNet) + '원' + (r.points ? ' (포인트 ' + fmt(r.points) + '원 반영)' : '') + (lump > 0 ? ' · 일시불 ' + fmt(lump) + '원' : '') + '</span></div>';
+        '<span class="subtab-savebox-sub">' + r.years + (r.pointsAll ? '년 실제 구독료 ' : '년 구독 총액 ') + fmt(r.expectedNet) + '원' + (r.pointsAll ? ' (포인트 ' + fmt(r.pointsAll) + '원 반영)' : '') + (lump > 0 ? ' · 일시불 ' + fmt(lump) + '원' : '') + '</span></div>';
     h = top + sum + '<p class="subtab-cond">기준: ' + esc(cond) + '</p>' +
       '<button type="button" class="subtab-acc" data-acc aria-expanded="' + state.open + '">조건별 구독가 확인하기<i aria-hidden="true"></i></button>' +
       '<div class="subtab-acc-body"' + (state.open ? '' : ' hidden') + '>' + h + '</div>';
@@ -660,7 +674,7 @@ function main() {
     var memo = '[' + srcName + '] ' + r.years + '년 · ' + careLabel(r.care) + ' · 월 ' + fmt(r.monthly) + '원' +
       (r.prepay ? ' · 선납 ' + Math.round(r.prepay * 100) + '%' : '') +
       (r.cardTotal ? ' · ' + state.card + ' ' + tierLabel(state.tier) : '') +
-      ' → 월 납부 예상 ' + fmt(r.finalMonthly) + '원' + (r.points ? ' · 포인트 ' + fmt(r.points) + '원 (실제 구독료 ' + fmt(r.expectedNet) + '원)' : '');
+      ' → 월 납부 예상 ' + fmt(r.finalMonthly) + '원' + (r.pointsAll ? ' · 포인트 ' + fmt(r.pointsAll) + '원' + (r.mpoints ? ' (멤버십 ' + fmt(r.mpoints) + 'P 포함)' : '') + ' (실제 구독료 ' + fmt(r.expectedNet) + '원)' : '');
     var q = 'from=' + encodeURIComponent(CFG.source || 'goods') +
       '&product=' + encodeURIComponent((IDX.m[state.model] && IDX.cats[IDX.m[state.model][0]]) || CFG.productCat || '') +
       '&purpose=' + encodeURIComponent('신규구독') +
@@ -811,8 +825,11 @@ function main() {
   function refreshModel() {
     var m = resolveModel();
     if (!m) return hideTab();   // 선택된 옵션에 구독 모델이 없으면 일시불로 되돌리고 탭 숨김
+    // 페이지의 모델이 그대로면 아무것도 하지 않는다 — 탭 안에서 형제 모델로 바꾼 상태를 지킨다
+    // (고도몰 페이지는 네이버페이 배너 문구가 주기적으로 바뀌어 MutationObserver 가 계속 호출된다)
+    if (m === pageModel) { if (state.info) root.hidden = false; return; }
     pageModel = m;   // 상품 페이지(선택한 옵션)의 모델 — 일시불 비교·[이 상품] 표시 기준 (탭 안 형제 모델 칩은 이 값을 바꾸지 않는다)
-    if (m === state.model) { if (state.info) root.hidden = false; return; }
+    if (m === state.model) { if (state.info) root.hidden = false; render(); return; }
     setModel(m, function () {
       if (!state.info) return hideTab();
       root.hidden = false;
