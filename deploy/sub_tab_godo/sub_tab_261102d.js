@@ -489,7 +489,7 @@ function main() {
       btns[i].classList.toggle('is-active', on);
       btns[i].setAttribute('aria-selected', on ? 'true' : 'false');
     }
-    if (state.subPage) return;   // 구독 전용 페이지: 페이지의 가격·신청 영역은 건드리지 않는다
+    if (!state.subPage) {   // 구독 전용 페이지에선 페이지의 가격·신청 영역을 건드리지 않는다
     // 구독 탭일 때는 일시불 전용 영역(가격·장바구니·간편결제)을 숨긴다
     (CFG.lumpOnly || []).forEach(function (sel) {
       var nodes = document.querySelectorAll(sel);
@@ -505,6 +505,7 @@ function main() {
         nodes[j].classList.toggle('subtab-hide', state.tab === 'sub');
       }
     });
+    }
     els.panel.hidden = state.tab !== 'sub';
   }
 
@@ -811,8 +812,11 @@ function main() {
   function refreshModel() {
     var m = resolveModel();
     if (!m) return hideTab();   // 선택된 옵션에 구독 모델이 없으면 일시불로 되돌리고 탭 숨김
+    // 페이지의 모델이 그대로면 아무것도 하지 않는다 — 탭 안에서 형제 모델로 바꾼 상태를 지킨다
+    // (고도몰 페이지는 네이버페이 배너 문구가 주기적으로 바뀌어 MutationObserver 가 계속 호출된다)
+    if (m === pageModel) { if (state.info) root.hidden = false; return; }
     pageModel = m;   // 상품 페이지(선택한 옵션)의 모델 — 일시불 비교·[이 상품] 표시 기준 (탭 안 형제 모델 칩은 이 값을 바꾸지 않는다)
-    if (m === state.model) { if (state.info) root.hidden = false; return; }
+    if (m === state.model) { if (state.info) root.hidden = false; render(); return; }
     setModel(m, function () {
       if (!state.info) return hideTab();
       root.hidden = false;
