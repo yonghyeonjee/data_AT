@@ -57,6 +57,41 @@ const fetchT = (url, init = {}) => fetch(url, { ...init, headers: { 'user-agent'
 /* 구독 상품 페이지 주소 — 품목 slug 는 무엇이든 마지막 모델번호로 상품을 찾아 준다 ('/' 가 든 모델은 그대로 둔다 · subimg 와 같은 규칙) */
 export const pageUrl = model => `${BASE}/sec/ai-subs-living/${encodeURIComponent(model)}-subscribe2-d2c/${model.split('/').map(encodeURIComponent).join('/')}/`;
 
+/* ---------- 삼성닷컴 상품 찾기(PF) 목록 — 품목별 구독 상품 전부 (2026-11-02) ----------
+   GET /sec/cxhr/pf/goodsList?dispClsfNo=<품목 번호>&onlyAiscGoods=Y&rows=100&page=N → { count, products: [{ goodsId, mdlCode, goodsOptStr }] }
+   goodsOptStr 에 같은 상품의 옵션 모델(색상·크기)과 goodsId 가 '…|KU65MH75-W6|G002965561,G002965562|…' 꼴로 들어 있어 형제 모델까지 한 번에 얻는다.
+   품목 번호는 각 '모두 보기' 페이지(/sec/tvs/all-tvs/ 등) HTML 의 dispClsfNo — 새 품목이 생기면 여기 더한다. 목록에 없는 모델은 예전처럼 상품 페이지로 한 번 더 본다 */
+export const PF_CATS = {
+  34060000: 'TV', 36010000: '냉장고', 36020000: '김치냉장고', 37020000: '세탁기', 37080000: '건조기', 37090000: '에어드레서',
+  37010000: '에어컨', 37040000: '공기청정기', 37030000: '청소기', 36080000: '식기세척기', 36070000: '인덕션', 36030000: '인덕션(플렉스존)',
+  39030000: '모니터', 33020000: '갤럭시 탭', 39120000: '갤럭시 북', 33010000: '스마트폰', 41040000: '오디오',
+};
+export async function pfScan(log = console.log) {
+  const pairs = {}; let goods = 0, cats = 0, fails = 0;
+  for (const [no, name] of Object.entries(PF_CATS)) {
+    try {
+      for (let page = 1, seen = 0; page <= 20; page++) {
+        const url = `${BASE}/sec/cxhr/pf/goodsList?searchFilter=&dispClsfNo=${no}&sortType=10&page=${page}&rows=100&ehcacheYn=Y&soldOutExceptYn=N&pfFasterUseYn=Y&secApp=false&secIos=false&aiscCtgYn=N&tcPlantCode=&onlyAiscGoods=Y`;
+        const r = await fetchT(url, { headers: { accept: 'application/json, text/javascript, */*; q=0.01', 'x-requested-with': 'XMLHttpRequest', referer: `${BASE}/sec/` } });
+        if (!r.ok) throw new Error(`PF ${name} HTTP ${r.status}`);
+        const j = await r.json(); const list = Array.isArray(j.products) ? j.products : [];
+        for (const p of list) {
+          if (p.goodsId && p.mdlCode) { pairs[norm(p.mdlCode)] = pairs[norm(p.mdlCode)] || p.goodsId; goods++; }
+          for (const m of String(p.goodsOptStr || '').matchAll(/\|([A-Za-z0-9][A-Za-z0-9\-\/]{4,})\|(G\d{6,12})(?:,(G\d{6,12}))*\|/g)) {
+            const k = norm(m[1]); if (!pairs[k]) pairs[k] = m[3] || m[2];   // 두 개면 뒤쪽(보통 스탠드형·대표) — 포인트 정률은 같은 상품이면 같다
+          }
+        }
+        seen += list.length;
+        if (!list.length || seen >= (Number(j.count) || 0)) break;
+        await sleep(SLEEP_MS);
+      }
+      cats++;
+    } catch (e) { fails++; log(`  ! PF ${name}: ${e.message}`); }
+    await sleep(SLEEP_MS);
+  }
+  return { pairs, goods, cats, fails, models: Object.keys(pairs).length };
+}
+
 /* 상품 페이지 HTML → { goodsId, pairs: {모델: goodsId}, found } · 없는 모델은 og:url 이 비고 상품 쌍이 없다 */
 export function parsePage(html, model) {
   const pairs = {};
@@ -124,8 +159,13 @@ if (process.argv[1] && /collect\.mjs$/.test(process.argv[1].replace(/\\/g, '/'))
   targets = targets.slice(0, LIMIT);
   console.log(`대상 ${targets.length}개 (${MODELS ? '지정' : ALL ? '전부' : '처음·오래된 것'})${dbOk ? '' : ' · DB 없음(dry)'}`);
 
-  const rows = [], gidCache = new Map();   // 모델 → goodsId (페이지 하나로 얻은 형제 모델 포함)
+  const rows = [], gidCache = new Map();   // 모델 → goodsId (PF 목록 · 페이지 하나로 얻은 형제 모델 포함)
   for (const t of targets) if (t.goods_id) gidCache.set(norm(t.model), t.goods_id);
+  // 삼성닷컴 상품 찾기 목록을 먼저 훑어 모델→goodsId 를 채운다 (품목당 1~2번 요청) — 목록 값이 DB 에 캐시된 옛 goodsId 보다 새롭다
+  const pf = targets.length ? await pfScan() : { pairs: {}, goods: 0, cats: 0, fails: 0, models: 0 };
+  for (const [m, g] of Object.entries(pf.pairs)) gidCache.set(m, g);
+  const inPf = targets.filter(t => pf.pairs[norm(t.model)]).length;
+  console.log(`PF 목록: 품목 ${pf.cats}개(실패 ${pf.fails}) · 상품 ${pf.goods}개 · 모델 ${pf.models}개 · 대상 중 ${inPf}개가 목록에 있음`);
   let found = 0, missed = 0, errors = 0, pages = 0, i = 0; const errSamples = [];   // 오류 표본: 전부 실패했을 때 원인을 fetch 기록(note)에 남긴다 — Actions 로그를 못 볼 때 관리자 화면에서 본다
   async function worker() {
     while (i < targets.length) {
@@ -167,7 +207,7 @@ if (process.argv[1] && /collect\.mjs$/.test(process.argv[1].replace(/\\/g, '/'))
   if (!DRY && (rows.length || errors)) {   // 찾은 게 없어도 오류가 있었으면 기록은 남긴다 (오류 표본 포함)
     if (!dbOk) console.log('DB 키가 없어 저장하지 않습니다');
     else {
-      const note = `${MODELS ? '지정' : ALL ? '전부' : '정기'} · 페이지 ${pages}번 · ${secs}초` + (errSamples.length ? ` · 오류 예: ${errSamples.join(' | ')}` : '');
+      const note = `${MODELS ? '지정' : ALL ? '전부' : '정기'} · PF 품목 ${pf.cats}/${Object.keys(PF_CATS).length} 모델 ${pf.models}개 · 페이지 ${pages}번 · ${secs}초` + (errSamples.length ? ` · 오류 예: ${errSamples.join(' | ')}` : '');
       saved = await rpc('fn_sub_point_upsert', { p_rows: rows, p_key: P_KEY, p_meta: { started_at: started.toISOString(), targets: targets.length, errors, note } });
       console.log('저장', JSON.stringify(saved));
     }
