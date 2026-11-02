@@ -808,7 +808,7 @@ function main() {
   function refreshModel() {
     var m = resolveModel();
     if (!m) return hideTab();   // 선택된 옵션에 구독 모델이 없으면 일시불로 되돌리고 탭 숨김
-    if (!pageModel) pageModel = m;   // 상품 페이지의 모델 (일시불 비교·[이 상품] 표시 기준)
+    pageModel = m;   // 상품 페이지(선택한 옵션)의 모델 — 일시불 비교·[이 상품] 표시 기준 (탭 안 형제 모델 칩은 이 값을 바꾸지 않는다)
     if (m === state.model) { if (state.info) root.hidden = false; return; }
     setModel(m, function () {
       if (!state.info) return hideTab();
@@ -859,6 +859,7 @@ function main() {
     CFG.lumpPrice = parseFloat(CFG.lumpPrice) || 0;
     var m = resolveModel();
     if (!m) return;                         // 구독 모델이 아닌 상품 → 아무 변화 없음
+    pageModel = m;                          // 상품 페이지의 모델 (일시불 비교·[이 상품] 표시 기준)
     if (!build()) return;
     root.hidden = true;
     setModel(m, function () {
