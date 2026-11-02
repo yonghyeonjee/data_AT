@@ -109,6 +109,17 @@ export function checkPolicy(pol) {
     if (p.amounts != null) { if (typeof p.amounts !== 'object') err.push(`promos[${i}].amounts: {모델: 금액} 객체여야 합니다`);
       else for (const [m, v] of Object.entries(p.amounts)) if (!(Number.isInteger(v) && v > 0)) err.push(`promos[${i}].amounts.${m}: 양의 정수여야 합니다 (현재 ${JSON.stringify(v)})`); }
   });
+  // 적립 예정 멤버십 포인트 (mvp_258): {모델: {rate, base, add, total}} · rate·base 는 0~100 %, add·total 은 양의 정수
+  if (pol.points != null) {
+    if (typeof pol.points !== 'object' || Array.isArray(pol.points)) err.push('points: {모델: {rate, base, add, total}} 객체여야 합니다');
+    else for (const [m, v] of Object.entries(pol.points)) {
+      if (!/^[A-Z0-9\/\-]+$/.test(m)) err.push(`points.${m}: 모델번호는 대문자·숫자만 (공백 없이)`);
+      if (!v || typeof v !== 'object') { err.push(`points.${m}: {rate, base, add, total} 객체여야 합니다`); continue; }
+      for (const k of ['rate', 'base']) if (v[k] != null && !(typeof v[k] === 'number' && v[k] >= 0 && v[k] < 100)) err.push(`points.${m}.${k}: 0 이상 100 미만 % 여야 합니다 (현재 ${JSON.stringify(v[k])})`);
+      for (const k of ['add', 'total']) if (v[k] != null && !(Number.isInteger(v[k]) && v[k] > 0)) err.push(`points.${m}.${k}: 양의 정수여야 합니다 (현재 ${JSON.stringify(v[k])})`);
+      if (!(v.rate > 0) && !(v.add > 0)) err.push(`points.${m}: rate 나 add 중 하나는 있어야 합니다`);
+    }
+  }
   const df = pol.defaults;   // 공통 기준값 (mvp_253) — 기본 카드·실적 구간 · 상담 주소 · 전화
   if (df != null) {
     if (typeof df !== 'object' || !String(df.card || '').trim()) err.push('defaults.card: 기본 제휴카드 이름이 필요합니다');
