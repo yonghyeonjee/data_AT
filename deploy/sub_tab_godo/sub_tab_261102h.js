@@ -707,12 +707,23 @@ function main() {
                            lumpUrl 도 없고 일시불 탭도 없으면(일시불가 0) 버튼을 숨긴다.
      라벨: CFG.lumpLabel · CFG.consultLabel */
   var PHONE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
+  // 상품상세(고도몰) 구독탭의 [시흥몰 가격 확인하기] 가 갈 곳 (2026-11-02): 시흥몰 [구독] 상품 페이지(카탈로그 7번째 항목 · 예: KU75MH80AFXKR → 1000000857),
+  //   없으면 구독센터 상품 페이지(/data/gudok/view.html?model=…). 구독센터 자신(CFG.lumpUrl 지정)·구독 전용 페이지에서는 쓰지 않는다
+  function subGoodsLink(m) {
+    if (CFG.lumpUrl || state.subPage || !m) return '';
+    var C = window.SUB_CATALOG && window.SUB_CATALOG.m, c = C && C[m], no = c && c[6] > 0 ? c[6] : 0;
+    var cur = String(CFG.goodsNo || (document.querySelector('#frmView input[name="goodsNo"]') || {}).value || '');
+    if (no && String(no) !== cur) return (CFG.goodsUrl || '/goods/goods_view.php?goodsNo=') + no + '&utm_source=' + encodeURIComponent(CFG.utmSource || 'goods_view') + '&utm_medium=subtab_sub&utm_campaign=' + encodeURIComponent(m);
+    if (no) return '';   // 지금 보는 페이지가 그 구독 상품이면 버튼을 내지 않는다
+    return (CFG.centerUrl || '/data/gudok/view.html?model=') + encodeURIComponent(m) + '&utm_source=' + encodeURIComponent(CFG.utmSource || 'goods_view') + '&utm_medium=subtab_center';
+  }
   function ctaHtml(consultHref) {
     var tel = CFG.tel || (POL.defaults && POL.defaults.tel) || '';   // 스킨에 없으면 데이터센터 정책의 전화
     if (CFG.cta === 'lump+consult') {
-      var lumpOk = (!!CFG.lumpUrl || (CFG.lumpPrice > 0)) && !(pageModel && state.model !== pageModel);
+      var subHref = subGoodsLink(state.model);
+      var lumpOk = subHref ? true : ((!!CFG.lumpUrl || (CFG.lumpPrice > 0)) && !(pageModel && state.model !== pageModel));
       return '<div class="subtab-cta subtab-cta--two">' +
-        (lumpOk ? '<a class="subtab-cta-lump" data-cta="lump" href="' + esc(CFG.lumpUrl || '#') + '">' + esc(CFG.lumpLabel || '시흥몰 가격 확인하기') + '</a>' : '') +
+        (lumpOk ? '<a class="subtab-cta-lump" data-cta="lump" href="' + esc(CFG.lumpUrl || subHref || '#') + '">' + esc(CFG.lumpLabel || '시흥몰 가격 확인하기') + '</a>' : '') +
         '<a class="subtab-cta-main" data-cta="consult" href="' + esc(consultHref) + '">' + PHONE_SVG + esc(CFG.consultLabel || '구독 문의하기') + '</a>' +
         '</div>';
     }
@@ -756,7 +767,7 @@ function main() {
       state.prepay = +t.getAttribute('data-prepay'); renderPanel(); track('sub_tab_prepay', { sub_prepay: state.prepay });
     } else if (t.hasAttribute('data-cta')) {
       track('sub_tab_cta', { sub_cta: t.getAttribute('data-cta'), sub_year: state.year, sub_care: joinCare(state.type, state.cycle) });
-      if (t.getAttribute('data-cta') === 'lump' && !CFG.lumpUrl) { ev.preventDefault(); openLump(); }
+      if (t.getAttribute('data-cta') === 'lump' && t.getAttribute('href') === '#') { ev.preventDefault(); openLump(); }
     }
   }
   function onChange(ev) {
