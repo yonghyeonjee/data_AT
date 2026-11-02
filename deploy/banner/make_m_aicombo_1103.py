@@ -5,8 +5,8 @@
 # 아래 약 34%(528px~)는 날짜·제목·버튼 문구가 덮으므로 상품은 y 18~505 안에 둔다
 from PIL import Image, ImageFilter, ImageDraw
 W, H = 640, 800
-TOP, BOTTOM = 18, 505
-TV_MM, COMBO_MM, GAP_MM, SIDE_MM = 1891, 686, 110, 40     # GAP: TV와 세탁기 사이, SIDE: 세탁기 두 대 사이
+TOP, BOTTOM = 14, 512
+TV_MM, COMBO_MM, GAP_MM, SIDE_MM = 1891, 686, 70, 36     # GAP: TV와 세탁기 사이, SIDE: 세탁기 두 대 사이
 def load(p):
     im = Image.open(p).convert('RGBA'); return im.crop(im.getbbox())
 tv, ga, wh = load('TV80.png'), load('AHS.png'), load('AHW.png')
@@ -18,9 +18,8 @@ def rs(im, mm): w = round(mm * s); return im.resize((w, round(im.height * w / im
 tv, ga, wh = rs(tv, TV_MM), rs(ga, COMBO_MM), rs(wh, COMBO_MM)
 side = round(SIDE_MM * s)
 # 배경: 밝은 회백 → 아래 바닥색, 위쪽에 아주 옅은 하늘빛
-bg = Image.new('RGB', (W, H), (246, 244, 240))
-top = Image.new('RGB', (W, H), (226, 236, 246))
-bg = Image.composite(bg, top, Image.linear_gradient('L').resize((W, H)).point(lambda v: min(255, int(v * 1.5))))
+# 배경: 와인·상품권 장과 같은 크림색(254,251,239) — 메인 비주얼 다른 장들과 톤을 맞춘다
+bg = Image.new('RGB', (W, H), (254, 251, 239))
 def shadow(img, x0, x1, y, h=18, a=120):
     sh = Image.new('L', (W, H), 0); ImageDraw.Draw(sh).ellipse((x0, y - h // 2, x1, y + h // 2), fill=a)
     sh = sh.filter(ImageFilter.GaussianBlur(10))
