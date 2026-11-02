@@ -35,10 +35,13 @@ function main() {
       maxByCat: { '에어컨': 0.5, '시스템에어컨': 0.5, 'TV': 0.5, '모니터': 0.5, '냉장고': 0.4, '김치냉장고': 0.4, '청소기': 0.4,
         '공기청정기': 0.3, '정수기': 0.3, '오디오': 0.3, '의류케어': 0.4, '조리기기': 0.5 },
       maxByName: [{ cat: '의류케어', contains: '에어드레서', max: 0.5 }, { cat: '조리기기', contains: '후드', max: 0.3 }],
-      notes: ['선납금은 구독 신청 시에만 선택할 수 있으며, 구독 기간 중에는 변경이 어렵습니다.']
+      notes: ['선납금은 구독 신청 시에만 선택할 수 있으며, 구독 기간 중에는 변경이 어렵습니다.'],
+      // 처음 선택되는 선납 비율(품목 한도 안에서 이 값을 넘지 않는 가장 큰 단계) · 선납금 옆 ? 아이콘을 누르면 보이는 안내 (2026-11-02 · 모든 구독 기본 = 6년·무상수리·삼성카드 30만↑·선납 40%)
+      initial: 0.4, help: '일시불 구매보다 일부 선납후 구독 전환하면 A/S 기간 및 추가 할인이 가능합니다.'
     },
     // 공통 기준값 — 처음 선택되는 카드·실적 구간, 상담 신청 주소, 전화 (관리자 › 구독 혜택 정책 › 기본 기준·상담 연락처 · mvp_253). 스킨 CFG 가 비어 있을 때 쓴다
-    defaults: { card: '삼성카드', tier: '30만↑', consultUrl: '/main/html.php?htmid=service/SamSungSubscription.html', tel: '' },
+    // tierByModel: 모델(또는 모델 앞글자) → 처음 선택할 실적 구간 (예: AI 콤보 WD90H25 → 70만↑ · 2026-11-02 본사 제시 월 구독료 기준)
+    defaults: { card: '삼성카드', tier: '30만↑', tierByModel: {}, consultUrl: '/main/html.php?htmid=service/SamSungSubscription.html', tel: '' },
     cards: {}, cardNotes: [], promos: [], points: {},   // points: 모델 → {rate, base, add, total} 적립 예정 멤버십 포인트 (mvp_258)
     texts: {
       points: ['목돈 없이 월 납부 · 약정 기간 동안 무상수리'],
@@ -67,6 +70,8 @@ function main() {
     tab: 'lump', model: '', info: null, min: 0, best: 0,
     subPage: false,   // 구독 전용 상품 페이지(대표 카테고리가 구독상품 012): 일시불 탭·일시불 비교 없이 계산기만 띄운다 (2026-11-02)
     year: 0, type: '', cycle: 0, prepay: 0,
+    prepaySet: false, tierSet: false,   // 고객이 선납·실적 구간을 직접 골랐는가 — 고르기 전엔 모델이 바뀔 때마다 정책 기본값을 다시 넣는다 (2026-11-02)
+    help: {},                           // 펼친 ? 안내 (help.prepay)
     card: '', tier: '', cardOn: true,
     open: !!CFG.openConditions    // [조건별 구독가 확인하기] 펼침 — 상품상세는 요약만, 구독 전용 페이지(sub_view)는 CFG.openConditions 로 처음부터 펼침
   };
@@ -121,6 +126,13 @@ function main() {
     return m !== undefined ? m : (pp.defaultMax || 0.5);
   }
   function prepayRate(s) { return (POL.prepay.rates || {})[String(s)] || 0; }
+  // 처음 선택되는 선납 비율 — 스킨 CFG.defaultPrepay 또는 정책 prepay.initial(40%)을 넘지 않는, 품목 한도(prepayMax) 안의 가장 큰 단계 (없으면 선납 없음) · 2026-11-02
+  function defaultPrepay(info) {
+    var want = (CFG.defaultPrepay !== undefined && CFG.defaultPrepay !== '' && CFG.defaultPrepay !== null) ? +CFG.defaultPrepay : +(POL.prepay.initial || 0);
+    var cap = Math.min(want || 0, prepayMax(info)), best = 0;
+    (POL.prepay.steps || []).forEach(function (st) { if (st <= cap + 1e-9 && st > best) best = st; });
+    return best;
+  }
   function autopayLabel() { return String(POL.autopay.label || '구독료 {rate} 할인 (자동납부)').replace('{rate}', pct(POL.autopay.rate)); }
   // 노출할 카드: 카드표에 있고, 정책에서 숨김·기간 밖이 아닌 카드
   function cardNames() {
@@ -382,18 +394,25 @@ function main() {
   // 기본 카드 혜택만 적용했을 때(선납 없음) 일시불 대비 최대 절감액 — 탭 배지용
   function bestSaving(info) {
     var dc = cardNames().indexOf(defaultCard()) >= 0 ? defaultCard() : '';
-    var o = { prepay: 0, card: dc, tier: defaultTier(dc), cardOn: !!dc }, best = 0;
+    var o = { prepay: 0, card: dc, tier: defaultTier(dc, info && info.model), cardOn: !!dc }, best = 0;
     info.p.forEach(function (p) { best = Math.max(best, calc(info, p, o).saving); });
     return best;
   }
   // 처음 선택된 카드·실적 구간 — 스킨 SUB_TAB_CONFIG 의 defaultCard · defaultTier 가 비어 있으면 데이터센터 정책 SUB_POLICY.defaults (관리자 › 구독 혜택 정책 › 기본 기준)
   function defaultCard() { return CFG.defaultCard || (POL.defaults && POL.defaults.card) || ''; }
-  function defaultTier(name) {
+  function defaultTier(name, model) {
     var cd = window.SUB_CARDS && window.SUB_CARDS[name];
     if (!cd) return '';
     var tiers = Object.keys(cd.t);
-    var want = CFG.defaultTier || (POL.defaults && POL.defaults.tier) || '';
+    var want = CFG.defaultTier || tierByModel(model || state.model) || (POL.defaults && POL.defaults.tier) || '';
     return tiers.indexOf(want) >= 0 ? want : tiers[0];
+  }
+  // 모델별 처음 실적 구간 — 정책 defaults.tierByModel { 모델 또는 모델 앞글자: 구간 } 에서 가장 길게 맞는 것 (예: 'WD90H25': '70만↑' → AI 콤보 전 색상·수납함) · 2026-11-02
+  function tierByModel(model) {
+    var map = (POL.defaults && POL.defaults.tierByModel) || {}, m = norm(model || ''), best = '', len = -1;
+    if (!m) return '';
+    for (var k in map) { var kk = norm(k); if (kk && m.indexOf(kk) === 0 && kk.length > len) { best = String(map[k] || ''); len = kk.length; } }
+    return best;
   }
   function setModel(m, cb) {
     state.model = m; state.info = null; state.year = 0; state.type = ''; state.cycle = 0;
@@ -409,7 +428,8 @@ function main() {
         } else state.min = 0;
         if (state.card && cardNames().indexOf(state.card) < 0) state.card = '';
         var defCard = defaultCard();
-        if (!state.card && cardNames().indexOf(defCard) >= 0) { state.card = defCard; state.tier = defaultTier(defCard); }
+        if (!state.card && cardNames().indexOf(defCard) >= 0) { state.card = defCard; state.tier = defaultTier(defCard, m); }
+        else if (state.card && !state.tierSet) state.tier = defaultTier(state.card, m);   // 실적 구간을 직접 고르기 전엔 모델별 기본 구간을 따라간다
         if (cb) cb();
       }); });
     });
@@ -423,7 +443,7 @@ function main() {
   window.SUB_CALC = {
     policy: function () { return POL; },
     getInfo: getInfo, calc: calc, plansOf: plansOf, findPlan: findPlan,
-    prepayMax: prepayMax, prepayRate: prepayRate, cardNames: cardNames, cardMonthly: cardMonthly,
+    prepayMax: prepayMax, prepayRate: prepayRate, defaultPrepay: defaultPrepay, tierByModel: tierByModel, cardNames: cardNames, cardMonthly: cardMonthly,
     splitCare: splitCare, joinCare: joinCare, typeOrder: TYPE_ORDER, typeLabel: TYPE_LABEL,
     defaultCard: function () { return defaultCard(); }, defaultTier: function (c) { return defaultTier(c); },
     autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt, pointsOf: pointsOf, pointPromos: pointPromos, memberPoints: memberPoints, modelPointOf: modelPointOf, siblings: siblings, siblingList: siblingList, cheapestOf: cheapestOf, subOnlyOf: subOnlyOf,
@@ -437,7 +457,9 @@ function main() {
     if (years.indexOf(state.year) < 0) {
       // 최장 약정 중 가장 저렴한 케어 (탭 라벨의 "월 X원~" 과 맞춘다)
       state.year = years[years.length - 1];
-      var cheap = plansOf(info, state.year).sort(function (a, b) { return a[3] - b[3]; })[0];
+      var inY = plansOf(info, state.year).sort(function (a, b) { return a[3] - b[3]; });
+      var free = inY.filter(function (p) { return splitCare(p[1])[0] === '무상수리'; });   // 기본 케어 = 무상수리 (없는 모델은 가장 저렴한 케어)
+      var cheap = (free.length ? free : inY)[0];
       var sc = splitCare(cheap[1]); state.type = sc[0]; state.cycle = sc[1];
     }
     var inYear = plansOf(info, state.year);
@@ -452,7 +474,8 @@ function main() {
     if (state.type === '무상수리' || !cycles.length) state.cycle = 0;   // 주기가 없는 유형은 0
     else if (cycles.indexOf(state.cycle) < 0) state.cycle = cycles.indexOf(12) >= 0 ? 12 : cycles[0];
     var maxR = prepayMax(info);
-    if (state.prepay > maxR + 1e-9) state.prepay = 0;
+    if (!state.prepaySet) state.prepay = defaultPrepay(info);   // 고객이 고르기 전엔 정책 기본값(선납 40% · 품목 한도 안) — 모델이 바뀌어도 다시 계산
+    else if (state.prepay > maxR + 1e-9) state.prepay = 0;
     return { years: years, types: types, cycles: cycles, inYear: inYear };
   }
 
@@ -590,7 +613,12 @@ function main() {
 
     // 선납금
     var maxR = prepayMax(info);
-    h += '<fieldset class="subtab-field"><legend>선납금<small>선납 시 월 구독료가 즉시 낮아집니다</small></legend><div class="subtab-grid subtab-grid--2">';
+    var helpTxt = String(POL.prepay.help || '');
+    h += '<fieldset class="subtab-field"><legend>선납금' +
+      (helpTxt ? '<button type="button" class="subtab-help" data-help="prepay" aria-label="선납금 안내 보기" aria-expanded="' + (state.help.prepay ? 'true' : 'false') + '">?</button>' : '') +
+      '<small>선납 시 월 구독료가 즉시 낮아집니다</small></legend>' +
+      (helpTxt && state.help.prepay ? '<p class="subtab-sub subtab-help-text" role="note">' + esc(helpTxt) + '</p>' : '') +
+      '<div class="subtab-grid subtab-grid--2">';
     [0].concat((POL.prepay.steps || []).filter(function (s) { return s <= maxR + 1e-9; })).forEach(function (s) {
       var rr = calc(info, plan, { prepay: s, cardOn: false });
       var title = s ? '선납 ' + Math.round(s * 100) + '%<em class="subtab-tag">할인 ' + Math.round(rr.prepayRate * 100) + '%</em>' : '선납 없음';
@@ -764,7 +792,9 @@ function main() {
     } else if (t.hasAttribute('data-cycle')) {
       state.cycle = +t.getAttribute('data-cycle'); renderPanel(); track('sub_tab_cycle', { sub_cycle: state.cycle });
     } else if (t.hasAttribute('data-prepay')) {
-      state.prepay = +t.getAttribute('data-prepay'); renderPanel(); track('sub_tab_prepay', { sub_prepay: state.prepay });
+      state.prepay = +t.getAttribute('data-prepay'); state.prepaySet = true; renderPanel(); track('sub_tab_prepay', { sub_prepay: state.prepay });
+    } else if (t.hasAttribute('data-help')) {
+      var hk = t.getAttribute('data-help'); state.help[hk] = !state.help[hk]; renderPanel(); track('sub_tab_help', { sub_help: hk, sub_open: !!state.help[hk] });
     } else if (t.hasAttribute('data-cta')) {
       track('sub_tab_cta', { sub_cta: t.getAttribute('data-cta'), sub_year: state.year, sub_care: joinCare(state.type, state.cycle) });
       if (t.getAttribute('data-cta') === 'lump' && t.getAttribute('href') === '#') { ev.preventDefault(); openLump(); }
@@ -772,8 +802,8 @@ function main() {
   }
   function onChange(ev) {
     var t = ev.target;
-    if (t.hasAttribute('data-card')) { state.card = t.value; state.tier = defaultTier(t.value); state.cardOn = !!t.value; }
-    else if (t.hasAttribute('data-tier')) state.tier = t.value;
+    if (t.hasAttribute('data-card')) { state.card = t.value; state.tier = defaultTier(t.value); state.tierSet = false; state.cardOn = !!t.value; }
+    else if (t.hasAttribute('data-tier')) { state.tier = t.value; state.tierSet = true; }
     else if (t.hasAttribute('data-cardon')) state.cardOn = t.checked;
     else return;
     renderPanel();
@@ -787,7 +817,11 @@ function main() {
   var pageModel = '';
   function familyOf(model) {
     if (window.SUB_FAMILY) return window.SUB_FAMILY(model);
-    var m = /^(.*\d)([A-Z]+?)(N\d)?$/.exec(String(model || '').toUpperCase());
+    var s = String(model || '').toUpperCase();
+    // 세탁건조기 AI 콤보(WD90H25AHW · BHW · AHWN1 · BHWN1 …)는 A/B 가 출시 차수 차이라 한 묶음 — 구독 전용 AHW·AHWN1 이 BHW·BHWN1 상품 페이지에도 "최저가 · 구독 전용" 칩으로 보인다 (2026-11-02)
+    var c = /^(WD\d+H\d+)[A-Z](H)([A-Z])(N\d)?$/.exec(s);
+    if (c) return c[1] + c[2] + (c[4] || '');
+    var m = /^(.*\d)([A-Z]+?)(N\d)?$/.exec(s);
     if (!m) return model;
     var letters = m[2], keep = letters.length >= 3 ? letters.slice(0, -1) : '';
     return m[1] + keep + (m[3] || '');

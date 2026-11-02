@@ -3085,9 +3085,10 @@ function renderSubPolicy(){
   h.push(`<div class="spol-sec"><h4>기본 기준 · 상담 연락처 ${spStamp(up.defaults)}</h4>
     <div class="spol-row"><label>처음 선택되는 제휴카드 <select class="in" id="sp_def_card">${cardOpts.map(c=>`<option ${c===D.card?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
       <label>실적 구간 <input class="in" id="sp_def_tier" value="${esc(D.tier||'')}" placeholder="30만↑" style="width:90px"></label>
+      <label title="모델(또는 모델 앞글자)=구간 · 쉼표로 여럿 · 예: WD90H25=70만↑ (AI 콤보 전 색상·수납함)">모델별 실적 구간 <input class="in" id="sp_def_tierby" value="${esc(Object.entries(D.tierByModel||{}).map(([k,v])=>k+'='+v).join(', '))}" placeholder="WD90H25=70만↑" style="width:200px"></label>
       <label>전화 <input class="in" id="sp_def_tel" value="${esc(D.tel||'')}" placeholder="031-8042-3166" style="width:140px"></label></div>
     <div class="spol-row"><label style="flex:1;min-width:300px">상담 신청 주소 <input class="in" id="sp_def_consult" value="${esc(D.consultUrl||'')}" style="flex:1"></label>
-      <button class="btn sm" onclick="spSave('defaults',()=>({card:$('sp_def_card').value,tier:$('sp_def_tier').value.trim(),consultUrl:$('sp_def_consult').value.trim(),tel:$('sp_def_tel').value.trim()}))">저장</button></div>
+      <button class="btn sm" onclick="spSave('defaults',()=>({card:$('sp_def_card').value,tier:$('sp_def_tier').value.trim(),tierByModel:spPairs($('sp_def_tierby').value),consultUrl:$('sp_def_consult').value.trim(),tel:$('sp_def_tel').value.trim()}))">저장</button></div>
     <p class="spol-hint">상품상세 구독탭 머리의 금액·"카드 적용 시 최대 ○원 저렴" 배지, 구독센터 목록의 "카드 할인 시" 금액, 상세의 처음 선택값이 모두 이 카드·실적 구간으로 계산됩니다. 실적 구간은 카드 금액표의 구간 이름 그대로 (없는 이름이면 가장 낮은 구간). 전화를 비우면 전화 버튼이 빠집니다.</p></div>`);
   /* 1 자동납부 */
   h.push(`<div class="spol-sec"><h4>자동납부 할인 ${spStamp(up.autopay)}</h4>
@@ -3103,12 +3104,14 @@ function renderSubPolicy(){
       <div><div class="spol-hint" style="margin:0 0 6px">선납 비율 → 선납 할인율 (고객에게 보이는 버튼 순서대로)</div>
         <table class="spol-t"><thead><tr><th>선납</th><th>할인</th><th></th></tr></thead><tbody id="sp_steps">${steps.map(([s,r])=>spStepRow(s,r)).join('')}</tbody></table>
         <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_steps').insertAdjacentHTML('beforeend',spStepRow('',''))">+ 단계</button>
-        <div class="spol-row" style="margin-top:10px"><label>규칙에 없는 품목의 최대 선납 <input class="in num" id="sp_defmax" value="${esc(spPct(R.defaultMax??0.5))}"> %</label></div></div>
+        <div class="spol-row" style="margin-top:10px"><label>규칙에 없는 품목의 최대 선납 <input class="in num" id="sp_defmax" value="${esc(spPct(R.defaultMax??0.5))}"> %</label></div>
+        <div class="spol-row" style="margin-top:6px"><label title="고객이 고르기 전에 선택돼 있는 선납 비율 · 품목 한도를 넘으면 한도 안의 가장 큰 단계 · 0 이면 선납 없음">처음 선택되는 선납 <input class="in num" id="sp_initial" value="${esc(spPct(R.initial??0))}"> %</label></div></div>
       <div><div class="spol-hint" style="margin:0 0 6px">품목별 최대 선납 비율 (비우면 기본값) · 아래 이름 규칙이 먼저 적용됩니다</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px" id="sp_maxcat">${cats.map(c=>`<label style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:calc(12px * var(--font-scale))"><span>${esc(c)}</span><span><input class="in num" data-cat="${esc(c)}" value="${esc(spPct((R.maxByCat||{})[c]))}" style="width:56px"> %</span></label>`).join('')}</div>
         <div class="spol-hint" style="margin:10px 0 6px">이름 규칙: 품목 안에서 모델 이름에 이 글자가 들어가면 (예: 의류케어 › 에어드레서 50%)</div>
         <table class="spol-t"><thead><tr><th>품목</th><th>이름에 포함</th><th>최대</th><th></th></tr></thead><tbody id="sp_byname">${(R.maxByName||[]).map(m=>spNameRow(m,cats)).join('')}</tbody></table>
         <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_byname').insertAdjacentHTML('beforeend',spNameRow({},${JSON.stringify(cats).replace(/"/g,'&quot;')}))">+ 규칙</button></div></div>
+    <div class="spol-hint" style="margin-top:10px">선납금 옆 ? 아이콘을 누르면 보이는 안내 (비우면 아이콘 없음)</div><input class="in" id="sp_prehelp" value="${esc(R.help||'')}" style="width:100%;box-sizing:border-box" placeholder="일시불 구매보다 일부 선납후 구독 전환하면 A/S 기간 및 추가 할인이 가능합니다.">
     <div class="spol-hint" style="margin-top:10px">선납금 아래 안내 (한 줄에 한 문장)</div><textarea class="in" id="sp_prenotes">${esc((R.notes||[]).join('\n'))}</textarea>
     <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSavePrepay()">선납 정책 저장</button></div></div>`);
   /* 3 카드 */
@@ -3152,6 +3155,7 @@ function renderSubPolicy(){
   if((d.log||[]).length) h.push(`<div class="spol-sec"><h4>최근 바뀐 것 <small>20건</small></h4><div class="spol-log">${d.log.map(l=>`<div>${esc(l.at)} · ${esc({policy:'정책',card:'카드',promo:'행사',point:'모델 포인트'}[l.kind]||l.kind)} <b>${esc(l.key)}</b> · ${esc(l.by||'')}</div>`).join('')}</div></div>`);
   $('spolBody').innerHTML=h.join('');
 }
+function spPairs(v){ const o={}; String(v||'').split(/[,\n]/).forEach(x=>{ const i=x.indexOf('='); if(i<1) return; const k=x.slice(0,i).trim().toUpperCase(), t=x.slice(i+1).trim(); if(k&&t) o[k]=t; }); return o; }
 function spStepRow(s,r){ return `<tr><td><input class="in num" data-k="step" value="${esc(spPct(s))}" style="width:56px"> %</td><td><input class="in num" data-k="rate" value="${esc(spPct(r))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
 function spNameRow(m,cats){ return `<tr><td><select class="in" data-k="cat">${cats.map(c=>`<option ${c===m.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></td><td><input class="in" data-k="contains" value="${esc(m.contains||'')}"></td><td><input class="in num" data-k="max" value="${esc(spPct(m.max))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
 async function spSave(key, make){
@@ -3164,7 +3168,8 @@ function spSavePrepay(){
     $('sp_steps').querySelectorAll('tr').forEach(tr=>{ const s=spRate(tr.querySelector('[data-k=step]').value), r=spRate(tr.querySelector('[data-k=rate]').value); if(s==null) return; steps.push(s); if(r!=null) rates[String(s)]=r; });
     const maxByCat={}; $('sp_maxcat').querySelectorAll('input[data-cat]').forEach(i=>{ const r=spRate(i.value); if(r!=null) maxByCat[i.dataset.cat]=r; });
     const maxByName=[]; $('sp_byname').querySelectorAll('tr').forEach(tr=>{ const c=tr.querySelector('[data-k=cat]').value, t=tr.querySelector('[data-k=contains]').value.trim(), m=spRate(tr.querySelector('[data-k=max]').value); if(!t && m==null) return; maxByName.push({cat:c,contains:t,max:m}); });
-    return {steps, rates, defaultMax:spRate($('sp_defmax').value)??0.5, maxByCat, maxByName, notes:spLines($('sp_prenotes').value)};
+    const initial=spRate($('sp_initial').value), help=$('sp_prehelp').value.trim();
+    return {steps, rates, defaultMax:spRate($('sp_defmax').value)??0.5, maxByCat, maxByName, notes:spLines($('sp_prenotes').value), ...(initial!=null?{initial}:{}), ...(help?{help}:{})};
   });
 }
 async function spSaveCard(tr){
