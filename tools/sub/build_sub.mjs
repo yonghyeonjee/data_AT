@@ -101,7 +101,14 @@ export function checkPolicy(pol) {
   for (const [k, v] of Object.entries(pp.maxByCat || {})) rate(v, 'prepay.maxByCat.' + k);
   (pp.maxByName || []).forEach((m, i) => { if (!m.cat || !m.contains) err.push(`prepay.maxByName[${i}]: cat, contains 가 필요합니다`); rate(m.max, `prepay.maxByName[${i}].max`); });
   for (const [name, c] of Object.entries(pol.cards || {})) period(c, 'cards.' + name);
-  (pol.promos || []).forEach((p, i) => { if (!p.text) err.push(`promos[${i}]: text 가 필요합니다`); period(p, `promos[${i}]`); });
+  (pol.promos || []).forEach((p, i) => {
+    if (!p.text) err.push(`promos[${i}]: text 가 필요합니다`); period(p, `promos[${i}]`);
+    // 포인트 지원 (mvp_257): 개월 수 1~72 · 금액은 양의 정수 · 모델별 금액표는 {모델: 원}
+    if (p.months != null && !(Number.isInteger(p.months) && p.months >= 1 && p.months <= 72)) err.push(`promos[${i}].months: 1~72 정수여야 합니다 (현재 ${JSON.stringify(p.months)})`);
+    if (p.amount != null && !(Number.isInteger(p.amount) && p.amount > 0)) err.push(`promos[${i}].amount: 양의 정수여야 합니다 (현재 ${JSON.stringify(p.amount)})`);
+    if (p.amounts != null) { if (typeof p.amounts !== 'object') err.push(`promos[${i}].amounts: {모델: 금액} 객체여야 합니다`);
+      else for (const [m, v] of Object.entries(p.amounts)) if (!(Number.isInteger(v) && v > 0)) err.push(`promos[${i}].amounts.${m}: 양의 정수여야 합니다 (현재 ${JSON.stringify(v)})`); }
+  });
   const df = pol.defaults;   // 공통 기준값 (mvp_253) — 기본 카드·실적 구간 · 상담 주소 · 전화
   if (df != null) {
     if (typeof df !== 'object' || !String(df.card || '').trim()) err.push('defaults.card: 기본 제휴카드 이름이 필요합니다');

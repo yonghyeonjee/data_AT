@@ -3097,9 +3097,9 @@ function renderSubPolicy(){
     <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSave('card_notes',()=>spLines($('sp_cardnotes').value))">공통 유의사항 저장</button></div></div>`);
   /* 4 행사 */
   const ST={on:['진행 중','y'],soon:['예정','n'],ended:['끝남','n'],off:['꺼짐','n']};
-  h.push(`<div class="spol-sec"><h4>행사 문구 <small>기간·대상이 맞을 때만 구독탭 혜택 목록에 한 줄로 나갑니다 (금액 계산에는 들어가지 않음)</small></h4>
+  h.push(`<div class="spol-sec"><h4>행사 문구 <small>기간·대상이 맞을 때만 구독탭 혜택 목록에 한 줄로 나갑니다. 포인트 지원(개월 수·금액)을 적은 행사는 결제 예상액에서 빼서 "실제 구독료" 로 계산됩니다 (최장 약정 선택 시)</small></h4>
     <table class="spol-t"><thead><tr><th>상태</th><th>문구</th><th>기간</th><th>대상</th><th class="num">순서</th><th></th></tr></thead><tbody>
-    ${promos.length?promos.map(p=>`<tr><td><span class="tag ${ST[p.state][1]}">${ST[p.state][0]}</span></td><td>${esc(p.text)}${p.note?`<div class="spol-hint" style="margin:0">${esc(p.note)}</div>`:''}</td>
+    ${promos.length?promos.map(p=>`<tr><td><span class="tag ${ST[p.state][1]}">${ST[p.state][0]}</span></td><td>${esc(p.text)}${spPointChip(p)}${p.note?`<div class="spol-hint" style="margin:0">${esc(p.note)}</div>`:''}</td>
       <td style="white-space:nowrap">${esc(p.from||'')}${p.from||p.to?' ~ ':'상시'}${esc(p.to||'')}</td>
       <td>${(p.cats||[]).map(c=>`<span class="spol-chip">${esc(c)}</span>`).join('')}${(p.models||[]).map(c=>`<span class="spol-chip mono">${esc(c)}</span>`).join('')}${(p.goods||[]).map(c=>`<span class="spol-chip">#${esc(c)}</span>`).join('')}${!(p.cats||[]).length&&!(p.models||[]).length&&!(p.goods||[]).length?'<span class="spol-chip">전체</span>':''}</td>
       <td class="num">${n(p.sort)}</td>
@@ -3146,17 +3146,33 @@ async function spPromoEdit(id){
       <div><div class="spol-hint" style="margin:0 0 3px">대상 품목 (아무것도 안 고르면 전체)</div><div id="pm_cats" style="display:flex;flex-wrap:wrap;gap:4px">${cats.map(c=>`<label class="tag ${(p.cats||[]).includes(c)?'y':'n'}" style="cursor:pointer"><input type="checkbox" value="${esc(c)}" ${(p.cats||[]).includes(c)?'checked':''} style="display:none" onchange="this.parentNode.className='tag '+(this.checked?'y':'n')">${esc(c)}</label>`).join('')}</div></div>
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 모델번호 (쉼표로 여러 개 · 비우면 전체)</div><input class="in mono" id="pm_models" value="${esc((p.models||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 고도몰 상품번호 (쉼표 · 비우면 전체)</div><input class="in mono" id="pm_goods" value="${esc((p.goods||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
-      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용)</div><input class="in" id="pm_note" value="${esc(p.note||'')}" style="width:100%;box-sizing:border-box"></label></div>`,
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용)</div><input class="in" id="pm_note" value="${esc(p.note||'')}" style="width:100%;box-sizing:border-box"></label>
+      <div style="border-top:1px dashed var(--line,#ddd);padding-top:8px"><div class="spol-hint" style="margin:0 0 6px"><b>포인트 지원</b> (삼성 "N개월 구독료 상당 포인트" 행사일 때만 · 비우면 문구만 나갑니다) — 금액 우선순위: 모델별 금액 → 공통 금액 → 개월 수 × 고객이 고른 요금제 월 구독료</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><label><div class="spol-hint" style="margin:0 0 3px">지원 개월 수</div><input class="in num" id="pm_months" value="${esc(p.months??'')}" style="width:70px" placeholder="6"></label>
+          <label><div class="spol-hint" style="margin:0 0 3px">공통 금액 (원 · 모델마다 다르면 아래 표)</div><input class="in num" id="pm_amount" value="${esc(p.amount??'')}" style="width:120px" placeholder="540000"></label>
+          <label style="display:flex;align-items:center;gap:6px;padding-bottom:6px;cursor:pointer"><input type="checkbox" id="pm_maxterm" ${p.maxTerm===false?'':'checked'}> 최장 약정을 골랐을 때만 지급 (삼성 기준)</label></div>
+        <label style="display:block;margin-top:6px"><div class="spol-hint" style="margin:0 0 3px">모델별 금액표 (한 줄에 <span class="mono">모델번호 금액</span> · 삼성 "N개월 대상모델 LIST" 를 그대로 붙여 넣어도 됩니다 · 여기 적은 모델은 대상 모델번호에도 자동으로 들어갑니다)</div><textarea class="in mono" id="pm_amounts" rows="4" style="width:100%;box-sizing:border-box" placeholder="WD90H25AHW 540000&#10;RF85DB9792AP 420000">${esc(Object.entries(p.amounts||{}).map(([k,v])=>k+' '+v).join('\n'))}</textarea></label></div></div>`,
     collect:()=>{ const t=$('pm_text').value.trim(); if(!t) throw new Error('문구를 적어 주세요');
+      const months=$('pm_months').value.trim()?Number($('pm_months').value):null; if(months!=null && !(Number.isInteger(months)&&months>=1&&months<=72)) throw new Error('지원 개월 수는 1~72 사이 숫자여야 합니다');
+      const amount=$('pm_amount').value.replace(/[^0-9]/g,'')?Number($('pm_amount').value.replace(/[^0-9]/g,'')):null;
+      const amounts={}; $('pm_amounts').value.split(/\r?\n/).forEach((ln,i)=>{ ln=ln.trim(); if(!ln) return; const m=/^([A-Za-z0-9\-\/]+)[\s,\t:=]+([0-9][0-9,\.]*)\s*(원)?/.exec(ln); if(!m) throw new Error((i+1)+'번째 줄을 읽지 못했습니다: "'+ln+'" (예: WD90H25AHW 540000)'); amounts[m[1].toUpperCase()]=Number(m[2].replace(/[^0-9]/g,'')); });
+      let models=spCsv($('pm_models').value).map(x=>x.toUpperCase()); Object.keys(amounts).forEach(m=>{ if(!models.includes(m)) models.push(m); });
       return {id:p.id, text:t, from:$('pm_from').value||null, to:$('pm_to').value||null, sort:Number($('pm_sort').value)||100, active:p.active!==false,
-              cats:[...$('pm_cats').querySelectorAll('input:checked')].map(i=>i.value), models:spCsv($('pm_models').value), goods:spCsv($('pm_goods').value), note:$('pm_note').value.trim()}; }});
+              cats:[...$('pm_cats').querySelectorAll('input:checked')].map(i=>i.value), models, goods:spCsv($('pm_goods').value), note:$('pm_note').value.trim(),
+              months, amount, amounts:Object.keys(amounts).length?amounts:null, maxTerm:$('pm_maxterm').checked}; }});
   if(!data) return;
   try{ await rpc('fn_sub_promo_save',{p_data:data}); toast('행사 문구를 저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+/* 행사의 포인트 지원 요약 칩 (mvp_257) */
+function spPointChip(p){
+  if(!(p.months>0||p.amount>0||(p.amounts&&Object.keys(p.amounts).length))) return '';
+  const n=p.amounts?Object.keys(p.amounts).length:0;
+  return `<div style="margin-top:2px"><span class="spol-chip" style="background:#fff3e8;border-color:#f3c7a0;color:#b4480b">★ 포인트 ${p.months?p.months+'개월':''}${p.amount?' 공통 '+fmt(p.amount)+'원':''}${n?' 모델별 '+n+'개':''}${p.maxTerm===false?' · 모든 약정':' · 최장 약정만'}</span></div>`;
 }
 async function spPromoToggle(id,on){
   const p=(SPOL&&SPOL.promos||[]).find(x=>x.id===id); if(!p) return;
   try{
-    if(on) await rpc('fn_sub_promo_save',{p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,sort:p.sort,note:p.note,active:true}});
+    if(on) await rpc('fn_sub_promo_save',{p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,sort:p.sort,note:p.note,active:true,months:p.months,amount:p.amount,amounts:p.amounts,maxTerm:p.maxTerm!==false}});
     else await rpc('fn_sub_promo_remove',{p_id:id});
     toast(on?'다시 켰습니다':'껐습니다 (기록은 남습니다)','ok'); loadSubPolicy(true);
   }catch(e){ toast(e.message,'bad'); }

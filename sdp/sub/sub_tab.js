@@ -126,16 +126,37 @@ function main() {
     var cards = window.SUB_CARDS || {}, pc = POL.cards || {};
     return Object.keys(cards).filter(function (n) { return !pc[n] || inPeriod(pc[n]); });
   }
-  // 이 상품에 해당하는 행사 문구 (기간 + 대상 품목/모델/상품번호)
-  function promoTexts(info) {
+  // 이 상품에 해당하는 행사 (기간 + 대상 품목/모델/상품번호) — 문구 노출과 포인트 지원 금액 계산이 같은 조건을 쓴다
+  function promoHits(info) {
+    var model = (info && info.model) || state.model;
     return (POL.promos || []).filter(function (p) {
-      if (!p || !p.text || !inPeriod(p)) return false;
+      if (!p || !inPeriod(p)) return false;
       if (p.cats && p.cats.length && p.cats.indexOf(info.cat) < 0) return false;
-      if (p.models && p.models.length && p.models.map(norm).indexOf(state.model) < 0) return false;
+      if (p.models && p.models.length && p.models.map(norm).indexOf(model) < 0) return false;
       if (p.goods && p.goods.length && p.goods.map(String).indexOf(String(CFG.goodsNo)) < 0) return false;
       return true;
-    }).map(function (p) { return p.text; });
+    });
   }
+  function promoTexts(info) { return promoHits(info).filter(function (p) { return !!p.text; }).map(function (p) { return p.text; }); }
+  /* N개월 구독료 상당 포인트 지원 (삼성 AI 구독 페스티벌 · 관리자 › 구독 혜택 정책 › 행사 문구에 개월 수·금액을 적으면 켜진다 · mvp_257)
+     금액 = 모델별 금액표(amounts[모델]) → 모델 공통 금액(amount) → 개월 수 × 선택 요금제의 월 구독료(할인 전)
+     maxTerm(기본 true) 이면 그 모델의 최장 약정을 골랐을 때만 지급 (삼성 기준 "최장 계약기간 적용") */
+  function pointPromos(info) {
+    return promoHits(info).filter(function (p) { return (p.months > 0) || (p.amount > 0) || (p.amounts && typeof p.amounts === 'object'); });
+  }
+  function maxYears(info) { var y = 0; info.p.forEach(function (x) { if (x[0] > y) y = x[0]; }); return y; }
+  function pointsOf(info, plan) {
+    var ps = pointPromos(info); if (!ps.length) return null;
+    var model = (info && info.model) || state.model, my = maxYears(info), best = null;
+    ps.forEach(function (p) {
+      if (p.maxTerm !== false && plan[0] !== my) return;
+      var amt = (p.amounts && +p.amounts[model]) || (+p.amount) || (p.months > 0 ? Math.round(p.months * plan[3]) : 0);
+      if (amt > 0 && (!best || amt > best.amt)) best = { amt: amt, months: +p.months || 0, text: p.text || '', maxTerm: p.maxTerm !== false };
+    });
+    return best;
+  }
+  // 일시불 비교에 쓸 가격 — 상품 페이지의 모델일 때만 (같은 모델 다른 색상·구독 전용 모델로 바꾸면 이 상품의 일시불가와 비교하지 않는다)
+  function lumpFor(model) { return (pageModel && model && model !== pageModel) ? 0 : (CFG.lumpPrice || 0); }
 
   // 한 요금제의 모든 혜택 계산
   function calc(info, plan, o) {
@@ -157,8 +178,12 @@ function main() {
     r.cardTotal = Math.round(r.cardMonthly * months);
     r.finalMonthly = Math.max(0, r.monthlyPay - r.cardMonthly);
     r.expected = total - r.prepayDisc - r.autoDisc - r.cardTotal;   // 선납금 포함 실제 결제 총액
-    var lump = CFG.lumpPrice || 0;
-    r.saving = (lump > 0 && r.expected < lump && CFG.lumpCompare !== 'never') ? lump - r.expected : 0;
+    // N개월 구독료 상당 포인트 지원 (mvp_257) — 결제 총액에서 빼서 "실제 구독료" 로 보여준다 (포인트는 결제 뒤 지급되므로 월 납부액은 그대로)
+    var pt = pointsOf(info, plan);
+    r.points = pt ? pt.amt : 0; r.pointsInfo = pt;
+    r.expectedNet = r.expected - r.points;
+    var lump = lumpFor(info && info.model);
+    r.saving = (lump > 0 && r.expectedNet < lump && CFG.lumpCompare !== 'never') ? lump - r.expectedNet : 0;
     return r;
   }
   function opts() { return { prepay: state.prepay, card: state.card, tier: state.tier, cardOn: state.cardOn }; }
@@ -330,7 +355,7 @@ function main() {
   function getInfo(model, cb) {
     if (merged.hasOwnProperty(model)) return cb(merged[model]);
     var e = IDX.m[model];
-    function done(file) { merged[model] = mergeInfo(file, OVR[model], e && IDX.cats[e[0]]); cb(merged[model]); }
+    function done(file) { merged[model] = mergeInfo(file, OVR[model], e && IDX.cats[e[0]]); if (merged[model]) merged[model].model = model; cb(merged[model]); }
     if (!e) return done(null);
     loadScript('sub_plans_' + e[0] + '.js', function () { return !!(window.SUB_PLANS && window.SUB_PLANS[e[0]]); },
       function () { done(window.SUB_PLANS[e[0]][model]); });
@@ -386,7 +411,7 @@ function main() {
     prepayMax: prepayMax, prepayRate: prepayRate, cardNames: cardNames, cardMonthly: cardMonthly,
     splitCare: splitCare, joinCare: joinCare, typeOrder: TYPE_ORDER, typeLabel: TYPE_LABEL,
     defaultCard: function () { return defaultCard(); }, defaultTier: function (c) { return defaultTier(c); },
-    autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt,
+    autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt, pointsOf: pointsOf, pointPromos: pointPromos, siblings: siblings,
     ready: function (cb) { loadCards(function () { loadPolicy(cb); }); }   // 카드표·정책을 받은 뒤 계산해야 금액이 구독탭과 같다
   };
   if (CFG.apiOnly) return;
@@ -447,7 +472,7 @@ function main() {
   // 탭 머리는 "총 ○○○원 (○○만원 저렴)" 만 — 월 납부액·조건은 패널에서 (2026-10-29)
   function shortWon(v) { return v >= 10000 ? fmt(Math.floor(v / 10000)) + '만원' : fmt(v) + '원'; }
   function setHeadPrice(r) {
-    els.subPrice.textContent = '총 ' + fmt(r.expected) + '원';
+    els.subPrice.textContent = '총 ' + fmt(r.expectedNet) + '원';
     els.subMonth.textContent = r.saving > 0 ? '(' + shortWon(r.saving) + ' 저렴)' : '';
   }
   function renderHead() {
@@ -500,10 +525,11 @@ function main() {
     var sel = normalizeSelection(info);
     var plan = findPlan(info, state.year, joinCare(state.type, state.cycle));
     var r = calc(info, plan, opts());
-    var lump = CFG.lumpPrice || 0, maxYear = sel.years[sel.years.length - 1];
+    var lump = lumpFor(state.model), maxYear = sel.years[sel.years.length - 1];
     var h = '';
 
     h += '<p class="subtab-model">구독 모델 <b>' + esc(state.model) + '</b>' + (info.s ? ' · ' + esc(segLabel(info.s)) : '') + '</p>';
+    h += siblingsHtml(info);
     // 요약(저렴한 금액 또는 월 구독료)만 먼저 보여주고, 약정·케어·선납·카드 선택과 결제 예상 내역은 [조건별 구독가 확인하기] 안에 접어 둔다
     var top = h; h = '';
 
@@ -513,6 +539,11 @@ function main() {
       h += optBtn('data-year="' + y + '"', y === state.year,
         (y === maxYear ? '<i class="subtab-rec">추천</i>' : '') + '<b>' + y + '년 약정</b><span>' + (y * 12) + '개월 플랜</span>');
     });
+    var pps = pointPromos(info);
+    if (pps.length && !r.points) {
+      var pm = 0; pps.forEach(function (p) { if (p.months > pm) pm = +p.months; });
+      h += '<p class="subtab-sub subtab-sub--point">★ ' + maxYear + '년 약정 선택 시 ' + (pm ? pm + '개월 구독료 상당 ' : '') + '포인트를 지원받을 수 있습니다.</p>';
+    }
     h += '</div></fieldset>';
 
     // 구독 케어 유형
@@ -586,7 +617,11 @@ function main() {
     if (r.prepay) h += row('선납 할인 (선납 ' + Math.round(r.prepay * 100) + '% · ' + Math.round(r.prepayRate * 100) + '%)', '-' + fmt(r.prepayDisc) + '원', 'is-blue');
     h += row(esc(autopayLabel()), '-' + fmt(r.autoDisc) + '원', 'is-blue');
     if (r.cardTotal) h += row('제휴카드 혜택 (' + esc(state.card) + ')', '-' + fmt(r.cardTotal) + '원', 'is-blue');
-    h += row('결제 예상액', fmt(r.expected) + '원', 'is-total');
+    h += row('결제 예상액', fmt(r.expected) + '원', r.points ? '' : 'is-total');
+    if (r.points) {
+      h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', '-' + fmt(r.points) + '원', 'is-blue is-point');
+      h += row('포인트 반영 실제 구독료', fmt(r.expectedNet) + '원', 'is-total');
+    }
     if (r.prepay) h += row('└ 선납금 (신청 시 1회)', fmt(r.prepayAmt) + '원', 'is-muted');
     var cmp = CFG.lumpCompare || 'auto';
     if (lump > 0 && (cmp === 'always' || (cmp === 'auto' && r.saving))) h += row('일시불 구매가', fmt(lump) + '원', 'is-muted');
@@ -600,13 +635,13 @@ function main() {
       '<div class="subtab-savebox" role="note"><span class="subtab-savebox-label">선택한 혜택 적용 시 일시불 구매보다</span>' +
         '<strong>' + fmt(r.saving) + '원 저렴해요</strong>' +
         '<div class="subtab-cmp"><div><em>일시불 구매가</em><b>' + fmt(lump) + '원</b></div><i aria-hidden="true"></i>' +
-        '<div class="is-sub"><em>' + r.years + '년 구독 총액</em><b>' + fmt(r.expected) + '원</b></div></div>' +
+        '<div class="is-sub"><em>' + r.years + (r.points ? '년 실제 구독료<small>포인트 반영</small>' : '년 구독 총액') + '</em><b>' + fmt(r.expectedNet) + '원</b></div></div>' +
         '<span class="subtab-savebox-sub">' + Math.floor(r.saving / lump * 100) + '% 절약 · 월 ' + fmt(r.finalMonthly) + '원 × ' + r.months + '개월' +
         (r.prepay ? ' (선납금 포함)' : '') + '</span></div>' :
       // 아니면 월 구독료 + 총액
       '<div class="subtab-monthbox" role="note"><span class="subtab-monthbox-label">선택한 혜택 적용 시 월 구독료</span>' +
         '<strong>월 ' + fmt(r.finalMonthly) + '원</strong>' +
-        '<span class="subtab-savebox-sub">' + r.years + '년 구독 총액 ' + fmt(r.expected) + '원' + (lump > 0 ? ' · 일시불 ' + fmt(lump) + '원' : '') + '</span></div>';
+        '<span class="subtab-savebox-sub">' + r.years + (r.points ? '년 실제 구독료 ' : '년 구독 총액 ') + fmt(r.expectedNet) + '원' + (r.points ? ' (포인트 ' + fmt(r.points) + '원 반영)' : '') + (lump > 0 ? ' · 일시불 ' + fmt(lump) + '원' : '') + '</span></div>';
     h = top + sum + '<p class="subtab-cond">기준: ' + esc(cond) + '</p>' +
       '<button type="button" class="subtab-acc" data-acc aria-expanded="' + state.open + '">조건별 구독가 확인하기<i aria-hidden="true"></i></button>' +
       '<div class="subtab-acc-body"' + (state.open ? '' : ' hidden') + '>' + h + '</div>';
@@ -622,7 +657,7 @@ function main() {
     var memo = '[' + srcName + '] ' + r.years + '년 · ' + careLabel(r.care) + ' · 월 ' + fmt(r.monthly) + '원' +
       (r.prepay ? ' · 선납 ' + Math.round(r.prepay * 100) + '%' : '') +
       (r.cardTotal ? ' · ' + state.card + ' ' + tierLabel(state.tier) : '') +
-      ' → 월 납부 예상 ' + fmt(r.finalMonthly) + '원';
+      ' → 월 납부 예상 ' + fmt(r.finalMonthly) + '원' + (r.points ? ' · 포인트 ' + fmt(r.points) + '원 (실제 구독료 ' + fmt(r.expectedNet) + '원)' : '');
     var q = 'from=' + encodeURIComponent(CFG.source || 'goods') +
       '&product=' + encodeURIComponent((IDX.m[state.model] && IDX.cats[IDX.m[state.model][0]]) || CFG.productCat || '') +
       '&purpose=' + encodeURIComponent('신규구독') +
@@ -658,7 +693,7 @@ function main() {
   function ctaHtml(consultHref) {
     var tel = CFG.tel || (POL.defaults && POL.defaults.tel) || '';   // 스킨에 없으면 데이터센터 정책의 전화
     if (CFG.cta === 'lump+consult') {
-      var lumpOk = !!CFG.lumpUrl || (CFG.lumpPrice > 0);
+      var lumpOk = (!!CFG.lumpUrl || (CFG.lumpPrice > 0)) && !(pageModel && state.model !== pageModel);
       return '<div class="subtab-cta subtab-cta--two">' +
         (lumpOk ? '<a class="subtab-cta-lump" data-cta="lump" href="' + esc(CFG.lumpUrl || '#') + '">' + esc(CFG.lumpLabel || '시흥몰 가격 확인하기') + '</a>' : '') +
         '<a class="subtab-cta-main" data-cta="consult" href="' + esc(consultHref) + '">' + PHONE_SVG + esc(CFG.consultLabel || '구독 문의하기') + '</a>' +
@@ -691,6 +726,9 @@ function main() {
     } else if (t.hasAttribute('data-tab')) {
       if (t.getAttribute('data-tab') === 'sub') { openSub(); track('sub_tab_open'); }
       else { state.tab = 'lump'; render(); }
+    } else if (t.hasAttribute('data-model')) {
+      var nm = t.getAttribute('data-model');
+      if (nm && nm !== state.model) { setModel(nm, function () { if (!state.info) return; root.hidden = false; render(); }); track('sub_tab_model', { sub_model: nm }); }
     } else if (t.hasAttribute('data-year')) {
       state.year = +t.getAttribute('data-year'); renderPanel(); track('sub_tab_year', { sub_year: state.year });
     } else if (t.hasAttribute('data-type')) {
@@ -714,10 +752,63 @@ function main() {
     track('sub_tab_card', { sub_card: state.cardOn ? state.card + ' ' + state.tier : '' });
   }
 
+  /* ---------- 같은 모델 다른 색상 · 구독 전용 모델 (2026-11-02) ----------
+     같은 품목·세부유형에서 모델명이 색상 글자만 다른 모델(규칙은 구독센터 sub_shop.js 의 SUB_FAMILY 와 같다)을 탭 안에서 바로 바꿔 볼 수 있게 한다.
+     예: WD90H25AHS(다크스틸 · 일반 판매) ↔ WD90H25AHW(화이트 · 구독 전용 — 시흥몰에 일시불 상품이 없음). 구독 전용 모델은 월 구독료가 크게 다를 수 있어 둘 다 보여준다.
+     이름·일시불 유무는 카탈로그(sub_catalog.js · 구독센터와 같은 파일)에서 읽는다 — 형제 모델이 있을 때만 받는다. CFG.siblings === false 면 끈다 (구독센터 상품 페이지는 자체 색상 목록이 있다) */
+  var pageModel = '';
+  function familyOf(model) {
+    if (window.SUB_FAMILY) return window.SUB_FAMILY(model);
+    var m = /^(.*\d)([A-Z]+?)(N\d)?$/.exec(String(model || '').toUpperCase());
+    if (!m) return model;
+    var letters = m[2], keep = letters.length >= 3 ? letters.slice(0, -1) : '';
+    return m[1] + keep + (m[3] || '');
+  }
+  function siblings(model, info) {
+    if (CFG.siblings === false) return [];
+    var e = IDX.m[model]; if (!e) return [];
+    var fam = familyOf(model), P = (window.SUB_PLANS || {})[e[0]] || {}, seg = info && info.s, out = [];
+    for (var m in IDX.m) {
+      if (m === model || IDX.m[m][0] !== e[0] || familyOf(m) !== fam) continue;
+      if (seg && P[m] && P[m].s && P[m].s !== seg) continue;
+      out.push(m);
+    }
+    out.sort(function (a, b) { return IDX.m[a][1] - IDX.m[b][1]; });
+    return out;
+  }
+  var catalogTried = false;
+  function colorOf(m) {
+    var c = window.SUB_CATALOG && window.SUB_CATALOG.m && window.SUB_CATALOG.m[m];
+    var name = c && c[1] ? String(c[1]).replace(/\s*\*+\s*$/, '') : '';
+    var last = name ? name.split(/\s+/).pop() : '';
+    return /^[가-힣]+$/.test(last) && last.length <= 6 ? last : '';   // 상품명 끝의 색상 낱말(다크스틸·그레이지·화이트 …)
+  }
+  function siblingsHtml(info) {
+    var sibs = siblings(state.model, info);
+    if (!sibs.length) return '';
+    if (!window.SUB_CATALOG && !catalogTried) {   // 이름·일시불 유무를 위해 카탈로그를 한 번 받아 온다 (못 받으면 모델명만)
+      catalogTried = true;
+      loadScript('sub_catalog.js', function () { return !!window.SUB_CATALOG; }, function () { if (state.tab === 'sub') renderPanel(); }, function () {});
+    }
+    var all = [pageModel && pageModel !== state.model && sibs.indexOf(pageModel) < 0 ? pageModel : null].filter(Boolean).concat(sibs.indexOf(state.model) < 0 ? [state.model] : [], sibs);
+    // 순서: 상품 페이지 모델 → 나머지는 월 구독료 낮은 순
+    all = all.filter(function (m, i) { return all.indexOf(m) === i; }).sort(function (a, b) { return (a === pageModel ? -1 : b === pageModel ? 1 : 0) || IDX.m[a][1] - IDX.m[b][1]; });
+    var C = window.SUB_CATALOG && window.SUB_CATALOG.m, h = '';
+    all.forEach(function (m) {
+      var c = C && C[m], color = colorOf(m), subOnly = C ? !(c && c[0] > 0) : false, cur = m === state.model;
+      var tag = m === pageModel ? '이 상품' : (subOnly ? '구독 전용' : '');
+      h += '<button type="button" class="subtab-sib' + (cur ? ' is-active' : '') + (subOnly ? ' is-subonly' : '') + '" data-model="' + esc(m) + '" aria-pressed="' + cur + '">' +
+        '<b>' + esc(color || m) + '</b>' + (color ? '<small>' + esc(m) + '</small>' : '') +
+        '<span>월 ' + fmt(IDX.m[m][1]) + '원~</span>' + (tag ? '<em>' + tag + '</em>' : '') + '</button>';
+    });
+    return '<div class="subtab-sibs"><p class="subtab-sibs-t">같은 모델 다른 색상 · 구독 전용 모델 <small>구독 전용은 시흥몰 일시불 판매가 없는 모델로, 월 구독료가 다를 수 있습니다</small></p><div class="subtab-sibs-row">' + h + '</div></div>';
+  }
+
   /* ---------- 옵션 변경 시 모델 다시 결정 ---------- */
   function refreshModel() {
     var m = resolveModel();
     if (!m) return hideTab();   // 선택된 옵션에 구독 모델이 없으면 일시불로 되돌리고 탭 숨김
+    if (!pageModel) pageModel = m;   // 상품 페이지의 모델 (일시불 비교·[이 상품] 표시 기준)
     if (m === state.model) { if (state.info) root.hidden = false; return; }
     setModel(m, function () {
       if (!state.info) return hideTab();

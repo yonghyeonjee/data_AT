@@ -358,7 +358,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   var base = CFG.dataBase || '/data/js/sub/', ver = CFG.ver || IDX.ver, vq = CFG.noVer ? '' : '?v=' + encodeURIComponent(ver);   // 데이터센터는 ?v= 없이 (HTML 의 preload 와 같은 주소)
   function startCalc() {
   window.SUB_TAB_CONFIG = {
-    ver: ver, dataBase: base, noVer: !!CFG.noVer,
+    ver: ver, dataBase: base, noVer: !!CFG.noVer, siblings: false,
     models: [model], goodsNo: goods ? String(goods[0]) : '',
     lumpPrice: goods && goods[3] > 0 ? goods[3] : 0,   // 시흥몰 일시불 판매가 → "일시불보다 ○원 저렴"·"일시불 구매가" 비교가 함께 나온다
     defaultTab: 'sub', enabled: true, lumpOnly: [],
