@@ -42,6 +42,16 @@ async function rpc(fn, body) {
   const r = await fetch(`${URL_}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: DB_KEY, authorization: 'Bearer ' + DB_KEY, 'content-type': 'application/json' }, body: JSON.stringify(body || {}) });
   const t = await r.text(); if (!r.ok) throw new Error(`${fn} ${r.status} ${t.slice(0, 300)}`); return t ? JSON.parse(t) : null;
 }
+// 표를 돌려주는 RPC 는 PostgREST 가 한 번에 최대 1000행만 주고 Range 헤더도 무시하므로 p_offset 으로 1000행씩 이어 받는다 (활성 구독 모델 1131개 · 2026-11-02)
+async function rpcAll(fn, body, want) {
+  const out = [], page = 1000, max = want || 100000;
+  for (let from = 0; from < max; from += page) {
+    const rows = await rpc(fn, { ...body, p_offset: from, p_limit: Math.min(page, max - from) }) || [];
+    out.push(...rows);
+    if (rows.length < page) break;
+  }
+  return out;
+}
 const fetchT = (url, init = {}) => fetch(url, { ...init, headers: { 'user-agent': UA, 'accept-language': 'ko-KR,ko;q=0.9', ...(init.headers || {}) }, signal: AbortSignal.timeout(TIMEOUT_MS), redirect: 'follow' });
 
 /* 구독 상품 페이지 주소 — 품목 slug 는 무엇이든 마지막 모델번호로 상품을 찾아 준다 ('/' 가 든 모델은 그대로 둔다 · subimg 와 같은 규칙) */
@@ -101,7 +111,7 @@ if (process.argv[1] && /collect\.mjs$/.test(process.argv[1].replace(/\\/g, '/'))
   // 대상: [{model, term_months, price, goods_id}]
   let targets;
   if (dbOk) {
-    try { targets = await rpc('fn_sub_point_targets', { p_all: ALL || !!MODELS, p_limit: MODELS ? 5000 : LIMIT, p_key: P_KEY }); }
+    try { targets = await rpcAll('fn_sub_point_targets', { p_all: ALL || !!MODELS, p_key: P_KEY }, MODELS ? 100000 : LIMIT); }
     catch (e) { if (!MODELS) throw e; console.log('대상 조회 실패 → 지정 모델만 기준 총액 없이:', e.message); targets = []; }
   } else {
     if (!MODELS) { console.log('SUPABASE_URL 과 SUPABASE_SERVICE_ROLE_KEY(또는 SUPABASE_ANON_KEY + SUB_POINT_KEY) 가 없습니다 (PC 에서는 --models A,B --dry)'); process.exit(1); }
@@ -116,7 +126,7 @@ if (process.argv[1] && /collect\.mjs$/.test(process.argv[1].replace(/\\/g, '/'))
 
   const rows = [], gidCache = new Map();   // 모델 → goodsId (페이지 하나로 얻은 형제 모델 포함)
   for (const t of targets) if (t.goods_id) gidCache.set(norm(t.model), t.goods_id);
-  let found = 0, missed = 0, errors = 0, pages = 0, i = 0;
+  let found = 0, missed = 0, errors = 0, pages = 0, i = 0; const errSamples = [];   // 오류 표본: 전부 실패했을 때 원인을 fetch 기록(note)에 남긴다 — Actions 로그를 못 볼 때 관리자 화면에서 본다
   async function worker() {
     while (i < targets.length) {
       const t = targets[i++], model = norm(t.model);
@@ -130,7 +140,11 @@ if (process.argv[1] && /collect\.mjs$/.test(process.argv[1].replace(/\\/g, '/'))
           gid = p.goodsId; fromPage = true;
         }
         let mp;
-        try { mp = await membershipPolicy(gid, model, t.price); }
+        try {
+          mp = await membershipPolicy(gid, model, t.price);
+          // 같은 요청에 정률(aiscRate)이 0 으로 오는 때가 간혹 있다(2026-11-02 확인) → 잠깐 뒤 한 번 더 보고 큰 쪽을 쓴다
+          if (!mp.aisc_rate && !mp.apl_point && mp.total_point !== null) { await sleep(SLEEP_MS * 2); const again = await membershipPolicy(gid, model, t.price); if ((again.aisc_rate || 0) > 0 || (again.apl_point || 0) > 0) mp = again; }
+        }
         catch (e) {
           // 캐시된 goodsId 가 낡았을 수 있다 → 페이지에서 다시 찾아 한 번 더
           if (fromPage || /HTTP 5|timeout|aborted|fetch failed/i.test(e.message)) throw e;
@@ -140,7 +154,7 @@ if (process.argv[1] && /collect\.mjs$/.test(process.argv[1].replace(/\\/g, '/'))
         }
         if (mp.aisc_rate === null && mp.total_point === null) { rows.push({ model, goods_id: gid, term_months: t.term_months, price: t.price, err: '포인트 응답에 aiscRate·totalPoint 없음: ' + JSON.stringify(mp.raw).slice(0, 160) }); missed++; }
         else { delete mp.raw; rows.push({ model, goods_id: gid, term_months: t.term_months, price: t.price, ...mp }); found++; }
-      } catch (e) { errors++; console.log(`  ! ${model} ${e.message}`); }   // 일시 오류: 기록하지 않고 다음에 다시
+      } catch (e) { errors++; console.log(`  ! ${model} ${e.message}`); if (errSamples.length < 3) errSamples.push(`${model}: ${e.message.slice(0, 120)}`); }   // 일시 오류: 기록하지 않고 다음에 다시
       await sleep(SLEEP_MS);
     }
   }
@@ -150,10 +164,11 @@ if (process.argv[1] && /collect\.mjs$/.test(process.argv[1].replace(/\\/g, '/'))
   if (MODELS || rows.length <= 5) for (const r of rows) console.log('  ', JSON.stringify(r));
   if (OUT) { fs.writeFileSync(OUT, JSON.stringify(rows, null, 1)); console.log('씀', OUT); }
   let saved = null;
-  if (!DRY && rows.length) {
+  if (!DRY && (rows.length || errors)) {   // 찾은 게 없어도 오류가 있었으면 기록은 남긴다 (오류 표본 포함)
     if (!dbOk) console.log('DB 키가 없어 저장하지 않습니다');
     else {
-      saved = await rpc('fn_sub_point_upsert', { p_rows: rows, p_key: P_KEY, p_meta: { started_at: started.toISOString(), targets: targets.length, errors, note: `${MODELS ? '지정' : ALL ? '전부' : '정기'} · 페이지 ${pages}번 · ${secs}초` } });
+      const note = `${MODELS ? '지정' : ALL ? '전부' : '정기'} · 페이지 ${pages}번 · ${secs}초` + (errSamples.length ? ` · 오류 예: ${errSamples.join(' | ')}` : '');
+      saved = await rpc('fn_sub_point_upsert', { p_rows: rows, p_key: P_KEY, p_meta: { started_at: started.toISOString(), targets: targets.length, errors, note } });
       console.log('저장', JSON.stringify(saved));
     }
   }
