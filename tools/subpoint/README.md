@@ -53,6 +53,12 @@ DB 에 넣으려면 `SUPABASE_URL` · `SUPABASE_SERVICE_ROLE_KEY` 환경변수�
 - `membershipPolicy` 가 같은 요청에 정률 0 으로 응답하는 때가 간혹 있어 수집기가 잠깐 뒤 한 번 더 본다.
 - 저장 함수의 임시표 열 이름 `found` 가 PL/pgSQL 의 FOUND 와 겹쳐 첫 Actions 실행이 저장에서 실패했다 → `ok` 로 고침 (`sql/mvp_258a_sub_points_fix.sql`).
 
+## 삼성닷컴에 없는 모델 — 추정 (mvp_258b · 2026-11-02)
+
+활성 1,131개 중 삼성닷컴에 구독 상품이 없는 366개(매장 전용 변형: TV 205 · 에어컨 89 · 세탁기/건조기 28 · 정수기 9 …)는 수집이 안 된다.
+수집된 765개가 전부 정률 6.0% + 기본 0.1% 로 같아서, 배포 파일 `points` 를 만드는 `sub.f_point_export()`(`sql/mvp_258b_sub_point_infer.sql`) 가 빈 모델을 **같은 품목에서 모델번호 앞부분이 가장 길게 같은 수집 모델**의 정률·기본률로 채운다(품목에 수집 모델이 없으면 최빈값 6.0 · 0.1). 상품별 추가 포인트는 앞 5자 이상 같은 모델에서만 물려받는다(AN40BSU5P44ISY ← AN40BSU5P40ISY 300,000P).
+추정 행은 `"est": 1` 과 기준 모델 `"ref"` 가 붙고 `total` 은 없다. `sub.model_point` 에는 넣지 않으므로 다음 수집이 실제 값을 받아 오면 추정은 저절로 빠진다. 관리자 요약(f_policy_view › points)의 `n_est` 가 추정 모델 수.
+
 ## 검증
 
 - `tools/sub/build_sub.mjs` checkPolicy 가 `points` 모양(모델 키 · rate/base 0~100 · add/total 양의 정수)을 검사한다.
