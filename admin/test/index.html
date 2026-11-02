@@ -1950,6 +1950,34 @@ th{background:var(--zone-head);color:var(--ink-2)}
           <div class="pager"><span id="upCount">아직 추출하지 않았습니다</span><div class="btns" id="upPg"></div></div>
           <textarea class="copybox hidden" id="unpaidCsv"></textarea>
         </div>
+
+        <!-- 렌탈(임대) 계약 명부 — 데이터 가져오기 › 렌탈 임대 계약 명부 로 올린 것 (mvp_260) -->
+        <div class="card" id="rtCard">
+          <h3>렌탈 고객 (임대 계약 명부)
+            <span id="rtSub">데이터 가져오기 › 렌탈 임대 계약 명부 로 올린 계약 줄 그대로입니다 · 문자는 휴대폰 번호 하나 = 한 사람으로 묶어 보냅니다</span>
+            <div class="actions"><button class="btn ghost sm" onclick="goSec('upload','src-rental_contract','center')">명부 다시 올리기</button></div>
+          </h3>
+          <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+            <div style="grid-column:span 2"><label for="rtReason">캠페인명 <span style="color:var(--bad)">필수</span> <span class="note">추출은 감사로그에 남습니다</span></label><input class="in" id="rtReason" placeholder="예: 2611_rental_renew — 렌탈 계약 갱신 안내" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_rt"></div>
+            <div><label for="rtQ">찾기</label><input class="in" id="rtQ" placeholder="업체 · 기기 · 주소 · 번호" onkeydown="if(event.key==='Enter')loadRental(0)"></div>
+            <div><label for="rtDue">만료 임박 기준 (일)</label><input class="in num" type="number" id="rtDue" value="90" min="1" max="730" onchange="if(RTL)loadRental(0)"></div>
+            <div><label for="rtNoSend">이미 보낸 사람 제외</label><select class="in" id="rtNoSend" onchange="if(RTL)loadRental(0)"><option value="">상관없음</option><option value="7">최근 7일 내 제외</option><option value="30">최근 30일 내 제외</option><option value="36500">한 번이라도 보낸 사람 전부 제외</option></select></div>
+          </div>
+          <div class="filters">
+            <select class="in" id="rtState" aria-label="계약 상태" onchange="if(RTL)loadRental(0)"><option value="active">해지 아님</option><option value="due">만료 임박</option><option value="over">종료일 지남</option><option value="closed">해지·폐업</option><option value="all">전체</option></select>
+            <label class="switch" id="rtBilled" onclick="this.classList.toggle('on');if(RTL)loadRental(0)"><span class="sw"></span>최근 6개월 렌탈 청구만</label>
+            <label class="switch" id="rtAd" onclick="this.classList.toggle('on');if(RTL)loadRental(0)" title="수신 동의 · 최근 6개월 렌탈 청구 · 계약 기간이 6개월 안까지 이어진 곳만"><span class="sw"></span>광고 문자 가능만</label>
+            <label class="switch" id="rtUnmask" onclick="this.classList.toggle('on');if(RTL)loadRental(0)"><span class="sw"></span>실번호</label>
+            <button class="btn" onclick="loadRental(0)">조회</button>
+            <span style="flex:1"></span>
+            <button class="btn ghost" onclick="exportRental()">엑셀 내려받기</button>
+            <button class="btn pri" onclick="rtToSms()">이 조건으로 문자 보내기 →</button>
+          </div>
+          <div class="callout" id="rtInfo" style="margin:8px 0">문자 규칙은 다른 CRM 발송과 같습니다 — <b>휴대폰만</b>(유선·번호 없음은 명단에만) · <b>문자 수신거부 번호는 늘 뺍니다</b> · 광고(할인·행사)는 <b>[광고 문자 가능만]</b>을 켜고 보내세요(수신 동의 또는 6개월 안 거래). 계약 만료·갱신 안내 같은 정보성 문자는 해지 아닌 고객 전체에 보낼 수 있습니다.</div>
+          <div class="mkpis" id="rtKpi"></div>
+          <div class="tw"><table><thead><tr><th>상태</th><th>업체</th><th>임대기기</th><th class="num">월 임대료</th><th>계약 기간</th><th class="num">남은 날</th><th>지역</th><th>연락처</th><th>최근 청구</th><th>최근 발송</th><th>비고</th></tr></thead><tbody id="tbRental"></tbody></table></div>
+          <div class="pager"><span id="rtCount">아직 조회하지 않았습니다</span><div class="btns" id="rtPg"></div></div>
+        </div>
       </div>
 
       <!-- ═══ 상담 대시보드 — 문의 → 구매 · 채널 · 담당자 · 관심 제품 · 구매 제품·금액 (mvp_158) ═══ -->
@@ -2067,7 +2095,8 @@ th{background:var(--zone-head);color:var(--ink-2)}
                   <div class="scways">
                     <div class="w"><b>[등록 방법1]</b><small>연락처와 변수가 포함된 파일을 업로드해 주세요 (엑셀·CSV · 번호 열 자동 인식 · 이름·그 밖의 열은 변수)</small><button class="btn sm ghost" onclick="$('scFile').click()">파일 업로드 하기</button><input type="file" id="scFile" accept=".xlsx,.xls,.csv,.txt" class="hidden" onchange="scFile(this.files[0])" aria-label="연락처 파일"></div>
                     <div class="w"><b>[등록 방법2]</b><small>발송 대상 추출 · 수동에서 뽑아 둔 명단을 그대로 불러옵니다 (실번호 · 감사로그)</small><button class="btn sm ghost" onclick="scFromTargets()">발송 대상 불러오기</button></div>
-                    <div class="w"><b>[등록 방법3]</b><small>번호와 이름을 직접 입력해 주세요 — 한 줄에 한 사람 · <span class="mono">01012345678 홍길동</span></small><button class="btn sm ghost" onclick="$('scRows').focus()">직접 입력하기</button></div>
+                    <div class="w"><b>[등록 방법3]</b><small>발송 대상 추출 › 렌탈 고객에서 조회한 조건 그대로 — 휴대폰만 · 수신거부 뺌 · 변수 {상호} {임대기기} {월임대료} {계약종료일}</small><button class="btn sm ghost" onclick="scFromRental()">렌탈 고객 불러오기</button></div>
+                    <div class="w"><b>[등록 방법4]</b><small>번호와 이름을 직접 입력해 주세요 — 한 줄에 한 사람 · <span class="mono">01012345678 홍길동</span></small><button class="btn sm ghost" onclick="$('scRows').focus()">직접 입력하기</button></div>
                   </div>
                   <textarea class="in mono" id="scRows" rows="4" placeholder="01012345678 홍길동&#10;01098765432 김철수" oninput="scPreview()" aria-label="받는 사람 직접 입력"></textarea>
                   <div id="scRowsList" class="note" style="margin-top:6px;line-height:1.8"></div>
@@ -2706,7 +2735,7 @@ const FN_LABEL={fn_sub_policy:'구독 혜택 정책',fn_exec_kpi:'경영 지표'
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
   fn_sl_pending:'샵링커 주문',fn_sl_status:'샵링커 상태',fn_order_queue:'전표 대기열',fn_settlement_list:'정산',fn_sub_plans:'구독 플랜',fn_store_daily_list:'매장 마감',
-  fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴',fn_crm_followups:'후속 관리',fn_product_sdp_upsert:'제품 정보',fn_sms_config_get:'문자 설정',fn_sms_log:'문자 발송 내역',fn_sms_check:'센드온 연결 확인',fn_sms_send:'문자 보내기',fn_sms_blocklist_pull:'센드온 수신거부',fn_sms_schedule_list:'예약 발송',fn_sms_schedule_save:'예약 등록',fn_sms_schedule_cancel:'예약 취소',fn_sms_batches:'발송 결과',fn_sms_batch:'발송결과 보기'};
+  fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴',fn_crm_followups:'후속 관리',fn_product_sdp_upsert:'제품 정보',fn_sms_config_get:'문자 설정',fn_sms_log:'문자 발송 내역',fn_sms_check:'센드온 연결 확인',fn_sms_send:'문자 보내기',fn_sms_blocklist_pull:'센드온 수신거부',fn_sms_schedule_list:'예약 발송',fn_sms_schedule_save:'예약 등록',fn_sms_schedule_cancel:'예약 취소',fn_sms_batches:'발송 결과',fn_sms_batch:'발송결과 보기',fn_rental_targets:'렌탈 고객'};
 const rpcLabel=fn=>FN_LABEL[fn]||'자료';
 const lpKB=b=>b>=1e6?(b/1e6).toFixed(1)+'MB':Math.max(1,Math.round(b/1e3))+'KB';
 function rpcExp(fn){ try{ return (JSON.parse(localStorage.getItem('dc_rpc_bytes')||'{}'))[fn]||0; }catch(e){ return 0; } }
@@ -5358,7 +5387,7 @@ const NAV_SUB={sms:[
      ids 가 여럿이면 같이 보인다 (예: 자동 발송 대상의 거르개 바 + 각 명단) */
   followup:[{k:'rules',label:'자동 발송 설정',ids:['arCard']},{k:'sub',label:'구독 만료 예정',ids:['nsc-followup-0','fuSubCard']},
     {k:'quote',label:'견적 보낸 고객',ids:['nsc-followup-0','fuQuoteCard']},{k:'prod',label:'제품군 재구매',ids:['nsc-followup-0','fuProdCard']}],
-  crm:[{k:'pick',label:'발송 대상 추출',ids:['nsc-crm-0','nsc-crm-1','nsc-crm-2']},{k:'unpaid',label:'결제 안 한 고객',ids:['upCard']}],
+  crm:[{k:'pick',label:'발송 대상 추출',ids:['nsc-crm-0','nsc-crm-1','nsc-crm-2']},{k:'unpaid',label:'결제 안 한 고객',ids:['upCard']},{k:'rental',label:'렌탈 고객',ids:['rtCard']}],
   inbox:[{k:'list',label:'문의 목록',ids:['nsc-inbox-0']},{k:'visit',label:'매장 방문 통계',ids:['visitCard']},{k:'box',label:'고객 접수함',ids:['nsc-inbox-2']}],
   consults:[{k:'list',label:'상담 목록',ids:['nsc-consults-0']},{k:'stat',label:'처리현황',ids:['nsc-consults-1','funnelCard']},{k:'quote',label:'구독 견적서 발행',ids:['nsc-consults-3']}],
   customers:[{k:'list',label:'고객 목록',ids:['nsc-customers-3']},{k:'flow',label:'문의 → 구매 흐름',ids:['ifCard']},{k:'dist',label:'유입 · 구매 분포',ids:['nsc-customers-0','nsc-customers-1']}],
@@ -7434,6 +7463,75 @@ async function exportUnpaid(kind){
   toast(`${n(d.total)}명 ${kind==='xlsx'?'엑셀로 내려받았습니다':'CSV 로 복사했습니다'} · 감사로그 기록됨`,'ok');
 }
 
+/* ═══ 렌탈 고객 — 임대 계약 명부 (mvp_260) : 계약 줄 그대로 보기 · 같은 조건으로 문자 보내기(휴대폰 하나 = 한 사람) ═══ */
+let rtPage=0, RTL=null;
+const RT_ST={due:['만료 임박','warn'],over:['종료일 지남','n'],active:['진행 중','ok'],nodate:['기간 없음','n'],closed:['해지·폐업','bad']};
+function rtParams(){ const v=id=>($(id)?$(id).value.trim():'');
+  return { p_reason:v('rtReason'), p_state:v('rtState')||'active', p_q:v('rtQ')||null, p_due_days:Number(v('rtDue'))||90,
+    p_billed6:$('rtBilled').classList.contains('on'), p_ad_only:$('rtAd').classList.contains('on'),
+    p_no_send_days:v('rtNoSend')?Number(v('rtNoSend')):null, p_unmask:$('rtUnmask').classList.contains('on') }; }
+function rtReasonOk(p){ if((p.p_reason||'').length<3){ toast('캠페인명(쓰는 이유)을 먼저 적어주세요 — 조회는 감사로그에 남습니다','bad'); try{ $('rtReason').focus(); }catch(e){} return false; } return true; }
+async function loadRental(page){
+  const p=rtParams(); if(!rtReasonOk(p)) return;
+  rtPage=Math.max(0,page||0); const per=pgSize('rental');
+  let d; try{ d=await rpc('fn_rental_targets',{...p,p_send:false,p_limit:per,p_offset:rtPage*per},{fresh:true}); }catch(e){ return toast(e.message,'bad'); }
+  RTL=d; const s=d.summary||{};
+  if(!Number(s.all_rows)){ $('rtKpi').innerHTML=''; $('tbRental').innerHTML='<tr><td colspan="11" class="note" style="text-align:center;padding:24px">아직 렌탈 계약 명부를 올리지 않았습니다 — 데이터 가져오기 › 렌탈 임대 계약 명부</td></tr>'; $('rtCount').textContent='명부 없음'; $('rtPg').innerHTML=''; return; }
+  $('rtSub').textContent=`명부 ${n(s.all_rows)}줄 · ${s.roster_at?new Date(s.roster_at).toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})+' 올림':''} · 문자는 휴대폰 번호 하나 = 한 사람으로 묶어 보냅니다`;
+  $('rtKpi').innerHTML=[
+    ['계약 줄', n(s.rows||0), '줄', `업체 ${n(s.companies||0)} · 월 임대료 ${wonK(s.fee_sum||0)}`, ''],
+    ['만료 임박', n(s.due||0), '줄', `${n(p.p_due_days)}일 안 · 종료일 지남 ${n(s.over||0)}`, (s.due?'t4':'')],
+    ['문자 가능 휴대폰', n(s.mobiles||0), '명', `유선 ${n(s.landline_rows||0)}줄 · 번호 없음 ${n(s.nophone_rows||0)}줄 · 수신거부 ${n(s.optout_rows||0)}줄`, 't3'],
+    ['광고 문자 가능', n(s.mobiles_ad||0), '명', `수신 동의 ${n(s.consent||0)} · 6개월 안 청구 ${n(s.billed6||0)} · 계약 6개월 안`, 't5'],
+  ].map(([k,v,u,sub,cls])=>`<div class="mk ${cls}"><div class="t">${k}</div><div class="v">${v}<small>${u}</small></div><div class="s">${esc(sub)}</div></div>`).join('');
+  $('rtCount').textContent = d.total ? `${n(d.total)}줄 중 ${rtPage*per+1}–${rtPage*per+d.rows.length}` : '조건에 맞는 계약이 없습니다';
+  $('rtPg').innerHTML=pgBar('rental',rtPage,d.total||0,'loadRental');
+  $('tbRental').innerHTML=d.rows.map(r=>{ const st=RT_ST[r.st]||[r.st,'n'];
+    const ph = r.phone ? `<span class="mono">${esc(r.phone)}</span>` : '<span class="note">없음</span>';
+    const tags=[!r.phone?'':(!r.mob?'<span class="tag n">유선 · 문자 안 감</span>':''), r.optout?'<span class="tag bad">수신거부</span>':'', r.mob&&!r.optout&&r.ad_ok?'<span class="tag ok" title="수신 동의 · 6개월 안 청구 · 계약 6개월 안">광고 가능</span>':'', r.consent?'<span class="tag ok">수신 동의</span>':''].filter(Boolean).join(' ');
+    return `<tr${r.st==='closed'?' style="color:var(--muted)"':''}>
+    <td><span class="tag ${st[1]}">${st[0]}</span></td>
+    <td><b>${esc(r.company||'-')}</b>${r.code?`<div class="note mono">${esc(r.code)}</div>`:''}</td>
+    <td class="wrap" style="font-size:calc(12px * var(--font-scale))">${esc(r.device||'')}</td>
+    <td class="num">${r.fee!=null?n(r.fee):''}</td>
+    <td class="mono" style="font-size:calc(12px * var(--font-scale))">${esc(r.start||'')}${r.start||r.end?' ~ ':''}${esc(r.end||'')}</td>
+    <td class="num">${r.days==null?'':(r.days<0?`<span class="note">${n(-r.days)}일 지남</span>`:`<b style="color:${r.days<=30?'var(--bad)':'inherit'}">${n(r.days)}일</b>`)}</td>
+    <td style="font-size:calc(12px * var(--font-scale))">${esc(r.region||'')}</td>
+    <td>${ph}${tags?`<div style="margin-top:3px">${tags}</div>`:''}</td>
+    <td class="mono" style="font-size:calc(12px * var(--font-scale))">${esc(r.billed_at||'')}</td>
+    <td class="mono" style="font-size:calc(12px * var(--font-scale))">${esc(r.last_sent||'')}</td>
+    <td class="wrap note">${esc(r.note||'')}</td></tr>`; }).join('')
+    ||'<tr><td colspan="11" class="note" style="text-align:center;padding:24px">조건에 맞는 계약이 없습니다</td></tr>';
+}
+async function exportRental(){
+  try{ await needXLSX(); }catch(e){ return toast(e.message,'bad'); }
+  const p=rtParams(); if(!rtReasonOk(p)) return;
+  let d; try{ d=await rpc('fn_rental_targets',{...p,p_send:false,p_limit:100000,p_offset:0,p_export:true},{fresh:true}); }catch(e){ return toast(e.message,'bad'); }
+  const cols=['상태','업체코드','업체','임대기기','월임대료','계약시작','계약종료','남은날','지역','연락처','휴대폰','수신거부','광고가능','최근청구','최근발송','비고'];
+  const rows=d.rows.map(r=>[(RT_ST[r.st]||[r.st])[0],r.code,r.company,r.device,r.fee,r.start,r.end,r.days,r.region,r.phone,r.mob?'Y':'',r.optout?'Y':'',r.ad_ok?'Y':'',r.billed_at,r.last_sent,r.note]);
+  const ws=XLSX.utils.aoa_to_sheet([cols,...rows]); ws['!cols']=cols.map((c,i)=>({wch:[9,10,22,24,10,11,11,7,12,14,6,7,7,11,11,30][i]}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'렌탈고객');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['캠페인',p.p_reason],['추출시각',new Date().toLocaleString('ko-KR')],['줄수',d.total],['조건',JSON.stringify(p)]]),'추출정보');
+  XLSX.writeFile(wb,`렌탈고객_${p.p_reason.replace(/[\\/:*?"<>|]/g,'_')}_${iso(new Date())}.xlsx`);
+  toast(`${n(d.total)}줄 엑셀로 내려받았습니다 · 감사로그 기록됨`,'ok');
+}
+/* 문자 보내기로 — 같은 조건 · 휴대폰만 · 수신거부 뺌 · 번호 하나 = 한 사람 · 변수 {상호} {임대기기} {월임대료} {계약종료일} */
+async function rtFetchSend(p){ const d=await rpc('fn_rental_targets',{...p,p_send:true,p_limit:100000,p_offset:0},{fresh:true});
+  SC_EXT=(d.rows||[]).map(r=>({phone:r.phone,name:r.name,key:r.key,vars:r.vars||{}}));
+  SC_EXT_SRC=`렌탈 고객 · ${({active:'해지 아님',due:'만료 임박',over:'종료일 지남',closed:'해지·폐업',all:'전체'})[p.p_state]||''}${p.p_ad_only?' · 광고 가능만':''}`;
+  if(p.p_reason && $('scCamp') && !$('scCamp').value) $('scCamp').value=p.p_reason;
+  return d; }
+async function rtToSms(){ const p=rtParams(); if(!rtReasonOk(p)) return;
+  try{ await smsCfgEnsure(); }catch(e){}
+  let d; try{ d=await rtFetchSend(p); }catch(e){ return toast(e.message,'bad'); }
+  if(!d.total) return toast('문자를 보낼 휴대폰 번호가 없습니다 (유선·번호 없음·수신거부는 빠집니다)','bad');
+  subSet('sms','compose'); show('sms');
+  setTimeout(()=>{ try{ scPreview(); }catch(e){} toast(`렌탈 고객 ${n(d.total)}명을 받는 사람에 넣었습니다 · 변수 {상호} {임대기기} {월임대료} {계약종료일} (감사로그 기록)`,'ok'); },400); }
+async function scFromRental(){
+  if(!RTL){ toast('먼저 [발송 대상 추출 › 렌탈 고객]에서 캠페인명을 적고 조회하세요 — 그 조건 그대로 불러옵니다','bad'); subSet('crm','rental'); return show('crm'); }
+  const p=rtParams(); if(!rtReasonOk(p)) return; $('scRowsN').textContent='명단 받는 중…';
+  try{ const d=await rtFetchSend(p); toast(`렌탈 고객 ${n(d.total)}명 불러왔습니다 (감사로그 기록)`,'ok'); }catch(e){ toast(e.message,'bad'); } scPreview(); }
+
 async function exportTargets(kind){
   if(kind!=='csv'){ try{ await needXLSX(); }catch(e){ return toast(e.message,'bad'); } }
   const p=tgParams();
@@ -7471,7 +7569,7 @@ async function loadSms(){ try{ await smsCfgEnsure(true); }catch(e){ $('smsState'
 /* ═══ 문자 보내기 — 센드온 [문자보내기] 양식 그대로 (mvp_211) : ① 발신번호 ② 광고 여부 ③ 변수 ④ 받는 사람(파일·추출·직접) ⑤ 문구 ⑥ 발송 시간 → 오른쪽 미리보기·테스트하기·발송 요약 → [발송하기]/[예약하기]
    받는 사람 = SC_EXT(파일·발송 대상 추출 · vars 포함) + 직접 입력 칸. 보내기는 fn_sms_send(조각) / 예약은 fn_sms_schedule_save(500명씩) · 발신번호는 p_opt.sender ═══ */
 let SC_AD=false, SC_WHEN='now', SC_EXT=[], SC_EXT_SRC='';
-const SC_VARS=['이름','담당자','매장전화','견적링크','기한','모델','제품','구매일','월요금','콜백시각','링크'];
+const SC_VARS=['이름','담당자','매장전화','견적링크','기한','모델','제품','구매일','월요금','콜백시각','링크','상호','임대기기','월임대료','계약종료일'];
 const scNorm=s=>{ let d=String(s==null?'':s).replace(/\D/g,''); if(/^1[016789]\d{7,8}$/.test(d)) d='0'+d; return d; };   /* 엑셀 숫자 칸은 앞 0 이 빠진다 */
 const scIsPh=s=>/^01[016789]\d{7,8}$/.test(scNorm(s));
 function fmtTel(d){ d=String(d||'').replace(/\D/g,''); if(/^02\d{7,8}$/.test(d)) return d.replace(/^(02)(\d{3,4})(\d{4})$/,'$1-$2-$3'); if(/^0\d{9,10}$/.test(d)) return d.replace(/^(\d{3})(\d{3,4})(\d{4})$/,'$1-$2-$3'); return d; }
@@ -8411,6 +8509,7 @@ async function loadDataStatus(){
         ? `<button class="btn sm" onclick="${x.key==='shoplinker'?"SL_REFUND_ONLY=true;":""}selectSource('${x.key}','file')">파일 올리기</button><button class="btn sm ghost" onclick="selectSource('${x.key}','paste')">붙여넣기</button><button class="btn sm ghost" onclick="downloadTemplate('${SRC_TPL[x.key]}')" title="이 소스의 양식만">양식</button>`
         + (x.key==='sub_plan' ? `<button class="btn sm ghost" onclick="goSec('items','subCard')">요금표 보기</button>` : '')
         + (x.key==='unpaid_order' ? `<button class="btn sm ghost" onclick="goSec('crm','upCard')">미입금 목록 보기</button>` : '')
+        + (x.key==='rental_contract' ? `<button class="btn sm ghost" onclick="goSec('crm','rtCard')">명부 보기 · 문자 보내기</button>` : '')
         + (x.key==='send_log' ? `<button class="btn sm ghost" onclick="goSec('crm','crmNoSend','center')">발송 대상에서 제외</button>` : '')
         + (x.key==='sms_optout' ? `<button class="btn sm ghost" onclick="show('crm')">발송 대상 추출 보기</button>` : '')
         + (x.key==='shoplinker' ? `<button class="btn sm ghost" onclick="SL_REFUND_ONLY=true;try{localStorage.setItem('dc_sl_refund_only','1')}catch(e){};selectSource('shoplinker','file')" title="샵링커 웹 주문목록(취소/반품 상태)을 올려 주문번호로 대조 — 환불만 반영">취소·환불 대조</button>` : '')
