@@ -24,7 +24,7 @@
 ## 어떻게 돌아가나
 
 ```
-GitHub Actions sub-point.yml (매주 월요일 09:00 KST · 수동 실행 · 관리자 [지금 수집] → Edge Function sub-deploy?wf=sub-point)
+GitHub Actions sub-point.yml (매일 06:00 KST 활성 모델 전부 다시(--all · 약 4분) · 수동 실행 · 관리자 [지금 수집] → Edge Function sub-deploy?wf=sub-point) — 2026-11-02 밤 주 1회(월요일)에서 매일로 (DPS·VMS 처럼)
   └ node tools/subpoint/collect.mjs
       ├ fn_sub_point_targets(p_all, p_limit, p_key, p_offset) : 활성 모델 + 최장 약정 최저 총액 + 캐시된 goods_id  (처음 보는 것 · 6일 지난 것 · 못 찾은 것은 7~30일 뒤)
       │    PostgREST 는 RPC 결과를 1000행에서 자르고 Range 헤더도 무시 → 수집기 rpcAll 이 p_offset 으로 1000행씩 이어 받는다 (활성 모델 1131개 · mvp_258a)
