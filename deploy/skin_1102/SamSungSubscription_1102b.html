@@ -1,0 +1,3141 @@
+{*** [삼성 스토어 시흥 구독 문의] | service/SamSungSubscription.php ***}
+{*** test 페이지 | service/test_subscribe.php ***}
+<!-- SUB v1.7 / 2026-11-02 : 구독 페스티벌 11월(2026.11.01 ~ 11.30) 연장 · B2B 프로모션 11월 상시 운영으로 전환 -->
+<!-- SUB v1.6.5 / 2026-10-29 : 주석 안에 있던 고도몰 footer 태그를 뺐다 (하단이 두 번 나오고 주석 글이 화면에 보이던 것) · 주석에 중괄호 템플릿 태그를 적지 말 것 -->
+<!-- SUB v1.6.4 / 2026-10-29 : 사람 확인을 못 받으면 보내지 않고 "접수되지 않았습니다" 안내 · 렌탈 여러 품목도 각자 확인 · 맨 아래 블록 -->
+<!-- SUB v1.6.3 / 2026-10-29 : 봇 차단 — Cloudflare Turnstile(사람 확인) + 숨은 칸·제출 시간 검사 (v1.6.2 대체) · 맨 아래 블록 -->
+<!-- SUB v1.6 / 2026-10-20 : 소호 특가 폼을 구독 페이지 분기(evt=soho)로 통합 · 별도 soho_form 페이지 불필요 -->
+<!-- SUB v1.5 / 2026-10-20 : B2B 창구 법인·공공기관 전용화 · 개인사업자 → 개인 구독 / 소호 특가 / 사업자 렌탈(렌탈 GAS→잔디) 분기 · ?biz=corp|personal 프리셋 -->
+<!-- SUB v1.4 / 2026-10-19 : 상담 유형 선택(구독 / 일반 구매 / 둘 다 비교) 추가 · ?ask=buy|both 프리셋 -->
+<!-- SUB v1.3.1 / 2026-10-07 : B2B 접수 시 구독 GAS 필수 필드 기본값 전송 (잔디 미발송 대응) -->
+<!-- SUB v1.3 / 2026-10-07 : B2B 삼성 AI 구독 전용 창구 추가 (evt=b2b) · 가격 미노출 · 10월 런칭 프로모션 · 파트너 인증 -->
+<!-- SUB v1.2 / 2026-10-01 : 구독 페스티벌 기간 2026.10.01 ~ 2026.10.31로 변경 -->
+<!-- SUB v1.1 / 2026-09-23 : 캐시백 문구 삭제 · 9.28 정책 자동 전환 (테스트: &sftest=2026-09-28) -->
+{ # header }
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="https://gdadmin-samsungsh70.godomall.com/data/Basic/favicon_b2b.ico">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "구독 말고 일반 구매 상담도 가능한가요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "네, 가능합니다. 신청서에서 일반 구매를 선택하시면 일시불·할부 견적을, 둘 다 비교를 선택하시면 구독과 구매 총비용을 비교해 안내드립니다." }
+    },
+    {
+      "@type": "Question",
+      "name": "가전구독과 일시불 구매의 차이는 무엇인가요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "가전구독은 초기 비용 부담 없이 월 구독료로 이용하며 케어서비스(정기점검, 소모품 교체 등)가 포함됩니다. 일시불 구매는 초기 비용을 한 번에 지불하고 별도 멤버십 케어를 선택하는 방식입니다. 상담을 통해 비교 안내받으실 수 있습니다." }
+    },
+    {
+      "@type": "Question",
+      "name": "여러 제품을 한 번에 구독하면 할인이 더 있나요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "네, 신규 가입 고객이 2개 이상 제품을 동시에 구독하시면 다품목 추가 할인 상담이 가능합니다. 다만 기존에 이미 구독 중인 제품이 있는 경우 적용 조건이 다를 수 있어 상담을 통해 확인이 필요합니다." }
+    },
+    {
+      "@type": "Question",
+      "name": "선납하면 할인을 더 받을 수 있나요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "네, 선납 조건으로 가입하시면 총 구독료 기준 추가 할인 상담이 가능합니다. 정확한 할인율은 선납 비율과 가입 시점에 따라 달라지므로 상담 시 안내드립니다." }
+    },
+    {
+      "@type": "Question",
+      "name": "삼성전자 멤버십이 없어도 구독 상담이 가능한가요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "네, 멤버십이 없어도 상담 및 구독 가입이 가능합니다. 다만 멤버십 포인트 관련 추가 혜택은 멤버십 가입 여부에 따라 달라지므로, 신청서에 가입 여부를 남겨주시면 함께 안내드립니다." }
+    },
+    {
+      "@type": "Question",
+      "name": "시흥 지역 어디까지 방문 상담이 가능한가요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "시흥 대야동, 신천동, 은계지구, 배곧, 정왕동을 포함한 시흥 전 지역 방문 상담이 가능합니다." }
+    },
+    {
+      "@type": "Question",
+      "name": "이미 다른 곳에서 견적을 받았는데 비교 상담도 가능한가요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "네, 가능합니다. 어느 경로에서 견적을 받으셨는지 신청서에 남겨주시면 비교하여 최대한 유리한 조건으로 안내드립니다." }
+    }
+  ]
+}
+</script>
+</head>
+<style>
+  #samsung-sub-page, #samsung-sub-page * {
+    box-sizing: border-box !important;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif !important;
+  }
+  #samsung-sub-page { color: #0f172a; line-height: 1.6; background: #ffffff; margin: 0; font-size: 17px; }
+  #samsung-sub-page .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  #samsung-sub-page a { text-decoration: none; color: inherit; }
+  #samsung-sub-page .top-bar { background: #0f172a; color: #fff; text-align: center; font-size: 13.5px; padding: 10px 12px; }
+  #samsung-sub-page .top-bar strong { color: #7fb3ff; }
+
+  /* 큰 글씨 / 간편 모드 전환 바 */
+  .mode-switch-wrap { background: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .mode-switch-label { font-size: 14.5px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px; }
+  .mode-btn { background: #0057ff; color: #fff; border: none; border-radius: 20px; padding: 6px 14px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; }
+  .mode-btn:hover { background: #0046d1; }
+
+  #samsung-sub-page .hero { background: linear-gradient(180deg, #0057ff 0%, #0046d1 100%); color: #fff; padding: 32px 0 40px; text-align: center; }
+  #samsung-sub-page .hero-badge {
+    display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 999px; padding: 6px 16px; font-size: 12.5px; font-weight: 700; margin-bottom: 14px;
+  }
+  #samsung-sub-page .hero h1 { font-size: 25px; font-weight: 800; line-height: 1.45; margin: 0 0 12px; word-break: keep-all; }
+  #samsung-sub-page .hero h1 em { font-style: normal; color: #ffe14d; }
+  #samsung-sub-page .hero p { font-size: 15px; opacity: 0.92; word-break: keep-all; margin: 0; }
+  #samsung-sub-page .hero-period { font-size: 13px; opacity: 0.85; margin-top: 8px; }
+
+  /* 구독 전용 스택 및 혜택 카드 */
+  #samsung-sub-page .stack-banner {
+    background: #fff; border-radius: 14px; box-shadow: 0 10px 28px rgba(15,23,42,0.1);
+    margin-top: -20px; position: relative; z-index: 2; padding: 16px 16px 14px;
+  }
+  #samsung-sub-page .stack-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+  #samsung-sub-page .stack-header .max-badge { font-size: 22px; font-weight: 900; color: #0057ff; }
+  #samsung-sub-page .stack-header .max-label { font-size: 11.5px; color: #64748b; font-weight: 700; }
+  #samsung-sub-page .stack-rows { display: flex; flex-direction: column; gap: 6px; }
+  #samsung-sub-page .stack-row { display: flex; align-items: center; gap: 10px; background: #f8fafc; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; }
+  #samsung-sub-page .stack-row .pct { flex-shrink: 0; background: #0057ff; color: #fff; font-weight: 800; font-size: 12px; border-radius: 6px; padding: 4px 8px; min-width: 42px; text-align: center; }
+  #samsung-sub-page .stack-row .desc { color: #334155; font-weight: 600; word-break: keep-all; }
+  #samsung-sub-page .stack-note { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.5; word-break: keep-all; }
+  #samsung-sub-page .benefit-belt { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+  #samsung-sub-page .benefit-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 6px; text-align: center; }
+  #samsung-sub-page .benefit-card .icon { font-size: 20px; margin-bottom: 5px; }
+  #samsung-sub-page .benefit-card .label { font-size: 12.5px; font-weight: 700; color: #334155; word-break: keep-all; }
+
+  #samsung-sub-page section { padding: 36px 0; }
+  #samsung-sub-page .section-eyebrow { font-size: 13.5px; font-weight: 800; color: #0057ff; letter-spacing: 0.02em; margin-bottom: 8px; }
+  #samsung-sub-page .section-title { font-size: 21px; font-weight: 800; color: #0f172a; margin: 0 0 8px; word-break: keep-all; }
+  #samsung-sub-page .form-section { padding: 24px 0 40px; }
+  #samsung-sub-page .form-card { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px 18px; box-shadow: 0 10px 30px rgba(15,23,42,0.06); }
+  #samsung-sub-page .form-card-title { font-size: 19px; font-weight: 800; margin: 0 0 6px; line-height: 1.4; }
+  #samsung-sub-page .form-card-desc { font-size: 14px; color: #64748b; margin: 0 0 20px; }
+  #samsung-sub-page .chip-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  #samsung-sub-page .chip {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 4px;
+    cursor: pointer; transition: all 0.15s ease; user-select: none;
+  }
+  #samsung-sub-page .chip .chip-emoji { font-size: 28px; }
+  #samsung-sub-page .chip .chip-label { font-size: 15px; font-weight: 700; color: #334155; }
+  #samsung-sub-page .chip.selected { border-color: #0057ff; background: #e6f0ff; }
+  #samsung-sub-page .chip.selected .chip-label { color: #0057ff; }
+  #samsung-sub-page .f-field { margin: 22px 0; }
+  #samsung-sub-page .f-label { display: block; font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 9px; }
+  #samsung-sub-page .f-req { color: #0057ff; }
+  #samsung-sub-page .f-hint { font-weight: 500; color: #64748b; font-size: 13.5px; }
+  #samsung-sub-page .f-input,
+  #samsung-sub-page .f-select,
+  #samsung-sub-page .f-textarea {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 52px !important;
+    padding: 14px 16px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    font-size: 17px !important;
+    line-height: 1.5 !important;
+    color: #0f172a !important;
+    outline: none !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    vertical-align: middle !important;
+  }
+  #samsung-sub-page .f-select {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    padding-right: 36px !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 16px 16px !important;
+    cursor: pointer;
+  }
+  #samsung-sub-page .f-select::-ms-expand { display: none; }
+  #samsung-sub-page .f-input:focus, #samsung-sub-page .f-select:focus, #samsung-sub-page .f-textarea:focus { border-color: #0057ff !important; }
+  #samsung-sub-page .f-textarea { min-height: 70px !important; resize: vertical; }
+  #samsung-sub-page .f-radio-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  #samsung-sub-page .f-radio {
+    display: flex; align-items: center; gap: 7px; font-size: 16px; color: #334155; cursor: pointer;
+    border: 1px solid #e2e8f0; border-radius: 8px; padding: 11px 15px;
+  }
+  #samsung-sub-page .f-radio input { accent-color: #0057ff; width: 18px !important; height: 18px !important; min-height: 0 !important; }
+  #samsung-sub-page .discount-cond-box { background: #f0f6ff; border: 1.5px solid #cfe1ff; border-radius: 12px; padding: 18px 16px; margin: 22px 0; }
+  #samsung-sub-page .discount-cond-title { font-size: 15px; font-weight: 800; color: #0046d1; margin: 0 0 5px; }
+  #samsung-sub-page .discount-cond-sub { font-size: 13px; color: #4c6ba8; margin: 0 0 16px; word-break: keep-all; line-height: 1.5; }
+  #samsung-sub-page .eligible-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  #samsung-sub-page .e-badge {
+    display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700;
+    border-radius: 999px; padding: 8px 14px; border: 1.5px solid #e2e8f0; color: #94a3b8; background: #fff;
+    transition: all 0.15s ease;
+  }
+  #samsung-sub-page .e-badge .dot { font-size: 12px; }
+  /* 날짜 자동 전환용 */
+  #samsung-sub-page .is-off { display: none !important; }
+  #samsung-sub-page .newtag { display: inline-block; background: #ff3b5c; color: #fff; font-size: 10.5px; font-weight: 900; letter-spacing: 0.5px; border-radius: 5px; padding: 2px 6px; margin-left: 5px; vertical-align: 1px; }
+  #samsung-sub-page .stack-row .pct { min-width: 54px; }
+  #samsung-sub-page .e-badge.active { border-color: #0057ff; background: #0057ff; color: #fff; }
+  #samsung-sub-page .f-consent { background: #f8fafc; border-radius: 8px; padding: 16px; margin: 20px 0; }
+  #samsung-sub-page .f-checkbox { display: flex; align-items: flex-start; gap: 9px; font-size: 14.5px; font-weight: 700; color: #334155; cursor: pointer; }
+  #samsung-sub-page .f-checkbox input { margin-top: 2px; accent-color: #0057ff; width: 18px !important; height: 18px !important; min-height: 0 !important; }
+  #samsung-sub-page .f-consent-desc { font-size: 12.5px; color: #64748b; margin: 8px 0 0 26px; line-height: 1.55; }
+  #samsung-sub-page .f-submit {
+    width: 100%; padding: 18px; background: #0057ff; color: #fff; border: none; border-radius: 99px;
+    font-size: 18px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 20px rgba(0,87,255,0.25);
+  }
+  #samsung-sub-page .f-submit:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+  #samsung-sub-page .success-box { text-align: center; padding: 20px 0; display: none; }
+  #samsung-sub-page .success-box .s-icon {
+    width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 50%; background: #e6f0ff; color: #0057ff;
+    font-size: 28px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  }
+  #samsung-sub-page .success-box h3 { font-size: 18px; font-weight: 800; margin: 0 0 8px; }
+  #samsung-sub-page .success-box p { font-size: 13.5px; color: #64748b; margin: 0; }
+  #samsung-sub-page .accordion-section { border-top: 8px solid #f8fafc; padding: 32px 0; }
+  #samsung-sub-page details.acc { border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+  #samsung-sub-page details.acc summary {
+    list-style: none; cursor: pointer; padding: 18px 18px; display: flex; align-items: center;
+    justify-content: space-between; font-weight: 800; font-size: 15.5px; color: #0f172a; background: #f8fafc;
+  }
+  #samsung-sub-page details.acc summary::-webkit-details-marker { display: none; }
+  #samsung-sub-page details.acc summary .acc-icon { font-size: 18px; margin-right: 8px; }
+  #samsung-sub-page details.acc summary .acc-arrow { color: #94a3b8; transition: transform 0.2s ease; font-size: 14px; }
+  #samsung-sub-page details.acc[open] summary .acc-arrow { transform: rotate(180deg); }
+  #samsung-sub-page .acc-body { padding: 16px 18px 22px; font-size: 14.5px; color: #64748b; word-break: keep-all; }
+  #samsung-sub-page .process-item { display: flex; gap: 14px; padding: 11px 0; }
+  #samsung-sub-page .process-num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: #0057ff; color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  #samsung-sub-page .process-text .t { font-weight: 700; font-size: 15px; color: #334155; margin-bottom: 3px; }
+  #samsung-sub-page .process-text .d { font-size: 13.5px; color: #64748b; }
+  #samsung-sub-page .region-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  #samsung-sub-page .region-tag { background: #fff; border: 1px solid #e2e8f0; border-radius: 999px; padding: 7px 15px; font-size: 13.5px; font-weight: 600; color: #334155; }
+  #samsung-sub-page .faq-item { border-bottom: 1px solid #f1f5f9; padding: 13px 0; }
+  #samsung-sub-page .faq-item:last-child { border-bottom: none; }
+  #samsung-sub-page .faq-q { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 15px; color: #0f172a; cursor: pointer; word-break: keep-all; }
+  #samsung-sub-page .faq-q .mark { color: #0057ff; font-size: 18px; flex-shrink: 0; margin-left: 10px; transition: transform 0.15s ease; }
+  #samsung-sub-page .faq-a { font-size: 14px; color: #64748b; margin-top: 9px; display: none; line-height: 1.65; }
+  #samsung-sub-page .faq-item.open .faq-a { display: block; }
+  #samsung-sub-page .faq-item.open .mark { transform: rotate(45deg); }
+  #samsung-sub-page footer { text-align: center; padding: 32px 20px 40px; font-size: 13.5px; color: #94a3b8; }
+  #samsung-sub-page footer .contact-line { font-size: 15px; color: #334155; font-weight: 700; margin-bottom: 6px; }
+
+  /* 맞춤 진단 프리필 배너 */
+  #samsung-sub-page .prefill-banner {
+    display: none; background: linear-gradient(135deg, #e6f0ff, #f0f6ff);
+    border: 1.5px solid #0057ff; border-radius: 14px; padding: 16px 16px 14px; margin: 0 0 20px;
+    animation: samPrefillIn .35s ease;
+  }
+  #samsung-sub-page .prefill-banner.on { display: block; }
+  @keyframes samPrefillIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  #samsung-sub-page .prefill-banner .pf-head {
+    display: flex; align-items: center; gap: 8px; font-size: 15.5px; font-weight: 800; color: #0046d1;
+    margin-bottom: 6px; word-break: keep-all;
+  }
+  #samsung-sub-page .prefill-banner .pf-desc { font-size: 13.5px; color: #4c6ba8; line-height: 1.6; word-break: keep-all; }
+  #samsung-sub-page .prefill-banner .pf-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+  #samsung-sub-page .prefill-banner .pf-tag {
+    background: #fff; border: 1px solid #cfe1ff; border-radius: 999px;
+    padding: 6px 13px; font-size: 13px; font-weight: 700; color: #0057ff;
+  }
+  #samsung-sub-page .prefill-banner .pf-tag.model { background: #0057ff; color: #fff; border-color: #0057ff; }
+  #samsung-sub-page .prefill-banner .pf-reset {
+    margin-top: 12px; background: #fff; border: 1px solid #cfe1ff; border-radius: 8px;
+    padding: 8px 14px; font-size: 13px; font-weight: 700; color: #4c6ba8; cursor: pointer;
+  }
+  #samsung-sub-page .prefill-banner .pf-reset:hover { border-color: #0057ff; color: #0057ff; }
+  #samsung-sub-page .chip.prefilled { box-shadow: 0 0 0 3px rgba(0,87,255,.15); }
+
+  /* 상담 유형 선택 (구독 / 일반 구매 / 비교) */
+  #samsung-sub-page .ask-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #f1f5f9; border-radius: 14px; padding: 5px; }
+  #samsung-sub-page .ask-btn { border: none; background: transparent; border-radius: 10px; padding: 12px 4px; font-size: 15px; font-weight: 800; color: #64748b; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; line-height: 1.3; transition: all .15s ease; }
+  #samsung-sub-page .ask-btn small { font-size: 11.5px; font-weight: 600; opacity: .85; }
+  #samsung-sub-page .ask-btn.on { background: #fff; color: #0057ff; box-shadow: 0 2px 10px rgba(15,23,42,.12); }
+  #samsung-sub-page .ask-note { font-size: 13px; color: #4c6ba8; margin-top: 9px; line-height: 1.55; word-break: keep-all; }
+  #samsung-sub-page.ask-buy .discount-cond-box { display: none !important; }
+  body.senior-mode #samsung-sub-page .ask-btn { font-size: 18px; padding: 16px 4px; }
+  body.senior-mode #samsung-sub-page .ask-btn small { font-size: 13.5px; }
+  body.senior-mode #samsung-sub-page .ask-note { font-size: 16px; }
+
+  /* ══════════════════════════════════════════════════════════════════
+     👵 [큰 글씨 / 간편 모드] 스타일 (body.senior-mode)
+     ────────────────────────────────────────────────────────────────── */
+  /* 1. 상단 복잡한 배너 및 프로모션 안내문구 숨김 */
+  body.senior-mode #samsung-sub-page .stack-banner,
+  body.senior-mode #samsung-sub-page .benefit-belt,
+  body.senior-mode #samsung-sub-page .hero-period {
+    display: none !important;
+  }
+
+  /* 2. 상단 히어로 영역 여백 최적화 및 폰트 확장 */
+  body.senior-mode #samsung-sub-page .hero { padding: 30px 0 36px !important; }
+  body.senior-mode #samsung-sub-page .hero-badge { font-size: 15px !important; padding: 8px 20px !important; margin-bottom: 12px !important; }
+  body.senior-mode #samsung-sub-page .hero h1 { font-size: 28px !important; line-height: 1.4 !important; margin-bottom: 10px !important; }
+  body.senior-mode #samsung-sub-page .hero p { font-size: 17.5px !important; font-weight: 600 !important; opacity: 0.95 !important; }
+
+  /* 3. 본문 폼 영역 큰 글씨 및 클릭 터치 영역 극대화 */
+  body.senior-mode #samsung-sub-page { font-size: 20px; line-height: 1.65; }
+  body.senior-mode #samsung-sub-page .form-card { padding: 26px 20px; border: 2.5px solid #0057ff; }
+  body.senior-mode #samsung-sub-page .form-card-title { font-size: 24px; }
+  body.senior-mode #samsung-sub-page .form-card-desc { font-size: 17px; color: #1e293b; font-weight: 600; }
+  body.senior-mode #samsung-sub-page .chip-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
+  body.senior-mode #samsung-sub-page .chip { padding: 18px 8px; border: 2px solid #cbd5e1; border-radius: 14px; }
+  body.senior-mode #samsung-sub-page .chip .chip-emoji { font-size: 38px; }
+  body.senior-mode #samsung-sub-page .chip .chip-label { font-size: 18px; font-weight: 800; color: #0f172a; }
+  body.senior-mode #samsung-sub-page .chip.selected { border-width: 2.5px; border-color: #0057ff; background: #e0edff; }
+  body.senior-mode #samsung-sub-page .f-label { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 12px; }
+  body.senior-mode #samsung-sub-page .f-hint { font-size: 15px; font-weight: 600; color: #0057ff; }
+  body.senior-mode #samsung-sub-page .f-input,
+  body.senior-mode #samsung-sub-page .f-select,
+  body.senior-mode #samsung-sub-page .f-textarea {
+    min-height: 60px !important; font-size: 20px !important; border: 2px solid #94a3b8 !important; border-radius: 10px !important;
+  }
+  body.senior-mode #samsung-sub-page .f-checkbox { font-size: 18px; }
+  body.senior-mode #samsung-sub-page .f-checkbox input { width: 24px !important; height: 24px !important; }
+  body.senior-mode #samsung-sub-page .f-consent-desc { font-size: 14px; line-height: 1.6; color: #475569; }
+  body.senior-mode #samsung-sub-page .f-submit { font-size: 22px; padding: 22px; font-weight: 900; }
+  body.senior-mode #samsung-sub-page .faq-q { font-size: 19px; }
+  body.senior-mode #samsung-sub-page .faq-a { font-size: 17px; color: #334155; }
+  body.senior-mode #samsung-sub-page details.acc summary { font-size: 19px; padding: 20px; }
+  body.senior-mode #samsung-sub-page .process-text .t { font-size: 18px; }
+  body.senior-mode #samsung-sub-page .process-text .d { font-size: 16px; }
+
+  /* 4. 큰 글씨 모드일 때 복잡한 입력 필드 숨김 */
+  body.senior-mode .hide-in-senior { display: none !important; }
+
+  @media (max-width: 480px) {
+    #samsung-sub-page { font-size: 18px; }
+    #samsung-sub-page .hero h1 { font-size: 25px; }
+    #samsung-sub-page .hero p { font-size: 15px; }
+    #samsung-sub-page .section-title { font-size: 21px; }
+    #samsung-sub-page .form-card-title { font-size: 19px; }
+    #samsung-sub-page .form-card-desc { font-size: 14.5px; }
+    #samsung-sub-page .f-label { font-size: 16.5px; }
+    #samsung-sub-page .f-input,
+    #samsung-sub-page .f-select,
+    #samsung-sub-page .f-textarea { font-size: 17px !important; min-height: 54px !important; }
+    #samsung-sub-page .f-radio { font-size: 16px; padding: 11px 14px; }
+    #samsung-sub-page .chip .chip-label { font-size: 15px; }
+    #samsung-sub-page .chip .chip-emoji { font-size: 28px; }
+    #samsung-sub-page .f-submit { font-size: 18px; padding: 18px; }
+    #samsung-sub-page .faq-q { font-size: 15.5px; }
+    #samsung-sub-page .faq-a { font-size: 14.5px; }
+    #samsung-sub-page .ask-btn { font-size: 14px; padding: 11px 2px; }
+    #samsung-sub-page .ask-btn small { font-size: 11px; }
+
+    body.senior-mode #samsung-sub-page .hero h1 { font-size: 26px !important; }
+    body.senior-mode #samsung-sub-page .hero p { font-size: 16.5px !important; }
+    body.senior-mode #samsung-sub-page .form-card-title { font-size: 22px; }
+    body.senior-mode #samsung-sub-page .chip-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    body.senior-mode #samsung-sub-page .chip .chip-emoji { font-size: 34px; }
+    body.senior-mode #samsung-sub-page .chip .chip-label { font-size: 17px; }
+    body.senior-mode #samsung-sub-page .f-input { min-height: 58px !important; font-size: 19px !important; }
+    body.senior-mode #samsung-sub-page .f-submit { font-size: 20px; padding: 19px; }
+    body.senior-mode #samsung-sub-page .ask-btn { font-size: 16px; padding: 14px 2px; }
+    body.senior-mode #samsung-sub-page .ask-btn small { font-size: 12.5px; }
+  }
+</style>
+
+<div id="samsung-sub-page">
+  <!-- 상단 모드 전환 스위치 바 -->
+  <div class="mode-switch-wrap">
+    <div class="mode-switch-label">
+      <span>🔎</span><span id="mode-text">글씨가 작아 보기 불편하신가요?</span>
+    </div>
+    <button type="button" class="mode-btn" id="seniorModeToggleBtn" onclick="toggleSeniorMode()">
+      <span>큰 글씨 · 간편 모드</span>
+    </button>
+  </div>
+
+  <div class="top-bar"><strong>삼성스토어 시흥</strong><br> 삼성전자 공식 판매점 · 시흥 대야동 · 031-8042-3166</div>
+
+  <section class="hero" style="padding-top:28px;">
+    <div class="wrap">
+      <span class="hero-badge">🔥 구독 페스티벌 진행중</span>
+      <h1 id="hero-main-title">지금 구독 상담 신청하면<br><em>최대 20%</em> 혜택 조건 확인</h1>
+      <p id="hero-subtext">구독은 물론 일반 구매 상담도 OK · 1분 신청으로 조건을 바로 확인하세요</p>
+      <div class="hero-period">구독 페스티벌 2026.11.01 ~ 2026.11.30</div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <!-- 기본 모드용 스택 배너 (큰 글씨 모드 시 숨김) -->
+    <div class="stack-banner">
+      <div class="stack-header">
+        <div><span class="max-badge">최대 20%</span> <span class="max-label">쌓일수록 커지는 혜택</span></div>
+      </div>
+      <div class="stack-rows">
+        <!-- ~ 9/27 기존 정책 -->
+        <div class="stack-row" data-until="2026-09-28T00:00:00+09:00"><span class="pct">5%</span><span class="desc">선납 이용 시 총 구독료 할인</span></div>
+        <div class="stack-row" data-until="2026-09-28T00:00:00+09:00"><span class="pct">5%</span><span class="desc">다품목 구독(신규 가입 시) 추가 할인</span></div>
+        <div class="stack-row" data-until="2026-09-28T00:00:00+09:00"><span class="pct">5%</span><span class="desc">한 품목 구독도 기본 할인 적용</span></div>
+        <div class="stack-row" data-until="2026-09-28T00:00:00+09:00"><span class="pct">5%</span><span class="desc">삼성전자 멤버십 포인트 추가 증정</span></div>
+        <!-- 9/28 ~ 새 정책 -->
+        <div class="stack-row is-off" data-from="2026-09-28T00:00:00+09:00"><span class="pct">3~5%</span><span class="desc">선납 할인 (20% 선납 3% · 30% 4% · 40~50% 5%)</span></div>
+        <div class="stack-row is-off" data-from="2026-09-28T00:00:00+09:00"><span class="pct">5%</span><span class="desc">전 품목 구독료 할인 (단품)</span></div>
+        <div class="stack-row is-off" data-from="2026-09-28T00:00:00+09:00"><span class="pct">최대 5%</span><span class="desc">다품목 구독할인 · 신규 2대↑ 동시 구독<span class="newtag">NEW</span></span></div>
+        <div class="stack-row is-off" data-from="2026-09-28T00:00:00+09:00"><span class="pct">3%</span><span class="desc">추가구독 할인 · 기존 구독 고객 1대↑ 추가<span class="newtag">NEW</span></span></div>
+        <div class="stack-row is-off" data-from="2026-09-28T00:00:00+09:00"><span class="pct">6개월</span><span class="desc">추천 모델 구독료 상당 포인트 지원 (~11/30)<span class="newtag">NEW</span></span></div>
+      </div>
+      <div class="stack-note" data-until="2026-09-28T00:00:00+09:00">* 조건(품목 수·기존 구독 여부·멤버십·선납 여부 등)에 따라 실제 적용 혜택은 달라질 수 있으며, 상담 시 정확히 안내드립니다. 프로모션은 2026.11.30까지이며 이후 조건은 변경될 수 있습니다.</div>
+      <div class="stack-note is-off" data-from="2026-09-28T00:00:00+09:00">* 추가구독 할인과 다품목 구독할인은 중복 적용되지 않으며, 다품목 구독할인은 중도해지 시 일부 환수될 수 있습니다. 모델·계약 기간에 따라 실제 적용 혜택이 달라지므로 상담 시 정확히 안내드립니다.</div>
+    </div>
+    <div class="benefit-belt">
+      <div class="benefit-card"><div class="icon">💳</div><div class="label">초기비용<br>부담 ZERO</div></div>
+      <div class="benefit-card"><div class="icon">🎁</div><div class="label">다품목<br>추가 할인</div></div>
+      <div class="benefit-card"><div class="icon">📍</div><div class="label">시흥 지역<br>당일 상담</div></div>
+    </div>
+  </div>
+
+  <section class="form-section" id="apply-form">
+    <div class="wrap">
+      <div class="form-card">
+        <div id="form-view">
+          <!-- 맞춤 진단 결과 자동 반영 배너 -->
+          <div class="prefill-banner" id="prefill-banner">
+            <div class="pf-head"><span>✅</span><span id="pf-title">맞춤 진단 결과가 반영되었습니다</span></div>
+            <div class="pf-desc" id="pf-desc">아래 신청서에 진단 결과가 미리 채워져 있어요. 연락처만 남겨주시면 진단 내용 그대로 상담해 드립니다.</div>
+            <div class="pf-tags" id="pf-tags"></div>
+            <button type="button" class="pf-reset" onclick="samSubClearPrefill()">↺ 처음부터 직접 선택할래요</button>
+          </div>
+
+          <div class="form-card-title" id="form-main-title">📝 가전구독 상담 신청<br><small>(☕ 상담완료 스타벅스 + 🎁 방문 구매완료 와인 증정)</small></div>
+          <div class="form-card-desc" id="form-sub-title">신청까지 1분이면 충분해요. 담당자가 확인 후 바로 연락드립니다.</div>
+
+          <form id="sub-form" onsubmit="return samSubSubmitForm(event)">
+            <!-- 0. 상담 유형 (구독 / 일반 구매 / 비교) -->
+            <div class="f-field" id="ask-field" style="margin-top:0;">
+              <label class="f-label">어떤 상담을 원하세요? <span class="f-req">*</span></label>
+              <div class="ask-seg" id="ask-seg">
+                <button type="button" class="ask-btn on" data-ask="sub">🔄 구독<small>월 구독료 · 케어 포함</small></button>
+                <button type="button" class="ask-btn" data-ask="buy">🛒 일반 구매<small>일시불 · 할부</small></button>
+                <button type="button" class="ask-btn" data-ask="both">⚖️ 둘 다 비교<small>유리한 쪽 추천</small></button>
+              </div>
+              <div class="ask-note" id="ask-note"></div>
+            </div>
+
+            <!-- 1. 관심 제품 선택 (유지) -->
+            <div class="f-field">
+              <label class="f-label">1. 관심 있는 제품 <span class="f-req">*</span> <span class="f-hint">(누르면 선택됩니다)</span></label>
+              <div class="chip-grid" id="chip-grid">
+                <div class="chip" data-value="에어컨" onclick="samSubToggleChip(this)"><span class="chip-emoji">❄️</span><span class="chip-label">에어컨</span></div>
+                <div class="chip" data-value="시스템에어컨" onclick="samSubToggleChip(this)"><span class="chip-emoji">🌀</span><span class="chip-label">시스템에어컨</span></div>
+                <div class="chip" data-value="공기청정기" onclick="samSubToggleChip(this)"><span class="chip-emoji">🌬️</span><span class="chip-label">공기청정기</span></div>
+                <div class="chip" data-value="세탁건조기" onclick="samSubToggleChip(this)"><span class="chip-emoji">☀️</span><span class="chip-label">세탁건조기</span></div>
+                <div class="chip" data-value="TV" onclick="samSubToggleChip(this)"><span class="chip-emoji">📺</span><span class="chip-label">TV</span></div>
+                <div class="chip" data-value="냉장고" onclick="samSubToggleChip(this)"><span class="chip-emoji">🧊</span><span class="chip-label">냉장고</span></div>
+                <div class="chip" data-value="김치냉장고" onclick="samSubToggleChip(this)"><span class="chip-emoji">🥬</span><span class="chip-label">김치냉장고</span></div>
+                <div class="chip" data-value="식기세척기" onclick="samSubToggleChip(this)"><span class="chip-emoji">🍽️</span><span class="chip-label">식기세척기</span></div>
+                <div class="chip" data-value="정수기" onclick="samSubToggleChip(this)"><span class="chip-emoji">💧</span><span class="chip-label">정수기</span></div>
+                <div class="chip" data-value="의류케어" onclick="samSubToggleChip(this)"><span class="chip-emoji">👔</span><span class="chip-label">의류케어</span></div>
+                <div class="chip" data-value="조리기기" onclick="samSubToggleChip(this)"><span class="chip-emoji">🍳</span><span class="chip-label">조리기기</span></div>
+                <div class="chip" data-value="청소기" onclick="samSubToggleChip(this)"><span class="chip-emoji">🧹</span><span class="chip-label">청소기</span></div>
+                <div class="chip" data-value="기타" onclick="samSubToggleChip(this)"><span class="chip-emoji">✨</span><span class="chip-label">기타</span></div>
+              </div>
+            </div>
+
+            <!-- 2. 구매 목적 (큰 글씨 모드 시 숨김) -->
+            <div class="f-field hide-in-senior">
+              <label class="f-label" for="f-purpose">구매 목적 <span class="f-req">*</span></label>
+              <select id="f-purpose" class="f-select" required>
+                <option value="">선택해주세요</option>
+                <option value="혼수·신혼">혼수·신혼</option>
+                <option value="이사·입주">이사·입주</option>
+                <option value="신규구독" selected>신규구독</option>
+                <option value="일반구매">일반 구매</option>
+                <option value="구독·구매 비교">구독·구매 비교</option>
+                <option value="가전교체">가전교체</option>
+                <option value="사업자·B2B">사업자·B2B</option>
+                <option value="기타">기타</option>
+              </select>
+            </div>
+
+            <!-- 3. 복잡한 할인 조건 (큰 글씨 모드 · 일반 구매 선택 시 숨김) -->
+            <div class="discount-cond-box hide-in-senior">
+              <div class="discount-cond-title">💡 할인 조건 확인</div>
+              <div class="discount-cond-sub">아래 정보에 따라 받으실 수 있는 혜택이 달라져요. 선택할 때마다 아래 배지가 바뀝니다.</div>
+              <div class="f-field" style="margin-top:0;">
+                <label class="f-label">기존 구독 중인 제품이 있나요? <span class="f-req">*</span></label>
+                <div class="f-radio-group">
+                  <label class="f-radio"><input type="radio" name="existingSub" value="없음(신규)" checked onchange="samSubUpdateBadges()"> 없음 (신규 가입)</label>
+                  <label class="f-radio"><input type="radio" name="existingSub" value="있음" onchange="samSubUpdateBadges()"> 있음</label>
+                </div>
+              </div>
+              <div class="f-field">
+                <label class="f-label">삼성전자 멤버십 가입되어 있나요? <span class="f-req">*</span></label>
+                <div class="f-radio-group">
+                  <label class="f-radio"><input type="radio" name="membership" value="있음" checked onchange="samSubUpdateBadges()"> 있음</label>
+                  <label class="f-radio"><input type="radio" name="membership" value="없음" onchange="samSubUpdateBadges()"> 없음</label>
+                  <label class="f-radio"><input type="radio" name="membership" value="모름" onchange="samSubUpdateBadges()"> 잘 모름</label>
+                </div>
+              </div>
+              <div class="f-field">
+                <label class="f-label">선납 의향이 있으신가요?</label>
+                <div class="f-radio-group">
+                  <label class="f-radio"><input type="radio" name="prepay" value="선납 예정" onchange="samSubUpdateBadges()"> 선납 예정</label>
+                  <label class="f-radio"><input type="radio" name="prepay" value="미정" checked onchange="samSubUpdateBadges()"> 아직 미정</label>
+                  <label class="f-radio"><input type="radio" name="prepay" value="월납 희망" onchange="samSubUpdateBadges()"> 월납 희망</label>
+                </div>
+              </div>
+              <div class="eligible-badges" id="eligible-badges">
+                <span class="e-badge" id="badge-single"><span class="dot">●</span> <span data-until="2026-09-28T00:00:00+09:00">한 품목 할인</span><span class="is-off" data-from="2026-09-28T00:00:00+09:00">구독료 할인</span></span>
+                <span class="e-badge" id="badge-multi"><span class="dot">●</span> 다품목 할인</span>
+                <span class="e-badge" id="badge-prepay"><span class="dot">●</span> 선납 할인</span>
+                <span class="e-badge" id="badge-member" data-until="2026-09-28T00:00:00+09:00"><span class="dot">●</span> 멤버십 포인트</span>
+                <span class="e-badge is-off" id="badge-addsub" data-from="2026-09-28T00:00:00+09:00"><span class="dot">●</span> 추가구독 할인</span>
+              </div>
+            </div>
+
+            <!-- 4. 타경로 견적 여부 (큰 글씨 모드 시 숨김) -->
+            <div class="f-field hide-in-senior">
+              <label class="f-label" for="f-referral">타경로·타유통에서 견적 받으신 곳이 있나요?</label>
+              <select id="f-referral" class="f-select">
+                <option value="처음 문의드려요" selected>처음 문의드려요</option>
+                <option value="백화점">백화점</option>
+                <option value="타 삼성스토어(디지털프라자)">타 삼성스토어(디지털프라자)</option>
+                <option value="이마트·홈플러스">이마트·홈플러스</option>
+                <option value="하이마트·전자랜드">하이마트·전자랜드</option>
+                <option value="온라인">온라인</option>
+                <option value="기타">기타</option>
+              </select>
+            </div>
+
+            <!-- 5. 성함 (필수) -->
+            <div class="f-field">
+              <label class="f-label" for="f-name">2. 고객님 성함 <span class="f-req">*</span></label>
+              <input type="text" id="f-name" class="f-input" placeholder="이름을 적어주세요 (예: 홍길동)" required>
+            </div>
+
+            <!-- 6. 연락처 (필수) -->
+            <div class="f-field">
+              <label class="f-label" for="f-phone">3. 전화번호 <span class="f-req">*</span></label>
+              <input type="tel" id="f-phone" class="f-input" placeholder="010-0000-0000" inputmode="numeric" maxlength="13" oninput="samSubFormatPhone(this)" required>
+            </div>
+
+            <!-- 7. 지역 (필수) -->
+            <div class="f-field">
+              <label class="f-label" for="f-region">4. 사시는 곳 (동네 이름) <span class="f-req">*</span></label>
+              <input type="text" id="f-region" class="f-input" placeholder="예: 시흥 대야동, 배곧 등" required>
+            </div>
+
+            <!-- 8. 상담 방법 (큰 글씨 모드 시 숨김 - 전화 기본) -->
+            <div class="f-field hide-in-senior">
+              <label class="f-label">희망 상담 방법</label>
+              <div class="f-radio-group">
+                <label class="f-radio"><input type="radio" name="contactMethod" value="전화" checked> 전화</label>
+                <label class="f-radio"><input type="radio" name="contactMethod" value="문자"> 문자</label>
+                <label class="f-radio"><input type="radio" name="contactMethod" value="카카오톡"> 카카오톡</label>
+              </div>
+            </div>
+
+            <!-- 9. 추가 메모 -->
+            <div class="f-field">
+              <label class="f-label" for="f-memo">추가 요청사항 (선택)</label>
+              <textarea id="f-memo" class="f-textarea" placeholder="궁금하신 내용이나 희망 상담 시간을 편하게 적어주세요"></textarea>
+            </div>
+
+            <!-- 10. 동의 체크박스 -->
+            <div class="f-consent">
+              <label class="f-checkbox">
+                <input type="checkbox" id="f-consent" required checked>
+                <span>개인정보 수집 및 상담 전화 연결에 동의합니다 <span class="f-req">*</span></span>
+              </label>
+              <p class="f-consent-desc">수집항목: 이름, 연락처, 지역 등 / 목적: 삼성스토어 시흥 가전 맞춤 상담 및 혜택 안내 / 보유기간: 상담 완료 후 6개월</p>
+            </div>
+
+            <button type="submit" id="submit-btn" class="f-submit">상담 신청하기</button>
+          </form>
+        </div>
+
+        <div class="success-box" id="success-view">
+          <div class="s-icon">✓</div>
+          <h3 style="font-size:22px; font-weight:800;">신청이 안전하게 완료되었습니다</h3>
+          <p style="font-size:16px; margin-top:8px;">삼성스토어 시흥 전문 상담사가 확인 후 빠르게 연락드리겠습니다.<br>전화 상담이 바로 필요하시면 <strong>031-8042-3166</strong>으로 언제든 전화 주세요.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="accordion-section">
+    <div class="wrap">
+      <div class="section-eyebrow">MORE INFO</div>
+      <div class="section-title">신청 전에 궁금하신 점이 있다면</div>
+      <details class="acc">
+        <summary><span><span class="acc-icon">🧭</span>상담 신청, 이렇게 진행돼요</span><span class="acc-arrow">▾</span></summary>
+        <div class="acc-body">
+          <div class="process-item"><div class="process-num">1</div><div class="process-text"><div class="t">상담 신청서 작성</div><div class="d">관심 제품과 연락처만 남기면 끝, 1분이면 충분합니다</div></div></div>
+          <div class="process-item"><div class="process-num">2</div><div class="process-text"><div class="t">담당자 연락</div><div class="d">영업일 기준 1~2일 이내 전문 상담사가 친절하게 전화드립니다.</div></div></div>
+          <div class="process-item"><div class="process-num">3</div><div class="process-text"><div class="t">맞춤 견적 & 혜택가 안내</div><div class="d">가장 저렴하고 유리한 구독 및 구매 조건을 꼼꼼히 비교해 드립니다.</div></div></div>
+        </div>
+      </details>
+      <details class="acc">
+        <summary><span><span class="acc-icon">📍</span>시흥 외 전국 방문 상담 가능</span><span class="acc-arrow">▾</span></summary>
+        <div class="acc-body">
+          삼성스토어 시흥 매장은 경기도 시흥시 대야동에 위치해 있습니다. 시흥뿐만 아니라 전국 어디서나 맞춤 상담이 가능합니다.
+          <div class="region-tags">
+            <span class="region-tag">시흥 대야동</span><span class="region-tag">신천동</span><span class="region-tag">은계지구</span><span class="region-tag">배곧</span><span class="region-tag">정왕동</span>
+          </div>
+        </div>
+      </details>
+      <details class="acc" id="faq-acc-wrapper">
+        <summary><span><span class="acc-icon">💬</span>자주 묻는 질문</span><span class="acc-arrow">▾</span></summary>
+        <div class="acc-body" id="faq-list-container">
+          <div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">구독 말고 일반 구매 상담도 가능한가요? <span class="mark">+</span></div><div class="faq-a">네, 가능합니다. 신청서 맨 위에서 '일반 구매'를 선택하시면 일시불·할부 견적을, '둘 다 비교'를 선택하시면 구독과 구매 총비용을 비교해 안내드립니다.</div></div>
+          <div class="faq-item is-off" data-from="2026-09-28T00:00:00+09:00" onclick="samSubToggleFaq(this)"><div class="faq-q">다품목 할인과 추가구독 할인을 함께 받을 수 있나요? <span class="mark">+</span></div><div class="faq-a">아니요, 두 할인은 중복 적용되지 않습니다. 처음 구독하며 2대 이상 함께 구독하면 다품목 구독할인(최대 5%), 이미 구독 중인 고객이 추가하면 추가구독 할인(3%)이 적용됩니다.</div></div>
+          <div class="faq-item is-off" data-from="2026-09-28T00:00:00+09:00" onclick="samSubToggleFaq(this)"><div class="faq-q">선납 비율에 따라 할인율이 달라지나요? <span class="mark">+</span></div><div class="faq-a">네, 9월 28일부터 선납 20% 시 3%, 30% 시 4%, 40~50% 시 5% 할인이 적용됩니다. 품목별로 다를 수 있어 상담 시 정확히 안내드립니다.</div></div>
+          <div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">가전구독과 일시불 구매의 차이는 무엇인가요? <span class="mark">+</span></div><div class="faq-a">가전구독은 초기 비용 부담 없이 월 구독료로 이용하며 정기점검, 소모품 교체 등 케어서비스가 포함됩니다. 일시불 구매는 초기 비용을 한 번에 지불하는 방식입니다.</div></div>
+          <div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">여러 제품을 한 번에 구독하면 할인이 더 있나요? <span class="mark">+</span></div><div class="faq-a">신규 가입 고객이 2개 이상 제품을 동시에 구독하시면 다품목 추가 할인 상담이 가능합니다. 이미 구독 중인 제품이 있는 경우 조건이 다를 수 있습니다.</div></div>
+          <div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">선납하면 할인을 더 받을 수 있나요? <span class="mark">+</span></div><div class="faq-a">네, 선납 조건으로 가입하시면 추가 할인 상담이 가능합니다. 정확한 할인율은 선납 비율에 따라 상담 시 안내드립니다.</div></div>
+          <div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">삼성전자 멤버십이 없어도 상담이 가능한가요? <span class="mark">+</span></div><div class="faq-a">네, 가능합니다. 편하게 신청해 주시면 담당자가 멤버십 가입 및 포인트 적립 혜택까지 함께 도와드립니다.</div></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <footer>
+    <div class="contact-line">삼성스토어 시흥 · 031-8042-3166</div>
+    <div>경기도 시흥시 서해안로1685번길 12 (대야동)</div>
+    <div style="margin-top:8px;"><a href="http://pf.kakao.com/_NcxjaC/chat">카카오톡 상담 문의</a></div>
+  </footer>
+</div>
+
+<script>
+/* 큰 글씨 / 간편 모드 상태 전환 함수 */
+function applySeniorMode(isSenior) {
+  var body = document.body;
+  var btn = document.getElementById('seniorModeToggleBtn');
+  var desc = document.getElementById('mode-text');
+  var formTitle = document.getElementById('form-main-title');
+  var formSub = document.getElementById('form-sub-title');
+  var purposeSel = document.getElementById('f-purpose');
+  var heroH1 = document.getElementById('hero-main-title');
+  var heroP = document.getElementById('hero-subtext');
+
+  if (isSenior) {
+    body.classList.add('senior-mode');
+    if (btn) btn.innerHTML = '<span>표준 화면으로 보기</span>';
+    if (desc) desc.textContent = '현재 큰 글씨·간편 화면입니다';
+    
+    // 상단 헤드라인 및 부제목 단순화
+    if (heroH1) heroH1.innerHTML = '삼성 가전 상담 신청<br><em>최대 20% 특별 혜택</em>';
+    if (heroP) heroP.textContent = '전화번호만 남겨주시면 친절한 직원이 바로 전화드립니다.';
+
+    if (formTitle) formTitle.innerHTML = '📝 간편 상담 신청 (큰 글씨)<br><small style="font-size:16px;color:#0057ff;">(복잡한 내용 없이 전화상담으로 도와드립니다)</small>';
+    if (formSub) formSub.textContent = '필요한 제품과 전화번호만 적어주세요. 1분이면 끝납니다.';
+    if (purposeSel && !purposeSel.value) purposeSel.value = '신규구독';
+  } else {
+    body.classList.remove('senior-mode');
+    if (btn) btn.innerHTML = '<span>큰 글씨 · 간편 모드</span>';
+    if (desc) desc.textContent = '글씨가 작아 보기 불편하신가요?';
+
+    // 표준 화면 복원
+    if (heroH1) heroH1.innerHTML = '지금 구독 상담 신청하면<br><em>최대 20%</em> 혜택 조건 확인';
+    if (heroP) heroP.textContent = '구독은 물론 일반 구매 상담도 OK · 1분 신청으로 조건을 바로 확인하세요';
+
+    if (formTitle) formTitle.innerHTML = '📝 가전구독 상담 신청<br><small>(☕ 상담완료 스타벅스 + 🎁 방문 구매완료 와인 증정)</small>';
+    if (formSub) formSub.textContent = '신청까지 1분이면 충분해요. 담당자가 확인 후 바로 연락드립니다.';
+  }
+  if (window.samAskApply) window.samAskApply();
+}
+
+window.toggleSeniorMode = function () {
+  var isSenior = !document.body.classList.contains('senior-mode');
+  applySeniorMode(isSenior);
+  try { localStorage.setItem('sam_senior_mode', isSenior ? 'Y' : 'N'); } catch(e){}
+};
+
+// 접속 시 URL 파라미터(?view=senior) 또는 저장 상태 확인
+(function checkInitialMode() {
+  var p = new URLSearchParams(window.location.search);
+  var viewParam = p.get('view');
+  var saved = '';
+  try { saved = localStorage.getItem('sam_senior_mode'); } catch(e){}
+  if (viewParam === 'senior' || viewParam === 'easy' || saved === 'Y') {
+    applySeniorMode(true);
+  }
+})();
+
+/* 날짜 자동 전환 (KST) — data-from 이후 표시 / data-until 이전까지 표시
+   테스트: 주소 뒤에 &sftest=2026-09-28
+   ※ 고도몰 템플릿 치환 방지: 여는 중괄호 뒤에 항상 공백 유지 */
+(function(){ 
+  var m = location.search.match(/sftest=(\d{4}-\d{2}-\d{2})/);
+  window.SAM_NOW = m ? Date.parse(m[1] + 'T00:00:00+09:00') : Date.now();
+  window.samIsFrom = function(d){ return window.SAM_NOW >= Date.parse(d); };
+  window.samDateApply = function(){ 
+    var els = document.querySelectorAll('#samsung-sub-page [data-from], #samsung-sub-page [data-until]');
+    for (var i = 0; i < els.length; i++){ 
+      var f = els[i].getAttribute('data-from'), u = els[i].getAttribute('data-until');
+      var on = (!f || window.SAM_NOW >= Date.parse(f)) && (!u || window.SAM_NOW < Date.parse(u));
+      els[i].classList.toggle('is-off', !on);
+    }
+    if (window.samSubUpdateBadges) window.samSubUpdateBadges();
+  };
+  window.samDateApply();
+  if (m){ 
+    var b = document.createElement('div');
+    b.textContent = '🧪 테스트 모드 : ' + m[1] + ' 기준 화면';
+    b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#ff3b5c;color:#fff;font-weight:800;text-align:center;padding:10px;font-size:14px;';
+    document.body.appendChild(b);
+    return;
+  }
+  if (window.fetch){ 
+    fetch(location.href, { method:'HEAD', cache:'no-store' }).then(function(r){ 
+      var d = r.headers.get('Date');
+      if (d){ window.SAM_NOW = Date.parse(d); window.samDateApply(); }
+    }).catch(function(){ });
+  }
+})();
+
+/* 기본 폼 스크립트 및 GAS 통신 */
+(function () {
+  var CONFIG = {
+    gasUrl: 'https://script.google.com/macros/s/AKfycbwqIrMBkK9ujBAKkH3ONO95-BYVt_SeQwNVWPuPfqGrfLYlhrpuP9xUalf1TGcsv3s2/exec'
+  };
+  var selectedProducts = [];
+
+  /* ── 상담 유형 (구독 / 일반 구매 / 둘 다 비교) ──
+     · 프리셋: ?ask=buy (일반 구매) / ?ask=both (비교)
+     · 자급제(evt=mobile·preorder) 화면에서는 숨김 */
+  var ASK = {
+    sub:  { label: '구독', purpose: '신규구독', btn: '구독 상담 신청하기',
+            title: '📝 가전구독 상담 신청<br><small>(☕ 상담완료 스타벅스 + 🎁 방문 구매완료 와인 증정)</small>',
+            desc: '신청까지 1분이면 충분해요. 담당자가 확인 후 바로 연락드립니다.',
+            note: '💡 월 구독료로 이용하고 케어서비스까지 포함돼요. 구독 페스티벌 할인 조건을 함께 확인해 드립니다.' },
+    buy:  { label: '일반구매', purpose: '일반구매', btn: '구매 상담 신청하기',
+            title: '📝 가전 구매 상담 신청<br><small>(🎁 방문 구매완료 와인 증정)</small>',
+            desc: '일시불·할부 구매 견적을 매장 혜택가로 안내드립니다. 1분이면 충분해요.',
+            note: '💡 일시불·카드 할부 견적을 안내드려요. 다른 곳에서 받은 견적이 있으면 비교해 드립니다.' },
+    both: { label: '구독·구매비교', purpose: '구독·구매 비교', btn: '비교 상담 신청하기',
+            title: '📝 구독 vs 구매 비교 상담<br><small>(☕ 상담완료 스타벅스 + 🎁 방문 구매완료 와인 증정)</small>',
+            desc: '같은 제품을 구독과 일반 구매로 각각 견적 내서 총비용을 비교해 드려요.',
+            note: '💡 구독 총 납부액과 일시불 가격을 나란히 놓고 더 유리한 쪽을 추천해 드려요.' }
+  };
+  var askType = 'sub';
+  var PURPOSE_DEFAULTS = ['신규구독', '일반구매', '구독·구매 비교'];
+  var evtNow = new URLSearchParams(location.search).get('evt');
+  var askEnabled = !(evtNow === 'mobile' || evtNow === 'preorder');
+
+  window.samAskApply = function () {
+    if (!askType) return;
+    var a = ASK[askType];
+    var page = document.getElementById('samsung-sub-page');
+    if (page) page.classList.toggle('ask-buy', askType === 'buy');
+    Array.prototype.forEach.call(document.querySelectorAll('#ask-seg .ask-btn'), function (b) {
+      b.classList.toggle('on', b.getAttribute('data-ask') === askType);
+    });
+    var note = document.getElementById('ask-note');
+    if (note) note.textContent = a.note;
+    var ps = document.getElementById('f-purpose');
+    if (ps && (!ps.value || PURPOSE_DEFAULTS.indexOf(ps.value) > -1)) ps.value = a.purpose;
+    if (window.SAM_FORM_MODE) return; /* 혼수·입주 등 분기 페이지는 제목 유지 */
+    if (!document.body.classList.contains('senior-mode')) {
+      var t = document.getElementById('form-main-title'); if (t) t.innerHTML = a.title;
+      var d = document.getElementById('form-sub-title'); if (d) d.textContent = a.desc;
+    }
+    var btn = document.getElementById('submit-btn'); if (btn) btn.textContent = a.btn;
+  };
+  window.samAskSet = function (type) { if (ASK[type]) { askType = type; window.samAskApply(); } };
+
+  var askField = document.getElementById('ask-field');
+  if (!askEnabled) {
+    if (askField) askField.style.display = 'none';
+    askType = null;
+  } else {
+    var askSeg = document.getElementById('ask-seg');
+    if (askSeg) askSeg.addEventListener('click', function (e) {
+      var b = e.target.closest('.ask-btn');
+      if (b) window.samAskSet(b.getAttribute('data-ask'));
+    });
+    var pa = new URLSearchParams(location.search).get('ask');
+    if (pa === 'buy' || pa === 'general') askType = 'buy';
+    else if (pa === 'both' || pa === 'compare') askType = 'both';
+    window.samAskApply();
+  }
+
+  window.samSubToggleChip = function (el) {
+    var value = el.getAttribute('data-value');
+    var idx = selectedProducts.indexOf(value);
+    if (idx > -1) { selectedProducts.splice(idx, 1); el.classList.remove('selected'); }
+    else { selectedProducts.push(value); el.classList.add('selected'); }
+    el.classList.remove('prefilled');
+    window.samSubUpdateBadges();
+  };
+
+  window.samSubGetSelected = function () { return selectedProducts.slice(); };
+  window.samSubResetSelected = function () {
+    selectedProducts = [];
+    Array.prototype.forEach.call(document.querySelectorAll('#chip-grid .chip'), function (c) {
+      c.classList.remove('selected'); c.classList.remove('prefilled');
+    });
+    window.samSubUpdateBadges();
+  };
+
+  window.samSubUpdateBadges = function () {
+    var existingSubEl = document.querySelector('input[name="existingSub"]:checked');
+    var membershipEl = document.querySelector('input[name="membership"]:checked');
+    var prepayEl = document.querySelector('input[name="prepay"]:checked');
+    var existingSub = existingSubEl ? existingSubEl.value : '';
+    var membership = membershipEl ? membershipEl.value : '';
+    var prepay = prepayEl ? prepayEl.value : '';
+    var singleOk = selectedProducts.length >= 1;
+    var multiOk = selectedProducts.length >= 2 && existingSub === '없음(신규)';
+    var prepayOk = prepay === '선납 예정';
+    var isNewPolicy = window.samIsFrom ? window.samIsFrom('2026-09-28T00:00:00+09:00') : false;
+    var memberOk = !isNewPolicy && membership === '있음';
+    var addSubOk = isNewPolicy && existingSub === '있음' && selectedProducts.length >= 1;
+    setBadge('badge-single', singleOk);
+    setBadge('badge-multi', multiOk);
+    setBadge('badge-prepay', prepayOk);
+    setBadge('badge-member', memberOk);
+    setBadge('badge-addsub', addSubOk);
+  };
+
+  function setBadge(id, active) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (active) el.classList.add('active');
+    else el.classList.remove('active');
+  }
+
+  window.samSubToggleFaq = function (el) { el.classList.toggle('open'); };
+
+  function getReferralSource() {
+    var params = new URLSearchParams(window.location.search);
+    var utmSource = params.get('utm_source');
+    var utmMedium = params.get('utm_medium');
+    var utmCampaign = params.get('utm_campaign');
+    if (utmSource) return [utmSource, utmMedium, utmCampaign].filter(Boolean).join('/');
+    if (window.SAM_FORM_SRC) return window.SAM_FORM_SRC;
+    if (document.referrer) { try { return new URL(document.referrer).hostname; } catch (e) { return document.referrer; } }
+    return '직접 유입';
+  }
+
+  function formatPhoneNumber(raw) {
+    var digits = raw.replace(/[^0-9]/g, '').slice(0, 11);
+    if (digits.length < 4) return digits;
+    if (digits.length < 8) return digits.slice(0, 3) + '-' + digits.slice(3);
+    if (digits.length < 11) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+    return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7, 11);
+  }
+
+  window.samSubFormatPhone = function (input) {
+    var cursorAtEnd = input.selectionEnd === input.value.length;
+    input.value = formatPhoneNumber(input.value);
+    if (cursorAtEnd) input.setSelectionRange(input.value.length, input.value.length);
+  };
+
+  function isValidPhone(value) {
+    var digits = value.replace(/[^0-9]/g, '');
+    return /^01[016789]\d{7,8}$/.test(digits);
+  }
+
+  window.samSubSubmitForm = function (e) {
+    e.preventDefault();
+    if (selectedProducts.length === 0) {
+      alert('관심 있으신 가전 제품을 1개 이상 콕 눌러주세요.');
+      return false;
+    }
+    var phoneInput = document.getElementById('f-phone');
+    var phone = phoneInput.value.trim();
+    if (!isValidPhone(phone)) {
+      alert('휴대폰 번호를 정확히 입력해주세요. (예: 010-1234-5678)');
+      phoneInput.focus();
+      return false;
+    }
+    var submitBtn = document.getElementById('submit-btn');
+    var submitLabel = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '상담 접수 중입니다...';
+
+    var isSenior = document.body.classList.contains('senior-mode');
+    var existingSubEl = document.querySelector('input[name="existingSub"]:checked');
+    var membershipEl = document.querySelector('input[name="membership"]:checked');
+    var prepayEl = document.querySelector('input[name="prepay"]:checked');
+    var contactMethodEl = document.querySelector('input[name="contactMethod"]:checked');
+    var purposeEl = document.getElementById('f-purpose');
+    var referralEl = document.getElementById('f-referral');
+
+    /* 상담 유형 → inquiryType (구독 선택 시 기존 값 '구독' 그대로 유지) */
+    var isBuy = askType === 'buy';
+    var askLabel = askType ? ASK[askType].label : '';
+    var baseMode = window.SAM_FORM_MODE;
+    var inquiryTypeVal = isSenior ? (askLabel || '구독') + '(간편모드)'
+      : baseMode ? ((askLabel && askType !== 'sub') ? baseMode + '(' + askLabel + ')' : baseMode)
+      : (askLabel || '구독');
+
+    var data = {
+      modelName: window.SAM_FORM_MODEL ? window.SAM_FORM_MODEL() : selectedProducts.join(', '),
+      inquiryType: inquiryTypeVal,
+      consultType: askLabel || '구독',
+      customerName: document.getElementById('f-name').value.trim(),
+      phone: phone,
+      memo: document.getElementById('f-memo').value.trim(),
+      pageUrl: window.location.href,
+      purchasePurpose: purposeEl && purposeEl.value ? purposeEl.value : (askType ? ASK[askType].purpose : '신규구독'),
+      region: document.getElementById('f-region').value.trim(),
+      contactMethod: contactMethodEl ? contactMethodEl.value : '전화',
+      referralSource: getReferralSource(),
+      productCount: selectedProducts.length,
+      existingSubscription: isBuy ? '해당없음(일반구매)' : (existingSubEl ? existingSubEl.value : '없음(신규)'),
+      membershipStatus: isBuy ? '해당없음(일반구매)' : (membershipEl ? membershipEl.value : '있음'),
+      prepayIntent: isBuy ? '해당없음(일반구매)' : (prepayEl ? prepayEl.value : '미정'),
+      otherQuoteSource: referralEl ? referralEl.value : '처음 문의드려요',
+      diagRecommend: window.SAM_DIAG_MODEL || '',
+      diagAnswers: window.SAM_DIAG_ANSWERS || '',
+      diagSource: window.SAM_FORM_SRC || (isSenior ? '간편모드' : '')
+    };
+
+    fetch(CONFIG.gasUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    })
+    .then(function () { onSubmitSuccess(data); })
+    .catch(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = submitLabel || '상담 신청하기';
+      alert('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+    });
+    return false;
+  };
+
+  function onSubmitSuccess(data) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'subscription_lead_submit',
+      lead_consult_type: data.consultType,
+      lead_model_name: data.modelName,
+      lead_purchase_purpose: data.purchasePurpose,
+      lead_region: data.region,
+      lead_product_count: data.productCount,
+      lead_is_multi_item: data.productCount >= 2,
+      lead_is_senior: document.body.classList.contains('senior-mode')
+    });
+    document.getElementById('form-view').style.display = 'none';
+    document.getElementById('success-view').style.display = 'block';
+    document.getElementById('apply-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  window.samSubUpdateBadges();
+})();
+</script>
+
+<!-- 추가 상품 리스트 (AJAX) -->
+<style>
+.subscription_goods_wrap { max-width: 1770px; margin: 50px auto; padding: 0 20px; }
+.subscription_goods_tit h3 { font-size: 24px; font-weight: bold; margin-bottom: 20px; text-align: center; }
+.btn_main_more { display: inline-block; padding: 12px 40px; border: 1px solid #333; background-color: #fff; color: #333; font-size: 15px; cursor: pointer; transition: all 0.2s ease; }
+.btn_main_more:hover { background-color: #333; color: #fff; }
+</style>
+<div class="subscription_goods_wrap">
+  <div class="subscription_goods_tit">
+    <h3>가전구독 상품</h3>
+  </div>
+  <div id="subGoodsList" class="goods_list_cont"></div>
+  <div class="btn_more_wrap" style="text-align: center; margin-top: 30px;">
+    <button type="button" id="btnMoreSubGoods" class="btn_main_more" onclick="loadSubscriptionGoods();">
+      <span>더보기 (<span id="currentCnt">0</span>/<span id="totalCnt">0</span>)</span>
+    </button>
+  </div>
+</div>
+<script type="text/javascript">
+var subPage = 1;
+var subPageSize = 8;
+var subCateCd = '012';
+$(document).ready(function() {
+    loadSubscriptionGoods();
+});
+function loadSubscriptionGoods() {
+    $.ajax({
+        url: '/goods/goods_list.php',
+        type: 'GET',
+        data: { 'cateCd': subCateCd, 'page': subPage, 'pageNum': subPageSize },
+        dataType: 'html',
+        beforeSend: function() { $('#btnMoreSubGoods').prop('disabled', true); },
+        success: function(data) {
+            var $html = $('<div>').html(data);
+            var $items = $html.find('.goods_pick_list').next('.goods_list').find('.goods_list_cont').html();
+            var totalRecodeText = $html.find('.pick_list_num strong').text();
+            var totalRecode = parseInt(totalRecodeText.replace(/[^0-9]/g, '')) || 0;
+            if ($items && $.trim($items) !== '') {
+                $('#subGoodsList').append($items);
+                var currentLoaded = Math.min(subPage * subPageSize, totalRecode);
+                $('#currentCnt').text(currentLoaded);
+                $('#totalCnt').text(totalRecode);
+                if (currentLoaded >= totalRecode || totalRecode === 0) {
+                    $('#btnMoreSubGoods').hide();
+                } else {
+                    subPage++;
+                }
+            } else {
+                if (subPage === 1) {
+                    $('#subGoodsList').html('<p class="no_data" style="text-align:center; padding:50px 0;">등록된 상품이 없습니다.</p>');
+                }
+                $('#btnMoreSubGoods').hide();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("상품을 불러오는 중 오류가 발생했습니다.", error);
+        },
+        complete: function() { $('#btnMoreSubGoods').prop('disabled', false); }
+    });
+}
+</script>
+
+<!-- 삼성 모바일 자급제 문의 분기 스크립트 -->
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var evt = params.get('evt');
+  if (evt !== 'mobile' && evt !== 'preorder') return;
+  window.SAM_FORM_MODE = '자급제문의(모바일)';
+  var CDN = 'https://godomall-storage.cdn-nhncommerce.com/bbfe079be9069f71afe7ad9a5bf9cee9/goods/';
+  var IMG = {
+    fold : CDN + '1000000918/image/detail/1000000918_detail_036.png',
+    flip : CDN + '1000000919/image/detail/1000000919_detail_036.png',
+    s26  : '',
+    tab  : CDN + '1000000599/image/detail/1000000599_detail_084.jpg',
+    book : CDN + '1000000906/image/detail/1000000906_detail_028.png',
+    watch: CDN + '1000000926/image/detail/1000000926_detail_020.png'
+  };
+  var TOP_BANNER_IMG = '';
+  var C_FOLD = ['색상 미정·상담시 결정', '제트블랙', '블루쉐도우', '실버쉐도우'];
+  var PRODUCTS = {
+    '갤럭시 탭': { img: IMG.tab, emoji: '📟', label: '갤럭시 탭', text: {key:'희망 모델·사양', ph:'예) 탭 S12 울트라 256GB / 모르면 비워두세요'} },
+	'Galaxy Z Fold8 Ultra': { img: IMG.fold, emoji: '📱', label: 'Z Fold8 Ultra', selects: [ {key:'색상', opts:C_FOLD}, {key:'용량', opts:['용량 미정·상담시 결정','512GB','1TB']} ] },
+    'Galaxy Z Fold8': { img: IMG.fold, emoji: '📱', label: 'Z Fold8', selects: [ {key:'색상', opts:C_FOLD}, {key:'용량', opts:['용량 미정·상담시 결정','256GB','512GB','1TB']} ] },
+    'Galaxy Z Flip8': { img: IMG.flip, emoji: '📲', label: 'Z Flip8', selects: [ {key:'색상', opts:['색상 미정·상담시 결정','제트블랙','블루쉐도우','코랄레드']}, {key:'용량', opts:['용량 미정·상담시 결정','256GB','512GB']} ] },
+    'Galaxy S26 시리즈': { img: IMG.s26, emoji: '📱', label: 'S26 시리즈', selects: [ {key:'모델', opts:['모델 미정·상담시 결정','S26','S26+','S26 Ultra']}, {key:'용량', opts:['용량 미정·상담시 결정','256GB','512GB','1TB']} ] },
+    '갤럭시 북': { img: IMG.book, emoji: '💻', label: '갤럭시 북', text: {key:'희망 모델·사양', ph:'예) 갤럭시 북5 프로 16인치 / 모르면 비워두세요'} },
+    '갤럭시 워치': { img: IMG.watch, emoji: '⌚', label: '갤럭시 워치', text: {key:'희망 모델·사양', ph:'예) 워치8 클래식 46mm 블루투스 / 모르면 비워두세요'} }
+  };
+  document.title = '삼성 모바일 자급제 제품 문의 | 삼성스토어 시흥';
+  var q = function (s) { return document.querySelector('#samsung-sub-page ' + s); };
+  if (q('.hero-badge')) q('.hero-badge').textContent = '📱 자급제 상담 접수중';
+  if (q('.hero h1')) q('.hero h1').innerHTML = '삼성 모바일 <br><em>자급제</em> 제품 문의';
+  if (q('.hero p')) q('.hero p').textContent = '갤럭시 폰·탭·북·워치, 원하는 제품만 남기면 담당자가 안내드립니다';
+  if (q('.form-card-title')) q('.form-card-title').innerHTML = '📱 자급제 제품 문의 신청';
+  if (q('.form-card-desc')) q('.form-card-desc').textContent = '1분이면 충분해요. 담당자가 확인 후 자급제 구매 조건을 안내드립니다.';
+  var submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) submitBtn.textContent = '문의 신청하기';
+  if (q('#success-view h3')) q('#success-view h3').textContent = '자급제 문의가 접수되었습니다';
+  if (q('#f-memo')) q('#f-memo').placeholder = '요청사항(개통 여부, 보상판매, 희망 수량 등)을 남겨주세요';
+
+  var grid = document.getElementById('chip-grid');
+  if (grid) {
+    var style = document.createElement('style');
+    style.textContent =
+      '#chip-grid{grid-template-columns:repeat(4,1fr)!important;gap:10px;}' +
+      '@media (max-width:760px){#chip-grid{grid-template-columns:repeat(3,1fr)!important;}}' +
+      '@media (max-width:420px){#chip-grid{grid-template-columns:repeat(2,1fr)!important;}}' +
+      '#chip-grid .chip{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:12px 8px;height:auto;}' +
+      '#chip-grid .chip-img{width:100%;max-width:92px;aspect-ratio:1/1;object-fit:contain;display:block;background:#f5f7fb;border-radius:10px;}' +
+      '#chip-grid .chip.selected .chip-img{background:#eaf1ff;}' +
+      '#chip-grid .chip-emoji{font-size:34px;line-height:1;height:92px;display:flex;align-items:center;justify-content:center;}' +
+      '#chip-grid .chip-label{font-size:13px;font-weight:700;line-height:1.3;text-align:center;word-break:keep-all;}' +
+      '#preorder-details .pd-row{border:1.5px solid #cfe1ff;background:#f0f6ff;border-radius:12px;padding:14px;margin-top:10px;}' +
+      '#preorder-details .pd-name{font-size:15px;font-weight:800;color:#0046d1;margin-bottom:10px;}' +
+      '#preorder-details .pd-selects{display:grid;grid-template-columns:1fr 1fr;gap:8px;}' +
+      '#preorder-details .pd-selects.one{grid-template-columns:1fr;}' +
+      '#preorder-details .pd-txt{width:100%;box-sizing:border-box;}' +
+      '@media (max-width:420px){#preorder-details .pd-selects{grid-template-columns:1fr;}}';
+    document.head.appendChild(style);
+    grid.innerHTML = Object.keys(PRODUCTS).map(function (k) {
+      var p = PRODUCTS[k];
+      var visual = p.img
+        ? '<img class="chip-img" src="' + p.img + '" alt="' + p.label + '" loading="lazy"><span class="chip-emoji chip-fallback" style="display:none;">' + p.emoji + '</span>'
+        : '<span class="chip-emoji chip-fallback">' + p.emoji + '</span>';
+      return '<div class="chip" data-value="' + k + '" onclick="samSubToggleChip(this)">' + visual + '<span class="chip-label">' + p.label + '</span></div>';
+    }).join('');
+
+    Array.prototype.forEach.call(grid.querySelectorAll('.chip-img'), function (im) {
+      im.addEventListener('error', function () {
+        im.style.display = 'none';
+        var fb = im.parentNode.querySelector('.chip-fallback');
+        if (fb) fb.style.display = 'flex';
+      });
+    });
+
+    var detailWrap = document.createElement('div');
+    detailWrap.id = 'preorder-details';
+    grid.parentNode.appendChild(detailWrap);
+
+    function selectedModels() {
+      return Array.prototype.map.call(grid.querySelectorAll('.chip.selected'), function (el) { return el.getAttribute('data-value'); });
+    }
+    function esc(v) { return String(v).replace(/"/g, '&quot;'); }
+    function buildSelect(model, key, opts) {
+      return '<select class="f-select pd-field" data-model="' + esc(model) + '" data-key="' + esc(key) + '">' +
+        opts.map(function (o, i) { return '<option value="' + esc(o) + '"' + (i === 0 ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>';
+    }
+    function buildText(model, t) {
+      return '<input type="text" class="f-input pd-field pd-txt" data-model="' + esc(model) + '" data-key="' + esc(t.key) + '" placeholder="' + esc(t.ph) + '">';
+    }
+    function renderDetails() {
+      var prev = {};
+      Array.prototype.forEach.call(detailWrap.querySelectorAll('.pd-field'), function (f) {
+        prev[f.getAttribute('data-model') + '|' + f.getAttribute('data-key')] = f.value;
+      });
+      detailWrap.innerHTML = selectedModels().map(function (m) {
+        var p = PRODUCTS[m], inner, cls = '';
+        if (p.selects) { inner = p.selects.map(function (s) { return buildSelect(m, s.key, s.opts); }).join(''); }
+        else { inner = buildText(m, p.text); cls = ' one'; }
+        return '<div class="pd-row"><div class="pd-name">' + p.emoji + ' ' + m + '</div><div class="pd-selects' + cls + '">' + inner + '</div></div>';
+      }).join('');
+      Array.prototype.forEach.call(detailWrap.querySelectorAll('.pd-field'), function (f) {
+        var k = f.getAttribute('data-model') + '|' + f.getAttribute('data-key');
+        if (prev[k]) f.value = prev[k];
+      });
+    }
+    var origToggle = window.samSubToggleChip;
+    window.samSubToggleChip = function (el) { origToggle(el); renderDetails(); };
+
+    window.SAM_FORM_ITEMS = function () {
+      return selectedModels().map(function (m) {
+        var o = { model: m, options: {} };
+        Array.prototype.forEach.call(detailWrap.querySelectorAll('.pd-field[data-model="' + m + '"]'), function (f) {
+          var v = (f.value || '').trim();
+          if (v.indexOf('미정') > -1 || v === '') v = '미정';
+          o.options[f.getAttribute('data-key')] = v;
+        });
+        return o;
+      });
+    };
+    window.SAM_FORM_MODEL = function () {
+      return window.SAM_FORM_ITEMS().map(function (o) {
+        var vals = Object.keys(o.options).map(function (k) { return o.options[k]; });
+        return o.model + (vals.length ? '(' + vals.join('/') + ')' : '');
+      }).join(', ');
+    };
+  }
+
+  ['.stack-banner', '.benefit-belt', '.discount-cond-box', '.accordion-section', '.subscription_goods_wrap'].forEach(function (sel) {
+    var el = document.querySelector(sel);
+    if (el) el.style.display = 'none';
+  });
+  var purpose = document.getElementById('f-purpose');
+  if (purpose) {
+    purpose.insertAdjacentHTML('beforeend', '<option value="자급제구매" selected>자급제 구매</option>');
+    purpose.removeAttribute('required');
+    purpose.closest('.f-field').style.display = 'none';
+  }
+  var referral = document.getElementById('f-referral');
+  if (referral) referral.closest('.f-field').style.display = 'none';
+})();
+</script>
+
+<!-- 혼수·입주·이사 전용 분기 스크립트 -->
+<script>
+(function () {
+  function getEvtParam() {
+    var href = window.location.href;
+    var match = href.match(/[?&]evt=([^&]+)/);
+    return match ? match[1] : null;
+  }
+  var evt = getEvtParam();
+  if (evt !== 'wedding' && evt !== 'wedding_move' && evt !== 'move') return;
+  window.SAM_FORM_MODE = '혼수·입주·이사';
+  document.title = '시흥 혼수·입주·이사 가전 맞춤 견적 | 삼성스토어 시흥';
+  var q = function (s) { return document.querySelector('#samsung-sub-page ' + s); };
+  if (q('.hero-badge')) q('.hero-badge').textContent = '💒 혼수·입주·이사 맞춤 상담';
+  if (q('.hero h1')) q('.hero h1').innerHTML = '시흥 혼수·입주·이사 가전,<br><em>최대 1645만 상당의</em>혜택으로 알뜰하게 준비하세요!';
+  if (q('.hero p')) q('.hero p').textContent = '필요 품목과 일정만 남겨주시면 1:1 전문 상담으로 최적 견적을 안내드립니다';
+  if (q('.hero-period')) q('.hero-period').style.display = 'none';
+  ['.stack-banner', '.benefit-belt', '.discount-cond-box'].forEach(function(sel) {
+    var el = document.querySelector(sel);
+    if (el) el.style.display = 'none';
+  });
+  if (q('.form-card-title')) q('.form-card-title').innerHTML = '💒 시흥 혼수·입주·이사 맞춤 가전 견적 받아보기';
+  if (q('.form-card-desc')) q('.form-card-desc').textContent = '1분이면 충분해요. 담당자가 확인 후 맞춤 견적을 안내드립니다.';
+  var submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) submitBtn.textContent = '1:1 맞춤 가전 상담 신청하기';
+  var faqContainer = document.getElementById('faq-list-container');
+  if (faqContainer) {
+    faqContainer.innerHTML = `
+      <div class="faq-item" onclick="samSubToggleFaq(this)">
+        <div class="faq-q">Q. 아직 입주나 결혼 일정이 확정되지 않았어도 상담이 가능한가요? <span class="mark">+</span></div>
+        <div class="faq-a">네, 대략적인 시기와 필요 품목만 알려주셔도 맞춤 할인가 견적을 받아보실 수 있습니다.</div>
+      </div>
+      <div class="faq-item" onclick="samSubToggleFaq(this)">
+        <div class="faq-q">Q. 이사할 때 기존 가전을 옮기는 것과 새로 바꾸는 것 중 뭐가 나을까요? <span class="mark">+</span></div>
+        <div class="faq-a">이전설치비와 신제품 교체 비용을 숫자로 비교해 상담드립니다. 이사 일정에 맞춰 희망일 배송·설치도 가능합니다.</div>
+      </div>
+    `;
+  }
+  var purposeSelect = document.getElementById('f-purpose');
+  if (purposeSelect) purposeSelect.value = '혼수·신혼';
+})();
+</script>
+
+<!-- 맞춤 진단 → 상담 신청서 자동 채움 -->
+<script>
+(function () {
+  function getParams() {
+    var out = {};
+    var qs = window.location.search || '';
+    var hidden = qs.match(/htmid=[^&]*\?([^&]*)/);
+    var raw = qs.replace(/^\?/, '');
+    if (hidden && hidden[1]) raw += '&' + hidden[1];
+    raw.split('&').forEach(function (pair) {
+      if (!pair) return;
+      var i = pair.indexOf('=');
+      if (i < 0) return;
+      var k = pair.slice(0, i);
+      var v = pair.slice(i + 1);
+      try { v = decodeURIComponent(v.replace(/\+/g, ' ')); } catch (e) {}
+      if (k && v && out[k] === undefined) out[k] = v;
+    });
+    return out;
+  }
+  var P = getParams();
+  if (!P.product && !P.memo && !P.purpose && !P.model) return;
+
+  var PROD_ALIAS = {
+    '정수기': '정수기', '얼음정수기': '정수기', '냉온정수기': '정수기',
+    '청소기': '청소기', '로봇청소기': '청소기', '무선청소기': '청소기', '비스포크제트': '청소기', '제트': '청소기',
+    '에어컨': '에어컨', '스탠드에어컨': '에어컨', '벽걸이에어컨': '에어컨', '무풍에어컨': '에어컨',
+    '시스템에어컨': '시스템에어컨', '천장형에어컨': '시스템에어컨',
+    '공기청정기': '공기청정기', '블루스카이': '공기청정기',
+    '세탁건조기': '세탁건조기', '세탁기': '세탁건조기', '건조기': '세탁건조기', '워시콤보': '세탁건조기', '콤보': '세탁건조기', '올인원': '세탁건조기',
+    'tv': 'TV', '티비': 'TV', '텔레비전': 'TV', '네오qled': 'TV', 'qled': 'TV', '더프레임': 'TV', '올레드': 'TV',
+    '냉장고': '냉장고', '비스포크냉장고': '냉장고',
+    '김치냉장고': '김치냉장고', '김냉': '김치냉장고',
+    '식기세척기': '식기세척기', '식세기': '식기세척기',
+    '의류케어': '의류케어', '에어드레서': '의류케어', '슈드레서': '의류케어', '드레서': '의류케어',
+    '조리기기': '조리기기', '인덕션': '조리기기', '전기레인지': '조리기기', '오븐': '조리기기', '큐커': '조리기기', '후드': '조리기기',
+    '모니터': '기타', '오디오': '기타', '사운드바': '기타', '뮤직프레임': '기타', '기타': '기타'
+  };
+  function normKey(s) { return String(s || '').toLowerCase().replace(/[\s\-_·,()]/g, ''); }
+
+  var PURPOSE_ALIAS = {
+    '혼수': '혼수·신혼', '신혼': '혼수·신혼', '혼수신혼': '혼수·신혼', '결혼': '혼수·신혼',
+    '이사': '이사·입주', '입주': '이사·입주', '이사입주': '이사·입주', '신축': '이사·입주',
+    '신규구독': '신규구독', '신규': '신규구독', '구독': '신규구독',
+    '일반구매': '일반구매', '구매': '일반구매', '일시불': '일반구매',
+    '비교': '구독·구매 비교', '구독구매비교': '구독·구매 비교',
+    '가전교체': '가전교체', '교체': '가전교체', '노후교체': '가전교체',
+    '사업자': '사업자·B2B', 'b2b': '사업자·B2B', '사업자b2b': '사업자·B2B',
+    '기타': '기타'
+  };
+
+  var applied = { products: [], purpose: '', model: '', memo: false, fields: [] };
+
+  function selectChips(raw) {
+    var grid = document.getElementById('chip-grid');
+    if (!grid) return;
+    var chips = Array.prototype.slice.call(grid.querySelectorAll('.chip'));
+    if (!chips.length) return;
+    String(raw).split(/[,·/|]+/).forEach(function (token) {
+      var t = normKey(token);
+      if (!t) return;
+      var want = PROD_ALIAS[t] || null;
+      var hit = null;
+      if (want) hit = chips.filter(function (c) { return normKey(c.getAttribute('data-value')) === normKey(want); })[0];
+      if (!hit) hit = chips.filter(function (c) { return normKey(c.getAttribute('data-value')) === t; })[0];
+      if (!hit) hit = chips.filter(function (c) { var v = normKey(c.getAttribute('data-value')); return v.indexOf(t) > -1 || t.indexOf(v) > -1; })[0];
+      if (hit && !hit.classList.contains('selected')) {
+        window.samSubToggleChip(hit);
+        hit.classList.add('prefilled');
+        applied.products.push(hit.getAttribute('data-value'));
+      }
+    });
+  }
+  if (P.product) selectChips(P.product);
+
+  if (P.purpose) {
+    var sel = document.getElementById('f-purpose');
+    if (sel) {
+      var want = PURPOSE_ALIAS[normKey(P.purpose)] || P.purpose;
+      var ok = Array.prototype.some.call(sel.options, function (o) { return o.value === want; });
+      if (ok) {
+        sel.value = want; applied.purpose = want;
+        /* 목적에 맞춰 상담 유형 자동 전환 */
+        if (window.samAskSet) {
+          if (want === '일반구매') window.samAskSet('buy');
+          else if (want === '구독·구매 비교') window.samAskSet('both');
+        }
+      }
+    }
+  }
+
+  var memoEl = document.getElementById('f-memo');
+  if (memoEl) {
+    var lines = [];
+    if (P.model) lines.push('[1위 추천 모델] ' + P.model);
+    if (P.memo) lines.push(P.memo);
+    if (lines.length) {
+      var body = lines.join('\n');
+      memoEl.value = memoEl.value ? (body + '\n' + memoEl.value) : body;
+      memoEl.style.minHeight = '120px';
+      applied.memo = true;
+    }
+  }
+  if (P.model) { window.SAM_DIAG_MODEL = P.model; applied.model = P.model; }
+  if (P.memo) window.SAM_DIAG_ANSWERS = P.memo.replace(/\n/g, ' ');
+  if (P.src) window.SAM_FORM_SRC = P.src;
+
+  [['name', 'f-name', '이름'], ['phone', 'f-phone', '연락처'], ['region', 'f-region', '지역']].forEach(function (m) {
+    if (!P[m[0]]) return;
+    var el = document.getElementById(m[1]);
+    if (!el) return;
+    el.value = P[m[0]];
+    if (m[0] === 'phone' && window.samSubFormatPhone) window.samSubFormatPhone(el);
+    applied.fields.push(m[2]);
+  });
+  [['existingSub', 'existingSub'], ['membership', 'membership'], ['prepay', 'prepay']].forEach(function (m) {
+    if (!P[m[0]]) return;
+    var r = document.querySelector('input[name="' + m[1] + '"][value="' + P[m[0]] + '"]');
+    if (r) { r.checked = true; }
+  });
+  if (window.samSubUpdateBadges) window.samSubUpdateBadges();
+
+  var banner = document.getElementById('prefill-banner');
+  if (banner && (applied.products.length || applied.model || applied.memo || applied.purpose)) {
+    var tags = document.getElementById('pf-tags');
+    var html = '';
+    if (applied.model) html += '<span class="pf-tag model">🏆 ' + applied.model + '</span>';
+    applied.products.forEach(function (p) { html += '<span class="pf-tag">' + p + '</span>'; });
+    if (applied.purpose) html += '<span class="pf-tag">' + applied.purpose + '</span>';
+    applied.fields.forEach(function (f) { html += '<span class="pf-tag">' + f + '</span>'; });
+    if (tags) tags.innerHTML = html;
+    var desc = document.getElementById('pf-desc');
+    if (desc) {
+      desc.textContent = applied.model
+        ? '진단 결과 1위 모델과 관심 제품이 신청서에 미리 채워졌습니다. 연락처만 남겨주시면 이 내용 그대로 담당자가 상담해 드립니다.'
+        : '진단 결과가 신청서에 미리 채워졌습니다. 연락처만 남겨주시면 이 내용 그대로 담당자가 상담해 드립니다.';
+    }
+    banner.classList.add('on');
+  }
+
+  window.samSubClearPrefill = function () {
+    if (window.samSubResetSelected) window.samSubResetSelected();
+    var mm = document.getElementById('f-memo');
+    if (mm) mm.value = '';
+    var ps = document.getElementById('f-purpose');
+    if (ps) ps.value = '';
+    if (window.samAskApply) window.samAskApply();
+    window.SAM_DIAG_MODEL = ''; window.SAM_DIAG_ANSWERS = '';
+    var b = document.getElementById('prefill-banner');
+    if (b) b.classList.remove('on');
+    if (window.samSubUpdateBadges) window.samSubUpdateBadges();
+  };
+
+  setTimeout(function () {
+    var target = document.getElementById('apply-form');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 350);
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: 'subscription_prefill_landing',
+    prefill_products: applied.products.join(','),
+    prefill_model: applied.model,
+    prefill_purpose: applied.purpose,
+    prefill_source: P.src || ''
+  });
+})();
+</script>
+
+<!-- 간편 문의 전용 분기 스크립트 (evt=simple) -->
+<script>
+(function () {
+  function getParam(name) {
+    var m = window.location.href.match(new RegExp('[?&]' + name + '=([^&#]+)'));
+    if (!m) return null;
+    try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; }
+  }
+  if (getParam('evt') !== 'simple') return;
+
+  var GAS_URL = 'https://script.google.com/macros/s/AKfycbwqIrMBkK9ujBAKkH3ONO95-BYVt_SeQwNVWPuPfqGrfLYlhrpuP9xUalf1TGcsv3s2/exec';
+  var TYPES = [
+    { v: '상품문의', e: '🛒', purpose: '기타' },
+    { v: '구독문의', e: '🔄', purpose: '신규구독' },
+    { v: '혼수문의', e: '💒', purpose: '혼수·신혼' },
+    { v: '입주문의', e: '🏠', purpose: '이사·입주' },
+    { v: '이사문의', e: '🚚', purpose: '이사·입주' },
+    { v: '특수차 이용 문의', e: '🚛', purpose: '기타',
+      notice: '죄송하지만 삼성스토어 시흥 주문 및 구매 문의 건만 전산상 확인 가능합니다.' }
+  ];
+  var selectedType = '';
+  window.SAM_FORM_MODE = '간편문의';
+  document.title = '간편 문의 | 삼성스토어 시흥';
+
+  /* ── 상단 문구 교체 ── */
+  var q = function (s) { return document.querySelector('#samsung-sub-page ' + s); };
+  function setHero() {
+    if (q('.hero-badge')) q('.hero-badge').textContent = '💬 간편 문의 접수중';
+    if (q('.hero h1')) q('.hero h1').innerHTML = '궁금한 점, <em>간편하게</em><br>문의 남겨주세요';
+    if (q('.hero p')) q('.hero p').textContent = '문의 유형과 연락처만 남기시면 담당자가 바로 연락드립니다';
+  }
+  setHero();
+  if (q('.hero-period')) q('.hero-period').style.display = 'none';
+  // 큰 글씨 모드 전환 시 히어로 문구가 구독용으로 덮이지 않도록
+  if (typeof window.applySeniorMode === 'function') {
+    var origApply = window.applySeniorMode;
+    window.applySeniorMode = function (s) { origApply(s); setHero(); };
+  }
+
+  ['.stack-banner', '.benefit-belt', '.accordion-section', '.subscription_goods_wrap'].forEach(function (sel) {
+    var el = document.querySelector(sel);
+    if (el) el.style.display = 'none';
+  });
+
+  /* ── 스타일 ── */
+  var st = document.createElement('style');
+  st.textContent =
+    '#simple-view .chip-grid{grid-template-columns:repeat(3,1fr)!important;}' +
+    '@media (max-width:420px){#simple-view .chip-grid{grid-template-columns:repeat(2,1fr)!important;}}' +
+    '#simple-view .chip .chip-label{font-size:14.5px;text-align:center;word-break:keep-all;line-height:1.35;}' +
+    '#simple-view .simple-notice{display:none;margin-top:12px;background:#fff8e6;border:1.5px solid #ffd666;border-radius:10px;' +
+      'padding:13px 15px;font-size:14.5px;font-weight:700;color:#8a5a00;line-height:1.55;word-break:keep-all;}' +
+    '#simple-view .simple-notice.on{display:block;}' +
+    '#simple-view .f-consent + .f-consent{margin-top:-8px;}' +
+    'body.senior-mode #simple-view .chip .chip-label{font-size:17px;}' +
+    'body.senior-mode #simple-view .simple-notice{font-size:17px;}';
+  document.head.appendChild(st);
+
+  /* ── 폼 생성 ── */
+  var formView = document.getElementById('form-view');
+  var successView = document.getElementById('success-view');
+  if (!formView) return;
+  formView.style.display = 'none';
+
+  var chips = TYPES.map(function (t) {
+    return '<div class="chip" data-value="' + t.v + '"><span class="chip-emoji">' + t.e + '</span><span class="chip-label">' + t.v + '</span></div>';
+  }).join('');
+
+  var view = document.createElement('div');
+  view.id = 'simple-view';
+  view.innerHTML =
+    '<div class="form-card-title">💬 간편 문의</div>' +
+    '<div class="form-card-desc">1분이면 충분해요. 담당자가 확인 후 바로 연락드립니다.</div>' +
+    '<form id="simple-form" novalidate>' +
+      '<div class="f-field"><label class="f-label">1. 문의 유형 <span class="f-req">*</span> <span class="f-hint">(하나를 눌러주세요)</span></label>' +
+        '<div class="chip-grid" id="simple-type-grid">' + chips + '</div>' +
+        '<div class="simple-notice" id="simple-notice"></div></div>' +
+      '<div class="f-field"><label class="f-label" for="s-name">2. 성함 <span class="f-req">*</span></label>' +
+        '<input type="text" id="s-name" class="f-input" placeholder="이름을 적어주세요 (예: 홍길동)"></div>' +
+      '<div class="f-field"><label class="f-label" for="s-phone">3. 전화번호 <span class="f-req">*</span></label>' +
+        '<input type="tel" id="s-phone" class="f-input" placeholder="010-0000-0000" inputmode="numeric" maxlength="13"></div>' +
+      '<div class="f-field"><label class="f-label" for="s-memo">4. 상담 내용 <span class="f-req">*</span></label>' +
+        '<textarea id="s-memo" class="f-textarea" style="min-height:120px!important;" placeholder="문의하실 내용을 편하게 적어주세요 (주문번호, 희망 연락 시간 등)"></textarea></div>' +
+      '<div class="f-consent"><label class="f-checkbox"><input type="checkbox" id="s-privacy">' +
+        '<span>[필수] 개인정보 수집 및 이용에 동의합니다 <span class="f-req">*</span></span></label>' +
+        '<p class="f-consent-desc">수집항목: 이름, 연락처, 상담내용 / 목적: 문의 확인 및 상담 연락 / 보유기간: 상담 완료 후 6개월</p></div>' +
+      '<div class="f-consent"><label class="f-checkbox"><input type="checkbox" id="s-marketing">' +
+        '<span>[선택] 마케팅 정보 수신에 동의합니다</span></label>' +
+        '<p class="f-consent-desc">수집항목: 이름, 연락처 / 목적: 신제품·이벤트·혜택 안내(문자·전화·카카오톡) / 보유기간: 동의 철회 시까지 · 미동의해도 문의 접수는 가능합니다</p></div>' +
+      '<button type="submit" id="s-submit" class="f-submit">문의 접수하기</button>' +
+    '</form>';
+  formView.parentNode.insertBefore(view, successView);
+
+  /* ── 유형 선택 (단일) ── */
+  var grid = document.getElementById('simple-type-grid');
+  var notice = document.getElementById('simple-notice');
+  function selectType(val) {
+    selectedType = val;
+    Array.prototype.forEach.call(grid.querySelectorAll('.chip'), function (c) {
+      c.classList.toggle('selected', c.getAttribute('data-value') === val);
+    });
+    var t = TYPES.filter(function (x) { return x.v === val; })[0];
+    if (t && t.notice) { notice.textContent = '⚠️ ' + t.notice; notice.classList.add('on'); }
+    else { notice.textContent = ''; notice.classList.remove('on'); }
+  }
+  grid.addEventListener('click', function (e) {
+    var c = e.target.closest('.chip');
+    if (c) selectType(c.getAttribute('data-value'));
+  });
+
+  // ?type=구독 등 프리셋
+  var preset = getParam('type');
+  if (preset) {
+    var key = preset.replace(/\s/g, '');
+    var hit = TYPES.filter(function (t) { return t.v.replace(/\s/g, '').indexOf(key) > -1; })[0];
+    if (hit) selectType(hit.v);
+  }
+
+  /* ── 전화번호 포맷 ── */
+  var phoneEl = document.getElementById('s-phone');
+  phoneEl.addEventListener('input', function () {
+    if (window.samSubFormatPhone) window.samSubFormatPhone(phoneEl);
+  });
+
+  function referral() {
+    var p = new URLSearchParams(window.location.search);
+    var src = [p.get('utm_source'), p.get('utm_medium'), p.get('utm_campaign')].filter(Boolean).join('/');
+    if (src) return src;
+    if (document.referrer) { try { return new URL(document.referrer).hostname; } catch (e) {} }
+    return '직접 유입';
+  }
+
+  /* ── 제출 ── */
+  document.getElementById('simple-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = document.getElementById('s-name').value.trim();
+    var phone = phoneEl.value.trim();
+    var memo = document.getElementById('s-memo').value.trim();
+    var privacy = document.getElementById('s-privacy').checked;
+    var marketing = document.getElementById('s-marketing').checked;
+
+    if (!selectedType) { alert('문의 유형을 선택해주세요.'); return; }
+    if (!name) { alert('성함을 입력해주세요.'); document.getElementById('s-name').focus(); return; }
+    if (!/^01[016789]\d{7,8}$/.test(phone.replace(/[^0-9]/g, ''))) {
+      alert('휴대폰 번호를 정확히 입력해주세요. (예: 010-1234-5678)'); phoneEl.focus(); return;
+    }
+    if (!memo) { alert('상담 내용을 입력해주세요.'); document.getElementById('s-memo').focus(); return; }
+    if (!privacy) { alert('개인정보 수집 및 이용에 동의해주세요.'); return; }
+
+    var btn = document.getElementById('s-submit');
+    btn.disabled = true; btn.textContent = '접수 중입니다...';
+
+    var t = TYPES.filter(function (x) { return x.v === selectedType; })[0];
+    var data = {
+      modelName: selectedType,
+      inquiryType: '간편문의(' + selectedType + ')',
+      customerName: name,
+      phone: phone,
+      memo: memo,
+      pageUrl: window.location.href,
+      purchasePurpose: t ? t.purpose : '기타',
+      region: '',
+      contactMethod: '전화',
+      referralSource: referral(),
+      productCount: 0,
+      privacyConsent: '동의',
+      marketingConsent: marketing ? '동의' : '미동의',
+      diagSource: '간편문의'
+    };
+
+    fetch(GAS_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    }).then(function () {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'simple_inquiry_submit',
+        inquiry_type: selectedType,
+        marketing_consent: marketing,
+        lead_is_senior: document.body.classList.contains('senior-mode')
+      });
+      view.style.display = 'none';
+      var h3 = successView.querySelector('h3');
+      if (h3) h3.textContent = '문의가 안전하게 접수되었습니다';
+      successView.style.display = 'block';
+      document.getElementById('apply-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = '문의 접수하기';
+      alert('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+    });
+  });
+
+  setTimeout(function () {
+    var target = document.getElementById('apply-form');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 350);
+})();
+</script>
+<!-- ══════════════════════════════════════════════════════════════════
+     🏢 B2B 삼성 AI 구독 전용 분기 스크립트 (evt=b2b)
+     · 접속: /service/SamSungSubscription.php?evt=b2b
+     · 제품 가격 미노출 / 제품군 + 수량만 선택 → 기존 GAS로 접수 (inquiryType: B2B구독)
+     · 프로모션 문구는 11월 프로모션 기준 (2026.11.01 ~ 11.30 · 상시 운영)
+     ※ 고도몰 템플릿 치환 방지: 여는 중괄호 뒤에 항상 공백 유지
+     ══════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  function getParam(name) {
+    var m = window.location.href.match(new RegExp('[?&]' + name + '=([^&#]+)'));
+    if (!m) return null;
+    try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; }
+  }
+  if (getParam('evt') !== 'b2b') return;
+
+  var GAS_URL = 'https://script.google.com/macros/s/AKfycbwqIrMBkK9ujBAKkH3ONO95-BYVt_SeQwNVWPuPfqGrfLYlhrpuP9xUalf1TGcsv3s2/exec';
+  var CERT_IMG = 'https://godomall-storage.cdn-nhncommerce.com/bbfe079be9069f71afe7ad9a5bf9cee9/editor/board/blog/121/904b3a2d65ef5bc9ea1c59e17520e793.jpg';
+  var CASES = [
+    { e: '🏥', t: '병원 구독 도입 사례', d: '대기실 공기질부터 진료실 디스플레이까지, 위생 관리가 중요한 의료 공간', url: 'https://www.samsungsh.co.kr/board/view.php?&bdId=blog&sno=119' },
+    { e: '🏢', t: '기숙사·연수원 구독 도입 사례', d: '객실마다 같은 제품을 대량 도입하고 정기 케어까지 한 번에', url: 'https://www.samsungsh.co.kr/board/view.php?&bdId=blog&sno=120' }
+  ];
+  /* tier: 3 = 추천모델 대상(최대 30%), 2 = 기본정책만(20%), 0 = 상담 */
+  var PRODUCTS = [
+    { v: '에어컨', e: '❄️', tier: 3 },
+    { v: '시스템에어컨', e: '🌀', tier: 0 },
+    { v: '공기청정기', e: '🌬️', tier: 3 },
+    { v: '정수기', e: '💧', tier: 3 },
+    { v: '냉장고', e: '🧊', tier: 3 },
+    { v: '김치냉장고', e: '🥬', tier: 0 },
+    { v: '세탁기', e: '🫧', tier: 3 },
+    { v: '건조기', e: '☀️', tier: 3 },
+    { v: '세탁건조기(콤보)', e: '🧺', tier: 3, label: '세탁건조기<br>(콤보)' },
+    { v: '에어드레서', e: '👔', tier: 2 },
+    { v: '전기레인지', e: '🍳', tier: 0 },
+    { v: 'TV·사이니지', e: '📺', tier: 2, label: 'TV·사이니지' },
+    { v: '모니터', e: '🖥️', tier: 0 },
+    { v: '기타', e: '✨', tier: 0 }
+  ];
+  var QTY = ['1대', '2~4대', '5~9대', '10대 이상'];
+  /* v1.5 개인사업자 분기 */
+  var RENTAL_GAS_URL = 'https://script.google.com/macros/s/AKfycbz5TD3xt0-sUFwUMmvZjeA3W6iGnWLIJ96kjSG6htzJcfDcXX4KtwhpbMvZqbgqj55hlg/exec'; /* 소모품/렌탈 문의 GAS → 잔디 사업자 렌탈 방 */
+  var URL_PERSONAL_SUB = '/main/html.php?htmid=service/SamSungSubscription.html&from=b2b_gate';
+  var URL_SOHO = '/main/html.php?htmid=service/SamSungSubscription.html&evt=soho&from=b2b_gate';
+  var RENTAL_ITEMS = [
+    { v: '프린터/복합기', e: '🖨️', d: '월 49,000원~ · 토너 무상 교체', keys: ['seenModel', 'paperSize', 'features', 'colorMode', 'region'] },
+    { v: '정수기', e: '💧', d: '월 34,900원~ · 정품 필터 제공', keys: ['purifierType', 'color'] },
+    { v: '공기청정기', e: '🍃', d: '월 58,900원 · 필터 60만원 상당', keys: ['area', 'filterType', 'petCare'] }
+  ];
+  var BIZ = ['병원·의원', '기숙사·연수원', '요양·시니어시설', '사무실·오피스', '학교·학원', '숙박·호텔', '요식업·카페', '기타'];
+
+  window.SAM_FORM_MODE = 'B2B구독';
+  document.title = 'B2B 삼성 AI 구독 상담 | 공식 파트너 삼성스토어 시흥';
+  document.body.classList.add('b2b-mode');
+  document.body.classList.remove('senior-mode');
+
+  /* ── 히어로 교체 ── */
+  var q = function (s) { return document.querySelector('#samsung-sub-page ' + s); };
+  function setHero() {
+    document.body.classList.remove('senior-mode');
+    if (q('.hero-badge')) q('.hero-badge').innerHTML = '🏅 삼성전자 B2B AI 구독 공식 파트너';
+    if (q('.hero h1')) q('.hero h1').innerHTML = '법인·공공기관 사업장 가전,<br>이제 구독으로 <em>최대 30%</em> 할인';
+    if (q('.hero p')) q('.hero p').textContent = '법인사업자·공공기관 전용 창구입니다. 개인사업자 사장님은 아래에서 더 맞는 상담으로 안내해 드려요';
+    if (q('.hero-period')) { q('.hero-period').textContent = '11월 프로모션 · 2026.11.01 ~ 11.30'; q('.hero-period').style.display = ''; }
+  }
+  setHero();
+  if (typeof window.applySeniorMode === 'function') {
+    var origApply = window.applySeniorMode;
+    window.applySeniorMode = function (s) { origApply(false); setHero(); };
+  }
+
+  ['.mode-switch-wrap', '.stack-banner', '.benefit-belt', '.accordion-section', '.subscription_goods_wrap'].forEach(function (sel) {
+    var el = document.querySelector(sel);
+    if (el) el.style.display = 'none';
+  });
+
+  /* ── 스타일 ── */
+  var st = document.createElement('style');
+  st.textContent = [
+    'body.b2b-mode #samsung-sub-page .hero { background: radial-gradient(120% 90% at 85% 0%, #1f5bff 0%, rgba(31,91,255,0) 55%), linear-gradient(180deg, #0a1a3f 0%, #0d2a6b 100%); padding: 34px 0 54px; }',
+    'body.b2b-mode #samsung-sub-page .hero-badge { background: rgba(255,255,255,.1); border-color: rgba(255,225,77,.55); color: #ffe78a; }',
+    'body.b2b-mode #samsung-sub-page .hero h1 { font-size: 27px; letter-spacing: -0.02em; }',
+    'body.b2b-mode #samsung-sub-page .hero p { opacity: .85; max-width: 440px; margin: 0 auto; line-height: 1.6; }',
+    'body.b2b-mode #samsung-sub-page .hero-period { display: inline-block; margin-top: 14px; padding: 5px 12px; border-radius: 6px; background: rgba(255,255,255,.08); font-weight: 700; opacity: 1; color: #c9d8ff; }',
+
+    '#b2b-top { position: relative; z-index: 2; margin-top: -30px; }',
+    '.b2b-card { background: #fff; border: 1px solid #e3e9f5; border-radius: 16px; box-shadow: 0 12px 32px rgba(10,26,63,.08); }',
+
+    /* 파트너 인증 */
+    '.b2b-partner { display: flex; gap: 16px; align-items: center; padding: 16px; }',
+    '.b2b-partner .cert { flex-shrink: 0; width: 92px; border-radius: 8px; overflow: hidden; border: 1px solid #e8dcb5; box-shadow: 0 4px 14px rgba(160,120,20,.18); cursor: zoom-in; background: #fff; padding: 0; }',
+    '.b2b-partner .cert img { display: block; width: 100%; height: auto; }',
+    '.b2b-partner .eyebrow { font-size: 11.5px; font-weight: 800; letter-spacing: .08em; color: #b8860b; margin-bottom: 4px; }',
+    '.b2b-partner .ttl { font-size: 18px; font-weight: 800; color: #0a1a3f; line-height: 1.35; margin-bottom: 6px; word-break: keep-all; }',
+    '.b2b-partner .dsc { font-size: 13.5px; color: #55607a; line-height: 1.55; word-break: keep-all; }',
+    '.b2b-partner .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }',
+    '.b2b-partner .tags span { font-size: 11.5px; font-weight: 700; color: #0d2a6b; background: #eef3ff; border-radius: 5px; padding: 4px 8px; }',
+
+    /* 프로모션 계단 */
+    '.b2b-sec { padding: 30px 0 4px; }',
+    '.b2b-eyebrow { font-size: 12.5px; font-weight: 800; letter-spacing: .06em; color: #1f5bff; margin-bottom: 6px; }',
+    '.b2b-h2 { font-size: 21px; font-weight: 800; color: #0a1a3f; margin: 0 0 6px; letter-spacing: -0.02em; word-break: keep-all; line-height: 1.4; }',
+    '.b2b-sub { font-size: 14px; color: #64748b; margin: 0 0 16px; word-break: keep-all; line-height: 1.55; }',
+    '.b2b-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: end; }',
+    '.b2b-step { border-radius: 14px; padding: 14px 10px 14px; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; }',
+    '.b2b-step.s1 { background: #4d7dff; min-height: 150px; }',
+    '.b2b-step.s2 { background: #1f5bff; min-height: 178px; }',
+    '.b2b-step.s3 { background: linear-gradient(160deg, #0d2a6b, #0a1a3f); min-height: 206px; box-shadow: 0 10px 24px rgba(10,26,63,.25); position: relative; }',
+    '.b2b-step.s3::before { content: "BEST"; position: absolute; top: 10px; right: 10px; font-size: 10px; font-weight: 900; letter-spacing: .08em; color: #0a1a3f; background: #ffe14d; border-radius: 4px; padding: 2px 6px; }',
+    '.b2b-step .no { font-size: 11.5px; font-weight: 800; opacity: .8; margin-bottom: 4px; }',
+    '.b2b-step .pct { font-size: 34px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }',
+    '.b2b-step .pct small { font-size: 15px; font-weight: 800; margin-left: 1px; }',
+    '.b2b-step.s3 .pct { color: #ffe14d; }',
+    '.b2b-step .nm { font-size: 13.5px; font-weight: 800; margin: 8px 0 4px; word-break: keep-all; line-height: 1.35; }',
+    '.b2b-step .cd { font-size: 12px; opacity: .85; line-height: 1.45; word-break: keep-all; }',
+    '.b2b-target { margin-top: 12px; padding: 14px; border-radius: 12px; background: #f5f8ff; border: 1px solid #dfe8ff; font-size: 13px; color: #334155; line-height: 1.7; word-break: keep-all; }',
+    '.b2b-target b { color: #0d2a6b; }',
+    '.b2b-note { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.55; word-break: keep-all; }',
+
+    /* 도입 이유 */
+    '.b2b-why { display: grid; grid-template-columns: 1fr; gap: 8px; }',
+    '.b2b-why .it { display: flex; gap: 14px; align-items: flex-start; padding: 16px; border: 1px solid #e3e9f5; border-radius: 14px; background: #fff; }',
+    '.b2b-why .ic { flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; background: #eef3ff; display: flex; align-items: center; justify-content: center; font-size: 22px; }',
+    '.b2b-why .t { font-size: 15.5px; font-weight: 800; color: #0a1a3f; margin-bottom: 3px; }',
+    '.b2b-why .d { font-size: 13.5px; color: #55607a; line-height: 1.55; word-break: keep-all; }',
+    '.b2b-plan { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }',
+    '.b2b-plan > div { border-radius: 12px; background: #0a1a3f; color: #fff; padding: 13px 14px; }',
+    '.b2b-plan .k { font-size: 12px; color: #9fb4e8; font-weight: 700; margin-bottom: 4px; }',
+    '.b2b-plan .v { font-size: 15px; font-weight: 800; }',
+    '.b2b-plan .s { font-size: 12px; color: #c9d8ff; margin-top: 3px; line-height: 1.45; word-break: keep-all; }',
+
+    /* 폼 */
+    'body.b2b-mode #samsung-sub-page .form-section { padding-top: 30px; }',
+    'body.b2b-mode #samsung-sub-page .form-card { border: 1.5px solid #cfdcf7; box-shadow: 0 14px 36px rgba(10,26,63,.08); }',
+    '#b2b-view .chip-grid { grid-template-columns: repeat(4, 1fr) !important; }',
+    '@media (max-width: 560px) { #b2b-view .chip-grid { grid-template-columns: repeat(3, 1fr) !important; } }',
+    '@media (max-width: 360px) { #b2b-view .chip-grid { grid-template-columns: repeat(2, 1fr) !important; } }',
+    '#b2b-view .chip { position: relative; padding: 14px 4px 12px; }',
+    '#b2b-view .chip .chip-emoji { font-size: 26px; }',
+    '#b2b-view .chip .chip-label { font-size: 13.5px; text-align: center; line-height: 1.3; word-break: keep-all; }',
+    '#b2b-view .chip .ptag { position: absolute; top: -7px; right: -3px; font-size: 10px; font-weight: 900; border-radius: 5px; padding: 2px 5px; background: #0a1a3f; color: #ffe14d; }',
+    '#b2b-view .chip .ptag.t2 { background: #4d7dff; color: #fff; }',
+    '#b2b-view .biz-grid { display: flex; flex-wrap: wrap; gap: 7px; }',
+    '#b2b-view .biz { border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 10px 15px; font-size: 14.5px; font-weight: 700; color: #334155; cursor: pointer; user-select: none; background: #fff; }',
+    '#b2b-view .biz.selected { border-color: #1f5bff; background: #1f5bff; color: #fff; }',
+    '#b2b-qty { margin-top: 10px; }',
+    '#b2b-qty .qrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1.5px solid #dfe8ff; background: #f5f8ff; border-radius: 12px; padding: 10px 10px 10px 14px; margin-top: 8px; }',
+    '#b2b-qty .qn { font-size: 14.5px; font-weight: 800; color: #0d2a6b; white-space: nowrap; }',
+    '#b2b-qty .qs { display: grid; grid-template-columns: repeat(4, auto); gap: 4px; }',
+    '#b2b-qty .qb { border: 1.5px solid #cfdcf7; background: #fff; color: #475569; border-radius: 8px; padding: 7px 9px; font-size: 13px; font-weight: 700; cursor: pointer; }',
+    '#b2b-qty .qb.on { border-color: #1f5bff; background: #1f5bff; color: #fff; }',
+    '#b2b-qty .qb.big.on { background: #0a1a3f; border-color: #0a1a3f; color: #ffe14d; }',
+    '@media (max-width: 480px) { #b2b-qty .qrow { flex-direction: column; align-items: stretch; gap: 8px; } #b2b-qty .qs { grid-template-columns: repeat(4, 1fr); } #b2b-qty .qb { padding: 9px 2px; } }',
+    '#b2b-meter { margin: 6px 0 0; border-radius: 14px; background: linear-gradient(135deg, #0a1a3f, #12317e); color: #fff; padding: 16px; }',
+    '#b2b-meter .mh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }',
+    '#b2b-meter .ml { font-size: 13px; color: #c9d8ff; font-weight: 700; }',
+    '#b2b-meter .mv { font-size: 26px; font-weight: 900; color: #ffe14d; letter-spacing: -0.02em; white-space: nowrap; }',
+    '#b2b-meter .bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 12px; }',
+    '#b2b-meter .bar span { display: block; text-align: center; font-size: 11.5px; font-weight: 800; padding: 7px 2px; border-radius: 7px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.45); transition: all .2s ease; }',
+    '#b2b-meter .bar span.on { background: #1f5bff; color: #fff; }',
+    '#b2b-meter .bar span.on.top { background: #ffe14d; color: #0a1a3f; }',
+    '#b2b-meter .mt { font-size: 12.5px; color: #c9d8ff; margin-top: 10px; line-height: 1.5; word-break: keep-all; }',
+    '#b2b-view .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }',
+    '@media (max-width: 480px) { #b2b-view .row2 { grid-template-columns: 1fr; gap: 0; } #b2b-view .row2 .f-field { margin: 0 0 18px !important; } }',
+    '#b2b-view .f-field.tight { margin: 14px 0; }',
+    'body.b2b-mode #samsung-sub-page .f-submit { background: #0a1a3f; box-shadow: 0 8px 22px rgba(10,26,63,.28); }',
+    'body.b2b-mode #samsung-sub-page .f-submit:hover { background: #12317e; }',
+
+    /* 사례 */
+    '.b2b-cases { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }',
+    '@media (max-width: 480px) { .b2b-cases { grid-template-columns: 1fr; } }',
+    '.b2b-case { display: block; text-decoration: none !important; border: 1px solid #e3e9f5; border-radius: 14px; padding: 18px 16px; background: #fff; transition: all .15s ease; }',
+    '.b2b-case:hover { border-color: #1f5bff; box-shadow: 0 8px 22px rgba(31,91,255,.12); transform: translateY(-2px); }',
+    '.b2b-case .ce { font-size: 28px; margin-bottom: 8px; }',
+    '.b2b-case .ct { font-size: 16px; font-weight: 800; color: #0a1a3f; margin-bottom: 4px; }',
+    '.b2b-case .cd { font-size: 13.5px; color: #55607a; line-height: 1.55; word-break: keep-all; }',
+    '.b2b-case .cl { font-size: 13.5px; font-weight: 800; color: #1f5bff; margin-top: 10px; }',
+
+    /* v1.5 대상 확인 게이트 */
+    '#b2b-gate { margin: 4px 0 22px; }',
+    '#b2b-gate .g-q { font-size: 16px; font-weight: 800; color: #0a1a3f; margin-bottom: 4px; }',
+    '#b2b-gate .g-s { font-size: 13.5px; color: #64748b; margin-bottom: 12px; line-height: 1.55; word-break: keep-all; }',
+    '#b2b-gate .g-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }',
+    '#b2b-gate .g-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; border: 1.5px solid #dbe4f5; background: #fff; border-radius: 14px; padding: 14px 14px 13px; cursor: pointer; transition: all .15s ease; font-family: inherit; }',
+    '#b2b-gate .g-opt:hover { border-color: #1f5bff; }',
+    '#b2b-gate .g-opt .gi { font-size: 24px; line-height: 1; margin-bottom: 4px; }',
+    '#b2b-gate .g-opt .gt { font-size: 15.5px; font-weight: 800; color: #0a1a3f; }',
+    '#b2b-gate .g-opt .gd { font-size: 12.5px; color: #64748b; line-height: 1.45; word-break: keep-all; }',
+    '#b2b-gate .g-opt.on { border-color: #0a1a3f; background: #0a1a3f; box-shadow: 0 10px 24px rgba(10,26,63,.22); }',
+    '#b2b-gate .g-opt.on .gt { color: #ffe14d; } #b2b-gate .g-opt.on .gd { color: #c9d8ff; }',
+    '#b2b-gate .g-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }',
+    '#b2b-gate .g-pills span { font-size: 12px; font-weight: 700; color: #475569; background: #f1f5f9; border-radius: 999px; padding: 4px 10px; }',
+    '#b2b-personal { display: none; }',
+    '#b2b-personal .p-sorry { border-radius: 14px; background: #fff8e6; border: 1px solid #f5dc9a; padding: 15px 16px; font-size: 14px; color: #5b4a1a; line-height: 1.65; word-break: keep-all; margin-bottom: 14px; }',
+    '#b2b-personal .p-sorry b { color: #8a5a00; }',
+    '#b2b-personal .routes { display: grid; grid-template-columns: 1fr; gap: 10px; }',
+    '#b2b-personal .route { display: flex; align-items: center; gap: 14px; border: 1.5px solid #e3e9f5; border-radius: 16px; padding: 16px; background: #fff; text-decoration: none !important; cursor: pointer; transition: all .15s ease; text-align: left; width: 100%; font-family: inherit; }',
+    '#b2b-personal .route:hover { border-color: #1f5bff; box-shadow: 0 8px 22px rgba(31,91,255,.12); transform: translateY(-1px); }',
+    '#b2b-personal .route .ri { flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; }',
+    '#b2b-personal .route.r1 .ri { background: #eaf1ff; } #b2b-personal .route.r2 .ri { background: #fff1e6; } #b2b-personal .route.r3 .ri { background: #e9f8f1; }',
+    '#b2b-personal .route .rb { flex: 1; min-width: 0; }',
+    '#b2b-personal .route .rk { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: .04em; border-radius: 5px; padding: 2px 7px; margin-bottom: 5px; }',
+    '#b2b-personal .route.r1 .rk { background: #1f5bff; color: #fff; } #b2b-personal .route.r2 .rk { background: #ff6a13; color: #fff; } #b2b-personal .route.r3 .rk { background: #0f9d63; color: #fff; }',
+    '#b2b-personal .route .rt, #b2b-personal .route .rd { display: block; }',
+    '#b2b-personal .route .rt { font-size: 16px; font-weight: 800; color: #0a1a3f; line-height: 1.35; word-break: keep-all; }',
+    '#b2b-personal .route .rd { font-size: 13px; color: #55607a; line-height: 1.5; margin-top: 3px; word-break: keep-all; }',
+    '#b2b-personal .route .ra { flex-shrink: 0; font-size: 20px; color: #94a3b8; font-weight: 800; }',
+    '#b2b-personal .route.on { border-color: #0f9d63; box-shadow: 0 8px 22px rgba(15,157,99,.14); }',
+    '#b2b-rental { display: none; margin-top: 2px; border: 1.5px solid #bfe8d4; background: #f3fbf7; border-radius: 16px; padding: 18px 16px; }',
+    '#b2b-rental .rt-h { font-size: 15.5px; font-weight: 800; color: #0b5e3c; margin-bottom: 12px; }',
+    '#b2b-rental .rprods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }',
+    '@media (max-width: 420px) { #b2b-rental .rprods { grid-template-columns: 1fr; } #b2b-rental .rp { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; } #b2b-rental .rp .re { font-size: 22px; } #b2b-rental .rp .rn { margin-top: 0; white-space: nowrap; } #b2b-rental .rp .rdd { flex: 1; text-align: right; margin-top: 0; } }',
+    '#b2b-rental .rp { border: 1.5px solid #cfe9dc; background: #fff; border-radius: 12px; padding: 11px 10px; cursor: pointer; text-align: center; user-select: none; }',
+    '#b2b-rental .rp .re { font-size: 24px; } #b2b-rental .rp .rn { font-size: 14px; font-weight: 800; color: #0a1a3f; margin-top: 2px; } #b2b-rental .rp .rdd { font-size: 11.5px; color: #64748b; margin-top: 2px; line-height: 1.35; word-break: keep-all; }',
+    '#b2b-rental .rp.selected { border-color: #0f9d63; background: #0f9d63; } #b2b-rental .rp.selected .rn, #b2b-rental .rp.selected .rdd { color: #fff; }',
+    '#b2b-rental .f-field { margin: 14px 0 0; }',
+    '#b2b-rental .r-submit { width: 100%; margin-top: 16px; border: none; border-radius: 12px; background: #0f9d63; color: #fff; font-size: 16.5px; font-weight: 800; padding: 15px; cursor: pointer; box-shadow: 0 8px 20px rgba(15,157,99,.25); font-family: inherit; }',
+    '#b2b-rental .r-submit:disabled { opacity: .6; cursor: default; }',
+    '#b2b-rental .r-note { font-size: 12px; color: #5f7a6d; margin-top: 10px; line-height: 1.55; word-break: keep-all; }',
+    '#b2b-rental-done { display: none; text-align: center; padding: 26px 10px 10px; }',
+    '#b2b-rental-done .ok { font-size: 40px; } #b2b-rental-done h4 { font-size: 18px; font-weight: 800; color: #0a1a3f; margin: 8px 0 6px; } #b2b-rental-done p { font-size: 14px; color: #55607a; line-height: 1.6; margin: 0; }',
+    '#b2b-corp-badge { display: none; align-items: center; justify-content: space-between; gap: 10px; border-radius: 12px; background: #eef3ff; padding: 10px 14px; margin-bottom: 18px; font-size: 13.5px; font-weight: 700; color: #0d2a6b; }',
+    '#b2b-corp-badge button { border: none; background: none; color: #1f5bff; font-weight: 800; font-size: 13px; cursor: pointer; text-decoration: underline; font-family: inherit; }',
+
+    /* FAQ */
+    '#b2b-faq { padding: 30px 0 10px; }',
+    '#b2b-faq .faq-item { padding: 15px 0; }',
+
+    /* 인증서 라이트박스 */
+    '#b2b-lightbox { position: fixed; inset: 0; z-index: 99999; background: rgba(5,12,30,.82); display: none; align-items: center; justify-content: center; padding: 24px; cursor: zoom-out; }',
+    '#b2b-lightbox.on { display: flex; }',
+    '#b2b-lightbox img { max-width: 100%; max-height: 90vh; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }'
+  ].join('\n');
+  document.head.appendChild(st);
+
+  /* ── 상단: 파트너 인증 + 프로모션 + 도입 이유 ── */
+  var top = document.createElement('div');
+  top.className = 'wrap';
+  top.id = 'b2b-top';
+  top.innerHTML =
+    '<div class="b2b-card b2b-partner">' +
+      '<button type="button" class="cert" id="b2b-cert-btn" aria-label="인증서 크게 보기"><img src="' + CERT_IMG + '" alt="2026 삼성전자 B2B AI 구독 파트너 위촉 인증서" loading="lazy"></button>' +
+      '<div>' +
+        '<div class="eyebrow">OFFICIAL PARTNER</div>' +
+        '<div class="ttl">삼성전자 공식 위촉<br>B2B AI 구독 파트너</div>' +
+        '<div class="dsc">삼성스토어 시흥은 삼성전자 한국총괄로부터 2026년 B2B AI 구독 파트너로 위촉된 인증점입니다.</div>' +
+        '<div class="tags"><span>삼성전자 한국총괄 위촉</span><span>2026.09.18</span></div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="b2b-sec">' +
+      '<div class="b2b-eyebrow">NOVEMBER PROMOTION</div>' +
+      '<h2 class="b2b-h2">11월에도 계속, 많이 도입할수록<br>할인이 커집니다</h2>' +
+      '<p class="b2b-sub">수량과 관계없이 20%부터 시작해, 추천 모델과 대량 도입 조건이 붙으면 최대 30%까지.</p>' +
+      '<div class="b2b-steps">' +
+        '<div class="b2b-step s1"><div class="no">STEP 1 · 기본</div><div class="pct">20<small>%</small></div><div class="nm">수량 무관 기본 할인</div><div class="cd">대상 품목 1대부터</div></div>' +
+        '<div class="b2b-step s2"><div class="no">STEP 2 · 추천모델</div><div class="pct">25<small>%</small></div><div class="nm">추천 모델 +5%</div><div class="cd">추천 모델 구독 시</div></div>' +
+        '<div class="b2b-step s3"><div class="no">STEP 3 · 대량도입</div><div class="pct">30<small>%</small></div><div class="nm">10대↑ +5% 추가</div><div class="cd">추천 모델 · 동일 장소 · 동일 품목 10대 이상</div></div>' +
+      '</div>' +
+      '<div class="b2b-target">' +
+        '<b>기본 20%</b> 냉장고 · 세탁기 · 건조기 · 에어컨 · 공기청정기 · 정수기 · 에어드레서 · TV<br>' +
+        '<b>추천모델 25~30%</b> 냉장고 · 세탁기 · 건조기 · 에어컨 · 공기청정기 · 정수기' +
+      '</div>' +
+      '<div class="b2b-note">* 2026.11.01 ~ 11.30 구독 계약 고객 대상. STEP 3(30%)는 방문케어 상품 구매 조건이며 무상수리 Only 상품 등 일부는 제외됩니다. 대상 모델·계약 기간에 따라 적용 할인이 달라지므로 상담 시 정확히 안내드립니다.</div>' +
+    '</div>' +
+
+    '<div class="b2b-sec">' +
+      '<div class="b2b-eyebrow">WHY B2B SUBSCRIPTION</div>' +
+      '<h2 class="b2b-h2">사는 것보다 구독이 유리한 이유</h2>' +
+      '<div class="b2b-why">' +
+        '<div class="it"><div class="ic">💳</div><div><div class="t">비용 부담은 낮추고</div><div class="d">목돈 드는 일시불 대신 월 분할 납부. 아낀 초기 자금은 마케팅·고객 서비스에 투자하세요.</div></div></div>' +
+        '<div class="it"><div class="ic">🛠️</div><div><div class="t">시설 관리는 편해지고</div><div class="d">전문 엔지니어가 주기적으로 성능 점검·필터 교체·전문 세척까지. A/S 접수와 고장 대응 부담이 줄어듭니다.</div></div></div>' +
+        '<div class="it"><div class="ic">😊</div><div><div class="t">고객 만족도는 올라가고</div><div class="d">늘 청결하게 관리되는 최신 프리미엄 제품으로 방문 고객의 신뢰와 재방문을 이끌어냅니다.</div></div></div>' +
+      '</div>' +
+      '<div class="b2b-plan">' +
+        '<div><div class="k">가전</div><div class="v">3 · 4 · 5 · 6년형</div><div class="s">무상 A/S + 방문케어 또는 무상 A/S</div></div>' +
+        '<div><div class="k">디스플레이</div><div class="v">3 · 4 · 5년형</div><div class="s">계약 기간 내 무상 A/S</div></div>' +
+      '</div>' +
+    '</div>';
+
+  var formSection = document.getElementById('apply-form');
+  if (!formSection) return;
+  formSection.parentNode.insertBefore(top, formSection);
+
+  /* ── 폼 생성 ── */
+  var formView = document.getElementById('form-view');
+  var successView = document.getElementById('success-view');
+  if (!formView) return;
+  formView.style.display = 'none';
+
+  var chipHtml = PRODUCTS.map(function (p) {
+    var tag = p.tier === 3 ? '<span class="ptag">최대30%</span>' : (p.tier === 2 ? '<span class="ptag t2">20%</span>' : '');
+    return '<div class="chip" data-value="' + p.v + '">' + tag + '<span class="chip-emoji">' + p.e + '</span><span class="chip-label">' + (p.label || p.v) + '</span></div>';
+  }).join('');
+  var bizHtml = BIZ.map(function (b) { return '<span class="biz" data-value="' + b + '">' + b + '</span>'; }).join('');
+
+  var view = document.createElement('div');
+  view.id = 'b2b-view';
+  view.innerHTML =
+    '<div class="form-card-title">🏢 B2B 구독 견적 상담 신청</div>' +
+    '<div class="form-card-desc">법인사업자·공공기관 전용 상담입니다. 가격은 모델·수량·계약 기간에 따라 달라져요. 제품군과 수량만 골라주시면 맞춤 견적서로 안내드립니다.</div>' +
+    '<div id="b2b-gate">' +
+      '<div class="g-q">먼저, 어떤 사업자이신가요? <span class="f-req">*</span></div>' +
+      '<div class="g-s">삼성 B2B AI 구독은 <b>법인사업자 · 공공기관</b>만 계약할 수 있어요.</div>' +
+      '<div class="g-opts">' +
+        '<button type="button" class="g-opt" data-g="corp"><span class="gi">🏛️</span><span class="gt">법인 · 공공기관</span><span class="gd">법인사업자, 관공서, 학교, 의료법인, 비영리법인</span></button>' +
+        '<button type="button" class="g-opt" data-g="personal"><span class="gi">🧑‍💼</span><span class="gt">개인사업자</span><span class="gd">개인 명의 사업자등록증 보유 사장님</span></button>' +
+      '</div>' +
+    '</div>' +
+    '<div id="b2b-personal">' +
+      '<div class="p-sorry">죄송합니다. <b>B2B AI 구독은 법인·공공기관만 계약이 가능</b>해 개인사업자는 신청하실 수 없어요.<br>대신 사장님 사업장에 더 잘 맞는 상담 3가지를 준비했습니다.</div>' +
+      '<div class="routes">' +
+        '<a class="route r1" href="' + URL_PERSONAL_SUB + '"><span class="ri">🏠</span><span class="rb"><span class="rk">개인 구독</span><span class="rt">삼성 가전 구독 상담</span><span class="rd">사장님 개인 명의로 구독 · 구독 페스티벌 할인 · 방문케어 포함</span></span><span class="ra">›</span></a>' +
+        '<a class="route r2" href="' + URL_SOHO + '"><span class="ri">🏪</span><span class="rb"><span class="rk">소호 특가</span><span class="rt">소상공인 사업장 전용 할인 구매</span><span class="rd">사업장 비치용 가전 · 품목별 최대 30%대 할인 · 사업자등록증 필요</span></span><span class="ra">›</span></a>' +
+        '<button type="button" class="route r3" id="b2b-route-rental"><span class="ri">🖨️</span><span class="rb"><span class="rk">사업자 렌탈</span><span class="rt">복합기 · 정수기 · 공기청정기 렌탈</span><span class="rd">토너·필터 무상 교체 · 2품목 이상 추가 DC · 이 화면에서 바로 신청</span></span><span class="ra">›</span></button>' +
+      '</div>' +
+      '<div id="b2b-rental">' +
+        '<div id="b2b-rental-body">' +
+          '<div class="rt-h">🖨️ 사업자 렌탈 상담 신청</div>' +
+          '<div class="f-label" style="margin-bottom:8px;">렌탈 희망 제품 <span class="f-req">*</span> <span class="f-hint">(여러 개 선택 가능)</span></div>' +
+          '<div class="rprods" id="b2b-rprods">' + RENTAL_ITEMS.map(function (r) { return '<div class="rp" data-v="' + r.v + '"><div class="re">' + r.e + '</div><div class="rn">' + r.v + '</div><div class="rdd">' + r.d + '</div></div>'; }).join('') + '</div>' +
+          '<div class="f-field"><label class="f-label">설치 장소 <span class="f-req">*</span></label>' +
+            '<div class="f-radio-group">' +
+              '<label class="f-radio"><input type="radio" name="rPlace" value="사업자소재지" checked> 사업장 (사업자등록증 제출)</label>' +
+              '<label class="f-radio"><input type="radio" name="rPlace" value="자택 설치"> 자택 (사업자등록증·명함 제출)</label>' +
+            '</div></div>' +
+          '<div class="f-field"><label class="f-label" for="r-biz">사업자명 <span class="f-req">*</span></label><input type="text" id="r-biz" class="f-input" placeholder="예: 시흥OO공인중개사"></div>' +
+          '<div class="f-field"><label class="f-label" for="r-phone">연락처 <span class="f-req">*</span></label><input type="tel" id="r-phone" class="f-input" placeholder="010-0000-0000" inputmode="numeric" maxlength="13"></div>' +
+          '<div class="f-field"><label class="f-label" for="r-memo">요청사항 (선택)</label><input type="text" id="r-memo" class="f-input" placeholder="예: A3 컬러 복합기 / 얼음정수기 / 통화 가능 시간"></div>' +
+          '<label class="f-checkbox" style="margin-top:14px;"><input type="checkbox" id="r-privacy" checked><span>[필수] 개인정보 수집 및 상담 연락에 동의합니다</span></label>' +
+          '<button type="button" class="r-submit" id="r-submit">렌탈 상담 신청하기</button>' +
+          '<div class="r-note">세부 사양(용지 크기·색상·평형 등)은 담당자가 통화로 함께 정해 드려요. 수집항목: 사업자명, 연락처, 문의내용 / 보유기간: 상담 완료 후 6개월</div>' +
+        '</div>' +
+        '<div id="b2b-rental-done"><div class="ok">✅</div><h4>사업자 렌탈 상담이 접수되었습니다</h4><p>렌탈 담당자가 확인 후 연락드립니다.<br>급하신 경우 <strong>031-8042-3166</strong>으로 전화 주세요.</p></div>' +
+      '</div>' +
+    '</div>' +
+    '<div id="b2b-corp-badge"><span>🏛️ <span id="b2b-corp-label">법인 · 공공기관</span> 상담으로 진행합니다</span><button type="button" id="b2b-gate-reset">변경</button></div>' +
+    '<form id="b2b-form" novalidate style="display:none;">' +
+      '<div class="f-field"><label class="f-label">1. 사업장 유형 <span class="f-req">*</span></label>' +
+        '<div class="biz-grid" id="b2b-biz">' + bizHtml + '</div></div>' +
+
+      '<div class="f-field"><label class="f-label">2. 도입 희망 제품군 <span class="f-req">*</span> <span class="f-hint">(여러 개 선택 가능)</span></label>' +
+        '<div class="chip-grid" id="b2b-chip-grid">' + chipHtml + '</div>' +
+        '<div id="b2b-qty"></div></div>' +
+
+      '<div class="f-field tight"><label class="f-label">3. 설치 장소</label>' +
+        '<div class="f-radio-group">' +
+          '<label class="f-radio"><input type="radio" name="b2bSite" value="한 사업장" checked> 한 사업장에 설치</label>' +
+          '<label class="f-radio"><input type="radio" name="b2bSite" value="여러 사업장"> 여러 사업장·지점</label>' +
+        '</div></div>' +
+
+      '<div id="b2b-meter">' +
+        '<div class="mh"><span class="ml">선택하신 조건으로 상담 가능한 할인</span><span class="mv" id="b2b-mv">제품을 선택하세요</span></div>' +
+        '<div class="bar"><span data-t="20">기본 20%</span><span data-t="25">추천 25%</span><span data-t="30" class="top">대량 30%</span></div>' +
+        '<div class="mt" id="b2b-mt">추천 모델·대량 도입 조건 기준이며, 최종 할인은 상담 시 확정됩니다.</div>' +
+      '</div>' +
+
+      '<div class="row2">' +
+        '<div class="f-field"><label class="f-label" for="b-company">4. 상호(사업장명) <span class="f-req">*</span></label>' +
+          '<input type="text" id="b-company" class="f-input" placeholder="예: 시흥OO의원"></div>' +
+        '<div class="f-field"><label class="f-label" for="b-name">5. 담당자 성함 <span class="f-req">*</span></label>' +
+          '<input type="text" id="b-name" class="f-input" placeholder="예: 홍길동 원장"></div>' +
+      '</div>' +
+      '<div class="row2">' +
+        '<div class="f-field" style="margin-top:0;"><label class="f-label" for="b-phone">6. 연락처 <span class="f-req">*</span></label>' +
+          '<input type="tel" id="b-phone" class="f-input" placeholder="010-0000-0000" inputmode="numeric" maxlength="13"></div>' +
+        '<div class="f-field" style="margin-top:0;"><label class="f-label" for="b-region">7. 사업장 지역 <span class="f-req">*</span></label>' +
+          '<input type="text" id="b-region" class="f-input" placeholder="예: 시흥 정왕동 / 서울 강서구"></div>' +
+      '</div>' +
+      '<div class="row2">' +
+        '<div class="f-field" style="margin-top:0;"><label class="f-label" for="b-when">도입 희망 시기</label>' +
+          '<select id="b-when" class="f-select"><option value="미정">아직 미정</option><option value="11월 중">11월 중 (프로모션 기간)</option><option value="1~2개월 내">1~2개월 내</option><option value="3개월 이후">3개월 이후</option><option value="신규 오픈 준비중">신규 오픈 준비중</option></select></div>' +
+        '<div class="f-field" style="margin-top:0;"><label class="f-label" for="b-term">희망 계약 기간</label>' +
+          '<select id="b-term" class="f-select"><option value="미정">상담 후 결정</option><option value="3년">3년</option><option value="4년">4년</option><option value="5년">5년</option><option value="6년">6년 (가전)</option></select></div>' +
+      '</div>' +
+      '<div class="f-field" style="margin-top:0;"><label class="f-label" for="b-memo">추가 요청사항 (선택)</label>' +
+        '<textarea id="b-memo" class="f-textarea" placeholder="예: 병실 20개에 공기청정기 / 기존 제품 교체 / 세금계산서 발행 / 희망 연락 시간 등"></textarea></div>' +
+
+      '<div class="f-consent"><label class="f-checkbox"><input type="checkbox" id="b-privacy" checked>' +
+        '<span>[필수] 개인정보 수집 및 상담 연락에 동의합니다 <span class="f-req">*</span></span></label>' +
+        '<p class="f-consent-desc">수집항목: 상호, 담당자명, 연락처, 지역, 문의내용 / 목적: B2B 구독 견적 상담 및 혜택 안내 / 보유기간: 상담 완료 후 6개월</p></div>' +
+      '<button type="submit" id="b-submit" class="f-submit">B2B 맞춤 견적 상담 신청</button>' +
+    '</form>';
+  formView.parentNode.insertBefore(view, successView);
+
+  /* ── 하단: 도입 사례 + FAQ ── */
+  var bottom = document.createElement('div');
+  bottom.className = 'wrap';
+  bottom.innerHTML =
+    '<div class="b2b-sec" style="padding-top:6px;">' +
+      '<div class="b2b-eyebrow">CASE STUDY</div>' +
+      '<h2 class="b2b-h2">업종별 구독 도입 예시</h2>' +
+      '<p class="b2b-sub">비슷한 사업장은 어떤 제품을 구독했는지 확인해 보세요.</p>' +
+      '<div class="b2b-cases">' + CASES.map(function (c) {
+        return '<a class="b2b-case" href="' + c.url + '" target="_blank" rel="noopener"><div class="ce">' + c.e + '</div><div class="ct">' + c.t + '</div><div class="cd">' + c.d + '</div><div class="cl">사례 보기 →</div></a>';
+      }).join('') + '</div>' +
+    '</div>' +
+    '<div id="b2b-faq">' +
+      '<div class="b2b-eyebrow">FAQ</div>' +
+      '<h2 class="b2b-h2">자주 묻는 질문</h2>' +
+      '<div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">홈페이지에 가격이 없는 이유가 있나요? <span class="mark">+</span></div><div class="faq-a">B2B 구독료는 모델, 도입 수량, 계약 기간(3~6년), 케어 옵션(방문케어 포함 여부)에 따라 달라집니다. 신청서를 남겨주시면 사업장 조건에 맞춘 견적서로 정확히 안내드립니다.</div></div>' +
+      '<div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">최대 30% 할인은 어떤 조건인가요? <span class="mark">+</span></div><div class="faq-a">11월에도 대상 품목은 수량과 관계없이 20%, 추천 모델은 25%가 적용됩니다. 추천 모델 중 동일 장소·동일 품목을 10대 이상 도입하시면 5%가 추가되어 총 30%입니다. 30% 조건은 방문케어 상품 구매 시 적용되며 무상수리 Only 상품 등 일부는 제외됩니다.</div></div>' +
+      '<div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">구독 기간 동안 관리는 어떻게 받나요? <span class="mark">+</span></div><div class="faq-a">가전은 "무상 A/S + 방문케어" 또는 "무상 A/S" 중 선택할 수 있습니다. 방문케어를 선택하시면 삼성 전문 엔지니어가 제품별 주기(6·12·36개월 등)에 맞춰 종합점검, 필터·소모품 교체, 전문 세척을 진행합니다. 디스플레이는 계약 기간 동안 무상 A/S가 제공됩니다.</div></div>' +
+      '<div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">어떤 사업장이 구독할 수 있나요? <span class="mark">+</span></div><div class="faq-a">B2B AI 구독은 <b>법인사업자와 공공기관</b>(관공서·학교·의료법인·비영리법인 등)만 계약할 수 있습니다. 병원, 기숙사·연수원, 요양시설, 사무실, 학원, 숙박·요식업 등 업종과 관계없이 법인이라면 상담 가능하며, 신규 오픈 준비나 기존 장비 교체 모두 해당됩니다.</div></div>' +
+      '<div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">개인사업자는 신청할 수 없나요? <span class="mark">+</span></div><div class="faq-a">B2B AI 구독은 개인사업자 계약이 불가합니다. 대신 ① 사장님 명의의 <b>개인 가전 구독</b>, ② 사업장 비치용 가전을 할인가에 구매하는 <b>소호(소상공인) 특가</b>, ③ 복합기·정수기·공기청정기 <b>사업자 렌탈</b> 중 맞는 방법으로 안내해 드립니다. 신청서 첫 질문에서 개인사업자를 선택해 주세요.</div></div>' +
+      '<div class="faq-item" onclick="samSubToggleFaq(this)"><div class="faq-q">시흥 외 지역 사업장도 가능한가요? <span class="mark">+</span></div><div class="faq-a">네, 전국 사업장 상담이 가능합니다. 여러 지점에 동시 도입하는 경우도 한 번에 견적을 받아보실 수 있습니다.</div></div>' +
+    '</div>';
+  formSection.parentNode.insertBefore(bottom, formSection.nextSibling);
+
+  /* ── 인증서 라이트박스 ── */
+  var lb = document.createElement('div');
+  lb.id = 'b2b-lightbox';
+  lb.innerHTML = '<img src="' + CERT_IMG + '" alt="B2B AI 구독 파트너 인증서">';
+  document.body.appendChild(lb);
+  document.getElementById('b2b-cert-btn').addEventListener('click', function () { lb.classList.add('on'); });
+  lb.addEventListener('click', function () { lb.classList.remove('on'); });
+
+  /* ── v1.5 대상 확인 게이트 ── */
+  var gate = document.getElementById('b2b-gate');
+  var personalBox = document.getElementById('b2b-personal');
+  var corpBadge = document.getElementById('b2b-corp-badge');
+  var b2bForm = document.getElementById('b2b-form');
+  var entityType = '';
+  function pushGate(v) { window.dataLayer = window.dataLayer || []; window.dataLayer.push({ event: 'b2b_gate_select', gate_value: v }); }
+  function setGate(g, silent) {
+    Array.prototype.forEach.call(gate.querySelectorAll('.g-opt'), function (x) { x.classList.toggle('on', x.getAttribute('data-g') === g); });
+    if (g === 'corp') {
+      entityType = '법인·공공기관';
+      gate.style.display = 'none'; personalBox.style.display = 'none';
+      corpBadge.style.display = 'flex'; b2bForm.style.display = '';
+    } else if (g === 'personal') {
+      entityType = '개인사업자';
+      personalBox.style.display = 'block'; corpBadge.style.display = 'none'; b2bForm.style.display = 'none';
+    } else {
+      entityType = '';
+      gate.style.display = ''; personalBox.style.display = 'none'; corpBadge.style.display = 'none'; b2bForm.style.display = 'none';
+    }
+    if (!silent && g) pushGate(g);
+  }
+  gate.addEventListener('click', function (e) {
+    var o = e.target.closest('.g-opt'); if (!o) return;
+    setGate(o.getAttribute('data-g'));
+    (o.getAttribute('data-g') === 'corp' ? corpBadge : personalBox).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  document.getElementById('b2b-gate-reset').addEventListener('click', function () { setGate(''); gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+
+  /* ── v1.5 사업자 렌탈 (렌탈 GAS → 잔디 사업자 렌탈 방) ── */
+  var rentalBox = document.getElementById('b2b-rental');
+  var rentalSel = [];
+  document.getElementById('b2b-route-rental').addEventListener('click', function () {
+    this.classList.add('on'); rentalBox.style.display = 'block'; pushGate('personal_rental');
+    rentalBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  Array.prototype.forEach.call(personalBox.querySelectorAll('a.route'), function (a) {
+    a.addEventListener('click', function () { pushGate(a.classList.contains('r1') ? 'personal_subscription' : 'personal_soho'); });
+  });
+  document.getElementById('b2b-rprods').addEventListener('click', function (e) {
+    var c = e.target.closest('.rp'); if (!c) return;
+    var v = c.getAttribute('data-v'); var i = rentalSel.indexOf(v);
+    if (i > -1) { rentalSel.splice(i, 1); c.classList.remove('selected'); } else { rentalSel.push(v); c.classList.add('selected'); }
+  });
+  var rPhone = document.getElementById('r-phone');
+  rPhone.addEventListener('input', function () { if (window.samSubFormatPhone) window.samSubFormatPhone(rPhone); });
+  document.getElementById('r-submit').addEventListener('click', function () {
+    var biz = document.getElementById('r-biz').value.trim();
+    var ph = rPhone.value.trim();
+    var memo = document.getElementById('r-memo').value.trim();
+    var placeEl = document.querySelector('input[name="rPlace"]:checked');
+    var place = placeEl ? placeEl.value : '사업자소재지';
+    if (!rentalSel.length) { alert('렌탈을 원하시는 제품을 1개 이상 선택해주세요.'); return; }
+    if (!biz) { alert('사업자명을 입력해주세요.'); document.getElementById('r-biz').focus(); return; }
+    if (ph.replace(/[^0-9]/g, '').length < 9) { alert('연락처를 정확히 입력해주세요. (예: 010-1234-5678)'); rPhone.focus(); return; }
+    if (!document.getElementById('r-privacy').checked) { alert('개인정보 수집 및 상담 연락에 동의해주세요.'); return; }
+    var btn = this; btn.disabled = true; btn.textContent = '접수 중입니다...';
+    var multiTag = rentalSel.length > 1 ? rentalSel.join(' + ') : '';
+    var jobs = rentalSel.map(function (pv) {
+      var def = RENTAL_ITEMS.filter(function (r) { return r.v === pv; })[0];
+      var ans = { place: place, phone: ph };
+      if (pv !== '공기청정기') ans.bizName = biz;
+      def.keys.forEach(function (k) { ans[k] = '상담 시 확인'; });
+      if (multiTag) ans.multiRental = '2품목 이상 문의 (' + multiTag + ')';
+      ans.memo = '[B2B구독 페이지 → 개인사업자 렌탈 분기] 사업자명: ' + biz + (memo ? ' / 요청: ' + memo : '');
+      return fetch(RENTAL_GAS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ product: pv, answers: ans }) });
+    });
+    Promise.all(jobs).then(function () {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: 'b2b_gate_rental_submit', lead_model_name: rentalSel.join(', '), lead_product_count: rentalSel.length });
+      document.getElementById('b2b-rental-body').style.display = 'none';
+      document.getElementById('b2b-rental-done').style.display = 'block';
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = '렌탈 상담 신청하기';
+      alert('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+    });
+  });
+
+  /* ── 선택 상태 ── */
+  var state = { biz: '', items: [] }; /* items: [ { v, tier, qty } ] */
+  var bizWrap = document.getElementById('b2b-biz');
+  var grid = document.getElementById('b2b-chip-grid');
+  var qtyWrap = document.getElementById('b2b-qty');
+
+  function findProduct(v) { return PRODUCTS.filter(function (p) { return p.v === v; })[0]; }
+  function findItem(v) { return state.items.filter(function (i) { return i.v === v; })[0]; }
+
+  bizWrap.addEventListener('click', function (e) {
+    var b = e.target.closest('.biz');
+    if (!b) return;
+    state.biz = b.getAttribute('data-value');
+    Array.prototype.forEach.call(bizWrap.querySelectorAll('.biz'), function (x) { x.classList.toggle('selected', x === b); });
+  });
+
+  grid.addEventListener('click', function (e) {
+    var c = e.target.closest('.chip');
+    if (!c) return;
+    var v = c.getAttribute('data-value');
+    var it = findItem(v);
+    if (it) { state.items.splice(state.items.indexOf(it), 1); c.classList.remove('selected'); }
+    else { state.items.push({ v: v, tier: findProduct(v).tier, qty: '1대' }); c.classList.add('selected'); }
+    renderQty(); updateMeter();
+  });
+
+  function renderQty() {
+    qtyWrap.innerHTML = state.items.map(function (it) {
+      var p = findProduct(it.v);
+      return '<div class="qrow" data-v="' + it.v + '"><span class="qn">' + p.e + ' ' + it.v + '</span><span class="qs">' +
+        QTY.map(function (qv) {
+          return '<button type="button" class="qb' + (qv === '10대 이상' ? ' big' : '') + (qv === it.qty ? ' on' : '') + '" data-q="' + qv + '">' + qv + '</button>';
+        }).join('') + '</span></div>';
+    }).join('');
+  }
+  qtyWrap.addEventListener('click', function (e) {
+    var b = e.target.closest('.qb');
+    if (!b) return;
+    var row = b.closest('.qrow');
+    var it = findItem(row.getAttribute('data-v'));
+    if (!it) return;
+    it.qty = b.getAttribute('data-q');
+    Array.prototype.forEach.call(row.querySelectorAll('.qb'), function (x) { x.classList.toggle('on', x === b); });
+    updateMeter();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="b2bSite"]'), function (r) { r.addEventListener('change', updateMeter); });
+
+  function siteVal() { var s = document.querySelector('input[name="b2bSite"]:checked'); return s ? s.value : '한 사업장'; }
+
+  function calcMax() {
+    var max = 0;
+    state.items.forEach(function (it) {
+      var m = 0;
+      if (it.tier === 2) m = 20;
+      if (it.tier === 3) m = (it.qty === '10대 이상' && siteVal() === '한 사업장') ? 30 : 25;
+      if (m > max) max = m;
+    });
+    return max;
+  }
+
+  function updateMeter() {
+    var max = calcMax();
+    var mv = document.getElementById('b2b-mv');
+    var mt = document.getElementById('b2b-mt');
+    if (!state.items.length) { mv.textContent = '제품을 선택하세요'; }
+    else if (!max) { mv.textContent = '별도 상담'; }
+    else { mv.textContent = '최대 ' + max + '%'; }
+    Array.prototype.forEach.call(document.querySelectorAll('#b2b-meter .bar span'), function (s) {
+      s.classList.toggle('on', max >= parseInt(s.getAttribute('data-t'), 10));
+    });
+    var hasRec = state.items.some(function (i) { return i.tier === 3; });
+    if (!state.items.length) mt.textContent = '추천 모델·대량 도입 조건 기준이며, 최종 할인은 상담 시 확정됩니다.';
+    else if (!max) mt.textContent = '선택하신 제품군은 11월 프로모션 대상 외 품목이에요. 사업장 조건에 맞춘 별도 혜택으로 안내드립니다.';
+    else if (max === 25 && hasRec) mt.textContent = '같은 장소에 같은 품목을 10대 이상 도입하시면 5%가 더해져 최대 30%까지 가능해요.';
+    else if (max === 30) mt.textContent = '대량 도입 조건 충족! 추천 모델·방문케어 상품 기준이며 최종 할인은 상담 시 확정됩니다.';
+    else mt.textContent = '추천 모델·대량 도입 조건 기준이며, 최종 할인은 상담 시 확정됩니다.';
+  }
+
+  /* ── 전화번호 포맷 ── */
+  var phoneEl = document.getElementById('b-phone');
+  phoneEl.addEventListener('input', function () { if (window.samSubFormatPhone) window.samSubFormatPhone(phoneEl); });
+
+  function referral() {
+    var p = new URLSearchParams(window.location.search);
+    var src = [p.get('utm_source'), p.get('utm_medium'), p.get('utm_campaign')].filter(Boolean).join('/');
+    if (src) return src;
+    if (document.referrer) { try { return new URL(document.referrer).hostname; } catch (e) { } }
+    return '직접 유입';
+  }
+
+  /* ── 제출 ── */
+  document.getElementById('b2b-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var company = document.getElementById('b-company').value.trim();
+    var name = document.getElementById('b-name').value.trim();
+    var phone = phoneEl.value.trim();
+    var region = document.getElementById('b-region').value.trim();
+    var when = document.getElementById('b-when').value;
+    var term = document.getElementById('b-term').value;
+    var memo = document.getElementById('b-memo').value.trim();
+
+    if (entityType !== '법인·공공기관') { alert('법인·공공기관 여부를 먼저 선택해주세요.'); setGate(''); gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (!state.biz) { alert('사업장 유형을 선택해주세요.'); bizWrap.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (!state.items.length) { alert('도입을 희망하시는 제품군을 1개 이상 선택해주세요.'); grid.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (!company) { alert('상호(사업장명)를 입력해주세요.'); document.getElementById('b-company').focus(); return; }
+    if (!name) { alert('담당자 성함을 입력해주세요.'); document.getElementById('b-name').focus(); return; }
+    if (phone.replace(/[^0-9]/g, '').length < 9) { alert('연락처를 정확히 입력해주세요. (예: 010-1234-5678)'); phoneEl.focus(); return; }
+    if (!region) { alert('사업장 지역을 입력해주세요.'); document.getElementById('b-region').focus(); return; }
+    if (!document.getElementById('b-privacy').checked) { alert('개인정보 수집 및 상담 연락에 동의해주세요.'); return; }
+
+    var btn = document.getElementById('b-submit');
+    btn.disabled = true; btn.textContent = '접수 중입니다...';
+
+    var itemsText = state.items.map(function (i) { return i.v + '(' + i.qty + ')'; }).join(', ');
+    var max = calcMax();
+    var memoFull =
+      '[B2B·' + entityType + '] ' + company + ' / ' + state.biz + '\n' +
+      '제품·수량: ' + itemsText + '\n' +
+      '설치장소: ' + siteVal() + ' / 도입시기: ' + when + ' / 계약기간: ' + term + '\n' +
+      '예상 프로모션: ' + (max ? '최대 ' + max + '%' : '대상 외(별도 상담)') +
+      (memo ? '\n요청: ' + memo : '');
+
+    var data = {
+      modelName: itemsText,
+      inquiryType: 'B2B구독',
+      customerName: company + ' ' + name,
+      phone: phone,
+      memo: memoFull,
+      pageUrl: window.location.href,
+      purchasePurpose: '사업자·B2B',
+      region: region,
+      contactMethod: '전화',
+      referralSource: referral(),
+      productCount: state.items.length,
+      /* 기존 구독 GAS가 기대하는 필드 기본값 (누락 시 잔디 메시지 생성 오류 방지) */
+      existingSubscription: '해당없음(B2B)',
+      membershipStatus: '해당없음(B2B)',
+      prepayIntent: '해당없음(B2B)',
+      otherQuoteSource: '-',
+      diagRecommend: '',
+      diagAnswers: '',
+      companyName: company,
+      contactPerson: name,
+      businessType: state.biz,
+      entityType: entityType,
+      installSite: siteVal(),
+      desiredTiming: when,
+      contractTerm: term,
+      promoTier: max ? max + '%' : '대상외',
+      privacyConsent: '동의',
+      diagSource: 'B2B구독'
+    };
+
+    fetch(GAS_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    }).then(function () {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'b2b_subscription_lead_submit',
+        lead_business_type: state.biz,
+        lead_model_name: itemsText,
+        lead_product_count: state.items.length,
+        lead_promo_tier: max,
+        lead_region: region
+      });
+      view.style.display = 'none';
+      var h3 = successView.querySelector('h3');
+      if (h3) h3.textContent = 'B2B 구독 상담 신청이 접수되었습니다';
+      var p = successView.querySelector('p');
+      if (p) p.innerHTML = 'B2B AI 구독 파트너 삼성스토어 시흥 담당자가 확인 후 맞춤 견적과 함께 연락드립니다.<br>급하신 경우 <strong>031-8042-3166</strong>으로 전화 주세요.';
+      successView.style.display = 'block';
+      formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = 'B2B 맞춤 견적 상담 신청';
+      alert('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+    });
+  });
+
+  /* ?biz=corp|personal|rental 프리셋 (포털·문자 링크용) */
+  var bizPreset = getParam('biz');
+  if (bizPreset === 'corp') setGate('corp', true);
+  else if (bizPreset === 'personal' || bizPreset === 'rental') { setGate('personal', true); if (bizPreset === 'rental') document.getElementById('b2b-route-rental').click(); }
+
+  /* ?item=에어컨,정수기 프리셋 */
+  var preset = getParam('item');
+  if (preset) {
+    preset.split(/[,·|]+/).forEach(function (t) {
+      t = t.trim(); if (!t) return;
+      var c = Array.prototype.filter.call(grid.querySelectorAll('.chip'), function (x) { return x.getAttribute('data-value').indexOf(t) > -1; })[0];
+      if (c && !c.classList.contains('selected')) c.click();
+    });
+  }
+  updateMeter();
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     🏪 소호(소상공인·개인사업자) 특가 전용 분기 (evt=soho)
+     · 접속: /service/SamSungSubscription.php?evt=soho  (&item=냉장고,TV 프리셋)
+     · 구독 페이지 본문(#samsung-sub-page)을 숨기고 #soho-page 표시 · 가격 미노출 / 품목별 할인율만 노출
+     · 접수: 구독 GAS (inquiryType: 소호특가) · 할인율은 2026.10 소상공인 정책 기준 — 정책 변경 시 ITEMS 배열 수정
+     ※ 고도몰 템플릿 치환 방지: 여는 중괄호 뒤에 항상 공백 유지
+     ══════════════════════════════════════════════════════════════════ -->
+<style>
+  #soho-page, #soho-page * { box-sizing: border-box !important; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif !important; }
+  #soho-page { --navy: #0b1d45; --navy2: #14306e; --blue: #1f5bff; --orange: #ff6a13; --orange-soft: #fff2e8; --ink: #0f172a; --sub: #5b6478; --line: #e4e9f2; --bg: #f6f8fc;
+    color: var(--ink); background: #fff; line-height: 1.6; font-size: 16px; margin: 0; padding-bottom: 40px; }
+  #soho-page .wrap { max-width: 760px; margin: 0 auto; padding: 0 18px; }
+  #soho-page a { color: inherit; text-decoration: none; }
+  #soho-page h1, #soho-page h2, #soho-page h3, #soho-page p { margin: 0; }
+
+  /* 히어로 */
+  #soho-page .hero { background: radial-gradient(110% 80% at 90% 0%, rgba(255,106,19,.35) 0%, rgba(255,106,19,0) 55%), linear-gradient(180deg, #0b1d45 0%, #12306f 100%); color: #fff; padding: 34px 0 64px; text-align: center; }
+  #soho-page .hero-badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,190,140,.55); background: rgba(255,255,255,.08); color: #ffd2b0; border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 800; margin-bottom: 14px; }
+  #soho-page .hero h1 { font-size: 27px; font-weight: 900; line-height: 1.4; letter-spacing: -0.02em; word-break: keep-all; }
+  #soho-page .hero h1 em { font-style: normal; color: #ffb27a; }
+  #soho-page .hero .lead { font-size: 15px; opacity: .86; margin: 12px auto 0; max-width: 470px; line-height: 1.6; word-break: keep-all; }
+  #soho-page .hero-chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+  #soho-page .hero-chips span { background: rgba(255,255,255,.1); border-radius: 8px; padding: 7px 11px; font-size: 13.5px; font-weight: 700; }
+  #soho-page .hero-chips b { color: #ffb27a; font-weight: 900; margin-left: 3px; }
+
+  /* 공통 카드/섹션 */
+  #soho-page .float { position: relative; z-index: 2; margin-top: -40px; }
+  #soho-page .card { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 14px 36px rgba(11,29,69,.08); }
+  #soho-page .sec { padding: 34px 0 0; }
+  #soho-page .eyebrow { font-size: 12px; font-weight: 900; letter-spacing: .08em; color: var(--orange); margin-bottom: 6px; }
+  #soho-page .h2 { font-size: 21px; font-weight: 900; color: var(--navy); letter-spacing: -0.02em; line-height: 1.4; word-break: keep-all; margin-bottom: 6px; }
+  #soho-page .sub { font-size: 14px; color: var(--sub); line-height: 1.6; word-break: keep-all; margin-bottom: 16px; }
+
+  /* 할인율 보드 */
+  #soho-page .board { padding: 18px 16px 14px; }
+  #soho-page .board-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 10px; margin-bottom: 12px; }
+  #soho-page .board-head .t { font-size: 16px; font-weight: 900; color: var(--navy); }
+  #soho-page .board-head .s { font-size: 12px; color: #8a93a6; white-space: nowrap; }
+  #soho-page .disc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  @media (max-width: 560px) { #soho-page .disc-grid { grid-template-columns: repeat(2, 1fr); } }
+  #soho-page .disc { border: 1px solid var(--line); border-radius: 14px; padding: 12px 12px 11px; background: #fff; }
+  #soho-page .disc.hot { border-color: #ffd0b0; background: linear-gradient(180deg, #fff7f1 0%, #fff 100%); }
+  #soho-page .disc .top { display: flex; align-items: center; gap: 6px; }
+  #soho-page .disc .ic { font-size: 20px; line-height: 1; }
+  #soho-page .disc .nm { font-size: 14px; font-weight: 800; color: var(--ink); word-break: keep-all; line-height: 1.3; }
+  #soho-page .disc .pct { margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--sub); }
+  #soho-page .disc .pct b { font-size: 26px; font-weight: 900; color: var(--orange); letter-spacing: -0.03em; margin-left: 2px; }
+  #soho-page .disc .pct small { font-size: 14px; font-weight: 900; color: var(--orange); }
+  #soho-page .disc .bar { height: 6px; border-radius: 6px; background: #eef1f6; margin-top: 7px; overflow: hidden; }
+  #soho-page .disc .bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #ffb27a, #ff6a13); }
+  #soho-page .disc .rg { font-size: 11.5px; color: #8a93a6; margin-top: 6px; line-height: 1.4; word-break: keep-all; }
+  #soho-page .board-note { font-size: 12px; color: #8a93a6; line-height: 1.6; margin-top: 12px; word-break: keep-all; }
+
+  /* 대상 확인 */
+  #soho-page .elig { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) { #soho-page .elig { grid-template-columns: 1fr; } }
+  #soho-page .elig .box { border-radius: 16px; padding: 16px; }
+  #soho-page .elig .ok { background: #effaf4; border: 1px solid #c7ebd7; }
+  #soho-page .elig .no { background: #fff4f2; border: 1px solid #f7d1ca; }
+  #soho-page .elig .bt { font-size: 15px; font-weight: 900; margin-bottom: 8px; }
+  #soho-page .elig .ok .bt { color: #0b7a4b; } #soho-page .elig .no .bt { color: #c2410c; }
+  #soho-page .elig ul { margin: 0; padding: 0 0 0 18px; }
+  #soho-page .elig li { font-size: 13.5px; color: #334155; line-height: 1.6; margin: 3px 0; word-break: keep-all; }
+  #soho-page .elig li small { color: #7b8496; }
+
+  /* 진행 순서 */
+  #soho-page .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; counter-reset: st; }
+  @media (max-width: 560px) { #soho-page .steps { grid-template-columns: 1fr 1fr; } }
+  #soho-page .step { border: 1px solid var(--line); border-radius: 14px; padding: 14px 12px; background: var(--bg); }
+  #soho-page .step .n { font-size: 11px; font-weight: 900; color: var(--blue); letter-spacing: .06em; }
+  #soho-page .step .t { font-size: 14.5px; font-weight: 800; color: var(--navy); margin-top: 4px; word-break: keep-all; }
+  #soho-page .step .d { font-size: 12.5px; color: var(--sub); margin-top: 3px; line-height: 1.5; word-break: keep-all; }
+
+  /* 폼 */
+  #soho-page .form-card { padding: 24px 18px 22px; border: 1.5px solid #d6def0; }
+  #soho-page .form-title { font-size: 20px; font-weight: 900; color: var(--navy); }
+  #soho-page .form-desc { font-size: 14px; color: var(--sub); margin: 6px 0 4px; line-height: 1.6; word-break: keep-all; }
+  #soho-page .grp { margin-top: 26px; padding-top: 22px; border-top: 1px dashed #dbe2ef; }
+  #soho-page .grp:first-of-type { border-top: none; padding-top: 4px; margin-top: 16px; }
+  #soho-page .grp-t { display: flex; align-items: center; gap: 8px; font-size: 16.5px; font-weight: 900; color: var(--navy); margin-bottom: 14px; }
+  #soho-page .grp-t .no { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 12.5px; align-items: center; justify-content: center; }
+  #soho-page .fld { margin: 0 0 16px; }
+  #soho-page .lbl { display: block; font-size: 14.5px; font-weight: 800; color: #1e293b; margin-bottom: 7px; }
+  #soho-page .req { color: var(--orange); margin-left: 2px; }
+  #soho-page .hint { font-size: 12.5px; font-weight: 600; color: #8a93a6; margin-left: 4px; }
+  #soho-page .inp, #soho-page .sel, #soho-page .ta { width: 100%; border: 1.5px solid #d9e0ec; border-radius: 12px; padding: 13px 14px; font-size: 16px; color: var(--ink); background: #fff; outline: none; transition: border-color .15s ease; }
+  #soho-page .inp:focus, #soho-page .sel:focus, #soho-page .ta:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(31,91,255,.12); }
+  #soho-page .inp.err { border-color: #ef4444; }
+  #soho-page .ta { min-height: 88px; resize: vertical; }
+  #soho-page .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 520px) { #soho-page .row2 { grid-template-columns: 1fr; gap: 0; } }
+  #soho-page .addr-row { display: flex; gap: 8px; }
+  #soho-page .addr-row .inp { flex: 1; }
+  #soho-page .btn-addr { flex-shrink: 0; border: none; border-radius: 12px; background: var(--navy); color: #fff; font-size: 14.5px; font-weight: 800; padding: 0 16px; cursor: pointer; }
+  #soho-page .msg { font-size: 12.5px; margin-top: 6px; line-height: 1.5; }
+  #soho-page .msg.ok { color: #0b7a4b; } #soho-page .msg.bad { color: #dc2626; }
+
+  #soho-page .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  @media (max-width: 560px) { #soho-page .chips { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 360px) { #soho-page .chips { grid-template-columns: repeat(2, 1fr); } }
+  #soho-page .chip { position: relative; border: 1.5px solid #dfe5f0; border-radius: 14px; background: #fff; padding: 14px 4px 11px; text-align: center; cursor: pointer; user-select: none; transition: all .15s ease; }
+  #soho-page .chip:hover { border-color: #b9c8e6; }
+  #soho-page .chip .ce { font-size: 26px; line-height: 1.1; }
+  #soho-page .chip .cl { font-size: 13.5px; font-weight: 800; color: #1e293b; margin-top: 5px; line-height: 1.25; word-break: keep-all; }
+  #soho-page .chip .tag { position: absolute; top: -8px; right: -3px; font-size: 10.5px; font-weight: 900; border-radius: 6px; padding: 2px 6px; background: var(--orange); color: #fff; }
+  #soho-page .chip.selected { border-color: var(--navy); background: var(--navy); }
+  #soho-page .chip.selected .cl { color: #fff; }
+
+  #soho-page #s-qty .qrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1.5px solid #e3e8f2; background: var(--bg); border-radius: 12px; padding: 10px 10px 10px 14px; margin-top: 8px; }
+  #soho-page #s-qty .qn { font-size: 14.5px; font-weight: 800; color: var(--navy); white-space: nowrap; }
+  #soho-page #s-qty .qn em { font-style: normal; font-size: 12px; font-weight: 800; color: var(--orange); margin-left: 4px; }
+  #soho-page #s-qty .qs { display: grid; grid-template-columns: repeat(4, auto); gap: 4px; }
+  #soho-page #s-qty .qb { border: 1.5px solid #d6deec; background: #fff; color: #475569; border-radius: 8px; padding: 7px 9px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  #soho-page #s-qty .qb.on { border-color: var(--navy); background: var(--navy); color: #fff; }
+  @media (max-width: 480px) { #soho-page #s-qty .qrow { flex-direction: column; align-items: stretch; gap: 8px; } #soho-page #s-qty .qs { grid-template-columns: repeat(4, 1fr); } #soho-page #s-qty .qb { padding: 9px 2px; } }
+
+  #soho-page .meter { margin-top: 12px; border-radius: 14px; background: linear-gradient(135deg, #0b1d45, #16357a); color: #fff; padding: 15px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  #soho-page .meter .ml { font-size: 13px; color: #c7d4f5; font-weight: 700; line-height: 1.45; word-break: keep-all; }
+  #soho-page .meter .mv { font-size: 25px; font-weight: 900; color: #ffb27a; white-space: nowrap; letter-spacing: -0.02em; }
+
+  #soho-page .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #soho-page .seg label { display: flex; align-items: center; gap: 8px; border: 1.5px solid #dfe5f0; border-radius: 12px; padding: 12px 13px; font-size: 14.5px; font-weight: 700; color: #334155; cursor: pointer; background: #fff; }
+  #soho-page .seg input { accent-color: #0b1d45; width: 18px; height: 18px; margin: 0; }
+  #soho-page .seg label.on { border-color: var(--navy); background: #f1f4fb; color: var(--navy); }
+  #soho-page .pills { display: flex; flex-wrap: wrap; gap: 7px; }
+  #soho-page .pill { border: 1.5px solid #dfe5f0; border-radius: 999px; padding: 9px 14px; font-size: 14px; font-weight: 700; color: #334155; cursor: pointer; background: #fff; user-select: none; }
+  #soho-page .pill.selected { border-color: var(--orange); background: var(--orange); color: #fff; }
+
+  #soho-page .alt-box { display: none; margin-top: 10px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); padding: 14px; }
+  #soho-page .warn { display: none; margin-top: 10px; border-radius: 12px; background: #fff4f2; border: 1px solid #f7d1ca; color: #9a3412; font-size: 13px; line-height: 1.6; padding: 11px 13px; word-break: keep-all; }
+  #soho-page .info { border-radius: 12px; background: #f1f5ff; border: 1px solid #dbe5ff; color: #1e3a8a; font-size: 13px; line-height: 1.6; padding: 11px 13px; margin-top: 10px; word-break: keep-all; }
+
+  #soho-page .checks { margin-top: 22px; border-radius: 14px; background: var(--bg); padding: 14px; }
+  #soho-page .ck { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; font-weight: 700; color: #1e293b; line-height: 1.5; padding: 6px 0; cursor: pointer; word-break: keep-all; }
+  #soho-page .ck input { width: 19px; height: 19px; margin: 1px 0 0; flex-shrink: 0; accent-color: #0b1d45; }
+  #soho-page .ck-d { font-size: 12px; color: #8a93a6; line-height: 1.55; margin: 0 0 4px 28px; word-break: keep-all; }
+  #soho-page .submit { width: 100%; margin-top: 18px; border: none; border-radius: 14px; background: var(--orange); color: #fff; font-size: 17.5px; font-weight: 900; padding: 17px; cursor: pointer; box-shadow: 0 10px 24px rgba(255,106,19,.3); transition: transform .1s ease; }
+  #soho-page .submit:active { transform: scale(.99); }
+  #soho-page .submit:disabled { opacity: .6; cursor: default; }
+
+  #soho-page #s-done { display: none; text-align: center; padding: 30px 8px 14px; }
+  #soho-page #s-done .ok { font-size: 46px; }
+  #soho-page #s-done h3 { font-size: 21px; font-weight: 900; color: var(--navy); margin: 10px 0 8px; }
+  #soho-page #s-done p { font-size: 14.5px; color: var(--sub); line-height: 1.7; }
+  #soho-page #s-done .todo { text-align: left; margin: 18px auto 0; max-width: 420px; border-radius: 14px; background: var(--bg); padding: 14px 16px; font-size: 13.5px; color: #334155; line-height: 1.8; }
+
+  /* 다른 상담 */
+  #soho-page .others { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 520px) { #soho-page .others { grid-template-columns: 1fr; } }
+  #soho-page .other { display: flex; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 16px; padding: 15px; background: #fff; transition: all .15s ease; }
+  #soho-page .other:hover { border-color: var(--blue); box-shadow: 0 8px 22px rgba(31,91,255,.1); }
+  #soho-page .other .oi { width: 46px; height: 46px; border-radius: 12px; background: #eef3ff; display: flex; align-items: center; justify-content: center; font-size: 23px; flex-shrink: 0; }
+  #soho-page .other .ot { font-size: 15px; font-weight: 800; color: var(--navy); }
+  #soho-page .other .od { font-size: 12.5px; color: var(--sub); line-height: 1.45; margin-top: 2px; word-break: keep-all; }
+
+  /* FAQ */
+  #soho-page .faq-item { border-bottom: 1px solid var(--line); padding: 15px 2px; cursor: pointer; }
+  #soho-page .faq-q { display: flex; justify-content: space-between; gap: 12px; font-size: 15.5px; font-weight: 800; color: var(--navy); line-height: 1.5; word-break: keep-all; }
+  #soho-page .faq-q .mk { color: var(--orange); font-size: 20px; line-height: 1; transition: transform .2s ease; }
+  #soho-page .faq-a { display: none; font-size: 14px; color: #475569; line-height: 1.7; margin-top: 9px; word-break: keep-all; }
+  #soho-page .faq-item.open .faq-a { display: block; }
+  #soho-page .faq-item.open .mk { transform: rotate(45deg); }
+
+  #soho-page .contact { margin-top: 30px; border-radius: 16px; background: var(--bg); padding: 18px; text-align: center; font-size: 14px; color: var(--sub); line-height: 1.7; }
+  #soho-page .contact a { color: var(--navy); font-weight: 900; }
+</style>
+<div id="soho-page" style="display:none;">
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-badge">🏪 소상공인 · 개인사업자 사장님 전용</div>
+      <h1>사업장에 들일 삼성 가전,<br><em>소호 특가</em>로 출고가보다 싸게</h1>
+      <p class="lead">사업자등록증 하나면 됩니다. 매장·사무실·학원에 둘 가전을 품목별 정책 할인율로 견적 받아보세요.</p>
+      <div class="hero-chips">
+        <span>냉장고<b>최대 35%</b></span><span>TV<b>최대 36%</b></span><span>세탁기<b>최대 34%</b></span><span>에어컨<b>최대 32%</b></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap float">
+    <div class="card board">
+      <div class="board-head"><span class="t">품목별 소호 특가 할인율</span><span class="s">출고가 대비 · 10월 정책</span></div>
+      <div class="disc-grid" id="s-board"></div>
+      <p class="board-note">* 할인율은 삼성전자 2026년 10월 소상공인 정책 기준이며, 출고가(VAT 포함) 대비 최대치입니다. 같은 품목이라도 모델·용량에 따라 할인율이 다르고 매월 정책에 따라 변동될 수 있어, 정확한 금액은 견적서로 안내드립니다.</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="sec">
+      <div class="eyebrow">WHO CAN APPLY</div>
+      <h2 class="h2">이런 경우 소호 특가가 가능해요</h2>
+      <p class="sub">소호 특가는 <b>사업자등록증상 사업장에서 쓰는 제품</b>에만 적용됩니다. 신청 전에 한 번만 확인해 주세요.</p>
+      <div class="elig">
+        <div class="box ok">
+          <div class="bt">✅ 가능해요</div>
+          <ul>
+            <li>사업장 주소에 설치해 매장·사무실에서 사용</li>
+            <li>사업장이 아파트·빌라 등 주택이고 그곳에서 사용</li>
+            <li>직원 기숙사 비치 <small>(관련 문서 첨부)</small></li>
+            <li>임대사업자의 원룸·오피스텔 등 임대 건물 비치 <small>(임대사업자 등록증)</small></li>
+            <li>시공·시행사, 인테리어 업체의 현장 납품 <small>(참조 문서 첨부)</small></li>
+            <li>경로당·지역복지센터 등 국가 지원 시설 <small>(공문 첨부)</small></li>
+          </ul>
+        </div>
+        <div class="box no">
+          <div class="bt">⛔ 어려워요</div>
+          <ul>
+            <li>사업장이 아닌 집에서 쓰는 가전</li>
+            <li>개인택시 등 사업장이 유동적인 경우의 가정용 구매</li>
+            <li>회사 행사·이벤트 경품용 구매</li>
+            <li>종교시설·조합 명의로 신도·조합원 개인이 구매</li>
+            <li>신청한 설치 주소 외 다른 곳으로 배송</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="eyebrow">HOW IT WORKS</div>
+      <h2 class="h2">신청부터 설치까지 4단계</h2>
+      <div class="steps">
+        <div class="step"><div class="n">STEP 1</div><div class="t">상담 신청</div><div class="d">품목·수량과 사업장 정보를 남겨주세요</div></div>
+        <div class="step"><div class="n">STEP 2</div><div class="t">사업자 확인</div><div class="d">국세청 사업자 유효 확인 + 등록증 사본 확인</div></div>
+        <div class="step"><div class="n">STEP 3</div><div class="t">견적 · 계약</div><div class="d">모델별 할인가 견적서 확인 후 납품 계약</div></div>
+        <div class="step"><div class="n">STEP 4</div><div class="t">사업장 설치</div><div class="d">희망일에 맞춰 사업장으로 배송·설치</div></div>
+      </div>
+    </section>
+
+    <section class="sec" id="soho-apply">
+      <div class="card form-card">
+        <div id="s-formwrap">
+          <div class="form-title">🏪 소호 특가 견적 상담 신청</div>
+          <p class="form-desc">가격은 모델·수량에 따라 달라져요. 품목과 사업장 정보를 남겨주시면 할인가가 적용된 견적서로 연락드립니다.</p>
+          <form id="s-form" novalidate>
+            <div class="grp">
+              <div class="grp-t"><span class="no">1</span>필요한 제품</div>
+              <div class="fld">
+                <label class="lbl">관심 품목 <span class="req">*</span><span class="hint">여러 개 선택 가능</span></label>
+                <div class="chips" id="s-chips"></div>
+                <div id="s-qty"></div>
+                <div class="meter"><span class="ml" id="s-ml">품목을 고르면 적용 가능한<br>최대 할인율을 보여드려요</span><span class="mv" id="s-mv">—</span></div>
+              </div>
+              <div class="fld">
+                <label class="lbl" for="s-model">원하는 모델명 <span class="hint">알고 계시면 (선택)</span></label>
+                <input type="text" id="s-model" class="inp" placeholder="예: RT53DB7A1CET / 65인치 UHD TV">
+              </div>
+            </div>
+
+            <div class="grp">
+              <div class="grp-t"><span class="no">2</span>사업자 정보</div>
+              <div class="row2">
+                <div class="fld"><label class="lbl" for="s-company">상호(사업자명) <span class="req">*</span></label><input type="text" id="s-company" class="inp" placeholder="예: 대야동 OO카페"></div>
+                <div class="fld"><label class="lbl" for="s-bizno">사업자등록번호 <span class="req">*</span></label><input type="text" id="s-bizno" class="inp" placeholder="000-00-00000" inputmode="numeric" maxlength="12"><div class="msg" id="s-bizno-msg"></div></div>
+              </div>
+              <div class="row2">
+                <div class="fld"><label class="lbl" for="s-name">대표자(담당자) 성함 <span class="req">*</span></label><input type="text" id="s-name" class="inp" placeholder="예: 홍길동"></div>
+                <div class="fld"><label class="lbl" for="s-phone">연락처 <span class="req">*</span></label><input type="tel" id="s-phone" class="inp" placeholder="010-0000-0000" inputmode="numeric" maxlength="13"></div>
+              </div>
+              <div class="fld">
+                <label class="lbl">업종 <span class="req">*</span></label>
+                <div class="pills" id="s-biz"></div>
+                <div class="warn" id="s-biz-warn">개인택시 등 사업장이 일정하지 않은 업종은 가정 사용 목적의 구매가 불가해요. 차량·사무실 등 실제 사업 용도로만 상담 가능합니다.</div>
+              </div>
+              <div class="fld">
+                <label class="lbl" for="s-addr">사업장 주소 <span class="req">*</span><span class="hint">사업자등록증 기준 · 도로명</span></label>
+                <div class="addr-row"><input type="text" id="s-addr" class="inp" placeholder="주소 검색을 눌러주세요" readonly><button type="button" class="btn-addr" id="s-addr-btn">주소 검색</button></div>
+                <input type="text" id="s-addr2" class="inp" placeholder="상세주소 (동·호수, 층)" style="margin-top:8px;">
+              </div>
+            </div>
+
+            <div class="grp">
+              <div class="grp-t"><span class="no">3</span>설치 · 사용 정보</div>
+              <div class="fld">
+                <label class="lbl">설치 장소 <span class="req">*</span></label>
+                <div class="seg" id="s-site">
+                  <label class="on"><input type="radio" name="sSite" value="사업장과 동일" checked> 사업장과 같아요</label>
+                  <label><input type="radio" name="sSite" value="다른 장소"> 다른 곳이에요</label>
+                </div>
+                <div class="alt-box" id="s-alt">
+                  <div class="fld">
+                    <label class="lbl" for="s-alt-reason">다른 곳에 설치하는 이유 <span class="req">*</span></label>
+                    <select id="s-alt-reason" class="sel">
+                      <option value="">선택해주세요</option>
+                      <option value="직원 기숙사">직원 기숙사 비치</option>
+                      <option value="임대 건물 비치">임대 건물(원룸·오피스텔 등) 비치 — 임대사업자</option>
+                      <option value="시공·인테리어 현장 납품">시공·인테리어 현장 납품</option>
+                      <option value="국가 지원 시설">경로당·복지센터 등 국가 지원 시설</option>
+                      <option value="위탁 납품">다른 사업자 위탁 납품</option>
+                      <option value="자택">자택(집)</option>
+                      <option value="기타">기타</option>
+                    </select>
+                    <div class="warn" id="s-alt-warn">죄송해요, 자택 등 사업장이 아닌 곳에서 쓰는 가전은 소호 특가 대상이 아니에요. 가정용은 <a href="/main/html.php?htmid=service/SamSungSubscription.html&from=soho" style="text-decoration:underline;font-weight:800;">개인 가전 구독 상담</a>이 더 유리합니다.</div>
+                    <div class="info" id="s-alt-info" style="display:none;">해당 경우는 관련 증빙(공문·계약서·임대사업자 등록증 등)이 필요해요. 담당자가 상담 시 안내드립니다.</div>
+                  </div>
+                  <div class="fld" style="margin-bottom:0;">
+                    <label class="lbl" for="s-alt-addr">설치(인도) 주소 <span class="req">*</span></label>
+                    <div class="addr-row"><input type="text" id="s-alt-addr" class="inp" placeholder="주소 검색을 눌러주세요" readonly><button type="button" class="btn-addr" id="s-alt-addr-btn">주소 검색</button></div>
+                    <input type="text" id="s-alt-addr2" class="inp" placeholder="상세주소" style="margin-top:8px;">
+                    <input type="tel" id="s-alt-phone" class="inp" placeholder="현장 인수자 연락처 (다를 경우)" inputmode="numeric" maxlength="13" style="margin-top:8px;">
+                  </div>
+                </div>
+              </div>
+              <div class="fld">
+                <label class="lbl">사용 목적 <span class="req">*</span></label>
+                <div class="pills" id="s-use"></div>
+              </div>
+              <div class="row2">
+                <div class="fld"><label class="lbl" for="s-when">희망 설치 시기</label>
+                  <select id="s-when" class="sel"><option value="미정">아직 미정</option><option value="2주 이내">2주 이내</option><option value="1개월 이내">1개월 이내</option><option value="1~3개월">1~3개월</option><option value="오픈 준비중">신규 오픈 준비중</option></select></div>
+                <div class="fld"><label class="lbl" for="s-ref">알게 된 경로</label>
+                  <select id="s-ref" class="sel"><option value="">선택 안 함</option><option value="지인">지인 소개</option><option value="내방">매장 방문</option><option value="발품">검색·비교 후 문의</option><option value="기타">기타</option></select></div>
+              </div>
+              <div class="fld" style="margin-bottom:0;">
+                <label class="lbl" for="s-memo">요청사항 <span class="hint">선택</span></label>
+                <textarea id="s-memo" class="ta" placeholder="예: 카페 오픈 예정, 쇼케이스형 냉장고 문의 / 세금계산서 발행 / 통화 가능 시간"></textarea>
+              </div>
+            </div>
+
+            <div class="checks">
+              <label class="ck"><input type="checkbox" id="s-c1"><span>[필수] 사업장에서 사용할 제품이며, 신청한 설치 주소 외 배송·재판매하지 않습니다</span></label>
+              <label class="ck"><input type="checkbox" id="s-c2"><span>[필수] 상담 진행 시 사업자등록증 사본을 제출합니다</span></label>
+              <label class="ck"><input type="checkbox" id="s-c3" checked><span>[필수] 개인정보 수집 및 상담 연락에 동의합니다</span></label>
+              <p class="ck-d">수집항목: 상호, 사업자등록번호, 대표자명, 연락처, 주소, 문의내용 / 목적: 소호 특가 견적 상담 및 사업자 확인 / 보유기간: 상담 완료 후 6개월</p>
+            </div>
+            <button type="submit" class="submit" id="s-submit">소호 특가 견적 받기</button>
+          </form>
+        </div>
+        <div id="s-done">
+          <div class="ok">✅</div>
+          <h3>소호 특가 상담이 접수되었습니다</h3>
+          <p>담당자가 사업자 정보를 확인한 뒤<br>할인가 견적서와 함께 연락드립니다.</p>
+          <div class="todo"><b>📎 미리 준비해 주세요</b><br>· 사업자등록증 사본 (사진 가능)<br>· 다른 곳 설치 시 관련 증빙 서류<br>· 급하신 경우 <a href="tel:03180423166" style="font-weight:900;color:#0b1d45;">031-8042-3166</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="eyebrow">OTHER OPTIONS</div>
+      <h2 class="h2">이런 상담이 더 맞을 수도 있어요</h2>
+      <div class="others">
+        <a class="other" href="/main/html.php?htmid=service/SamSungSubscription.html&from=soho"><span class="oi">🏠</span><span><span class="ot">개인 가전 구독</span><span class="od" style="display:block;">목돈 없이 월 구독료 · 방문케어 포함</span></span></a>
+        <a class="other" href="/main/html.php?htmid=service/b2b_form.html&from=soho"><span class="oi">🖨️</span><span><span class="ot">사업자 렌탈</span><span class="od" style="display:block;">복합기·정수기·공기청정기 · 소모품 무상</span></span></a>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="eyebrow">FAQ</div>
+      <h2 class="h2">자주 묻는 질문</h2>
+      <div class="faq-item"><div class="faq-q">소호 특가는 누가 신청할 수 있나요? <span class="mk">+</span></div><div class="faq-a">사업자등록증을 가진 개인사업자(소상공인) 사장님이 사업장에서 쓸 가전을 구매하는 경우 신청할 수 있어요. 국세청 사업자 유효 확인을 거쳐 진행합니다. 법인·공공기관은 <a href="/main/html.php?htmid=service/SamSungSubscription.html&evt=b2b&biz=corp" style="text-decoration:underline;">B2B AI 구독</a>으로 상담해 드립니다.</div></div>
+      <div class="faq-item"><div class="faq-q">할인율은 어떻게 정해지나요? <span class="mk">+</span></div><div class="faq-a">삼성전자 소상공인 정책에 따라 품목·모델마다 출고가 대비 할인율이 정해져 있어요. 위 표의 수치는 품목별 최대치이고, 같은 냉장고라도 모델에 따라 24~35%처럼 차이가 납니다. 정책은 매월 바뀔 수 있어 견적서 기준으로 확정됩니다.</div></div>
+      <div class="faq-item"><div class="faq-q">집에서 쓸 가전도 같이 살 수 있나요? <span class="mk">+</span></div><div class="faq-a">소호 특가는 사업장에서 사용하는 제품만 가능해요. 가정용 가전은 개인 가전 구독이나 일반 구매로 따로 상담해 드리면 혜택을 더 잘 챙기실 수 있습니다.</div></div>
+      <div class="faq-item"><div class="faq-q">사업장이 집(주택)인데 가능한가요? <span class="mk">+</span></div><div class="faq-a">네, 사업자등록증상 주소가 아파트·빌라 등 주택이고 그곳에서 사업용으로 사용하신다면 가능합니다.</div></div>
+      <div class="faq-item"><div class="faq-q">구독으로도 받을 수 있나요? <span class="mk">+</span></div><div class="faq-a">소호 특가는 할인가 구매 방식이에요. 월 구독료로 나눠 내고 싶으시면 개인 가전 구독 상담을 이용해 주세요. 어느 쪽이 유리한지 함께 비교해 드릴 수도 있습니다.</div></div>
+      <div class="faq-item"><div class="faq-q">시흥 외 지역 사업장도 되나요? <span class="mk">+</span></div><div class="faq-a">네, 전국 사업장 상담이 가능합니다. 설치 일정은 지역과 재고에 따라 상담 시 안내드립니다.</div></div>
+    </section>
+
+    <div class="contact">전화 상담 <a href="tel:03180423166">031-8042-3166</a> · 평일 10:00~18:00<br>삼성스토어 시흥 · 경기도 시흥시 서해안로1685번길 12</div>
+  </div>
+</div>
+<script>
+(function () {
+  var evtM = window.location.href.match(/[?&]evt=([^&#]+)/);
+  if (!evtM || evtM[1] !== 'soho') return;
+  var sohoEl = document.getElementById('soho-page');
+  var subEl = document.getElementById('samsung-sub-page');
+  if (!sohoEl) return;
+  if (subEl) { subEl.parentNode.insertBefore(sohoEl, subEl); subEl.style.display = 'none'; }
+  sohoEl.style.display = '';
+  Array.prototype.forEach.call(document.querySelectorAll('.subscription_goods_wrap'), function (el) { el.style.display = 'none'; });
+  document.body.classList.add('soho-mode');
+  document.title = '소상공인 사업장 가전 소호 특가 상담 | 삼성스토어 시흥';
+  window.SAM_FORM_MODE = '소호특가';
+  var GAS_URL = 'https://script.google.com/macros/s/AKfycbwqIrMBkK9ujBAKkH3ONO95-BYVt_SeQwNVWPuPfqGrfLYlhrpuP9xUalf1TGcsv3s2/exec'; /* 구독 문의 GAS (B2B와 동일 접수처) */
+
+  /* 품목별 할인율 — 2026.10 소상공인 정책(출고가 대비) · 액세서리 제외 본체 기준 */
+  var ITEMS = [
+    { v: '냉장고', e: '🧊', max: 35, rg: '모델별 24~35% · 업소용 포함' },
+    { v: 'TV', e: '📺', max: 36, rg: '모델별 11~36%' },
+    { v: '세탁기', e: '🫧', max: 34, rg: '모델별 10~34%' },
+    { v: '건조기', e: '☀️', max: 33, rg: '모델별 15~33%' },
+    { v: '에어컨', e: '❄️', max: 32, rg: '스탠드·벽걸이 20~32%' },
+    { v: '김치냉장고', e: '🥬', max: 31, rg: '모델별 23~31%' },
+    { v: '시스템에어컨', e: '🌀', max: 30, rg: '천장형 대부분 30%' },
+    { v: '공기청정기', e: '🌬️', max: 30, rg: '대상 모델 30%' },
+    { v: '청소기', e: '🧹', max: 29, rg: '모델별 28~29%' },
+    { v: '주방가전', e: '🍳', max: 28, rg: '인덕션·식기세척기·전자레인지' },
+    { v: '에어드레서', e: '👔', max: 26, rg: '모델별 16~26%' },
+    { v: '사운드바', e: '🔊', max: 40, rg: '모델별 15~40%' },
+    { v: '사이니지', e: '🖥️', max: 20, rg: '상업용 디스플레이 15~20%' },
+    { v: '정수기', e: '💧', max: 15, rg: '대상 모델 15%' },
+    { v: '모니터', e: '💻', max: 15, rg: '대상 모델 15%' }
+  ];
+  var QTY = ['1대', '2~4대', '5~9대', '10대 이상'];
+  var BIZ = ['음식점·카페', '미용·뷰티', '학원·교습소', '병의원·약국', '숙박·펜션', '사무실·부동산', '소매·편의점', '헬스·필라테스', '운수(개인택시 등)', '기타'];
+  var USE = ['매장 비치(고객용)', '직원 휴게·복지', '객실·임대 비치', '시공·납품', '기타'];
+  var state = { items: [], biz: '', use: '' };
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* 할인율 보드 */
+  $('s-board').innerHTML = ITEMS.map(function (it) {
+    return '<div class="disc' + (it.max >= 32 ? ' hot' : '') + '"><div class="top"><span class="ic">' + it.e + '</span><span class="nm">' + it.v + '</span></div>' +
+      '<div class="pct">최대<b>' + it.max + '</b><small>%</small></div><div class="bar"><i style="width:' + Math.round(it.max / 40 * 100) + '%"></i></div>' +
+      '<div class="rg">' + it.rg + '</div></div>';
+  }).join('');
+
+  /* 칩 / 수량 */
+  var chips = $('s-chips');
+  chips.innerHTML = ITEMS.map(function (it) {
+    return '<div class="chip" data-v="' + it.v + '"><span class="tag">' + it.max + '%</span><div class="ce">' + it.e + '</div><div class="cl">' + it.v + '</div></div>';
+  }).join('') + '<div class="chip" data-v="기타"><div class="ce">✨</div><div class="cl">기타</div></div>';
+  function itemDef(v) { return ITEMS.filter(function (i) { return i.v === v; })[0] || { v: v, e: '✨', max: 0 }; }
+  function findSel(v) { return state.items.filter(function (i) { return i.v === v; })[0]; }
+  chips.addEventListener('click', function (e) {
+    var c = e.target.closest('.chip'); if (!c) return;
+    var v = c.getAttribute('data-v'); var s = findSel(v);
+    if (s) { state.items.splice(state.items.indexOf(s), 1); c.classList.remove('selected'); }
+    else { state.items.push({ v: v, qty: '1대' }); c.classList.add('selected'); }
+    renderQty(); meter();
+  });
+  function renderQty() {
+    $('s-qty').innerHTML = state.items.map(function (s) {
+      var d = itemDef(s.v);
+      return '<div class="qrow" data-v="' + s.v + '"><span class="qn">' + d.e + ' ' + s.v + (d.max ? '<em>최대 ' + d.max + '%</em>' : '') + '</span><span class="qs">' +
+        QTY.map(function (q) { return '<button type="button" class="qb' + (q === s.qty ? ' on' : '') + '" data-q="' + q + '">' + q + '</button>'; }).join('') + '</span></div>';
+    }).join('');
+  }
+  $('s-qty').addEventListener('click', function (e) {
+    var b = e.target.closest('.qb'); if (!b) return;
+    var row = b.closest('.qrow'); var s = findSel(row.getAttribute('data-v')); if (!s) return;
+    s.qty = b.getAttribute('data-q');
+    Array.prototype.forEach.call(row.querySelectorAll('.qb'), function (x) { x.classList.toggle('on', x === b); });
+  });
+  function maxPct() { var m = 0; state.items.forEach(function (s) { var d = itemDef(s.v); if (d.max > m) m = d.max; }); return m; }
+  function meter() {
+    var m = maxPct();
+    if (!state.items.length) { $('s-mv').textContent = '—'; $('s-ml').innerHTML = '품목을 고르면 적용 가능한<br>최대 할인율을 보여드려요'; }
+    else if (!m) { $('s-mv').textContent = '별도 상담'; $('s-ml').innerHTML = '선택하신 품목은<br>담당자가 개별 안내드려요'; }
+    else { $('s-mv').textContent = '최대 ' + m + '%'; $('s-ml').innerHTML = '선택 품목 ' + state.items.length + '개 기준 (출고가 대비)<br>최종 할인은 견적서로 확정'; }
+  }
+
+  /* 업종 / 사용목적 pills */
+  function pills(id, arr, key, onPick) {
+    var w = $(id);
+    w.innerHTML = arr.map(function (a) { return '<span class="pill" data-v="' + a + '">' + a + '</span>'; }).join('');
+    w.addEventListener('click', function (e) {
+      var p = e.target.closest('.pill'); if (!p) return;
+      state[key] = p.getAttribute('data-v');
+      Array.prototype.forEach.call(w.querySelectorAll('.pill'), function (x) { x.classList.toggle('selected', x === p); });
+      if (onPick) onPick(state[key]);
+    });
+  }
+  pills('s-biz', BIZ, 'biz', function (v) { $('s-biz-warn').style.display = v.indexOf('운수') === 0 ? 'block' : 'none'; });
+  pills('s-use', USE, 'use');
+
+  /* 설치 장소 */
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="sSite"]'), function (r) {
+    r.addEventListener('change', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#s-site label'), function (l) { l.classList.toggle('on', l.querySelector('input').checked); });
+      $('s-alt').style.display = siteVal() === '다른 장소' ? 'block' : 'none';
+    });
+  });
+  function siteVal() { var s = document.querySelector('input[name="sSite"]:checked'); return s ? s.value : '사업장과 동일'; }
+  $('s-alt-reason').addEventListener('change', function () {
+    var v = this.value;
+    $('s-alt-warn').style.display = v === '자택' ? 'block' : 'none';
+    $('s-alt-info').style.display = (v && v !== '자택' && v !== '기타') ? 'block' : 'none';
+  });
+
+  /* 전화번호 / 사업자번호 포맷 */
+  function fmtPhone(el) {
+    var d = el.value.replace(/[^0-9]/g, '').slice(0, 11);
+    if (d.indexOf('02') === 0) el.value = d.length < 3 ? d : d.length < 6 ? d.slice(0, 2) + '-' + d.slice(2) : d.length < 10 ? d.slice(0, 2) + '-' + d.slice(2, 5) + '-' + d.slice(5) : d.slice(0, 2) + '-' + d.slice(2, 6) + '-' + d.slice(6, 10);
+    else el.value = d.length < 4 ? d : d.length < 8 ? d.slice(0, 3) + '-' + d.slice(3) : d.length < 11 ? d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6) : d.slice(0, 3) + '-' + d.slice(3, 7) + '-' + d.slice(7);
+  }
+  ['s-phone', 's-alt-phone'].forEach(function (id) { $(id).addEventListener('input', function () { fmtPhone(this); }); });
+  function bizValid(d) {
+    if (d.length !== 10 || !/^[0-9]+$/.test(d)) return false;
+    var w = [1, 3, 7, 1, 3, 7, 1, 3, 5], s = 0;
+    for (var i = 0; i < 9; i++) s += parseInt(d.charAt(i), 10) * w[i];
+    s += Math.floor(parseInt(d.charAt(8), 10) * 5 / 10);
+    return (10 - (s % 10)) % 10 === parseInt(d.charAt(9), 10);
+  }
+  var bizEl = $('s-bizno'), bizMsg = $('s-bizno-msg');
+  bizEl.addEventListener('input', function () {
+    var d = bizEl.value.replace(/[^0-9]/g, '').slice(0, 10);
+    bizEl.value = d.length < 4 ? d : d.length < 6 ? d.slice(0, 3) + '-' + d.slice(3) : d.slice(0, 3) + '-' + d.slice(3, 5) + '-' + d.slice(5);
+    if (d.length < 10) { bizMsg.textContent = ''; bizMsg.className = 'msg'; bizEl.classList.remove('err'); return; }
+    var ok = bizValid(d);
+    bizMsg.textContent = ok ? '형식이 올바른 사업자등록번호예요' : '번호를 다시 확인해 주세요 (자리수·검증번호 불일치)';
+    bizMsg.className = 'msg ' + (ok ? 'ok' : 'bad');
+    bizEl.classList.toggle('err', !ok);
+  });
+
+  /* 도로명 주소 검색 (카카오 우편번호 서비스) */
+  function loadPostcode(cb) {
+    if (window.daum && window.daum.Postcode) return cb();
+    var s = document.createElement('script');
+    s.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    s.onload = cb;
+    s.onerror = function () { alert('주소 검색을 불러오지 못했어요. 주소를 직접 입력해 주세요.'); };
+    document.head.appendChild(s);
+  }
+  function bindAddr(btnId, inpId, nextId) {
+    var inp = $(inpId);
+    function open() {
+      loadPostcode(function () {
+        new window.daum.Postcode({ oncomplete: function (data) { inp.value = data.roadAddress || data.address; inp.classList.remove('err'); $(nextId).focus(); } }).open();
+      });
+    }
+    $(btnId).addEventListener('click', open);
+    inp.addEventListener('click', open);
+  }
+  bindAddr('s-addr-btn', 's-addr', 's-addr2');
+  bindAddr('s-alt-addr-btn', 's-alt-addr', 's-alt-addr2');
+
+  /* FAQ */
+  Array.prototype.forEach.call(document.querySelectorAll('#soho-page .faq-item'), function (f) {
+    f.addEventListener('click', function (e) { if (e.target.tagName === 'A') return; f.classList.toggle('open'); });
+  });
+
+  function referral() {
+    var p = new URLSearchParams(window.location.search);
+    var src = [p.get('utm_source'), p.get('utm_medium'), p.get('utm_campaign'), p.get('from')].filter(Boolean).join('/');
+    if (src) return src;
+    if (document.referrer) { try { return new URL(document.referrer).hostname; } catch (e) { } }
+    return '직접 유입';
+  }
+  function stop(msg, el) { alert(msg); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (el.focus) el.focus(); } return false; }
+
+  /* 제출 */
+  $('s-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var company = $('s-company').value.trim(), bizno = bizEl.value.replace(/[^0-9]/g, ''), name = $('s-name').value.trim();
+    var phone = $('s-phone').value.trim(), addr = $('s-addr').value.trim(), addr2 = $('s-addr2').value.trim();
+    var site = siteVal(), altReason = $('s-alt-reason').value, altAddr = ($('s-alt-addr').value.trim() + ' ' + $('s-alt-addr2').value.trim()).trim(), altPhone = $('s-alt-phone').value.trim();
+    var when = $('s-when').value, ref = $('s-ref').value, model = $('s-model').value.trim(), memo = $('s-memo').value.trim();
+
+    if (!state.items.length) return stop('필요하신 품목을 1개 이상 선택해주세요.', chips);
+    if (!company) return stop('상호(사업자명)를 입력해주세요.', $('s-company'));
+    if (!bizValid(bizno)) return stop('사업자등록번호 10자리를 정확히 입력해주세요.', bizEl);
+    if (!name) return stop('대표자(담당자) 성함을 입력해주세요.', $('s-name'));
+    if (phone.replace(/[^0-9]/g, '').length < 9) return stop('연락처를 정확히 입력해주세요. (예: 010-1234-5678)', $('s-phone'));
+    if (!state.biz) return stop('업종을 선택해주세요.', $('s-biz'));
+    if (!addr) { $('s-addr').classList.add('err'); return stop('사업장 주소를 검색해 입력해주세요.', $('s-addr')); }
+    if (site === '다른 장소') {
+      if (!altReason) return stop('다른 곳에 설치하는 이유를 선택해주세요.', $('s-alt-reason'));
+      if (altReason === '자택') return stop('자택에서 사용하는 가전은 소호 특가 대상이 아니에요. 개인 가전 구독 상담을 이용해 주세요.', $('s-alt-reason'));
+      if (!$('s-alt-addr').value.trim()) return stop('설치(인도) 주소를 입력해주세요.', $('s-alt-addr'));
+    }
+    if (!state.use) return stop('사용 목적을 선택해주세요.', $('s-use'));
+    if (!$('s-c1').checked || !$('s-c2').checked || !$('s-c3').checked) return stop('필수 확인 항목에 모두 동의해주세요.', $('s-c1'));
+
+    var btn = $('s-submit'); btn.disabled = true; btn.textContent = '접수 중입니다...';
+    var itemsText = state.items.map(function (s) { return s.v + '(' + s.qty + ')'; }).join(', ');
+    var m = maxPct();
+    var bizFmt = bizno.slice(0, 3) + '-' + bizno.slice(3, 5) + '-' + bizno.slice(5);
+    var fullAddr = (addr + ' ' + addr2).trim();
+    var deliver = site === '다른 장소' ? altAddr + ' [' + altReason + ']' + (altPhone ? ' / 인수자 ' + altPhone : '') : '사업장과 동일';
+    var memoFull =
+      '[소호] ' + company + ' (' + bizFmt + ') / ' + state.biz + '\n' +
+      '제품·수량: ' + itemsText + (model ? ' / 모델: ' + model : '') + '\n' +
+      '사업장: ' + fullAddr + '\n' +
+      '인도처: ' + deliver + ' / 사용목적: ' + state.use + '\n' +
+      '설치시기: ' + when + (ref ? ' / 수주유형: ' + ref : '') + ' / 안내 최대할인: ' + (m ? m + '%' : '별도') +
+      (memo ? '\n요청: ' + memo : '');
+
+    var data = {
+      modelName: itemsText,
+      inquiryType: '소호특가',
+      customerName: company + ' ' + name,
+      phone: phone,
+      memo: memoFull,
+      pageUrl: window.location.href,
+      purchasePurpose: '소호·개인사업자',
+      region: fullAddr,
+      contactMethod: '전화',
+      referralSource: referral(),
+      productCount: state.items.length,
+      /* 구독 GAS 필수 필드 기본값 (누락 시 잔디 메시지 생성 오류 방지) */
+      existingSubscription: '해당없음(소호)',
+      membershipStatus: '해당없음(소호)',
+      prepayIntent: '해당없음(소호)',
+      otherQuoteSource: '-',
+      diagRecommend: '',
+      diagAnswers: '',
+      companyName: company,
+      contactPerson: name,
+      bizNumber: bizFmt,
+      businessType: state.biz,
+      businessAddress: fullAddr,
+      installSite: deliver,
+      usePurpose: state.use,
+      desiredTiming: when,
+      orderChannel: ref || '-',
+      promoTier: m ? m + '%' : '별도',
+      privacyConsent: '동의',
+      diagSource: '소호특가'
+    };
+
+    fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(data) })
+      .then(function () {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({ event: 'soho_lead_submit', lead_business_type: state.biz, lead_model_name: itemsText, lead_product_count: state.items.length, lead_promo_tier: m });
+        $('s-formwrap').style.display = 'none';
+        $('s-done').style.display = 'block';
+        $('soho-apply').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      })
+      .catch(function () {
+        btn.disabled = false; btn.textContent = '소호 특가 견적 받기';
+        alert('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      });
+  });
+
+  /* ?item=냉장고,TV 프리셋 */
+  var p = new URLSearchParams(window.location.search).get('item');
+  if (p) p.split(/[,·|]+/).forEach(function (t) {
+    t = t.trim(); if (!t) return;
+    var c = Array.prototype.filter.call(chips.querySelectorAll('.chip'), function (x) { return x.getAttribute('data-v') === t; })[0];
+    if (c && !c.classList.contains('selected')) c.click();
+  });
+  meter();
+})();
+</script>
+<!-- ══════════════════════════════════════════════════════════════════
+     📱 SUB v1.6.1 / 2026-10-29 : 모바일 레이아웃 개선 패치
+     · 붙이는 위치: 파일 맨 아래 footer 줄 바로 위 (다른 코드는 수정 없음)
+     · 여백 축소 · 상담유형 버튼 줄바꿈 해결 · 힌트/부제 정리 · 라디오 균등 배치 · 큰 글씨 모드 모바일 최적화
+     ※ 고도몰 템플릿 치환 방지: 여는 중괄호 뒤에 항상 공백 유지
+     ══════════════════════════════════════════════════════════════════ -->
+<style>
+  /* ── 공통: 폼 제목 부제(증정 문구 등) 한 덩어리로 ── */
+  #samsung-sub-page .form-card-title br { display: none; }
+  #samsung-sub-page .form-card-title small {
+    display: block; margin-top: 6px; font-size: 13.5px !important; font-weight: 700;
+    color: #64748b !important; line-height: 1.5; letter-spacing: -0.01em; word-break: keep-all;
+  }
+  body.senior-mode #samsung-sub-page .form-card-title small { font-size: 15px !important; color: #0057ff !important; }
+  #samsung-sub-page .form-card-title,
+  #samsung-sub-page .form-card-desc,
+  #samsung-sub-page .f-label,
+  #samsung-sub-page .ask-note { word-break: keep-all; }
+
+  /* ── 상담 유형 버튼: 아이콘 / 라벨 / 보조문구 3단 · 줄바꿈 금지 ── */
+  #samsung-sub-page .ask-btn { gap: 2px; padding: 11px 4px 10px; }
+  #samsung-sub-page .ask-btn .ai { font-size: 20px; line-height: 1.15; }
+  #samsung-sub-page .ask-btn .at { white-space: nowrap; letter-spacing: -0.02em; }
+  #samsung-sub-page .ask-btn small { white-space: nowrap; letter-spacing: -0.02em; }
+  #samsung-sub-page .ask-btn.on .ai { transform: scale(1.06); }
+
+  /* ── 모바일 (≤480px) ── */
+  @media (max-width: 480px) {
+    /* 여백 */
+    #samsung-sub-page .wrap { padding: 0 14px; }
+    #samsung-sub-page .form-section { padding: 18px 0 32px; }
+    #samsung-sub-page .form-card { padding: 20px 14px 18px; border-radius: 14px; }
+    #samsung-sub-page .f-field { margin: 20px 0; }
+
+    /* 상단 모드 전환 바 */
+    .mode-switch-wrap { padding: 8px 14px; gap: 8px; }
+    .mode-switch-label { font-size: 13px; }
+    .mode-btn { font-size: 12.5px; padding: 6px 12px; white-space: nowrap; }
+
+    /* 제목 · 라벨 · 힌트 */
+    #samsung-sub-page .form-card-title { font-size: 19px; line-height: 1.4; }
+    #samsung-sub-page .form-card-desc { font-size: 14px; line-height: 1.55; margin-bottom: 16px; }
+    #samsung-sub-page .f-label { line-height: 1.45; }
+    #samsung-sub-page .f-label .f-hint { display: block; margin-top: 3px; font-size: 13px; }
+
+    /* 상담 유형 버튼 */
+    #samsung-sub-page .ask-seg { gap: 4px; padding: 4px; border-radius: 12px; }
+    #samsung-sub-page .ask-btn { font-size: 14.5px; padding: 10px 2px 9px; border-radius: 9px; }
+    #samsung-sub-page .ask-btn .ai { font-size: 19px; }
+    #samsung-sub-page .ask-btn small { font-size: 11px; }
+    #samsung-sub-page .ask-note { font-size: 13px; line-height: 1.55; margin-top: 8px; }
+
+    /* 제품 칩 */
+    #samsung-sub-page .chip-grid { gap: 7px; }
+    #samsung-sub-page .chip { padding: 12px 4px 11px; border-radius: 12px; }
+    #samsung-sub-page .chip .chip-emoji { font-size: 26px; }
+    #samsung-sub-page .chip .chip-label { font-size: 14px; text-align: center; line-height: 1.3; word-break: keep-all; }
+
+    /* 라디오: 한 줄 균등 배치 */
+    #samsung-sub-page .f-radio-group { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+    #samsung-sub-page .f-radio {
+      justify-content: center; text-align: center; padding: 11px 6px; font-size: 14.5px;
+      line-height: 1.35; gap: 6px; word-break: keep-all;
+    }
+    #samsung-sub-page .discount-cond-box { padding: 16px 12px; }
+
+    /* 동의 · 버튼 */
+    #samsung-sub-page .f-consent { padding: 14px 12px; }
+    #samsung-sub-page .f-consent-desc { margin-left: 27px; font-size: 12px; }
+    #samsung-sub-page .f-submit { padding: 17px; font-size: 17.5px; }
+
+    /* ── 큰 글씨 모드 · 모바일 ── */
+    body.senior-mode #samsung-sub-page .form-card { padding: 22px 15px 20px; border-width: 2px; }
+    body.senior-mode #samsung-sub-page .form-card-title { font-size: 21px; }
+    body.senior-mode #samsung-sub-page .form-card-title small { font-size: 14.5px !important; }
+    body.senior-mode #samsung-sub-page .form-card-desc { font-size: 16px; }
+    body.senior-mode #samsung-sub-page .f-label { font-size: 18.5px; margin-bottom: 10px; }
+    body.senior-mode #samsung-sub-page .f-label .f-hint { font-size: 14px; }
+    body.senior-mode #samsung-sub-page .ask-btn { font-size: 16px; padding: 12px 2px 11px; }
+    body.senior-mode #samsung-sub-page .ask-btn .ai { font-size: 22px; }
+    body.senior-mode #samsung-sub-page .ask-btn small { font-size: 12px; }
+    body.senior-mode #samsung-sub-page .ask-note { font-size: 15px; }
+    body.senior-mode #samsung-sub-page .chip-grid { gap: 10px; }
+    body.senior-mode #samsung-sub-page .chip { padding: 15px 6px 13px; }
+    body.senior-mode #samsung-sub-page .chip .chip-emoji { font-size: 30px; }
+    body.senior-mode #samsung-sub-page .chip .chip-label { font-size: 16.5px; }
+    body.senior-mode #samsung-sub-page .f-input,
+    body.senior-mode #samsung-sub-page .f-select,
+    body.senior-mode #samsung-sub-page .f-textarea { font-size: 18px !important; min-height: 56px !important; }
+    body.senior-mode #samsung-sub-page .f-submit { font-size: 19px; padding: 18px; }
+  }
+
+  /* ── 아주 좁은 화면 (≤360px) ── */
+  @media (max-width: 360px) {
+    #samsung-sub-page .wrap { padding: 0 10px; }
+    #samsung-sub-page .form-card { padding: 18px 12px 16px; }
+    #samsung-sub-page .ask-btn { font-size: 13.5px; }
+    #samsung-sub-page .ask-btn small { font-size: 10.5px; }
+    #samsung-sub-page .chip .chip-label { font-size: 13px; }
+    body.senior-mode #samsung-sub-page .ask-btn { font-size: 15px; }
+    body.senior-mode #samsung-sub-page .ask-btn small { display: none; }
+  }
+</style>
+<script>
+(function () {
+  /* 상담 유형 버튼을 아이콘 / 라벨 / 짧은 보조문구 3단 구조로 재구성 */
+  var MAP = {
+    sub:  ['🔄', '구독', '월 구독료'],
+    buy:  ['🛒', '일반 구매', '일시불·할부'],
+    both: ['⚖️', '둘 다 비교', '총비용 비교']
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('#ask-seg .ask-btn'), function (b) {
+    var m = MAP[b.getAttribute('data-ask')];
+    if (!m) return;
+    b.innerHTML = '<span class="ai">' + m[0] + '</span><span class="at">' + m[1] + '</span><small>' + m[2] + '</small>';
+  });
+})();
+</script>
+
+<!-- SUB v1.6.4 / 2026-10-29 : 봇 차단 — Cloudflare Turnstile(사람 확인) + 숨은 칸 · 제출 시간 · 사람 입력 흔적 · 같은 브라우저 10분 3건
+     사람 확인을 못 받으면 보내지 않고 "접수되지 않았습니다" 안내 (v1.6.3 은 보내고 서버가 숨겼다 — 고객은 접수된 줄 알았다)
+     v1.6.2·v1.6.3 블록이 있으면 지우고 이것으로 바꾼다 (두 개 같이 두지 말 것). 붙이는 곳·확인 방법은 sub_turnstile.md -->
+<script>
+(function () {
+  if (window.__samBot) return;
+  window.__samBot = 1;
+  var SITEKEY = window.SAM_TS_KEY || '0x4AAAAAAFqp7LFwZAAhjdVD';
+  var TEL = '031-8042-3166';
+  var T0 = Date.now();
+  var human = 0;
+
+  /* ── 1. 사람 확인 (Cloudflare Turnstile) ─────────────────────────
+     평소엔 안 보이고, Cloudflare 가 의심할 때만 화면 아래에 체크 상자가 뜬다.
+     토큰은 한 번만 쓸 수 있고 5분 유효 — 첫 터치 때 미리 받아 두고, 쓰면 새로 받는다. */
+  var box = null, wid = null, tok = '', tokAt = 0, state = 'loading', waiters = [], nextT = null;
+  function boxEl() {
+    if (box) return box;
+    box = document.createElement('div');
+    box.id = 'sam-ts';
+    box.style.cssText = 'display:none;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483000;'
+      + 'background:#fff;border:1px solid #d5dbe5;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:14px 14px 10px;max-width:calc(100vw - 24px);';
+    box.innerHTML = '<div style="font:600 14px/1.4 sans-serif;color:#1f2937;margin:0 0 8px;">문의 접수 전에 사람인지 확인해 주세요</div><div id="sam-ts-w"></div>';
+    document.body.appendChild(box);
+    return box;
+  }
+  function settle(t, st) {
+    if (t) { tok = t; tokAt = Date.now(); }
+    state = st;
+    var w = waiters; waiters = [];
+    w.forEach(function (f) { f(); });
+  }
+  function run() {
+    clearTimeout(nextT);
+    if (wid === null || !window.turnstile) return;
+    tok = ''; state = 'running';
+    try { window.turnstile.reset(wid); window.turnstile.execute(wid); } catch (e) { settle('', 'error:exec'); }
+  }
+  window.samTsReady = function () {
+    try {
+      wid = window.turnstile.render(boxEl().querySelector('#sam-ts-w'), {
+        sitekey: SITEKEY, language: 'ko', appearance: 'interaction-only', execution: 'execute',
+        callback: function (t) { box.style.display = 'none'; settle(t, 'ok'); },
+        'error-callback': function (c) { box.style.display = 'none'; settle('', 'error:' + c); return true; },
+        'expired-callback': function () { tok = ''; state = 'expired'; },
+        'timeout-callback': function () { box.style.display = 'none'; settle('', 'timeout'); },
+        'before-interactive-callback': function () { box.style.display = 'block'; },
+        'after-interactive-callback': function () { box.style.display = 'none'; }
+      });
+      state = 'ready';
+      if (human) run();
+    } catch (e) { settle('', 'error:render'); }
+  };
+  var s = document.createElement('script');
+  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=samTsReady';
+  s.async = true; s.defer = true;
+  s.onerror = function () { settle('', 'noscript'); };
+  document.head.appendChild(s);
+
+  /* 쓸 토큰 하나 — 미리 받아 둔 게 있으면 바로, 없으면 받을 때까지(사람 확인이 뜨면 최대 90초).
+     한 번에 여러 건을 보내면(렌탈 여러 품목) 하나씩 차례로 새 토큰을 받는다. */
+  var WAIT = { loading: 1, ready: 1, running: 1, pending: 1, expired: 1 };
+  function getToken() {
+    return new Promise(function (res) {
+      var done = false, limit = null;
+      function finish(r) { if (done) return; done = true; clearTimeout(limit); res(r); }
+      function take() {
+        var t = tok, st = state;
+        tok = ''; state = 'pending';
+        clearTimeout(nextT); nextT = setTimeout(run, 300);
+        finish({ t: t, st: st });
+      }
+      function waiter() {
+        if (done) return;
+        if (tok) return take();
+        if (WAIT[state]) { waiters.push(waiter); return; }
+        finish({ t: '', st: state });
+      }
+      if (tok && Date.now() - tokAt < 270000) return take();
+      if (state === 'noscript' || /^error:(render|exec)/.test(state)) return finish({ t: '', st: state });
+      limit = setTimeout(function () {
+        if (done) return;
+        if (box && box.style.display === 'block') {           /* 체크 상자가 떠 있으면 더 기다린다 */
+          limit = setTimeout(function () { finish({ t: '', st: 'timeout' }); }, 75000);
+          return;
+        }
+        finish({ t: '', st: state === 'loading' ? 'noscript' : 'timeout' });
+      }, 15000);
+      waiters.push(waiter);
+      if (state !== 'running' && state !== 'pending') run();
+    });
+  }
+
+  /* 확인을 못 받았을 때 고객에게 알린다 — 페이지의 '일시적인 오류' 창은 한 번 건너뛴다(창이 두 번 뜨지 않게) */
+  var quietUntil = 0, lastNotice = 0, oalert = window.alert;
+  window.alert = function (m) {
+    if (Date.now() < quietUntil && /일시적인 오류/.test(String(m))) return;
+    return oalert.apply(window, arguments);
+  };
+  function blockedNotice(st) {
+    if (Date.now() - lastNotice > 3000) {
+      lastNotice = Date.now();
+      var msg = st === 'noscript'
+        ? '보안 확인 화면을 불러오지 못해 접수되지 않았습니다.\n광고 차단 기능을 끄고 다시 눌러 주시거나 ' + TEL + ' 으로 전화 주시면 바로 도와드립니다.'
+        : '사람인지 확인을 마치지 못해 접수되지 않았습니다.\n잠시 뒤 다시 눌러 주세요. 계속 안 되면 ' + TEL + ' 으로 전화 주시면 바로 도와드립니다.';
+      try { oalert.call(window, msg); } catch (e) { }
+    }
+    quietUntil = Date.now() + 1500;
+    if (state !== 'noscript') run();                       /* 다시 누르면 새로 확인 */
+  }
+
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+    document.addEventListener(ev, function () {
+      human++;
+      if (human === 1 && state === 'ready') run();      /* 첫 터치 때 미리 받아 둔다 → 제출이 안 늦어진다 */
+    }, { passive: true, capture: true });
+  });
+
+  /* ── 2. 숨은 칸 · 제출 시간 · 같은 브라우저 반복 (v1.6.2 그대로) ── */
+  function addHp(el) {
+    if (!el || el.querySelector('.sam-hp')) return;
+    var w = document.createElement('div');
+    w.setAttribute('aria-hidden', 'true');
+    w.style.cssText = 'position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden;';
+    w.innerHTML = '<label>홈페이지 주소<input type="text" name="company_website" class="sam-hp" tabindex="-1" autocomplete="off"></label>';
+    el.appendChild(w);
+  }
+  ['sub-form', 'simple-form', 'b2b-form', 's-form', 'b2b-rental-body'].forEach(function (id) { addHp(document.getElementById(id)); });
+  function hpFilled() {
+    return Array.prototype.some.call(document.querySelectorAll('.sam-hp'), function (i) { return !!i.value; });
+  }
+  function readLog() {
+    try { return JSON.parse(localStorage.getItem('sam_sub_log') || '[]').filter(function (t) { return Date.now() - t < 600000; }); }
+    catch (e) { return []; }
+  }
+
+  /* ── 3. GAS 로 가는 접수에 토큰·검사값을 싣는다.
+     봇 흔적(숨은 칸 · 4초 안 · 입력 0 · 반복)이면 보내지 않고 '완료' 화면만 (봇이 눈치채지 못하게)
+     사람 확인을 못 받으면 보내지 않고 안내 → 고객은 다시 누르거나 전화 ── */
+  var ofetch = window.fetch;
+  window.fetch = function (url, opt) {
+    try {
+      if (String(url).indexOf('script.google.com') > -1 && opt && typeof opt.body === 'string') {
+        var d = JSON.parse(opt.body);
+        var ms = Date.now() - T0, log = readLog(), hp = hpFilled();
+        d.botCheck = { hp: hp ? 1 : 0, ms: ms, human: human, recent: log.length, v: '1.6.4' };
+        if (hp || ms < 4000 || !human || log.length >= 3) {
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        return getToken().then(function (r) {
+          if (!r.t) { blockedNotice(r.st); throw new Error('bot-check ' + r.st); }
+          log.push(Date.now());
+          try { localStorage.setItem('sam_sub_log', JSON.stringify(log)); } catch (e) { }
+          d.cfToken = r.t;
+          d.botCheck.ts = r.st;
+          return ofetch.call(window, url, Object.assign({ }, opt, { body: JSON.stringify(d) }));
+        });
+      }
+    } catch (e) { }
+    return ofetch.call(window, url, opt);
+  };
+})();
+</script>
+
+{ # footer }
