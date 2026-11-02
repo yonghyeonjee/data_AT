@@ -65,6 +65,7 @@ function main() {
 
   var state = {
     tab: 'lump', model: '', info: null, min: 0, best: 0,
+    subPage: false,   // 구독 전용 상품 페이지(대표 카테고리가 구독상품 012): 일시불 탭·일시불 비교 없이 계산기만 띄운다 (2026-11-02)
     year: 0, type: '', cycle: 0, prepay: 0,
     card: '', tier: '', cardOn: true,
     open: !!CFG.openConditions    // [조건별 구독가 확인하기] 펼침 — 상품상세는 요약만, 구독 전용 페이지(sub_view)는 CFG.openConditions 로 처음부터 펼침
@@ -463,6 +464,7 @@ function main() {
     els.subSave = root.querySelector('[data-slot="sub-save"]');
     els.panel = root.querySelector('[data-slot="panel"]');
     els.lumpPrice.textContent = CFG.lumpPrice > 0 ? fmt(CFG.lumpPrice) + '원' : '';
+    root.classList.toggle('is-subpage', !!state.subPage);   // 구독 전용 페이지: 일시불 탭 숨김(css) · 페이지 가격 영역은 그대로 둔다
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
     return true;
@@ -487,6 +489,7 @@ function main() {
       btns[i].classList.toggle('is-active', on);
       btns[i].setAttribute('aria-selected', on ? 'true' : 'false');
     }
+    if (state.subPage) return;   // 구독 전용 페이지: 페이지의 가격·신청 영역은 건드리지 않는다
     // 구독 탭일 때는 일시불 전용 영역(가격·장바구니·간편결제)을 숨긴다
     (CFG.lumpOnly || []).forEach(function (sel) {
       var nodes = document.querySelectorAll(sel);
@@ -725,7 +728,7 @@ function main() {
       state.open = !state.open; renderPanel(); track('sub_tab_conditions', { sub_open: state.open });
     } else if (t.hasAttribute('data-tab')) {
       if (t.getAttribute('data-tab') === 'sub') { openSub(); track('sub_tab_open'); }
-      else { state.tab = 'lump'; render(); }
+      else if (!state.subPage) { state.tab = 'lump'; render(); }
     } else if (t.hasAttribute('data-model')) {
       var nm = t.getAttribute('data-model');
       if (nm && nm !== state.model) { setModel(nm, function () { if (!state.info) return; root.hidden = false; render(); }); track('sub_tab_model', { sub_model: nm }); }
@@ -840,9 +843,13 @@ function main() {
     var en = CFG.enabled === undefined ? true : CFG.enabled;
     if (en === false || en === 'false') return false;
     if (CFG.onlyGoods && CFG.onlyGoods.length && CFG.onlyGoods.indexOf(String(CFG.goodsNo)) < 0) return false;
-    // 대표 카테고리가 구독상품(012)·그 하위인 상품은 이미 구독 전용 상품이라 탭을 띄우지 않는다 — CFG.skipCate 로 바꿀 수 있다
+    // 대표 카테고리가 구독상품(012)·그 하위인 상품은 구독 전용 상품 페이지 → 일시불 탭 없이 계산기만 띄운다 (구독 전용 페이지 모드 · 2026-11-02)
+    //   CFG.subPage === false 면 예전처럼 아예 띄우지 않는다. 카테고리 목록은 CFG.skipCate 로 바꿀 수 있다
     var cate = document.querySelector('#frmView input[name="cateCd"]'), cc = cate ? String(cate.value || '') : '';
-    if (cc && (CFG.skipCate || ['012']).some(function (c) { return cc.indexOf(c) === 0; })) return false;
+    if (cc && (CFG.skipCate || ['012']).some(function (c) { return cc.indexOf(c) === 0; })) {
+      if (CFG.subPage === false) return false;
+      state.subPage = true;
+    }
     if (en !== 'test') return true;
     var qs = location.search, on = /[?&]subtab=on(&|$)/.test(qs);
     try {
@@ -857,6 +864,7 @@ function main() {
     if (!isEnabled()) return;
     readSource();
     CFG.lumpPrice = parseFloat(CFG.lumpPrice) || 0;
+    if (state.subPage) { CFG.lumpPrice = 0; CFG.lumpUrl = ''; CFG.lumpCompare = 'never'; }   // 구독 전용 페이지의 판매가는 월 구독료 자리표시라 일시불 비교에 쓰지 않는다
     var m = resolveModel();
     if (!m) return;                         // 구독 모델이 아닌 상품 → 아무 변화 없음
     pageModel = m;                          // 상품 페이지의 모델 (일시불 비교·[이 상품] 표시 기준)
@@ -868,7 +876,7 @@ function main() {
       document.documentElement.classList.add('has-subtab');
       renderHead();
       track('sub_tab_view');
-      if (CFG.defaultTab === 'sub' || /[?&]buy=sub(&|$)/.test(location.search)) openSub();
+      if (state.subPage || CFG.defaultTab === 'sub' || /[?&]buy=sub(&|$)/.test(location.search)) openSub();
     });
 
     var frm = document.getElementById('frmView');
