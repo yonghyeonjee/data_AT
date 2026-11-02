@@ -3140,7 +3140,7 @@ function renderSubPolicy(){
   /* 4b 모델 포인트 (mvp_258) — 삼성닷컴 "적립 예정 멤버십 포인트" · 수집기(tools/subpoint · 매일 06:00 전부 다시)가 채우고 여기서 손 입력·되돌리기 */
   const PT=d.points||{}, PL=PT.last;
   h.push(`<div class="spol-sec" id="spPtSec"><h4>모델 포인트 <small>삼성닷컴 "적립 예정 멤버십 포인트"(정률 + 기본 0.1% + 상품별 추가) — 구독탭·구독센터가 결제 예상액 × 정률 + 추가 포인트로 보여 주고 실제 구독료에서 뺍니다. 위 행사 포인트와는 별도로 둘 다 적용</small></h4>
-    <div class="spol-row"><span class="spol-chip">마지막 수집 ${PL?esc(PL.at)+' · 대상 '+n(PL.targets||0)+' · 찾음 '+n(PL.found||0)+' · 못 찾음 '+n(PL.missed||0)+' · 오류 '+n(PL.errors||0)+(PL.kept_manual?' · 손 입력 보호 '+n(PL.kept_manual):''):'아직 없음 (매주 월요일 09:00 자동 · 또는 [지금 수집])'}</span>
+    <div class="spol-row"><span class="spol-chip">마지막 수집 ${PL?esc(PL.at)+' · 대상 '+n(PL.targets||0)+' · 찾음 '+n(PL.found||0)+' · 못 찾음 '+n(PL.missed||0)+' · 오류 '+n(PL.errors||0)+(PL.kept_manual?' · 손 입력 보호 '+n(PL.kept_manual):''):'아직 없음 (매일 06:00 자동 · 또는 [지금 수집])'}</span>
       <span class="spol-chip">모델 ${n(PT.n||0)} / 활성 ${n(PT.n_active||0)} · 추가 포인트 있는 모델 ${n(PT.n_add||0)} · 손 입력 ${n(PT.n_manual||0)} · 못 찾은 모델 ${n(PT.n_missed||0)}</span>
       <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="spPointCollect()">지금 수집</button><button class="btn sm" onclick="spPointEdit(null)">+ 손 입력</button></span></div>
     <div class="spol-row"><input class="in" id="spPtQ" placeholder="모델번호 · 품목 검색" style="min-width:200px" onkeydown="if(event.key==='Enter')spPointLoad()"><button class="btn sm ghost" onclick="spPointLoad()">찾기</button>
@@ -3245,7 +3245,7 @@ async function spPointEdit(model){
         <label><div class="spol-hint" style="margin:0 0 3px">기본 %</div><input class="in num" id="pt_base" value="${esc(r.base??'0.1')}" style="width:80px"></label></div>
       <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="pt_subonly" ${r.sub_only?'checked':''}> <b>구독 전용 모델</b> <span class="spol-hint" style="margin:0">일시불 판매 없음 — 시흥몰에 일시불 상품이 있어도 구독센터·구독탭이 일시불 가격·비교를 내지 않습니다 (예: AI 콤보 화이트 WD90H25BHW)</span></label>
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용 · 출처·기간)</div><input class="in" id="pt_note" value="${esc(r.note||'')}" style="width:100%;box-sizing:border-box"></label>
-      <p class="spol-hint" style="margin:0">저장하면 '손 입력' 이 되어 매주 수집이 덮지 않습니다. 삼성닷컴 값으로 되돌리려면 표에서 [수집값으로]. 화면 계산 = 결제 예상액 × (정률+기본)% + 추가 포인트.</p></div>`,
+      <p class="spol-hint" style="margin:0">저장하면 '손 입력' 이 되어 매일 수집이 덮지 않습니다. 삼성닷컴 값으로 되돌리려면 표에서 [수집값으로]. 화면 계산 = 결제 예상액 × (정률+기본)% + 추가 포인트.</p></div>`,
     collect:()=>{ const m=$('pt_model').value.trim().toUpperCase(); if(!m) throw new Error('모델번호를 적어 주세요');
       const o={model:m, note:$('pt_note').value.trim(), subOnly:$('pt_subonly').checked};
       // 포인트 칸을 하나도 안 적고 구독 전용만 바꾸면 포인트 행은 건드리지 않는다 (정률 없는 '손 입력' 행이 생겨 포인트가 사라지지 않게 · mvp_259)
