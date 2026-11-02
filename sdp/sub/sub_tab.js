@@ -292,7 +292,7 @@ function main() {
     if (loading[file]) return loading[file].push(cb);
     loading[file] = [cb];
     var s = document.createElement('script');
-    s.src = (CFG.dataBase || '/data/js/sub/') + file + '?v=' + (CFG.ver || IDX.ver);
+    s.src = (CFG.dataBase || '/data/js/sub/') + file + (CFG.noVer ? '' : '?v=' + (CFG.ver || IDX.ver));   // noVer: 구독센터가 데이터센터 파일을 ?v= 없이 쓸 때
     s.onload = function () { var q = loading[file]; loading[file] = null; q.forEach(function (f) { f(); }); };
     s.onerror = function () {
       var q = loading[file]; loading[file] = null;
@@ -377,6 +377,19 @@ function main() {
 
   /* ---------- 선택값 정리 ---------- */
   function plansOf(info, y) { return info.p.filter(function (p) { return p[0] === y; }); }
+
+  /* ---------- 다른 화면이 쓰는 계산 API (구독센터 다품목 계산기 sub_bundle.js · 2026-10-30) ----------
+     금액 식이 한 곳(이 파일)에만 있도록, 요금표 읽기·정책·카드·선납 규칙을 그대로 내준다. CFG.apiOnly 면 화면은 그리지 않는다 */
+  window.SUB_CALC = {
+    policy: function () { return POL; },
+    getInfo: getInfo, calc: calc, plansOf: plansOf, findPlan: findPlan,
+    prepayMax: prepayMax, prepayRate: prepayRate, cardNames: cardNames, cardMonthly: cardMonthly,
+    splitCare: splitCare, joinCare: joinCare, typeOrder: TYPE_ORDER, typeLabel: TYPE_LABEL,
+    defaultCard: function () { return defaultCard(); }, defaultTier: function (c) { return defaultTier(c); },
+    autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt,
+    ready: function (cb) { loadCards(function () { loadPolicy(cb); }); }   // 카드표·정책을 받은 뒤 계산해야 금액이 구독탭과 같다
+  };
+  if (CFG.apiOnly) return;
   function normalizeSelection(info) {
     var years = [];
     info.p.forEach(function (p) { if (years.indexOf(p[0]) < 0) years.push(p[0]); });

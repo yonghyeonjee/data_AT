@@ -57,9 +57,18 @@ let subChanged = 0, subVer = subCur || '';
 if (skip) await log('sub_skipped', subCur || '', skip + ' (수집기 점검 필요 · 정책 변경도 다음 정상 수집 뒤에 반영됨)');
 else {
   // 화면 파일이 바뀌면 판 번호도 바뀌게 (상세페이지·구독센터는 ?v=판 번호 로 화면 파일을 부른다 — 안 바꾸면 캐시에 예전 화면이 남는다)
-  const UI_FILES = ['sub_tab.js', 'sub_tab.css', 'sub_view.js', 'sub_view.css', 'sub_shop.js', 'sub_shop.css', 'sub_find.js', 'sub_find.css'];
+  const UI_FILES = ['sub_tab.js', 'sub_tab.css', 'sub_view.js', 'sub_view.css', 'sub_shop.js', 'sub_shop.css', 'sub_find.js', 'sub_find.css', 'sub_bundle.js', 'sub_bundle.css'];
   const h = createHash('md5'); for (const f of UI_FILES) if (fs.existsSync(`sdp/sub/${f}`)) h.update(fs.readFileSync(`sdp/sub/${f}`));
   const sub = buildSubFiles(rel, policy, dps, h.digest('hex').slice(0, 4));
+  // 구독센터 카탈로그(모델 → [고도몰 상품번호, 상품명, 사진, 일시불가, 사진출처]) 를 정적 파일로도 둔다 (2026-10-30)
+  // 구독센터·구독 상품 페이지가 매번 RPC(1초 안팎)를 기다리지 않고 요금표와 같이 받는다. 못 받으면 이전 파일 유지 (화면은 RPC 로 되돌아간다)
+  try {
+    const cat = await rpc('fn_sub_catalog');
+    if (cat && cat.m && Object.keys(cat.m).length > 100) {
+      delete cat.ver;   // 호출 시각이라 매번 바뀐다 — 파일이 쓸데없이 바뀌지 않게 뺀다
+      sub['sub_catalog.js'] = '// 구독센터 카탈로그 — 데이터센터 fn_sub_catalog 를 배포 때 받아 둔 사본 (tools/sdp/publish.mjs)\nwindow.SUB_CATALOG = ' + JSON.stringify(cat) + ';\n';
+    } else console.log('카탈로그가 비어 있어 sub_catalog.js 는 이전 파일 유지');
+  } catch (e) { console.log('카탈로그를 못 받았습니다 → sub_catalog.js 이전 파일 유지:', e.message); }
   subChanged = writeAll('sdp/sub', sub);
   subVer = (sub['version.js'].match(/SUB_VER = "([^"]+)"/) || [])[1];
   console.log(`구독탭 판 ${subVer} (지금 ${subCur || '없음'}) · 원본 ${sub.__stats.src} · 모델 ${sub.__stats.models} · 선납불가 ${sub.__stats.prepayNo} · 바뀐 파일 ${subChanged}` + (sub.__stats.missing.length ? ` · CAT_KEYS 에 없는 품목: ${sub.__stats.missing.join(', ')}` : ''));
