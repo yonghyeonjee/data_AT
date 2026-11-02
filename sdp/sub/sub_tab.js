@@ -794,10 +794,13 @@ function main() {
     return out;
   }
   // 시흥몰 상품(일시불 또는 구독 페이지)이 있는 모델인가 — 카탈로그가 아직 없으면 모른다(null)
-  function hasGoods(m) { var C = window.SUB_CATALOG && window.SUB_CATALOG.m; return C ? !!(C[m] && C[m][0] > 0) : null; }
+  function hasGoods(m) { var C = window.SUB_CATALOG && window.SUB_CATALOG.m; return C ? !!(C[m] && C[m][0] > 0 && !C[m][5]) : null; }
+  // 관리자·매장이 '구독 전용' 으로 표시한 모델 (카탈로그 6번째 항목 · mvp_259) — 시흥몰에 일시불 상품이 올라 있어도 구독 전용으로 다룬다
+  function subOnlyFlag(m) { var C = window.SUB_CATALOG && window.SUB_CATALOG.m; return !!(C && C[m] && C[m][5]); }
   // 구독 전용 모델 = 시흥몰에 상품이 없고 월 구독료가 시흥몰 판매 모델과 다른 모델 (예: AI 콤보 WD90H25AHW)
   //   상품도 없고 요금도 같은 색상(예: WD90H25AHT)은 구독 전용이 아니라 시흥몰이 안 다루는 색상이라 칩에서 뺀다 (2026-11-02)
   function subOnlyOf(m, all) {
+    if (subOnlyFlag(m)) return true;
     if (hasGoods(m) !== false) return false;
     var mine = IDX.m[m] ? IDX.m[m][1] : 0;
     return all.every(function (o) { return o === m || hasGoods(o) === false || !IDX.m[o] || IDX.m[o][1] !== mine; });
@@ -918,6 +921,9 @@ function main() {
     if (!build()) return;
     root.hidden = true;
     loadCatalog(function () {               // 구독 전용 판정에 카탈로그가 필요하다 — 못 받으면 상품 페이지 모델로
+    if (subOnlyFlag(m) && !state.subPage) {   // 이 상품 페이지의 모델이 구독 전용으로 표시돼 있으면 일시불 비교·일시불 탭 없이 계산기만 (구독 전용 페이지 모드와 같다)
+      state.subPage = true; CFG.lumpPrice = 0; CFG.lumpUrl = ''; CFG.lumpCompare = 'never'; root.classList.add('is-subpage');
+    }
     setModel(cheapestOf(m, null), function () {   // 기본 선택: 가장 저렴한 모델 (예: WD90H25AHS 페이지 → 구독 전용 WD90H25AHW 의 총 구독가를 탭 머리에)
       if (!state.info) return;              // 구독요금으로 전부 숨긴 경우
       root.hidden = false;

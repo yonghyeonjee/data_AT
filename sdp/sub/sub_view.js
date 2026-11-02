@@ -77,7 +77,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     return;
   }
   var cat = entry[0], catName = IDX.cats[cat] || '';
-  var goods = null, seg = '', pname = '', img = '', imgRep = false;   // goods: 고도몰 연결 [상품번호, 상품명, 이미지, 일시불가] · pname/img: 구독센터 카탈로그
+  var goods = null, seg = '', pname = '', img = '', imgRep = false, subOnly = false;   // goods: 고도몰 연결 [상품번호, 상품명, 이미지, 일시불가, 사진출처, 구독전용] · pname/img: 구독센터 카탈로그 · subOnly: 구독 전용 모델(일시불 판매 없음 · 관리자·매장 표시 mvp_259)
 
   /* 구독센터(sub_shop.js) 품목 페이지 — 경로·검색엔진 이동 경로에 쓴다 (sub_shop.js 의 PAGES 와 같은 규칙) */
   var CENTER = [['aicombo', 'AI 콤보', 'laundry', /콤보/], ['washer', '세탁기', 'laundry', /^(드럼|전자동|세탁기\+건조기)/],
@@ -128,7 +128,8 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
       '<p class="sv-model">모델명 <b>' + esc(model) + '</b></p>' +
       '<p class="sv-price"><small>구독 월</small> ' + fmt(entry[1]) + '<small>원~</small></p>' +
       '<p class="sv-badge">삼성전자 AI 구독클럽 공식 파트너 · 무상수리 포함</p>' +
-      (goods ? '<a class="sv-goods" data-cta="goods" href="' + esc(lumpHref()) + '">시흥몰 가격 확인하기' + (goods[3] > 0 ? ' · 일시불 ' + fmt(goods[3]) + '원' : '') + '</a>' : '') +
+      (subOnly ? '<p class="sv-subonly">구독 전용 모델 · 일시불 판매 없이 구독으로만 이용할 수 있는 색상·모델입니다</p>' :
+        goods ? '<a class="sv-goods" data-cta="goods" href="' + esc(lumpHref()) + '">시흥몰 가격 확인하기' + (goods[3] > 0 ? ' · 일시불 ' + fmt(goods[3]) + '원' : '') + '</a>' : '') +
       '<button type="button" class="sv-bundle' + (cartHas(model) ? ' is-on' : '') + '" data-bundle="' + esc(model) + '">' + (cartHas(model) ? '묶음 계산기에 담김 ✓ · 계산하기' : '+ 다른 제품과 묶어 계산하기') + '</button>' +
       '</div></div>';
   }
@@ -415,7 +416,8 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     catMap = (G && G.m) || {};
     var c = catInfo(model);
     if (c) {
-      goods = c[0] ? c : null;
+      subOnly = !!c[5];                 // 구독 전용 표시 → 시흥몰 일시불 상품이 있어도 가격 비교·시흥몰 가격 버튼을 내지 않는다
+      goods = c[0] && !subOnly ? c : null;
       pname = cleanName(c[1]);
       img = imgOf(c);
       imgRep = /^[sgc]$/.test(c[4] || '');   // 같은 세부유형·품목의 다른 모델 사진
