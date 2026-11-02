@@ -26,7 +26,8 @@
 ```
 GitHub Actions sub-point.yml (매주 월요일 09:00 KST · 수동 실행 · 관리자 [지금 수집] → Edge Function sub-deploy?wf=sub-point)
   └ node tools/subpoint/collect.mjs
-      ├ fn_sub_point_targets(p_all, p_limit, p_key) : 활성 모델 + 최장 약정 최저 총액 + 캐시된 goods_id  (처음 보는 것 · 6일 지난 것 · 못 찾은 것은 7~30일 뒤)
+      ├ fn_sub_point_targets(p_all, p_limit, p_key, p_offset) : 활성 모델 + 최장 약정 최저 총액 + 캐시된 goods_id  (처음 보는 것 · 6일 지난 것 · 못 찾은 것은 7~30일 뒤)
+      │    PostgREST 는 RPC 결과를 1000행에서 자르고 Range 헤더도 무시 → 수집기 rpcAll 이 p_offset 으로 1000행씩 이어 받는다 (활성 모델 1131개 · mvp_258a)
       ├ goods_id 가 없으면 구독 상품 페이지 1번 (형제 모델 goodsId 도 캐시) → membershipPolicy 1번   (동시 3 · 0.4초 간격)
       └ fn_sub_point_upsert(p_rows, p_key, p_meta) : sub.model_point (src 'samsung.com' · 손 입력 행은 안 덮음) · sub.model_point_check · sub.model_point_fetch
             └ 저장 트리거 sub.f_deploy_kick → sub-deploy → sdp-publish.yml → sdp/sub/sub_policy.js 의 points 갱신
@@ -44,6 +45,13 @@ node tools/subpoint/collect.mjs --models WD90H25AHS,WD90H25AHW --dry            
 node tools/subpoint/collect.mjs --models WD90H25AHS --dry --price 6343920 --out out.json
 ```
 DB 에 넣으려면 `SUPABASE_URL` · `SUPABASE_SERVICE_ROLE_KEY` 환경변수가 있어야 한다.
+
+## 첫 수집 결과 (2026-11-02)
+
+- 활성 모델 1131개 중 첫 1000개: 찾음 184 · 없음 816 (`sub.model_point_fetch` id 1 · 333초). 못 찾은 것은 삼성닷컴에 `ai-subs-living/<모델>-subscribe2-d2c/<모델>/` 꼴 구독 상품 페이지가 없는 모델(태블릿 SM-X…, 일부 TV·소형가전)이다 — 품목별 URL 패턴을 더 찾으면 늘릴 수 있다.
+- 찾은 모델은 모두 정률 6.0% + 기본 0.1% (에어컨 AJ·AN·AS 계열은 상품별 추가 300,000P).
+- `membershipPolicy` 가 같은 요청에 정률 0 으로 응답하는 때가 간혹 있어 수집기가 잠깐 뒤 한 번 더 본다.
+- 저장 함수의 임시표 열 이름 `found` 가 PL/pgSQL 의 FOUND 와 겹쳐 첫 Actions 실행이 저장에서 실패했다 → `ok` 로 고침 (`sql/mvp_258a_sub_points_fix.sql`).
 
 ## 검증
 

@@ -69,8 +69,9 @@ language sql stable security definer set search_path to 'pg_catalog','public' as
 $$;
 
 -- ── 수집 대상 ── 활성 구독 모델마다 최장 약정의 최저 총액(무상수리) · 캐시된 goods_id
+--   p_offset: 1000행 단위로 이어 받기 (sql/mvp_258a 에서 추가)
 --   p_all=false: 처음 보는 모델 + 찾은 지 6일 넘은 모델 + 못 찾은 모델은 7·14·21…(최대 30)일 뒤
-create or replace function public.fn_sub_point_targets(p_all boolean default false, p_limit int default 3000, p_key text default null)
+create or replace function public.fn_sub_point_targets(p_all boolean default false, p_limit int default 3000, p_key text default null, p_offset int default 0)
 returns table(model text, term_months int, price int, goods_id text)
 language plpgsql stable security definer set search_path to 'pg_catalog','public' as $$
 begin
@@ -89,7 +90,7 @@ begin
         or (c.found and c.checked_at < now() - interval '6 days')
         or (not c.found and c.checked_at < now() - least(7 * (1 + c.miss_count / 3), 30) * interval '1 day')
      order by c.checked_at nulls first, pr.model
-     limit p_limit;
+     limit least(p_limit, 1000) offset greatest(coalesce(p_offset, 0), 0);   -- PostgREST 는 한 번에 1000행까지 → 수집기가 p_offset 으로 이어 받는다 (RPC 에는 Range 헤더가 안 먹음 · 2026-11-02)
 end $$;
 
 -- ── 수집 결과 저장 ──
@@ -106,7 +107,7 @@ begin
   v_by := case when coalesce(current_setting('request.jwt.claims', true)::jsonb->>'role','') = 'service_role' then 'github-actions' else 'api:sub_point' end;
 
   create temp table _pt on commit drop as
-    select r.*, (r.total_point is not null or r.aisc_rate is not null) found from (
+    select r.*, (r.total_point is not null or r.aisc_rate is not null) ok from (   -- 열 이름 found 는 PL/pgSQL 의 FOUND 변수와 겹쳐 '모호' 오류 → ok
     select upper(regexp_replace(x->>'model', '\s', '', 'g')) model,
            nullif(btrim(x->>'goods_id'),'') goods_id,
            nullif(x->>'term_months','')::int term_months,
@@ -120,13 +121,13 @@ begin
            left(nullif(btrim(x->>'err'),''), 300) err
       from jsonb_array_elements(p_rows) x
      where coalesce(x->>'model','') <> '') r;
-  select count(*) filter (where found), count(*) filter (where not found) into n_found, n_missed from _pt;
+  select count(*) filter (where ok), count(*) filter (where not ok) into n_found, n_missed from _pt;
 
   -- 찾은 것 → sub.model_point (손 입력 행은 goods_id 만 보충)
   with up as (
     insert into sub.model_point as t (model, goods_id, term_months, price, total_point, apl_point, basic_point, mdl_add_point, aisc_rate, basic_rate, src, fetched_at, updated_at, updated_by)
     select model, goods_id, term_months, price, total_point, apl_point, basic_point, mdl_add_point, aisc_rate, basic_rate, 'samsung.com', now(), now(), v_by
-      from _pt where found
+      from _pt where ok
     on conflict (model) do update
       set goods_id = coalesce(excluded.goods_id, t.goods_id),
           term_months = case when t.src = 'manual' then t.term_months else excluded.term_months end,
@@ -149,7 +150,7 @@ begin
 
   -- 모델별 확인 기록
   insert into sub.model_point_check as c (model, found, checked_at, miss_count, goods_id, err)
-  select model, found, now(), case when found then 0 else 1 end, goods_id, case when found then null else err end from _pt
+  select model, ok, now(), case when ok then 0 else 1 end, goods_id, case when ok then null else err end from _pt
   on conflict (model) do update
     set found = excluded.found, checked_at = now(),
         miss_count = case when excluded.found then 0 else c.miss_count + 1 end,
@@ -159,7 +160,7 @@ begin
 
   insert into sub.model_point_fetch (started_at, targets, found, missed, errors, saved, kept_manual, miss_models, note, by_user)
   values (nullif(p_meta->>'started_at','')::timestamptz, nullif(p_meta->>'targets','')::int, n_found, n_missed, nullif(p_meta->>'errors','')::int,
-          n_saved, n_kept, (select coalesce(jsonb_agg(model order by model), '[]'::jsonb) from (select model from _pt where not found limit 500) m),
+          n_saved, n_kept, (select coalesce(jsonb_agg(model order by model), '[]'::jsonb) from (select model from _pt where not ok limit 500) m),
           left(p_meta->>'note', 500), v_by)
   returning id into v_id;
   return jsonb_build_object('ok', true, 'fetch_id', v_id, 'found', n_found, 'missed', n_missed, 'saved', n_saved, 'kept_manual', n_kept, 'checked', n_check);
@@ -338,7 +339,7 @@ revoke all on function sub.f_point_api_ok(text), sub.f_point_save(jsonb, text), 
               public.fn_sub_point_save(jsonb), public.fn_sub_point_list(text, int),
               public.fn_store_sub_point_save(text, jsonb), public.fn_store_sub_point_list(text, text, int)
   from public, anon, authenticated;
-grant execute on function public.fn_sub_point_targets(boolean, int, text)     to anon, authenticated, service_role;   -- 키로 막는다
+grant execute on function public.fn_sub_point_targets(boolean, int, text, int) to anon, authenticated, service_role;   -- 키로 막는다
 grant execute on function public.fn_sub_point_upsert(jsonb, text, jsonb)      to anon, authenticated, service_role;   -- 키로 막는다
 grant execute on function public.fn_sub_point_save(jsonb)                     to authenticated, service_role;
 grant execute on function public.fn_sub_point_list(text, int)                 to authenticated, service_role;

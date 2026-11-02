@@ -426,7 +426,7 @@ function main() {
     prepayMax: prepayMax, prepayRate: prepayRate, cardNames: cardNames, cardMonthly: cardMonthly,
     splitCare: splitCare, joinCare: joinCare, typeOrder: TYPE_ORDER, typeLabel: TYPE_LABEL,
     defaultCard: function () { return defaultCard(); }, defaultTier: function (c) { return defaultTier(c); },
-    autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt, pointsOf: pointsOf, pointPromos: pointPromos, memberPoints: memberPoints, modelPointOf: modelPointOf, siblings: siblings,
+    autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt, pointsOf: pointsOf, pointPromos: pointPromos, memberPoints: memberPoints, modelPointOf: modelPointOf, siblings: siblings, siblingList: siblingList, cheapestOf: cheapestOf, subOnlyOf: subOnlyOf,
     ready: function (cb) { loadCards(function () { loadPolicy(cb); }); }   // 카드표·정책을 받은 뒤 계산해야 금액이 구독탭과 같다
   };
   if (CFG.apiOnly) return;
@@ -707,12 +707,23 @@ function main() {
                            lumpUrl 도 없고 일시불 탭도 없으면(일시불가 0) 버튼을 숨긴다.
      라벨: CFG.lumpLabel · CFG.consultLabel */
   var PHONE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
+  // 상품상세(고도몰) 구독탭의 [시흥몰 가격 확인하기] 가 갈 곳 (2026-11-02): 시흥몰 [구독] 상품 페이지(카탈로그 7번째 항목 · 예: KU75MH80AFXKR → 1000000857),
+  //   없으면 구독센터 상품 페이지(/data/gudok/view.html?model=…). 구독센터 자신(CFG.lumpUrl 지정)·구독 전용 페이지에서는 쓰지 않는다
+  function subGoodsLink(m) {
+    if (CFG.lumpUrl || state.subPage || !m) return '';
+    var C = window.SUB_CATALOG && window.SUB_CATALOG.m, c = C && C[m], no = c && c[6] > 0 ? c[6] : 0;
+    var cur = String(CFG.goodsNo || (document.querySelector('#frmView input[name="goodsNo"]') || {}).value || '');
+    if (no && String(no) !== cur) return (CFG.goodsUrl || '/goods/goods_view.php?goodsNo=') + no + '&utm_source=' + encodeURIComponent(CFG.utmSource || 'goods_view') + '&utm_medium=subtab_sub&utm_campaign=' + encodeURIComponent(m);
+    if (no) return '';   // 지금 보는 페이지가 그 구독 상품이면 버튼을 내지 않는다
+    return (CFG.centerUrl || '/data/gudok/view.html?model=') + encodeURIComponent(m) + '&utm_source=' + encodeURIComponent(CFG.utmSource || 'goods_view') + '&utm_medium=subtab_center';
+  }
   function ctaHtml(consultHref) {
     var tel = CFG.tel || (POL.defaults && POL.defaults.tel) || '';   // 스킨에 없으면 데이터센터 정책의 전화
     if (CFG.cta === 'lump+consult') {
-      var lumpOk = (!!CFG.lumpUrl || (CFG.lumpPrice > 0)) && !(pageModel && state.model !== pageModel);
+      var subHref = subGoodsLink(state.model);
+      var lumpOk = subHref ? true : ((!!CFG.lumpUrl || (CFG.lumpPrice > 0)) && !(pageModel && state.model !== pageModel));
       return '<div class="subtab-cta subtab-cta--two">' +
-        (lumpOk ? '<a class="subtab-cta-lump" data-cta="lump" href="' + esc(CFG.lumpUrl || '#') + '">' + esc(CFG.lumpLabel || '시흥몰 가격 확인하기') + '</a>' : '') +
+        (lumpOk ? '<a class="subtab-cta-lump" data-cta="lump" href="' + esc(CFG.lumpUrl || subHref || '#') + '">' + esc(CFG.lumpLabel || '시흥몰 가격 확인하기') + '</a>' : '') +
         '<a class="subtab-cta-main" data-cta="consult" href="' + esc(consultHref) + '">' + PHONE_SVG + esc(CFG.consultLabel || '구독 문의하기') + '</a>' +
         '</div>';
     }
@@ -756,7 +767,7 @@ function main() {
       state.prepay = +t.getAttribute('data-prepay'); renderPanel(); track('sub_tab_prepay', { sub_prepay: state.prepay });
     } else if (t.hasAttribute('data-cta')) {
       track('sub_tab_cta', { sub_cta: t.getAttribute('data-cta'), sub_year: state.year, sub_care: joinCare(state.type, state.cycle) });
-      if (t.getAttribute('data-cta') === 'lump' && !CFG.lumpUrl) { ev.preventDefault(); openLump(); }
+      if (t.getAttribute('data-cta') === 'lump' && t.getAttribute('href') === '#') { ev.preventDefault(); openLump(); }
     }
   }
   function onChange(ev) {
@@ -793,7 +804,40 @@ function main() {
     out.sort(function (a, b) { return IDX.m[a][1] - IDX.m[b][1]; });
     return out;
   }
-  var catalogTried = false;
+  // 시흥몰 상품(일시불 또는 구독 페이지)이 있는 모델인가 — 카탈로그가 아직 없으면 모른다(null)
+  function hasGoods(m) { var C = window.SUB_CATALOG && window.SUB_CATALOG.m; return C ? !!(C[m] && C[m][0] > 0 && !C[m][5]) : null; }
+  // 관리자·매장이 '구독 전용' 으로 표시한 모델 (카탈로그 6번째 항목 · mvp_259) — 시흥몰에 일시불 상품이 올라 있어도 구독 전용으로 다룬다
+  function subOnlyFlag(m) { var C = window.SUB_CATALOG && window.SUB_CATALOG.m; return !!(C && C[m] && C[m][5]); }
+  // 구독 전용 모델 = 시흥몰에 상품이 없고 월 구독료가 시흥몰 판매 모델과 다른 모델 (예: AI 콤보 WD90H25AHW)
+  //   상품도 없고 요금도 같은 색상(예: WD90H25AHT)은 구독 전용이 아니라 시흥몰이 안 다루는 색상이라 칩에서 뺀다 (2026-11-02)
+  function subOnlyOf(m, all) {
+    if (subOnlyFlag(m)) return true;
+    if (hasGoods(m) !== false) return false;
+    var mine = IDX.m[m] ? IDX.m[m][1] : 0;
+    return all.every(function (o) { return o === m || hasGoods(o) === false || !IDX.m[o] || IDX.m[o][1] !== mine; });
+  }
+  function siblingList(model, info) {   // 상품 페이지 모델 + 형제 모델 (중복 없이 · 시흥몰이 안 다루는 같은 요금 색상은 뺀다)
+    var sibs = siblings(model, info);
+    var all = [pageModel && pageModel !== model && sibs.indexOf(pageModel) < 0 ? pageModel : null].filter(Boolean).concat(sibs.indexOf(model) < 0 ? [model] : [], sibs);
+    all = all.filter(function (m, i) { return all.indexOf(m) === i; });
+    return all.filter(function (m) { return m === pageModel || m === model || hasGoods(m) !== false || subOnlyOf(m, all); });
+  }
+  // 가장 저렴한 모델(월 구독료 최저) — 상품 페이지 모델보다 싼 형제(구독 전용 등)가 있으면 그 모델을 먼저·기본으로 보여 준다
+  function cheapestOf(model, info) {
+    if (!IDX.m[model]) return model;
+    var all = siblingList(model, info), best = model;
+    all.forEach(function (m) { if (IDX.m[m] && IDX.m[m][1] < IDX.m[best][1]) best = m; });
+    return best;
+  }
+  var catalogTried = false, catalogWait = [];
+  function loadCatalog(cb) {   // 이름·시흥몰 상품 유무를 위해 카탈로그(sub_catalog.js)를 한 번 받아 온다 — 있으면 바로, 못 받으면 없이 진행
+    if (window.SUB_CATALOG || (catalogTried && !catalogWait.length)) return cb();
+    catalogWait.push(cb);
+    if (catalogTried) return;
+    catalogTried = true;
+    var done = function () { var w = catalogWait; catalogWait = []; w.forEach(function (f) { f(); }); };
+    loadScript('sub_catalog.js', function () { return !!window.SUB_CATALOG; }, done, done);
+  }
   function colorOf(m) {
     var c = window.SUB_CATALOG && window.SUB_CATALOG.m && window.SUB_CATALOG.m[m];
     var name = c && c[1] ? String(c[1]).replace(/\s*\*+\s*$/, '') : '';
@@ -803,22 +847,21 @@ function main() {
   function siblingsHtml(info) {
     var sibs = siblings(state.model, info);
     if (!sibs.length) return '';
-    if (!window.SUB_CATALOG && !catalogTried) {   // 이름·일시불 유무를 위해 카탈로그를 한 번 받아 온다 (못 받으면 모델명만)
-      catalogTried = true;
-      loadScript('sub_catalog.js', function () { return !!window.SUB_CATALOG; }, function () { if (state.tab === 'sub') renderPanel(); }, function () {});
-    }
-    var all = [pageModel && pageModel !== state.model && sibs.indexOf(pageModel) < 0 ? pageModel : null].filter(Boolean).concat(sibs.indexOf(state.model) < 0 ? [state.model] : [], sibs);
-    // 순서: 상품 페이지 모델 → 나머지는 월 구독료 낮은 순
-    all = all.filter(function (m, i) { return all.indexOf(m) === i; }).sort(function (a, b) { return (a === pageModel ? -1 : b === pageModel ? 1 : 0) || IDX.m[a][1] - IDX.m[b][1]; });
-    var C = window.SUB_CATALOG && window.SUB_CATALOG.m, h = '';
+    if (!window.SUB_CATALOG) loadCatalog(function () { if (state.tab === 'sub') renderPanel(); });   // 이름·시흥몰 상품 유무 (못 받으면 모델명만)
+    var all = siblingList(state.model, info), cheap = cheapestOf(state.model, info);
+    if (all.length < 2) return '';
+    // 순서: 가장 저렴한 모델 → 상품 페이지 모델 → 나머지는 월 구독료 낮은 순 (2026-11-02: 가장 싼 모델을 맨 앞에 눈에 띄게)
+    var rank = function (m) { return m === cheap ? 0 : m === pageModel ? 1 : 2; };
+    all.sort(function (a, b) { return rank(a) - rank(b) || IDX.m[a][1] - IDX.m[b][1]; });
+    var h = '', isCheap = all.some(function (m) { return m !== cheap && IDX.m[m][1] > IDX.m[cheap][1]; });   // 다른 모델보다 실제로 싼 경우만 "최저가"
     all.forEach(function (m) {
-      var c = C && C[m], color = colorOf(m), subOnly = C ? !(c && c[0] > 0) : false, cur = m === state.model;
-      var tag = m === pageModel ? '이 상품' : (subOnly ? '구독 전용' : '');
-      h += '<button type="button" class="subtab-sib' + (cur ? ' is-active' : '') + (subOnly ? ' is-subonly' : '') + '" data-model="' + esc(m) + '" aria-pressed="' + cur + '">' +
+      var color = colorOf(m), subOnly = subOnlyOf(m, all), cur = m === state.model, low = isCheap && m === cheap;
+      var tag = low ? '최저가' + (subOnly ? ' · 구독 전용' : '') : (m === pageModel ? '이 상품' : (subOnly ? '구독 전용' : ''));
+      h += '<button type="button" class="subtab-sib' + (cur ? ' is-active' : '') + (subOnly ? ' is-subonly' : '') + (low ? ' is-cheap' : '') + '" data-model="' + esc(m) + '" aria-pressed="' + cur + '">' +
         '<b>' + esc(color || m) + '</b>' + (color ? '<small>' + esc(m) + '</small>' : '') +
         '<span>월 ' + fmt(IDX.m[m][1]) + '원~</span>' + (tag ? '<em>' + tag + '</em>' : '') + '</button>';
     });
-    return '<div class="subtab-sibs"><p class="subtab-sibs-t">같은 모델 다른 색상 · 구독 전용 모델 <small>구독 전용은 시흥몰 일시불 판매가 없는 모델로, 월 구독료가 다를 수 있습니다</small></p><div class="subtab-sibs-row">' + h + '</div></div>';
+    return '<div class="subtab-sibs"><p class="subtab-sibs-t">같은 모델 다른 색상 · 구독 전용 모델 <small>구독 전용은 시흥몰 일시불 판매가 없는 구독 전용 모델로, 월 구독료가 더 저렴합니다</small></p><div class="subtab-sibs-row">' + h + '</div></div>';
   }
 
   /* ---------- 옵션 변경 시 모델 다시 결정 ---------- */
@@ -829,6 +872,7 @@ function main() {
     // (고도몰 페이지는 네이버페이 배너 문구가 주기적으로 바뀌어 MutationObserver 가 계속 호출된다)
     if (m === pageModel) { if (state.info) root.hidden = false; return; }
     pageModel = m;   // 상품 페이지(선택한 옵션)의 모델 — 일시불 비교·[이 상품] 표시 기준 (탭 안 형제 모델 칩은 이 값을 바꾸지 않는다)
+    m = cheapestOf(m, null);   // 옵션이 바뀌어 모델이 바뀌면 그 모델의 가장 저렴한 형제로
     if (m === state.model) { if (state.info) root.hidden = false; render(); return; }
     setModel(m, function () {
       if (!state.info) return hideTab();
@@ -887,13 +931,18 @@ function main() {
     pageModel = m;                          // 상품 페이지의 모델 (일시불 비교·[이 상품] 표시 기준)
     if (!build()) return;
     root.hidden = true;
-    setModel(m, function () {
+    loadCatalog(function () {               // 구독 전용 판정에 카탈로그가 필요하다 — 못 받으면 상품 페이지 모델로
+    if (subOnlyFlag(m) && !state.subPage) {   // 이 상품 페이지의 모델이 구독 전용으로 표시돼 있으면 일시불 비교·일시불 탭 없이 계산기만 (구독 전용 페이지 모드와 같다)
+      state.subPage = true; CFG.lumpPrice = 0; CFG.lumpUrl = ''; CFG.lumpCompare = 'never'; root.classList.add('is-subpage');
+    }
+    setModel(cheapestOf(m, null), function () {   // 기본 선택: 가장 저렴한 모델 (예: WD90H25AHS 페이지 → 구독 전용 WD90H25AHW 의 총 구독가를 탭 머리에)
       if (!state.info) return;              // 구독요금으로 전부 숨긴 경우
       root.hidden = false;
       document.documentElement.classList.add('has-subtab');
       renderHead();
       track('sub_tab_view');
       if (state.subPage || CFG.defaultTab === 'sub' || /[?&]buy=sub(&|$)/.test(location.search)) openSub();
+    });
     });
 
     var frm = document.getElementById('frmView');

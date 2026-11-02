@@ -3222,7 +3222,7 @@ function spPointRender(){
       <p class="spol-hint">삼성닷컴에 구독 상품 페이지가 없는 모델(매장 전용·단종 등)입니다. 포인트가 있다면 손 입력하세요. 7~30일 뒤 자동으로 다시 확인합니다.</p>`:'<div class="note">못 찾은 모델이 없습니다</div>'; return; }
   const rows=d.rows||[];
   box.innerHTML=rows.length?`<table class="spol-t"><thead><tr><th>모델</th><th>품목</th><th class="num">정률</th><th class="num">기본</th><th class="num">추가 포인트</th><th class="num">기준 총액 → 총 포인트</th><th>출처</th><th>수집·수정</th><th></th></tr></thead><tbody>
-    ${rows.map(r=>`<tr${r.active?'':' style="opacity:.55" title="지금 DPS 구독 목록에 없는 모델"'}><td class="mono"><b>${esc(r.model)}</b>${r.goods_id?`<div class="spol-hint" style="margin:0">${esc(r.goods_id)}</div>`:''}</td><td>${esc(r.cat||'')}${r.seg?` <small style="color:var(--faint)">${esc(r.seg)}</small>`:''}</td>
+    ${rows.map(r=>`<tr${r.active?'':' style="opacity:.55" title="지금 DPS 구독 목록에 없는 모델"'}><td class="mono"><b>${esc(r.model)}</b>${r.sub_only?' <span class="tag y" title="일시불 판매 없음 · 구독센터·구독탭에서 일시불 비교를 뺍니다">구독 전용</span>':''}${r.goods_id?`<div class="spol-hint" style="margin:0">${esc(r.goods_id)}</div>`:''}</td><td>${esc(r.cat||'')}${r.seg?` <small style="color:var(--faint)">${esc(r.seg)}</small>`:''}</td>
       <td class="num">${r.rate!=null?Number(r.rate)+'%':'-'}</td><td class="num">${r.base!=null?Number(r.base)+'%':'-'}</td><td class="num">${r.add?fmt(r.add)+'P':'-'}</td>
       <td class="num">${r.price?fmt(r.price)+'원 → '+(r.total!=null?fmt(r.total)+'P':'-'):'-'}</td>
       <td>${r.src==='manual'?'<span class="tag y">손 입력</span>':'<span class="tag n">삼성닷컴</span>'}${r.note?`<div class="spol-hint" style="margin:0">${esc(r.note)}</div>`:''}</td>
@@ -3238,11 +3238,15 @@ async function spPointEdit(model){
       <div style="display:flex;gap:10px;flex-wrap:wrap"><label><div class="spol-hint" style="margin:0 0 3px">상품별 추가 포인트 (P)</div><input class="in num" id="pt_add" value="${esc(r.add??'')}" style="width:120px" placeholder="50000"></label>
         <label><div class="spol-hint" style="margin:0 0 3px">정률 % (비우면 수집값 유지)</div><input class="in num" id="pt_rate" value="${esc(r.rate??'')}" style="width:80px" placeholder="6"></label>
         <label><div class="spol-hint" style="margin:0 0 3px">기본 %</div><input class="in num" id="pt_base" value="${esc(r.base??'0.1')}" style="width:80px"></label></div>
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="pt_subonly" ${r.sub_only?'checked':''}> <b>구독 전용 모델</b> <span class="spol-hint" style="margin:0">일시불 판매 없음 — 시흥몰에 일시불 상품이 있어도 구독센터·구독탭이 일시불 가격·비교를 내지 않습니다 (예: AI 콤보 화이트 WD90H25BHW)</span></label>
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용 · 출처·기간)</div><input class="in" id="pt_note" value="${esc(r.note||'')}" style="width:100%;box-sizing:border-box"></label>
       <p class="spol-hint" style="margin:0">저장하면 '손 입력' 이 되어 매주 수집이 덮지 않습니다. 삼성닷컴 값으로 되돌리려면 표에서 [수집값으로]. 화면 계산 = 결제 예상액 × (정률+기본)% + 추가 포인트.</p></div>`,
     collect:()=>{ const m=$('pt_model').value.trim().toUpperCase(); if(!m) throw new Error('모델번호를 적어 주세요');
-      const o={model:m, add:$('pt_add').value.trim()===''?null:Number($('pt_add').value.replace(/[^0-9]/g,'')), note:$('pt_note').value.trim()};
-      if($('pt_rate').value.trim()!=='') o.rate=Number($('pt_rate').value); if($('pt_base').value.trim()!=='') o.base=Number($('pt_base').value); return o; }});
+      const o={model:m, note:$('pt_note').value.trim(), subOnly:$('pt_subonly').checked};
+      // 포인트 칸을 하나도 안 적고 구독 전용만 바꾸면 포인트 행은 건드리지 않는다 (정률 없는 '손 입력' 행이 생겨 포인트가 사라지지 않게 · mvp_259)
+      const addV=$('pt_add').value.trim(), rateV=$('pt_rate').value.trim(), baseV=$('pt_base').value.trim();
+      if(addV!==''||rateV!==''||(r.src&&r.src!=='none')) o.add=addV===''?null:Number(addV.replace(/[^0-9]/g,''));
+      if(rateV!=='') o.rate=Number(rateV); if(baseV!==''&&(o.add!==undefined||o.rate!==undefined)) o.base=Number(baseV); return o; }});
   if(!data) return;
   try{ await rpc('fn_sub_point_save',{p_data:data}); toast('저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); spPointLoad(); }catch(e){ toast(e.message,'bad'); }
 }
