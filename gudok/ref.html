@@ -15,7 +15,9 @@
 <meta property="og:url" content="https://db.samsungat.co.kr/gudok/ref.html">
 <link rel="preconnect" href="https://db.samsungat.co.kr" crossorigin>
 <link rel="dns-prefetch" href="https://db.samsungat.co.kr">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://images.samsung.com">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 <style>
   body { margin:0; background:#fff; color:#111; font-family:'Pretendard','Noto Sans KR',sans-serif; -webkit-text-size-adjust:100%; }
   .gd-top { border-bottom:1px solid #eee; background:#fff; }
@@ -23,6 +25,7 @@
   .gd-top a { color:#111; text-decoration:none; }
   .gd-top .home { font-weight:800; }
   .gd-top .tel { color:#1d6fe8; font-weight:700; white-space:nowrap; }
+  b, strong { font-weight:700; }
   .gd-main { max-width:1080px; margin:0 auto; padding:24px 16px 64px; }
   .gd-foot { border-top:1px solid #eee; background:#fafafa; color:#777; font-size:13px; line-height:1.7; }
   .gd-foot .in { max-width:1080px; margin:0 auto; padding:20px 16px 32px; }
@@ -97,35 +100,39 @@
         tel: '031-8042-3166',
         defaultCard: '삼성카드'
     };
-    /* 1) 판 번호 (5분 단위로 새로 읽는다) */
-    if (SUB_SHOP_CONFIG.dcBase) document.write('<script src="' + SUB_SHOP_CONFIG.dcBase + 'version.js?t=' + Math.floor(Date.now() / 300000) + '"><\/script>');
+    /* 데이터센터를 먼저 쓴다 (아래 정적 태그가 그 주소다) — 못 읽으면 뒤에서 예비 사본(/data/js/sub/)으로 돌아간다 */
+    (function (c) { c.localBase = c.dataBase; c.localVer = c.ver; if (c.dcBase) { c.dataBase = c.dcBase; c.noVer = true; } })(SUB_SHOP_CONFIG);
 </script>
+<link rel="stylesheet" href="https://db.samsungat.co.kr/sdp/sub/sub_shop.css">
+<script src="https://db.samsungat.co.kr/sdp/sub/version.js"></script>
+<script src="https://db.samsungat.co.kr/sdp/sub/sub_index.js" charset="utf-8"></script>
+<script src="https://db.samsungat.co.kr/sdp/sub/sub_catalog.js" charset="utf-8"></script>
+<script src="https://db.samsungat.co.kr/sdp/sub/sub_cards.js" charset="utf-8"></script>
+<script src="https://db.samsungat.co.kr/sdp/sub/sub_policy.js" charset="utf-8"></script>
+<script src="https://db.samsungat.co.kr/sdp/sub/sub_plans_ref.js" charset="utf-8"></script>
+<link rel="preload" as="script" href="https://db.samsungat.co.kr/sdp/sub/sub_shop.js">
 <script>
-    /* 2) 요금표·카탈로그·카드표·정책을 한꺼번에 — 브라우저가 동시에 받고 쓴 순서대로 실행한다 (2026-10-30) */
+    /* 데이터센터를 못 읽었으면(요금표 없음) 예비 사본으로 — 화면 파일은 판단 뒤 같은 주소(preload 해 둔 것)로 실행 */
     (function (c) {
-        if (window.SUB_VER && c.dcBase) { c.localBase = c.dataBase; c.localVer = c.ver; c.dataBase = c.dcBase; c.ver = window.SUB_VER; }
-        var b = c.dataBase, v = encodeURIComponent(c.ver), h = '';
-        h += '<link rel="stylesheet" href="' + b + 'sub_shop.css?v=' + v + '">';
-        
-        ["sub_index.js", "sub_catalog.js", "sub_cards.js", "sub_policy.js", "sub_plans_ref.js"].forEach(function (f) { h += '<script src="' + b + f + '?v=' + v + '" charset="utf-8"><\/script>'; });
-        [].forEach(function (f) { h += '<link rel="preload" as="' + (/\.css$/.test(f) ? 'style' : 'script') + '" href="' + b + f + '?v=' + v + '"' + (/\.js$/.test(f) ? ' crossorigin="anonymous"' : '') + '>'; });
-        document.write(h);
+        if (window.SUB_INDEX) { if (window.SUB_VER) c.ver = window.SUB_VER; }
+        else if (c.dcBase) {
+            c.dcFailed = true; c.noVer = false; c.dataBase = c.localBase; c.ver = c.localVer;
+            var b = c.dataBase, v = encodeURIComponent(c.ver), h = '';
+            ["sub_shop.css"].forEach(function (f) { h += '<link rel="stylesheet" href="' + b + f + '?v=' + v + '">'; });
+            ["sub_index.js", "sub_catalog.js", "sub_cards.js", "sub_policy.js", "sub_plans_ref.js"].forEach(function (f) { h += '<script src="' + b + f + '?v=' + v + '" charset="utf-8"><\/script>'; });
+            document.write(h);
+        }
+        document.write('<script src="' + c.dataBase + 'sub_shop.js' + (c.noVer ? '' : '?v=' + encodeURIComponent(c.ver)) + '" charset="utf-8"><\/script>');
     })(SUB_SHOP_CONFIG);
 </script>
 <script>
-    /* 3) 화면 파일 — 데이터센터를 못 읽었으면(요금표 없음) 고도몰 예비 사본(/data/js/sub/)으로 */
-    (function (c) {
-        if (!window.SUB_INDEX && c.localBase) { c.dataBase = c.localBase; c.ver = c.localVer; c.dcFailed = true;
-            document.write('<script src="' + c.dataBase + 'sub_index.js?v=' + encodeURIComponent(c.ver) + '" charset="utf-8"><\/script>'); }
-        document.write('<script src="' + c.dataBase + 'sub_shop.js?v=' + encodeURIComponent(c.ver) + '" charset="utf-8"><\/script>');
-    })(SUB_SHOP_CONFIG);
-</script>
-<script>
-    /* 4) 화면 파일도 못 받았으면 예비 사본 */
+    /* 화면 파일도 못 받았으면 예비 사본 */
     (function (c) {
         if (window.SUB_SHOP_READY || !c.localBase || c.dcFailed) return;
-        var b = c.localBase, v = encodeURIComponent(c.localVer);
-        document.write('<link rel="stylesheet" href="' + b + 'sub_shop.css?v=' + v + '"><script src="' + b + 'sub_shop.js?v=' + v + '" charset="utf-8"><\/script>');
+        c.dataBase = c.localBase; c.ver = c.localVer; c.noVer = false;
+        var b = c.localBase, v = encodeURIComponent(c.localVer), h = '';
+        ["sub_shop.css"].forEach(function (f) { h += '<link rel="stylesheet" href="' + b + f + '?v=' + v + '">'; });
+        document.write(h + '<script src="' + b + 'sub_shop.js?v=' + v + '" charset="utf-8"><\/script>');
     })(SUB_SHOP_CONFIG);
 </script>
 </body>

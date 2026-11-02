@@ -78,7 +78,9 @@ class Site:
 <meta property="og:url" content="%(url)s">
 <link rel="preconnect" href="%(dc_origin)s" crossorigin>
 <link rel="dns-prefetch" href="%(dc_origin)s">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://images.samsung.com">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 <style>
   body { margin:0; background:#fff; color:#111; font-family:'Pretendard','Noto Sans KR',sans-serif; -webkit-text-size-adjust:100%%; }
   .gd-top { border-bottom:1px solid #eee; background:#fff; }
@@ -86,6 +88,7 @@ class Site:
   .gd-top a { color:#111; text-decoration:none; }
   .gd-top .home { font-weight:800; }
   .gd-top .tel { color:#1d6fe8; font-weight:700; white-space:nowrap; }
+  b, strong { font-weight:700; }
   .gd-main { max-width:1080px; margin:0 auto; padding:24px 16px 64px; }
   .gd-foot { border-top:1px solid #eee; background:#fafafa; color:#777; font-size:13px; line-height:1.7; }
   .gd-foot .in { max-width:1080px; margin:0 auto; padding:20px 16px 32px; }
@@ -111,9 +114,13 @@ class Site:
 ''' % dict(tel=B.TEL, home=self.dir + 'index.html', bundle=self.dir + 'bundle.html', consult=CONSULT, shop=SHOP, sitemap=self.dir + 'sitemap.html')
 
     def loader(self, name, cfg_var, ready_var, page, key='', cats=None, preload=None, before_ui=''):
-        """데이터센터 version.js → 요금표·카탈로그·카드표·정책·화면 파일을 한꺼번에 (동시 다운로드), 실패하면 /data/js/sub/ 예비 사본
-           name: 화면 파일 이름(shop·find·view·bundle) / cats: 같이 받아 둘 요금표 품목 / preload: 미리 받아 둘 파일(실행은 화면 JS 가)
-           before_ui: 요금표가 실행된 뒤·화면 JS 전에 끼울 JS (상품 페이지가 모델의 품목 요금표를 미리 받는 데 쓴다)"""
+        """데이터센터 파일을 HTML 에 정적 태그로 적는다 → 브라우저가 HTML 을 받자마자 전부 동시에 내려받는다 (2026-11-02 · 전엔 version.js → 데이터 → 화면 3단계 순차)
+           - 데이터 파일(version·index·catalog·cards·policy·plans) 은 <script src> 로 바로 실행 (순서대로 실행되므로 안전)
+           - 화면 파일(sub_<name>.js · 메뉴용 sub_shop.js · 계산기 sub_tab.js) 은 <link rel=preload> 로 먼저 받아 두고, 데이터센터를 읽었는지 판단한 뒤 같은 주소로 실행
+           - 캐시: 데이터센터(GitHub Pages) 는 max-age=600 이라 ?v= 없이도 10분 안에 새 판이 된다 → 데이터센터일 땐 c.noVer=true 로 화면 JS 도 ?v= 를 안 붙인다
+             (preload 주소와 실행 주소가 같아야 다시 받지 않는다). 예비 사본(/data/js/sub/)은 전처럼 ?v=판 번호
+           name: 화면 파일 이름(shop·find·view·bundle) / cats: 같이 받아 둘 요금표 품목 / preload: 미리 받아 둘 파일
+           before_ui: sub_index.js 바로 뒤에 끼울 JS (상품 페이지가 모델의 품목 요금표를 preload 하는 데 쓴다)"""
         extra = {
             'shop': """page: '%s', key: '%s',
         catalogApi: { url: '%s', key: '%s', timeout: 3000 },
@@ -132,10 +139,14 @@ class Site:
         site: '%s',""" % (B.API, B.API_KEY, self.site),
         }[name]
         c = cfg_var
-        boot = ['sub_index.js', 'sub_catalog.js', 'sub_cards.js', 'sub_policy.js'] + ['sub_plans_%s.js' % k for k in (cats or [])]
-        pre = list(preload or [])
-        css_line = ("h += '<link rel=\"stylesheet\" href=\"' + b + 'sub_%s.css?v=' + v + '\">';" % name) if name != 'shop' else ''
-        css_local = ("<link rel=\"stylesheet\" href=\"' + b + 'sub_%s.css?v=' + v + '\">" % name) if name != 'shop' else ''
+        dc = B.DC
+        data = ['sub_index.js', 'sub_catalog.js', 'sub_cards.js', 'sub_policy.js'] + ['sub_plans_%s.js' % k for k in (cats or [])]
+        css = ['sub_shop.css'] + (['sub_%s.css' % name] if name != 'shop' else []) + (['sub_tab.css'] if name == 'view' else [])
+        pre = ['sub_%s.js' % name] + (['sub_shop.js'] if name != 'shop' else []) + [f for f in (preload or []) if f not in ('sub_%s.js' % name, 'sub_shop.js')]
+        tag_css = ''.join('<link rel="stylesheet" href="%s%s">\n' % (dc, f) for f in css)
+        tag_data = '<script src="%sversion.js"></script>\n<script src="%ssub_index.js" charset="utf-8"></script>\n' % (dc, dc) + before_ui + \
+            ''.join('<script src="%s%s" charset="utf-8"></script>\n' % (dc, f) for f in data[1:])
+        tag_pre = ''.join('<link rel="preload" as="script" href="%s%s">\n' % (dc, f) for f in pre)
         return '''<script>
     var %(c)s = { ver: '%(ver)s',
         dcBase: '%(dc)s',
@@ -145,39 +156,35 @@ class Site:
         tel: '%(tel)s',
         defaultCard: '삼성카드'
     };
-    /* 1) 판 번호 (5분 단위로 새로 읽는다) */
-    if (%(c)s.dcBase) document.write('<script src="' + %(c)s.dcBase + 'version.js?t=' + Math.floor(Date.now() / 300000) + '"><\\/script>');
+    /* 데이터센터를 먼저 쓴다 (아래 정적 태그가 그 주소다) — 못 읽으면 뒤에서 예비 사본(/data/js/sub/)으로 돌아간다 */
+    (function (c) { c.localBase = c.dataBase; c.localVer = c.ver; if (c.dcBase) { c.dataBase = c.dcBase; c.noVer = true; } })(%(c)s);
 </script>
-<script>
-    /* 2) 요금표·카탈로그·카드표·정책을 한꺼번에 — 브라우저가 동시에 받고 쓴 순서대로 실행한다 (2026-10-30) */
+%(tag_css)s%(tag_data)s%(tag_pre)s<script>
+    /* 데이터센터를 못 읽었으면(요금표 없음) 예비 사본으로 — 화면 파일은 판단 뒤 같은 주소(preload 해 둔 것)로 실행 */
     (function (c) {
-        if (window.SUB_VER && c.dcBase) { c.localBase = c.dataBase; c.localVer = c.ver; c.dataBase = c.dcBase; c.ver = window.SUB_VER; }
-        var b = c.dataBase, v = encodeURIComponent(c.ver), h = '';
-        h += '<link rel="stylesheet" href="' + b + 'sub_shop.css?v=' + v + '">';
-        %(css_line)s
-        %(boot)s.forEach(function (f) { h += '<script src="' + b + f + '?v=' + v + '" charset="utf-8"><\\/script>'; });
-        %(pre)s.forEach(function (f) { h += '<link rel="preload" as="' + (/\\.css$/.test(f) ? 'style' : 'script') + '" href="' + b + f + '?v=' + v + '"' + (/\\.js$/.test(f) ? ' crossorigin="anonymous"' : '') + '>'; });
-        document.write(h);
-    })(%(c)s);
-</script>
-%(before_ui)s<script>
-    /* 3) 화면 파일 — 데이터센터를 못 읽었으면(요금표 없음) 고도몰 예비 사본(/data/js/sub/)으로 */
-    (function (c) {
-        if (!window.SUB_INDEX && c.localBase) { c.dataBase = c.localBase; c.ver = c.localVer; c.dcFailed = true;
-            document.write('<script src="' + c.dataBase + 'sub_index.js?v=' + encodeURIComponent(c.ver) + '" charset="utf-8"><\\/script>'); }
-        document.write('<script src="' + c.dataBase + 'sub_%(n)s.js?v=' + encodeURIComponent(c.ver) + '" charset="utf-8"><\\/script>');
+        if (window.SUB_INDEX) { if (window.SUB_VER) c.ver = window.SUB_VER; }
+        else if (c.dcBase) {
+            c.dcFailed = true; c.noVer = false; c.dataBase = c.localBase; c.ver = c.localVer;
+            var b = c.dataBase, v = encodeURIComponent(c.ver), h = '';
+            %(css_json)s.forEach(function (f) { h += '<link rel="stylesheet" href="' + b + f + '?v=' + v + '">'; });
+            %(data_json)s.forEach(function (f) { h += '<script src="' + b + f + '?v=' + v + '" charset="utf-8"><\\/script>'; });
+            document.write(h);
+        }
+        document.write('<script src="' + c.dataBase + 'sub_%(n)s.js' + (c.noVer ? '' : '?v=' + encodeURIComponent(c.ver)) + '" charset="utf-8"><\\/script>');
     })(%(c)s);
 </script>
 <script>
-    /* 4) 화면 파일도 못 받았으면 예비 사본 */
+    /* 화면 파일도 못 받았으면 예비 사본 */
     (function (c) {
         if (window.%(r)s || !c.localBase || c.dcFailed) return;
-        var b = c.localBase, v = encodeURIComponent(c.localVer);
-        document.write('<link rel="stylesheet" href="' + b + 'sub_shop.css?v=' + v + '">%(css_local)s<script src="' + b + 'sub_%(n)s.js?v=' + v + '" charset="utf-8"><\\/script>');
+        c.dataBase = c.localBase; c.ver = c.localVer; c.noVer = false;
+        var b = c.localBase, v = encodeURIComponent(c.localVer), h = '';
+        %(css_json)s.forEach(function (f) { h += '<link rel="stylesheet" href="' + b + f + '?v=' + v + '">'; });
+        document.write(h + '<script src="' + b + 'sub_%(n)s.js?v=' + v + '" charset="utf-8"><\\/script>');
     })(%(c)s);
 </script>
-''' % dict(c=c, r=ready_var, n=name, ver=B.VER, dc=B.DC, extra=extra, links=self.js_links(), tel=B.TEL,
-           boot=json.dumps(boot), pre=json.dumps(pre), css_line=css_line, css_local=css_local, before_ui=before_ui)
+''' % dict(c=c, r=ready_var, n=name, ver=B.VER, dc=dc, extra=extra, links=self.js_links(), tel=B.TEL,
+           tag_css=tag_css, tag_data=tag_data, tag_pre=tag_pre, css_json=json.dumps(css), data_json=json.dumps(data))
 
     # ---------- 페이지 ----------
     def shop_page(self, fname, title, desc, kw, body, kind, key):
@@ -238,16 +245,13 @@ class Site:
     def view_page(self):
         # 모델마다 주소가 달라(view.html?model=…) canonical·제목은 sub_view.js 가 모델에 맞춰 바꾼다. 계산기(sub_tab)와 그 품목 요금표·특장점 요약은 미리 받아 둔다
         pre_js = '''<script>
-    /* 상품 페이지: 주소의 모델로 품목을 알아내 그 요금표·계산기·특장점 요약을 미리 받아 둔다 (sub_view.js 가 곧 쓴다) */
+    /* 상품 페이지: 주소의 모델로 품목을 알아내 그 요금표를 미리 받아 둔다 (sub_view.js 가 같은 주소로 부른다 · 계산기 sub_tab.js 는 아래 preload) */
     (function (c) {
         try {
             var m = decodeURIComponent((location.search.match(/[?&]model=([^&]*)/) || [])[1] || '').replace(/\\s+/g, '').toUpperCase();
             var en = window.SUB_INDEX && window.SUB_INDEX.m && window.SUB_INDEX.m[m];
             if (!en) return;
-            var b = c.dataBase, v = encodeURIComponent(c.ver);
-            document.write('<link rel="preload" as="script" crossorigin="anonymous" href="' + b + 'sub_plans_' + en[0] + '.js?v=' + v + '">' +
-                '<link rel="preload" as="script" crossorigin="anonymous" href="' + b + 'sub_tab.js?v=' + v + '">' +
-                '<link rel="preload" as="style" href="' + b + 'sub_tab.css?v=' + v + '">');
+            document.write('<link rel="preload" as="script" href="' + c.dataBase + 'sub_plans_' + en[0] + '.js' + (c.noVer ? '' : '?v=' + encodeURIComponent(c.ver)) + '">');
         } catch (e) {}
     })(SUB_VIEW_CONFIG);
 </script>
@@ -256,7 +260,7 @@ class Site:
                           '삼성 AI 구독 모델의 약정·케어·제휴카드별 월 구독료를 확인하고 구독 상담을 신청하세요. 삼성스토어 시흥.',
                           '삼성 가전 구독, 삼성 구독료, AI 구독클럽, 삼성스토어 시흥', self.url + 'view.html') +
                 '<div id="subViewRoot"><p class="sv-loading">구독 상품을 불러오는 중…</p></div>\n' +
-                self.foot() + self.loader('view', 'SUB_VIEW_CONFIG', 'SUB_VIEW_READY', 'view', before_ui=pre_js) + '</body>\n</html>\n')
+                self.foot() + self.loader('view', 'SUB_VIEW_CONFIG', 'SUB_VIEW_READY', 'view', before_ui=pre_js, preload=['sub_tab.js']) + '</body>\n</html>\n')
 
     def bundle_page(self):
         css = '''  .sb-hero { margin:16px 0 24px; }

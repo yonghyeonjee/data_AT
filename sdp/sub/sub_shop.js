@@ -210,7 +210,7 @@ window.SUB_SHOP_READY = true;
     (planWait[cat] = planWait[cat] || []).push(cb);
     if (planState[cat] === 'loading') return;
     planState[cat] = 'loading';
-    loadScript((CFG.dataBase || '/data/js/sub/') + 'sub_plans_' + cat + '.js?v=' + encodeURIComponent(CFG.ver || IDX.ver), function () {
+    loadScript((CFG.dataBase || '/data/js/sub/') + 'sub_plans_' + cat + '.js' + (CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || IDX.ver)), function () {
       var P = (window.SUB_PLANS || {})[cat] || {};
       rows.forEach(function (r) { if (r.cat === cat && P[r.model]) { r.seg = P[r.model].s || ''; r.plans = P[r.model].p || []; } });
       planState[cat] = 'done';
@@ -568,7 +568,7 @@ window.SUB_SHOP_READY = true;
     var left = need.length;
     if (!left) return done();
     need.forEach(function (f) {
-      loadScript((CFG.dataBase || '/data/js/sub/') + f + '?v=' + encodeURIComponent(CFG.ver || ''), function () {
+      loadScript((CFG.dataBase || '/data/js/sub/') + f + (CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || '')), function () {
         if (--left === 0) { CARDS = window.SUB_CARDS || null; POL = window.SUB_POLICY || null; done(); }
       });
     });

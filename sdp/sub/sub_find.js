@@ -174,7 +174,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     (planWait[cat] = planWait[cat] || []).push(cb);
     if (planState[cat] === 'loading') return;
     planState[cat] = 'loading';
-    loadScript((CFG.dataBase || '/data/js/sub/') + 'sub_plans_' + cat + '.js?v=' + encodeURIComponent(CFG.ver || IDX.ver), function () {
+    loadScript((CFG.dataBase || '/data/js/sub/') + 'sub_plans_' + cat + '.js' + (CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || IDX.ver)), function () {
       var P = (window.SUB_PLANS || {})[cat] || {};
       rows.forEach(function (r) { if (r.cat === cat && P[r.model]) { r.seg = P[r.model].s || ''; setHay(r); } });
       planState[cat] = 'done';
@@ -441,9 +441,9 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     root.parentNode.insertBefore(nav, root.parentNode.firstChild);   // 페이지 맨 위 (머리글보다 먼저)
     window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl,
       homeUrl: CFG.homeUrl, catUrl: CFG.catUrl, cardUrl: CFG.cardUrl, guideUrl: CFG.guideUrl };
-    var b = CFG.dataBase || '/data/js/sub/', v = encodeURIComponent(CFG.ver || (IDX && IDX.ver) || '');
-    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = b + 'sub_shop.css?v=' + v; document.head.appendChild(l);
-    var s = document.createElement('script'); s.src = b + 'sub_shop.js?v=' + v; document.head.appendChild(s);
+    var b = CFG.dataBase || '/data/js/sub/', q = CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || (IDX && IDX.ver) || '');
+    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = b + 'sub_shop.css' + q; document.head.appendChild(l);
+    var s = document.createElement('script'); s.src = b + 'sub_shop.js' + q; document.head.appendChild(s);
   }
 
   function start() {

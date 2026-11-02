@@ -292,7 +292,7 @@ function main() {
     if (loading[file]) return loading[file].push(cb);
     loading[file] = [cb];
     var s = document.createElement('script');
-    s.src = (CFG.dataBase || '/data/js/sub/') + file + '?v=' + (CFG.ver || IDX.ver);
+    s.src = (CFG.dataBase || '/data/js/sub/') + file + (CFG.noVer ? '' : '?v=' + (CFG.ver || IDX.ver));   // noVer: 구독센터가 데이터센터 파일을 ?v= 없이 쓸 때
     s.onload = function () { var q = loading[file]; loading[file] = null; q.forEach(function (f) { f(); }); };
     s.onerror = function () {
       var q = loading[file]; loading[file] = null;

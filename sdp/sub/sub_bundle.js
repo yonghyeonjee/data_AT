@@ -35,7 +35,7 @@ window.SUB_BUNDLE_READY = true;
   function track(name, extra) { var ev = { event: name }; for (var k in extra) ev[k] = extra[k]; if (window.dataLayer) window.dataLayer.push(ev); }
   function cleanName(s) { return String(s || '').replace(/\s*\*+\s*$/, '').replace(/\s*(삼성본사직배송|본사직배송)\s*/g, ' ').replace(/\s{2,}/g, ' ').replace(/^\s|\s$/g, ''); }
   function loadScript(src, ok, fail) { var s = document.createElement('script'); s.src = src; s.charset = 'utf-8'; s.onload = ok; s.onerror = fail || ok; document.head.appendChild(s); }
-  var BASE = CFG.dataBase || '/data/js/sub/', VER = encodeURIComponent(CFG.ver || IDX.ver || '');
+  var BASE = CFG.dataBase || '/data/js/sub/', VQ = CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || IDX.ver || '');   // 데이터센터는 ?v= 없이 (HTML 의 preload 와 같은 주소)
   function viewUrl(m) { return (CFG.viewUrl || '/main/html.php?htmid=subscribe/sub_view.html&model=') + encodeURIComponent(m) + '&utm_source=sub_bundle&utm_medium=item'; }
   function familyKey(m) {
     if (window.SUB_FAMILY) return window.SUB_FAMILY(m);
@@ -305,7 +305,7 @@ window.SUB_BUNDLE_READY = true;
     var left = needCats.length;
     needCats.forEach(function (c) {
       if ((window.SUB_PLANS || {})[c]) { if (--left === 0) done(); return; }
-      loadScript(BASE + 'sub_plans_' + c + '.js?v=' + VER, function () { if (--left === 0) done(); });
+      loadScript(BASE + 'sub_plans_' + c + '.js' + VQ, function () { if (--left === 0) done(); });
     });
     function done() {
       var out = [];
@@ -386,15 +386,15 @@ window.SUB_BUNDLE_READY = true;
     root.parentNode.insertBefore(nav, root.parentNode.firstChild);
     window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: 'bundle', key: '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl,
       homeUrl: CFG.homeUrl, catUrl: CFG.catUrl, cardUrl: CFG.cardUrl, guideUrl: CFG.guideUrl, bundleUrl: CFG.bundleUrl };
-    if (!document.querySelector('link[href*="sub_shop.css"]')) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = BASE + 'sub_shop.css?v=' + VER; document.head.appendChild(l); }
-    if (!window.SUB_CART) loadScript(BASE + 'sub_shop.js?v=' + VER);
+    if (!document.querySelector('link[href*="sub_shop.css"]')) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = BASE + 'sub_shop.css' + VQ; document.head.appendChild(l); }
+    if (!window.SUB_CART) loadScript(BASE + 'sub_shop.js' + VQ);
   }
 
   /* ---------- 시작: 카탈로그 → 계산기(sub_tab.js API) → 카드·정책 → 그리기 ---------- */
   function start() {
     buildRows();
     centerNav();
-    window.SUB_TAB_CONFIG = { ver: CFG.ver, dataBase: BASE, apiOnly: true, defaultCard: CFG.defaultCard || '' };
+    window.SUB_TAB_CONFIG = { ver: CFG.ver, dataBase: BASE, noVer: !!CFG.noVer, apiOnly: true, defaultCard: CFG.defaultCard || '' };
     function withCalc() {
       C = window.SUB_CALC;
       if (!C) { root.innerHTML = '<p class="sb-empty">계산기를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</p>'; return; }
@@ -405,7 +405,7 @@ window.SUB_BUNDLE_READY = true;
       });
     }
     if (window.SUB_CALC) withCalc();
-    else loadScript(BASE + 'sub_tab.js?v=' + VER, withCalc, withCalc);
+    else loadScript(BASE + 'sub_tab.js' + VQ, withCalc, withCalc);
   }
   function useCatalog(G) { CAT = { m: (G && G.m) || {}, img: (G && G.img) || '' }; }
   if (window.SUB_CATALOG && window.SUB_CATALOG.m) { useCatalog(window.SUB_CATALOG); start(); }

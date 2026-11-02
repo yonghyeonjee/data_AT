@@ -307,9 +307,9 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     root.parentNode.insertBefore(nav, root.parentNode.firstChild);   // 페이지 맨 위 (머리글보다 먼저)
     window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl,
       homeUrl: CFG.homeUrl, catUrl: CFG.catUrl, cardUrl: CFG.cardUrl, guideUrl: CFG.guideUrl };
-    var b = CFG.dataBase || '/data/js/sub/', v = encodeURIComponent(CFG.ver || (IDX && IDX.ver) || '');
-    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = b + 'sub_shop.css?v=' + v; document.head.appendChild(l);
-    var s = document.createElement('script'); s.src = b + 'sub_shop.js?v=' + v; document.head.appendChild(s);
+    var b = CFG.dataBase || '/data/js/sub/', q = CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || (IDX && IDX.ver) || '');
+    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = b + 'sub_shop.css' + q; document.head.appendChild(l);
+    var s = document.createElement('script'); s.src = b + 'sub_shop.js' + q; document.head.appendChild(s);
   }
 
   /* ---------- 골격 ---------- */
@@ -355,10 +355,10 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   }
 
   /* ---------- 계산 화면: 상품상세 구독탭(sub_tab.js) 을 구독 모드로 ---------- */
-  var base = CFG.dataBase || '/data/js/sub/', ver = CFG.ver || IDX.ver;
+  var base = CFG.dataBase || '/data/js/sub/', ver = CFG.ver || IDX.ver, vq = CFG.noVer ? '' : '?v=' + encodeURIComponent(ver);   // 데이터센터는 ?v= 없이 (HTML 의 preload 와 같은 주소)
   function startCalc() {
   window.SUB_TAB_CONFIG = {
-    ver: ver, dataBase: base,
+    ver: ver, dataBase: base, noVer: !!CFG.noVer,
     models: [model], goodsNo: goods ? String(goods[0]) : '',
     lumpPrice: goods && goods[3] > 0 ? goods[3] : 0,   // 시흥몰 일시불 판매가 → "일시불보다 ○원 저렴"·"일시불 구매가" 비교가 함께 나온다
     defaultTab: 'sub', enabled: true, lumpOnly: [],
@@ -378,8 +378,8 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     var ld = root.querySelector('[data-slot="loading"]');
     if (ld && root.querySelector('#subTabRoot .subtab-bar')) ld.parentNode.removeChild(ld);
   }).observe(tabRoot, { childList: true, subtree: true });
-  loadCss(base + 'sub_tab.css?v=' + encodeURIComponent(ver));
-  loadScript(base + 'sub_plans_' + cat + '.js?v=' + encodeURIComponent(ver), function () {
+  loadCss(base + 'sub_tab.css' + vq);
+  loadScript(base + 'sub_plans_' + cat + '.js' + vq, function () {
     var P = (window.SUB_PLANS || {})[cat] || {};
     seg = P[model] ? P[model].s || '' : '';
     renderHead(); renderVariants(); renderSiblings(); renderReco(); renderDesc();
@@ -392,7 +392,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
       ld.innerHTML = '이 모델은 요금 계산 화면을 준비 중입니다. 약정·케어별 요금은 <a href="' + esc(href) + '">구독 상담 신청</a>으로 바로 안내해 드립니다.';
       track('sub_view_calc_fail', { sv_cat: cat });
     }
-    loadScript(base + 'sub_tab.js?v=' + encodeURIComponent(ver), function () {
+    loadScript(base + 'sub_tab.js' + vq, function () {
       // 계산 화면이 실제로 그려졌는지 확인 — 요금제 이름을 못 읽는 품목 등으로 비어 있으면 상담 안내로 대신한다
       setTimeout(function () {
         if (root.querySelector('#subTabRoot .subtab-bar')) {
