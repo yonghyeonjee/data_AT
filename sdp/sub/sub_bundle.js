@@ -247,13 +247,13 @@ window.SUB_BUNDLE_READY = true;
     });
   }
   function drawCart(items, results) {
-    var html = '', sum = { monthly: 0, auto: 0, prepayDisc: 0, prepayAmt: 0, card: 0, pay: 0, expected: 0, lump: 0, lumpAll: true, n: 0 };
+    var html = '', sum = { monthly: 0, auto: 0, prepayDisc: 0, prepayAmt: 0, card: 0, pay: 0, expected: 0, points: 0, lump: 0, lumpAll: true, n: 0 };
     items.forEach(function (it) {
       var r = results[it.m];
       if (!r) { html += '<li class="sb-item is-na" data-model="' + esc(it.m) + '"><div class="sb-item-head"><div class="sb-item-t"><b>' + esc(it.m) + '</b><span class="sb-item-model">지금 구독으로 운영되지 않는 모델</span></div><button type="button" class="sb-del" data-del="' + esc(it.m) + '">×</button></div></li>'; return; }
       html += itemHtml(it, r);
       sum.n++; sum.monthly += r.monthly; sum.auto += r.autoDisc / r.months; sum.prepayDisc += r.prepayDisc; sum.prepayAmt += r.prepayAmt;
-      sum.card += r.cardMonthly; sum.pay += r.finalMonthly; sum.expected += r.expected;
+      sum.card += r.cardMonthly; sum.pay += r.finalMonthly; sum.expected += r.expected; sum.points += r.points || 0;
       var lp = lumpOf(it.m); if (lp) sum.lump += lp; else sum.lumpAll = false;
     });
     els.items.innerHTML = html;
@@ -270,8 +270,9 @@ window.SUB_BUNDLE_READY = true;
       (bundleOff ? '<tr class="is-off"><th>다품목 동시구독 혜택 <small>' + Math.round(bp.rate * 100) + '%</small></th><td>− ' + fmt(bundleOff) + '원</td></tr>' : '') +
       '</tbody><tfoot><tr><th>' + sum.n + '대 월 납부 예상액</th><td><b>월 ' + fmt(payFinal) + '원</b></td></tr></tfoot></table>' +
       (sum.prepayAmt ? '<p class="sb-sumnote">+ 선납금 ' + fmt(sum.prepayAmt) + '원 (신청 때 한 번)</p>' : '') +
-      '<div class="sb-cmp"><div><span>약정 기간 총 결제 예상</span><b>' + fmt(sum.expected - bundleOff * 12 * 0) + '원</b></div>' +
-      (sum.lumpAll && sum.lump ? '<div><span>시흥몰 일시불 합계</span><b>' + fmt(sum.lump) + '원</b></div><div class="is-save"><span>' + (sum.lump > sum.expected ? '구독이 ' : '일시불이 ') + '</span><b>' + fmt(Math.abs(sum.lump - sum.expected)) + '원 저렴</b></div>' : '') + '</div>' +
+      '<div class="sb-cmp"><div><span>약정 기간 총 결제 예상</span><b>' + fmt(sum.expected) + '원</b></div>' +
+      (sum.points ? '<div><span>포인트 지원 (대상 모델 · 최장 약정)</span><b>− ' + fmt(sum.points) + '원</b></div><div><span>포인트 반영 실제 구독료</span><b>' + fmt(sum.expected - sum.points) + '원</b></div>' : '') +
+      (sum.lumpAll && sum.lump ? '<div><span>시흥몰 일시불 합계</span><b>' + fmt(sum.lump) + '원</b></div><div class="is-save"><span>' + (sum.lump > sum.expected - sum.points ? '구독이 ' : '일시불이 ') + '</span><b>' + fmt(Math.abs(sum.lump - (sum.expected - sum.points))) + '원 저렴</b></div>' : '') + '</div>' +
       (!bp ? '<p class="sb-sumnote">여러 대를 동시에 구독할 때의 추가 혜택(행사·사은품 등)은 상담 때 안내해 드립니다.</p>' : '') +
       '<div class="sb-ctas"><a class="sb-btn" data-cta="consult" href="' + esc(consultHref(items, results, payFinal)) + '">이 조건으로 구독 문의하기</a>' +
       (CFG.tel ? '<a class="sb-btn-line" href="tel:' + esc(CFG.tel.replace(/[^0-9]/g, '')) + '">' + esc(CFG.tel) + '</a>' : '') +
