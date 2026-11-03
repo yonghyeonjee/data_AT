@@ -1799,6 +1799,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
             <select class="in" id="cuSrc"><option value="">전체 유입</option></select>
             <select class="in" id="cuFreq"><option value="">전체 구매횟수</option><option value="0">구매 없음</option><option value="1">1회</option><option value="2">2–3회</option><option value="4">4–9회</option><option value="10">10회 이상</option></select>
             <select class="in" id="cuConsent"><option value="">수신동의 전체</option><option value="y">동의</option><option value="n">미동의</option></select>
+            <select class="in" id="cuGrade" title="DPS 멤버십 등급 (DPS 수집기가 넣는 삼성 멤버십 등급)"><option value="">DPS 등급 전체</option><option value="로열블루,프레스티지">로열블루 이상</option><option value="프레스티지">프레스티지</option><option value="로열블루">로열블루</option><option value="스타">스타</option><option value="일반">일반</option><option value="단골,단골직전">단골·단골직전</option></select>
             <select class="in" id="cuSort" onchange="loadCustomers(0)">
               <option value="net_desc">구매액 높은순</option><option value="cnt_desc">구매 잦은순</option>
               <option value="recent">최근 구매순</option><option value="new">최근 가입순</option></select>
@@ -1902,6 +1903,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
             <div><label>구매 카테고리</label><select class="in" id="crmCat"><option value="">전체</option></select></div>
             <div><label>지역</label><select class="in" id="crmRegion"><option value="">전체</option></select></div>
             <div><label>고객 구분</label><select class="in" id="crmKind"><option value="">전체</option><option value="personal">개인</option><option value="business">사업자</option></select></div>
+            <div><label>DPS 멤버십 등급</label><select class="in" id="crmGrade"><option value="">전체</option><option value="로열블루,프레스티지">로열블루 이상</option><option value="프레스티지">프레스티지</option><option value="로열블루">로열블루</option><option value="스타">스타</option><option value="일반">일반</option><option value="단골,단골직전">단골·단골직전</option></select></div>
             <div><label id="crmFromL">최근 구매일 시작</label><input class="in" type="date" id="crmFrom"></div>
             <div><label id="crmToL">최근 구매일 끝</label><input class="in" type="date" id="crmTo"></div>
             <div><label>구매 횟수 이상</label><input class="in num" type="number" id="crmMinCnt" placeholder="예: 2" min="0"></div>
@@ -3091,9 +3093,10 @@ function renderSubPolicy(){
   h.push(`<div class="spol-sec"><h4>기본 기준 · 상담 연락처 ${spStamp(up.defaults)}</h4>
     <div class="spol-row"><label>처음 선택되는 제휴카드 <select class="in" id="sp_def_card">${cardOpts.map(c=>`<option ${c===D.card?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
       <label>실적 구간 <input class="in" id="sp_def_tier" value="${esc(D.tier||'')}" placeholder="30만↑" style="width:90px"></label>
+      <label title="모델(또는 모델 앞글자)=구간 · 쉼표로 여럿 · 예: WD90H25=70만↑ (AI 콤보 전 색상·수납함)">모델별 실적 구간 <input class="in" id="sp_def_tierby" value="${esc(Object.entries(D.tierByModel||{}).map(([k,v])=>k+'='+v).join(', '))}" placeholder="WD90H25=70만↑" style="width:200px"></label>
       <label>전화 <input class="in" id="sp_def_tel" value="${esc(D.tel||'')}" placeholder="031-8042-3166" style="width:140px"></label></div>
     <div class="spol-row"><label style="flex:1;min-width:300px">상담 신청 주소 <input class="in" id="sp_def_consult" value="${esc(D.consultUrl||'')}" style="flex:1"></label>
-      <button class="btn sm" onclick="spSave('defaults',()=>({card:$('sp_def_card').value,tier:$('sp_def_tier').value.trim(),consultUrl:$('sp_def_consult').value.trim(),tel:$('sp_def_tel').value.trim()}))">저장</button></div>
+      <button class="btn sm" onclick="spSave('defaults',()=>({card:$('sp_def_card').value,tier:$('sp_def_tier').value.trim(),tierByModel:spPairs($('sp_def_tierby').value),consultUrl:$('sp_def_consult').value.trim(),tel:$('sp_def_tel').value.trim()}))">저장</button></div>
     <p class="spol-hint">상품상세 구독탭 머리의 금액·"카드 적용 시 최대 ○원 저렴" 배지, 구독센터 목록의 "카드 할인 시" 금액, 상세의 처음 선택값이 모두 이 카드·실적 구간으로 계산됩니다. 실적 구간은 카드 금액표의 구간 이름 그대로 (없는 이름이면 가장 낮은 구간). 전화를 비우면 전화 버튼이 빠집니다.</p></div>`);
   /* 1 자동납부 */
   h.push(`<div class="spol-sec"><h4>자동납부 할인 ${spStamp(up.autopay)}</h4>
@@ -3109,12 +3112,14 @@ function renderSubPolicy(){
       <div><div class="spol-hint" style="margin:0 0 6px">선납 비율 → 선납 할인율 (고객에게 보이는 버튼 순서대로)</div>
         <table class="spol-t"><thead><tr><th>선납</th><th>할인</th><th></th></tr></thead><tbody id="sp_steps">${steps.map(([s,r])=>spStepRow(s,r)).join('')}</tbody></table>
         <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_steps').insertAdjacentHTML('beforeend',spStepRow('',''))">+ 단계</button>
-        <div class="spol-row" style="margin-top:10px"><label>규칙에 없는 품목의 최대 선납 <input class="in num" id="sp_defmax" value="${esc(spPct(R.defaultMax??0.5))}"> %</label></div></div>
+        <div class="spol-row" style="margin-top:10px"><label>규칙에 없는 품목의 최대 선납 <input class="in num" id="sp_defmax" value="${esc(spPct(R.defaultMax??0.5))}"> %</label></div>
+        <div class="spol-row" style="margin-top:6px"><label title="고객이 고르기 전에 선택돼 있는 선납 비율 · 품목 한도를 넘으면 한도 안의 가장 큰 단계 · 0 이면 선납 없음">처음 선택되는 선납 <input class="in num" id="sp_initial" value="${esc(spPct(R.initial??0))}"> %</label></div></div>
       <div><div class="spol-hint" style="margin:0 0 6px">품목별 최대 선납 비율 (비우면 기본값) · 아래 이름 규칙이 먼저 적용됩니다</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px" id="sp_maxcat">${cats.map(c=>`<label style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:calc(12px * var(--font-scale))"><span>${esc(c)}</span><span><input class="in num" data-cat="${esc(c)}" value="${esc(spPct((R.maxByCat||{})[c]))}" style="width:56px"> %</span></label>`).join('')}</div>
         <div class="spol-hint" style="margin:10px 0 6px">이름 규칙: 품목 안에서 모델 이름에 이 글자가 들어가면 (예: 의류케어 › 에어드레서 50%)</div>
         <table class="spol-t"><thead><tr><th>품목</th><th>이름에 포함</th><th>최대</th><th></th></tr></thead><tbody id="sp_byname">${(R.maxByName||[]).map(m=>spNameRow(m,cats)).join('')}</tbody></table>
         <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_byname').insertAdjacentHTML('beforeend',spNameRow({},${JSON.stringify(cats).replace(/"/g,'&quot;')}))">+ 규칙</button></div></div>
+    <div class="spol-hint" style="margin-top:10px">선납금 옆 ? 아이콘을 누르면 보이는 안내 (비우면 아이콘 없음)</div><input class="in" id="sp_prehelp" value="${esc(R.help||'')}" style="width:100%;box-sizing:border-box" placeholder="일시불 구매보다 일부 선납후 구독 전환하면 A/S 기간 및 추가 할인이 가능합니다.">
     <div class="spol-hint" style="margin-top:10px">선납금 아래 안내 (한 줄에 한 문장)</div><textarea class="in" id="sp_prenotes">${esc((R.notes||[]).join('\n'))}</textarea>
     <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSavePrepay()">선납 정책 저장</button></div></div>`);
   /* 3 카드 */
@@ -3134,21 +3139,37 @@ function renderSubPolicy(){
   const ST={on:['진행 중','y'],soon:['예정','n'],ended:['끝남','n'],off:['꺼짐','n']};
   h.push(`<div class="spol-sec"><h4>행사 문구 <small>기간·대상이 맞을 때만 구독탭 혜택 목록에 한 줄로 나갑니다. 포인트 지원(개월 수·금액)을 적은 행사는 결제 예상액에서 빼서 "실제 구독료" 로 계산됩니다 (최장 약정 선택 시)</small></h4>
     <table class="spol-t"><thead><tr><th>상태</th><th>문구</th><th>기간</th><th>대상</th><th class="num">순서</th><th></th></tr></thead><tbody>
-    ${promos.length?promos.map(p=>`<tr><td><span class="tag ${ST[p.state][1]}">${ST[p.state][0]}</span></td><td>${esc(p.text)}${spPointChip(p)}${p.note?`<div class="spol-hint" style="margin:0">${esc(p.note)}</div>`:''}</td>
+    ${promos.length?promos.map(p=>`<tr><td><span class="tag ${ST[p.state][1]}">${ST[p.state][0]}</span></td><td>${esc(p.text)}${spPointChip(p)}${(p.malls||[]).length?`<div class="spol-hint" style="margin:0">몰: ${esc(p.malls.map(c=>(((SPOL&&SPOL.malls)||[]).find(m=>m.code===c)||{name:c}).name).join(', '))}</div>`:''}${p.note?`<div class="spol-hint" style="margin:0">${esc(p.note)}</div>`:''}</td>
       <td style="white-space:nowrap">${esc(p.from||'')}${p.from||p.to?' ~ ':'상시'}${esc(p.to||'')}</td>
       <td>${(p.cats||[]).map(c=>`<span class="spol-chip">${esc(c)}</span>`).join('')}${(p.models||[]).map(c=>`<span class="spol-chip mono">${esc(c)}</span>`).join('')}${(p.goods||[]).map(c=>`<span class="spol-chip">#${esc(c)}</span>`).join('')}${!(p.cats||[]).length&&!(p.models||[]).length&&!(p.goods||[]).length?'<span class="spol-chip">전체</span>':''}</td>
       <td class="num">${n(p.sort)}</td>
       <td style="white-space:nowrap"><button class="btn sm ghost" onclick="spPromoEdit(${p.id})">고치기</button> <button class="btn sm ghost" onclick="spPromoToggle(${p.id},${p.active?'false':'true'})">${p.active?'끄기':'켜기'}</button></td></tr>`).join('')
       :'<tr><td colspan="6" class="note">등록된 행사 문구가 없습니다. 오른쪽 위 [+ 행사 문구]</td></tr>'}</tbody></table></div>`);
-  /* 4b 모델 포인트 (mvp_258) — 삼성닷컴 "적립 예정 멤버십 포인트" · 수집기(tools/subpoint · 매주 월요일)가 채우고 여기서 손 입력·되돌리기 */
+  /* 4b 모델 포인트 (mvp_258) — 삼성닷컴 "적립 예정 멤버십 포인트" · 수집기(tools/subpoint · 매일 06:00 전부 다시)가 채우고 여기서 손 입력·되돌리기 */
   const PT=d.points||{}, PL=PT.last;
-  h.push(`<div class="spol-sec" id="spPtSec"><h4>모델 포인트 <small>삼성닷컴 "적립 예정 멤버십 포인트"(정률 + 기본 0.1% + 상품별 추가) — 구독탭·구독센터가 결제 예상액 × 정률 + 추가 포인트로 보여 주고 실제 구독료에서 뺍니다. 위 행사 포인트와는 별도로 둘 다 적용</small></h4>
-    <div class="spol-row"><span class="spol-chip">마지막 수집 ${PL?esc(PL.at)+' · 대상 '+n(PL.targets||0)+' · 찾음 '+n(PL.found||0)+' · 못 찾음 '+n(PL.missed||0)+' · 오류 '+n(PL.errors||0)+(PL.kept_manual?' · 손 입력 보호 '+n(PL.kept_manual):''):'아직 없음 (매주 월요일 09:00 자동 · 또는 [지금 수집])'}</span>
+  h.push(`<div class="spol-sec" id="spPtSec"><h4>모델 포인트 <small>삼성닷컴 "적립 예정 멤버십 포인트"(정률 + 기본 0.1% + 상품별 추가) — 구독탭·구독센터가 제품분 금액(총 구독금액 − 무상수리료 · 삼성닷컴과 같은 기준, 선납·카드와 무관) × 정률 + 추가 포인트로 보여 주고 실제 구독료에서 뺍니다. 위 행사 포인트와는 별도로 둘 다 적용</small></h4>
+    <div class="spol-row"><span class="spol-chip">마지막 수집 ${PL?esc(PL.at)+' · 대상 '+n(PL.targets||0)+' · 찾음 '+n(PL.found||0)+' · 못 찾음 '+n(PL.missed||0)+' · 오류 '+n(PL.errors||0)+(PL.kept_manual?' · 손 입력 보호 '+n(PL.kept_manual):''):'아직 없음 (매일 06:00 자동 · 또는 [지금 수집])'}</span>
       <span class="spol-chip">모델 ${n(PT.n||0)} / 활성 ${n(PT.n_active||0)} · 추가 포인트 있는 모델 ${n(PT.n_add||0)} · 손 입력 ${n(PT.n_manual||0)} · 못 찾은 모델 ${n(PT.n_missed||0)}</span>
       <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="spPointCollect()">지금 수집</button><button class="btn sm" onclick="spPointEdit(null)">+ 손 입력</button></span></div>
     <div class="spol-row"><input class="in" id="spPtQ" placeholder="모델번호 · 품목 검색" style="min-width:200px" onkeydown="if(event.key==='Enter')spPointLoad()"><button class="btn sm ghost" onclick="spPointLoad()">찾기</button>
       <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="spPtMiss" onchange="spPointLoad()"> 못 찾은 모델 보기</label></div>
     <div id="spPtBody"><div class="spol-hint">[찾기] 를 누르면 표가 나옵니다 (손 입력·최근 바뀐 것 먼저 · 300건)</div></div></div>`);
+  /* 4c 다품목 스마트 패키지 (mvp_264) — 품목 수별 정액 포인트(정책 bundle) + 대상 모델 목록(sub.pkg_model). 구독 대상 모델만 다품목 계산기(구독센터)로 나간다 */
+  const B=P.bundle||{}, BT=B.tiers||{}, PK=d.pkg||{};
+  h.push(`<div class="spol-sec" id="spPkgSec"><h4>다품목 스마트 패키지 ${spStamp(up.bundle)} <small>본사 월별 정액표 — 대상 모델을 2품목 이상 동시 구매(구독 대상 모델은 구독으로 사도)하면 품목 수별 포인트. 다품목 계산기가 담긴 모델 중 구독 대상 모델의 품목 수를 세어 "실제 구독료" 에서 뺍니다. TV 와 2nd TV 는 다른 품목 · 『3만 혜택』 모델은 일반 구매 때만이라 구독 계산에 안 들어감</small></h4>
+    <div class="spol-row"><label>이름 <input class="in" id="sp_bd_name" value="${esc(B.name||'스마트 패키지')}" style="width:140px"></label>
+      <label>기간 <input class="in" type="date" id="sp_bd_from" value="${esc(B.from||'')}"> ~ <input class="in" type="date" id="sp_bd_to" value="${esc(B.to||'')}"></label>
+      <label>최소 품목 <input class="in num" id="sp_bd_min" value="${esc(B.min||2)}" style="width:50px"></label></div>
+    <div class="spol-hint" style="margin:6px 0">품목 수 → 포인트(만원) · 비우면 그 줄은 뺍니다 (표에 없는 품목 수는 바로 아래 구간 금액)</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:4px 10px" id="sp_bd_tiers">${Array.from({length:21},(_,i)=>i+2).map(k=>`<label style="display:flex;justify-content:space-between;align-items:center;gap:4px;font-size:calc(12px * var(--font-scale))"><span>${k}품목</span><span><input class="in num" data-tier="${k}" value="${BT[k]!=null?BT[k]/10000:''}" style="width:52px"> 만</span></label>`).join('')}</div>
+    <div class="spol-row" style="margin-top:8px"><input class="in" id="sp_bd_text" value="${esc(B.text||'')}" placeholder="고객 안내 문구 (계산기 아래 한 줄)" style="flex:1;min-width:280px"><button class="btn sm" onclick="spSaveBundle()">정액표 저장</button></div>
+    <div class="spol-row" style="margin-top:10px"><span class="spol-chip">대상 모델 ${n(PK.n||0)} · 구독 대상 ${n(PK.n_sub||0)} (지금 구독 운영 중인 모델과 맞는 것 ${n(PK.n_dps||0)}) · 3만 혜택 ${n(PK.n_bonus||0)}${PK.updated?' · '+esc(PK.updated):''}</span>
+      <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="spPkgLoad()">모델 목록 보기</button><button class="btn sm ghost" onclick="$('spPkgImp').hidden=!$('spPkgImp').hidden">목록 바꾸기</button></span></div>
+    <div class="spol-hint">${(PK.cats||[]).map(c=>`<span class="spol-chip">${esc(c.cat)} ${n(c.n_sub)}/${n(c.n)}</span>`).join('')}</div>
+    <div id="spPkgImp" hidden><div class="spol-hint" style="margin:8px 0 4px">본사 엑셀의 품목 · 모델군 · 모델명 · 구독여부 네 열을 그대로 붙여 넣기 (탭 구분 · 한 줄에 한 모델 · 구독여부가 '구독' 이면 구독 대상 · 『3만 혜택』 모델은 구독여부 자리에 '3만'). PC 에서는 tools/sub/pkg_from_xlsx.py 로 엑셀을 바로 읽을 수도 있습니다</div>
+      <textarea class="in" id="sp_pkg_txt" style="min-height:120px" placeholder="TV	Neo QLED	KQ85QNH80AFXKR	구독"></textarea>
+      <div class="spol-row" style="margin-top:6px"><label><input type="checkbox" id="sp_pkg_replace" checked> 붙여 넣은 목록에 없는 기존 모델은 끄기 (달이 바뀔 때)</label><button class="btn sm" onclick="spPkgImport()">모델 목록 저장</button></div></div>
+    <div id="spPkgBody"></div></div>`);
   /* 5 문구 */
   h.push(`<div class="spol-sec"><h4>기본 문구 ${spStamp(up.texts)}</h4>
     <div class="spol-hint" style="margin:0 0 4px">혜택 목록 기본 문장 (한 줄에 한 문장 · 행사 문구는 이 아래에 붙습니다)</div><textarea class="in" id="sp_points">${esc((T.points||[]).join('\n'))}</textarea>
@@ -3158,6 +3179,7 @@ function renderSubPolicy(){
   if((d.log||[]).length) h.push(`<div class="spol-sec"><h4>최근 바뀐 것 <small>20건</small></h4><div class="spol-log">${d.log.map(l=>`<div>${esc(l.at)} · ${esc({policy:'정책',card:'카드',promo:'행사',point:'모델 포인트'}[l.kind]||l.kind)} <b>${esc(l.key)}</b> · ${esc(l.by||'')}</div>`).join('')}</div></div>`);
   $('spolBody').innerHTML=h.join('');
 }
+function spPairs(v){ const o={}; String(v||'').split(/[,\n]/).forEach(x=>{ const i=x.indexOf('='); if(i<1) return; const k=x.slice(0,i).trim().toUpperCase(), t=x.slice(i+1).trim(); if(k&&t) o[k]=t; }); return o; }
 function spStepRow(s,r){ return `<tr><td><input class="in num" data-k="step" value="${esc(spPct(s))}" style="width:56px"> %</td><td><input class="in num" data-k="rate" value="${esc(spPct(r))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
 function spNameRow(m,cats){ return `<tr><td><select class="in" data-k="cat">${cats.map(c=>`<option ${c===m.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></td><td><input class="in" data-k="contains" value="${esc(m.contains||'')}"></td><td><input class="in num" data-k="max" value="${esc(spPct(m.max))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
 async function spSave(key, make){
@@ -3170,8 +3192,35 @@ function spSavePrepay(){
     $('sp_steps').querySelectorAll('tr').forEach(tr=>{ const s=spRate(tr.querySelector('[data-k=step]').value), r=spRate(tr.querySelector('[data-k=rate]').value); if(s==null) return; steps.push(s); if(r!=null) rates[String(s)]=r; });
     const maxByCat={}; $('sp_maxcat').querySelectorAll('input[data-cat]').forEach(i=>{ const r=spRate(i.value); if(r!=null) maxByCat[i.dataset.cat]=r; });
     const maxByName=[]; $('sp_byname').querySelectorAll('tr').forEach(tr=>{ const c=tr.querySelector('[data-k=cat]').value, t=tr.querySelector('[data-k=contains]').value.trim(), m=spRate(tr.querySelector('[data-k=max]').value); if(!t && m==null) return; maxByName.push({cat:c,contains:t,max:m}); });
-    return {steps, rates, defaultMax:spRate($('sp_defmax').value)??0.5, maxByCat, maxByName, notes:spLines($('sp_prenotes').value)};
+    const initial=spRate($('sp_initial').value), help=$('sp_prehelp').value.trim();
+    return {steps, rates, defaultMax:spRate($('sp_defmax').value)??0.5, maxByCat, maxByName, notes:spLines($('sp_prenotes').value), ...(initial!=null?{initial}:{}), ...(help?{help}:{})};
   });
+}
+/* 다품목 스마트 패키지 (mvp_264) — 정액표는 정책 키 bundle 로, 모델 목록은 fn_sub_pkg_import 로 */
+function spSaveBundle(){
+  spSave('bundle',()=>{
+    const tiers={}; $('sp_bd_tiers').querySelectorAll('input[data-tier]').forEach(i=>{ const v=Number(String(i.value).replace(/[^0-9.]/g,'')); if(v>0) tiers[i.dataset.tier]=Math.round(v*10000); });
+    if(!Object.keys(tiers).length) throw new Error('품목 수별 포인트를 하나 이상 적어 주세요');
+    const o={kind:'package',name:$('sp_bd_name').value.trim()||'스마트 패키지',tiers,min:Math.max(2,Number($('sp_bd_min').value)||2),text:$('sp_bd_text').value.trim()};
+    const f=$('sp_bd_from').value, t=$('sp_bd_to').value; if(f) o.from=f; if(t) o.to=t;
+    return o;
+  });
+}
+async function spPkgImport(){
+  const rows=[];
+  String($('sp_pkg_txt').value||'').split(/\r?\n/).forEach(l=>{ const c=l.split('\t').map(x=>x.trim()); if(c.length<3||!c[2]) return; rows.push({cat:c[0],grp:c[1],model:c[2].toUpperCase(),sub_ok:/구독/.test(c[3]||''),bonus:/3만/.test(c[3]||'')}); });
+  if(!rows.length) return toast('붙여 넣은 줄에서 품목·모델군·모델명을 찾지 못했습니다 (탭으로 구분된 네 열)','bad');
+  const rep=$('sp_pkg_replace').checked;
+  if(!confirm(`${rows.length}개 모델을 저장할까요?${rep?' 목록에 없는 기존 모델은 꺼집니다.':''}`)) return;
+  try{ const r=await rpc('fn_sub_pkg_import',{p_rows:rows,p_replace:rep}); toast(`저장 ${n(r.in)} · 끔 ${n(r.off)} · 대상 ${n(r.n)} (구독 대상 ${n(r.n_sub)}) · 바로 배포됩니다 (1~3분)`,'ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+async function spPkgLoad(){
+  const box=$('spPkgBody'); box.innerHTML='<div class="spol-hint">불러오는 중…</div>';
+  try{
+    const L=await rpc('fn_sub_pkg_list',{p_q:null},{fresh:true})||[], subs=L.filter(r=>r.sub_ok), noDps=subs.filter(r=>!r.dps).length;
+    box.innerHTML=`<div class="spol-hint">구독 대상 ${n(subs.length)}개 (전체 ${n(L.length)}) · <b>DPS 없음 ${n(noDps)}</b> = 지금 구독으로 운영되지 않아 계산기에 담을 수 없는 모델 (본사 표가 앞서거나 모델번호 표기가 다른 것)</div>
+      <div style="max-height:360px;overflow:auto"><table class="spol-t"><thead><tr><th>품목</th><th>모델군</th><th>모델</th><th>구독</th><th>DPS</th></tr></thead><tbody>${L.map(r=>`<tr><td>${esc(r.cat)}</td><td>${esc(r.grp||'')}</td><td class="mono">${esc(r.model)}${r.bonus?' <span class="tag n">3만</span>':''}</td><td>${r.sub_ok?'구독':''}</td><td>${r.sub_ok?(r.dps?'있음':'<span class="tag 보류">없음</span>'):''}</td></tr>`).join('')}</tbody></table></div>`;
+  }catch(e){ box.innerHTML=`<div class="note">${esc(e.message)}</div>`; }
 }
 async function spSaveCard(tr){
   const g=k=>tr.querySelector(`[data-k=${k}]`);
@@ -3190,6 +3239,7 @@ async function spPromoEdit(id){
       <div><div class="spol-hint" style="margin:0 0 3px">대상 품목 (아무것도 안 고르면 전체)</div><div id="pm_cats" style="display:flex;flex-wrap:wrap;gap:4px">${cats.map(c=>`<label class="tag ${(p.cats||[]).includes(c)?'y':'n'}" style="cursor:pointer"><input type="checkbox" value="${esc(c)}" ${(p.cats||[]).includes(c)?'checked':''} style="display:none" onchange="this.parentNode.className='tag '+(this.checked?'y':'n')">${esc(c)}</label>`).join('')}</div></div>
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 모델번호 (쉼표로 여러 개 · 비우면 전체)</div><input class="in mono" id="pm_models" value="${esc((p.models||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 고도몰 상품번호 (쉼표 · 비우면 전체)</div><input class="in mono" id="pm_goods" value="${esc((p.goods||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
+      <div><div class="spol-hint" style="margin:0 0 3px">대상 몰 (아무것도 안 고르면 모든 몰 · 상품번호로 고르면 몰을 꼭 고르세요 — 안 고르면 시흥몰)</div><div id="pm_malls" style="display:flex;flex-wrap:wrap;gap:4px">${((SPOL&&SPOL.malls)||[]).map(m=>`<label class="tag ${(p.malls||[]).includes(m.code)?'y':'n'}" style="cursor:pointer"><input type="checkbox" value="${esc(m.code)}" ${(p.malls||[]).includes(m.code)?'checked':''} style="display:none" onchange="this.parentNode.className='tag '+(this.checked?'y':'n')">${esc(m.name)}</label>`).join('')}</div></div>
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용)</div><input class="in" id="pm_note" value="${esc(p.note||'')}" style="width:100%;box-sizing:border-box"></label>
       <div style="border-top:1px dashed var(--line,#ddd);padding-top:8px"><div class="spol-hint" style="margin:0 0 6px"><b>포인트 지원</b> (삼성 "N개월 구독료 상당 포인트" 행사일 때만 · 비우면 문구만 나갑니다) — 금액 우선순위: 모델별 금액 → 공통 금액 → 개월 수 × 고객이 고른 요금제 월 구독료</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><label><div class="spol-hint" style="margin:0 0 3px">지원 개월 수</div><input class="in num" id="pm_months" value="${esc(p.months??'')}" style="width:70px" placeholder="6"></label>
@@ -3202,7 +3252,7 @@ async function spPromoEdit(id){
       const amounts={}; $('pm_amounts').value.split(/\r?\n/).forEach((ln,i)=>{ ln=ln.trim(); if(!ln) return; const m=/^([A-Za-z0-9\-\/]+)[\s,\t:=]+([0-9][0-9,\.]*)\s*(원)?/.exec(ln); if(!m) throw new Error((i+1)+'번째 줄을 읽지 못했습니다: "'+ln+'" (예: WD90H25AHW 540000)'); amounts[m[1].toUpperCase()]=Number(m[2].replace(/[^0-9]/g,'')); });
       let models=spCsv($('pm_models').value).map(x=>x.toUpperCase()); Object.keys(amounts).forEach(m=>{ if(!models.includes(m)) models.push(m); });
       return {id:p.id, text:t, from:$('pm_from').value||null, to:$('pm_to').value||null, sort:Number($('pm_sort').value)||100, active:p.active!==false,
-              cats:[...$('pm_cats').querySelectorAll('input:checked')].map(i=>i.value), models, goods:spCsv($('pm_goods').value), note:$('pm_note').value.trim(),
+              cats:[...$('pm_cats').querySelectorAll('input:checked')].map(i=>i.value), models, goods:spCsv($('pm_goods').value), malls:[...$('pm_malls').querySelectorAll('input:checked')].map(i=>i.value), note:$('pm_note').value.trim(),
               months, amount, amounts:Object.keys(amounts).length?amounts:null, maxTerm:$('pm_maxterm').checked}; }});
   if(!data) return;
   try{ await rpc('fn_sub_promo_save',{p_data:data}); toast('행사 문구를 저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
@@ -3246,7 +3296,7 @@ async function spPointEdit(model){
         <label><div class="spol-hint" style="margin:0 0 3px">기본 %</div><input class="in num" id="pt_base" value="${esc(r.base??'0.1')}" style="width:80px"></label></div>
       <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="pt_subonly" ${r.sub_only?'checked':''}> <b>구독 전용 모델</b> <span class="spol-hint" style="margin:0">일시불 판매 없음 — 시흥몰에 일시불 상품이 있어도 구독센터·구독탭이 일시불 가격·비교를 내지 않습니다 (예: AI 콤보 화이트 WD90H25BHW)</span></label>
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용 · 출처·기간)</div><input class="in" id="pt_note" value="${esc(r.note||'')}" style="width:100%;box-sizing:border-box"></label>
-      <p class="spol-hint" style="margin:0">저장하면 '손 입력' 이 되어 매주 수집이 덮지 않습니다. 삼성닷컴 값으로 되돌리려면 표에서 [수집값으로]. 화면 계산 = 결제 예상액 × (정률+기본)% + 추가 포인트.</p></div>`,
+      <p class="spol-hint" style="margin:0">저장하면 '손 입력' 이 되어 매일 수집이 덮지 않습니다. 삼성닷컴 값으로 되돌리려면 표에서 [수집값으로]. 화면 계산 = 제품분 금액(총 구독금액 − 무상수리료) × (정률+기본)% + 추가 포인트 (선납·카드와 무관 · 삼성닷컴과 같은 기준).</p></div>`,
     collect:()=>{ const m=$('pt_model').value.trim().toUpperCase(); if(!m) throw new Error('모델번호를 적어 주세요');
       const o={model:m, note:$('pt_note').value.trim(), subOnly:$('pt_subonly').checked};
       // 포인트 칸을 하나도 안 적고 구독 전용만 바꾸면 포인트 행은 건드리지 않는다 (정률 없는 '손 입력' 행이 생겨 포인트가 사라지지 않게 · mvp_259)
@@ -3259,10 +3309,10 @@ async function spPointEdit(model){
 async function spPointRelease(model){ if(!confirm(model+' 을 삼성닷컴 수집값으로 되돌릴까요? (다음 수집에서 덮어씁니다)')) return; try{ await rpc('fn_sub_point_save',{p_data:{model,release:true}}); toast('되돌렸습니다','ok'); loadSubPolicy(true); spPointLoad(); }catch(e){ toast(e.message,'bad'); } }
 async function spPointRemove(model){ if(!confirm(model+' 포인트를 지울까요? (다음 수집에서 삼성닷컴 값이 있으면 다시 들어옵니다)')) return; try{ await rpc('fn_sub_point_save',{p_data:{model,remove:true}}); toast('지웠습니다','ok'); loadSubPolicy(true); spPointLoad(); }catch(e){ toast(e.message,'bad'); } }
 async function spPointCollect(){
-  if(!confirm('삼성닷컴에서 모델 포인트를 지금 수집할까요? (GitHub Actions 에서 10~20분 · 끝나면 자동 배포)')) return;
+  if(!confirm('삼성닷컴에서 모델 포인트를 지금 수집할까요? (활성 모델 전부 다시 · GitHub Actions 에서 5~10분 · 끝나면 자동 배포)')) return;
   let tok=null; try{ const {data}=await sb.auth.getSession(); tok=data&&data.session&&data.session.access_token; }catch(e){}
   if(!tok) return toast('로그인이 필요합니다','bad');
-  try{ const res=await fetch(SUPABASE_URL+'/functions/v1/sub-deploy?by=admin&wf=sub-point',{method:'POST',headers:{Authorization:'Bearer '+tok,apikey:SUPABASE_KEY,'Content-Type':'application/json'},body:'{}'});
+  try{ const res=await fetch(SUPABASE_URL+'/functions/v1/sub-deploy?by=admin&wf=sub-point&all=1',{method:'POST',headers:{Authorization:'Bearer '+tok,apikey:SUPABASE_KEY,'Content-Type':'application/json'},body:'{}'});
     const j=await res.json().catch(()=>({})); if(!res.ok||!j.ok) throw new Error(j.error||('HTTP '+res.status));
     toast(j.skipped?'이미 수집이 돌고 있습니다 · '+j.reason:'수집을 시작했습니다 · 10~20분 뒤 [새로고침]','ok'); }
   catch(e){ toast('수집 요청 실패: '+e.message+' — GitHub › Actions › 구독 멤버십 포인트 › Run workflow 로 직접 실행하세요','bad'); }
@@ -3270,7 +3320,7 @@ async function spPointCollect(){
 async function spPromoToggle(id,on){
   const p=(SPOL&&SPOL.promos||[]).find(x=>x.id===id); if(!p) return;
   try{
-    if(on) await rpc('fn_sub_promo_save',{p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,sort:p.sort,note:p.note,active:true,months:p.months,amount:p.amount,amounts:p.amounts,maxTerm:p.maxTerm!==false}});
+    if(on) await rpc('fn_sub_promo_save',{p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,malls:p.malls||[],sort:p.sort,note:p.note,active:true,months:p.months,amount:p.amount,amounts:p.amounts,maxTerm:p.maxTerm!==false}});
     else await rpc('fn_sub_promo_remove',{p_id:id});
     toast(on?'다시 켰습니다':'껐습니다 (기록은 남습니다)','ok'); loadSubPolicy(true);
   }catch(e){ toast(e.message,'bad'); }
@@ -5661,7 +5711,7 @@ function fkSyncAll(){ document.querySelectorAll('[data-fk]').forEach(x=>x.dispat
 function fkInit(){
   fkRange('crmMinCnt',{min:0,max:10,step:1,unit:'회 이상',empty:'상관없음',nullAt:0,maxPlus:true,label:'구매 횟수 이상'});
   fkRange('crmMinNet',{min:0,max:5000000,step:50000,fmt:v=>wonK(v)+' 이상',empty:'상관없음',nullAt:0,maxPlus:true,label:'누적 구매액 이상'});
-  fkRadio('crmKind',{label:'고객 구분'}); fkRadio('crmDormant',{label:'휴면'}); fkRadio('crmSort',{label:'정렬'});
+  fkRadio('crmKind',{label:'고객 구분'}); fkRadio('crmGrade',{label:'DPS 멤버십 등급'}); fkRadio('crmDormant',{label:'휴면'}); fkRadio('crmSort',{label:'정렬'});
   fkRadio('crmNoSend',{label:'이미 보낸 사람 제외',short:s=>({'상관없음 — 보낸 적 있어도 포함':'상관없음','최근 7일 내 보낸 사람 제외':'7일 안 제외','최근 30일 내 보낸 사람 제외':'30일 안 제외','최근 90일 내 보낸 사람 제외':'90일 안 제외','한 번이라도 보낸 사람 전부 제외':'전부 제외'})[s]||s});
   fkRange2('crmDueLo','crmDueHi',{min:-90,max:60,step:1,label:'예상재구매일 창',fmt:(a,b)=>`D${a>=0?'+':''}${a} ~ D${b>=0?'+':''}${b}`});
   fkRange2('upMinD','upMaxD',{min:0,max:90,step:1,nullable:true,empty:'전체 기간',label:'주문 후 경과일',fmt:(a,b)=>`${a}~${b}일`});
@@ -6738,7 +6788,7 @@ let TG=null, tgPage=0, TG_OPTS=null;
 function tgParams(){
   const v=id=>$(id).value.trim();
   return { p_reason:v('crmReason'), p_q:v('crmQ')||null, p_channel:v('crmCh')||null, p_category:v('crmCat')||null,
-    p_region:v('crmRegion')||null, p_kind:v('crmKind')||null, p_from:v('crmFrom')||null, p_to:v('crmTo')||null,
+    p_region:v('crmRegion')||null, p_kind:v('crmKind')||null, p_grade:v('crmGrade')||null, p_from:v('crmFrom')||null, p_to:v('crmTo')||null,
     p_min_cnt:v('crmMinCnt')?Number(v('crmMinCnt')):null, p_min_net:v('crmMinNet')?Number(v('crmMinNet')):null,
     p_dormant_days:v('crmDormant')?Number(v('crmDormant')):null, p_no_send_days:v('crmNoSend')?Number(v('crmNoSend')):null,
     p_basis:TG_BASIS, p_product:(TG_BASIS==='product' ? ($('crmProd').value.trim()||null) : null),
@@ -6785,6 +6835,7 @@ async function loadTargets(page){ crmRentalHint();
     ['창',TG_BASIS==='repeat'?`D${p.p_due_lo==null?'-30':(p.p_due_lo<0?p.p_due_lo:'+'+p.p_due_lo)} ~ D${p.p_due_hi==null?'+14':(p.p_due_hi<0?p.p_due_hi:'+'+p.p_due_hi)}`:null],
     ['키워드',p.p_q],['채널',p.p_channel],['카테고리',p.p_category],['지역',p.p_region],
     ['구분',p.p_kind==='business'?'사업자':p.p_kind==='personal'?'개인':null],
+    ['등급',p.p_grade?(p.p_grade==='로열블루,프레스티지'?'로열블루 이상':p.p_grade.replace(/,/g,'·')):null],
     ['최근구매',p.p_from||p.p_to?`${p.p_from||'…'}~${p.p_to||'…'}`:null],
     ['구매횟수',p.p_min_cnt?`${p.p_min_cnt}회+`:null],['누적',p.p_min_net?wonK(p.p_min_net)+'+':null],
     ['휴면',p.p_dormant_days?`${p.p_dormant_days}일+`:null],['발송제외',p.p_no_send_days?(p.p_no_send_days>=36500?'보낸 적 있으면 전부':`${p.p_no_send_days}일 내`):null],
@@ -6793,7 +6844,7 @@ async function loadTargets(page){ crmRentalHint();
     || '<span style="color:var(--faint)">조건 없음</span>')
     + `<button class="btn sm ghost" style="margin-left:6px" onclick="copyCond()" title="이 조건을 그대로 복사해 다른 사람에게 주면 같은 수가 나옵니다">조건 복사</button>`;
   $('tbTargets').innerHTML=d.rows.map(r=>`<tr>
-    <td><b>${esc(r.name||'-')}</b>${r.biz?' <span class="tag n">사업자</span>':''}</td>
+    <td><b>${esc(r.name||'-')}</b>${r.biz?' <span class="tag n">사업자</span>':''}${r.grade?` <span class="tag n" title="DPS 멤버십 등급">${esc(r.grade)}</span>`:''}</td>
     <td class="mono">${esc(r.phone||'')}</td><td style="font-size:calc(12px * var(--font-scale));color:var(--muted)">${esc(r.region||'')}</td>
     <td class="wrap" style="font-size:calc(12px * var(--font-scale))">${(r.chans||[]).map(c=>`<span class="tag n" style="margin-right:3px">${esc(c)}</span>`).join('')}</td>
     <td class="num">${r.cnt?n(r.cnt)+'회':'-'}</td><td class="num"><b>${n(r.net)}</b></td>
@@ -6893,7 +6944,7 @@ async function segEdit(code){
 /* 저장 조건이 쓸 수 있는 키 전부. 여기 없는 키는 화면이 조용히 무시하므로
    조건 이름과 실제 조건이 어긋난다 (예전 '토너·잉크 재구매 주기' 가 kind_goods 를 담아
    토너가 아닌 사람까지 뽑던 사고). 모르는 키가 있으면 알려 준다. */
-const SEG_KEYS=['q','channel','category','region','kind','min_cnt','min_net','dormant_days',
+const SEG_KEYS=['q','channel','category','region','kind','grade','min_cnt','min_net','dormant_days',
   'no_send_days','sort','next_only','from','to','last_days_max','last_days_min','basis','product','asof','due_lo','due_hi'];
 function segToForm(pm){
   const set=(id,v)=>{ $(id).value = (v===null||v===undefined)?'':String(v); };
@@ -6903,9 +6954,9 @@ function segToForm(pm){
   set('crmProd', pm.product); set('crmAsof', pm.asof); set('crmDueLo', pm.due_lo==null?-30:pm.due_lo); set('crmDueHi', pm.due_hi==null?14:pm.due_hi);
   if(pm.basis && pm.basis!==TG_BASIS) setBasisQuiet(pm.basis);
   else setBasisQuiet(pm.basis || TG_BASIS);
-  set('crmQ',pm.q); set('crmCh',pm.channel); set('crmCat',pm.category); set('crmRegion',pm.region); set('crmKind',pm.kind);
+  set('crmQ',pm.q); set('crmCh',pm.channel); set('crmCat',pm.category); set('crmRegion',pm.region); set('crmKind',pm.kind); set('crmGrade',pm.grade);
   /* select 는 목록에 없는 값을 넣으면 조용히 '전체' 가 된다 — 조건이 사라진 줄 모르게 된다 */
-  [['crmKind',pm.kind],['crmCh',pm.channel],['crmCat',pm.category],['crmRegion',pm.region],['crmSort',pm.sort]]
+  [['crmKind',pm.kind],['crmGrade',pm.grade],['crmCh',pm.channel],['crmCat',pm.category],['crmRegion',pm.region],['crmSort',pm.sort]]
     .forEach(([id,v])=>{ if(v && String($(id).value)!==String(v))
       toast(`조건의 "${v}" 는 이 목록에 없어 걸리지 않았습니다`,'bad'); });
   set('crmMinCnt',pm.min_cnt); set('crmMinNet',pm.min_net);
@@ -6933,7 +6984,7 @@ function clearSegment(){ SEG_CUR=null; $('segNote').classList.add('hidden'); seg
 async function saveSegment(){
   const pm={}; const v=id=>$(id).value.trim();
   if(v('crmQ')) pm.q=v('crmQ'); if(v('crmCh')) pm.channel=v('crmCh'); if(v('crmCat')) pm.category=v('crmCat');
-  if(v('crmRegion')) pm.region=v('crmRegion'); if(v('crmKind')) pm.kind=v('crmKind');
+  if(v('crmRegion')) pm.region=v('crmRegion'); if(v('crmKind')) pm.kind=v('crmKind'); if(v('crmGrade')) pm.grade=v('crmGrade');
   if(v('crmMinCnt')) pm.min_cnt=Number(v('crmMinCnt')); if(v('crmMinNet')) pm.min_net=Number(v('crmMinNet'));
   if(v('crmDormant')) pm.dormant_days=Number(v('crmDormant')); if(v('crmNoSend')) pm.no_send_days=Number(v('crmNoSend'));
   if($('crmNext').classList.contains('on')) pm.next_only=true;
@@ -7056,7 +7107,7 @@ async function pasteCond(){
   const set=(id,v)=>{ $(id).value=(v===null||v===undefined)?'':String(v); };
   setBasisQuiet(d.p_basis||'consent');
   set('crmProd',d.p_product); set('crmAsof',d.p_asof); set('crmDueLo',d.p_due_lo==null?-30:d.p_due_lo); set('crmDueHi',d.p_due_hi==null?14:d.p_due_hi); set('crmQ',d.p_q); set('crmCh',d.p_channel);
-  set('crmCat',d.p_category); set('crmRegion',d.p_region); set('crmKind',d.p_kind);
+  set('crmCat',d.p_category); set('crmRegion',d.p_region); set('crmKind',d.p_kind); set('crmGrade',d.p_grade);
   set('crmFrom',d.p_from); set('crmTo',d.p_to); set('crmMinCnt',d.p_min_cnt); set('crmMinNet',d.p_min_net);
   set('crmDormant',d.p_dormant_days); set('crmNoSend',d.p_no_send_days); set('crmSort',d.p_sort||'recent');
   $('crmNext').classList.toggle('on', !!d.p_next_only);
@@ -7493,7 +7544,7 @@ async function utmQuick(){
 }
 /* [대상 조건] → 발송 대상 추출로. 캠페인 코드를 캠페인명에 넣어 감사로그가 같은 이름으로 남게 한다 */
 function utmExtract(code, seg){ $('crmReason').value=code; PENDING_SEG=seg||null; subSet('crm','pick'); show('crm'); }
-function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value=''); $('crmDueLo').value='-30'; $('crmDueHi').value='14'; fkSyncAll();
+function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmGrade','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value=''); $('crmDueLo').value='-30'; $('crmDueHi').value='14'; fkSyncAll();
   $('crmNext').classList.remove('on'); $('crmSort').value='recent'; prodRenderSel(); if($('crmReason').value.trim().length>=3 && (TG_BASIS!=='product'||prodTokens().length)) loadTargets(0); }
 /* ═══ 미입금 주문 (결제 안 한 고객) ═══
    고도몰에서 받아 올린 입금 대기 주문. 샵링커는 결제가 끝난 주문만 주므로 여기로 따로 받는다. */
@@ -8756,7 +8807,7 @@ async function loadCustomers(page){
   cuPage=Math.max(0,page||0);
   if(!CUST){ try{ CUST=await rpc('fn_customer_stats'); renderCustStats(); }catch(e){} }
   const p={ p_q:$('cuQ').value.trim()||null, p_source:$('cuSrc').value||null, p_freq:$('cuFreq').value||null,
-    p_consent:$('cuConsent').value||null, p_sort:$('cuSort').value, p_limit:pgSize('customers'), p_offset:cuPage*pgSize('customers'),
+    p_consent:$('cuConsent').value||null, p_grade:$('cuGrade').value||null, p_sort:$('cuSort').value, p_limit:pgSize('customers'), p_offset:cuPage*pgSize('customers'),
     p_unmask:$('cuUnmask').classList.contains('on') };
   let d; try{ d=await rpc('fn_customer_list',p); }
   catch(e){ $('tbCust').innerHTML=`<tr><td colspan="8" class="note">${esc(e.message)}</td></tr>`; return; }
@@ -8765,7 +8816,7 @@ async function loadCustomers(page){
   $('cuPg').innerHTML=pgBar('customers',cuPage,d.total||0,'loadCustomers');
   $('custHint').textContent=`${n(d.total)}명 · 줄을 누르면 문의·견적·구매 흐름`;
   $('tbCust').innerHTML=d.rows.map(r=>`<tr onclick="cjOpenRow(event,'${esc(r.key||'')}',0)" title="누르면 문의·견적·구매 흐름">
-    <td><button type="button" class="cjlnk">${esc(r.name||'-')}</button>${r.biz?' <span class="tag n">사업자</span>':''}</td>
+    <td><button type="button" class="cjlnk">${esc(r.name||'-')}</button>${r.biz?' <span class="tag n">사업자</span>':''}${r.grade?` <span class="tag n" title="DPS 멤버십 등급">${esc(r.grade)}</span>`:''}</td>
     <td class="mono">${esc(r.phone||'-')}</td>
     <td class="wrap" style="font-size:calc(12px * var(--font-scale))">${(r.chans||[]).map(c=>`<span class="tag n" style="margin-right:3px">${esc(c)}</span>`).join('')}${(r.sub?['구독']:[]).concat((r.kinds||[]).filter(k=>k&&k!=='구독')).map(k=>`<span class="tag ${k==='구독'?'y':'n'}" style="margin-right:3px" title="${k==='구독'&&(r.sub_kinds||[]).length?esc('DPS 구독: '+(r.sub_kinds||[]).join('·')):'구매 구분 (원장·DPS)'}">${esc(k)}</span>`).join('')}</td>
     <td class="num">${r.cnt?n(r.cnt)+'회':'<span style="color:var(--faint)">-</span>'}</td>
@@ -8805,7 +8856,7 @@ function renderCustStats(){
     (c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>`<option>${esc(x.k)}</option>`).join('')+
     '<option value="구독">구매 구분 · 구독 (원장·DPS)</option><option value="일시불">구매 구분 · 일시불</option>';   /* mvp_190: 출처 칸으로 구매 구분도 거른다 */
 }
-function resetCustomers(){ ['cuQ','cuSrc','cuFreq','cuConsent'].forEach(id=>$(id).value=''); $('cuSort').value='net_desc'; loadCustomers(0); }
+function resetCustomers(){ ['cuQ','cuSrc','cuFreq','cuConsent','cuGrade'].forEach(id=>$(id).value=''); $('cuSort').value='net_desc'; loadCustomers(0); }
 
 /** 비교 대상이 없는 단순 분포용 막대 */
 /** 전체(회색) 위에 발송 가능(색) 을 겹쳐 그리는 막대 */

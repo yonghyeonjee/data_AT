@@ -10,6 +10,12 @@
   var TEL='031-8042-3166';
   var EXTRA_GOODSNO=[]; /* 모델명 매칭이 안 되는 상품은 goodsNo를 넣으면 일반 문구로 노출 */
   var DC='https://db.samsungat.co.kr/sdp/spkg/';
+  /* mvp_271: 카드 문구 · 상담 버튼 · 전화 · 켜기/끄기 · 숨길/더할 상품은 데이터센터 매장 › 구독 관리에서 몰 담당자가 고친다 (fn_spkg_conf · 빈 칸은 아래 원래 문구) */
+  var C=window.SPKG_CONFIG||{}, MALL=C.mall||'sh', CF={};
+  var API='https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_spkg_conf', KEY='sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function rich(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/!!(.+?)!!/g,'<em>$1</em>')} /* **굵게(파랑)** · !!빨강!! */
+  function tpl(s){return s.replace(/\{min\}/g,MINTXT||'').replace(/\{max\}/g,MAX||'')}
   var q=location.search, preview=/sp_preview=1/.test(q), force=(q.match(/sp_ver=([\w-]+)/)||[])[1];
   var R,D,MAP={},L,hl,MINTXT,MAX,BONUS,PERIOD;
   function fmt(v){return (Math.round(v*10)/10)+'만'}
@@ -26,8 +32,10 @@
     D=R;['p','s','n'].forEach(function(t){for(var c in (D[t]||{})){D[t][c].split(' ').forEach(function(m){MAP[m]=[t,c,m]})}});
     L=R.ladder.map(function(x){return [x[0],fmt(x[1])]});hl=hlOf(R.ladder);
     MINTXT=L[0][0]+'품목 '+L[0][1]+'P';MAX=L[L.length-1][1];BONUS=R.bonus||'3만';PERIOD=per(R.from,R.to);
-    var st=document.createElement('style');st.textContent=".sp26{--sp-navy:#1f3f8f;--sp-blue:#2f5aa8;--sp-red:#c8432b;margin:14px 0 6px;font-family:inherit;letter-spacing:-.02em;color:#1d2433;clear:both}\n.sp26 *{box-sizing:border-box}\n.sp26-card{position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(135deg,#eef3fc 0%,#f7f9fe 60%,#fff 100%);border:1px solid #d6e0f3;padding:14px 16px 14px 16px}\n.sp26-card:before{content:\"\";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--sp-blue),var(--sp-navy))}\n.sp26-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}\n.sp26-tag{display:inline-flex;align-items:center;gap:5px;background:var(--sp-navy);color:#fff;font-size:11.5px;font-weight:700;padding:4px 9px 4px 8px;border-radius:999px;line-height:1}\n.sp26-tag i{width:14px;height:14px;border-radius:50%;background:#ffc93c;color:#8a5a00;font-style:normal;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}\n.sp26-period{font-size:11.5px;color:#6b7590}\n.sp26-msg{font-size:14.5px;font-weight:700;line-height:1.45;color:#1d2433;margin:0}\n.sp26-msg b{color:var(--sp-blue)}\n.sp26-sub{font-size:12.5px;color:#4a5470;margin:3px 0 0;line-height:1.5}\n.sp26-sub em{font-style:normal;color:var(--sp-red);font-weight:700}\n.sp26-more{margin-top:9px;background:none;border:0;padding:0;font:inherit;font-size:12px;color:var(--sp-blue);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:3px}\n.sp26-more:after{content:\"\";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .2s}\n.sp26.open .sp26-more:after{transform:rotate(-135deg) translateY(-1px)}\n.sp26-ladder{display:none;margin-top:10px;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:5px}\n.sp26.open .sp26-ladder{display:grid}\n.sp26-step{background:#fff;border:1px solid #dfe6f4;border-radius:8px;padding:6px 4px;text-align:center;line-height:1.25}\n.sp26-step span{display:block;font-size:10.5px;color:#7a84a0}\n.sp26-step strong{font-size:12.5px;color:var(--sp-navy)}\n.sp26-step.hl{border-color:var(--sp-red);background:#fff6f4}\n.sp26-step.hl strong{color:var(--sp-red)}\n.sp26-note{display:none;margin-top:8px;font-size:11px;color:#8a92a8;line-height:1.55}\n.sp26.open .sp26-note{display:block}\n.sp26-tip{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:#fff;border:1px dashed #b9c8e8;font-size:12.5px;color:#33405e;line-height:1.5}\n.sp26-tip b{color:#1f3f8f}\n.sp26-cta{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}\n.sp26-btn{flex:1 1 140px;display:inline-flex;align-items:center;justify-content:center;gap:5px;height:38px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none!important;letter-spacing:-.02em}\n.sp26-ask{background:#1f3f8f;color:#fff!important}\n.sp26-ask:hover{background:#163276}\n.sp26-tel{background:#fff;color:#1f3f8f!important;border:1px solid #1f3f8f}\n.sp26-tel:hover{background:#f1f5fd}\n.sp26-bonus{display:flex;align-items:center;gap:12px;margin:10px 0 0;padding:12px 14px;border-radius:10px;background:linear-gradient(120deg,#fff3ef,#ffe6de);border:1px solid #f3c2b4}\n.sp26-bamt{flex:0 0 auto;text-align:center;line-height:1}\n.sp26-bamt small{display:block;font-size:11px;font-weight:700;color:#c8432b;margin-bottom:4px;letter-spacing:0}\n.sp26-bamt strong{font-size:30px;font-weight:900;color:#c8432b;letter-spacing:-.04em}\n.sp26-bamt strong i{font-style:normal;font-size:18px;margin-left:1px}\n.sp26-btxt{flex:1 1 auto;min-width:0;border-left:1px solid #f0c3b6;padding-left:12px;font-size:13px;line-height:1.45;color:#3a2a26}\n.sp26-btxt b{display:block;font-size:14px;color:#1d2433}\n.sp26-btxt span{display:block;margin-top:3px;font-size:11.5px;color:#7a5a52}\n@media(max-width:480px){.sp26-msg{font-size:13.5px}.sp26-card{padding:12px 13px}}";document.head.appendChild(st);
+    addCss();
     return true}
+  var CSS=".sp26{--sp-navy:#1f3f8f;--sp-blue:#2f5aa8;--sp-red:#c8432b;margin:14px 0 6px;font-family:inherit;letter-spacing:-.02em;color:#1d2433;clear:both}\n.sp26 *{box-sizing:border-box}\n.sp26-card{position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(135deg,#eef3fc 0%,#f7f9fe 60%,#fff 100%);border:1px solid #d6e0f3;padding:14px 16px 14px 16px}\n.sp26-card:before{content:\"\";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--sp-blue),var(--sp-navy))}\n.sp26-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}\n.sp26-tag{display:inline-flex;align-items:center;gap:5px;background:var(--sp-navy);color:#fff;font-size:11.5px;font-weight:700;padding:4px 9px 4px 8px;border-radius:999px;line-height:1}\n.sp26-tag i{width:14px;height:14px;border-radius:50%;background:#ffc93c;color:#8a5a00;font-style:normal;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}\n.sp26-period{font-size:11.5px;color:#6b7590}\n.sp26-msg{font-size:14.5px;font-weight:700;line-height:1.45;color:#1d2433;margin:0}\n.sp26-msg b{color:var(--sp-blue)}\n.sp26-sub{font-size:12.5px;color:#4a5470;margin:3px 0 0;line-height:1.5}\n.sp26-sub em{font-style:normal;color:var(--sp-red);font-weight:700}\n.sp26-more{margin-top:9px;background:none;border:0;padding:0;font:inherit;font-size:12px;color:var(--sp-blue);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:3px}\n.sp26-more:after{content:\"\";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .2s}\n.sp26.open .sp26-more:after{transform:rotate(-135deg) translateY(-1px)}\n.sp26-ladder{display:none;margin-top:10px;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:5px}\n.sp26.open .sp26-ladder{display:grid}\n.sp26-step{background:#fff;border:1px solid #dfe6f4;border-radius:8px;padding:6px 4px;text-align:center;line-height:1.25}\n.sp26-step span{display:block;font-size:10.5px;color:#7a84a0}\n.sp26-step strong{font-size:12.5px;color:var(--sp-navy)}\n.sp26-step.hl{border-color:var(--sp-red);background:#fff6f4}\n.sp26-step.hl strong{color:var(--sp-red)}\n.sp26-note{display:none;margin-top:8px;font-size:11px;color:#8a92a8;line-height:1.55}\n.sp26.open .sp26-note{display:block}\n.sp26-tip{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:#fff;border:1px dashed #b9c8e8;font-size:12.5px;color:#33405e;line-height:1.5}\n.sp26-tip b{color:#1f3f8f}\n.sp26-cta{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}\n.sp26-btn{flex:1 1 140px;display:inline-flex;align-items:center;justify-content:center;gap:5px;height:38px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none!important;letter-spacing:-.02em}\n.sp26-ask{background:#1f3f8f;color:#fff!important}\n.sp26-ask:hover{background:#163276}\n.sp26-tel{background:#fff;color:#1f3f8f!important;border:1px solid #1f3f8f}\n.sp26-tel:hover{background:#f1f5fd}\n.sp26-bonus{display:flex;align-items:center;gap:12px;margin:10px 0 0;padding:12px 14px;border-radius:10px;background:linear-gradient(120deg,#fff3ef,#ffe6de);border:1px solid #f3c2b4}\n.sp26-bamt{flex:0 0 auto;text-align:center;line-height:1}\n.sp26-bamt small{display:block;font-size:11px;font-weight:700;color:#c8432b;margin-bottom:4px;letter-spacing:0}\n.sp26-bamt strong{font-size:30px;font-weight:900;color:#c8432b;letter-spacing:-.04em}\n.sp26-bamt strong i{font-style:normal;font-size:18px;margin-left:1px}\n.sp26-btxt{flex:1 1 auto;min-width:0;border-left:1px solid #f0c3b6;padding-left:12px;font-size:13px;line-height:1.45;color:#3a2a26}\n.sp26-btxt b{display:block;font-size:14px;color:#1d2433}\n.sp26-btxt span{display:block;margin-top:3px;font-size:11.5px;color:#7a5a52}\n@media(max-width:480px){.sp26-msg{font-size:13.5px}.sp26-card{padding:12px 13px}}";
+  function addCss(){if(document.getElementById('sp26Css'))return;var st=document.createElement('style');st.id='sp26Css';st.textContent=CSS;document.head.appendChild(st)}
   function first(sels,root){for(var i=0;i<sels.length;i++){var e=(root||document).querySelector(sels[i]);if(e)return e}return null}
   function run(){
     if(document.querySelector('.sp26'))return;
@@ -37,7 +45,10 @@
     var toks=txt.match(/[A-Z0-9][A-Z0-9\-]{5,}/g)||[], type=null, hit=null;
     for(var i=0;i<toks.length;i++){var t=toks[i].replace(/-+$/,''),h=MAP[t]||MAP[t+'/KR'];if(!h)continue;if(h[0]==='n'){hit=h;break}if(!hit)hit=h}
     if(hit)type=hit[0];
-    var gno=(q.match(/goodsNo=(\d+)/)||[])[1];if(!type&&gno&&EXTRA_GOODSNO.indexOf(gno)>-1)type='n';
+    var gno=(q.match(/goodsNo=(\d+)/)||[])[1];
+    if(CF.on===false&&!preview)return;
+    if(gno&&(CF.hide||[]).indexOf(gno)>-1&&!preview)return;
+    if(!type&&gno&&EXTRA_GOODSNO.concat(CF.extra||[]).indexOf(gno)>-1)type='n';
     if(preview&&!type)type=(q.match(/sp_type=([nsp])/)||[])[1]||'n';
     if(!type)return;
     if(/정수기?\s*필터|정수필터/.test(((document.querySelector('meta[property="og:title"]')||{}).content||document.title||'')))return; /* 냉장고 정수 필터 상품은 호환 모델명이 적혀 있어 제외 */
@@ -50,21 +61,37 @@
       else{msg='다른 스마트 패키지 대상 제품과 <b>함께 구매</b>하면 <b>'+BONUS+'P를 추가 적립</b>해 드립니다.';sub='';bonus='<div class="sp26-bonus"><div class="sp26-bamt"><small>추가 적립</small><strong>+'+BONUS+'<i>P</i></strong></div><div class="sp26-btxt"><b>다른 대상 제품과<br>함께 구매할 때만</b><span>삼성전자 멤버십 포인트 '+BONUS+'P · 이 제품만 단독 구매 시 미적용</span></div></div>';tip='<b>구독으로 가입하면</b> 스마트 패키지 <b>품목 수에 포함</b>돼 품목 수별 포인트(최대 '+MAX+'P)를 받을 수 있어요.';}
     }else if(type==='s'&&!isSub){
       msg='<b>삼성 AI 구독</b>으로 가입하면 스마트 패키지 <b>품목으로 인정</b>됩니다.';sub='일반 구매는 품목 수에 들어가지 않아요 · 구독 포함 대상 제품 <b>2개 이상</b> 함께 구매 시 '+MINTXT+'부터, <em>최대 '+MAX+'P</em>';
-    }else{msg='스마트 패키지 대상 제품을 <b>2개 이상 함께 구매</b>하면 <b>멤버십 포인트</b>를 드립니다.';sub='이 제품 1개만 구매하면 적용되지 않아요 · '+MINTXT+'부터, 함께 사는 품목이 많을수록 <em>최대 '+MAX+'P</em>';}
+    }else{msg='스마트 패키지 대상 제품을 <b>2개 이상 함께 구매</b>하면 <b>멤버십 포인트</b>를 드립니다.';sub='이 제품 1개만 구매하면 적용되지 않아요 · '+MINTXT+'부터, 함께 사는 품목이 많을수록 <em>최대 '+MAX+'P</em>';
+      if(CF.msg)msg=tpl(rich(CF.msg));if(CF.sub)sub=tpl(rich(CF.sub));}
     var gtitle=title.replace(/\s*[-|]\s*삼성스토어.*$/,'').trim();
     var memo='[스마트 패키지 문의] '+gtitle+(hit&&gtitle.toUpperCase().indexOf(hit[2].split('/')[0])<0?' / 모델 '+hit[2]:'')+(gno?' / 상품번호 '+gno:'')+' / '+(isSub?'구독 상품':'일반 구매 상품')+'\n다른 제품과 함께 구매 시 스마트 패키지 혜택 상담 희망';
-    var ask=ASK_URL+'&src=smartpackage_detail'+(hit?'&product='+encodeURIComponent(hit[1]):'')+(isSub?'':'&ask=both')+'&memo='+encodeURIComponent(memo);
+    var base=CF.ask||ASK_URL, ask=/SamSungSubscription/.test(base)?base+(base.indexOf('?')<0?'?':'&')+'src=smartpackage_detail'+(hit?'&product='+encodeURIComponent(hit[1]):'')+(isSub?'':'&ask=both')+'&memo='+encodeURIComponent(memo):base;
     var lad=(type==='p'&&!isSub)?'':'<div class="sp26-ladder">'+L.map(function(x){return '<div class="sp26-step'+(hl[x[0]]?' hl':'')+'"><span>'+x[0]+'품목</span><strong>'+x[1]+'</strong></div>'}).join('')+'</div>';
     var box=document.createElement('div');box.className='sp26';
-    box.innerHTML='<div class="sp26-card"><div class="sp26-top"><span class="sp26-tag"><i>P</i>삼성전자 스마트 패키지</span></div>'+
-      '<p class="sp26-msg">'+msg+'</p>'+bonus+(sub?'<p class="sp26-sub">'+sub+'</p>':'')+(tip?'<p class="sp26-tip">'+tip+'</p>':'')+
-      '<div class="sp26-cta"><a class="sp26-btn sp26-ask" href="'+ask+'">스마트 패키지 상담 문의</a><a class="sp26-btn sp26-tel" href="tel:'+TEL.replace(/-/g,'')+'"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>'+TEL+'</a></div>'+
-      (lad?'<button type="button" class="sp26-more">품목 수별 포인트 보기</button>':'')+lad+
-      '<div class="sp26-note">· 동일 판매전표 기준 합산, 삼성전자 멤버십 포인트로 지급(사전 가입 필요)<br>· 배송완료 D+7일 내 자동 적립 · 세부 대상모델은 매장에서 안내드립니다</div></div>';
+    box.innerHTML=card({msg:msg,bonus:bonus,sub:sub,tip:tip,ask:ask,lad:lad});
     price.parentNode.insertBefore(box,price.nextSibling);
     var b=box.querySelector('.sp26-more');if(b)b.onclick=function(){box.classList.toggle('open');b.textContent=box.classList.contains('open')?'접기':'품목 수별 포인트 보기'};
   }
+  /* 카드 HTML — 상품 페이지와 매장 미리보기(window.Spkg.card)가 같이 쓴다 */
+  function card(o){var tel=CF.tel||TEL,ext=/^https?:/i.test(o.ask)&&o.ask.indexOf(location.host)<0;
+    return '<div class="sp26-card"><div class="sp26-top"><span class="sp26-tag"><i>P</i>'+(CF.tag?esc(CF.tag):'삼성전자 스마트 패키지')+'</span></div>'+
+      '<p class="sp26-msg">'+o.msg+'</p>'+(o.bonus||'')+(o.sub?'<p class="sp26-sub">'+o.sub+'</p>':'')+(o.tip?'<p class="sp26-tip">'+o.tip+'</p>':'')+
+      '<div class="sp26-cta"><a class="sp26-btn sp26-ask" href="'+esc(o.ask)+'"'+(ext?' target="_blank" rel="noopener noreferrer"':'')+'>'+esc(CF.btn||'스마트 패키지 상담 문의')+'</a><a class="sp26-btn sp26-tel" href="tel:'+esc(tel.replace(/[^0-9+]/g,''))+'"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>'+esc(tel)+'</a></div>'+
+      (o.lad?'<button type="button" class="sp26-more">품목 수별 포인트 보기</button>':'')+o.lad+
+      '<div class="sp26-note">· 동일 판매전표 기준 합산, 삼성전자 멤버십 포인트로 지급(사전 가입 필요)<br>· 배송완료 D+7일 내 자동 적립 · 세부 대상모델은 매장에서 안내드립니다</div></div>';
+  }
   function boot(){if(!init())return;if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();window.addEventListener('load',run);var n=0,iv=setInterval(function(){run();if(++n>=20)clearInterval(iv)},500)} /* 가격 영역을 늦게 그리거나 다시 그리는 상품에서도 카드가 남도록 10초간 다시 확인 */
-  if(window.SPKG_DATA)boot();
-  else{var sc=document.createElement('script');sc.src=DC+'data.js?t='+Math.floor(Date.now()/6e5);sc.async=true;sc.onload=boot;(document.head||document.documentElement).appendChild(sc)}
+  /* 매장 미리보기용: 데이터 없이 카드만 그린다 (o.conf = 매장에서 고치는 중인 설정 · o.min/o.max = 예시 포인트) */
+  window.Spkg={addCss:addCss,card:function(o){CF=o.conf||{};MINTXT=o.min||'2품목 10만P';MAX=o.max||'600만';
+    var msg=CF.msg?tpl(rich(CF.msg)):'스마트 패키지 대상 제품을 <b>2개 이상 함께 구매</b>하면 <b>멤버십 포인트</b>를 드립니다.',
+        sub=CF.sub?tpl(rich(CF.sub)):'이 제품 1개만 구매하면 적용되지 않아요 · '+MINTXT+'부터, 함께 사는 품목이 많을수록 <em>최대 '+MAX+'P</em>';
+    return '<div class="sp26">'+card({msg:msg,sub:sub,ask:CF.ask||ASK_URL,lad:''})+'</div>'}};
+  if(C.auto===false)return;
+  function data(){if(window.SPKG_DATA)boot();
+    else{var sc=document.createElement('script');sc.src=DC+'data.js?t='+Math.floor(Date.now()/6e5);sc.async=true;sc.onload=boot;(document.head||document.documentElement).appendChild(sc)}}
+  /* 설정을 먼저 받고(2.5초 안에 못 받으면 원래 문구로) 카드 데이터를 부른다 */
+  var started=false;function go(){if(started)return;started=true;data()}
+  setTimeout(go,2500);
+  try{fetch(API,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_mall:MALL})})
+    .then(function(r){return r.ok?r.json():{}}).then(function(j){if(!started)CF=j||{};go()},go)}catch(e){go()}
 })();

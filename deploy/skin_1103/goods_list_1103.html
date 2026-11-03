@@ -1,0 +1,255 @@
+{*** 상품 리스트 | goods/goods_list.php ***}
+{ # header }
+<style>
+	#contents { max-width:1770px; min-width:1210px; }
+.list-top-bn.gold-bn {
+  position:relative; overflow:hidden; isolation:isolate; padding:5px; border-radius:18px; line-height:0;
+  background:#c9a227; box-shadow:0 6px 22px rgba(160,120,10,.28);
+}
+.list-top-bn.gold-bn::before {
+  content:""; position:absolute; z-index:-1; left:50%; top:50%; width:125%; aspect-ratio:1;
+  background:conic-gradient(#9a7410 0deg,#ffd76a 40deg,#fffbe0 60deg,#ffd76a 80deg,#9a7410 150deg,#c9a227 180deg,#ffd76a 220deg,#fffbe0 240deg,#ffd76a 260deg,#9a7410 330deg,#9a7410 360deg);
+  transform:translate(-50%,-50%); animation:goldBnSpin 3.5s linear infinite;
+}
+.list-top-bn.gold-bn a {
+  display:block;
+}
+.list-top-bn.gold-bn img {
+  display:block; width:100%; height:auto; aspect-ratio:3/1; object-fit:contain; background:#fff; border-radius:13px;
+}
+.addition_zone .gold-highlight-banner {
+  display:none !important;
+}
+.list-top-bn.gold-bn .sub-bn {
+  position:relative; display:block; line-height:1.3;
+}
+.list-top-bn.gold-bn .sub-bn img {
+  aspect-ratio:auto; object-fit:cover;
+}
+.list-top-bn.gold-bn .sub-bn .sub-bn-m {
+  display:none;
+}
+.list-top-bn.gold-bn .sub-bn .sub-bn-txt {
+  position:absolute; left:6%; top:50%; transform:translateY(-50%); color:#111; text-align:left; word-break:keep-all;
+}
+.list-top-bn.gold-bn .sub-bn .sub-bn-txt span {
+  display:block; font-size:clamp(12px,1.1vw,17px); font-weight:600; opacity:.7; margin:0 0 .5em;
+}
+.list-top-bn.gold-bn .sub-bn .sub-bn-txt h3 {
+  margin:0 0 .4em; font-size:clamp(22px,2.6vw,46px); line-height:1.25; font-weight:800; letter-spacing:-.02em; color:#111;
+}
+.list-top-bn.gold-bn .sub-bn .sub-bn-txt p {
+  margin:0 0 .9em; font-size:clamp(13px,1.3vw,20px); color:#111;
+}
+.list-top-bn.gold-bn .sub-bn .sub-bn-txt strong {
+  display:inline-block; padding:.6em 1.4em; border-radius:2em; background:#111; color:#fff; font-size:clamp(12px,1vw,15px); font-weight:700;
+}
+@media (max-width:640px) {
+  .list-top-bn.gold-bn .sub-bn .sub-bn-pc {
+    display:none;
+  }
+  .list-top-bn.gold-bn .sub-bn .sub-bn-m {
+    display:block;
+  }
+  .list-top-bn.gold-bn .sub-bn .sub-bn-txt {
+    left:7%; right:7%; top:auto; bottom:4%; transform:none; text-align:center; line-height:1.2;
+  }
+  .list-top-bn.gold-bn .sub-bn .sub-bn-txt span {
+    display:none;
+  }
+  .list-top-bn.gold-bn .sub-bn .sub-bn-txt h3 {
+    font-size:21px; margin:0 0 .3em;
+  }
+  .list-top-bn.gold-bn .sub-bn .sub-bn-txt p {
+    font-size:13px; margin:0 0 .6em;
+  }
+  .list-top-bn.gold-bn .sub-bn .sub-bn-txt strong {
+    font-size:12px; padding:.5em 1.2em;
+  }
+}
+@keyframes goldBnSpin {
+  to {
+    transform:translate(-50%,-50%) rotate(360deg);
+  }
+}
+</style>
+<div class="content">
+    <div class="location_wrap">
+        <div class="location_cont">
+            <em><a href="#" class="local_home">HOME</a></em>
+            <!--{ ? goodsCategoryList }-->
+            <!--{ @ goodsCategoryList }-->
+            <span>&gt; </span>
+            <div class="location_select">
+                <div class="location_tit"><a href="#"><span>{=.cateNm}</span></a></div>
+                <ul style="display:none;">
+                    <!--{ @ .data }-->
+                    <li><a href="?{cateType}Cd={..key_}"><span>{=..value_}</span></a></li>
+                    <!--{ / }-->
+                </ul>
+            </div>
+            <!--{ / }-->
+            <!--{ / }-->
+        </div>
+    </div>
+    <!-- //location_wrap -->
+
+    <div class="goods_list_item">
+		<div class="goods_list_top">
+			<div class="goods_list_item_tit">
+				<h2>{=goodsCategoryList[cateCd]['cateNm']}</h2>
+			</div>
+			<!--{ ? naviDisplay.naviUse =='y' }-->
+			<!--{ ? goodsDataSubCategory }-->
+			<div class="list_item_category">
+				<ul>
+					<!--{ @ goodsDataSubCategory }-->
+					<li class="<!--{ ? cateCd == .cateCd }-->on<!--{ / }-->">
+						<a href="?{cateType}Cd={.cateCd}"><span>{.cateNm} <!--{ ? naviDisplay.naviCount =='y' }--><em>({.goodsCnt+0})</em><!--{ / }--></span></a>
+					</li>
+					<!--{ / }-->
+				</ul>
+			</div>
+			<!--{ / }-->
+			<!--{ ? themeInfo.cateHtml1 }-->
+			<!-- 상단 꾸미기 영역 -->
+			<div class="addition_zone">
+				{=stripslashes(str_replace('&nbsp;', ' ', themeInfo.cateHtml1))}
+			</div>
+			<!--{ / }-->
+			<!--{ / }-->
+		</div>
+
+		<div class="list-top-bn gold-bn">
+			<!--{ ? substr(cateCd,0,3)=='003' }-->
+			<!--{ @dataBanner('918436661') }-->{.tag}<!--{ / }-->
+			<!--{ : cateCd=='005' || substr(cateCd,0,6)=='005001' || substr(cateCd,0,6)=='005002' || substr(cateCd,0,6)=='005003' }-->
+			<!--{ @dataBanner('1599707918') }-->{.tag}<!--{ / }-->
+			<!--{ : substr(cateCd,0,3)=='012' }-->
+			<!-- 구독 전용몰: 메인 1번 슬라이드(AI 콤보·85인치 TV · 2026-11-03)와 같은 배너 · PC/모바일 그림 (deploy/banner/pc_visual_aicombo_1103.png · m_visual_washer_tv_1103b.png) -->
+			<a href="/board/view.php?&bdId=blog&sno=167" class="sub-bn">
+				<img class="sub-bn-pc" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_511517418/e8c0372e596d3c62958cf7301b7f9e2d_43657.png" alt="삼성 AI 콤보 270만원 대 · 85인치 TV 250만원 대 - 방문상담만 해도 와인 증정 (삼성스토어 시흥 11월 구독 행사)" />
+				<img class="sub-bn-m" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_1053291314/9bf53cce2896f5ec0ede30a7c6841526_47297.png" alt="삼성 AI 콤보 270만원 대 · 85인치 TV 250만원 대 - 방문상담만 해도 와인 증정 (삼성스토어 시흥 11월 구독 행사)" />
+				<div class="sub-bn-txt"><span>2026.11.01 ~ 2026.11.30</span><h3>AI콤보 270만원 대 <br/>85인치 TV 250만원 대</h3><p>방문상담만해도 와인 증정!!</p><strong>바로가기</strong></div>
+			</a>
+			<!--{ : }-->
+			<!--{ @dataBanner('2327352746') }-->{.tag}<!--{ / }-->
+			<!--{ / }-->
+		</div>
+
+        <!-- 설문조사 배너 -->{=pollViewBanner()}<!-- 설문조사 배너 -->
+
+        <!--{ ? themeInfo.recomDisplayFl == 'y'  && widgetGoodsList}-->
+        <!--{ ? themeInfo.cateHtml2 }-->
+        <!-- 추천상품 상단 꾸미기 영역 -->
+        <div class="addition_zone">
+            {=stripslashes(str_replace('&nbsp;', ' ', themeInfo.cateHtml2))}
+        </div>
+        <!-- //추천상품 상단 꾸미기 영역 -->
+        <!--{ / }-->
+
+        <!-- 추천 상품 나오는영역 -->
+        <div class="best_item_view">
+            <div class="best_item_view_tit">
+                <h3>{=__('추천상품')}</h3>
+            </div>
+            <div class="goods_list">
+                <div class="goods_list_cont">
+                    <p>{=includeWidget('goods/_goods_display.html')}</p>
+                </div>
+            </div>
+        </div>
+        <!-- //추천 상품 나오는영역 -->
+        <!--{ / }-->
+
+        <!--{ ? themeInfo.cateHtml3 }-->
+        <div class="addition_zone">
+            {=stripslashes(str_replace('&nbsp;', ' ', themeInfo.cateHtml3))}
+        </div>
+        <!--{ / }-->
+        <div class="goods_pick_list">
+            <span class="pick_list_num">{=__('전체상품')} <strong>{=number_format(gd_isset(page->recode['total']))}</strong>{=__('개')}</span>
+            <form name="frmList" action="">
+                <input type="hidden" name="{cateType}Cd" value="{cateCd}"/>
+                <div class="pick_list_box">
+					<div class="sort-select">
+						<em>추천순</em>
+						<ul class="pick_list">
+							<li>
+								<input type="radio" id="sort1" class="radio" name="sort" value=""/>
+								<label for="sort1">{=__('추천순')}</label>
+							</li>
+							<li>
+								<input type="radio" id="sort2" class="radio" name="sort" value="sellcnt"/>
+								<label for="sort2">{=__('판매인기순')}</label>
+							</li>
+							<li>
+								<input type="radio" id="sort3" class="radio" name="sort" value="price_asc"/>
+								<label for="sort3">{=__('낮은가격순')}</label>
+							</li>
+							<li>
+								<input type="radio" id="sort4" class="radio" name="sort" value="price_dsc"/>
+								<label for="sort4">{=__('높은가격순')}</label>
+							</li>
+							<li>
+								<input type="radio" id="sort5" class="radio" name="sort" value="review"/>
+								<label for="sort5">{=__('상품평순')}</label>
+							</li>
+							<li>
+								<input type="radio" id="sort6" class="radio" name="sort" value="date"/>
+								<label for="sort6">{=__('등록일순')}</label>
+							</li>
+						</ul>
+					</div>
+					<div class="choice_num_view dn">
+						<select class="chosen-select" name="pageNum">
+							!--{ @ goodsData.multiple }-->
+							<option value="{=.value_}"  <!--{ ? pageNum == .value_ }-->selected='selected'<!--{ / }-->>{=.value_}{=__('개씩보기')}</option>
+							<!--{ / }-->
+						</select>
+					</div>
+					<!-- //choice_num_view -->
+				</div>
+                <!-- //pick_list_box -->
+            </form>
+        </div>
+        <!-- //goods_pick_list -->
+
+        <div class="goods_list">
+            <div class="goods_list_cont">
+                <!-- 상품 리스트 -->
+                { # goodsTemplate }
+                <!-- //상품 리스트 -->
+            </div>
+        </div>
+
+        <div class="pagination">
+            {page->getPage()}
+        </div>
+
+    </div>
+    <!-- //goods_list_item -->
+	<script type="text/javascript">
+		$(document).ready(function () {
+
+			$('form[name=frmList] select[name=pageNum]').change(function() {
+				$('form[name=frmList]').get(0).submit();
+			});
+
+			$('form[name=frmList] input[name=sort]').click(function() {
+				$('form[name=frmList]').get(0).submit();
+			});
+
+			$(':radio[name="sort"][value="{sort}"]').prop("checked","checked")
+			$(':radio[name="sort"][value="{sort}"]').next().addClass('on');
+
+		});
+	</script>
+	<!--{ ? substr(cateCd,0,3)=='012' }-->
+	<!-- 구독 전용몰: 목록을 월 구독료 가격대별로 묶어 보여준다 (db.samsungat.co.kr/sdp/sub/sub_list.js · 2026-11-03) -->
+	<script src="https://db.samsungat.co.kr/sdp/sub/sub_list.js?v=1103b" defer></script>
+	<!--{ / }-->
+</div>
+<!-- //content -->
+
+{ # footer }

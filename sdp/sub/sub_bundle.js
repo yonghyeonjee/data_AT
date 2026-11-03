@@ -5,7 +5,7 @@
    주소
      bundle.html?preset=newlywed          생활 유형 프리셋 (sub_shop.js 의 SUB_PERSONAS 와 같은 키)
      bundle.html?items=RM80F91H1X,WD90H25AHY   모델을 바로 담기 (모델~약정~케어~선납 으로 조건까지)
-   ※ 다품목 추가 혜택(정책 bundle.rate · bundle.min)은 데이터센터 구독 혜택 정책에 있을 때만 계산에 넣는다. 없으면 "상담 시 안내" 로만.
+   ※ 다품목 추가 혜택은 데이터센터 구독 혜택 정책(bundle)에 있을 때만 계산에 넣는다 — 2026-11 부터 본사 "스마트 패키지" 품목 수별 정액 포인트 (mvp_264 · bundlePolicy/pkgOf). 없으면 "상담 시 안내" 로만.
 ===== */
 window.SUB_BUNDLE_READY = true;
 (function () {
@@ -201,8 +201,39 @@ window.SUB_BUNDLE_READY = true;
     res.y = r.y; res.plan = r.plan; res.prepayMax = r.prepayMax; res.info = info;
     return res;
   }
-  var POLB = null;   // 다품목 정책 { rate, min } — 정책에 있을 때만
-  function bundlePolicy() { var P = C.policy(); return P && P.bundle && P.bundle.rate > 0 ? P.bundle : null; }
+  /* 다품목 혜택 정책 (데이터센터 sub.policy bundle · mvp_264)
+     kind 'package' = 스마트 패키지: 대상 모델을 2품목 이상 동시 구매하면 품목 수별 정액 포인트 {tiers: {"2": 100000, …}, min, cats: [품목…], models: {모델: 품목 번호}, from, to, name, text}
+       models 는 구독으로 사도 품목 수에 들어가는 모델만. 본사 표기(KQ85QNH80AFXKR)가 DPS 모델번호보다 길 수 있어 앞부분이 같으면 같은 모델로 본다. TV 와 2nd TV 는 다른 품목.
+     kind 'rate' = 월 납부액 합계의 비율 할인 {rate, min} (예전 방식) */
+  function bundlePolicy() {
+    var P = C.policy(), b = P && P.bundle; if (!b || typeof b !== 'object') return null;
+    if ((b.from || b.to) && !C.inPeriod(b)) return null;
+    if ((b.kind || (b.tiers ? 'package' : 'rate')) === 'package') return b.tiers && b.models ? b : null;
+    return b.rate > 0 ? b : null;
+  }
+  // 본사 표기(s) ↔ DPS 모델번호(d): 같다 / 한쪽이 다른 쪽의 앞부분 / 앞부분이 9자 이상 같고 짧은 쪽 길이 −1 이상(설치형·색상 꼬리표 AF80F19D25WN↔WT) / 'AP'·'APG'(패널 선택형)를 뗀 앞부분(DW80F75K1UAP↔DW80F75K1USWS) — DB sub.f_pkg_match 와 같은 규칙
+  function pkgMatch(s, d) {
+    if (s === d || d.indexOf(s) === 0 || (d.length >= 8 && s.indexOf(d) === 0)) return true;
+    var n = Math.min(s.length, d.length), i = 0; while (i < n && s.charAt(i) === d.charAt(i)) i++;
+    if (i >= 9 && i >= n - 1) return true;
+    var b = s.replace(/(AP|APG)$/, '');
+    return b !== s && b.length >= 8 && d.indexOf(b) === 0;
+  }
+  function pkgIdx(bp, model) {
+    var m = norm(model), v = bp.models[m], k;
+    if (v !== undefined) return v;
+    for (k in bp.models) if (pkgMatch(k, m)) return bp.models[k];
+    return undefined;
+  }
+  // 담긴 모델 중 스마트 패키지 대상의 품목 수 → 정액 (품목 수가 표에 없으면 그 아래 가장 큰 구간)
+  function pkgOf(bp, items) {
+    var seen = {}, hit = [], miss = [];
+    items.forEach(function (it) { var i = pkgIdx(bp, it.m); if (i === undefined) miss.push(it.m); else { seen[i] = 1; hit.push(it.m); } });
+    var n = Object.keys(seen).length, amt = 0, best = 0, t, next = 0;
+    for (t in bp.tiers) { var tn = +t; if (tn <= n && tn > best) { best = tn; amt = +bp.tiers[t] || 0; } if (tn === n + 1) next = +bp.tiers[t] || 0; }
+    if (n < (bp.min || 2)) amt = 0;
+    return { n: n, amt: amt, hit: hit, miss: miss, next: next, cats: Object.keys(seen).map(function (i) { return (bp.cats || [])[i] || ''; }).filter(Boolean) };
+  }
 
   /* ---------- 내 묶음 ---------- */
   function renderCardSel() {
@@ -257,9 +288,12 @@ window.SUB_BUNDLE_READY = true;
       var lp = lumpOf(it.m); if (lp) sum.lump += lp; else sum.lumpAll = false;
     });
     els.items.innerHTML = html;
-    var bp = bundlePolicy(), bundleOff = 0;
-    if (bp && sum.n >= (bp.min || 2)) bundleOff = Math.round(sum.pay * bp.rate);
+    var bp = bundlePolicy(), bundleOff = 0, pk = null;
+    if (bp && bp.tiers) pk = pkgOf(bp, items.filter(function (it) { return results[it.m]; }));          // 스마트 패키지: 품목 수별 정액 포인트 (총 결제에서 뺀다 · 월 납부액은 그대로)
+    else if (bp && sum.n >= (bp.min || 2)) bundleOff = Math.round(sum.pay * bp.rate);                   // 비율 방식 (월 납부액에서)
+    var pkgAmt = pk ? pk.amt : 0, pkgName = bp && bp.name ? bp.name : '스마트 패키지';
     var payFinal = Math.max(0, sum.pay - bundleOff);
+    var netAll = sum.expected - sum.points - pkgAmt;
     var cardName = state.cardOn && state.card ? state.card : '';
     els.sum.innerHTML =
       '<table class="sb-table"><tbody>' +
@@ -271,8 +305,12 @@ window.SUB_BUNDLE_READY = true;
       '</tbody><tfoot><tr><th>' + sum.n + '대 월 납부 예상액</th><td><b>월 ' + fmt(payFinal) + '원</b></td></tr></tfoot></table>' +
       (sum.prepayAmt ? '<p class="sb-sumnote">+ 선납금 ' + fmt(sum.prepayAmt) + '원 (신청 때 한 번)</p>' : '') +
       '<div class="sb-cmp"><div><span>약정 기간 총 결제 예상</span><b>' + fmt(sum.expected) + '원</b></div>' +
-      (sum.points ? '<div><span>포인트 지원 · 멤버십 적립 (해당 모델)</span><b>− ' + fmt(sum.points) + '원</b></div><div><span>포인트 반영 실제 구독료</span><b>' + fmt(sum.expected - sum.points) + '원</b></div>' : '') +
-      (sum.lumpAll && sum.lump ? '<div><span>시흥몰 일시불 합계</span><b>' + fmt(sum.lump) + '원</b></div><div class="is-save"><span>' + (sum.lump > sum.expected - sum.points ? '구독이 ' : '일시불이 ') + '</span><b>' + fmt(Math.abs(sum.lump - (sum.expected - sum.points))) + '원 저렴</b></div>' : '') + '</div>' +
+      (sum.points ? '<div><span>포인트 지원 · 멤버십 적립 (해당 모델)</span><b>− ' + fmt(sum.points) + '원</b></div>' : '') +
+      (pkgAmt ? '<div><span>' + esc(pkgName) + ' ' + pk.n + '품목 포인트 <small>' + esc(pk.cats.join(' · ')) + '</small></span><b>− ' + fmt(pkgAmt) + '원</b></div>' : '') +
+      (sum.points || pkgAmt ? '<div><span>포인트 반영 실제 구독료</span><b>' + fmt(netAll) + '원</b></div>' : '') +
+      (sum.lumpAll && sum.lump ? '<div><span>시흥몰 일시불 합계</span><b>' + fmt(sum.lump) + '원</b></div><div class="is-save"><span>' + (sum.lump > netAll ? '구독이 ' : '일시불이 ') + '</span><b>' + fmt(Math.abs(sum.lump - netAll)) + '원 저렴</b></div>' : '') + '</div>' +
+      (pk ? '<p class="sb-sumnote">' + esc(pkgName) + ': ' + (pk.n >= 2 ? '대상 ' + pk.n + '품목' + (pk.next ? ' · 한 품목 더 담으면 ' + fmt(pk.next) + '원' : '') : pk.n === 1 ? '대상 모델 1품목 — 대상 모델을 한 품목 더 담으면 ' + fmt(pk.next || 0) + '원 포인트' : '담긴 모델 중 대상 모델이 없습니다') +
+        (pk.miss.length ? ' · 대상 아님: ' + esc(pk.miss.join(', ')) : '') + (bp.text ? '<br>' + esc(bp.text) : '') + ' (포인트는 구매 뒤 지급 · 자세한 조건은 상담 때 안내)</p>' : '') +
       (!bp ? '<p class="sb-sumnote">여러 대를 동시에 구독할 때의 추가 혜택(행사·사은품 등)은 상담 때 안내해 드립니다.</p>' : '') +
       '<div class="sb-ctas"><a class="sb-btn" data-cta="consult" href="' + esc(consultHref(items, results, payFinal)) + '">이 조건으로 구독 문의하기</a>' +
       (CFG.tel ? '<a class="sb-btn-line" href="tel:' + esc(CFG.tel.replace(/[^0-9]/g, '')) + '">' + esc(CFG.tel) + '</a>' : '') +

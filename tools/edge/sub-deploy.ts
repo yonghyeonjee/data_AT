@@ -35,7 +35,8 @@ Deno.serve(async (req) => {
       if (live) return json({ ok: true, skipped: true, reason: `이미 실행 중/직전 실행 (${live.status}, ${live.created_at})`, by, wf: WORKFLOW });
     }
     // 2) 실행
-    const d = await gh(`workflows/${WORKFLOW}/dispatches`, { method: "POST", body: JSON.stringify({ ref: REF }) });
+    const all = u.searchParams.get("all") === "1";  // mvp_264: &all=1 → 워크플로 입력 all=true (포인트 전부 다시)
+    const d = await gh(`workflows/${WORKFLOW}/dispatches`, { method: "POST", body: JSON.stringify(all ? { ref: REF, inputs: { all: "true" } } : { ref: REF }) });
     if (d.status !== 204) return json({ ok: false, error: `dispatch HTTP ${d.status} ${(await d.text()).slice(0, 200)}`, by, wf: WORKFLOW }, 502);
     return json({ ok: true, dispatched: true, by, wf: WORKFLOW, at: new Date().toISOString() });
   } catch (e) {

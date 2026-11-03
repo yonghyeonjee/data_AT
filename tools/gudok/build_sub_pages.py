@@ -200,10 +200,23 @@ def home_body():
         <ul class="ss-points"><li>구독 모델 1,000여 개</li><li>제휴카드 청구할인</li><li>선납 할인</li><li>방문케어 · 무상수리</li></ul>
     </header>
 
+    <!-- 11월 행사 배너: 시흥몰 메인 1번 슬라이드·구독 전용몰 목록과 같은 그림(글자 없음)에 같은 문구를 얹음 · 기간이 지나면 sub_shop.js 가 지운다 -->
+    <a class="ss-promo" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=167" data-cta="promo" data-until="2026-11-30">
+        <img class="ss-promo-pc" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_511517418/e8c0372e596d3c62958cf7301b7f9e2d_43657.png" alt="삼성 AI 콤보 270만원 대 · 85인치 TV 250만원 대 - 방문상담만 해도 와인 증정 (삼성스토어 시흥 11월 구독 행사)" width="1916" height="821">
+        <img class="ss-promo-m" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_1053291314/9bf53cce2896f5ec0ede30a7c6841526_47297.png" alt="삼성 AI 콤보 270만원 대 · 85인치 TV 250만원 대 - 방문상담만 해도 와인 증정 (삼성스토어 시흥 11월 구독 행사)" width="640" height="800" loading="lazy">
+        <div class="ss-promo-txt"><span>2026.11.01 ~ 2026.11.30</span><b>AI콤보 270만원 대<br>85인치 TV 250만원 대</b><p>방문상담만해도 와인 증정!!</p><strong>바로가기</strong></div>
+    </a>
+
     <section class="ss-sec">
         <h2>품목별 삼성 구독 가격</h2>
         <p class="ss-sub">품목을 고르면 모델별 최저 월 구독료를 비교할 수 있습니다.</p>
         <div data-ss="cats"></div>
+    </section>
+
+    <section class="ss-sec">
+        <h2>월 구독료 가격대별로 보기</h2>
+        <p class="ss-sub">월 1만원 미만부터 10만원 이상까지, 예산에 맞는 가격대를 고르면 그 가격대의 대표 모델이 보입니다. 금액은 최저 월 구독료(VAT 포함) 기준이며, 약정·케어·선납·제휴카드에 따라 실제 월 납부액은 달라집니다.</p>
+        <div data-ss="bands" data-n="8"></div>
     </section>
 
     <section class="ss-sec ss-band">

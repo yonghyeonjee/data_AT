@@ -3,12 +3,12 @@
          "적립 예정 멤버십 포인트" — 정률(aiscRate %) · 기본률(basicRate %) · 상품별 추가 포인트(mdlAddPoint) · 기준 총액일 때 총 포인트(totalPoint) — 를 받아
          sub.model_point 에 넣는다. 구독탭(sub_tab.js)·구독센터가 sub_policy.js 의 points[모델] 로 "적립 예정 멤버십 포인트" 줄을 보여 준다.
    왜:  DPS 올인원구독모델조회에는 포인트 항목이 없고, 삼성닷컴 페이지의 "N개월 구독료 상당" 배너는 이미지라 읽을 수 없다. 정률·추가 포인트는 이 API 가 숫자로 준다.
-   어디서: GitHub Actions sub-point.yml (매주 월요일 09:00 KST · 수동 실행 가능) · PC 에서는 --models 로 DB 없이 돌려 볼 수 있다.
+   어디서: GitHub Actions sub-point.yml (매일 06:00 KST 전부 다시(--all) · 수동 실행 가능) · PC 에서는 --models 로 DB 없이 돌려 볼 수 있다.
    어떻게 찾나:
      1) 모델 → goodsId : sub.model_point.goods_id 에 캐시된 값 → 없으면 구독 상품 페이지 https://www.samsung.com/sec/ai-subs-living/<모델>-subscribe2-d2c/<모델>/
         (주소의 품목 slug 는 무엇이든 마지막 모델번호로 상품을 찾아 준다). 서버가 그려 준 HTML 의 StPrdtOptItemVO(goodsId=G00…, mdlCode=모델) 쌍을 읽는다 —
         같은 상품의 다른 색상·옵션 모델도 함께 나오므로 한 페이지로 형제 모델의 goodsId 까지 얻는다. 없는 모델은 og:url 이 빈 공통 페이지(약 226KB)로 떨어진다.
-     2) goodsId + 기준 총액(dps.sub_model 최장 약정 최저 total_fee) → POST /sec/xhr/goods/membershipPolicy
+     2) goodsId + 기준금액(dps.sub_model 최장 약정 최저 product_fee = 제품분 · mvp_264 · 없으면 total_fee) → POST /sec/xhr/goods/membershipPolicy
         form: goodsListStr=[{goodsId, mdlCode, price, cnt:1, mainGoodsYn:'Y'}] · bespokeMinimumPrice=0 · bundleYn=N · bundleOrgAplVal=0 · aiscAinYn=Y
         응답(JSON): totalPoint · basicRate(0.1) · basicRatePoint · aplPoint(정률 포인트) · mdlAddPoint(상품별 추가) · aiscRate("6.0")
    환경변수: SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY (Actions Secrets) — 또는 SUPABASE_ANON_KEY + SUB_POINT_KEY(core.api_key 'sub_point' · 값은 _secrets.local.md). 코드·표·git 에 넣지 않는다

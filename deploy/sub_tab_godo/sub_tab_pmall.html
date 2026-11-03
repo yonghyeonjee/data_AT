@@ -1,0 +1,44 @@
+<!-- ===== [구독탭] 프라자몰(www.samsungpmall.com) 상품상세 일시불/구독 탭 — mall: 'pm' (mvp_265 · 2026-11-03) =====
+     넣는 곳: 고도몰 관리자 › 디자인 › 스킨(designbookR_dodamdod) › goods/goods_view.html 맨 아래 { # footer } 바로 위,
+              {=fbGoodsViewScript} 줄 바로 위에 이 블록 전체를 붙인다. (또는 goods/_sub_tab.html 로 저장하고 includeFile 한 줄)
+     시흥몰 모듈(sub_tab_v*_*.html)과 다른 점
+       - mall: 'pm'        → 데이터센터 행사 문구 중 "모든 몰" + "프라자몰" 로 고른 것만 보인다 (매장 [구독 혜택 안내] · 관리자 [구독 혜택 정책] 의 대상 몰 칩)
+       - 화면 파일을 웹FTP 에 올리지 않고 데이터센터(db.samsungat.co.kr/sdp/sub/)에서 바로 읽는다 → 구독탭 화면을 고치면 10분 안에 같이 바뀐다
+       - 모델번호를 관리자 칸(모델번호·자체상품코드·자체옵션코드·추가항목 구독모델)에서 먼저 찾고, 없으면 상품명 속 모델번호(예: RQ33DG71G1S9)
+       - 하단 버튼은 [상담하고 구독하기](카카오 상담)+전화 · 시흥몰 상품으로 가는 버튼·색상 칩은 끈다 · 구독상품 카테고리(032) 페이지에는 안 띄운다
+     ▶ 처음엔 enabled: 'test' — 주소 끝에 ?subtab=on 을 붙인 사람만 보인다. 확인 뒤 true 로 바꾸면 모두에게 보이고, 문제 시 false.
+     ※ 고도몰 템플릿 치환 방지: 인라인 JS 의 여는 중괄호 뒤에는 항상 공백 · 정규식에 {숫자} 를 쓰지 않는다 -->
+<div id="subTabSrc" hidden>
+    <i data-k="model" data-v="{=goodsView['goodsModelNo']}"></i>
+    <i data-k="model" data-v="{=goodsView['goodsCd']}"></i>
+    <!--{ ? empty(goodsView['addInfo']) === false }-->
+    <!--{ @ goodsView['addInfo'] }--><i data-k="add" data-t="{=.infoTitle}" data-v="{=.infoValue}"></i><!--{ / }-->
+    <!--{ / }-->
+    <!--{ ? goodsView['optionFl'] == 'y' }-->
+    <!--{ @ goodsView['option'] }--><i data-k="opt" data-sno="{=.sno}" data-v="{=.optionCode}"></i><!--{ / }-->
+    <!--{ / }-->
+    <i id="subTabName" data-v="{=goodsView['goodsNmDetail']}"></i>
+</div>
+<link rel="stylesheet" href="https://db.samsungat.co.kr/sdp/sub/sub_tab.css">
+<script type="text/javascript">
+    var SUB_TAB_CONFIG = { uiVer: 'pmall',
+        mall: 'pm',                                     /* 몰 코드 — 데이터센터 sub.mall (sh 시흥몰 · pm 프라자몰) */
+        dcBase: 'https://db.samsungat.co.kr/sdp/sub/',
+        dataBase: 'https://db.samsungat.co.kr/sdp/sub/',
+        enabled: 'test',                                /* ★ 'test' → 확인 뒤 true · 문제 시 false */
+        skipCate: ['032'],                              /* 프라자몰 구독상품 카테고리 */
+        goodsNo: '{=goodsView['goodsNo']}',
+        lumpPrice: '{=gd_isset(goodsView['goodsPrice'], 0)}',
+        cta: 'consult',
+        consultUrl: 'https://open.kakao.com/o/sQFilWrg',
+        tel: '02-2109-3535',
+        siblings: false,
+        lumpOnly: ['.price-box', '.item_choice_list', '.item_price_cont', '.btn_choice_box', '.pay_box'],
+        models: []
+    };
+    (function () { var n = document.getElementById('subTabName'); if (!n) return;
+        var w = (n.getAttribute('data-v') || '').split(/[\s\/\[\]()+,]+/);
+        for (var i = 0; i < w.length; i++) if (w[i].length >= 8 && /^[A-Z][A-Z][A-Z0-9-]+$/.test(w[i])) SUB_TAB_CONFIG.models.push(w[i]); })();
+</script>
+<script type="text/javascript" src="https://db.samsungat.co.kr/sdp/sub/sub_tab.js" charset="utf-8"></script>
+<!-- //[구독탭] 프라자몰 -->

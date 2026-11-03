@@ -24,7 +24,7 @@
 ## 어떻게 돌아가나
 
 ```
-GitHub Actions sub-point.yml (매주 월요일 09:00 KST · 수동 실행 · 관리자 [지금 수집] → Edge Function sub-deploy?wf=sub-point)
+GitHub Actions sub-point.yml (매일 06:00 KST 활성 모델 전부 다시(--all · 약 4분) · 수동 실행 · 관리자 [지금 수집] → Edge Function sub-deploy?wf=sub-point) — 2026-11-02 밤 주 1회(월요일)에서 매일로 (DPS·VMS 처럼)
   └ node tools/subpoint/collect.mjs
       ├ fn_sub_point_targets(p_all, p_limit, p_key, p_offset) : 활성 모델 + 최장 약정 최저 총액 + 캐시된 goods_id  (처음 보는 것 · 6일 지난 것 · 못 찾은 것은 7~30일 뒤)
       │    PostgREST 는 RPC 결과를 1000행에서 자르고 Range 헤더도 무시 → 수집기 rpcAll 이 p_offset 으로 1000행씩 이어 받는다 (활성 모델 1131개 · mvp_258a)
@@ -36,7 +36,7 @@ sub.f_policy_export() → points: {모델: {rate: 6.0, base: 0.1, add: 5000, tot
 
 - **손 입력**: 관리자(admin.html › 품목 › 구독 혜택 정책 › 모델 포인트) `fn_sub_point_save` · 매장(store.html › 구독 › 구독 혜택 안내) `fn_store_sub_point_save(p_code, p_data)` — src 'manual' 이 되어 수집이 덮지 않는다. [수집값으로 되돌리기](release) 를 누르면 다음 수집이 다시 덮는다.
 - **키**: 수집기는 서비스 롤 키(Actions Secrets `SUPABASE_SERVICE_ROLE_KEY`) 또는 API 키 `SUB_POINT_KEY`(core.api_key 'sub_point' · 해시만 DB 에 · 값은 `_secrets.local.md`) 로 부른다. 코드·표·git 에는 없다.
-- 기준 총액은 DPS 최장 약정의 최저 total_fee(무상수리). 화면은 저장된 총 포인트가 아니라 **정률 × 고객이 고른 조건의 결제 예상액 + 추가 포인트** 로 다시 계산한다.
+- 기준금액은 DPS 최장 약정의 최저 **product_fee(제품분 · 총액에서 무상수리료를 뺀 것 = 삼성닷컴 aiscPrdSsbPrc)** (mvp_264 · 2026-11-03 · 그 전엔 total_fee 라 5% 가량 높게 저장됐다). 화면은 저장된 총 포인트가 아니라 **정률 × 고객이 고른 요금제의 제품분 금액 + 추가 포인트** 로 다시 계산한다 (선납·카드와 무관 · 삼성닷컴 계산기와 같음).
 
 ## PC 에서
 
@@ -52,6 +52,12 @@ DB 에 넣으려면 `SUPABASE_URL` · `SUPABASE_SERVICE_ROLE_KEY` 환경변수�
 - 찾은 모델은 모두 정률 6.0% + 기본 0.1% (에어컨 AJ·AN·AS 계열은 상품별 추가 300,000P).
 - `membershipPolicy` 가 같은 요청에 정률 0 으로 응답하는 때가 간혹 있어 수집기가 잠깐 뒤 한 번 더 본다.
 - 저장 함수의 임시표 열 이름 `found` 가 PL/pgSQL 의 FOUND 와 겹쳐 첫 Actions 실행이 저장에서 실패했다 → `ok` 로 고침 (`sql/mvp_258a_sub_points_fix.sql`).
+
+## 삼성닷컴에 없는 모델 — 추정 (mvp_258b · 2026-11-02)
+
+활성 1,131개 중 삼성닷컴에 구독 상품이 없는 366개(매장 전용 변형: TV 205 · 에어컨 89 · 세탁기/건조기 28 · 정수기 9 …)는 수집이 안 된다.
+수집된 765개가 전부 정률 6.0% + 기본 0.1% 로 같아서, 배포 파일 `points` 를 만드는 `sub.f_point_export()`(`sql/mvp_258b_sub_point_infer.sql`) 가 빈 모델을 **같은 품목에서 모델번호 앞부분이 가장 길게 같은 수집 모델**의 정률·기본률로 채운다(품목에 수집 모델이 없으면 최빈값 6.0 · 0.1). 상품별 추가 포인트는 앞 5자 이상 같은 모델에서만 물려받는다(AN40BSU5P44ISY ← AN40BSU5P40ISY 300,000P).
+추정 행은 `"est": 1` 과 기준 모델 `"ref"` 가 붙고 `total` 은 없다. `sub.model_point` 에는 넣지 않으므로 다음 수집이 실제 값을 받아 오면 추정은 저절로 빠진다. 관리자 요약(f_policy_view › points)의 `n_est` 가 추정 모델 수.
 
 ## 검증
 
