@@ -6297,9 +6297,9 @@ function renderGoodsNote(){
   $('gnBody').innerHTML=h;
 }
 function gnOpen(id){
-  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{mall:'pm',goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'benefit_below',status:'test'};
+  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{mall:'pm',goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
   GN_DLG={n}; $('gnDlgTitle').textContent=id!=null?'상품 안내 문구 고치기':'상품 안내 문구 추가'; $('gnErr').textContent='';
-  const L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{benefit_below:'혜택 안내 상자 아래'};
+  const L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{price_below:'가격 아래 (공통)'};
   const tones=[['blue','파랑'],['red','빨강'],['gray','회색'],['yellow','노랑']];
   $('gnForm').innerHTML=`
     <div class="gn-two"><div><label for="gn_mall">몰</label><select class="in" id="gn_mall" oninput="gnPreview()">${(GN.malls||[]).map(m=>`<option value="${esc(m.code)}" ${m.code===n.mall?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
@@ -6330,8 +6330,8 @@ function gnPreview(){
   const d=gnData(), L=G.POS_LABEL;
   $('gnPrevPos').textContent='· '+(L[d.pos]||'');
   box.innerHTML=`<div class="gn-mock"><div class="item_detail_tit"><h3>삼성 2026 OLED SH90 (105cm) 스탠드형 ${esc(d.models[0]||'KQ42SH90AEXKR')}</h3>
-      <div class="price-box"><em>5%</em>1,790,000원<del>1,890,000원</del></div></div>
-    <div class="custom-benefit-notice">삼성카드 할부 혜택 · 배송 안내 (지금 있는 혜택 상자)</div>
+      <div class="price-box"><em>5%</em>1,790,000원<del>1,890,000원</del></div>${d.mall==='sh'?'<div class="sp26" style="margin-top:8px;padding:8px 10px;border:1px dashed #bbb;border-radius:6px;color:#666;font-size:12px">스마트 패키지 안내 (시흥몰 · 지금 있는 상자)</div>':''}</div>
+    ${d.mall==='sh'?'':'<div class="custom-benefit-notice">삼성카드 할부 혜택 · 배송 안내 (지금 있는 혜택 상자)</div>'}
     <div class="gnm-rows">상품코드 ${esc(d.goods[0]||'1000003136')} · 배송비 무료</div>
     <div class="item_choice_list">수량 1 · 1,790,000원</div>
     <div class="btn_choice_box"><span>찜하기</span><span>장바구니</span><span>구매하기</span></div>
