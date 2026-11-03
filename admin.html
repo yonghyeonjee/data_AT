@@ -1220,6 +1220,11 @@ th{background:var(--zone-head);color:var(--ink-2)}
 .ifch .mixm{display:none}
 @media(max-width:640px){ .ifch .mixm{display:block;margin-top:6px} .ifch th:last-child,.ifch td.mixcell{display:none} .ifch td:first-child{min-width:220px;white-space:normal} }   /* 폰: 많이 들어온 문의는 옆으로 넘기지 않게 채널 이름 아래로 (v229) */
 @media(max-width:640px){ .chseg button{min-height:40px;min-width:52px} #exBasis button{min-height:40px} }   /* 폰: 홈 채널 상위 · 경영 지표 [DPS|원장] 40px (v248) */
+/* 버튼 역할 색 (v254) — 실행(조회·추출)=초록 · 보내기 같은 주 동작=남색 · 고르는 버튼(라디오·세그)=흰 바탕 + 남색 테두리 */
+.btn.go{background:#0B7A55;color:#fff} .btn.go:hover{background:#09694A}
+.btn.basis{background:#fff;color:var(--ink-2);border:1.5px solid var(--line-2)} .btn.basis:hover{border-color:var(--navy);color:var(--navy)}
+.btn.basis.on{background:#EEF2FF;color:var(--navy);border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)}
+.fk-radio button.on,.seg2 button.on{background:#fff;color:var(--navy);box-shadow:inset 0 0 0 1.5px var(--navy),0 1px 2px rgba(20,40,160,.12);font-weight:700}
 </style>
 </head>
 <body>
@@ -1827,9 +1832,9 @@ th{background:var(--zone-head);color:var(--ink-2)}
           </div>
           <div class="filters" style="margin-bottom:10px">
             <span class="note" style="font-weight:700">대상 기준</span>
-            <button class="btn sm" id="tbBasisC" onclick="setBasis('consent')">수신동의 고객</button>
-            <button class="btn sm ghost" id="tbBasisR" onclick="setBasis('repeat')">거래 재구매 주기</button>
-            <button class="btn sm ghost" id="tbBasisP" onclick="setBasis('product')">제품 재구매</button>
+            <button class="btn sm basis on" role="radio" aria-checked="true" id="tbBasisC" onclick="setBasis('consent')">수신동의 고객</button>
+            <button class="btn sm basis" role="radio" aria-checked="false" id="tbBasisR" onclick="setBasis('repeat')">거래 재구매 주기</button>
+            <button class="btn sm basis" role="radio" aria-checked="false" id="tbBasisP" onclick="setBasis('product')">제품 재구매</button>
             <span class="note" id="basisNote">광고성 메시지를 보내도 된다고 동의한 고객만 나옵니다.</span>
           </div>
           <div id="prodBox" class="hidden" style="margin:-4px 0 12px;padding:12px 14px;background:var(--bg2);border-radius:8px">
@@ -1890,10 +1895,10 @@ th{background:var(--zone-head);color:var(--ink-2)}
             <div style="grid-column:span 2"><label>캠페인명 <span style="color:var(--bad)">필수</span>
               <span class="note">감사로그·발송 이력·UTM 에 같은 이름이 쓰입니다</span></label>
               <div style="display:flex;gap:6px"><input class="in" id="crmReason" placeholder="예: 2609_chuseok (발송 링크 관리의 캠페인 코드 · 누르면 목록)" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_reason" readonly onfocus="this.removeAttribute('readonly');campPick(this)" oninput="campPick(this)" onblur="campPickHide(this)">
-              <button class="btn sm" style="white-space:nowrap" onclick="utmQuick()" title="캠페인명의 코드로 단축 링크를 만듭니다 · 캠페인이 아직 없으면 먼저 등록합니다">링크 만들기</button>
+              <button class="btn sm ghost" style="white-space:nowrap" onclick="utmQuick()" title="캠페인명의 코드로 단축 링크를 만듭니다 · 캠페인이 아직 없으면 먼저 등록합니다">링크 만들기</button>
               <button class="btn sm ghost" style="white-space:nowrap" onclick="show('utm')" title="캠페인·링크·클릭 전체 보기">발송 링크 관리</button></div></div>
             <div><label>키워드</label><input class="in" id="crmQ" placeholder="이름 · 최근상품 · 관심상품" onkeydown="if(event.key==='Enter')loadTargets(0)"></div>
-            <div><label>유입·구매 채널</label><select class="in" id="crmCh"><option value="">전체</option></select></div>
+            <div><label>유입·구매 채널</label><select class="in" id="crmCh" onchange="crmRentalHint()"><option value="">전체</option></select></div>
             <div><label>구매 카테고리</label><select class="in" id="crmCat"><option value="">전체</option></select></div>
             <div><label>지역</label><select class="in" id="crmRegion"><option value="">전체</option></select></div>
             <div><label>고객 구분</label><select class="in" id="crmKind"><option value="">전체</option><option value="personal">개인</option><option value="business">사업자</option></select></div>
@@ -1908,7 +1913,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
           <div class="filters">
             <label class="switch" id="crmNext" onclick="this.classList.toggle('on')"><span class="sw"></span>관심상품 적어낸 고객만</label>
             <label class="switch" id="crmUnmask" onclick="this.classList.toggle('on');if(TG)loadTargets(0)"><span class="sw"></span>실명·실번호</label>
-            <button class="btn" onclick="loadTargets(0)">추출</button>
+            <button class="btn go" onclick="loadTargets(0)"><span aria-hidden="true">⌕</span> 추출</button>
             <button class="btn ghost" onclick="resetTargets()">초기화</button>
             <span style="flex:1"></span>
             <button class="btn ghost" onclick="exportTargets('xlsx')">엑셀 내려받기</button>
@@ -1916,6 +1921,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
             <button class="btn" onclick="smsOpenTargets()" title="추출된 명단 전체에 문자 — [메시지 발송 관리] 의 모드(테스트/실제)대로 나갑니다">문자 보내기</button>
           </div>
           <div class="qstat" data-view="crm"></div>
+          <div id="crmRentHint" class="callout hidden" style="margin:-4px 0 10px">렌탈 고객은 대부분 마케팅 수신 동의가 없어 여기 <b>[수신동의 고객]</b> 기준으로는 거의 안 나옵니다. 임대 계약 명부(계약 기간·임대기기·월 임대료)는 <button class="btn sm" onclick="navSubGo('crm','rental')">렌탈 고객 메뉴로 →</button> 에서 보고, 같은 조건으로 바로 문자를 보낼 수 있습니다.</div>
           <div id="crmChips" class="legend" style="margin:-4px 0 10px"></div>
           <div class="tw"><table><thead><tr><th>고객</th><th>연락처</th><th>지역</th><th>채널</th><th class="num">구매</th><th class="num">누적</th><th>최근 구매</th><th>최근 상품</th><th>관심 상품</th><th>담당</th><th>최근 발송</th></tr></thead><tbody id="tbTargets"></tbody></table></div>
           <div class="pager"><span id="tgCount">아직 추출하지 않았습니다</span><div class="btns" id="tgPg"></div></div>
@@ -1940,7 +1946,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
           </div>
           <div class="filters">
             <label class="switch" id="upUnmask" onclick="this.classList.toggle('on');if(UPL)loadUnpaid(0)"><span class="sw"></span>실명·실번호</label>
-            <button class="btn" onclick="loadUnpaid(0)">추출</button>
+            <button class="btn go" onclick="loadUnpaid(0)"><span aria-hidden="true">⌕</span> 추출</button>
             <button class="btn ghost" onclick="['upQ','upMinD','upMaxD','upMinAmt','upNoSend'].forEach(i=>$(i).value='');fkSyncAll();loadUnpaid(0)">초기화</button>
             <span style="flex:1"></span>
             <button class="btn ghost" onclick="exportUnpaid('xlsx')">엑셀 내려받기</button>
@@ -1968,12 +1974,12 @@ th{background:var(--zone-head);color:var(--ink-2)}
             <label class="switch" id="rtBilled" onclick="this.classList.toggle('on');if(RTL)loadRental(0)"><span class="sw"></span>최근 6개월 렌탈 청구만</label>
             <label class="switch" id="rtAd" onclick="this.classList.toggle('on');if(RTL)loadRental(0)" title="수신 동의 · 최근 6개월 렌탈 청구 · 계약 기간이 6개월 안까지 이어진 곳만"><span class="sw"></span>광고 문자 가능만</label>
             <label class="switch" id="rtUnmask" onclick="this.classList.toggle('on');if(RTL)loadRental(0)"><span class="sw"></span>실번호</label>
-            <button class="btn" onclick="loadRental(0)">조회</button>
+            <button class="btn go" onclick="loadRental(0)"><span aria-hidden="true">⌕</span> 조회</button>
             <span style="flex:1"></span>
             <button class="btn ghost" onclick="exportRental()">엑셀 내려받기</button>
             <button class="btn pri" onclick="rtToSms()">이 조건으로 문자 보내기 →</button>
           </div>
-          <div class="callout" id="rtInfo" style="margin:8px 0">문자 규칙은 다른 CRM 발송과 같습니다 — <b>휴대폰만</b>(유선·번호 없음은 명단에만) · <b>문자 수신거부 번호는 늘 뺍니다</b> · 광고(할인·행사)는 <b>[광고 문자 가능만]</b>을 켜고 보내세요(수신 동의 또는 6개월 안 거래). 계약 만료·갱신 안내 같은 정보성 문자는 해지 아닌 고객 전체에 보낼 수 있습니다.</div>
+          <div class="callout" id="rtInfo" style="margin:8px 0">문자 규칙은 다른 CRM 발송과 같습니다 — <b>휴대폰만</b>(유선·번호 없음은 명단에만) · <b>문자 수신거부 번호는 늘 뺍니다</b> · 광고(할인·행사)는 <b>[광고 문자 가능만]</b>을 켜고 보내세요(수신 동의 또는 6개월 안 거래). <b>수신 동의 없이 6개월 안 거래로 보내는 광고는 거래한 것과 같은 종류 상품(임대·복합기·소모품)만</b> — 공기청정기 같은 다른 상품 광고는 수신 동의한 사람에게만 보낼 수 있습니다. 계약 만료·갱신 안내 같은 정보성 문자는 해지 아닌 고객 전체에 보낼 수 있습니다.</div>
           <div class="mkpis" id="rtKpi"></div>
           <div class="tw"><table><thead><tr><th>상태</th><th>업체</th><th>임대기기</th><th class="num">월 임대료</th><th>계약 기간</th><th class="num">남은 날</th><th>지역</th><th>연락처</th><th>최근 청구</th><th>최근 발송</th><th>비고</th></tr></thead><tbody id="tbRental"></tbody></table></div>
           <div class="pager"><span id="rtCount">아직 조회하지 않았습니다</span><div class="btns" id="rtPg"></div></div>
@@ -6750,7 +6756,7 @@ function tgFillOptions(o){
   fill('crmCh',chs); fill('crmCat',o.categories||[]); fill('crmRegion',o.regions||[]);
   if(typeof segSync==='function') segSync();
 }
-async function loadTargets(page){
+async function loadTargets(page){ crmRentalHint();
   const p=tgParams();
   if(p.p_reason.length<3) return toast('캠페인명을 3자 이상 적어주세요 — 감사로그에 남습니다','bad');
   if(TG_BASIS==='product' && !p.p_product) return toast('어떤 제품인지 먼저 적어주세요 (예: HAF-)','bad');
@@ -6967,15 +6973,16 @@ async function saveSegment(){
              · 이탈(마지막 구매 365일 초과) 제외 · 예상재구매일(마지막 구매 + 주기) 기준 D-30 ~ D+14.
              동의 여부를 안 보므로 보낼 수 있는지는 사람이 판단한다. */
 let TG_BASIS = localStorage.getItem('dc_tg_basis') || 'consent';
+function basisPaint(id,on){ const e=$(id); e.classList.toggle('on',on); e.setAttribute('aria-checked',on?'true':'false'); }
 function setBasis(b){
   TG_BASIS = b; try{ localStorage.setItem('dc_tg_basis', b); }catch(e){}
-  $('tbBasisC').className = 'btn sm' + (b==='consent' ? '' : ' ghost');
-  $('tbBasisR').className = 'btn sm' + (b==='repeat'  ? '' : ' ghost');
+  basisPaint('tbBasisC', b==='consent');
+  basisPaint('tbBasisR', b==='repeat');
   /* 재구매 주기 알림은 같은 사람에게 두 번 가면 안 된다. 이 기준을 고르면
      '이미 보낸 사람 제외' 를 '전부 제외' 로 미리 놓는다 — 8/14 발송분은 '30일 내' 로는 안 빠진다 */
   if(b!=='consent' && !$('crmNoSend').value) $('crmNoSend').value='36500';
   fkSyncAll();
-  $('tbBasisP').className = 'btn sm' + (b==='product' ? '' : ' ghost');
+  basisPaint('tbBasisP', b==='product');
   $('prodBox').classList.toggle('hidden', b!=='product'); if(b==='product') prodRenderSel();
   $('asofBox').classList.toggle('hidden', b!=='repeat');
   if(b==='repeat' && !$('crmAsof').value) $('crmAsof').value = iso(new Date());
@@ -6988,6 +6995,7 @@ function setBasis(b){
   if(TG) loadTargets(0);
 }
 /* 화면만 기준에 맞추고 추출은 하지 않는다 (저장 조건을 불러올 때 씀) */
+function crmRentalHint(){ const v=(($('crmCh')||{}).value||''); const h=$('crmRentHint'); if(h) h.classList.toggle('hidden', !/rental|렌탈|임대/i.test(v)); }
 function setBasisQuiet(b){
   const keep=TG; TG=null; try{ setBasis(b); } finally { TG=keep; }
 }
