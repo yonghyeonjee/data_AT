@@ -17,12 +17,12 @@
   //   S몰 PC(no99): 가격이 .item_detail_list 의 dl.item_price · S몰 모바일(no99): .detail_info_top .price_box · .js_naver_btn · .detail_buy · .cont_detail
   var POS = {
     price_below:   [['.price-box', 'after'], ['.item_detail_list .item_price', 'after'], ['.detail_info_top .price_box', 'after']],
-    pay_above:     [['.pay_box', 'before'], ['.js_naver_btn', 'before']],
+    pay_above:     [['.pay_box', 'before'], ['.js_naver_btn', 'before'], ['.btn_choice_box', 'after']],   // 네이버페이가 없는 몰(AT몰)은 구매 버튼 바로 아래
     title_below:   [['.item_detail_tit h3', 'after'], ['.detail_info_top h3', 'after'], ['.detail_info_top .goods_name', 'after']],
     benefit_above: [['.custom-benefit-notice', 'before']],
     benefit_below: [['.custom-benefit-notice', 'after']],
     buy_above:     [['.btn_choice_box', 'before'], ['.detail_buy', 'before']],
-    pay_below:     [['.pay_box', 'after'], ['.js_naver_btn', 'after']],
+    pay_below:     [['.pay_box', 'after'], ['.js_naver_btn', 'after'], ['.btn_choice_box', 'after']],
     detail_top:    [['.detail_explain_box', 'prepend'], ['.cont_detail', 'prepend']]
   };
   var LAST = [['.item_detail_tit', 'append'], ['.item_info_box', 'append'], ['.detail_info_top', 'append']];
