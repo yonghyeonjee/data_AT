@@ -569,6 +569,10 @@ window.SUB_SHOP_READY = true;
     // 기간 지난 행사 배너(html 고정 · data-until=YYYY-MM-DD)는 지운다
     var td = new Date(), today = td.getFullYear() + '-' + ('0' + (td.getMonth() + 1)).slice(-2) + '-' + ('0' + td.getDate()).slice(-2);
     $all('.ss-promo[data-until]').forEach(function (a) { if (a.getAttribute('data-until') < today) a.parentNode.removeChild(a); });
+    // 홈은 가격대별 보기를 품목별 가격보다 먼저 (2026-11-03 · 고도몰에 올린 html 이 예전 순서여도 맞춘다)
+    var secB = document.querySelector('[data-ss="bands"]'), secC = document.querySelector('[data-ss="cats"]');
+    secB = secB && secB.closest ? secB.closest('section') : null; secC = secC && secC.closest ? secC.closest('section') : null;
+    if (secB && secC && secB !== secC && (secC.compareDocumentPosition(secB) & 4)) secC.parentNode.insertBefore(secB, secC);
     if (!IDX || !IDX.m) {
       $all('[data-ss="list"],[data-ss="cats"]').forEach(function (el) { el.innerHTML = '<p class="ss-empty">구독 요금 정보를 불러오지 못했습니다. 잠시 후 다시 시도하시거나 상담으로 문의해 주세요.</p>'; });
       draw(['nav', 'cta']);
