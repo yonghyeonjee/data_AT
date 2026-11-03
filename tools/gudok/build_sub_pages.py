@@ -207,16 +207,16 @@ def home_body():
         <div class="ss-promo-txt"><span>2026.11.01 ~ 2026.11.30</span><b>AI콤보 270만원 대<br>85인치 TV 250만원 대</b><p>방문상담만해도 와인 증정!!</p><strong>바로가기</strong></div>
     </a>
 
-    <section class="ss-sec">
-        <h2>품목별 삼성 구독 가격</h2>
-        <p class="ss-sub">품목을 고르면 모델별 최저 월 구독료를 비교할 수 있습니다.</p>
-        <div data-ss="cats"></div>
-    </section>
-
-    <section class="ss-sec">
+<section class="ss-sec">
         <h2>월 구독료 가격대별로 보기</h2>
         <p class="ss-sub">월 1만원 미만부터 10만원 이상까지, 예산에 맞는 가격대를 고르면 그 가격대의 대표 모델이 보입니다. 금액은 최저 월 구독료(VAT 포함) 기준이며, 약정·케어·선납·제휴카드에 따라 실제 월 납부액은 달라집니다.</p>
         <div data-ss="bands" data-n="8"></div>
+    </section>
+
+        <section class="ss-sec">
+        <h2>품목별 삼성 구독 가격</h2>
+        <p class="ss-sub">품목을 고르면 모델별 최저 월 구독료를 비교할 수 있습니다.</p>
+        <div data-ss="cats"></div>
     </section>
 
     <section class="ss-sec ss-band">
