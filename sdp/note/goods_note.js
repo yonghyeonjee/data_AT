@@ -61,7 +61,10 @@
     var body = String(n.body || '').split(/\r?\n/).map(function (line) {
       var h = esc(line).replace(/\*\*(.+?)\*\*/g, '<strong style="color:' + t.em + '">$1</strong>')
                        .replace(/!!(.+?)!!/g, '<strong style="color:#d43f3f">$1</strong>');
-      return '<div class="' + (/^\s*※/.test(line) ? 'gnote-small' : 'gnote-line') + '">' + (h || '&nbsp;') + '</div>';
+      // ※ 로 시작하거나 ~ 로 시작하는 줄은 작은 회색 (~ 는 떼고 보인다)
+      var small = /^\s*[※~]/.test(line);
+      if (/^\s*~/.test(line)) h = h.replace(/^\s*~\s?/, '');
+      return '<div class="' + (small ? 'gnote-small' : 'gnote-line') + '">' + (h || '&nbsp;') + '</div>';
     }).join('');
     var url = safeUrl(n.url), ext = /^https?:/i.test(url) && url.indexOf(location.host) < 0;
     var img = /^https:\/\//i.test(String(n.img || '')) ? String(n.img) : '';
