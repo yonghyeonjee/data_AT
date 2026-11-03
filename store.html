@@ -1575,6 +1575,17 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         .gn-mock .detail_explain_box{margin-top:14px;padding-top:10px;border-top:2px solid #222;color:#666;font-size:12px}
         .gn-mock .gnote.gn-now{outline:2px dashed #ff8a00;outline-offset:3px}
         @media (max-width:760px){ #gnDlg .gn-grid{grid-template-columns:1fr} #gnDlg .gn-prev{position:static} }
+        .gn-filter{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;margin:0 0 10px;padding:2px 0 6px}
+        .gn-filter .gf-g{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;color:var(--muted);font-size:calc(12px * var(--font-scale));margin-left:6px}
+        .gn-filter .gf-g:first-child{margin-left:0}
+        .gn-filter .gf{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;color:#333;font-size:calc(12.5px * var(--font-scale));line-height:1.2;cursor:pointer;white-space:nowrap}
+        .gn-filter .gf .bx{width:14px;height:14px;border:1.5px solid #b8c0cc;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;line-height:1;color:#fff;background:#fff}
+        .gn-filter .gf[aria-pressed="true"]{border-color:#1757a6;background:#eef4fc;color:#1757a6;font-weight:600}
+        .gn-filter .gf[aria-pressed="true"] .bx{border-color:#1757a6;background:#1757a6}
+        .gn-filter .gf .dot{width:8px;height:8px;border-radius:50%}
+        .gn-filter .gf-n{flex:0 0 auto;padding-right:2px;font-weight:600;color:var(--muted);font-size:calc(12px * var(--font-scale));white-space:nowrap}
+        @media (max-width:560px){ #gnBody .item{grid-template-columns:1fr!important;gap:8px} #gnBody .item>div:last-child{flex-direction:row-reverse!important;align-items:flex-start!important;justify-content:space-between} #gnBody .item>div:last-child>span:not(.pill){flex:1 1 auto;justify-content:flex-start!important} #gnBody .item .btn.sm{padding-left:12px;padding-right:12px} }
+        .gn-filter .gf-x{flex:0 0 auto;border:0;background:none;color:#1757a6;font-size:calc(12px * var(--font-scale));cursor:pointer;padding:4px 2px;white-space:nowrap}
         .gn-q{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;margin-left:2px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--muted);font-size:12px;font-weight:700;line-height:1;cursor:pointer;vertical-align:2px}
         .gn-q:hover{border-color:#1757a6;color:#1757a6}
         #gnHelp .lvdlg{width:min(860px,100%);max-height:92vh;overflow:auto;line-height:1.65}
@@ -6396,7 +6407,7 @@ function spkLib(cb){
   const s=document.createElement('script'); s.src='/sdp/spkg/spkg.js?v='+Date.now(); s.onload=()=>{ if(window.Spkg) window.Spkg.addCss(); cb(); }; s.onerror=()=>cb(); document.head.appendChild(s);
 }
 function spkRows(){
-  const items=(SPK&&SPK.items)||[], can=!!(SPK&&SPK.can_edit); if(!items.length) return '';
+  const items=((SPK&&SPK.items)||[]).filter(gnFSpk), can=!!(SPK&&SPK.can_edit); if(!items.length) return '';
   return '<div class="list" style="margin-bottom:10px">'+items.map(c=>{ const on=c.on!==false;
     return `<div class="item" style="grid-template-columns:1fr auto">
       <div><div style="font-weight:700">${esc(c.tag||SPK_DEF.tag)} <span class="note-in" style="font-weight:400">· 상품 안내 카드</span></div>
@@ -6444,11 +6455,30 @@ function gnPageUrl(n){
   const m=gnMall((n.malls||[n.mall]).find(c=>c!=='*')||n.mall); if(!m.domain || !(n.goods||[]).length) return '';
   return 'https://'+m.domain+'/goods/goods_view.php?goodsNo='+encodeURIComponent(n.goods[0])+(n.status==='test'?'&gnote=on':'');
 }
+/* 목록 필터 (몰 · 상태 · 종류) — 같은 줄 안은 '또는', 줄끼리는 '그리고' · 아무것도 안 고르면 전부 · 이 기기에 기억 */
+let GN_F=(()=>{ try{ const v=JSON.parse(localStorage.getItem('gnFilter')||'{}'); return {mall:v.mall||[],st:v.st||[],kind:v.kind||[]}; }catch(e){ return {mall:[],st:[],kind:[]}; } })();
+function gnFSave(){ try{ localStorage.setItem('gnFilter',JSON.stringify(GN_F)); }catch(e){} }
+function gnFToggle(g,v){ const a=GN_F[g], i=a.indexOf(v); if(i<0) a.push(v); else a.splice(i,1); gnFSave(); renderGoodsNote(); }
+function gnFClear(){ GN_F={mall:[],st:[],kind:[]}; gnFSave(); renderGoodsNote(); }
+function gnFMall(ms){ const f=GN_F.mall; if(!f.length) return true; ms=ms||[]; return f.some(c=> c==='*' ? ms.includes('*') : (ms.includes(c)||ms.includes('*'))); }
+function gnFPass(n){ return gnFMall(n.malls||[n.mall]) && (!GN_F.st.length||GN_F.st.includes(n.status)) && (!GN_F.kind.length||GN_F.kind.includes(n.scope==='all'?'all':'goods')); }
+function gnFSpk(c){ return gnFMall([c.mall]) && (!GN_F.st.length||GN_F.st.includes(c.on===false?'off':'on')) && (!GN_F.kind.length||GN_F.kind.includes('all')); }
+function gnFilterBar(shown,total){
+  const malls=(GN&&GN.malls)||[], chip=(g,v,label,extra)=>`<button type="button" class="gf" aria-pressed="${GN_F[g].includes(v)}" onclick="gnFToggle('${g}','${v}')"><span class="bx">${GN_F[g].includes(v)?'✓':''}</span>${extra||''}${label}</button>`;
+  const dot=c=>`<span class="dot" style="background:${c}"></span>`, any=GN_F.mall.length+GN_F.st.length+GN_F.kind.length;
+  let h='<div class="gn-filter" role="group" aria-label="상품 안내 문구 거르기">'+`<span class="gf-n">${any?shown+' / '+total+'개':total+'개'}</span>`+(any?'<button type="button" class="gf-x" onclick="gnFClear()">모두 보기</button>':'');
+  if(malls.length>1) h+='<span class="gf-g">🏬 몰</span>'+chip('mall','*','전체 몰')+malls.map(m=>chip('mall',m.code,esc(m.name))).join('');
+  h+='<span class="gf-g">◉ 상태</span>'+chip('st','on','공개',dot('#1f9d55'))+chip('st','test','test',dot('#ff8a00'))+chip('st','off','꺼짐',dot('#9aa3ad'));
+  h+='<span class="gf-g">▤ 종류</span>'+chip('kind','all','공통')+chip('kind','goods','개별');
+  h+='</div>';
+  return h;
+}
 function renderGoodsNote(){
   const d=GN, can=!!d.can_edit, L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{};
   const ST={on:['공개','ok'],test:['test','warn'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
   $('gnSub').textContent=can?'전체 몰 또는 고른 몰 · 공통(모든 상품) 또는 개별(특정 상품) 문구·이미지와 작은 버튼 — 저장 (test) 은 주소 끝에 &gnote=on 을 붙인 사람만 봅니다':'상품 상세페이지에 나가는 문구 (수정·삭제는 권한이 있는 담당자만)';
-  const notes=(d.notes||[]).filter(n=>can || n.state!=='off').sort((a,b)=>(a.scope==='all'?0:1)-(b.scope==='all'?0:1));
+  const all=(d.notes||[]).filter(n=>can || n.state!=='off'), spks=((SPK&&SPK.items)||[]);
+  const notes=all.filter(gnFPass).sort((a,b)=>(a.scope==='all'?0:1)-(b.scope==='all'?0:1));
   let h=can?`<div style="display:flex;justify-content:flex-end;margin:0 0 8px"><button type="button" class="btn sm" onclick="gnOpen(null)">＋ 문구 추가</button></div>`:'';
   h+=notes.length?`<div class="list">${notes.map(n=>{ const url=gnPageUrl(n);
     return `<div class="item" style="grid-template-columns:1fr auto">
@@ -6456,8 +6486,9 @@ function renderGoodsNote(){
         <div class="note-in" style="margin:2px 0 0">${gnMallsTxt(n)} · ${esc(L[n.pos]||n.pos)} · ${n.scope==='all'?'<b>공통</b> · 모든 상품':''}${(n.goods||[]).length?'<b>개별</b> · 상품 '+esc(n.goods.join(', ')):''}${(n.goods||[]).length&&(n.models||[]).length?' · ':''}${(n.models||[]).length?'모델 '+esc(n.models.join(', ')):''}${n.from||n.to?' · '+esc(n.from||'')+' ~ '+esc(n.to||''):''}${n.btn?' · 버튼 「'+esc(n.btn)+'」':''}</div>
         ${url?`<a class="note-in" style="display:inline-block;margin-top:4px" href="${esc(url)}" target="_blank" rel="noopener">페이지에서 보기 ↗</a>`:''}</div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[n.state][1]}">${ST[n.state][0]}</span>${can&&n.can!==false?`<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sm ghost" onclick="gnOpen(${n.id})">수정</button>${n.status!=='on'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'on')">공개</button>`:`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'test')">test로</button>`}${n.status!=='off'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'off')">끄기</button>`:''}<button type="button" class="btn sm ghost" style="color:#d43f3f" onclick="gnStatus(${n.id},'gone')">삭제</button></span>`:''}</div></div>`; }).join('')}</div>`
-    :`<div class="empty">아직 상품 안내 문구가 없습니다</div>`;
-  $('gnBody').innerHTML=spkRows()+h;
+    :`<div class="empty">${all.length?'고른 조건에 맞는 문구가 없습니다':'아직 상품 안내 문구가 없습니다'}</div>`;
+  const total=all.length+spks.length, shown=notes.length+spks.filter(gnFSpk).length;
+  $('gnBody').innerHTML=(total>1?gnFilterBar(shown,total):'')+spkRows()+h;
 }
 function gnOpen(id){
   const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{scope:'goods',malls:[((GN.malls||[]).find(m=>m.code==='pm')||(GN.malls||[])[0]||{code:'pm'}).code],goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
