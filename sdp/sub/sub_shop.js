@@ -434,12 +434,28 @@ window.SUB_SHOP_READY = true;
       '<p class="ss-bubble-main">💬 ' + esc(t.main) + '</p><p class="ss-bubble-gift">🎁 ' + esc(t.gift) + '</p>' +
       '<div class="ss-bubble-btns"><a class="ss-btn" href="' + esc(consultHref(null, 'bubble')) + '" data-cta="consult">구독 문의하기</a>' +
       (tel ? '<a class="ss-btn-line" href="tel:' + esc(tel.replace(/[^0-9]/g, '')) + '" data-cta="tel">📞 ' + esc(tel) + '</a>' : '') + '</div>';
+    // 말풍선이 목록 끝을 가리지 않게 (2026-11-03): 페이지 끝에 말풍선 높이만큼 빈 자리를 두고, 내려 읽는 동안은 한 줄로 접는다 (누르면 다시 펼침)
+    var space = document.createElement('div'); space.id = 'ssBubbleSpace'; space.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(space);
     document.body.appendChild(b);
-    setTimeout(function () { b.classList.add('is-on'); track('ss_bubble_view'); }, 1500);
+    function fit() { space.style.height = b.classList.contains('is-on') ? (b.offsetHeight + 24) + 'px' : '0'; }
+    var userOpen = false;
+    function onScroll() {
+      if (!b.classList.contains('is-on')) return;
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      if (y > 300 && !userOpen && !b.classList.contains('is-mini')) { b.classList.add('is-mini'); fit(); }
+      else if (y < 120 && b.classList.contains('is-mini')) { b.classList.remove('is-mini'); userOpen = false; fit(); }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', fit);
+    setTimeout(function () { b.classList.add('is-on'); fit(); onScroll(); track('ss_bubble_view'); }, 1500);
     b.addEventListener('click', function (ev) {
       var x = ev.target.closest ? ev.target.closest('.ss-bubble-x, a[data-cta]') : null;
-      if (!x) return;
-      if (x.classList.contains('ss-bubble-x')) { b.classList.remove('is-on'); try { sessionStorage.setItem('ss_bubble_off', '1'); } catch (e) {} track('ss_bubble_close'); }
+      if (!x) {
+        if (b.classList.contains('is-mini')) { b.classList.remove('is-mini'); userOpen = true; fit(); track('ss_bubble_open'); }
+        return;
+      }
+      if (x.classList.contains('ss-bubble-x')) { b.classList.remove('is-on'); fit(); try { sessionStorage.setItem('ss_bubble_off', '1'); } catch (e) {} track('ss_bubble_close'); }
       else track('ss_bubble_click', { ss_cta: x.getAttribute('data-cta') });
     });
   }
