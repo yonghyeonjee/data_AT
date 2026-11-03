@@ -217,7 +217,8 @@ window.SUB_BUNDLE_READY = true;
      금액은 자동납부 할인과 같은 식 calcDiscount(총 구독금액, 비율, 개월) → 월 환산. 제휴카드 청구할인은 그 뒤(청구 기준)에 다시 상한.
      정수기는 본사 표(세부유형·약정·케어별)가 따로라 exclude 로 빼고 상담 안내. 스마트 패키지(bundle) 포인트와 같이 계산한다 */
   function multiPolicy() {
-    var P = C.policy(), m = P && P.multi; if (!m || typeof m !== 'object' || !m.rates) return null;
+    // sub_tab.js 의 SUB_CALC.policy() 는 자기 기본 정책에 있는 키만 남기므로(usePolicy) multi 는 배포 원본 window.SUB_POLICY 에서 읽는다
+    var P = window.SUB_POLICY || C.policy(), m = P && P.multi; if (!m || typeof m !== 'object' || !m.rates) return null;
     if ((m.from || m.to) && !C.inPeriod(m)) return null;
     return m;
   }
