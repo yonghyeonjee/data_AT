@@ -433,7 +433,7 @@ window.SUB_SHOP_READY = true;
     b.innerHTML = '<button type="button" class="ss-bubble-x" aria-label="닫기">×</button>' +
       '<p class="ss-bubble-main">💬 ' + esc(t.main) + '</p><p class="ss-bubble-gift">🎁 ' + esc(t.gift) + '</p>' +
       '<div class="ss-bubble-btns"><a class="ss-btn" href="' + esc(consultHref(null, 'bubble')) + '" data-cta="consult">구독 문의하기</a>' +
-      (tel ? '<a class="ss-btn-line" href="tel:' + esc(tel.replace(/[^0-9]/g, '')) + '" data-cta="tel">📞 ' + esc(tel) + '</a>' : '') + '</div>';
+      (tel ? '<a class="ss-btn-line" href="tel:' + esc(tel.replace(/[^0-9]/g, '')) + '" data-cta="tel" aria-label="전화 ' + esc(tel) + '">📞<span class="ss-tel-num"> ' + esc(tel) + '</span></a>' : '') + '</div>';
     // 말풍선이 목록 끝을 가리지 않게 (2026-11-03): 페이지 끝에 말풍선 높이만큼 빈 자리를 두고, 내려 읽는 동안은 한 줄로 접는다 (누르면 다시 펼침)
     var space = document.createElement('div'); space.id = 'ssBubbleSpace'; space.setAttribute('aria-hidden', 'true');
     document.body.appendChild(space);
@@ -452,6 +452,8 @@ window.SUB_SHOP_READY = true;
     b.addEventListener('click', function (ev) {
       var x = ev.target.closest ? ev.target.closest('.ss-bubble-x, a[data-cta]') : null;
       if (!x) {
+        // 휴대폰에서 접힌 하단 바를 누르면 바로 구독 문의로 이동 (2026-11-03)
+        if (b.classList.contains('is-mini') && window.matchMedia && window.matchMedia('(max-width:760px)').matches) { track('ss_bubble_click', { ss_cta: 'consult_bar' }); location.href = consultHref(null, 'bubble'); return; }
         if (b.classList.contains('is-mini')) { b.classList.remove('is-mini'); userOpen = true; fit(); track('ss_bubble_open'); }
         return;
       }
