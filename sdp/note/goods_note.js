@@ -23,7 +23,7 @@
     detail_top:    ['.detail_explain_box', 'prepend']
   };
   var POS_LABEL = {
-    price_below: '가격 아래 (공통)', pay_above: '네이버페이 위 (공통)',
+    price_below: '가격 아래', pay_above: '네이버페이 위',
     title_below: '상품명 아래', benefit_above: '혜택 안내 상자 위', benefit_below: '혜택 안내 상자 아래',
     buy_above: '구매 버튼 위', pay_below: '네이버페이 아래', detail_top: '상세정보 맨 위'
   };

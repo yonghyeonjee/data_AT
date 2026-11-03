@@ -6284,28 +6284,29 @@ function gnPageUrl(n){
 function renderGoodsNote(){
   const d=GN, can=!!d.can_edit, L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{};
   const ST={on:['공개','ok'],test:['시험','warn'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
-  $('gnSub').textContent=can?'특정 상품에만 나가는 문구와 작은 버튼 — 시험으로 저장하면 주소 끝에 &gnote=on 을 붙인 사람만 봅니다':'특정 상품 상세페이지에만 나가는 문구 (고치기는 점장님·대표님)';
-  const notes=(d.notes||[]).filter(n=>can || n.state!=='off');
+  $('gnSub').textContent=can?'공통(이 몰 모든 상품) 또는 개별(특정 상품) 문구와 작은 버튼 — 시험으로 저장하면 주소 끝에 &gnote=on 을 붙인 사람만 봅니다':'특정 상품 상세페이지에만 나가는 문구 (고치기는 점장님·대표님)';
+  const notes=(d.notes||[]).filter(n=>can || n.state!=='off').sort((a,b)=>(a.scope==='all'?0:1)-(b.scope==='all'?0:1));
   let h=can?`<div style="display:flex;justify-content:flex-end;margin:0 0 8px"><button type="button" class="btn sm" onclick="gnOpen(null)">＋ 문구 추가</button></div>`:'';
   h+=notes.length?`<div class="list">${notes.map(n=>{ const url=gnPageUrl(n);
     return `<div class="item" style="grid-template-columns:1fr auto">
       <div><div style="font-weight:700">${esc(n.title||String(n.body).split('\n')[0].replace(/\*\*/g,''))}</div>
-        <div class="note-in" style="margin:2px 0 0">${esc(gnMall(n.mall).name)} · ${esc(L[n.pos]||n.pos)} · ${(n.goods||[]).length?'상품 '+esc(n.goods.join(', ')):''}${(n.goods||[]).length&&(n.models||[]).length?' · ':''}${(n.models||[]).length?'모델 '+esc(n.models.join(', ')):''}${n.from||n.to?' · '+esc(n.from||'')+' ~ '+esc(n.to||''):''}${n.btn?' · 버튼 「'+esc(n.btn)+'」':''}</div>
+        <div class="note-in" style="margin:2px 0 0">${esc(gnMall(n.mall).name)} · ${esc(L[n.pos]||n.pos)} · ${n.scope==='all'?'<b>공통</b> · 모든 상품':''}${(n.goods||[]).length?'<b>개별</b> · 상품 '+esc(n.goods.join(', ')):''}${(n.goods||[]).length&&(n.models||[]).length?' · ':''}${(n.models||[]).length?'모델 '+esc(n.models.join(', ')):''}${n.from||n.to?' · '+esc(n.from||'')+' ~ '+esc(n.to||''):''}${n.btn?' · 버튼 「'+esc(n.btn)+'」':''}</div>
         ${url?`<a class="note-in" style="display:inline-block;margin-top:4px" href="${esc(url)}" target="_blank" rel="noopener">페이지에서 보기 ↗</a>`:''}</div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[n.state][1]}">${ST[n.state][0]}</span>${can?`<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sm ghost" onclick="gnOpen(${n.id})">고치기</button>${n.status!=='on'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'on')">공개</button>`:`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'test')">시험으로</button>`}${n.status!=='off'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'off')">끄기</button>`:''}</span>`:''}</div></div>`; }).join('')}</div>`
     :`<div class="empty">아직 상품 안내 문구가 없습니다</div>`;
   $('gnBody').innerHTML=h;
 }
 function gnOpen(id){
-  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{mall:'pm',goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
+  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{scope:'goods',mall:'pm',goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
   GN_DLG={n}; $('gnDlgTitle').textContent=id!=null?'상품 안내 문구 고치기':'상품 안내 문구 추가'; $('gnErr').textContent='';
-  const L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{price_below:'가격 아래 (공통)'};
+  const L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{price_below:'가격 아래'};
   const tones=[['blue','파랑'],['red','빨강'],['gray','회색'],['yellow','노랑']];
   $('gnForm').innerHTML=`
     <div class="gn-two"><div><label for="gn_mall">몰</label><select class="in" id="gn_mall" oninput="gnPreview()">${(GN.malls||[]).map(m=>`<option value="${esc(m.code)}" ${m.code===n.mall?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
       <div><label for="gn_pos">위치</label><select class="in" id="gn_pos" oninput="gnPreview()">${Object.keys(L).map(k=>`<option value="${k}" ${k===n.pos?'selected':''}>${esc(L[k])}</option>`).join('')}</select></div></div>
-    <div><label for="gn_goods">대상 상품번호 (쉼표로 여러 개)</label><input class="in" id="gn_goods" inputmode="numeric" value="${esc((n.goods||[]).join(', '))}" placeholder="예: 1000003136"><div class="gn-hint">상품 페이지의 상품코드(주소 goodsNo=) · 몰마다 번호가 다릅니다</div></div>
-    <div><label for="gn_models">또는 모델번호 (쉼표 · 상품명에 들어 있는 모델번호로 찾습니다)</label><input class="in" id="gn_models" autocapitalize="characters" value="${esc((n.models||[]).join(', '))}" placeholder="예: KQ42SH90AEXKR"></div>
+    <div><label>범위</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_scope">${[['goods','개별 · 특정 상품만'],['all','공통 · 이 몰 모든 상품']].map(t=>`<span class="chip ${t[0]===(n.scope||'goods')?'on':''}" data-v="${t[0]}" onclick="[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on');gnScope()">${t[1]}</span>`).join('')}</div></div>
+    <div id="gn_target" style="display:grid;gap:inherit"><div><label for="gn_goods">대상 상품번호 (쉼표로 여러 개)</label><input class="in" id="gn_goods" inputmode="numeric" value="${esc((n.goods||[]).join(', '))}" placeholder="예: 1000003136"><div class="gn-hint">상품 페이지의 상품코드(주소 goodsNo=) · 몰마다 번호가 다릅니다</div></div>
+    <div><label for="gn_models">또는 모델번호 (쉼표 · 상품명에 들어 있는 모델번호로 찾습니다)</label><input class="in" id="gn_models" autocapitalize="characters" value="${esc((n.models||[]).join(', '))}" placeholder="예: KQ42SH90AEXKR"></div></div>
     <div><label for="gn_title">제목 (선택)</label><input class="in" id="gn_title" value="${esc(n.title||'')}" placeholder="예: 11월 한정 혜택" oninput="gnPreview()"></div>
     <div><label for="gn_body">문구</label><textarea class="in" id="gn_body" rows="4" oninput="gnPreview()" placeholder="줄바꿈 그대로 나갑니다. **이렇게** 감싸면 강조색 굵은 글씨">${esc(n.body||'')}</textarea></div>
     <div><label>색</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_tone">${tones.map(t=>`<span class="chip ${t[0]===(n.tone||'blue')?'on':''}" data-v="${t[0]}" onclick="[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on');gnPreview()">${t[1]}</span>`).join('')}</div></div>
@@ -6314,12 +6315,13 @@ function gnOpen(id){
     <div><label for="gn_url">버튼 주소</label><input class="in" id="gn_url" value="${esc(n.url||'')}" placeholder="https://… 또는 tel:0212345678" oninput="gnPreview()"></div>
     <div class="gn-two"><div><label for="gn_from">시작일 (비우면 바로)</label><input class="in" type="date" id="gn_from" value="${esc(n.from||'')}"></div><div><label for="gn_to">종료일 (비우면 계속)</label><input class="in" type="date" id="gn_to" value="${esc(n.to||'')}"></div></div>
     <div class="gn-two"><div><label for="gn_sort">순서 (같은 위치에 여럿일 때 작은 수가 위)</label><input class="in" id="gn_sort" inputmode="numeric" value="${esc(n.sort??100)}"></div><div><label for="gn_note">메모 (사내용)</label><input class="in" id="gn_note" value="${esc(n.note||'')}"></div></div>`;
-  $('gnDlg').classList.remove('hidden'); gnPreview(); setTimeout(()=>{ const f=$('gn_goods'); if(f) f.focus(); },50);
+  $('gnDlg').classList.remove('hidden'); gnScope(); setTimeout(()=>{ const f=$('gn_goods'); if(f) f.focus(); },50);
 }
+function gnScope(){ const t=$('gn_target'); if(t) t.style.display=gnData().scope==='all'?'none':''; gnPreview(); }
 function gnClose(){ $('gnDlg').classList.add('hidden'); GN_DLG=null; }
 function gnData(){
   const csv=v=>v.split(/[,\n\s]+/).map(x=>x.trim()).filter(Boolean);
-  return { id:GN_DLG&&GN_DLG.n.id, mall:$('gn_mall').value, pos:$('gn_pos').value, goods:csv($('gn_goods').value), models:csv($('gn_models').value).map(x=>x.toUpperCase()),
+  return { id:GN_DLG&&GN_DLG.n.id, scope:(($('gn_scope').querySelector('.chip.on')||{}).dataset||{}).v||'goods', mall:$('gn_mall').value, pos:$('gn_pos').value, goods:csv($('gn_goods').value), models:csv($('gn_models').value).map(x=>x.toUpperCase()),
     title:$('gn_title').value.trim(), body:$('gn_body').value.replace(/\s+$/,''), tone:(($('gn_tone').querySelector('.chip.on')||{}).dataset||{}).v||'blue',
     btn:$('gn_btn').value.trim(), btnTone:$('gn_btntone').value, url:$('gn_url').value.trim(), from:$('gn_from').value||null, to:$('gn_to').value||null,
     sort:Number($('gn_sort').value)||100, note:$('gn_note').value.trim() };
@@ -6344,7 +6346,7 @@ async function gnSave(status){
   if(!GN_DLG) return; const b1=$('gnSaveTest'), b2=$('gnSaveOn'); b1.disabled=b2.disabled=true;
   try{
     const d=gnData(); if(!d.body.trim()) throw new Error('문구를 적어 주세요');
-    if(!d.goods.length && !d.models.length) throw new Error('대상 상품번호나 모델번호를 하나 이상 넣어 주세요');
+    if(d.scope!=='all' && !d.goods.length && !d.models.length) throw new Error('대상 상품번호나 모델번호를 하나 이상 넣어 주세요');
     if(!!d.btn !== !!d.url) throw new Error('버튼은 글자와 주소를 둘 다 넣어야 합니다');
     if(d.url && !/^(https?:\/\/|tel:|\/)/i.test(d.url)) throw new Error('버튼 주소는 https:// 또는 tel: 로 시작해야 합니다');
     d.status=status;
