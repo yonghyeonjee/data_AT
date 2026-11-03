@@ -1607,6 +1607,17 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         .gn-mock .detail_explain_box{margin-top:14px;padding-top:10px;border-top:2px solid #222;color:#666;font-size:12px}
         .gn-mock .gnote.gn-now{outline:2px dashed #ff8a00;outline-offset:3px}
         @media (max-width:760px){ #gnDlg .gn-grid{grid-template-columns:1fr} #gnDlg .gn-prev{position:static} }
+        .gn-filter{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;margin:0 0 10px;padding:2px 0 6px}
+        .gn-filter .gf-g{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;color:var(--muted);font-size:calc(12px * var(--font-scale));margin-left:6px}
+        .gn-filter .gf-g:first-child{margin-left:0}
+        .gn-filter .gf{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;color:#333;font-size:calc(12.5px * var(--font-scale));line-height:1.2;cursor:pointer;white-space:nowrap}
+        .gn-filter .gf .bx{width:14px;height:14px;border:1.5px solid #b8c0cc;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;line-height:1;color:#fff;background:#fff}
+        .gn-filter .gf[aria-pressed="true"]{border-color:#1757a6;background:#eef4fc;color:#1757a6;font-weight:600}
+        .gn-filter .gf[aria-pressed="true"] .bx{border-color:#1757a6;background:#1757a6}
+        .gn-filter .gf .dot{width:8px;height:8px;border-radius:50%}
+        .gn-filter .gf-n{flex:0 0 auto;padding-right:2px;font-weight:600;color:var(--muted);font-size:calc(12px * var(--font-scale));white-space:nowrap}
+        @media (max-width:560px){ #gnBody .item{grid-template-columns:1fr!important;gap:8px} #gnBody .item>div:last-child{flex-direction:row-reverse!important;align-items:flex-start!important;justify-content:space-between} #gnBody .item>div:last-child>span:not(.pill){flex:1 1 auto;justify-content:flex-start!important} #gnBody .item .btn.sm{padding-left:12px;padding-right:12px} }
+        .gn-filter .gf-x{flex:0 0 auto;border:0;background:none;color:#1757a6;font-size:calc(12px * var(--font-scale));cursor:pointer;padding:4px 2px;white-space:nowrap}
         .gn-q{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;margin-left:2px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--muted);font-size:12px;font-weight:700;line-height:1;cursor:pointer;vertical-align:2px}
         .gn-q:hover{border-color:#1757a6;color:#1757a6}
         #gnHelp .lvdlg{width:min(860px,100%);max-height:92vh;overflow:auto;line-height:1.65}
@@ -1637,6 +1648,22 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           </div>
         </div>
       </div>
+      <div class="lvmask hidden" id="spkDlg" onclick="if(event.target===this)spkClose()">
+        <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="spkDlgTitle" style="width:min(980px,100%);max-height:92vh;overflow:auto">
+          <button type="button" class="lvx" onclick="spkClose()" aria-label="닫기" title="닫기">✕</button>
+          <h3 id="spkDlgTitle">스마트 패키지 안내 수정</h3>
+          <div class="gn-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start">
+            <div class="lvform" id="spkForm"></div>
+            <div class="gn-prev" style="border:1px solid var(--line);border-radius:10px;padding:12px;background:#fafbfc"><h4>미리보기</h4><div id="spkPrev"></div>
+              <p class="gn-hint" style="color:var(--muted);font-size:12px">일반 대상 제품 카드입니다. 포인트 숫자는 예시이고, 실제 숫자와 대상 모델은 관리자 [스마트 패키지] 판에서 옵니다.</p></div>
+          </div>
+          <p class="note-in" id="spkErr" style="color:var(--bad);min-height:18px;margin:6px 0 0"></p>
+          <div class="btns" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px">
+            <button type="button" class="btn ghost" onclick="spkClose()">취소</button>
+            <button type="button" class="btn" id="spkSave" onclick="spkSave()">저장</button>
+          </div>
+        </div>
+      </div>
       <div class="lvmask hidden" id="gnHelp" onclick="if(event.target===this)gnHelp(false)">
         <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="gnHelpTitle">
           <button type="button" class="lvx" onclick="gnHelp(false)" aria-label="닫기" title="닫기">✕</button>
@@ -1647,7 +1674,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           <ul>
             <li><b>공통</b> — 그 몰의 모든 상품에 나갑니다 (예: 삼성카드 할부 혜택 · 배송 안내)</li>
             <li><b>개별</b> — 상품번호(주소의 goodsNo=) 또는 모델번호를 넣은 상품에만 나갑니다. 상품번호는 몰마다 다릅니다</li>
-            <li><b>몰</b> — 시흥몰 · 프라자몰 중 고릅니다. 담당자마다 보이는 몰이 다릅니다 (최지영 프로: 시흥몰만 · 박은지 프로: 모든 몰 · 그 밖의 점장급: 모든 몰 · 그 밖의 담당자: 보기만)</li>
+            <li><b>몰</b> — <b>전체 몰</b>(지금 4몰 + 나중에 생기는 몰) 또는 시흥몰 · 프라자몰 · S몰 · AT몰 중 여러 개를 고릅니다. 담당자마다 보이는 몰이 다릅니다 (최지영 프로: 시흥몰만 · 박은지 프로: 모든 몰 · 그 밖의 점장급: 모든 몰 · 그 밖의 담당자: 보기만). 전체 몰 문구는 모든 몰을 맡은 담당자만 수정합니다</li>
           </ul>
 
           <h4>2. 넣는 방법</h4>
@@ -1673,6 +1700,9 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
               <ul>
                 <li>프라자몰: <a href="https://www.samsungpmall.com/goods/goods_view.php?goodsNo=1000003136&amp;gnote=on" target="_blank" rel="noopener">www.samsungpmall.com/goods/goods_view.php?goodsNo=1000003136&amp;gnote=on</a></li>
                 <li>시흥몰: <a href="https://www.samsungsh.co.kr/goods/goods_view.php?goodsNo=1000001077&amp;gnote=on" target="_blank" rel="noopener">www.samsungsh.co.kr/goods/goods_view.php?goodsNo=1000001077&amp;gnote=on</a></li>
+                <li>S몰 PC: <a href="https://www.samsungsmall.com/goods/goods_view.php?goodsNo=1000004061&amp;gnote=on" target="_blank" rel="noopener">www.samsungsmall.com/goods/goods_view.php?goodsNo=1000004061&amp;gnote=on</a></li>
+                <li>S몰 모바일(휴대폰으로): <a href="https://m.samsungsmall.com/goods/goods_view.php?goodsNo=1000004061&amp;gnote=on" target="_blank" rel="noopener">m.samsungsmall.com/goods/goods_view.php?goodsNo=1000004061&amp;gnote=on</a></li>
+                <li>AT몰: <a href="https://www.samsungat.com/goods/goods_view.php?goodsNo=1000003438&amp;gnote=on" target="_blank" rel="noopener">www.samsungat.com/goods/goods_view.php?goodsNo=1000003438&amp;gnote=on</a></li>
               </ul></li>
             <li>손님 화면 확인: <code>&amp;gnote=on</code> 없이 같은 주소를 열어 test 문구가 <b>안 보이는지</b> 봅니다</li>
             <li><b>공개</b>한 뒤에는 주소를 그대로 열어 보이는지 확인합니다 (새로고침하면 바로 반영)</li>
@@ -1681,16 +1711,21 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           <p class="note-in">이 매장 화면 자체가 바뀐 뒤(새 기능)에는 브라우저에 옛 화면이 최대 10분 남아 있을 수 있습니다. 그때는 <b>Ctrl+Shift+R</b> 로 새로고침하세요.</p>
 
           <h4>4. 고도몰 어디를 고쳐서 동작하나요</h4>
-          <p>두 몰의 상품상세 스킨 파일 <b>goods/goods_view.html</b> 맨 아래, <code>{=fbGoodsViewScript}</code> 줄 바로 위에 두 줄을 넣었습니다 (2026-11-03). 이 두 줄이 데이터센터에서 문구를 읽어 와 정한 자리에 끼웁니다.</p>
+          <p>각 몰 상품상세 스킨 파일 <b>goods/goods_view.html</b> 맨 아래 <code>{=fbGoodsViewScript}</code> 줄 바로 위에 두 줄을 넣었습니다 (2026-11-03). 이 두 줄이 데이터센터에서 문구를 읽어 와 정한 자리에 끼웁니다. 편집 경로: 관리자 › 디자인 › 디자인 스킨 리스트 › 사용 스킨 [HTML로 편집하기] › 상품 › 상품상세화면.</p>
           <table>
-            <tr><th></th><th>프라자몰</th><th>시흥몰</th></tr>
-            <tr><th>관리자</th><td>gdadmin-samsungdmfp.godomall.com</td><td>gdadmin-samsungsh70.godomall.com</td></tr>
-            <tr><th>스킨</th><td>designbookR_dodamdod</td><td>designbook_air_RES</td></tr>
-            <tr><th>파일</th><td colspan="2">디자인 › 디자인 스킨 › 상품 › 상품상세화면 (goods/goods_view.html)</td></tr>
-            <tr><th>몰 코드</th><td><code>mall: 'pm'</code></td><td><code>mall: 'sh'</code></td></tr>
-            <tr><th>함께 바꾼 것</th><td>쿠폰 영역 아래에 박혀 있던 <b>삼성카드 할부 혜택 · 배송 안내</b> 상자(style + div)를 빼고, 같은 내용을 공통 문구 2개로 옮김. 그 자리에 <code>[상품 안내 문구] … 옮김</code> 주석을 남김. 네이버 프로모션 배너 코드는 원래 주석으로 꺼져 있어 그대로 두고, 목록에 <b>꺼짐</b> 상태로 넣어 둠</td><td>없음 — 스마트 패키지(구독탭, <code>goods/_sub_tab.html</code>)는 그대로</td></tr>
+            <tr><th>몰</th><th>관리자</th><th>PC 스킨</th><th>모바일 스킨</th><th>몰 코드</th></tr>
+            <tr><td>시흥몰</td><td>gdadmin-samsungsh70</td><td>designbook_air_RES ✔</td><td>moment_FRUITY — 안 씀 (휴대폰도 PC 반응형 스킨)</td><td><code>'sh'</code></td></tr>
+            <tr><td>프라자몰</td><td>gdadmin-samsungdmfp</td><td>designbookR_dodamdod ✔</td><td>designbookM — 안 씀</td><td><code>'pm'</code></td></tr>
+            <tr><td>S몰</td><td>gdadmin-samsuntr8819</td><td>no99 ✔</td><td><b>no99 (모바일) ✔ — 따로 넣음</b></td><td><code>'sm'</code></td></tr>
+            <tr><td>AT몰</td><td>gdadmin-samsuntr6395</td><td>designbook_air_RES ✔</td><td>mo_designart — 안 씀</td><td><code>'at'</code></td></tr>
           </table>
-          <p>넣은 두 줄 (시흥몰은 <code>'pm'</code> 대신 <code>'sh'</code>):</p>
+          <ul>
+            <li><b>모바일:</b> 휴대폰으로 열었을 때 <b>S몰만</b> 모바일 전용 스킨(m.samsungsmall.com)을 씁니다. 나머지 세 몰은 PC 스킨이 휴대폰 화면에 맞춰 줄어듭니다. 고도몰에서 <b>모바일샵 사용</b>을 켜면 그 몰 모바일 스킨에도 두 줄을 넣어야 합니다</li>
+            <li><b>몰마다 다른 자리:</b> S몰 PC 는 가격이 상품정보 표 안에 있어 '가격 아래'가 그 줄 아래로 · AT몰은 네이버페이가 없어 '네이버페이 위/아래'가 구매 버튼 아래로 · S몰 모바일은 네이버페이·구매 버튼이 아래 구매 창 안에 있어 '네이버페이 위/아래 · 구매 버튼 위'가 상품정보 표 아래로 들어갑니다</li>
+            <li><b>프라자몰에서 함께 바꾼 것:</b> 쿠폰 영역 아래 <b>삼성카드 할부 혜택 · 배송 안내</b> 상자(style + div)를 빼고 같은 내용을 공통 문구로 옮김 (그 자리에 <code>[상품 안내 문구] … 옮김</code> 주석). 네이버 프로모션 배너 코드는 원래 주석으로 꺼져 있어 그대로 두고 목록에 <b>꺼짐</b>으로 넣어 둠</li>
+            <li><b>스마트 패키지 안내 카드</b>(시흥몰): 스킨의 <code>sdp/spkg/spkg.js</code> 한 줄이 그립니다. 문구·버튼·전화·켜기/끄기·숨길 상품은 이 카드 맨 위 [스마트 패키지] 줄의 <b>수정</b>에서, 대상 모델·포인트표는 관리자 [스마트 패키지] 판에서 바꿉니다</li>
+          </ul>
+          <p>넣은 두 줄 (프라자몰 예 · 다른 몰은 <code>'pm'</code> 자리에 위 표의 몰 코드):</p>
           <pre>&lt;!-- [상품 안내 문구] 데이터센터 mvp_266 · 2026-11-03 --&gt;
 &lt;script type="text/javascript"&gt;var GOODS_NOTE_CONFIG = { mall: 'pm', goodsNo: '{=goodsView['goodsNo']}' };&lt;/script&gt;
 &lt;script type="text/javascript" src="https://db.samsungat.co.kr/sdp/note/goods_note.js" charset="utf-8"&gt;&lt;/script&gt;
@@ -1699,7 +1734,8 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
             <li><b>찾기</b>: 편집 화면에서 <code>[상품 안내 문구]</code> 로 검색하면 두 곳(두 줄 · 옮긴 상자 자리)이 나옵니다</li>
             <li><b>되돌리기</b>: 주석 사이 두 줄을 지우면 모든 문구가 그 몰에서 사라집니다. 고도몰 편집 화면의 <b>[저장내용 확인]</b>에서 이전 판으로 돌릴 수 있습니다</li>
             <li><b>주의</b>: 고도몰 스킨의 <code>{</code> 뒤에는 꼭 공백을 둡니다 (<code>{ mall:</code>). 붙여 쓰면 고도몰이 치환코드로 읽어 깨집니다</li>
-            <li><b>다른 몰 추가</b>: 같은 두 줄을 넣되 새 몰 코드를 씁니다. 몰 코드는 데이터센터에 먼저 등록해야 합니다 (개발 담당)</li>
+            <li><b>다른 몰 추가</b>: 같은 두 줄을 넣되 새 몰 코드를 씁니다. 몰 코드는 데이터센터(sub.mall)에 먼저 등록해야 합니다 (개발 담당)</li>
+            <li><b>저장 확인</b>: 고도몰 [디자인 페이지 저장] 뒤 "저장이 완료되었습니다"가 떠야 합니다. 저장 후 상품 페이지 소스에서 <code>goods_note.js</code> 가 보이는지 확인하세요</li>
           </ul>
 
           <h4>5. 안 보일 때 확인할 것</h4>
@@ -6498,37 +6534,110 @@ function gnLib(cb){
 async function loadGoodsNote(){
   if(!CODE) return;
   try{ GN=await rpc('fn_store_goods_note_list',{p_code:CODE}); }catch(e){ $('gnBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  try{ SPK=await rpc('fn_store_spkg_conf_list',{p_code:CODE}); }catch(e){ SPK=null; }
   gnLib(renderGoodsNote);
 }
+/* ═══ 스마트 패키지 안내 카드 (mvp_271) : 몰마다 문구·버튼·전화·켜기/끄기·숨길/더할 상품 — fn_store_spkg_conf_list/save · 고도몰 sdp/spkg/spkg.js 가 fn_spkg_conf 로 읽는다 ═══ */
+let SPK=null, SPK_CUR=null;
+const SPK_DEF={tag:'삼성전자 스마트 패키지', msg:'스마트 패키지 대상 제품을 **2개 이상 함께 구매**하면 **멤버십 포인트**를 드립니다.', sub:'이 제품 1개만 구매하면 적용되지 않아요 · {min}부터, 함께 사는 품목이 많을수록 !!최대 {max}P!!', btn:'스마트 패키지 상담 문의', ask:'/main/html.php?htmid=service/SamSungSubscription.html', tel:'031-8042-3166'};
+function spkLib(cb){
+  if(window.Spkg) return cb();
+  window.SPKG_CONFIG={auto:false};
+  const s=document.createElement('script'); s.src='/sdp/spkg/spkg.js?v='+Date.now(); s.onload=()=>{ if(window.Spkg) window.Spkg.addCss(); cb(); }; s.onerror=()=>cb(); document.head.appendChild(s);
+}
+function spkRows(){
+  const items=((SPK&&SPK.items)||[]).filter(gnFSpk), can=!!(SPK&&SPK.can_edit); if(!items.length) return '';
+  return '<div class="list" style="margin-bottom:10px">'+items.map(c=>{ const on=c.on!==false;
+    return `<div class="item" style="grid-template-columns:1fr auto">
+      <div><div style="font-weight:700">${esc(c.tag||SPK_DEF.tag)} <span class="note-in" style="font-weight:400">· 상품 안내 카드</span></div>
+        <div class="note-in" style="margin:2px 0 0">${esc(c.name)} · 가격 아래 · <b>대상 모델 자동</b> (관리자 스마트 패키지 판)${(c.hide||[]).length?' · 숨김 상품 '+c.hide.length+'개':''}${(c.extra||[]).length?' · 더한 상품 '+c.extra.length+'개':''}${c.by?' · '+esc(c.updated||'')+' '+esc(c.by):''}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${on?'ok':''}">${on?'공개':'꺼짐'}</span>${can?`<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sm ghost" onclick="spkOpen('${esc(c.mall)}')">수정</button><button type="button" class="btn sm ghost" onclick="spkToggle('${esc(c.mall)}',${on?'false':'true'})">${on?'끄기':'켜기'}</button></span>`:''}</div></div>`; }).join('')+'</div>';
+}
+function spkOpen(mall){
+  const c=((SPK&&SPK.items)||[]).find(x=>x.mall===mall); if(!c) return; SPK_CUR=c; $('spkErr').textContent='';
+  $('spkDlgTitle').textContent=c.name+' 스마트 패키지 안내 수정';
+  const f=(id,label,val,ph,hint,area)=>`<div><label for="${id}">${label}</label>${area?`<textarea class="in" id="${id}" rows="2" oninput="spkPreview()" placeholder="${esc(ph)}">${esc(val||'')}</textarea>`:`<input class="in" id="${id}" value="${esc(val||'')}" placeholder="${esc(ph)}" oninput="spkPreview()">`}${hint?`<div class="gn-hint">${hint}</div>`:''}</div>`;
+  $('spkForm').innerHTML=`<p class="gn-hint" style="margin:0 0 8px">빈 칸은 원래 문구 그대로 나갑니다 (회색 글씨). 대상 모델·포인트표는 관리자 [스마트 패키지] 판에서 관리합니다.</p>`+
+    f('spk_tag','꼬리표',c.tag,SPK_DEF.tag)+
+    f('spk_msg','큰 문구 (일반 대상 제품)',c.msg,SPK_DEF.msg,'**글자** 파랑 굵게 · !!글자!! 빨강',true)+
+    f('spk_sub','작은 문구',c.sub,SPK_DEF.sub,'{min} = 첫 단계(예: 2품목 10만P) · {max} = 최대 포인트(예: 600만) — 판이 바뀌면 숫자도 따라 바뀝니다',true)+
+    `<div class="gn-two" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">`+f('spk_btn','상담 버튼 글자',c.btn,SPK_DEF.btn)+f('spk_tel','전화번호',c.tel,SPK_DEF.tel)+`</div>`+
+    f('spk_ask','상담 버튼 주소',c.ask,SPK_DEF.ask,'구독 문의 페이지면 상품·모델이 자동으로 채워집니다 · https:// 나 / 로 시작')+
+    f('spk_hide','이 상품에서는 숨기기 (상품번호 · 쉼표)',(c.hide||[]).join(', '),'예: 1000001077')+
+    f('spk_extra','대상 모델이 아니어도 보이기 (상품번호 · 쉼표)',(c.extra||[]).join(', '),'예: 1000000844','모델명으로 못 찾는 상품만 넣으세요');
+  $('spkDlg').classList.remove('hidden'); spkLib(spkPreview);
+}
+function spkClose(){ $('spkDlg').classList.add('hidden'); SPK_CUR=null; }
+function spkData(){
+  const v=id=>$(id).value.trim(), csv=s=>s.split(/[,\n\s]+/).map(x=>x.trim()).filter(Boolean);
+  return { mall:SPK_CUR.mall, tag:v('spk_tag'), msg:v('spk_msg'), sub:v('spk_sub'), btn:v('spk_btn'), tel:v('spk_tel'), ask:v('spk_ask'), hide:csv(v('spk_hide')), extra:csv(v('spk_extra')) };
+}
+function spkPreview(){
+  const box=$('spkPrev'); if(!box||!SPK_CUR) return;
+  if(!window.Spkg){ box.innerHTML='<div class="empty">미리보기를 불러오지 못했습니다</div>'; return; }
+  const d=spkData(), conf={}; ['tag','msg','sub','btn','tel','ask'].forEach(k=>{ if(d[k]) conf[k]=d[k]; });
+  box.innerHTML=window.Spkg.card({conf}); box.querySelectorAll('a').forEach(a=>a.addEventListener('click',e=>e.preventDefault()));
+}
+async function spkSave(){
+  if(!SPK_CUR) return; const b=$('spkSave'); b.disabled=true;
+  try{ const d=spkData(); if(d.ask && !/^(https?:\/\/|\/)/i.test(d.ask)) throw new Error('상담 버튼 주소는 https:// 또는 / 로 시작해야 합니다');
+    await rpc('fn_store_spkg_conf_save',{p_code:CODE,p_data:d}); spkClose(); toast('저장했습니다 · 상품 페이지를 새로고침하면 바로 바뀝니다'); loadGoodsNote(); }
+  catch(e){ $('spkErr').textContent=e.message; } finally{ b.disabled=false; }
+}
+async function spkToggle(mall,on){
+  if(!on && !confirm('이 몰 상품 페이지의 스마트 패키지 안내 카드를 끌까요? (다시 켤 수 있습니다)')) return;
+  try{ await rpc('fn_store_spkg_conf_save',{p_code:CODE,p_data:{mall,on}}); toast(on?'켰습니다':'껐습니다'); loadGoodsNote(); }catch(e){ toast(e.message); }
+}
 function gnMall(c){ return ((GN&&GN.malls)||[]).find(m=>m.code===c)||{code:c,name:c,domain:''}; }
+function gnMallsTxt(n){ const ms=n.malls||[n.mall]; return ms.includes('*')?'<b>전체 몰</b>':ms.map(c=>esc(gnMall(c).name)).join('·'); }
 function gnPageUrl(n){
-  const m=gnMall(n.mall); if(!m.domain || !(n.goods||[]).length) return '';
+  const m=gnMall((n.malls||[n.mall]).find(c=>c!=='*')||n.mall); if(!m.domain || !(n.goods||[]).length) return '';
   return 'https://'+m.domain+'/goods/goods_view.php?goodsNo='+encodeURIComponent(n.goods[0])+(n.status==='test'?'&gnote=on':'');
+}
+/* 목록 필터 (몰 · 상태 · 종류) — 같은 줄 안은 '또는', 줄끼리는 '그리고' · 아무것도 안 고르면 전부 · 이 기기에 기억 */
+let GN_F=(()=>{ try{ const v=JSON.parse(localStorage.getItem('gnFilter')||'{}'); return {mall:v.mall||[],st:v.st||[],kind:v.kind||[]}; }catch(e){ return {mall:[],st:[],kind:[]}; } })();
+function gnFSave(){ try{ localStorage.setItem('gnFilter',JSON.stringify(GN_F)); }catch(e){} }
+function gnFToggle(g,v){ const a=GN_F[g], i=a.indexOf(v); if(i<0) a.push(v); else a.splice(i,1); gnFSave(); renderGoodsNote(); }
+function gnFClear(){ GN_F={mall:[],st:[],kind:[]}; gnFSave(); renderGoodsNote(); }
+function gnFMall(ms){ const f=GN_F.mall; if(!f.length) return true; ms=ms||[]; return f.some(c=> c==='*' ? ms.includes('*') : (ms.includes(c)||ms.includes('*'))); }
+function gnFPass(n){ return gnFMall(n.malls||[n.mall]) && (!GN_F.st.length||GN_F.st.includes(n.status)) && (!GN_F.kind.length||GN_F.kind.includes(n.scope==='all'?'all':'goods')); }
+function gnFSpk(c){ return gnFMall([c.mall]) && (!GN_F.st.length||GN_F.st.includes(c.on===false?'off':'on')) && (!GN_F.kind.length||GN_F.kind.includes('all')); }
+function gnFilterBar(shown,total){
+  const malls=(GN&&GN.malls)||[], chip=(g,v,label,extra)=>`<button type="button" class="gf" aria-pressed="${GN_F[g].includes(v)}" onclick="gnFToggle('${g}','${v}')"><span class="bx">${GN_F[g].includes(v)?'✓':''}</span>${extra||''}${label}</button>`;
+  const dot=c=>`<span class="dot" style="background:${c}"></span>`, any=GN_F.mall.length+GN_F.st.length+GN_F.kind.length;
+  let h='<div class="gn-filter" role="group" aria-label="상품 안내 문구 거르기">'+`<span class="gf-n">${any?shown+' / '+total+'개':total+'개'}</span>`+(any?'<button type="button" class="gf-x" onclick="gnFClear()">모두 보기</button>':'');
+  if(malls.length>1) h+='<span class="gf-g">🏬 몰</span>'+chip('mall','*','전체 몰')+malls.map(m=>chip('mall',m.code,esc(m.name))).join('');
+  h+='<span class="gf-g">◉ 상태</span>'+chip('st','on','공개',dot('#1f9d55'))+chip('st','test','test',dot('#ff8a00'))+chip('st','off','꺼짐',dot('#9aa3ad'));
+  h+='<span class="gf-g">▤ 종류</span>'+chip('kind','all','공통')+chip('kind','goods','개별');
+  h+='</div>';
+  return h;
 }
 function renderGoodsNote(){
   const d=GN, can=!!d.can_edit, L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{};
   const ST={on:['공개','ok'],test:['test','warn'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
-  $('gnSub').textContent=can?'공통(이 몰 모든 상품) 또는 개별(특정 상품) 문구·이미지와 작은 버튼 — 저장 (test) 은 주소 끝에 &gnote=on 을 붙인 사람만 봅니다':'상품 상세페이지에 나가는 문구 (수정·삭제는 권한이 있는 담당자만)';
-  const notes=(d.notes||[]).filter(n=>can || n.state!=='off').sort((a,b)=>(a.scope==='all'?0:1)-(b.scope==='all'?0:1));
+  $('gnSub').textContent=can?'전체 몰 또는 고른 몰 · 공통(모든 상품) 또는 개별(특정 상품) 문구·이미지와 작은 버튼 — 저장 (test) 은 주소 끝에 &gnote=on 을 붙인 사람만 봅니다':'상품 상세페이지에 나가는 문구 (수정·삭제는 권한이 있는 담당자만)';
+  const all=(d.notes||[]).filter(n=>can || n.state!=='off'), spks=((SPK&&SPK.items)||[]);
+  const notes=all.filter(gnFPass).sort((a,b)=>(a.scope==='all'?0:1)-(b.scope==='all'?0:1));
   let h=can?`<div style="display:flex;justify-content:flex-end;margin:0 0 8px"><button type="button" class="btn sm" onclick="gnOpen(null)">＋ 문구 추가</button></div>`:'';
   h+=notes.length?`<div class="list">${notes.map(n=>{ const url=gnPageUrl(n);
     return `<div class="item" style="grid-template-columns:1fr auto">
       <div><div style="font-weight:700">${esc(n.title||String(n.body).split('\n')[0].replace(/\*\*/g,''))}</div>
-        <div class="note-in" style="margin:2px 0 0">${esc(gnMall(n.mall).name)} · ${esc(L[n.pos]||n.pos)} · ${n.scope==='all'?'<b>공통</b> · 모든 상품':''}${(n.goods||[]).length?'<b>개별</b> · 상품 '+esc(n.goods.join(', ')):''}${(n.goods||[]).length&&(n.models||[]).length?' · ':''}${(n.models||[]).length?'모델 '+esc(n.models.join(', ')):''}${n.from||n.to?' · '+esc(n.from||'')+' ~ '+esc(n.to||''):''}${n.btn?' · 버튼 「'+esc(n.btn)+'」':''}</div>
+        <div class="note-in" style="margin:2px 0 0">${gnMallsTxt(n)} · ${esc(L[n.pos]||n.pos)} · ${n.scope==='all'?'<b>공통</b> · 모든 상품':''}${(n.goods||[]).length?'<b>개별</b> · 상품 '+esc(n.goods.join(', ')):''}${(n.goods||[]).length&&(n.models||[]).length?' · ':''}${(n.models||[]).length?'모델 '+esc(n.models.join(', ')):''}${n.from||n.to?' · '+esc(n.from||'')+' ~ '+esc(n.to||''):''}${n.btn?' · 버튼 「'+esc(n.btn)+'」':''}</div>
         ${url?`<a class="note-in" style="display:inline-block;margin-top:4px" href="${esc(url)}" target="_blank" rel="noopener">페이지에서 보기 ↗</a>`:''}</div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[n.state][1]}">${ST[n.state][0]}</span>${can?`<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sm ghost" onclick="gnOpen(${n.id})">수정</button>${n.status!=='on'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'on')">공개</button>`:`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'test')">test로</button>`}${n.status!=='off'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'off')">끄기</button>`:''}<button type="button" class="btn sm ghost" style="color:#d43f3f" onclick="gnStatus(${n.id},'gone')">삭제</button></span>`:''}</div></div>`; }).join('')}</div>`
-    :`<div class="empty">아직 상품 안내 문구가 없습니다</div>`;
-  $('gnBody').innerHTML=h;
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[n.state][1]}">${ST[n.state][0]}</span>${can&&n.can!==false?`<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sm ghost" onclick="gnOpen(${n.id})">수정</button>${n.status!=='on'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'on')">공개</button>`:`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'test')">test로</button>`}${n.status!=='off'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'off')">끄기</button>`:''}<button type="button" class="btn sm ghost" style="color:#d43f3f" onclick="gnStatus(${n.id},'gone')">삭제</button></span>`:''}</div></div>`; }).join('')}</div>`
+    :`<div class="empty">${all.length?'고른 조건에 맞는 문구가 없습니다':'아직 상품 안내 문구가 없습니다'}</div>`;
+  const total=all.length+spks.length, shown=notes.length+spks.filter(gnFSpk).length;
+  $('gnBody').innerHTML=(total>1?gnFilterBar(shown,total):'')+spkRows()+h;
 }
 function gnOpen(id){
-  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{scope:'goods',mall:((GN.malls||[]).find(m=>m.code==='pm')||(GN.malls||[])[0]||{code:'pm'}).code,goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
+  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{scope:'goods',malls:[((GN.malls||[]).find(m=>m.code==='pm')||(GN.malls||[])[0]||{code:'pm'}).code],goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
   GN_DLG={n}; $('gnDlgTitle').textContent=id!=null?'상품 안내 문구 수정':'상품 안내 문구 추가'; $('gnErr').textContent='';
   const L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{price_below:'가격 아래'};
   const tones=[['blue','파랑'],['red','빨강'],['gray','회색'],['yellow','노랑'],['plain','상자 없음']];
   $('gnForm').innerHTML=`
-    <div class="gn-two"><div><label for="gn_mall">몰</label><select class="in" id="gn_mall" oninput="gnPreview()">${(GN.malls||[]).map(m=>`<option value="${esc(m.code)}" ${m.code===n.mall?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
-      <div><label for="gn_pos">위치</label><select class="in" id="gn_pos" oninput="gnPreview()">${Object.keys(L).map(k=>`<option value="${k}" ${k===n.pos?'selected':''}>${esc(L[k])}</option>`).join('')}</select></div></div>
-    <div><label>범위</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_scope">${[['goods','개별 · 특정 상품만'],['all','공통 · 이 몰 모든 상품']].map(t=>`<span class="chip ${t[0]===(n.scope||'goods')?'on':''}" data-v="${t[0]}" onclick="[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on');gnScope()">${t[1]}</span>`).join('')}</div></div>
+    <div><label>몰 (여러 개 고를 수 있음)</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_malls">${(GN.can_all?[{code:'*',name:'전체 몰'}]:[]).concat(GN.malls||[]).map(m=>`<span class="chip ${(n.malls||[n.mall]).includes(m.code)?'on':''}" data-v="${esc(m.code)}" onclick="gnMallPick(this)">${esc(m.name)}</span>`).join('')}</div><div class="gn-hint">전체 몰 = 지금 몰과 나중에 생기는 몰 모두 · 몰마다 상품번호가 달라서 개별 문구를 여러 몰에 낼 때는 모델번호로 넣으세요</div></div>
+    <div class="gn-two"><div><label for="gn_pos">위치</label><select class="in" id="gn_pos" oninput="gnPreview()">${Object.keys(L).map(k=>`<option value="${k}" ${k===n.pos?'selected':''}>${esc(L[k])}</option>`).join('')}</select></div><div></div></div>
+    <div><label>범위</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_scope">${[['goods','개별 · 특정 상품만'],['all','공통 · 고른 몰의 모든 상품']].map(t=>`<span class="chip ${t[0]===(n.scope||'goods')?'on':''}" data-v="${t[0]}" onclick="[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on');gnScope()">${t[1]}</span>`).join('')}</div></div>
     <div id="gn_target" style="display:grid;gap:inherit"><div><label for="gn_goods">대상 상품번호 (쉼표로 여러 개)</label><input class="in" id="gn_goods" inputmode="numeric" value="${esc((n.goods||[]).join(', '))}" placeholder="예: 1000003136"><div class="gn-hint">상품 페이지의 상품코드(주소 goodsNo=) · 몰마다 번호가 다릅니다</div></div>
     <div><label for="gn_models">또는 모델번호 (쉼표 · 상품명에 들어 있는 모델번호로 찾습니다)</label><input class="in" id="gn_models" autocapitalize="characters" value="${esc((n.models||[]).join(', '))}" placeholder="예: KQ42SH90AEXKR"></div></div>
     <div><label for="gn_title">제목 (선택)</label><input class="in" id="gn_title" value="${esc(n.title||'')}" placeholder="예: 11월 한정 혜택" oninput="gnPreview()"></div>
@@ -6542,12 +6651,13 @@ function gnOpen(id){
     <div class="gn-two"><div><label for="gn_sort">순서 (같은 위치에 여럿일 때 작은 수가 위)</label><input class="in" id="gn_sort" inputmode="numeric" value="${esc(n.sort??100)}"></div><div><label for="gn_note">메모 (사내용)</label><input class="in" id="gn_note" value="${esc(n.note||'')}"></div></div>`;
   $('gnDlg').classList.remove('hidden'); gnScope(); setTimeout(()=>{ const f=$('gn_goods'); if(f) f.focus(); },50);
 }
+function gnMallPick(el){ const box=el.parentNode, all=el.dataset.v==='*'; if(all){ const on=!el.classList.contains('on'); [...box.children].forEach(x=>x.classList.remove('on')); if(on) el.classList.add('on'); } else { const a=box.querySelector('[data-v="*"]'); if(a) a.classList.remove('on'); el.classList.toggle('on'); } gnPreview(); }
 function gnScope(){ const t=$('gn_target'); if(t) t.style.display=gnData().scope==='all'?'none':''; gnPreview(); }
 function gnHelp(open){ const d=$('gnHelp'); if(!d) return; d.classList.toggle('hidden',!open); if(open){ const x=d.querySelector('.lvx'); if(x) x.focus(); } }
 function gnClose(){ $('gnDlg').classList.add('hidden'); GN_DLG=null; }
 function gnData(){
   const csv=v=>v.split(/[,\n\s]+/).map(x=>x.trim()).filter(Boolean);
-  return { id:GN_DLG&&GN_DLG.n.id, scope:(($('gn_scope').querySelector('.chip.on')||{}).dataset||{}).v||'goods', mall:$('gn_mall').value, pos:$('gn_pos').value, goods:csv($('gn_goods').value), models:csv($('gn_models').value).map(x=>x.toUpperCase()),
+  return { id:GN_DLG&&GN_DLG.n.id, scope:(($('gn_scope').querySelector('.chip.on')||{}).dataset||{}).v||'goods', malls:[...$('gn_malls').querySelectorAll('.chip.on')].map(x=>x.dataset.v), mall:([...$('gn_malls').querySelectorAll('.chip.on')].map(x=>x.dataset.v).find(c=>c!=='*')||'pm'), pos:$('gn_pos').value, goods:csv($('gn_goods').value), models:csv($('gn_models').value).map(x=>x.toUpperCase()),
     title:$('gn_title').value.trim(), body:$('gn_body').value.replace(/\s+$/,''), tone:(($('gn_tone').querySelector('.chip.on')||{}).dataset||{}).v||'blue', img:$('gn_img').value.trim(),
     btn:$('gn_btn').value.trim(), btnTone:$('gn_btntone').value, url:$('gn_url').value.trim(), from:$('gn_from').value||null, to:$('gn_to').value||null,
     sort:Number($('gn_sort').value)||100, note:$('gn_note').value.trim() };
@@ -6572,6 +6682,7 @@ async function gnSave(status){
   try{
     const d=gnData(); if(!d.body.trim() && !d.img) throw new Error('문구나 이미지 주소를 넣어 주세요');
     if(d.img && !/^https:\/\//i.test(d.img)) throw new Error('이미지 주소는 https:// 로 시작해야 합니다');
+    if(!d.malls.length) throw new Error('나갈 몰을 하나 이상 고르세요');
     if(d.scope!=='all' && !d.goods.length && !d.models.length) throw new Error('대상 상품번호나 모델번호를 하나 이상 넣어 주세요');
     if(!!d.btn !== !!d.url) throw new Error('버튼은 글자와 주소를 둘 다 넣어야 합니다');
     if(d.url && !/^(https?:\/\/|tel:|\/)/i.test(d.url)) throw new Error('버튼 주소는 https:// 또는 tel: 로 시작해야 합니다');

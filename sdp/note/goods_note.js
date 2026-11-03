@@ -12,16 +12,20 @@
   var C = window.GOODS_NOTE_CONFIG || {};
   var API = C.api || 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_goods_note';
   var KEY = C.key || 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';   // 공개(publishable) 키 — 공개 함수만 부른다
+  // 위치 → [선택자, 넣는 법] 후보를 앞에서부터 찾는다 (몰·스킨마다 이름이 달라서)
+  //   디자인북 PC/반응형(프라자몰 designbookR · 시흥몰/AT몰 designbook_air_RES): .price-box · .pay_box · .btn_choice_box · .detail_explain_box
+  //   S몰 PC(no99): 가격이 .item_detail_list 의 dl.item_price · S몰 모바일(no99): .detail_info_top .price_box · 네이버페이·구매 버튼은 구매 창 안이라 상품정보 표(.detail_sub_info) 아래로 · .cont_detail
   var POS = {
-    price_below:   ['.price-box', 'after'],     // 공통 — 프라자몰·시흥몰 둘 다 (시흥몰은 스마트 패키지 자리)
-    pay_above:     ['.pay_box', 'before'],      // 공통 — 네이버페이 바로 위
-    title_below:   ['.item_detail_tit h3', 'after'],
-    benefit_above: ['.custom-benefit-notice', 'before'],
-    benefit_below: ['.custom-benefit-notice', 'after'],
-    buy_above:     ['.btn_choice_box', 'before'],
-    pay_below:     ['.pay_box', 'after'],
-    detail_top:    ['.detail_explain_box', 'prepend']
+    price_below:   [['.price-box', 'after'], ['.item_detail_list .item_price', 'after'], ['.detail_info_top .price_box', 'after']],
+    pay_above:     [['.pay_box', 'before'], ['.btn_choice_box', 'after'], ['.detail_sub_info', 'after']],   // 네이버페이가 없는 몰(AT몰)은 구매 버튼 바로 아래
+    title_below:   [['.item_detail_tit h3', 'after'], ['.detail_info_top h3', 'after'], ['.detail_info_top .goods_name', 'after']],
+    benefit_above: [['.custom-benefit-notice', 'before']],
+    benefit_below: [['.custom-benefit-notice', 'after']],
+    buy_above:     [['.btn_choice_box', 'before'], ['.detail_sub_info', 'after']],
+    pay_below:     [['.pay_box', 'after'], ['.btn_choice_box', 'after'], ['.detail_sub_info', 'after']],
+    detail_top:    [['.detail_explain_box', 'prepend'], ['.cont_detail', 'prepend']]
   };
+  var LAST = [['.item_detail_tit', 'append'], ['.item_info_box', 'append'], ['.detail_info_top', 'append']];
   var POS_LABEL = {
     price_below: '가격 아래', pay_above: '네이버페이 위',
     title_below: '상품명 아래',   // benefit_above/below 는 예전 고정 혜택 상자 기준 — 그 상자를 문구로 옮겨 목록에서 뺐다 (있던 문구는 가격 아래로 대신 들어감)
@@ -81,11 +85,8 @@
   // 문구를 root(기본 document) 안의 정한 위치에 끼운다 — 요소가 없으면 가격 아래 → 상품명 영역 끝
   function place(n, root) {
     root = root || document;
-    var anchors = C.anchors || {}, p = anchors[n.pos] || POS[n.pos] || POS.price_below;
-    var el = root.querySelector(p[0]), how = p[1];
-    if (!el) { el = root.querySelector('.price-box'); how = 'after'; }
-    if (!el) { el = root.querySelector('.item_detail_tit') || root.querySelector('.item_info_box'); how = 'append'; }
-    if (!el) return null;
+    var t = target(n.pos, root); if (!t) return null;
+    var el = t[0], how = t[1];
     var box = (root.ownerDocument || root).createElement('div'); box.innerHTML = html(n); box = box.firstChild;
     if (how === 'before') el.parentNode.insertBefore(box, el);
     else if (how === 'after') el.parentNode.insertBefore(box, el.nextSibling);
@@ -93,10 +94,17 @@
     else el.appendChild(box);
     return box;
   }
+  // 위치의 후보 중 페이지에 있는 첫 요소 → [요소, 넣는 법] (없으면 가격 아래 → 상품명 영역 끝) · CFG.anchors[pos] = [선택자, 넣는 법] 이 먼저
+  function target(pos, root) {
+    var a = (C.anchors || {})[pos], list = (a ? [a] : []).concat(POS[pos] || [], POS.price_below, LAST);
+    for (var i = 0; i < list.length; i++) { var el = root.querySelector(list[i][0]); if (el) return [el, list[i][1]]; }
+    return null;
+  }
   function modelsOnPage() {
     var out = (C.models || []).slice();
-    var h = document.querySelector('.item_detail_tit h3') || document.querySelector('h3');
-    var name = (C.name || (h && h.textContent) || '');
+    var h = document.querySelector('.item_detail_tit h3') || document.querySelector('.detail_info_top h3');
+    var og = document.querySelector('meta[property="og:title"]');
+    var name = (C.name || (h && h.textContent) || (og && og.content) || document.title || '');
     name.split(/[\s\/\[\]()+,]+/).forEach(function (w) { if (w.length >= 8 && /^[A-Z][A-Z][A-Z0-9-]+$/.test(w)) out.push(w); });
     return out;
   }
@@ -114,9 +122,10 @@
       .then(function (list) {
         if (!list || !list.length) return;
         addCss();
-        // 같은 위치에 여러 개면 순서(sort)대로 — after/before 는 뒤에서부터 넣어야 순서가 유지된다
-        list.slice().reverse().forEach(function (n) { if (/(after|before|prepend)/.test(((C.anchors || {})[n.pos] || POS[n.pos] || ['', 'after'])[1])) place(n); });
-        list.forEach(function (n) { if (!/(after|before|prepend)/.test(((C.anchors || {})[n.pos] || POS[n.pos] || ['', 'after'])[1])) place(n); });
+        // 같은 위치에 여러 개면 순서(sort)대로 — after/prepend 는 뒤에서부터, before/append 는 앞에서부터 넣어야 순서가 유지된다
+        var how = function (n) { var t = target(n.pos, document); return t ? t[1] : ''; };
+        list.slice().reverse().forEach(function (n) { if (/^(after|prepend)$/.test(how(n))) place(n); });
+        list.forEach(function (n) { if (/^(before|append)$/.test(how(n))) place(n); });
       })
       .catch(function () { /* 데이터센터를 못 읽으면 아무것도 안 한다 */ });
   }

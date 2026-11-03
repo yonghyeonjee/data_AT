@@ -8,3 +8,4 @@
     · 메인 슬라이드 그림에는 글자가 없어(메인은 HTML 문구를 덧얹음) 같은 문구를 .sub-bn-txt 로 얹음 (PC 왼쪽 세로 가운데 · 모바일 아래 빈 영역)
   서버 파일: goods_list.html = 이 파일(3판 · v=1103b) · goods_list_bak_1103.html = 원본(7,152바이트) · goods_list_1103a/1103b.html = 중간판(지워도 됨)
 올릴 때는 웹FTP(popup_webftp.php?dir=data/skin/front/designbook_air_RES/goods) 로 새 이름으로 올린 뒤 rename 으로 바꿔 넣는다. 토큰은 1회용.
+- header_fixed_1103c.html (2026-11-03 저녁) : 1103b + #topLine 숨김 — 고도몰 상단 띠 배너 그림이 글자 없는 파란 단색(2000x40·모바일 720x48)이라 이벤트 띠 아래 빈 파란 줄로 보였다. 서버 이전 판은 outline/_header_261103b_bak.html
