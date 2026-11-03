@@ -403,17 +403,20 @@ function main() {
   // 기본 카드 혜택만 적용했을 때(선납 없음) 일시불 대비 최대 절감액 — 탭 배지용
   function bestSaving(info) {
     var dc = cardNames().indexOf(defaultCard()) >= 0 ? defaultCard() : '';
-    var o = { prepay: 0, card: dc, tier: defaultTier(dc, info && info.model), cardOn: !!dc }, best = 0;
+    var o = { prepay: 0, card: dc, tier: defaultTier(dc, info && info.model, 0), cardOn: !!dc }, best = 0;
     info.p.forEach(function (p) { best = Math.max(best, calc(info, p, o).saving); });
     return best;
   }
   // 처음 선택된 카드·실적 구간 — 스킨 SUB_TAB_CONFIG 의 defaultCard · defaultTier 가 비어 있으면 데이터센터 정책 SUB_POLICY.defaults (관리자 › 구독 혜택 정책 › 기본 기준)
   function defaultCard() { return CFG.defaultCard || (POL.defaults && POL.defaults.card) || ''; }
-  function defaultTier(name, model) {
+  // 선납 40% 이상이면 모델별 구간(예: AI 콤보 70만↑)을 쓰지 않고 기본 구간(30만↑) — 선납으로 월 구독료가 낮아져 높은 실적 구간이 맞지 않는다 (2026-11-03)
+  //   prepay 를 넘기지 않으면 지금 고른 선납 비율(state.prepay)
+  function defaultTier(name, model, prepay) {
     var cd = window.SUB_CARDS && window.SUB_CARDS[name];
     if (!cd) return '';
     var tiers = Object.keys(cd.t);
-    var want = CFG.defaultTier || tierByModel(model || state.model) || (POL.defaults && POL.defaults.tier) || '';
+    var pp = prepay === undefined ? state.prepay : prepay, hiPre = +pp >= 0.4 - 1e-9;
+    var want = CFG.defaultTier || (hiPre ? '' : tierByModel(model || state.model)) || (POL.defaults && POL.defaults.tier) || '';
     return tiers.indexOf(want) >= 0 ? want : tiers[0];
   }
   // 모델별 처음 실적 구간 — 정책 defaults.tierByModel { 모델 또는 모델 앞글자: 구간 } 에서 가장 길게 맞는 것 (예: 'WD90H25': '70만↑' → AI 콤보 전 색상·수납함) · 2026-11-02
@@ -485,6 +488,7 @@ function main() {
     var maxR = prepayMax(info);
     if (!state.prepaySet) state.prepay = defaultPrepay(info);   // 고객이 고르기 전엔 정책 기본값(선납 40% · 품목 한도 안) — 모델이 바뀌어도 다시 계산
     else if (state.prepay > maxR + 1e-9) state.prepay = 0;
+    if (state.card && !state.tierSet) state.tier = defaultTier(state.card, state.model);   // 실적 구간을 직접 고르기 전엔 선납 비율을 따라간다 (선납 40% → 30만↑)
     return { years: years, types: types, cycles: cycles, inYear: inYear };
   }
 
