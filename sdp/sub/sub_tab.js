@@ -573,7 +573,6 @@ function main() {
     var lump = lumpFor(state.model), maxYear = sel.years[sel.years.length - 1];
     var h = '';
 
-    h += '<p class="subtab-model">구독 모델 <b>' + esc(state.model) + '</b>' + (info.s ? ' · ' + esc(segLabel(info.s)) : '') + '</p>';
     h += siblingsHtml(info);
     // 요약(저렴한 금액 또는 월 구독료)만 먼저 보여주고, 약정·케어·선납·카드 선택과 결제 예상 내역은 [조건별 구독가 확인하기] 안에 접어 둔다
     var top = h; h = '';
@@ -685,20 +684,19 @@ function main() {
         '<strong>' + fmt(r.saving) + '원 저렴해요</strong>' +
         '<div class="subtab-cmp"><div><em>일시불 구매가</em><b>' + fmt(lump) + '원</b></div><i aria-hidden="true"></i>' +
         '<div class="is-sub"><em>' + r.years + (r.pointsAll ? '년 실제 구독료<small>포인트 반영</small>' : '년 구독 총액') + '</em><b>' + fmt(r.expectedNet) + '원</b></div></div>' +
-        '<span class="subtab-savebox-sub">' + Math.floor(r.saving / lump * 100) + '% 절약 · 월 ' + fmt(r.finalMonthly) + '원 × ' + r.months + '개월' +
-        (r.prepay ? ' (선납금 포함)' : '') + '</span></div>' :
+        '<span class="subtab-savebox-sub">' + esc(cond) + '</span></div>' :
       // 아니면 월 구독료 + 총액
       '<div class="subtab-monthbox" role="note"><span class="subtab-monthbox-label">선택한 혜택 적용 시 월 구독료</span>' +
         '<strong>월 ' + fmt(r.finalMonthly) + '원</strong>' +
-        '<span class="subtab-savebox-sub">' + r.years + (r.pointsAll ? '년 실제 구독료 ' : '년 구독 총액 ') + fmt(r.expectedNet) + '원' + (r.pointsAll ? ' (포인트 ' + fmt(r.pointsAll) + '원 반영)' : '') + (lump > 0 ? ' · 일시불 ' + fmt(lump) + '원' : '') + '</span></div>';
-    h = top + sum + '<p class="subtab-cond">기준: ' + esc(cond) + '</p>' +
+        '<span class="subtab-savebox-sub">' + r.years + (r.pointsAll ? '년 실제 구독료 ' : '년 구독 총액 ') + fmt(r.expectedNet) + '원 · ' + esc(cond) + '</span></div>';
+    if (POL.texts.notice) h += '<p class="subtab-note">' + esc(POL.texts.notice) + '</p>';   // 안내 작은 글씨는 [조건별 구독가 확인하기] 안에만 (2026-11-03)
+    h = top + sum +
       '<button type="button" class="subtab-acc" data-acc aria-expanded="' + state.open + '">조건별 구독가 확인하기<i aria-hidden="true"></i></button>' +
       '<div class="subtab-acc-body"' + (state.open ? '' : ' hidden') + '>' + h + '</div>';
 
     // 혜택 문구: 정책 기본 문구 + 기간 중인 행사 + 스킨 설정 extraPoints
     var points = (POL.texts.points || []).concat(promoTexts(info), CFG.extraPoints || []);
     if (points.length) h += '<ul class="subtab-points">' + points.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
-    if (POL.texts.notice) h += '<p class="subtab-note">' + esc(POL.texts.notice) + '</p>';
 
     // 하단 고정 바 — 상담 신청만
     // CFG.source('goods'|'view'|…)·CFG.sourceName·CFG.utmSource 로 상담서에 남는 출처를 바꿀 수 있다 (구독 상품 페이지 sub_view 가 같은 파일을 쓴다)
@@ -882,24 +880,42 @@ function main() {
     var last = name ? name.split(/\s+/).pop() : '';
     return /^[가-힣]+$/.test(last) && last.length <= 6 ? last : '';   // 상품명 끝의 색상 낱말(다크스틸·그레이지·화이트 …)
   }
+  // 칩 하나의 계산 — 지금 고른 약정·케어·선납·카드를 그 모델에 그대로 (그 조합이 없으면 그 모델의 최장 약정 기본 케어)
+  function chipCalc(m) {
+    var inf = null; getInfo(m, function (x) { inf = x; });   // 같은 품목 요금표는 이미 받아 둬서 바로 돌아온다
+    if (!inf || !inf.p || !inf.p.length) return null;
+    var plan = findPlan(inf, state.year, joinCare(state.type, state.cycle));
+    if (!plan) {
+      var ys = inf.p.map(function (x) { return x[0]; }), maxY = Math.max.apply(null, ys);
+      var inY = inf.p.filter(function (x) { return x[0] === maxY; });
+      var free = inY.filter(function (x) { return splitCare(x[1])[0] === '무상수리'; });
+      plan = (free.length ? free : inY).slice().sort(function (a, b) { return a[3] - b[3]; })[0];
+    }
+    return calc(inf, plan, opts());
+  }
+  // 같은 모델 다른 색상 · 구독 전용 칩 (2026-11-03): 가장 저렴한 모델과 이 상품 두 개만. 이 상품 일시불가가 있으면 칩마다 "일시불 대비 ○○원 저렴"
   function siblingsHtml(info) {
     var sibs = siblings(state.model, info);
     if (!sibs.length) return '';
     if (!window.SUB_CATALOG) loadCatalog(function () { if (state.tab === 'sub') renderPanel(); });   // 이름·시흥몰 상품 유무 (못 받으면 모델명만)
     var all = siblingList(state.model, info), cheap = cheapestOf(state.model, info);
-    if (all.length < 2) return '';
-    // 순서: 가장 저렴한 모델 → 상품 페이지 모델 → 나머지는 월 구독료 낮은 순 (2026-11-02: 가장 싼 모델을 맨 앞에 눈에 띄게)
-    var rank = function (m) { return m === cheap ? 0 : m === pageModel ? 1 : 2; };
-    all.sort(function (a, b) { return rank(a) - rank(b) || IDX.m[a][1] - IDX.m[b][1]; });
-    var h = '', isCheap = all.some(function (m) { return m !== cheap && IDX.m[m][1] > IDX.m[cheap][1]; });   // 다른 모델보다 실제로 싼 경우만 "최저가"
-    all.forEach(function (m) {
-      var color = colorOf(m), subOnly = subOnlyOf(m, all), cur = m === state.model, low = isCheap && m === cheap;
-      var tag = low ? '최저가' + (subOnly ? ' · 구독 전용' : '') : (m === pageModel ? '이 상품' : (subOnly ? '구독 전용' : ''));
+    var page = pageModel || state.model;
+    if (!IDX.m[cheap] || !IDX.m[page] || cheap === page || IDX.m[cheap][1] >= IDX.m[page][1]) return '';   // 이 상품이 가장 저렴하면 칩을 내지 않는다
+    var show = [cheap, page];
+    if (show.indexOf(state.model) < 0 && IDX.m[state.model]) show.push(state.model);
+    var lump = (CFG.lumpCompare !== 'never' && CFG.lumpPrice > 0) ? CFG.lumpPrice : 0;
+    var h = '';
+    show.forEach(function (m) {
+      var color = colorOf(m), subOnly = subOnlyOf(m, all), cur = m === state.model, low = m === cheap;
+      var tag = low ? (subOnly ? '최저가 · 구독 전용' : '최저가') : (m === page ? '이 상품' : (subOnly ? '구독 전용' : ''));
+      var sv = '';
+      if (lump) { var cr = chipCalc(m); if (cr && cr.expectedNet < lump) sv = '<strong>일시불 대비 ' + shortWon(lump - cr.expectedNet) + ' 저렴</strong>'; }
       h += '<button type="button" class="subtab-sib' + (cur ? ' is-active' : '') + (subOnly ? ' is-subonly' : '') + (low ? ' is-cheap' : '') + '" data-model="' + esc(m) + '" aria-pressed="' + cur + '">' +
-        '<b>' + esc(color || m) + '</b>' + (color ? '<small>' + esc(m) + '</small>' : '') +
-        '<span>월 ' + fmt(IDX.m[m][1]) + '원~</span>' + (tag ? '<em>' + tag + '</em>' : '') + '</button>';
+        (tag ? '<em>' + tag + '</em>' : '') + '<b>' + esc(color || m) + '</b>' +
+        '<span>월 ' + fmt(IDX.m[m][1]) + '원~</span>' + sv + '</button>';
     });
-    return '<div class="subtab-sibs"><p class="subtab-sibs-t">같은 모델 다른 색상 · 구독 전용 모델 <small>구독 전용은 시흥몰 일시불 판매가 없는 구독 전용 모델로, 월 구독료가 더 저렴합니다</small></p><div class="subtab-sibs-row">' + h + '</div></div>';
+    var title = lump ? '이 상품 일시불 ' + fmt(lump) + '원 대비' : '더 저렴한 ' + (subOnlyOf(cheap, all) ? '구독 전용 모델' : '색상');
+    return '<div class="subtab-sibs"><p class="subtab-sibs-t">' + title + '</p><div class="subtab-sibs-row">' + h + '</div></div>';
   }
 
   /* ---------- 옵션 변경 시 모델 다시 결정 ---------- */
