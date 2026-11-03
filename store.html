@@ -4771,7 +4771,7 @@ document.addEventListener('click', e=>{ const c=e.target.closest('#al_kind .chip
 let SMS_INFO=null, SMS_AT=0, SMS_CTX=null;
 async function smsInfo(fresh){ if(SMS_INFO && !fresh && Date.now()-SMS_AT<45000) return SMS_INFO; SMS_INFO=await rpc('fn_store_sms_info',{p_code:CODE}); SMS_AT=Date.now(); return SMS_INFO; }
 function smsBytes(t){ let n=0; for(const ch of String(t||'')) n+= ch.codePointAt(0)<128?1:2; return n; }
-function smsRender(body,vars){ let v=String(body||''); Object.entries(vars||{}).forEach(([k,val])=>{ v=v.split('{'+k+'}').join(val==null?'':String(val)); }); v=v.replace(/\{[^{}\n]{1,20}\}/g,''); v=v.replace(/\n[ \t·]*\n/g,'\n'); return v.trim(); }
+function smsRender(body,vars){ let v=String(body||''); Object.entries(vars||{}).forEach(([k,val])=>{ v=v.split('{'+k+'}').join(val==null?'':String(val)); }); v=v.replace(/\{[^{}\n]{1,20}\}/g,''); v=v.replace(/\n[ \t]*·[ \t·]*(?=\n|$)/g,'').replace(/\n([ \t]*\n){2,}/g,'\n\n'); return v.replace(/^[ \n]+|[ \n]+$/g,''); }  /* 서버 core.f_sms_render 와 같은 규칙 (mvp_227) — 빈 줄 하나는 남기고 여럿이면 하나로 · '·' 만 남은 줄은 지움 */
 async function smsCompose(o){ SMS_CTX=o||{}; let body=o.body||'';
   if(o.template){ try{ const inf=await smsInfo(); const t=((inf&&inf.templates)||[]).find(x=>x.code===o.template); if(t) body=smsRender(t.body, Object.assign({이름:o.name||'고객', 담당자:ME, 매장전화:(inf&&inf.store_tel)||''}, o.vars||{})); }catch(e){} }
   smsApp((o.phone||'').replace(/\D/g,''), body); }

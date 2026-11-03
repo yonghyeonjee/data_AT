@@ -7573,7 +7573,7 @@ let SMS_CFG=null, SMS_TPL=[], SMS_LOG_PG=0;
 function smsBytes(t){ let n=0; for(const ch of String(t||'')) n+= ch.codePointAt(0)<128?1:2; return n; }   /* 통신사 셈법: ASCII 1 · 한글·기호 2 */
 function smsType(b){ return b<=90?'SMS':'LMS'; }
 function smsWon(x){ return Number(x||0).toLocaleString('ko-KR',{maximumFractionDigits:1}); }   /* 단가는 9.9원처럼 소수점이 있다 */
-function smsRender(body,vars){ let v=String(body||''); Object.entries(vars||{}).forEach(([k,val])=>{ v=v.split('{'+k+'}').join(val==null?'':String(val)); }); v=v.replace(/\{[^{}\n]{1,20}\}/g,''); v=v.replace(/\n[ \t·]*\n/g,'\n'); return v.trim(); }
+function smsRender(body,vars){ let v=String(body||''); Object.entries(vars||{}).forEach(([k,val])=>{ v=v.split('{'+k+'}').join(val==null?'':String(val)); }); v=v.replace(/\{[^{}\n]{1,20}\}/g,''); v=v.replace(/\n[ \t]*·[ \t·]*(?=\n|$)/g,'').replace(/\n([ \t]*\n){2,}/g,'\n\n'); return v.replace(/^[ \n]+|[ \n]+$/g,''); }  /* 서버 core.f_sms_render 와 같은 규칙 (mvp_227) — 빈 줄 하나는 남기고 여럿이면 하나로 · '·' 만 남은 줄은 지움 */
 function smsAdWrap(body,isAd){ if(!isAd||!SMS_CFG) return body; let v=body; if(!/^\(광고\)/.test(v)) v=(SMS_CFG.ad_prefix||'(광고)')+' '+v; const f=(SMS_CFG.ad_footer||'').trim(); if(f && !v.includes(f)) v+='\n'+f; return v; }
 const SMS_MODE_NM={test:'테스트 모드',live:'실제 발송'};
 async function smsCfgEnsure(fresh){ if(SMS_CFG && !fresh) return SMS_CFG; SMS_CFG=await rpc('fn_sms_config_get',{},{fresh:true}); return SMS_CFG; }
