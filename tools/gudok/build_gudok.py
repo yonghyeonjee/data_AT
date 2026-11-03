@@ -28,7 +28,7 @@ import build_sub_pages as B  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SHOP = 'https://www.samsungsh.co.kr'
-ICON = 'https://gdadmin-samsungsh70.godomall.com/data/%EC%82%BC%EC%84%B1%EC%8A%A4%ED%86%A0%EC%96%B4-%EC%8B%9C%ED%9D%A5.ico'
+ICON = SHOP + '/data/common/favicon.ico'   # 쇼핑몰 본 사이트와 같은 파비콘 (2026-11-03 · 예전 관리자 주소는 로그인으로 넘어가 깨졌다)
 CONSULT = SHOP + '/main/html.php?htmid=service/SamSungSubscription.html'   # 절대 주소 — 시험 서버(db.samsungat.co.kr)에서도 상담 신청은 쇼핑몰로
 GOODS_URL = SHOP + '/goods/goods_view.php?goodsNo='
 e = B.e
