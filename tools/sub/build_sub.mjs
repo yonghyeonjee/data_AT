@@ -21,7 +21,7 @@ export const CAT_KEYS = {
 const norm = m => String(m).replace(/\s+/g, '').toUpperCase();
 
 /* ── DPS 올인원구독모델 → 계산기 요금표(DATA·PREPAY_NO) ──
-   dps: fn_sub_dps_export 응답 { fetch_id, fetched_at, rows, models, items: [[model, category, seg, term_months, service, visit_cycle, total_fee, monthly_fee, prepay_ok]] }
+   dps: fn_sub_dps_export 응답 { fetch_id, fetched_at, rows, models, items: [[model, category, seg, term_months, service, visit_cycle, total_fee, monthly_fee, prepay_ok, product_fee]] }
    품목: 에어컨 중 세부유형이 천장형/전열교환기면 시스템에어컨 · 세탁기/건조기/에어드레서 → 의류케어 · 전기레인지/식기세척기/후드 → 조리기기
    요금제 이름: SDP 엑셀판과 같은 표기 — 무상수리(재설치포함)→무상수리 · 방문케어 12개월 주기는 '방문케어', 그 밖은 '방문케어(36개월주기)' · 셀프케어는 항상 주기 표기
    같은 (모델·약정·이름) 이 두 번 나오면(무상수리 와 무상수리(재설치포함)) DPS 순서상 앞의 것만 */
@@ -54,7 +54,7 @@ export function dpsVer(dps) {
 export function dpsToData(dps) {
   const DATA = {}, seen = new Set(), prepayOk = new Map(); let dup = 0;
   for (const it of dps.items || []) {
-    const [model, category, seg, months, service, cycle, total, monthly, ok] = it;
+    const [model, category, seg, months, service, cycle, total, monthly, ok, productFee] = it;   // productFee: 제품분 금액 (mvp_264 · 멤버십 포인트 기준)
     if (!model || !months || !(total > 0) || !(monthly > 0)) continue;
     const cat = dpsCat(category, seg);
     (DATA[cat] ||= {})[model] ||= { s: seg || '', p: [] };
@@ -62,7 +62,10 @@ export function dpsToData(dps) {
     const care = dpsCare(service, cycle, months, cat), y = months / 12, key = model + '|' + y + '|' + care;
     if (seen.has(key)) { dup++; continue; }
     seen.add(key);
-    DATA[cat][model].p.push([y, care, Number(total), Number(monthly)]);
+    // 요금제 행: [약정년수, 케어명, 총구독료, 월구독료, 제품분 금액] — 제품분은 있을 때만 (삼성닷컴 "적립 예정 멤버십 포인트" = 제품분 × 정률 · mvp_264)
+    const row = [y, care, Number(total), Number(monthly)];
+    if (productFee > 0 && productFee < total) row.push(Number(productFee));
+    DATA[cat][model].p.push(row);
   }
   for (const models of Object.values(DATA)) for (const o of Object.values(models)) o.p.sort((a, b) => b[0] - a[0] || careRank(a[1]) - careRank(b[1]) || a[1].localeCompare(b[1]));
   const PREPAY_NO = [...prepayOk].filter(([, ok]) => !ok).map(([m]) => m);
@@ -70,7 +73,8 @@ export function dpsToData(dps) {
 }
 // 로컬 확인용: 수집기 sub_model.json(행 배열) + meta → fn_sub_dps_export 와 같은 모양
 export function dpsFromRows(rows, meta) {
-  const items = rows.map(r => [r.model, r.category, r.seg, r.term_months, r.service, r.visit_cycle || 0, r.total_fee, r.monthly_fee, (r.prepay || []).some(p => p.ratio > 0)]);
+  const items = rows.map(r => [r.model, r.category, r.seg, r.term_months, r.service, r.visit_cycle || 0, r.total_fee, r.monthly_fee, (r.prepay || []).some(p => p.ratio > 0),
+    r.product_fee > 0 && r.product_fee < r.total_fee ? r.product_fee : null]);
   return { fetch_id: meta?.fetched_at || '', fetched_at: meta?.fetched_at || '', fetch_rows: rows.length, rows: rows.length, models: new Set(rows.map(r => r.model)).size, items };
 }
 
@@ -125,6 +129,20 @@ export function checkPolicy(pol) {
     if (typeof df !== 'object' || !String(df.card || '').trim()) err.push('defaults.card: 기본 제휴카드 이름이 필요합니다');
     if (df.consultUrl != null && !/^(\/|https:\/\/)/.test(String(df.consultUrl))) err.push('defaults.consultUrl: / 또는 https:// 로 시작해야 합니다');
     if (df.tel != null && !/^[0-9-]*$/.test(String(df.tel))) err.push('defaults.tel: 숫자와 - 만 적을 수 있습니다');
+  }
+  const bd = pol.bundle;   // 다품목 혜택 (mvp_264) — package: 품목 수별 정액 {tiers, min, cats, models} · rate: {rate, min}
+  if (bd != null) {
+    if (typeof bd !== 'object') err.push('bundle: 항목 묶음이어야 합니다');
+    else {
+      const kind = bd.kind || (bd.tiers ? 'package' : 'rate');
+      if (kind === 'package') {
+        if (!bd.tiers || typeof bd.tiers !== 'object' || !Object.keys(bd.tiers).length) err.push('bundle.tiers: 품목 수별 금액표가 필요합니다');
+        else for (const [k, v] of Object.entries(bd.tiers)) if (!/^\d+$/.test(k) || +k < 2 || !(Number.isInteger(v) && v > 0)) err.push(`bundle.tiers.${k}: 품목 수는 2 이상, 금액은 양의 정수여야 합니다`);
+        if (bd.models != null && (typeof bd.models !== 'object' || Array.isArray(bd.models))) err.push('bundle.models: {모델: 품목 번호} 객체여야 합니다');
+      } else rate(bd.rate, 'bundle.rate');
+      if (bd.min != null && !(Number.isInteger(bd.min) && bd.min >= 2)) err.push('bundle.min: 2 이상 정수여야 합니다');
+      period(bd, 'bundle');
+    }
   }
   if (err.length) throw new Error('정책 오류\n  - ' + err.join('\n  - '));
   return pol;

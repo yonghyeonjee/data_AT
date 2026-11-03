@@ -43,6 +43,7 @@ function main() {
     // tierByModel: 모델(또는 모델 앞글자) → 처음 선택할 실적 구간 (예: AI 콤보 WD90H25 → 70만↑ · 2026-11-02 본사 제시 월 구독료 기준)
     defaults: { card: '삼성카드', tier: '30만↑', tierByModel: {}, consultUrl: '/main/html.php?htmid=service/SamSungSubscription.html', tel: '' },
     cards: {}, cardNotes: [], promos: [], points: {},   // points: 모델 → {rate, base, add, total} 적립 예정 멤버십 포인트 (mvp_258)
+    bundle: null,   // 다품목 혜택 (mvp_264 · 스마트 패키지 품목 수별 정액 {kind:'package', tiers, min, cats, models, from, to}) — 다품목 계산기(sub_bundle.js)만 쓴다
     texts: {
       points: ['목돈 없이 월 납부 · 약정 기간 동안 무상수리'],
       notice: '* 월 구독료는 VAT 포함 기준이며, 카드 혜택은 카드사 조건(전월 실적·정기결제 등)에 따라 달라질 수 있습니다. ' +
@@ -168,14 +169,16 @@ function main() {
     });
     return best;
   }
-  /* 적립 예정 멤버십 포인트 (mvp_258) — 삼성닷컴 구독 상품의 정률(rate %) + 기본(base %) 을 결제 예상액에 곱하고 상품별 추가 포인트(add)를 더한다.
-     원본은 sub.model_point (수집기 tools/subpoint/collect.mjs 가 매주 월요일 삼성닷컴에서 받아 온다 · 관리자·매장에서 손 입력 가능) → sub_policy.js points[모델]
-     행사 포인트(pointsOf · N개월 구독료 상당)와는 중복 지급이라 둘 다 보여 주고 둘 다 뺀다. 결제 예상액(선납·자동납부·카드 할인 뒤 실제 결제액) 기준 */
+  /* 적립 예정 멤버십 포인트 (mvp_258) — 삼성닷컴 구독 상품의 정률(rate %) + 기본(base %) 을 제품분 금액에 곱하고 상품별 추가 포인트(add)를 더한다.
+     원본은 sub.model_point (수집기 tools/subpoint/collect.mjs 가 매일 삼성닷컴에서 받아 온다 · 관리자·매장에서 손 입력 가능) → sub_policy.js points[모델]
+     행사 포인트(pointsOf · N개월 구독료 상당)와는 중복 지급이라 둘 다 보여 주고 둘 다 뺀다.
+     기준금액(base)은 요금제 행의 제품분 금액(plan[4] · 총 구독금액에서 무상수리료를 뺀 DPS product_fee) — 삼성닷컴 계산기와 같이 선납·카드를 바꿔도 변하지 않는다 (mvp_264 · 2026-11-03 AI 콤보 6년 6,066,720 × 6.1% = 370,069P 로 확인).
+     제품분이 없는 행(요금 직접 관리로 넣은 요금제)은 총 구독금액으로 */
   function modelPointOf(model) { var pts = POL.points || {}; return pts[norm(model)] || null; }
-  function memberPoints(model, expected) {
+  function memberPoints(model, base) {
     var mp = modelPointOf(model); if (!mp) return null;
     var rate = (+mp.rate || 0) + (+mp.base || 0), add = +mp.add || 0;
-    var amt = Math.floor(Math.max(0, expected || 0) * rate / 100) + add;
+    var amt = Math.floor(Math.max(0, base || 0) * rate / 100) + add;
     return amt > 0 ? { amt: amt, rate: rate, add: add, pct: Math.round(rate * 100) / 100 } : null;
   }
   // 일시불 비교에 쓸 가격 — 상품 페이지의 모델일 때만 (같은 모델 다른 색상·구독 전용 모델로 바꾸면 이 상품의 일시불가와 비교하지 않는다)
@@ -204,8 +207,9 @@ function main() {
     // N개월 구독료 상당 포인트 지원 (mvp_257) — 결제 총액에서 빼서 "실제 구독료" 로 보여준다 (포인트는 결제 뒤 지급되므로 월 납부액은 그대로)
     var pt = pointsOf(info, plan);
     r.points = pt ? pt.amt : 0; r.pointsInfo = pt;
-    // 적립 예정 멤버십 포인트 (mvp_258) — 행사 포인트와 별도로 더 뺀다
-    var mpt = memberPoints(info && info.model, r.expected);
+    // 적립 예정 멤버십 포인트 (mvp_258) — 행사 포인트와 별도로 더 뺀다. 기준은 제품분 금액(plan[4] · 없으면 총 구독금액) — 삼성닷컴과 같이 선납·카드와 무관 (mvp_264)
+    r.pointBase = plan[4] > 0 ? plan[4] : total;
+    var mpt = memberPoints(info && info.model, r.pointBase);
     r.mpoints = mpt ? mpt.amt : 0; r.mpointsInfo = mpt;
     r.pointsAll = r.points + r.mpoints;
     r.expectedNet = r.expected - r.pointsAll;

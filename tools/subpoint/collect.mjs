@@ -8,7 +8,7 @@
      1) 모델 → goodsId : sub.model_point.goods_id 에 캐시된 값 → 없으면 구독 상품 페이지 https://www.samsung.com/sec/ai-subs-living/<모델>-subscribe2-d2c/<모델>/
         (주소의 품목 slug 는 무엇이든 마지막 모델번호로 상품을 찾아 준다). 서버가 그려 준 HTML 의 StPrdtOptItemVO(goodsId=G00…, mdlCode=모델) 쌍을 읽는다 —
         같은 상품의 다른 색상·옵션 모델도 함께 나오므로 한 페이지로 형제 모델의 goodsId 까지 얻는다. 없는 모델은 og:url 이 빈 공통 페이지(약 226KB)로 떨어진다.
-     2) goodsId + 기준 총액(dps.sub_model 최장 약정 최저 total_fee) → POST /sec/xhr/goods/membershipPolicy
+     2) goodsId + 기준금액(dps.sub_model 최장 약정 최저 product_fee = 제품분 · mvp_264 · 없으면 total_fee) → POST /sec/xhr/goods/membershipPolicy
         form: goodsListStr=[{goodsId, mdlCode, price, cnt:1, mainGoodsYn:'Y'}] · bespokeMinimumPrice=0 · bundleYn=N · bundleOrgAplVal=0 · aiscAinYn=Y
         응답(JSON): totalPoint · basicRate(0.1) · basicRatePoint · aplPoint(정률 포인트) · mdlAddPoint(상품별 추가) · aiscRate("6.0")
    환경변수: SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY (Actions Secrets) — 또는 SUPABASE_ANON_KEY + SUB_POINT_KEY(core.api_key 'sub_point' · 값은 _secrets.local.md). 코드·표·git 에 넣지 않는다

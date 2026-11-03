@@ -36,7 +36,7 @@ sub.f_policy_export() → points: {모델: {rate: 6.0, base: 0.1, add: 5000, tot
 
 - **손 입력**: 관리자(admin.html › 품목 › 구독 혜택 정책 › 모델 포인트) `fn_sub_point_save` · 매장(store.html › 구독 › 구독 혜택 안내) `fn_store_sub_point_save(p_code, p_data)` — src 'manual' 이 되어 수집이 덮지 않는다. [수집값으로 되돌리기](release) 를 누르면 다음 수집이 다시 덮는다.
 - **키**: 수집기는 서비스 롤 키(Actions Secrets `SUPABASE_SERVICE_ROLE_KEY`) 또는 API 키 `SUB_POINT_KEY`(core.api_key 'sub_point' · 해시만 DB 에 · 값은 `_secrets.local.md`) 로 부른다. 코드·표·git 에는 없다.
-- 기준 총액은 DPS 최장 약정의 최저 total_fee(무상수리). 화면은 저장된 총 포인트가 아니라 **정률 × 고객이 고른 조건의 결제 예상액 + 추가 포인트** 로 다시 계산한다.
+- 기준금액은 DPS 최장 약정의 최저 **product_fee(제품분 · 총액에서 무상수리료를 뺀 것 = 삼성닷컴 aiscPrdSsbPrc)** (mvp_264 · 2026-11-03 · 그 전엔 total_fee 라 5% 가량 높게 저장됐다). 화면은 저장된 총 포인트가 아니라 **정률 × 고객이 고른 요금제의 제품분 금액 + 추가 포인트** 로 다시 계산한다 (선납·카드와 무관 · 삼성닷컴 계산기와 같음).
 
 ## PC 에서
 
