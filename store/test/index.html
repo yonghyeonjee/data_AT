@@ -1653,7 +1653,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
         <b id="lvListTitle" class="lvlt">이 달 휴가</b>
         <select class="in lvsel" id="lv_fstaff" aria-label="담당자로 거르기" onchange="lvGo(0)"><option value="">담당자 전체</option></select>
         <select class="in lvsel" id="lv_fkind" aria-label="종류로 거르기" onchange="lvGo(0)"><option value="">종류 전체</option><option>반차</option><option>휴무</option><option>교육</option><option>휴가</option><option>연차</option><option>매장휴무</option></select>
-        <button type="button" class="btn ghost sm" id="lv_fclr" onclick="lvFilterClear()" style="margin:0">거르개 해제</button>
+        <button type="button" class="btn ghost sm" id="lv_fclr" onclick="lvFilterClear()" style="margin:0" disabled title="담당자·종류 거르기를 풀고 이 달 휴가를 전부 봅니다">필터 초기화</button>
         <span class="note-in" id="lvCount" style="margin:0"></span>
       </div>
       <div class="lvlist" id="lvList"><div class="empty">불러오는 중…</div></div>
@@ -4353,7 +4353,7 @@ function lvRenderList(){
   if(LV_PG>last) LV_PG=last;
   const page=rows.slice(LV_PG*per, LV_PG*per+per);
   const flt=(fs?1:0)+(fk?1:0);
-  $('lv_fclr').classList.toggle('hidden', !flt);
+  $('lv_fclr').disabled = !flt;
   $('lvCount').textContent = rows.length
     ? (rows.length>per ? `${rows.length}건 중 ${LV_PG*per+1}–${LV_PG*per+page.length}` : `${rows.length}건`) + (flt?' · 걸러진 목록':'')
     : '';
