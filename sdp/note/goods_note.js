@@ -71,7 +71,7 @@
     var imgHtml = img ? '<img class="gnote-img" src="' + esc(img) + '" alt="' + esc(n.title || '') + '">' : '';
     if (imgHtml && url && !n.btn) imgHtml = '<a href="' + esc(url) + '"' + (ext ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' + imgHtml + '</a>';
     return '<div class="gnote' + (n.tone === 'plain' ? ' plain' : '') + '" data-gnote="' + esc(n.id || '') + '" style="background:' + t.bg + ';border-color:' + t.line + '">' +
-      (n.test ? '<span class="gnote-test" title="상태가 시험이라 주소에 gnote=on 이 있을 때만 보입니다">시험</span>' : '') +
+      (n.test ? '<span class="gnote-test" title="상태가 test라 주소에 gnote=on 이 있을 때만 보입니다">test</span>' : '') +
       (n.title && n.tone !== 'plain' ? '<strong class="gnote-title">' + esc(n.title) + '</strong>' : '') +
       imgHtml +
       (String(n.body || '').trim() ? '<div class="gnote-body">' + body + '</div>' : '') +
