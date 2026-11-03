@@ -6284,7 +6284,7 @@ function gnPageUrl(n){
 function renderGoodsNote(){
   const d=GN, can=!!d.can_edit, L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{};
   const ST={on:['공개','ok'],test:['시험','warn'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
-  $('gnSub').textContent=can?'공통(이 몰 모든 상품) 또는 개별(특정 상품) 문구와 작은 버튼 — 시험으로 저장하면 주소 끝에 &gnote=on 을 붙인 사람만 봅니다':'특정 상품 상세페이지에만 나가는 문구 (고치기는 점장님·대표님)';
+  $('gnSub').textContent=can?'공통(이 몰 모든 상품) 또는 개별(특정 상품) 문구와 작은 버튼 — 시험으로 저장하면 주소 끝에 &gnote=on 을 붙인 사람만 봅니다':'상품 상세페이지에 나가는 문구 (고치기는 권한이 있는 담당자만)';
   const notes=(d.notes||[]).filter(n=>can || n.state!=='off').sort((a,b)=>(a.scope==='all'?0:1)-(b.scope==='all'?0:1));
   let h=can?`<div style="display:flex;justify-content:flex-end;margin:0 0 8px"><button type="button" class="btn sm" onclick="gnOpen(null)">＋ 문구 추가</button></div>`:'';
   h+=notes.length?`<div class="list">${notes.map(n=>{ const url=gnPageUrl(n);
@@ -6297,7 +6297,7 @@ function renderGoodsNote(){
   $('gnBody').innerHTML=h;
 }
 function gnOpen(id){
-  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{scope:'goods',mall:'pm',goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
+  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{scope:'goods',mall:((GN.malls||[]).find(m=>m.code==='pm')||(GN.malls||[])[0]||{code:'pm'}).code,goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
   GN_DLG={n}; $('gnDlgTitle').textContent=id!=null?'상품 안내 문구 고치기':'상품 안내 문구 추가'; $('gnErr').textContent='';
   const L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{price_below:'가격 아래'};
   const tones=[['blue','파랑'],['red','빨강'],['gray','회색'],['yellow','노랑']];
