@@ -7,7 +7,7 @@
    4) 검색 조건은 주소에 남는다 → 랜딩 주소로 그대로 사용
         /service/sub_find.php?cat=ref          냉장고만
         /service/sub_find.php?q=양문형          검색어
-        /service/sub_find.php?cat=aircon&max=50000&sort=low
+        /service/sub_find.php?cat=aircon&max=u60&sort=low
    ※ 요금 데이터는 sub_tab.js 와 같은 파일을 쓴다 — sub_find.html 이 goods_view.html 과 같은 순서로
      데이터센터(dcBase, version.js) → 예비 사본(dataBase) 에서 sub_index.js 를 읽고, 고른 위치를 CFG.dataBase 에 남긴다
 ===== */
@@ -52,10 +52,12 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
   };
   var BANDS = [
     { k: '', label: '전체 금액' },
-    { k: '30000', label: '월 3만원 이하', max: 30000 },
-    { k: '50000', label: '월 5만원 이하', max: 50000 },
-    { k: '100000', label: '월 10만원 이하', max: 100000 },
-    { k: 'over', label: '월 10만원 초과', min: 100001 }
+    { k: 'u10', label: '월 1만원 미만', max: 9999 },          // 구간은 구독센터 홈(sub_shop.js HBANDS)·전용몰 목록(sub_list.js) 과 같다 · 2026-11-03
+    { k: 'u20', label: '월 1만 ~ 2만원', min: 10000, max: 19999 },
+    { k: 'u40', label: '월 2만 ~ 4만원', min: 20000, max: 39999 },
+    { k: 'u60', label: '월 4만 ~ 6만원', min: 40000, max: 59999 },
+    { k: 'u100', label: '월 6만 ~ 10만원', min: 60000, max: 99999 },
+    { k: 'over', label: '월 10만원 이상', min: 100000 }
   ];
   var SORTS = [['low', '월 구독료 낮은순'], ['high', '월 구독료 높은순'], ['model', '모델명순']];
   var PAGE = CFG.pageSize || 24;
