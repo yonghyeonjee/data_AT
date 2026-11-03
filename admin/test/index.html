@@ -1794,6 +1794,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
             <select class="in" id="cuSrc"><option value="">전체 유입</option></select>
             <select class="in" id="cuFreq"><option value="">전체 구매횟수</option><option value="0">구매 없음</option><option value="1">1회</option><option value="2">2–3회</option><option value="4">4–9회</option><option value="10">10회 이상</option></select>
             <select class="in" id="cuConsent"><option value="">수신동의 전체</option><option value="y">동의</option><option value="n">미동의</option></select>
+            <select class="in" id="cuGrade" title="DPS 멤버십 등급 (DPS 수집기가 넣는 삼성 멤버십 등급)"><option value="">DPS 등급 전체</option><option value="로열블루,프레스티지">로열블루 이상</option><option value="프레스티지">프레스티지</option><option value="로열블루">로열블루</option><option value="스타">스타</option><option value="일반">일반</option><option value="단골,단골직전">단골·단골직전</option></select>
             <select class="in" id="cuSort" onchange="loadCustomers(0)">
               <option value="net_desc">구매액 높은순</option><option value="cnt_desc">구매 잦은순</option>
               <option value="recent">최근 구매순</option><option value="new">최근 가입순</option></select>
@@ -1897,6 +1898,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
             <div><label>구매 카테고리</label><select class="in" id="crmCat"><option value="">전체</option></select></div>
             <div><label>지역</label><select class="in" id="crmRegion"><option value="">전체</option></select></div>
             <div><label>고객 구분</label><select class="in" id="crmKind"><option value="">전체</option><option value="personal">개인</option><option value="business">사업자</option></select></div>
+            <div><label>DPS 멤버십 등급</label><select class="in" id="crmGrade"><option value="">전체</option><option value="로열블루,프레스티지">로열블루 이상</option><option value="프레스티지">프레스티지</option><option value="로열블루">로열블루</option><option value="스타">스타</option><option value="일반">일반</option><option value="단골,단골직전">단골·단골직전</option></select></div>
             <div><label id="crmFromL">최근 구매일 시작</label><input class="in" type="date" id="crmFrom"></div>
             <div><label id="crmToL">최근 구매일 끝</label><input class="in" type="date" id="crmTo"></div>
             <div><label>구매 횟수 이상</label><input class="in num" type="number" id="crmMinCnt" placeholder="예: 2" min="0"></div>
@@ -5576,7 +5578,7 @@ function fkSyncAll(){ document.querySelectorAll('[data-fk]').forEach(x=>x.dispat
 function fkInit(){
   fkRange('crmMinCnt',{min:0,max:10,step:1,unit:'회 이상',empty:'상관없음',nullAt:0,maxPlus:true,label:'구매 횟수 이상'});
   fkRange('crmMinNet',{min:0,max:5000000,step:50000,fmt:v=>wonK(v)+' 이상',empty:'상관없음',nullAt:0,maxPlus:true,label:'누적 구매액 이상'});
-  fkRadio('crmKind',{label:'고객 구분'}); fkRadio('crmDormant',{label:'휴면'}); fkRadio('crmSort',{label:'정렬'});
+  fkRadio('crmKind',{label:'고객 구분'}); fkRadio('crmGrade',{label:'DPS 멤버십 등급'}); fkRadio('crmDormant',{label:'휴면'}); fkRadio('crmSort',{label:'정렬'});
   fkRadio('crmNoSend',{label:'이미 보낸 사람 제외',short:s=>({'상관없음 — 보낸 적 있어도 포함':'상관없음','최근 7일 내 보낸 사람 제외':'7일 안 제외','최근 30일 내 보낸 사람 제외':'30일 안 제외','최근 90일 내 보낸 사람 제외':'90일 안 제외','한 번이라도 보낸 사람 전부 제외':'전부 제외'})[s]||s});
   fkRange2('crmDueLo','crmDueHi',{min:-90,max:60,step:1,label:'예상재구매일 창',fmt:(a,b)=>`D${a>=0?'+':''}${a} ~ D${b>=0?'+':''}${b}`});
   fkRange2('upMinD','upMaxD',{min:0,max:90,step:1,nullable:true,empty:'전체 기간',label:'주문 후 경과일',fmt:(a,b)=>`${a}~${b}일`});
@@ -6653,7 +6655,7 @@ let TG=null, tgPage=0, TG_OPTS=null;
 function tgParams(){
   const v=id=>$(id).value.trim();
   return { p_reason:v('crmReason'), p_q:v('crmQ')||null, p_channel:v('crmCh')||null, p_category:v('crmCat')||null,
-    p_region:v('crmRegion')||null, p_kind:v('crmKind')||null, p_from:v('crmFrom')||null, p_to:v('crmTo')||null,
+    p_region:v('crmRegion')||null, p_kind:v('crmKind')||null, p_grade:v('crmGrade')||null, p_from:v('crmFrom')||null, p_to:v('crmTo')||null,
     p_min_cnt:v('crmMinCnt')?Number(v('crmMinCnt')):null, p_min_net:v('crmMinNet')?Number(v('crmMinNet')):null,
     p_dormant_days:v('crmDormant')?Number(v('crmDormant')):null, p_no_send_days:v('crmNoSend')?Number(v('crmNoSend')):null,
     p_basis:TG_BASIS, p_product:(TG_BASIS==='product' ? ($('crmProd').value.trim()||null) : null),
@@ -6700,6 +6702,7 @@ async function loadTargets(page){
     ['창',TG_BASIS==='repeat'?`D${p.p_due_lo==null?'-30':(p.p_due_lo<0?p.p_due_lo:'+'+p.p_due_lo)} ~ D${p.p_due_hi==null?'+14':(p.p_due_hi<0?p.p_due_hi:'+'+p.p_due_hi)}`:null],
     ['키워드',p.p_q],['채널',p.p_channel],['카테고리',p.p_category],['지역',p.p_region],
     ['구분',p.p_kind==='business'?'사업자':p.p_kind==='personal'?'개인':null],
+    ['등급',p.p_grade?(p.p_grade==='로열블루,프레스티지'?'로열블루 이상':p.p_grade.replace(/,/g,'·')):null],
     ['최근구매',p.p_from||p.p_to?`${p.p_from||'…'}~${p.p_to||'…'}`:null],
     ['구매횟수',p.p_min_cnt?`${p.p_min_cnt}회+`:null],['누적',p.p_min_net?wonK(p.p_min_net)+'+':null],
     ['휴면',p.p_dormant_days?`${p.p_dormant_days}일+`:null],['발송제외',p.p_no_send_days?(p.p_no_send_days>=36500?'보낸 적 있으면 전부':`${p.p_no_send_days}일 내`):null],
@@ -6708,7 +6711,7 @@ async function loadTargets(page){
     || '<span style="color:var(--faint)">조건 없음</span>')
     + `<button class="btn sm ghost" style="margin-left:6px" onclick="copyCond()" title="이 조건을 그대로 복사해 다른 사람에게 주면 같은 수가 나옵니다">조건 복사</button>`;
   $('tbTargets').innerHTML=d.rows.map(r=>`<tr>
-    <td><b>${esc(r.name||'-')}</b>${r.biz?' <span class="tag n">사업자</span>':''}</td>
+    <td><b>${esc(r.name||'-')}</b>${r.biz?' <span class="tag n">사업자</span>':''}${r.grade?` <span class="tag n" title="DPS 멤버십 등급">${esc(r.grade)}</span>`:''}</td>
     <td class="mono">${esc(r.phone||'')}</td><td style="font-size:calc(12px * var(--font-scale));color:var(--muted)">${esc(r.region||'')}</td>
     <td class="wrap" style="font-size:calc(12px * var(--font-scale))">${(r.chans||[]).map(c=>`<span class="tag n" style="margin-right:3px">${esc(c)}</span>`).join('')}</td>
     <td class="num">${r.cnt?n(r.cnt)+'회':'-'}</td><td class="num"><b>${n(r.net)}</b></td>
@@ -6808,7 +6811,7 @@ async function segEdit(code){
 /* 저장 조건이 쓸 수 있는 키 전부. 여기 없는 키는 화면이 조용히 무시하므로
    조건 이름과 실제 조건이 어긋난다 (예전 '토너·잉크 재구매 주기' 가 kind_goods 를 담아
    토너가 아닌 사람까지 뽑던 사고). 모르는 키가 있으면 알려 준다. */
-const SEG_KEYS=['q','channel','category','region','kind','min_cnt','min_net','dormant_days',
+const SEG_KEYS=['q','channel','category','region','kind','grade','min_cnt','min_net','dormant_days',
   'no_send_days','sort','next_only','from','to','last_days_max','last_days_min','basis','product','asof','due_lo','due_hi'];
 function segToForm(pm){
   const set=(id,v)=>{ $(id).value = (v===null||v===undefined)?'':String(v); };
@@ -6818,9 +6821,9 @@ function segToForm(pm){
   set('crmProd', pm.product); set('crmAsof', pm.asof); set('crmDueLo', pm.due_lo==null?-30:pm.due_lo); set('crmDueHi', pm.due_hi==null?14:pm.due_hi);
   if(pm.basis && pm.basis!==TG_BASIS) setBasisQuiet(pm.basis);
   else setBasisQuiet(pm.basis || TG_BASIS);
-  set('crmQ',pm.q); set('crmCh',pm.channel); set('crmCat',pm.category); set('crmRegion',pm.region); set('crmKind',pm.kind);
+  set('crmQ',pm.q); set('crmCh',pm.channel); set('crmCat',pm.category); set('crmRegion',pm.region); set('crmKind',pm.kind); set('crmGrade',pm.grade);
   /* select 는 목록에 없는 값을 넣으면 조용히 '전체' 가 된다 — 조건이 사라진 줄 모르게 된다 */
-  [['crmKind',pm.kind],['crmCh',pm.channel],['crmCat',pm.category],['crmRegion',pm.region],['crmSort',pm.sort]]
+  [['crmKind',pm.kind],['crmGrade',pm.grade],['crmCh',pm.channel],['crmCat',pm.category],['crmRegion',pm.region],['crmSort',pm.sort]]
     .forEach(([id,v])=>{ if(v && String($(id).value)!==String(v))
       toast(`조건의 "${v}" 는 이 목록에 없어 걸리지 않았습니다`,'bad'); });
   set('crmMinCnt',pm.min_cnt); set('crmMinNet',pm.min_net);
@@ -6848,7 +6851,7 @@ function clearSegment(){ SEG_CUR=null; $('segNote').classList.add('hidden'); seg
 async function saveSegment(){
   const pm={}; const v=id=>$(id).value.trim();
   if(v('crmQ')) pm.q=v('crmQ'); if(v('crmCh')) pm.channel=v('crmCh'); if(v('crmCat')) pm.category=v('crmCat');
-  if(v('crmRegion')) pm.region=v('crmRegion'); if(v('crmKind')) pm.kind=v('crmKind');
+  if(v('crmRegion')) pm.region=v('crmRegion'); if(v('crmKind')) pm.kind=v('crmKind'); if(v('crmGrade')) pm.grade=v('crmGrade');
   if(v('crmMinCnt')) pm.min_cnt=Number(v('crmMinCnt')); if(v('crmMinNet')) pm.min_net=Number(v('crmMinNet'));
   if(v('crmDormant')) pm.dormant_days=Number(v('crmDormant')); if(v('crmNoSend')) pm.no_send_days=Number(v('crmNoSend'));
   if($('crmNext').classList.contains('on')) pm.next_only=true;
@@ -6969,7 +6972,7 @@ async function pasteCond(){
   const set=(id,v)=>{ $(id).value=(v===null||v===undefined)?'':String(v); };
   setBasisQuiet(d.p_basis||'consent');
   set('crmProd',d.p_product); set('crmAsof',d.p_asof); set('crmDueLo',d.p_due_lo==null?-30:d.p_due_lo); set('crmDueHi',d.p_due_hi==null?14:d.p_due_hi); set('crmQ',d.p_q); set('crmCh',d.p_channel);
-  set('crmCat',d.p_category); set('crmRegion',d.p_region); set('crmKind',d.p_kind);
+  set('crmCat',d.p_category); set('crmRegion',d.p_region); set('crmKind',d.p_kind); set('crmGrade',d.p_grade);
   set('crmFrom',d.p_from); set('crmTo',d.p_to); set('crmMinCnt',d.p_min_cnt); set('crmMinNet',d.p_min_net);
   set('crmDormant',d.p_dormant_days); set('crmNoSend',d.p_no_send_days); set('crmSort',d.p_sort||'recent');
   $('crmNext').classList.toggle('on', !!d.p_next_only);
@@ -7406,7 +7409,7 @@ async function utmQuick(){
 }
 /* [대상 조건] → 발송 대상 추출로. 캠페인 코드를 캠페인명에 넣어 감사로그가 같은 이름으로 남게 한다 */
 function utmExtract(code, seg){ $('crmReason').value=code; PENDING_SEG=seg||null; subSet('crm','pick'); show('crm'); }
-function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value=''); $('crmDueLo').value='-30'; $('crmDueHi').value='14'; fkSyncAll();
+function resetTargets(){ ['crmQ','crmCh','crmCat','crmRegion','crmKind','crmGrade','crmFrom','crmTo','crmMinCnt','crmMinNet','crmDormant','crmNoSend'].forEach(id=>$(id).value=''); $('crmDueLo').value='-30'; $('crmDueHi').value='14'; fkSyncAll();
   $('crmNext').classList.remove('on'); $('crmSort').value='recent'; prodRenderSel(); if($('crmReason').value.trim().length>=3 && (TG_BASIS!=='product'||prodTokens().length)) loadTargets(0); }
 /* ═══ 미입금 주문 (결제 안 한 고객) ═══
    고도몰에서 받아 올린 입금 대기 주문. 샵링커는 결제가 끝난 주문만 주므로 여기로 따로 받는다. */
@@ -8669,7 +8672,7 @@ async function loadCustomers(page){
   cuPage=Math.max(0,page||0);
   if(!CUST){ try{ CUST=await rpc('fn_customer_stats'); renderCustStats(); }catch(e){} }
   const p={ p_q:$('cuQ').value.trim()||null, p_source:$('cuSrc').value||null, p_freq:$('cuFreq').value||null,
-    p_consent:$('cuConsent').value||null, p_sort:$('cuSort').value, p_limit:pgSize('customers'), p_offset:cuPage*pgSize('customers'),
+    p_consent:$('cuConsent').value||null, p_grade:$('cuGrade').value||null, p_sort:$('cuSort').value, p_limit:pgSize('customers'), p_offset:cuPage*pgSize('customers'),
     p_unmask:$('cuUnmask').classList.contains('on') };
   let d; try{ d=await rpc('fn_customer_list',p); }
   catch(e){ $('tbCust').innerHTML=`<tr><td colspan="8" class="note">${esc(e.message)}</td></tr>`; return; }
@@ -8678,7 +8681,7 @@ async function loadCustomers(page){
   $('cuPg').innerHTML=pgBar('customers',cuPage,d.total||0,'loadCustomers');
   $('custHint').textContent=`${n(d.total)}명 · 줄을 누르면 문의·견적·구매 흐름`;
   $('tbCust').innerHTML=d.rows.map(r=>`<tr onclick="cjOpenRow(event,'${esc(r.key||'')}',0)" title="누르면 문의·견적·구매 흐름">
-    <td><button type="button" class="cjlnk">${esc(r.name||'-')}</button>${r.biz?' <span class="tag n">사업자</span>':''}</td>
+    <td><button type="button" class="cjlnk">${esc(r.name||'-')}</button>${r.biz?' <span class="tag n">사업자</span>':''}${r.grade?` <span class="tag n" title="DPS 멤버십 등급">${esc(r.grade)}</span>`:''}</td>
     <td class="mono">${esc(r.phone||'-')}</td>
     <td class="wrap" style="font-size:calc(12px * var(--font-scale))">${(r.chans||[]).map(c=>`<span class="tag n" style="margin-right:3px">${esc(c)}</span>`).join('')}${(r.sub?['구독']:[]).concat((r.kinds||[]).filter(k=>k&&k!=='구독')).map(k=>`<span class="tag ${k==='구독'?'y':'n'}" style="margin-right:3px" title="${k==='구독'&&(r.sub_kinds||[]).length?esc('DPS 구독: '+(r.sub_kinds||[]).join('·')):'구매 구분 (원장·DPS)'}">${esc(k)}</span>`).join('')}</td>
     <td class="num">${r.cnt?n(r.cnt)+'회':'<span style="color:var(--faint)">-</span>'}</td>
@@ -8718,7 +8721,7 @@ function renderCustStats(){
     (c.by_source||[]).filter(x=>!CRM_SRC.some(r=>r[1]===x.k)).map(x=>`<option>${esc(x.k)}</option>`).join('')+
     '<option value="구독">구매 구분 · 구독 (원장·DPS)</option><option value="일시불">구매 구분 · 일시불</option>';   /* mvp_190: 출처 칸으로 구매 구분도 거른다 */
 }
-function resetCustomers(){ ['cuQ','cuSrc','cuFreq','cuConsent'].forEach(id=>$(id).value=''); $('cuSort').value='net_desc'; loadCustomers(0); }
+function resetCustomers(){ ['cuQ','cuSrc','cuFreq','cuConsent','cuGrade'].forEach(id=>$(id).value=''); $('cuSort').value='net_desc'; loadCustomers(0); }
 
 /** 비교 대상이 없는 단순 분포용 막대 */
 /** 전체(회색) 위에 발송 가능(색) 을 겹쳐 그리는 막대 */
