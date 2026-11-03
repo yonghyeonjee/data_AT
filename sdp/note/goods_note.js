@@ -24,25 +24,29 @@
   };
   var POS_LABEL = {
     price_below: '가격 아래', pay_above: '네이버페이 위',
-    title_below: '상품명 아래', benefit_above: '혜택 안내 상자 위', benefit_below: '혜택 안내 상자 아래',
+    title_below: '상품명 아래',   // benefit_above/below 는 예전 고정 혜택 상자 기준 — 그 상자를 문구로 옮겨 목록에서 뺐다 (있던 문구는 가격 아래로 대신 들어감)
     buy_above: '구매 버튼 위', pay_below: '네이버페이 아래', detail_top: '상세정보 맨 위'
   };
   var TONES = {
     blue:   { bg: '#f7faff', line: '#d9e3f0', em: '#1757a6' },
     red:    { bg: '#fff6f6', line: '#f2d0d0', em: '#d43f3f' },
     gray:   { bg: '#f7f7f7', line: '#e3e3e3', em: '#333333' },
-    yellow: { bg: '#fffbe8', line: '#f0e2a0', em: '#8a5a00' }
+    yellow: { bg: '#fffbe8', line: '#f0e2a0', em: '#8a5a00' },
+    plain:  { bg: 'transparent', line: 'transparent', em: '#1757a6' }   // 상자 없이 (이미지 배너 등)
   };
   var CSS = '.gnote{margin:14px 0;padding:16px 18px;border:1px solid;border-radius:6px;color:#333;font-size:14px;line-height:1.7;box-sizing:border-box;text-align:left;word-break:keep-all;position:relative}' +
     '.gnote-title{display:block;margin-bottom:4px;font-size:16px;font-weight:700;color:#222}' +
-    '.gnote-body{white-space:pre-line}' +
+    '.gnote.plain{padding:0;border:0;text-align:center}' +
+    '.gnote-img{display:inline-block;width:602px;max-width:100%;height:auto;vertical-align:top}' +
+    '.gnote-small{color:#666;font-size:13px}' +
+    '.gnote-line{min-height:1em}' +
     '.gnote-body strong{font-weight:700}' +
     '.gnote-btn{display:inline-block;margin-top:10px;padding:8px 16px;border-radius:4px;font-size:14px;font-weight:700;line-height:1.4;text-decoration:none!important;box-sizing:border-box}' +
     '.gnote-btn.kakao{background:#FEE500;color:#191919!important}' +
     '.gnote-btn.blue{background:#1757a6;color:#fff!important}' +
     '.gnote-btn.line{background:#fff;color:#1757a6!important;border:1px solid #1757a6}' +
     '.gnote-test{position:absolute;top:6px;right:8px;padding:1px 6px;border-radius:3px;background:#ff8a00;color:#fff;font-size:11px;font-weight:700}' +
-    '@media (max-width:767px){.gnote{padding:13px 15px;font-size:13px}.gnote-title{font-size:15px}.gnote-btn{font-size:13px}}';
+    '@media (max-width:767px){.gnote{padding:13px 15px;font-size:13px}.gnote.plain{padding:0}.gnote-title{font-size:15px}.gnote-btn{font-size:13px}.gnote-small{font-size:12px}}';
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function safeUrl(u) { u = String(u || '').trim(); return /^(https?:\/\/|tel:|\/)/i.test(u) ? u : ''; }
@@ -51,15 +55,23 @@
     if (doc.getElementById('gnoteCss')) return;
     var st = doc.createElement('style'); st.id = 'gnoteCss'; st.textContent = CSS; (doc.head || doc.documentElement).appendChild(st);
   }
-  // 문구 하나 → HTML (글자만 · 줄바꿈 유지 · **굵게**)
+  // 문구 하나 → HTML (글자만 · 한 줄씩 · **색 굵게** · !!빨간 굵게!! · ※ 로 시작하는 줄은 작은 회색 · 이미지는 https 주소만)
   function html(n) {
     var t = TONES[n.tone] || TONES.blue;
-    var body = esc(n.body).replace(/\*\*(.+?)\*\*/g, '<strong style="color:' + t.em + '">$1</strong>');
+    var body = String(n.body || '').split(/\r?\n/).map(function (line) {
+      var h = esc(line).replace(/\*\*(.+?)\*\*/g, '<strong style="color:' + t.em + '">$1</strong>')
+                       .replace(/!!(.+?)!!/g, '<strong style="color:#d43f3f">$1</strong>');
+      return '<div class="' + (/^\s*※/.test(line) ? 'gnote-small' : 'gnote-line') + '">' + (h || '&nbsp;') + '</div>';
+    }).join('');
     var url = safeUrl(n.url), ext = /^https?:/i.test(url) && url.indexOf(location.host) < 0;
-    return '<div class="gnote" data-gnote="' + esc(n.id || '') + '" style="background:' + t.bg + ';border-color:' + t.line + '">' +
+    var img = /^https:\/\//i.test(String(n.img || '')) ? String(n.img) : '';
+    var imgHtml = img ? '<img class="gnote-img" src="' + esc(img) + '" alt="' + esc(n.title || '') + '">' : '';
+    if (imgHtml && url && !n.btn) imgHtml = '<a href="' + esc(url) + '"' + (ext ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' + imgHtml + '</a>';
+    return '<div class="gnote' + (n.tone === 'plain' ? ' plain' : '') + '" data-gnote="' + esc(n.id || '') + '" style="background:' + t.bg + ';border-color:' + t.line + '">' +
       (n.test ? '<span class="gnote-test" title="상태가 시험이라 주소에 gnote=on 이 있을 때만 보입니다">시험</span>' : '') +
-      (n.title ? '<strong class="gnote-title">' + esc(n.title) + '</strong>' : '') +
-      '<div class="gnote-body">' + body + '</div>' +
+      (n.title && n.tone !== 'plain' ? '<strong class="gnote-title">' + esc(n.title) + '</strong>' : '') +
+      imgHtml +
+      (String(n.body || '').trim() ? '<div class="gnote-body">' + body + '</div>' : '') +
       (n.btn && url ? '<div><a class="gnote-btn ' + esc(n.btnTone || 'kakao') + '" href="' + esc(url) + '"' + (ext ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' + esc(n.btn) + '</a></div>' : '') +
       '</div>';
   }
