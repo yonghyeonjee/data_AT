@@ -1605,6 +1605,22 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           </div>
         </div>
       </div>
+      <div class="lvmask hidden" id="spkDlg" onclick="if(event.target===this)spkClose()">
+        <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="spkDlgTitle" style="width:min(980px,100%);max-height:92vh;overflow:auto">
+          <button type="button" class="lvx" onclick="spkClose()" aria-label="닫기" title="닫기">✕</button>
+          <h3 id="spkDlgTitle">스마트 패키지 안내 수정</h3>
+          <div class="gn-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start">
+            <div class="lvform" id="spkForm"></div>
+            <div class="gn-prev" style="border:1px solid var(--line);border-radius:10px;padding:12px;background:#fafbfc"><h4>미리보기</h4><div id="spkPrev"></div>
+              <p class="gn-hint" style="color:var(--muted);font-size:12px">일반 대상 제품 카드입니다. 포인트 숫자는 예시이고, 실제 숫자와 대상 모델은 관리자 [스마트 패키지] 판에서 옵니다.</p></div>
+          </div>
+          <p class="note-in" id="spkErr" style="color:var(--bad);min-height:18px;margin:6px 0 0"></p>
+          <div class="btns" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px">
+            <button type="button" class="btn ghost" onclick="spkClose()">취소</button>
+            <button type="button" class="btn" id="spkSave" onclick="spkSave()">저장</button>
+          </div>
+        </div>
+      </div>
       <div class="lvmask hidden" id="gnHelp" onclick="if(event.target===this)gnHelp(false)">
         <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="gnHelpTitle">
           <button type="button" class="lvx" onclick="gnHelp(false)" aria-label="닫기" title="닫기">✕</button>
@@ -6359,37 +6375,90 @@ function gnLib(cb){
 async function loadGoodsNote(){
   if(!CODE) return;
   try{ GN=await rpc('fn_store_goods_note_list',{p_code:CODE}); }catch(e){ $('gnBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  try{ SPK=await rpc('fn_store_spkg_conf_list',{p_code:CODE}); }catch(e){ SPK=null; }
   gnLib(renderGoodsNote);
 }
+/* ═══ 스마트 패키지 안내 카드 (mvp_271) : 몰마다 문구·버튼·전화·켜기/끄기·숨길/더할 상품 — fn_store_spkg_conf_list/save · 고도몰 sdp/spkg/spkg.js 가 fn_spkg_conf 로 읽는다 ═══ */
+let SPK=null, SPK_CUR=null;
+const SPK_DEF={tag:'삼성전자 스마트 패키지', msg:'스마트 패키지 대상 제품을 **2개 이상 함께 구매**하면 **멤버십 포인트**를 드립니다.', sub:'이 제품 1개만 구매하면 적용되지 않아요 · {min}부터, 함께 사는 품목이 많을수록 !!최대 {max}P!!', btn:'스마트 패키지 상담 문의', ask:'/main/html.php?htmid=service/SamSungSubscription.html', tel:'031-8042-3166'};
+function spkLib(cb){
+  if(window.Spkg) return cb();
+  window.SPKG_CONFIG={auto:false};
+  const s=document.createElement('script'); s.src='/sdp/spkg/spkg.js?v='+Date.now(); s.onload=()=>{ if(window.Spkg) window.Spkg.addCss(); cb(); }; s.onerror=()=>cb(); document.head.appendChild(s);
+}
+function spkRows(){
+  const items=(SPK&&SPK.items)||[], can=!!(SPK&&SPK.can_edit); if(!items.length) return '';
+  return '<div class="list" style="margin-bottom:10px">'+items.map(c=>{ const on=c.on!==false;
+    return `<div class="item" style="grid-template-columns:1fr auto">
+      <div><div style="font-weight:700">${esc(c.tag||SPK_DEF.tag)} <span class="note-in" style="font-weight:400">· 상품 안내 카드</span></div>
+        <div class="note-in" style="margin:2px 0 0">${esc(c.name)} · 가격 아래 · <b>대상 모델 자동</b> (관리자 스마트 패키지 판)${(c.hide||[]).length?' · 숨김 상품 '+c.hide.length+'개':''}${(c.extra||[]).length?' · 더한 상품 '+c.extra.length+'개':''}${c.by?' · '+esc(c.updated||'')+' '+esc(c.by):''}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${on?'ok':''}">${on?'공개':'꺼짐'}</span>${can?`<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sm ghost" onclick="spkOpen('${esc(c.mall)}')">수정</button><button type="button" class="btn sm ghost" onclick="spkToggle('${esc(c.mall)}',${on?'false':'true'})">${on?'끄기':'켜기'}</button></span>`:''}</div></div>`; }).join('')+'</div>';
+}
+function spkOpen(mall){
+  const c=((SPK&&SPK.items)||[]).find(x=>x.mall===mall); if(!c) return; SPK_CUR=c; $('spkErr').textContent='';
+  $('spkDlgTitle').textContent=c.name+' 스마트 패키지 안내 수정';
+  const f=(id,label,val,ph,hint,area)=>`<div><label for="${id}">${label}</label>${area?`<textarea class="in" id="${id}" rows="2" oninput="spkPreview()" placeholder="${esc(ph)}">${esc(val||'')}</textarea>`:`<input class="in" id="${id}" value="${esc(val||'')}" placeholder="${esc(ph)}" oninput="spkPreview()">`}${hint?`<div class="gn-hint">${hint}</div>`:''}</div>`;
+  $('spkForm').innerHTML=`<p class="gn-hint" style="margin:0 0 8px">빈 칸은 원래 문구 그대로 나갑니다 (회색 글씨). 대상 모델·포인트표는 관리자 [스마트 패키지] 판에서 관리합니다.</p>`+
+    f('spk_tag','꼬리표',c.tag,SPK_DEF.tag)+
+    f('spk_msg','큰 문구 (일반 대상 제품)',c.msg,SPK_DEF.msg,'**글자** 파랑 굵게 · !!글자!! 빨강',true)+
+    f('spk_sub','작은 문구',c.sub,SPK_DEF.sub,'{min} = 첫 단계(예: 2품목 10만P) · {max} = 최대 포인트(예: 600만) — 판이 바뀌면 숫자도 따라 바뀝니다',true)+
+    `<div class="gn-two" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">`+f('spk_btn','상담 버튼 글자',c.btn,SPK_DEF.btn)+f('spk_tel','전화번호',c.tel,SPK_DEF.tel)+`</div>`+
+    f('spk_ask','상담 버튼 주소',c.ask,SPK_DEF.ask,'구독 문의 페이지면 상품·모델이 자동으로 채워집니다 · https:// 나 / 로 시작')+
+    f('spk_hide','이 상품에서는 숨기기 (상품번호 · 쉼표)',(c.hide||[]).join(', '),'예: 1000001077')+
+    f('spk_extra','대상 모델이 아니어도 보이기 (상품번호 · 쉼표)',(c.extra||[]).join(', '),'예: 1000000844','모델명으로 못 찾는 상품만 넣으세요');
+  $('spkDlg').classList.remove('hidden'); spkLib(spkPreview);
+}
+function spkClose(){ $('spkDlg').classList.add('hidden'); SPK_CUR=null; }
+function spkData(){
+  const v=id=>$(id).value.trim(), csv=s=>s.split(/[,\n\s]+/).map(x=>x.trim()).filter(Boolean);
+  return { mall:SPK_CUR.mall, tag:v('spk_tag'), msg:v('spk_msg'), sub:v('spk_sub'), btn:v('spk_btn'), tel:v('spk_tel'), ask:v('spk_ask'), hide:csv(v('spk_hide')), extra:csv(v('spk_extra')) };
+}
+function spkPreview(){
+  const box=$('spkPrev'); if(!box||!SPK_CUR) return;
+  if(!window.Spkg){ box.innerHTML='<div class="empty">미리보기를 불러오지 못했습니다</div>'; return; }
+  const d=spkData(), conf={}; ['tag','msg','sub','btn','tel','ask'].forEach(k=>{ if(d[k]) conf[k]=d[k]; });
+  box.innerHTML=window.Spkg.card({conf}); box.querySelectorAll('a').forEach(a=>a.addEventListener('click',e=>e.preventDefault()));
+}
+async function spkSave(){
+  if(!SPK_CUR) return; const b=$('spkSave'); b.disabled=true;
+  try{ const d=spkData(); if(d.ask && !/^(https?:\/\/|\/)/i.test(d.ask)) throw new Error('상담 버튼 주소는 https:// 또는 / 로 시작해야 합니다');
+    await rpc('fn_store_spkg_conf_save',{p_code:CODE,p_data:d}); spkClose(); toast('저장했습니다 · 상품 페이지를 새로고침하면 바로 바뀝니다'); loadGoodsNote(); }
+  catch(e){ $('spkErr').textContent=e.message; } finally{ b.disabled=false; }
+}
+async function spkToggle(mall,on){
+  if(!on && !confirm('이 몰 상품 페이지의 스마트 패키지 안내 카드를 끌까요? (다시 켤 수 있습니다)')) return;
+  try{ await rpc('fn_store_spkg_conf_save',{p_code:CODE,p_data:{mall,on}}); toast(on?'켰습니다':'껐습니다'); loadGoodsNote(); }catch(e){ toast(e.message); }
+}
 function gnMall(c){ return ((GN&&GN.malls)||[]).find(m=>m.code===c)||{code:c,name:c,domain:''}; }
+function gnMallsTxt(n){ const ms=n.malls||[n.mall]; return ms.includes('*')?'<b>전체 몰</b>':ms.map(c=>esc(gnMall(c).name)).join('·'); }
 function gnPageUrl(n){
-  const m=gnMall(n.mall); if(!m.domain || !(n.goods||[]).length) return '';
+  const m=gnMall((n.malls||[n.mall]).find(c=>c!=='*')||n.mall); if(!m.domain || !(n.goods||[]).length) return '';
   return 'https://'+m.domain+'/goods/goods_view.php?goodsNo='+encodeURIComponent(n.goods[0])+(n.status==='test'?'&gnote=on':'');
 }
 function renderGoodsNote(){
   const d=GN, can=!!d.can_edit, L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{};
   const ST={on:['공개','ok'],test:['test','warn'],soon:['예정','warn'],ended:['끝남',''],off:['꺼짐','']};
-  $('gnSub').textContent=can?'공통(이 몰 모든 상품) 또는 개별(특정 상품) 문구·이미지와 작은 버튼 — 저장 (test) 은 주소 끝에 &gnote=on 을 붙인 사람만 봅니다':'상품 상세페이지에 나가는 문구 (수정·삭제는 권한이 있는 담당자만)';
+  $('gnSub').textContent=can?'전체 몰 또는 고른 몰 · 공통(모든 상품) 또는 개별(특정 상품) 문구·이미지와 작은 버튼 — 저장 (test) 은 주소 끝에 &gnote=on 을 붙인 사람만 봅니다':'상품 상세페이지에 나가는 문구 (수정·삭제는 권한이 있는 담당자만)';
   const notes=(d.notes||[]).filter(n=>can || n.state!=='off').sort((a,b)=>(a.scope==='all'?0:1)-(b.scope==='all'?0:1));
   let h=can?`<div style="display:flex;justify-content:flex-end;margin:0 0 8px"><button type="button" class="btn sm" onclick="gnOpen(null)">＋ 문구 추가</button></div>`:'';
   h+=notes.length?`<div class="list">${notes.map(n=>{ const url=gnPageUrl(n);
     return `<div class="item" style="grid-template-columns:1fr auto">
       <div><div style="font-weight:700">${esc(n.title||String(n.body).split('\n')[0].replace(/\*\*/g,''))}</div>
-        <div class="note-in" style="margin:2px 0 0">${esc(gnMall(n.mall).name)} · ${esc(L[n.pos]||n.pos)} · ${n.scope==='all'?'<b>공통</b> · 모든 상품':''}${(n.goods||[]).length?'<b>개별</b> · 상품 '+esc(n.goods.join(', ')):''}${(n.goods||[]).length&&(n.models||[]).length?' · ':''}${(n.models||[]).length?'모델 '+esc(n.models.join(', ')):''}${n.from||n.to?' · '+esc(n.from||'')+' ~ '+esc(n.to||''):''}${n.btn?' · 버튼 「'+esc(n.btn)+'」':''}</div>
+        <div class="note-in" style="margin:2px 0 0">${gnMallsTxt(n)} · ${esc(L[n.pos]||n.pos)} · ${n.scope==='all'?'<b>공통</b> · 모든 상품':''}${(n.goods||[]).length?'<b>개별</b> · 상품 '+esc(n.goods.join(', ')):''}${(n.goods||[]).length&&(n.models||[]).length?' · ':''}${(n.models||[]).length?'모델 '+esc(n.models.join(', ')):''}${n.from||n.to?' · '+esc(n.from||'')+' ~ '+esc(n.to||''):''}${n.btn?' · 버튼 「'+esc(n.btn)+'」':''}</div>
         ${url?`<a class="note-in" style="display:inline-block;margin-top:4px" href="${esc(url)}" target="_blank" rel="noopener">페이지에서 보기 ↗</a>`:''}</div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[n.state][1]}">${ST[n.state][0]}</span>${can?`<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sm ghost" onclick="gnOpen(${n.id})">수정</button>${n.status!=='on'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'on')">공개</button>`:`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'test')">test로</button>`}${n.status!=='off'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'off')">끄기</button>`:''}<button type="button" class="btn sm ghost" style="color:#d43f3f" onclick="gnStatus(${n.id},'gone')">삭제</button></span>`:''}</div></div>`; }).join('')}</div>`
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[n.state][1]}">${ST[n.state][0]}</span>${can&&n.can!==false?`<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sm ghost" onclick="gnOpen(${n.id})">수정</button>${n.status!=='on'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'on')">공개</button>`:`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'test')">test로</button>`}${n.status!=='off'?`<button type="button" class="btn sm ghost" onclick="gnStatus(${n.id},'off')">끄기</button>`:''}<button type="button" class="btn sm ghost" style="color:#d43f3f" onclick="gnStatus(${n.id},'gone')">삭제</button></span>`:''}</div></div>`; }).join('')}</div>`
     :`<div class="empty">아직 상품 안내 문구가 없습니다</div>`;
-  $('gnBody').innerHTML=h;
+  $('gnBody').innerHTML=spkRows()+h;
 }
 function gnOpen(id){
-  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{scope:'goods',mall:((GN.malls||[]).find(m=>m.code==='pm')||(GN.malls||[])[0]||{code:'pm'}).code,goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
+  const n=(id!=null && (GN.notes||[]).find(x=>x.id===id))||{scope:'goods',malls:[((GN.malls||[]).find(m=>m.code==='pm')||(GN.malls||[])[0]||{code:'pm'}).code],goods:[],models:[],tone:'blue',btnTone:'kakao',pos:'price_below',status:'test'};
   GN_DLG={n}; $('gnDlgTitle').textContent=id!=null?'상품 안내 문구 수정':'상품 안내 문구 추가'; $('gnErr').textContent='';
   const L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{price_below:'가격 아래'};
   const tones=[['blue','파랑'],['red','빨강'],['gray','회색'],['yellow','노랑'],['plain','상자 없음']];
   $('gnForm').innerHTML=`
-    <div class="gn-two"><div><label for="gn_mall">몰</label><select class="in" id="gn_mall" oninput="gnPreview()">${(GN.malls||[]).map(m=>`<option value="${esc(m.code)}" ${m.code===n.mall?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
-      <div><label for="gn_pos">위치</label><select class="in" id="gn_pos" oninput="gnPreview()">${Object.keys(L).map(k=>`<option value="${k}" ${k===n.pos?'selected':''}>${esc(L[k])}</option>`).join('')}</select></div></div>
-    <div><label>범위</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_scope">${[['goods','개별 · 특정 상품만'],['all','공통 · 이 몰 모든 상품']].map(t=>`<span class="chip ${t[0]===(n.scope||'goods')?'on':''}" data-v="${t[0]}" onclick="[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on');gnScope()">${t[1]}</span>`).join('')}</div></div>
+    <div><label>몰 (여러 개 고를 수 있음)</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_malls">${(GN.can_all?[{code:'*',name:'전체 몰'}]:[]).concat(GN.malls||[]).map(m=>`<span class="chip ${(n.malls||[n.mall]).includes(m.code)?'on':''}" data-v="${esc(m.code)}" onclick="gnMallPick(this)">${esc(m.name)}</span>`).join('')}</div><div class="gn-hint">전체 몰 = 지금 몰과 나중에 생기는 몰 모두 · 몰마다 상품번호가 달라서 개별 문구를 여러 몰에 낼 때는 모델번호로 넣으세요</div></div>
+    <div class="gn-two"><div><label for="gn_pos">위치</label><select class="in" id="gn_pos" oninput="gnPreview()">${Object.keys(L).map(k=>`<option value="${k}" ${k===n.pos?'selected':''}>${esc(L[k])}</option>`).join('')}</select></div><div></div></div>
+    <div><label>범위</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_scope">${[['goods','개별 · 특정 상품만'],['all','공통 · 고른 몰의 모든 상품']].map(t=>`<span class="chip ${t[0]===(n.scope||'goods')?'on':''}" data-v="${t[0]}" onclick="[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on');gnScope()">${t[1]}</span>`).join('')}</div></div>
     <div id="gn_target" style="display:grid;gap:inherit"><div><label for="gn_goods">대상 상품번호 (쉼표로 여러 개)</label><input class="in" id="gn_goods" inputmode="numeric" value="${esc((n.goods||[]).join(', '))}" placeholder="예: 1000003136"><div class="gn-hint">상품 페이지의 상품코드(주소 goodsNo=) · 몰마다 번호가 다릅니다</div></div>
     <div><label for="gn_models">또는 모델번호 (쉼표 · 상품명에 들어 있는 모델번호로 찾습니다)</label><input class="in" id="gn_models" autocapitalize="characters" value="${esc((n.models||[]).join(', '))}" placeholder="예: KQ42SH90AEXKR"></div></div>
     <div><label for="gn_title">제목 (선택)</label><input class="in" id="gn_title" value="${esc(n.title||'')}" placeholder="예: 11월 한정 혜택" oninput="gnPreview()"></div>
@@ -6403,12 +6472,13 @@ function gnOpen(id){
     <div class="gn-two"><div><label for="gn_sort">순서 (같은 위치에 여럿일 때 작은 수가 위)</label><input class="in" id="gn_sort" inputmode="numeric" value="${esc(n.sort??100)}"></div><div><label for="gn_note">메모 (사내용)</label><input class="in" id="gn_note" value="${esc(n.note||'')}"></div></div>`;
   $('gnDlg').classList.remove('hidden'); gnScope(); setTimeout(()=>{ const f=$('gn_goods'); if(f) f.focus(); },50);
 }
+function gnMallPick(el){ const box=el.parentNode, all=el.dataset.v==='*'; if(all){ const on=!el.classList.contains('on'); [...box.children].forEach(x=>x.classList.remove('on')); if(on) el.classList.add('on'); } else { const a=box.querySelector('[data-v="*"]'); if(a) a.classList.remove('on'); el.classList.toggle('on'); } gnPreview(); }
 function gnScope(){ const t=$('gn_target'); if(t) t.style.display=gnData().scope==='all'?'none':''; gnPreview(); }
 function gnHelp(open){ const d=$('gnHelp'); if(!d) return; d.classList.toggle('hidden',!open); if(open){ const x=d.querySelector('.lvx'); if(x) x.focus(); } }
 function gnClose(){ $('gnDlg').classList.add('hidden'); GN_DLG=null; }
 function gnData(){
   const csv=v=>v.split(/[,\n\s]+/).map(x=>x.trim()).filter(Boolean);
-  return { id:GN_DLG&&GN_DLG.n.id, scope:(($('gn_scope').querySelector('.chip.on')||{}).dataset||{}).v||'goods', mall:$('gn_mall').value, pos:$('gn_pos').value, goods:csv($('gn_goods').value), models:csv($('gn_models').value).map(x=>x.toUpperCase()),
+  return { id:GN_DLG&&GN_DLG.n.id, scope:(($('gn_scope').querySelector('.chip.on')||{}).dataset||{}).v||'goods', malls:[...$('gn_malls').querySelectorAll('.chip.on')].map(x=>x.dataset.v), mall:([...$('gn_malls').querySelectorAll('.chip.on')].map(x=>x.dataset.v).find(c=>c!=='*')||'pm'), pos:$('gn_pos').value, goods:csv($('gn_goods').value), models:csv($('gn_models').value).map(x=>x.toUpperCase()),
     title:$('gn_title').value.trim(), body:$('gn_body').value.replace(/\s+$/,''), tone:(($('gn_tone').querySelector('.chip.on')||{}).dataset||{}).v||'blue', img:$('gn_img').value.trim(),
     btn:$('gn_btn').value.trim(), btnTone:$('gn_btntone').value, url:$('gn_url').value.trim(), from:$('gn_from').value||null, to:$('gn_to').value||null,
     sort:Number($('gn_sort').value)||100, note:$('gn_note').value.trim() };
@@ -6433,6 +6503,7 @@ async function gnSave(status){
   try{
     const d=gnData(); if(!d.body.trim() && !d.img) throw new Error('문구나 이미지 주소를 넣어 주세요');
     if(d.img && !/^https:\/\//i.test(d.img)) throw new Error('이미지 주소는 https:// 로 시작해야 합니다');
+    if(!d.malls.length) throw new Error('나갈 몰을 하나 이상 고르세요');
     if(d.scope!=='all' && !d.goods.length && !d.models.length) throw new Error('대상 상품번호나 모델번호를 하나 이상 넣어 주세요');
     if(!!d.btn !== !!d.url) throw new Error('버튼은 글자와 주소를 둘 다 넣어야 합니다');
     if(d.url && !/^(https?:\/\/|tel:|\/)/i.test(d.url)) throw new Error('버튼 주소는 https:// 또는 tel: 로 시작해야 합니다');
