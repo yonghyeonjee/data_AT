@@ -1509,7 +1509,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <h2>판매 완료 상담 <span id="skHead"></span></h2>
       <div class="cbar">
         <div class="csearchbox"><input class="in" id="sk_q" placeholder="이름 · 번호 뒷자리 · 상담번호 · 품목으로 찾기" autocomplete="off" onkeydown="if(event.key==='Enter')loadSaleChk(0)"><button type="button" class="go" onclick="loadSaleChk(0)" aria-label="찾기">⌕</button></div>
-        <button class="btn sm ghost" onclick="skRelink()" title="DPS 판매에 다시 맞춰 봅니다 (고객명·전화번호)">DPS 다시 맞추기</button>
+        <button class="btn sm ghost" onclick="skRelink()" title="DPS·이카운트 판매에 다시 맞춰 봅니다 (고객 전화번호)">판매 다시 맞추기</button>
       </div>
       <div class="prow" id="sk_period"></div>
       <div class="prow skwho hidden" id="sk_whoRow"><label for="sk_who">담당</label><select class="in" id="sk_who" onchange="loadSaleChk(0)"><option value="">나</option><option value="*">전체 담당</option></select></div>
@@ -4347,12 +4347,13 @@ function skRowHtml(x,o){ o=o||{};
   const st = x.st && x.st!=='other' ? SK_ST[x.st] : null;
   const res = st ? `<span class="tag ${st[0]==='bad'?'new':st[0]==='warn'?'hold':'buy'}">${st[1]}</span>` : `<span class="tag">${esc((RES_UI[x.result]||[0,x.result])[1])}</span>`;
   const od = x.order;
-  const sale = od ? `<div class="meta sksale">✅ ${od.src==='dps'?'DPS 판매':'판매 입력'} <b>${skDt(od.at)}</b>${od.product?` · ${esc(String(od.product).slice(0,60))}`:''}${od.amount!=null?` · <b>${won(od.amount)}</b>`:''}${od.no?` <small>#${esc(od.no)}</small>`:''}</div>`
-    : x.st==='need' ? `<div class="meta" style="color:var(--bad,#B3261E)">DPS 에서 이 고객 이름·전화번호의 판매를 못 찾았습니다 — ${o.acts?'[판매 고르기]로':'<a href="javascript:void 0" onclick="goTab(\'salechk\')">판매 확인 필요</a>에서'} 맞는 판매를 고르세요</div>`
+  const sale = od ? `<div class="meta sksale">✅ ${skSrcNm(od.src)} <b>${skDt(od.at)}</b>${od.product?` · ${esc(String(od.product).slice(0,60))}`:''}${od.amount!=null?` · <b>${won(od.amount)}</b>`:''}${od.no?` <small>#${esc(od.no)}</small>`:''}</div>`
+    : x.st==='need' ? `<div class="meta" style="color:var(--bad,#B3261E)">판매 내역(DPS·이카운트)에서 이 고객 이름·전화번호의 판매를 못 찾았습니다 — ${o.acts?'[판매 고르기]로':'<a href="javascript:void 0" onclick="goTab(\'salechk\')">판매 확인 필요</a>에서'} 맞는 판매를 고르고, 판매가 아니었으면 [판매 아님]</div>`
     : x.st==='wait' ? `<div class="meta" style="color:var(--warn,#8A5D00)">DPS 는 아침에 전날까지 들어옵니다 — 기다리면 저절로 이어집니다</div>` : '';
   const A=[];
   if(o.acts){
-    if(x.st==='need'||x.st==='wait') A.push(`<button class="mini ok" onclick="skCand(${x.id})" aria-expanded="${SK_OPEN===x.id}">판매 고르기</button>`);
+    if(x.st==='need'||x.st==='wait'){ A.push(`<button class="mini ok" onclick="skCand(${x.id})" aria-expanded="${SK_OPEN===x.id}">판매 고르기</button>`);
+      A.push(`<button class="mini warn" onclick="skNotSale(${x.id},'${esc(x.name)}')" title="상담만 하고 판매는 없었으면 — 종료로 바꾸고 판매 확인 필요에서 뺍니다">판매 아님</button>`); }
     if(x.st==='linked' && SK_FLT==='linked') A.push(`<button class="mini" onclick="skUnlink(${x.id},'${esc(x.name)}')" title="잘못 이어졌으면 떼고 다시 고릅니다">이어진 판매 떼기</button>`);
   }
   A.push(`<button class="mini" onclick="cdOpen(${x.id})">상세 보기</button>`);
@@ -4376,35 +4377,41 @@ async function skCand(id, any, keep){
   SK_OPEN=id; SK_ANY=!!any; box.classList.remove('hidden'); box.innerHTML='<div class="empty">DPS 판매 찾는 중…</div>';
   let d; try{ d=await rpc('fn_store_sale_candidates',{p_code:CODE,p_id:id,p_any:!!any}); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const R=d.rows||[];
-  box.innerHTML=`<div class="skt">${any?'모든 담당':'<b>'+esc(d.handler||'')+'</b>'}의 DPS 판매 · 상담일 14일 전 ~ 60일 뒤 · 아직 상담에 안 이어진 것 <small>${R.length}건</small></div>`
+  box.innerHTML=`<div class="skt">${any?'모든 담당':'<b>'+esc(d.handler||'')+'</b>'}의 ${d.out?'DPS·이카운트':'DPS'} 판매 · 상담일 14일 전 ~ 60일 뒤 · 아직 상담에 안 이어진 것 <small>${R.length}건</small></div>`
     + (R.length ? R.map(c=>`<div class="skc${c.same_phone?' hit':''}">
         <div class="ct"><b>${skDt(c.at)}</b> ${c.days?`<small>(상담 ${c.days>0?c.days+'일 뒤':(-c.days)+'일 전'})</small>`:'<small>(상담일)</small>'} · ${esc(c.name||'-')}${c.tail?` <small>…${esc(c.tail)}</small>`:''}
           ${c.same_phone?'<span class="tag buy">전화번호 같음</span>':''}${c.same_name&&!c.same_phone?'<span class="tag">이름 같음</span>':''}${c.kind?` <span class="tag">${esc(c.kind)}</span>`:''}${any&&c.handler?` <span class="tag hd">${esc(c.handler)}</span>`:''}</div>
-        <div class="cm">${esc(String(c.product||'-').slice(0,80))} · <b>${won(c.amount)}</b> <small>${c.src==='dps'?'DPS':'판매 입력'} #${esc(c.no||'')}</small></div>
+        <div class="cm">${esc(String(c.product||'-').slice(0,80))} · <b>${won(c.amount)}</b> <small>${skSrcNm(c.src)} #${esc(c.no||'')}</small></div>
         <button class="mini ok" onclick="skLink(${id},${c.id})">이 판매로 잇기</button></div>`).join('')
-      : `<div class="empty">맞는 판매가 없습니다 — DPS 등록이 아직이면 기다리고, 판매가 아니었으면 [상세 보기]에서 상태를 바꾸세요</div>`)
+      : `<div class="empty">맞는 판매가 없습니다 — DPS 등록이 아직이면 기다리고, 판매가 아니었으면 [판매 아님]을 누르세요</div>`)
     + (any?'':`<button class="mini" style="margin-top:8px" onclick="skCand(${id},true,true)" title="다른 담당 이름으로 DPS 에 들어갔을 때">다른 담당 판매도 보기</button>`);
 }
 async function skLink(id, oid){
   try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:'link',p_memo:String(oid)}); }catch(e){ return toast(e.message,'bad'); }
   toast('판매를 이었습니다 — 판매현황에 보입니다','ok'); SK_OPEN=null; loadSaleChk(SK_OFF); REPORT_LOADED=false;
 }
+/* 판매 아님 — 상담만 끝낸 건. 종료(상담완료)로 바꾸면 서버가 판매 구분·이어진 판매를 비운다 */
+async function skNotSale(id, nm){
+  if(!confirm(`${nm||''} 님 — 판매가 아니었나요?\n상담만 끝낸 것(종료)으로 바꾸고 판매 확인 필요에서 뺍니다.`)) return;
+  try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:'done'}); }catch(e){ return toast(e.message,'bad'); }
+  toast('종료로 바꿨습니다 — 판매 확인 필요에서 빠집니다','ok'); SK_OPEN=null; REPORT_LOADED=false; loadSaleChk(SK_OFF); skLoadBadge(); if(typeof MC_LOADED!=='undefined'&&MC_LOADED) loadMyConsults(MC_OFF,true);
+}
+function skSrcNm(s){ return s==='dps'?'DPS 판매':s==='ecount'?'이카운트 판매':'판매 입력'; }
 async function skUnlink(id, nm){
   if(!confirm(`${nm} 님 상담에 이어진 판매를 뗄까요? (판매 완료는 그대로 · 다시 고를 수 있습니다)`)) return;
   try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:'unlink'}); }catch(e){ return toast(e.message,'bad'); }
   toast('이어진 판매를 뗐습니다','ok'); loadSaleChk(SK_OFF); skLoadBadge();
 }
-/* DPS 다시 맞추기 — [판매 완료] 저장 때와 같은 규칙(이름·번호)으로 한 번 더 (서버 'sold' 와 같은 함수) */
+/* 판매 다시 맞추기 — 판매 완료 상담 전부를 같은 규칙(고객키·번호 뒤 8자리)으로 한 번 더 · 메모 안 남김 (mvp_274) */
 async function skRelink(){
-  const x=SK_ROWS.find(r=>r.st==='need'||r.st==='wait');
-  if(!x){ toast('다시 맞출 상담이 없습니다','ok'); return loadSaleChk(SK_OFF); }
-  try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:x.id,p_action:'sold',p_memo:x.kind||'일시불'}); }catch(e){ return toast(e.message,'bad'); }
-  await loadSaleChk(SK_OFF); skLoadBadge(); toast('DPS 판매에 다시 맞춰 봤습니다','ok');
+  let r; try{ r=await rpc('fn_store_sale_relink',{p_code:CODE}); }catch(e){ return toast(e.message,'bad'); }
+  await loadSaleChk(SK_OFF); skLoadBadge(); const n=Number((r||{}).consult_linked)||0;
+  toast(n?`판매 ${n}건을 이었습니다`:'새로 이어진 판매가 없습니다','ok');
 }
 /* 내 상담 줄 — 판매 완료면 구분 · 이어진 DPS 판매 (없으면 판매 확인 필요로) */
 function soldMeta(x){
   const k = x.sale_kind ? `<b>${esc(x.sale_kind)}</b>` : '';
-  if(x.order_id) return `<div class="meta" style="color:var(--sub)">판매 완료 ${k}${x.order_at?` · ${x.order_src==='dps'?'DPS 판매':'판매 입력'} ${skDt(x.order_at)}`:''}${x.bought?` · ${esc(x.bought)}`:''}${x.buy_amount?` · ${won(x.buy_amount)}`:''}</div>`;
+  if(x.order_id) return `<div class="meta" style="color:var(--sub)">판매 완료 ${k}${x.order_at?` · ${skSrcNm(x.order_src)} ${skDt(x.order_at)}`:''}${x.bought?` · ${esc(x.bought)}`:''}${x.buy_amount?` · ${won(x.buy_amount)}`:''}</div>`;
   const recent = (Date.now()-new Date(x.at).getTime()) < 3*864e5;
   return `<div class="meta" style="color:${recent?'var(--warn,#8A5D00)':'var(--bad,#B3261E)'}">판매 완료 ${k} · ${recent?'DPS 판매를 기다리는 중 (아침에 전날까지 들어옵니다)':`DPS 판매 아직 안 이어짐 — <a href="javascript:void 0" onclick="goTab('salechk')">판매 확인 필요</a>에서 고르세요`}</div>`;
 }
