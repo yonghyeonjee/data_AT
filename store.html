@@ -6236,7 +6236,7 @@ function renderSubPolicy(){
   let h=`<div class="chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${DF.card?`<span class="pill" title="구독탭·구독센터가 처음 보여 주는 카드 혜택 기준">기본 카드 <b>${esc(DF.card)}${DF.tier?' '+esc(DF.tier):''}</b></span>`:''}${DF.tel?`<span class="pill">상담 전화 <b>${esc(DF.tel)}</b></span>`:''}<span class="pill">자동납부 할인 <b>${spPct(A.rate)}</b></span><span class="pill" title="${esc(steps)}">선납 ${(R.steps||[]).map(spPct).join(' · ')}</span></div>`;
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px"><b style="font-size:calc(14px * var(--font-scale))">행사 문구</b>${can?'<button type="button" class="btn sm" onclick="spDlgOpen(\'promo\',null)">＋ 행사 추가</button>':''}</div>`;
   h+=promos.length?`<div class="list">${promos.map(p=>`<div class="item" style="grid-template-columns:1fr auto">
-      <div><div style="font-weight:700">${esc(p.text)}</div><div class="note-in" style="margin:2px 0 0">${p.from||p.to?esc(p.from||'')+' ~ '+esc(p.to||''):'상시'} · ${(p.cats||[]).length?esc(p.cats.join(', ')):'전체 품목'}${(p.models||[]).length?' · '+esc(p.models.join(', ')):''}</div>${(p.months>0||p.amount>0||(p.amounts&&Object.keys(p.amounts).length))?`<div class="note-in" style="margin:2px 0 0;color:#b4480b;font-weight:700">★ 포인트 지원 ${p.months?p.months+'개월 구독료 상당':''}${p.amount?' · 공통 '+Number(p.amount).toLocaleString()+'원':''}${p.amounts?' · 모델별 '+Object.keys(p.amounts).length+'개':''} (금액은 관리자 화면에서 고칩니다)</div>`:''}</div>
+      <div><div style="font-weight:700">${esc(p.text)}</div><div class="note-in" style="margin:2px 0 0">${p.from||p.to?esc(p.from||'')+' ~ '+esc(p.to||''):'상시'} · ${(p.cats||[]).length?esc(p.cats.join(', ')):'전체 품목'}${(p.models||[]).length?' · '+esc(p.models.join(', ')):''}${(p.malls||[]).length?' · '+esc(p.malls.map(c=>((d.malls||[]).find(m=>m.code===c)||{name:c}).name).join(', ')):' · 모든 몰'}</div>${(p.months>0||p.amount>0||(p.amounts&&Object.keys(p.amounts).length))?`<div class="note-in" style="margin:2px 0 0;color:#b4480b;font-weight:700">★ 포인트 지원 ${p.months?p.months+'개월 구독료 상당':''}${p.amount?' · 공통 '+Number(p.amount).toLocaleString()+'원':''}${p.amounts?' · 모델별 '+Object.keys(p.amounts).length+'개':''} (금액은 관리자 화면에서 고칩니다)</div>`:''}</div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill ${ST[p.state][1]}">${ST[p.state][0]}</span>${can?`<span style="display:flex;gap:6px"><button type="button" class="btn sm ghost" onclick="spDlgOpen('promo',${p.id})">고치기</button><button type="button" class="btn sm ghost" onclick="spPromoToggle(${p.id},${p.active?'false':'true'})">${p.active?'끄기':'켜기'}</button></span>`:''}</div></div>`).join('')}</div>`
     :`<div class="empty">진행 중인 행사 문구가 없습니다</div>`;
   const cards=d.cards||[], names=[...new Set([...(d.card_names||[]),...cards.map(c=>c.card)])], by={}; cards.forEach(c=>by[c.card]=c);
@@ -6284,7 +6284,8 @@ function spDlgOpen(kind,key){
     F.innerHTML=`<div><label for="spf_text">문구 (고객에게 그대로 보입니다)</label><input class="in" id="spf_text" value="${esc(p.text||'')}" placeholder="예: 11월 구독 확정 시 신세계 상품권 10만원"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="spf_from">시작일 (비우면 바로)</label><input class="in" type="date" id="spf_from" value="${esc(p.from||'')}"></div><div><label for="spf_to">종료일 (비우면 계속)</label><input class="in" type="date" id="spf_to" value="${esc(p.to||'')}"></div></div>
       <div><label>대상 품목 (아무것도 안 고르면 전체)</label><div style="display:flex;flex-wrap:wrap;gap:6px" id="spf_cats">${(SP.cats||[]).map(c=>`<span class="chip ${(p.cats||[]).includes(c)?'on':''}" data-v="${esc(c)}" onclick="this.classList.toggle('on')">${esc(c)}</span>`).join('')}</div></div>
-      <div><label for="spf_models">대상 모델번호 (쉼표로 여러 개 · 비우면 전체)</label><input class="in" id="spf_models" value="${esc((p.models||[]).join(', '))}" autocapitalize="characters"></div>`;
+      <div><label for="spf_models">대상 모델번호 (쉼표로 여러 개 · 비우면 전체)</label><input class="in" id="spf_models" value="${esc((p.models||[]).join(', '))}" autocapitalize="characters"></div>
+      <div><label>대상 몰 (아무것도 안 고르면 모든 몰)</label><div style="display:flex;flex-wrap:wrap;gap:6px" id="spf_malls">${(SP.malls||[]).map(m=>`<span class="chip ${(p.malls||[]).includes(m.code)?'on':''}" data-v="${esc(m.code)}" onclick="this.classList.toggle('on')">${esc(m.name)}</span>`).join('')}</div></div>`;
   } else {
     const c=(SP.cards||[]).find(x=>x.card===key)||{card:key,notes:[]};
     SP_DLG={kind,c}; $('spDlgTitle').textContent=key+' 유의사항';
@@ -6301,7 +6302,7 @@ async function spDlgSave(){
     if(SP_DLG.kind==='promo'){
       const p=SP_DLG.p, text=$('spf_text').value.trim(); if(!text) throw new Error('문구를 적어 주세요');
       await rpc('fn_store_sub_promo_save',{p_code:CODE,p_data:{id:p.id,text,from:$('spf_from').value||null,to:$('spf_to').value||null,sort:p.sort,note:p.note,active:p.active!==false,
-        cats:[...$('spf_cats').querySelectorAll('.chip.on')].map(x=>x.dataset.v),models:$('spf_models').value.split(/[,\n]/).map(x=>x.trim()).filter(Boolean),goods:p.goods||[]}});
+        cats:[...$('spf_cats').querySelectorAll('.chip.on')].map(x=>x.dataset.v),models:$('spf_models').value.split(/[,\n]/).map(x=>x.trim()).filter(Boolean),goods:p.goods||[],malls:[...$('spf_malls').querySelectorAll('.chip.on')].map(x=>x.dataset.v)}});
     } else {
       const c=SP_DLG.c;
       await rpc('fn_store_sub_card_policy_save',{p_code:CODE,p_data:{card:c.card,notes:$('spf_notes').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),from:$('spf_from').value||null,to:$('spf_to').value||null,hidden:$('spf_hidden').checked}});
@@ -6313,7 +6314,7 @@ async function spDlgSave(){
 async function spPromoToggle(id,on){
   const p=(SP&&SP.promos||[]).find(x=>x.id===id); if(!p) return;
   if(!on && !confirm(`"${p.text}" 행사 문구를 끌까요? (기록은 남고 다시 켤 수 있습니다)`)) return;
-  try{ await rpc('fn_store_sub_promo_save',{p_code:CODE,p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,sort:p.sort,note:p.note,active:!!on}}); toast(on?'다시 켰습니다':'껐습니다'); loadSubPolicy(); }
+  try{ await rpc('fn_store_sub_promo_save',{p_code:CODE,p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,malls:p.malls||[],sort:p.sort,note:p.note,active:!!on}}); toast(on?'다시 켰습니다':'껐습니다'); loadSubPolicy(); }
   catch(e){ toast(e.message); }
 }
 

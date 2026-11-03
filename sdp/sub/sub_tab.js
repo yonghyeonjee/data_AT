@@ -42,7 +42,8 @@ function main() {
     // 공통 기준값 — 처음 선택되는 카드·실적 구간, 상담 신청 주소, 전화 (관리자 › 구독 혜택 정책 › 기본 기준·상담 연락처 · mvp_253). 스킨 CFG 가 비어 있을 때 쓴다
     // tierByModel: 모델(또는 모델 앞글자) → 처음 선택할 실적 구간 (예: AI 콤보 WD90H25 → 70만↑ · 2026-11-02 본사 제시 월 구독료 기준)
     defaults: { card: '삼성카드', tier: '30만↑', tierByModel: {}, consultUrl: '/main/html.php?htmid=service/SamSungSubscription.html', tel: '' },
-    cards: {}, cardNotes: [], promos: [], points: {},   // points: 모델 → {rate, base, add, total} 적립 예정 멤버십 포인트 (mvp_258)
+    cards: {}, cardNotes: [], promos: [], points: {},
+    promosAll: null,   // promos = 시흥몰(sh)에 나갈 행사만 · promosAll = 모든 몰 행사(malls 표시) — SUB_TAB_CONFIG.mall 이 sh 가 아니면 promosAll 에서 고른다 (mvp_265)   // points: 모델 → {rate, base, add, total} 적립 예정 멤버십 포인트 (mvp_258)
     bundle: null,   // 다품목 혜택 (mvp_264 · 스마트 패키지 품목 수별 정액 {kind:'package', tiers, min, cats, models, from, to}) — 다품목 계산기(sub_bundle.js)만 쓴다
     texts: {
       points: ['목돈 없이 월 납부 · 약정 기간 동안 무상수리'],
@@ -140,11 +141,15 @@ function main() {
     var cards = window.SUB_CARDS || {}, pc = POL.cards || {};
     return Object.keys(cards).filter(function (n) { return !pc[n] || inPeriod(pc[n]); });
   }
-  // 이 상품에 해당하는 행사 (기간 + 대상 품목/모델/상품번호) — 문구 노출과 포인트 지원 금액 계산이 같은 조건을 쓴다
+  // 이 상품에 해당하는 행사 (몰 + 기간 + 대상 품목/모델/상품번호) — 문구 노출과 포인트 지원 금액 계산이 같은 조건을 쓴다
+  //   몰: 스킨 SUB_TAB_CONFIG.mall (기본 'sh' 시흥몰 · 프라자몰 'pm') — 행사의 malls 가 비면 모든 몰 (mvp_265)
   function promoHits(info) {
     var model = (info && info.model) || state.model;
-    return (POL.promos || []).filter(function (p) {
+    var mall = String(CFG.mall || 'sh').toLowerCase();
+    var list = (mall !== 'sh' && POL.promosAll) ? POL.promosAll : (POL.promos || []);
+    return list.filter(function (p) {
       if (!p || !inPeriod(p)) return false;
+      if (p.malls && p.malls.length && p.malls.indexOf(mall) < 0) return false;
       if (p.cats && p.cats.length && p.cats.indexOf(info.cat) < 0) return false;
       if (p.models && p.models.length && p.models.map(norm).indexOf(model) < 0) return false;
       if (p.goods && p.goods.length && p.goods.map(String).indexOf(String(CFG.goodsNo)) < 0) return false;
