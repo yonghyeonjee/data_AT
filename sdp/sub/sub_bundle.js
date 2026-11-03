@@ -5,7 +5,8 @@
    주소
      bundle.html?preset=newlywed          생활 유형 프리셋 (sub_shop.js 의 SUB_PERSONAS 와 같은 키)
      bundle.html?items=RM80F91H1X,WD90H25AHY   모델을 바로 담기 (모델~약정~케어~선납 으로 조건까지)
-   ※ 다품목 추가 혜택은 데이터센터 구독 혜택 정책(bundle)에 있을 때만 계산에 넣는다 — 2026-11 부터 본사 "스마트 패키지" 품목 수별 정액 포인트 (mvp_264 · bundlePolicy/pkgOf). 없으면 "상담 시 안내" 로만.
+   ※ 다품목 추가 혜택은 데이터센터 구독 혜택 정책에 있을 때만 계산에 넣는다 — bundle: 본사 "스마트 패키지" 품목 수별 정액 포인트 (mvp_264 · bundlePolicy/pkgOf),
+     multi: "다품목 구독 할인" 약정 기간별 월 구독료 비율 할인 (mvp_273 · multiPolicy/applyMulti · 2026-11-03). 둘 다 없으면 "상담 시 안내" 로만.
 ===== */
 window.SUB_BUNDLE_READY = true;
 (function () {
@@ -211,6 +212,52 @@ window.SUB_BUNDLE_READY = true;
     if ((b.kind || (b.tiers ? 'package' : 'rate')) === 'package') return b.tiers && b.models ? b : null;
     return b.rate > 0 ? b : null;
   }
+  /* 다품목 구독 할인 (데이터센터 sub.policy multi · mvp_273 · 삼성 11월 SDP 상담 기준)
+     신규 고객이 min 대 이상 동시 구독하면 대마다 약정 기간별 비율 {rates: {"3": 0.02, "4": 0.03, "5": 0.03, "6": 0.05}, robot5(로봇청소기 5년), min, exclude: [품목], from, to, name, text}
+     금액은 자동납부 할인과 같은 식 calcDiscount(총 구독금액, 비율, 개월) → 월 환산. 제휴카드 청구할인은 그 뒤(청구 기준)에 다시 상한.
+     정수기는 본사 표(세부유형·약정·케어별)가 따로라 exclude 로 빼고 상담 안내. 스마트 패키지(bundle) 포인트와 같이 계산한다 */
+  function multiPolicy() {
+    var P = C.policy(), m = P && P.multi; if (!m || typeof m !== 'object' || !m.rates) return null;
+    if ((m.from || m.to) && !C.inPeriod(m)) return null;
+    return m;
+  }
+  function calcDiscount(total, rate, months) {   // sub_tab.js 와 같은 식: ROUNDUP(V+ × rate / 1.1 / months, -2) × months × 1.1
+    var inner = total * rate / 1.1 / months;
+    return Math.round(Math.ceil(Math.round(inner * 1000000) / 1000000 / 100) * 100 * months * 1.1);
+  }
+  function multiRate(mp, r) {
+    var info = r.info || {}, cat = info.cat || '';
+    if ((mp.exclude || []).indexOf(cat) >= 0) return 0;
+    if (mp.robot5 > 0 && r.y === 5 && cat === '청소기' && /로봇/.test(String(info.s || ''))) return +mp.robot5;
+    return +(mp.rates[String(r.y)] || 0);
+  }
+  function multiRatesLabel(mp) {   // "3년 2% · 4년 3% · 5년 3% · 6년 5%"
+    return Object.keys(mp.rates).sort(function (a, b) { return a - b; }).map(function (y) { return y + '년 ' + Math.round(mp.rates[y] * 1000) / 10 + '%'; }).join(' · ') +
+      (mp.robot5 > 0 ? ' · 로봇청소기 5년 ' + Math.round(mp.robot5 * 1000) / 10 + '%' : '');
+  }
+  // 계산 결과(results)에 다품목 할인을 얹는다 — 대마다 multiRate · multiOff(총액) · multiMonthly 를 두고 월 납부·카드·결제 예상을 다시 계산. 대상 수가 min 미만이면 금액은 0
+  function applyMulti(items, results) {
+    var mp = multiPolicy(); if (!mp) return null;
+    var rs = []; items.forEach(function (it) { if (results[it.m]) rs.push(results[it.m]); });
+    var out = { mp: mp, n: rs.length, min: mp.min || 2, off: 0, skip: [], labels: [] };
+    if (rs.length < out.min) return out;
+    rs.forEach(function (r) {
+      var rate = multiRate(mp, r);
+      if (!(rate > 0)) { out.skip.push(r); return; }
+      var off = calcDiscount(r.total, rate, r.months);
+      r.multiRate = rate; r.multiOff = off; r.multiMonthly = off / r.months;
+      r.monthlyPay = r.monthlyPay - r.multiMonthly;
+      r.cardMonthly = Math.min(r.cardInfo.md || 0, Math.max(0, r.monthlyPay));
+      r.cardCapped = (r.cardInfo.md || 0) > r.cardMonthly;
+      r.cardTotal = Math.round(r.cardMonthly * r.months);
+      r.finalMonthly = Math.max(0, r.monthlyPay - r.cardMonthly);
+      r.expected = r.total - r.prepayDisc - r.autoDisc - off - r.cardTotal;
+      r.expectedNet = r.expected - (r.pointsAll || 0);
+      out.off += r.multiMonthly;
+      var lb = r.y + '년 ' + Math.round(rate * 1000) / 10 + '%'; if (out.labels.indexOf(lb) < 0) out.labels.push(lb);
+    });
+    return out;
+  }
   // 본사 표기(s) ↔ DPS 모델번호(d): 같다 / 한쪽이 다른 쪽의 앞부분 / 앞부분이 9자 이상 같고 짧은 쪽 길이 −1 이상(설치형·색상 꼬리표 AF80F19D25WN↔WT) / 'AP'·'APG'(패널 선택형)를 뗀 앞부분(DW80F75K1UAP↔DW80F75K1USWS) — DB sub.f_pkg_match 와 같은 규칙
   function pkgMatch(s, d) {
     if (s === d || d.indexOf(s) === 0 || (d.length >= 8 && s.indexOf(d) === 0)) return true;
@@ -259,6 +306,7 @@ window.SUB_BUNDLE_READY = true;
       '<select data-p aria-label="선납"' + (steps.length ? '' : ' disabled') + '><option value="0">선납 없음</option>' + steps.map(function (s) { return '<option value="' + s + '"' + (Math.abs(s - res.prepay) < 1e-9 ? ' selected' : '') + '>선납 ' + Math.round(s * 100) + '% (' + Math.round(C.prepayRate(s) * 1000) / 10 + '% 할인)</option>'; }).join('') + '</select>' +
       '</div>' +
       '<div class="sb-item-price"><span>월 <s>' + fmt(res.monthly) + '원</s></span><b>월 ' + fmt(res.finalMonthly) + '원</b>' +
+      (res.multiMonthly ? '<small>다품목 할인 ' + Math.round(res.multiRate * 1000) / 10 + '% 반영 (월 −' + fmt(res.multiMonthly) + '원)</small>' : '') +
       (res.prepayAmt ? '<small>선납금 ' + fmt(res.prepayAmt) + '원 별도</small>' : '') + '</div></li>';
   }
   function renderCart() {
@@ -278,6 +326,7 @@ window.SUB_BUNDLE_READY = true;
     });
   }
   function drawCart(items, results) {
+    var mu = applyMulti(items, results);   // 다품목 구독 할인 (mvp_273) — results 의 월 납부·카드·결제 예상에 반영된다
     var html = '', sum = { monthly: 0, auto: 0, prepayDisc: 0, prepayAmt: 0, card: 0, pay: 0, expected: 0, points: 0, lump: 0, lumpAll: true, n: 0 };
     items.forEach(function (it) {
       var r = results[it.m];
@@ -300,6 +349,7 @@ window.SUB_BUNDLE_READY = true;
       '<tr><th>월 구독료 합계 <small>' + sum.n + '대 · 정가</small></th><td>' + fmt(sum.monthly) + '원</td></tr>' +
       '<tr class="is-off"><th>' + esc(C.autopayLabel()) + '</th><td>− ' + fmt(sum.auto) + '원</td></tr>' +
       (sum.prepayDisc ? '<tr class="is-off"><th>선납 할인 <small>월 환산</small></th><td>− ' + fmt(sum.prepayDisc / 12 / 1) + '원</td></tr>' : '') +
+      (mu && mu.off ? '<tr class="is-off"><th>' + esc(mu.mp.name || '다품목 구독 할인') + ' <small>' + esc(mu.labels.join(' · ')) + '</small></th><td>− ' + fmt(mu.off) + '원</td></tr>' : '') +
       (cardName ? '<tr class="is-off"><th>' + esc(cardName) + ' 청구할인 <small>' + sum.n + '건</small></th><td>− ' + fmt(sum.card) + '원</td></tr>' : '') +
       (bundleOff ? '<tr class="is-off"><th>다품목 동시구독 혜택 <small>' + Math.round(bp.rate * 100) + '%</small></th><td>− ' + fmt(bundleOff) + '원</td></tr>' : '') +
       '</tbody><tfoot><tr><th>' + sum.n + '대 월 납부 예상액</th><td><b>월 ' + fmt(payFinal) + '원</b></td></tr></tfoot></table>' +
@@ -311,7 +361,12 @@ window.SUB_BUNDLE_READY = true;
       (sum.lumpAll && sum.lump ? '<div><span>시흥몰 일시불 합계</span><b>' + fmt(sum.lump) + '원</b></div><div class="is-save"><span>' + (sum.lump > netAll ? '구독이 ' : '일시불이 ') + '</span><b>' + fmt(Math.abs(sum.lump - netAll)) + '원 저렴</b></div>' : '') + '</div>' +
       (pk ? '<p class="sb-sumnote">' + esc(pkgName) + ': ' + (pk.n >= 2 ? '대상 ' + pk.n + '품목' + (pk.next ? ' · 한 품목 더 담으면 ' + fmt(pk.next) + '원' : '') : pk.n === 1 ? '대상 모델 1품목 — 대상 모델을 한 품목 더 담으면 ' + fmt(pk.next || 0) + '원 포인트' : '담긴 모델 중 대상 모델이 없습니다') +
         (pk.miss.length ? ' · 대상 아님: ' + esc(pk.miss.join(', ')) : '') + (bp.text ? '<br>' + esc(bp.text) : '') + ' (포인트는 구매 뒤 지급 · 자세한 조건은 상담 때 안내)</p>' : '') +
-      (!bp ? '<p class="sb-sumnote">여러 대를 동시에 구독할 때의 추가 혜택(행사·사은품 등)은 상담 때 안내해 드립니다.</p>' : '') +
+      (mu ? '<p class="sb-sumnote">' + esc(mu.mp.name || '다품목 구독 할인') + ': ' +
+        (mu.off ? '신규 고객 ' + mu.n + '대 동시 구독 기준 (' + esc(multiRatesLabel(mu.mp)) + ')' + (mu.skip.length ? ' · 제외: ' + esc(mu.skip.map(function (r) { return r.info.model + '(' + r.info.cat + ' — 상담 때 안내)'; }).join(', ')) : '')
+          : mu.n < mu.min ? '한 대 더 담으면 약정 기간별로 월 구독료가 추가 할인됩니다 (' + esc(multiRatesLabel(mu.mp)) + ')'
+          : '담긴 모델은 대상이 아닙니다 (' + esc(mu.skip.map(function (r) { return r.info.cat; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(' · ')) + ' — 상담 때 안내)') +
+        (mu.mp.text ? '<br>' + esc(mu.mp.text) : '') + '</p>' : '') +
+      (!bp && !mu ? '<p class="sb-sumnote">여러 대를 동시에 구독할 때의 추가 혜택(행사·사은품 등)은 상담 때 안내해 드립니다.</p>' : '') +
       '<div class="sb-ctas"><a class="sb-btn" data-cta="consult" href="' + esc(consultHref(items, results, payFinal)) + '">이 조건으로 구독 문의하기</a>' +
       (CFG.tel ? '<a class="sb-btn-line" href="tel:' + esc(CFG.tel.replace(/[^0-9]/g, '')) + '">' + esc(CFG.tel) + '</a>' : '') +
       '<button type="button" class="sb-btn-line" data-share>묶음 링크 복사</button>' +
@@ -326,7 +381,8 @@ window.SUB_BUNDLE_READY = true;
     var pd = C.policy().defaults || {};
     var u = CFG.consultUrl || pd.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html';
     var lines = items.map(function (it) { var r = results[it.m]; return it.m + (r ? ' ' + r.y + '년 ' + r.plan[1] + (r.prepay ? ' 선납' + Math.round(r.prepay * 100) + '%' : '') + ' 월 ' + fmt(r.finalMonthly) + '원' : ''); });
-    var memo = '[다품목 계산기] ' + items.length + '대 · 월 ' + fmt(pay) + '원' + (state.cardOn && state.card ? ' (' + state.card + ' ' + state.tier + ')' : '') + ' / ' + lines.join(' / ');
+    var muOff = 0; items.forEach(function (it) { var r = results[it.m]; if (r && r.multiMonthly) muOff += r.multiMonthly; });
+    var memo = '[다품목 계산기] ' + items.length + '대 · 월 ' + fmt(pay) + '원' + (state.cardOn && state.card ? ' (' + state.card + ' ' + state.tier + ')' : '') + (muOff ? ' · 다품목 할인 월 −' + fmt(muOff) + '원 반영' : '') + ' / ' + lines.join(' / ');
     var q = 'from=bundle&purpose=' + encodeURIComponent('신규구독') + '&product=' + encodeURIComponent('다품목') + '&model=' + encodeURIComponent(items.map(function (i) { return i.m; }).join(',')) +
       '&memo=' + encodeURIComponent(memo.slice(0, 900)) + '&src=' + encodeURIComponent('다품목 계산기') + '&utm_source=sub_bundle&utm_medium=consult';
     return u + (u.indexOf('?') >= 0 ? '&' : '?') + q;
