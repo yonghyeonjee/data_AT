@@ -14,15 +14,15 @@
   var KEY = C.key || 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';   // 공개(publishable) 키 — 공개 함수만 부른다
   // 위치 → [선택자, 넣는 법] 후보를 앞에서부터 찾는다 (몰·스킨마다 이름이 달라서)
   //   디자인북 PC/반응형(프라자몰 designbookR · 시흥몰/AT몰 designbook_air_RES): .price-box · .pay_box · .btn_choice_box · .detail_explain_box
-  //   S몰 PC(no99): 가격이 .item_detail_list 의 dl.item_price · S몰 모바일(no99): .detail_info_top .price_box · .js_naver_btn · .detail_buy · .cont_detail
+  //   S몰 PC(no99): 가격이 .item_detail_list 의 dl.item_price · S몰 모바일(no99): .detail_info_top .price_box · 네이버페이·구매 버튼은 구매 창 안이라 상품정보 표(.detail_sub_info) 아래로 · .cont_detail
   var POS = {
     price_below:   [['.price-box', 'after'], ['.item_detail_list .item_price', 'after'], ['.detail_info_top .price_box', 'after']],
-    pay_above:     [['.pay_box', 'before'], ['.js_naver_btn', 'before'], ['.btn_choice_box', 'after']],   // 네이버페이가 없는 몰(AT몰)은 구매 버튼 바로 아래
+    pay_above:     [['.pay_box', 'before'], ['.btn_choice_box', 'after'], ['.detail_sub_info', 'after']],   // 네이버페이가 없는 몰(AT몰)은 구매 버튼 바로 아래
     title_below:   [['.item_detail_tit h3', 'after'], ['.detail_info_top h3', 'after'], ['.detail_info_top .goods_name', 'after']],
     benefit_above: [['.custom-benefit-notice', 'before']],
     benefit_below: [['.custom-benefit-notice', 'after']],
-    buy_above:     [['.btn_choice_box', 'before'], ['.detail_buy', 'before']],
-    pay_below:     [['.pay_box', 'after'], ['.js_naver_btn', 'after'], ['.btn_choice_box', 'after']],
+    buy_above:     [['.btn_choice_box', 'before'], ['.detail_sub_info', 'after']],
+    pay_below:     [['.pay_box', 'after'], ['.btn_choice_box', 'after'], ['.detail_sub_info', 'after']],
     detail_top:    [['.detail_explain_box', 'prepend'], ['.cont_detail', 'prepend']]
   };
   var LAST = [['.item_detail_tit', 'append'], ['.item_info_box', 'append'], ['.detail_info_top', 'append']];
