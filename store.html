@@ -1638,9 +1638,9 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       </style>
       <h2>상품 안내 문구 <button type="button" class="gn-q" onclick="gnHelp(true)" aria-label="상품 안내 문구 설명서 열기" title="설명서 · test 방법 · 고도몰 적용 위치">?</button> <span id="gnSub">특정 상품 상세페이지에만 나가는 문구와 작은 버튼</span></h2>
       <div id="gnBody"><div class="empty">불러오는 중…</div></div>
-      <div class="lvmask hidden" id="gnDlg" onclick="if(event.target===this)gnClose()">
+      <div class="lvmask hidden" id="gnDlg" onclick="if(event.target===this)gnClose(true)">
         <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="gnDlgTitle">
-          <button type="button" class="lvx" onclick="gnClose()" aria-label="닫기" title="닫기">✕</button>
+          <button type="button" class="lvx" onclick="gnClose(true)" aria-label="닫기" title="닫기">✕</button>
           <h3 id="gnDlgTitle">상품 안내 문구</h3>
           <div class="gn-grid">
             <div class="lvform" id="gnForm"></div>
@@ -1649,13 +1649,13 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           </div>
           <p class="note-in" id="gnErr" style="color:var(--bad);min-height:18px;margin:6px 0 0"></p>
           <div class="btns" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px">
-            <button type="button" class="btn ghost" onclick="gnClose()">취소</button>
+            <button type="button" class="btn ghost" onclick="gnClose(true)">취소</button>
             <button type="button" class="btn ghost" id="gnSaveTest" onclick="gnSave('test')" title="주소 끝에 &gnote=on 을 붙인 사람만 봅니다">저장 (test)</button>
             <button type="button" class="btn" id="gnSaveOn" onclick="gnSave('on')">저장 (공개)</button>
           </div>
         </div>
       </div>
-      <div class="lvmask hidden" id="spkDlg" onclick="if(event.target===this)spkClose()">
+      <div class="lvmask hidden" id="spkDlg" onclick="if(event.target===this)spkClose(true)">
         <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="spkDlgTitle" style="width:min(980px,100%);max-height:92vh;overflow:auto">
           <button type="button" class="lvx" onclick="spkClose()" aria-label="닫기" title="닫기">✕</button>
           <h3 id="spkDlgTitle">스마트 패키지 안내 수정</h3>
@@ -6572,9 +6572,11 @@ function spkOpen(mall){
     f('spk_ask','상담 버튼 주소',c.ask,SPK_DEF.ask,'구독 문의 페이지면 상품·모델이 자동으로 채워집니다 · https:// 나 / 로 시작')+
     f('spk_hide','이 상품에서는 숨기기 (상품번호 · 쉼표)',(c.hide||[]).join(', '),'예: 1000001077')+
     f('spk_extra','대상 모델이 아니어도 보이기 (상품번호 · 쉼표)',(c.extra||[]).join(', '),'예: 1000000844','모델명으로 못 찾는 상품만 넣으세요');
-  $('spkDlg').classList.remove('hidden'); spkLib(spkPreview);
+  $('spkDlg').classList.remove('hidden'); SPK_CUR.start=JSON.stringify(spkData()); spkLib(spkPreview);
 }
-function spkClose(){ $('spkDlg').classList.add('hidden'); SPK_CUR=null; }
+function spkClose(ask){
+  if(ask && SPK_CUR && SPK_CUR.start && JSON.stringify(spkData())!==SPK_CUR.start && !confirm('수정 중인 내용이 있습니다. 창을 닫을까요?')) return;
+  $('spkDlg').classList.add('hidden'); SPK_CUR=null; }
 function spkData(){
   const v=id=>$(id).value.trim(), csv=s=>s.split(/[,\n\s]+/).map(x=>x.trim()).filter(Boolean);
   return { mall:SPK_CUR.mall, tag:v('spk_tag'), msg:v('spk_msg'), sub:v('spk_sub'), btn:v('spk_btn'), tel:v('spk_tel'), ask:v('spk_ask'), hide:csv(v('spk_hide')), extra:csv(v('spk_extra')) };
@@ -6659,12 +6661,40 @@ function gnOpen(id){
     <div><label for="gn_url">버튼 주소</label><input class="in" id="gn_url" value="${esc(n.url||'')}" placeholder="https://… 또는 tel:0212345678" oninput="gnPreview()"></div>
     <div class="gn-two"><div><label for="gn_from">시작일 (비우면 바로)</label><input class="in" type="date" id="gn_from" value="${esc(n.from||'')}"></div><div><label for="gn_to">종료일 (비우면 계속)</label><input class="in" type="date" id="gn_to" value="${esc(n.to||'')}"></div></div>
     <div class="gn-two"><div><label for="gn_sort">순서 (같은 위치에 여럿일 때 작은 수가 위)</label><input class="in" id="gn_sort" inputmode="numeric" value="${esc(n.sort??100)}"></div><div><label for="gn_note">메모 (사내용)</label><input class="in" id="gn_note" value="${esc(n.note||'')}"></div></div>`;
-  $('gnDlg').classList.remove('hidden'); gnScope(); setTimeout(()=>{ const f=$('gn_goods'); if(f) f.focus(); },50);
+  $('gnDlg').classList.remove('hidden'); gnScope(); GN_DLG.start=JSON.stringify(gnData()); gnDraftOffer(); setTimeout(()=>{ const f=$('gn_goods'); if(f) f.focus(); },50);
 }
 function gnMallPick(el){ const box=el.parentNode, all=el.dataset.v==='*'; if(all){ const on=!el.classList.contains('on'); [...box.children].forEach(x=>x.classList.remove('on')); if(on) el.classList.add('on'); } else { const a=box.querySelector('[data-v="*"]'); if(a) a.classList.remove('on'); el.classList.toggle('on'); } gnPreview(); }
 function gnScope(){ const t=$('gn_target'); if(t) t.style.display=gnData().scope==='all'?'none':''; gnPreview(); }
 function gnHelp(open){ const d=$('gnHelp'); if(!d) return; d.classList.toggle('hidden',!open); if(open){ const x=d.querySelector('.lvx'); if(x) x.focus(); } }
-function gnClose(){ $('gnDlg').classList.add('hidden'); GN_DLG=null; }
+/* 쓰던 내용 지키기 (2026-11-04 "문구추가 하고 다른 창으로 넘기거나 잠깐 다른걸 키면 문구추가 창이 꺼져버려요")
+   · 창 바깥은 '눌렀다 뗀' 곳이 둘 다 바깥일 때만 닫힌다 (아래 전역 처리) · 쓰던 내용이 있으면 닫기 전에 묻는다
+   · 쓰는 동안 이 기기(localStorage)에 임시 저장 — 창이 닫히거나 휴대폰에서 페이지가 새로 열려도 다시 열면 불러온다 (3일 · 저장하면 지움) */
+function gnDraftKey(){ return 'gnDraft:'+((GN_DLG&&GN_DLG.n.id)||'new'); }
+function gnDirty(){ return !!(GN_DLG && GN_DLG.start && JSON.stringify(gnData())!==GN_DLG.start); }
+function gnDraftSave(){ if(!gnDirty()) return; try{ localStorage.setItem(gnDraftKey(), JSON.stringify({t:Date.now(), d:gnData()})); }catch(e){} }
+function gnDraftDrop(key){ try{ localStorage.removeItem(key||gnDraftKey()); }catch(e){} }
+function gnDraftOffer(){
+  let v=null; try{ v=JSON.parse(localStorage.getItem(gnDraftKey())||'null'); }catch(e){}
+  if(!v || !v.d || Date.now()-v.t>3*864e5 || JSON.stringify(v.d)===GN_DLG.start){ if(v) gnDraftDrop(); return; }
+  const bar=document.createElement('div'); bar.id='gnDraftBar';
+  bar.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding:8px 10px;border:1px solid #f0d58a;border-radius:8px;background:#fffbe8;font-size:13px';
+  const at=new Date(v.t); bar.innerHTML='<span style="flex:1 1 auto">작성 중이던 내용이 있습니다 ('+(at.getMonth()+1)+'/'+at.getDate()+' '+String(at.getHours()).padStart(2,'0')+':'+String(at.getMinutes()).padStart(2,'0')+')</span><button type="button" class="btn sm" id="gnDraftUse">불러오기</button><button type="button" class="btn sm ghost" id="gnDraftNo">버리기</button>';
+  $('gnForm').prepend(bar);
+  $('gnDraftUse').onclick=()=>{ gnApply(v.d); bar.remove(); };
+  $('gnDraftNo').onclick=()=>{ gnDraftDrop(); bar.remove(); };
+}
+function gnApply(d){
+  const set=(id,val)=>{ const e=$(id); if(e&&val!=null) e.value=Array.isArray(val)?val.join(', '):val; };
+  const chips=(id,vals)=>{ const box=$(id); if(!box) return; [...box.children].forEach(c=>c.classList.toggle('on', vals.includes(c.dataset.v))); };
+  chips('gn_malls', d.malls||[]); chips('gn_scope',[d.scope||'goods']); chips('gn_tone',[d.tone||'blue']);
+  set('gn_pos',d.pos); set('gn_goods',d.goods); set('gn_models',d.models); set('gn_title',d.title); set('gn_body',d.body); set('gn_img',d.img);
+  set('gn_btn',d.btn); set('gn_btntone',d.btnTone); set('gn_url',d.url); set('gn_from',d.from||''); set('gn_to',d.to||''); set('gn_sort',d.sort); set('gn_note',d.note);
+  gnScope();
+}
+function gnClose(ask){
+  if(ask && gnDirty()){ gnDraftSave(); if(!confirm('작성 중인 내용이 있습니다. 창을 닫을까요?\n(닫아도 이 기기에 임시 저장돼 다시 열면 불러올 수 있습니다)')) return; }
+  $('gnDlg').classList.add('hidden'); GN_DLG=null;
+}
 function gnData(){
   const csv=v=>v.split(/[,\n\s]+/).map(x=>x.trim()).filter(Boolean);
   return { id:GN_DLG&&GN_DLG.n.id, scope:(($('gn_scope').querySelector('.chip.on')||{}).dataset||{}).v||'goods', malls:[...$('gn_malls').querySelectorAll('.chip.on')].map(x=>x.dataset.v), mall:([...$('gn_malls').querySelectorAll('.chip.on')].map(x=>x.dataset.v).find(c=>c!=='*')||'pm'), pos:$('gn_pos').value, goods:csv($('gn_goods').value), models:csv($('gn_models').value).map(x=>x.toUpperCase()),
@@ -6698,7 +6728,7 @@ async function gnSave(status){
     if(d.url && !/^(https?:\/\/|tel:|\/)/i.test(d.url)) throw new Error('버튼 주소는 https:// 또는 tel: 로 시작해야 합니다');
     d.status=status;
     await rpc('fn_store_goods_note_save',{p_code:CODE,p_data:d});
-    gnClose(); toast(status==='on'?'저장했습니다 (공개) · 바로 상품 페이지에 나갑니다':'저장했습니다 (test) · 주소 끝에 &gnote=on 을 붙이면 보입니다'); loadGoodsNote();
+    gnDraftDrop(); gnClose(); toast(status==='on'?'저장했습니다 (공개) · 바로 상품 페이지에 나갑니다':'저장했습니다 (test) · 주소 끝에 &gnote=on 을 붙이면 보입니다'); loadGoodsNote();
   }catch(e){ $('gnErr').textContent=e.message; }
   finally{ b1.disabled=b2.disabled=false; }
 }
@@ -7074,6 +7104,17 @@ function reqToOrder(id){
   if(x.status==='open') rpc('fn_store_request_take',{p_code:CODE,p_id:id}).catch(()=>{});
   const nOk=lines.filter(l=>l.item_code).length; toast(nOk===lines.length?`품목코드 ${lines.length}줄 모두 채웠습니다. 확인하고 등록하세요`:`${lines.length}줄 중 ${nOk}줄만 코드를 찾았습니다. 나머지는 골라 주세요`, nOk===lines.length?'ok':'bad');
 }
+
+/* ═══ 창 바깥 클릭 (2026-11-04) : 어두운 바탕을 '눌렀다 뗀' 곳이 둘 다 바탕일 때만 닫는다.
+   창 안에서 글을 드래그하다 바깥에서 손을 떼거나, 다른 창에서 돌아와 누를 때 쓰던 창이 닫히던 것을 막는다 (모든 .lvmask · .sheet-bg) ═══ */
+let MASK_DOWN=null;
+document.addEventListener('pointerdown', e=>{ MASK_DOWN=e.target; }, true);
+document.addEventListener('click', e=>{ const t=e.target; if(t && t.classList && (t.classList.contains('lvmask')||t.classList.contains('sheet-bg')) && MASK_DOWN!==t){ e.stopPropagation(); } MASK_DOWN=null; }, true);
+/* 상품 안내 문구 창: 쓰는 동안 임시 저장 · 다른 앱/탭으로 갈 때도 저장 */
+document.addEventListener('input', e=>{ if(GN_DLG && e.target.closest && e.target.closest('#gnForm')) { clearTimeout(window.__gnDT); window.__gnDT=setTimeout(gnDraftSave,400); } });
+document.addEventListener('click', e=>{ if(GN_DLG && e.target.closest && e.target.closest('#gnForm .chip')) setTimeout(gnDraftSave,0); });
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden && GN_DLG) gnDraftSave(); });
+window.addEventListener('pagehide', ()=>{ if(GN_DLG) gnDraftSave(); });
 
 /* ═══ 부팅 ═══ */
 /* ── 잠금 : 코드는 기억하되, 자리 비움(30분)·탭을 닫았다 열면 코드를 다시 친다 ── */
