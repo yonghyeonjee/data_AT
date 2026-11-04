@@ -281,10 +281,29 @@ window.SUB_SHOP_READY = true;
     });
     return best;
   }
+  // 삼성닷컴 후기 별점 — sub_reviews.js 를 HTML 이 안 실어도 받아 와서 이미 그린 카드에 배지를 붙인다 (2026-11-04)
+  function loadReviews() {
+    if (window.SUB_REVIEWS || loadReviews.on || !CFG.dataBase && !document.querySelector('.ss-card')) return;
+    loadReviews.on = 1;
+    var s = document.createElement('script'); s.charset = 'utf-8';
+    s.src = (CFG.dataBase || '/data/js/sub/') + 'sub_reviews.js';
+    s.onload = function () {
+      var M = window.SUB_REVIEWS && window.SUB_REVIEWS.m; if (!M) return;
+      $all('.ss-card-link[data-model]').forEach(function (a) {
+        var rv = M[a.getAttribute('data-model')]; if (!rv || rv[1] < 3 || a.querySelector('.is-rv')) return;
+        var ps = a.querySelector('.ss-perks');
+        if (!ps) { ps = document.createElement('span'); ps.className = 'ss-perks'; var at = a.querySelector('.ss-net') || a.querySelector('.ss-price'); if (!at) return; at.parentNode.insertBefore(ps, at.nextSibling); }
+        ps.insertAdjacentHTML('afterbegin', '<span class="ss-perk is-rv">★ ' + (+rv[0]).toFixed(1) + ' <small>후기 ' + fmt(rv[1]) + '</small></span>');
+      });
+    };
+    document.head.appendChild(s);
+  }
   function perksHtml(r, net) {
-    var out = [], pts = pointOf(r.model), pm = promoMonths(r.model);
+    setTimeout(loadReviews, 0);
+    var out = [], pts = pointOf(r.model), pm = promoMonths(r.model), rv = window.SUB_REVIEWS && window.SUB_REVIEWS.m && window.SUB_REVIEWS.m[r.model];
     if (CARD1 && net === 0) out.push('<span class="ss-perk is-zero">최대혜택 월 0원</span>');
     if (pm) out.push('<span class="ss-perk is-promo">구독료 지원 ' + pm + '개월</span>');
+    if (rv && rv[1] >= 3) out.push('<span class="ss-perk is-rv">★ ' + (+rv[0]).toFixed(1) + ' <small>후기 ' + fmt(rv[1]) + '</small></span>');
     if (pts >= 1000) out.push('<span class="ss-perk">멤버십 ' + (pts >= 10000 ? fmt(Math.floor(pts / 1000) * 1000) : fmt(pts)) + 'P 적립</span>');
     return out.length ? '<span class="ss-perks">' + out.join('') + '</span>' : '';
   }
