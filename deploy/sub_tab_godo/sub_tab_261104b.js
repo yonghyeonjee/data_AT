@@ -600,6 +600,11 @@ function main() {
     }
     return '1~' + V + '개월 월 ' + fmt(r.ptSplitPay) + '원' + (V < n ? ' → ' + (V + 1) + '~' + n + '개월 월 ' + fmt(M) + '원' : '');
   }
+  // 유지기간 안에 구독료로 다 못 쓰는 포인트 (월 구독료 × 유지기간보다 포인트가 많을 때)
+  function ptLeftRow(r) {
+    var left = Math.round(r.pointsAll - r.ptUsed);
+    return left > 0 ? row('남는 포인트 <small>' + r.ptValid + '개월 구독료를 다 내고 남는 만큼 · 현금처럼 사용</small>', '+' + fmt(left) + 'P', 'is-blue is-strong') : '';
+  }
   // 결제 예상 내역 안의 개월별 납부 줄
   function ptRows(r) {
     var M = r.finalMonthly, V = r.ptValid, n = r.months, h = '';
@@ -608,11 +613,11 @@ function main() {
       if (k) h += row('1~' + k + '개월 월 납부 <small>구독료 전액 포인트</small>', '월 0원', 'is-strong');
       if (r.ptFullRem && k < n) { h += row((k + 1) + '개월째 납부 <small>남은 ' + fmt(r.ptFullRem) + 'P 사용</small>', fmt(Math.max(0, M - r.ptFullRem)) + '원', 'is-strong'); k++; }
       if (k < n) h += row((k + 1 < n ? (k + 1) + '~' + n + '개월' : n + '개월째') + ' 월 납부', '월 ' + fmt(M) + '원', 'is-strong');
-      return h;
+      return h + ptLeftRow(r);
     }
     h += row('1~' + V + '개월 월 납부 <small>매월 ' + fmt(r.ptSplit) + 'P 사용</small>', '월 ' + fmt(r.ptSplitPay) + '원', 'is-strong');
     if (V < n) h += row((V + 1) + '~' + n + '개월 월 납부', '월 ' + fmt(M) + '원', 'is-strong');
-    return h;
+    return h + ptLeftRow(r);
   }
   function row(label, value, cls) {
     return '<div' + (cls ? ' class="' + cls + '"' : '') + '><dt>' + label + '</dt><dd>' + value + '</dd></div>';
