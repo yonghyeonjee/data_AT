@@ -228,7 +228,7 @@ function main() {
     r.ptSplitPay = Math.max(0, M - r.ptSplit);                                  // split: 1~유지기간 월 납부
     r.ptFullN = M > 0 ? Math.min(r.ptValid, Math.floor(P / M)) : 0;             // full: 월 0원인 개월 수
     r.ptFullRem = r.ptFullN < r.ptValid ? Math.round(P - r.ptFullN * M) : 0;    // full: 다음 달에 쓰는 나머지
-    var used = r.ptMode === 'split' ? r.ptSplit * r.ptValid : r.ptMode === 'full' ? Math.round(r.ptFullN * M) + r.ptFullRem : 0;
+    var used = r.ptMode === 'split' ? Math.round(Math.min(P, M * r.ptValid)) : r.ptMode === 'full' ? Math.round(r.ptFullN * M) + r.ptFullRem : 0;
     r.ptUsed = Math.min(P, used);
     r.netTotal = r.ptMode === 'cash' ? r.expected : r.expected - r.ptUsed;
     r.netMonthly = r.ptMode === 'split' ? r.ptSplitPay : r.ptMode === 'full' && r.ptFullN ? 0 : r.finalMonthly;
