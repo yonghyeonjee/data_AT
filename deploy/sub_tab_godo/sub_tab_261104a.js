@@ -684,7 +684,7 @@ function main() {
       h += row('포인트 반영 실제 구독료', fmt(r.expectedNet) + '원', 'is-total');
       h += row('포인트 반영 월 실부담 <small>포인트 ÷ ' + r.months + '개월</small>', '월 ' + fmt(r.netMonthly) + '원', 'is-strong');
     }
-    if (r.pointsAll && cash) h += row('따로 받는 포인트 <small>결제 뒤 적립 · 현금처럼 사용</small>', '+' + fmt(r.pointsAll) + 'P', 'is-blue is-strong');
+    if (r.points && r.mpoints && cash) h += row('따로 받는 포인트 합계 <small>결제 뒤 적립 · 현금처럼 사용</small>', '+' + fmt(r.pointsAll) + 'P', 'is-blue is-strong');
     if (r.prepay) h += row('└ 선납금 (신청 시 1회)', fmt(r.prepayAmt) + '원', 'is-muted');
     var cmp = CFG.lumpCompare || 'auto';
     if (lump > 0 && (cmp === 'always' || (cmp === 'auto' && r.saving))) h += row('일시불 구매가', fmt(lump) + '원', 'is-muted');
