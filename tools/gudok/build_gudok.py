@@ -28,6 +28,7 @@ import argparse, datetime, json, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_sub_pages as B  # noqa: E402
 import model_pages as MP  # noqa: E402  모델별 정적 페이지 (2026-11-04)
+import guide_pages as GP  # noqa: E402  질문형 가이드 글 g/<주제>.html (2026-11-04)
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SHOP = 'https://www.samsungsh.co.kr'
@@ -48,7 +49,7 @@ class Site:
         self.site, self.dir, self.out = site.rstrip('/'), dir_, out
         self.url = self.site + dir_
         self.links = dict(homeUrl=dir_ + 'index.html', catUrl=dir_, cardUrl=dir_ + 'card.html', guideUrl=dir_ + 'guide.html',
-                          findUrl=dir_ + 'find.html', viewUrl=dir_ + 'view.html?model=', viewStatic=dir_ + 'm/', bundleUrl=dir_ + 'bundle.html', consultUrl=CONSULT)
+                          findUrl=dir_ + 'find.html', viewUrl=dir_ + 'view.html?model=', viewStatic=dir_ + 'm/', guideDir=dir_ + 'g/', bundleUrl=dir_ + 'bundle.html', consultUrl=CONSULT)
 
     def remap(self, s):
         """build_sub_pages 본문의 고도몰 주소(htmid=subscribe/…)를 이 사이트 주소로"""
@@ -214,6 +215,9 @@ class Site:
             lds.append({'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': crumbs})
         if kind == 'home':
             lds.append(MP.store_ld(self.site, self.dir + 'index.html'))
+        if kind == 'guide' and getattr(self, 'articles', None):   # 구독 안내 페이지에 가이드 글 목록
+            mk = '    <section class="ss-sec">\n        <h2>자주 묻는 질문</h2>'
+            if mk in body: body = body.replace(mk, GP.Guides.index_html(self.articles, self.links) + mk, 1)
         faq = MP.faq_items(body)
         if faq:
             lds.append({'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': faq})
@@ -374,6 +378,7 @@ class Site:
     def build(self, index_js):
         os.makedirs(self.out, exist_ok=True)
         self.M = MP.Models(os.path.dirname(index_js))   # 품목 페이지 목록·모델 페이지가 같이 쓴다
+        self.G = GP.Guides(os.path.dirname(index_js)); self.articles = self.G.articles(self.links)
         pages = []   # (파일, 내용, (우선순위, 주기))
         for fname, t, d, k, body, kind, key in B.page_list():
             new = 'index.html' if fname == 'sub_home.html' else re.sub(r'^sub_(c_)?', '', fname)
@@ -409,12 +414,20 @@ class Site:
             with open(os.path.join(mdir, fn + '.html'), 'w', encoding='utf-8', newline='\n') as f:
                 f.write(self.model_page(M, m))
         MP.static_js(models, os.path.join(os.path.dirname(index_js), 'sub_static.js'))
+        # 질문형 가이드 글 (2026-11-04)
+        gdir = os.path.join(self.out, 'g'); os.makedirs(gdir, exist_ok=True)
+        for a in self.articles:
+            html_ = self.G.page(self, a, self.links, self.head, self.foot, lambda: self.loader('shop', 'SUB_SHOP_CONFIG', 'SUB_SHOP_READY', 'guide', ''))
+            with open(os.path.join(gdir, a['slug'] + '.html'), 'w', encoding='utf-8', newline='\n') as f:
+                f.write(html_)
 
         today = datetime.date.today().isoformat()
         sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
         for fname, _, pri in pages:
             if pri:
                 sm.append('<url><loc>%s</loc><lastmod>%s</lastmod><changefreq>%s</changefreq><priority>%s</priority></url>' % (e(self.url + fname), today, pri[1], pri[0]))
+        for a in self.articles:
+            sm.append('<url><loc>%s</loc><lastmod>%s</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>' % (e(self.site + self.links['guideDir'] + a['slug'] + '.html'), today))
         n_models = 0
         if index_js and os.path.exists(index_js):
             src = open(index_js, encoding='utf-8').read()
