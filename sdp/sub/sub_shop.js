@@ -318,6 +318,15 @@ window.SUB_SHOP_READY = true;
   }
 
   /* ---------- 자리별 그리기 ---------- */
+  // 메뉴가 위에 붙었는지 (그림자 · 휴대폰에선 품목 줄 접기) — 2026-11-04
+  var navStuckOn = false;
+  function watchNavStuck(el) {
+    if (navStuckOn || !el) return; navStuckOn = true;
+    var tick = false;
+    function check() { tick = false; var y = window.pageYOffset || document.documentElement.scrollTop || 0; el.classList.toggle('is-stuck', y > 0 && el.getBoundingClientRect().top <= 1); }
+    window.addEventListener('scroll', function () { if (!tick) { tick = true; (window.requestAnimationFrame || setTimeout)(check); } }, { passive: true });
+    check();
+  }
   function drawNav(el) {
     var cur = CFG.page === 'cat' || CFG.page === 'view' ? CFG.key : CFG.page;
     var top = [['home', '구독 홈', LINK.home], ['bundle', '다품목 계산기', LINK.bundle, true], ['card', '카드 혜택', LINK.card], ['guide', '구독 안내', LINK.guide], ['find', '상품 찾기', LINK.find]];
@@ -332,6 +341,7 @@ window.SUB_SHOP_READY = true;
         return '<a href="' + esc(catHref(p.key)) + '"' + (cur === p.key ? ' aria-current="page"' : '') + (p.hot ? ' class="is-hot"' : '') + '>' + esc(p.name) + '</a>';
       }).join('') + '</div></nav>';
     el.innerHTML = h;
+    watchNavStuck(el);
     var on = el.querySelector('.ss-nav-cats [aria-current]');
     if (on && on.scrollIntoView && on.parentNode.scrollWidth > on.parentNode.clientWidth) on.parentNode.scrollLeft = on.offsetLeft - 16;
   }

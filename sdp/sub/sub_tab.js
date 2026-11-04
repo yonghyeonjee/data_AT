@@ -727,7 +727,7 @@ function main() {
     h += '</div></section>';
 
     // 결제 예상 내역
-    h += '<section class="subtab-field"><div class="subtab-legend">결제 예상 내역</div><dl class="subtab-sum">';
+    h += '<section class="subtab-field" id="subTabDetail"><div class="subtab-legend">결제 예상 내역</div><dl class="subtab-sum">';
     h += row('총 구독금액 (' + r.years + '년)', fmt(r.total) + '원');
     if (r.prepay) h += row('선납 할인 (선납 ' + Math.round(r.prepay * 100) + '% · ' + Math.round(r.prepayRate * 100) + '%)', '-' + fmt(r.prepayDisc) + '원', 'is-blue');
     h += row(esc(autopayLabel()), '-' + fmt(r.autoDisc) + '원', 'is-blue');
@@ -762,11 +762,11 @@ function main() {
         '<div class="subtab-cmp"><div><em>일시불 구매가</em><b>' + fmt(lump) + '원</b></div><i aria-hidden="true"></i>' +
         '<div class="is-sub"><em>' + r.years + (r.pointsAll && !cash ? '년 실제 구독료<small>포인트 구독료로 사용</small>' : r.pointsAll ? '년 결제 총액<small>포인트 ' + fmt(r.pointsAll) + 'P 별도</small>' : '년 구독 총액') + '</em><b>' + fmt(r.netTotal) + '원</b></div></div>' +
         (r.pointsAll ? '<span class="subtab-savebox-sub is-pt">' + esc(ptPlan(r)) + '</span>' : '') +
-        '<span class="subtab-savebox-sub">' + esc(cond) + '</span></div>' :
+        '<span class="subtab-savebox-sub">' + esc(cond) + '</span>' + '<button type="button" class="subtab-detail-go" data-detail>' + (state.open ? '최종 구독가 계산 내역 아래에 펼쳐져 있어요 ▾' : '최종 구독가 계산 내역 보기 ▾') + '</button>' + '</div>' :
       // 아니면 월 구독료 + 총액
       '<div class="subtab-monthbox" role="note"><span class="subtab-monthbox-label">선택한 혜택 적용 시 월 구독료</span>' +
         '<strong>' + esc(ptMain(r)) + '</strong>' + (r.pointsAll ? '<span class="subtab-savebox-sub is-pt">' + esc(ptPlan(r)) + '</span>' : '') +
-        '<span class="subtab-savebox-sub">' + r.years + (r.pointsAll && !cash ? '년 실제 구독료 ' : r.pointsAll ? '년 결제 총액 ' : '년 구독 총액 ') + fmt(r.netTotal) + '원 · ' + esc(cond) + '</span></div>';
+        '<span class="subtab-savebox-sub">' + r.years + (r.pointsAll && !cash ? '년 실제 구독료 ' : r.pointsAll ? '년 결제 총액 ' : '년 구독 총액 ') + fmt(r.netTotal) + '원 · ' + esc(cond) + '</span>' + '<button type="button" class="subtab-detail-go" data-detail>' + (state.open ? '최종 구독가 계산 내역 아래에 펼쳐져 있어요 ▾' : '최종 구독가 계산 내역 보기 ▾') + '</button>' + '</div>';
     if (POL.texts.notice) h += '<p class="subtab-note">' + esc(POL.texts.notice) + '</p>';   // 안내 작은 글씨는 [조건별 구독가 확인하기] 안에만 (2026-11-03)
     h = top + sum +
       '<button type="button" class="subtab-acc" data-acc aria-expanded="' + state.open + '">조건별 구독가 확인하기<i aria-hidden="true"></i></button>' +
@@ -793,7 +793,7 @@ function main() {
     var discounted = r.netMonthly < r.monthly - 0.5;
     h += '<div class="subtab-bar">' +
       '<div class="subtab-bar-row"><span>월 납부 예상금액</span><s' + (discounted ? '' : ' hidden') + '>월 ' + fmt(r.monthly) + '원</s></div>' +
-      '<div class="subtab-bar-row is-main"><span>' + (r.pointsAll && !cash ? '포인트 사용가' : r.cardTotal ? '제휴카드 적용가' : '혜택 적용가') + '</span><strong>' + esc(ptMain(r)) + '</strong></div>' +
+      '<div class="subtab-bar-row is-main"><span>' + (r.pointsAll && !cash ? '포인트 사용가' : r.cardTotal ? '제휴카드 적용가' : '혜택 적용가') + '</span><strong>' + esc(ptMain(r)) + '</strong><button type="button" class="subtab-bar-detail" data-detail aria-label="최종 구독가 계산 내역 보기">상세</button></div>' +
       (r.pointsAll ? '<div class="subtab-bar-row is-pt"><span>' + esc(ptPlan(r)) + '</span></div>' : '') +
       ctaHtml(consultBase() + q) + '</div>';
 
@@ -858,7 +858,13 @@ function main() {
   function onClick(ev) {
     var t = ev.target.closest ? ev.target.closest('button, a') : null;
     if (!t || !root.contains(t) || t.disabled) return;
-    if (t.hasAttribute('data-acc')) {
+    if (t.hasAttribute('data-detail')) {
+      // 최종 구독가 계산 내역 (2026-11-04) — [조건별 구독가 확인하기] 를 펼치고 결제 예상 내역으로 내려간다
+      if (!state.open) { state.open = true; renderPanel(); }
+      var d = document.getElementById('subTabDetail');
+      if (d && d.scrollIntoView) d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      track('sub_tab_detail');
+    } else if (t.hasAttribute('data-acc')) {
       state.open = !state.open; renderPanel(); track('sub_tab_conditions', { sub_open: state.open });
     } else if (t.hasAttribute('data-tab')) {
       if (t.getAttribute('data-tab') === 'sub') { openSub(); track('sub_tab_open'); }
