@@ -377,6 +377,7 @@ const P = new URLSearchParams(location.search);
 const Q = { no:P.get('no')||'', ver:+(P.get('v')||0)||0, issuedAt:'',
   cust:{ type:P.get('type')||'혼수', name:P.get('name')||'', phone:P.get('phone')||'', addr:'', proof:'', until:'', memo:P.get('memo')||'' },
   cond:{ card:'', tier:'', cardOn:true, prepay:null, lumpKind:'베네핏', lumpMonths:6, cb:true },
+  consult:P.get('consult')||'',                               // 어느 문의(crm.consult id)에서 열렸나 — 저장 meta 에 남긴다 (2026-11-04)
   items:[] };   // {m, mode:'sub'|'lump', years, care, lump, note}
 if(P.get('counselor')) ME=P.get('counselor');
 let C=null, POL=null, IDX=null, CAT=null, LUMP=null;
@@ -396,8 +397,12 @@ function loadJs(src){ return new Promise((ok,no)=>{ const s=document.createEleme
   $('boot').classList.add('hidden'); $('v-edit').classList.remove('hidden');
   bindInputs(); fillCust();
   await auth();
-  if(Q.no) await loadQuote(Q.no); else render();
+  if(Q.no) await loadQuote(Q.no); else { prefillModels(); render(); }
 })();
+/* 매장 상담 줄 [견적서 만들기] · 구독센터 문의에서 넘어온 관심 모델을 바로 담는다: ?models=WD90H25AHW,RF85DB91A1AP (요금표에 없는 모델은 일시불 줄) */
+function prefillModels(){ const ms=String(P.get('models')||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+  ms.forEach(m=>{ if(Q.items.some(x=>x.m===m)) return; if(IDX&&IDX.m&&IDX.m[m]) addModel(m); else if(priceOf(m)) addModel(m,'lump'); else addFree(m); });
+  if(ms.length) toast('문의하신 모델 '+ms.length+'개를 담았습니다'); }
 
 async function auth(){
   try{ const r=await rpc('fn_quote_page_me',{p_code:CODE||null}); if(r&&r.ok){ ME=r.me||ME||localStorage.getItem('dc_login_name')||''; $('meLbl').textContent=ME?ME+' 프로':'(코드 접속)'; return true; } }catch(e){}
@@ -608,7 +613,7 @@ function toQuoteJson(){
   const lump = L.items.length? { items:L.items.map(it=>({model:it.free?'':it.m, name:nameOf(it.m), amount:+it.lump||0, note:it.note||''})), kind:L.kind, kindLabel:(LUMP&&LUMP.cards[L.kind]||{}).label||L.kind, months:L.months, amount:L.amount, fee:L.fee, bill:L.bill, sPoint:L.sp, typePoint:L.tp, typeLabel:Q.cust.type+' 포인트', cashback:L.cb, member:L.mem, benefit:L.ben, net:L.net, per:L.per } : null;
   const quote={ cust:{ name:Q.cust.name, phone:Q.cust.phone, addr:Q.cust.addr, type:Q.cust.type, proof, memo:Q.cust.memo, until:Q.cust.until, untilMode:Q.cust.until?'date':'none', date:Q.issuedAt||todayStr() },
     items, extra:[], lump, opt:{ card:Q.cond.card?Q.cond.card+' '+Q.cond.tier:'', prepayPct:Math.round((Q.cond.prepay||0)*100), pointMode:'replace', pointCommon:S.pkg, show:{ total:true, sub:true, multi:true, sumBox:true, payband:true, realM:true }, counselor:ME },
-    src:{ ver:1, items:Q.items, cond:Q.cond }, meta:{ page:'dc-quote', policyVer:POL.ver||'', idxVer:IDX.ver||'' } };
+    src:{ ver:1, items:Q.items, cond:Q.cond }, meta:{ page:'dc-quote', policyVer:POL.ver||'', idxVer:IDX.ver||'', consult:Q.consult||null } };
   const summary={ name:Q.cust.name, phone:Q.cust.phone, counselor:ME, type:Q.cust.type, models:Q.items.map(x=>x.m).join(', '), count:Q.items.length, multiCount:S.multiN,
     total:S.total+L.amount, benefit:S.ben+L.ben, finalP:S.net+L.net, monthly:S.monthly, realM:S.pay, prepayAmt:S.preAmt, card:Q.cond.card||'', memo:Q.cust.memo, date:Q.issuedAt||todayStr(), lump:L.amount, lumpNet:L.net };
   return {quote, summary};

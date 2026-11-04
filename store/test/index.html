@@ -2054,7 +2054,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
     <div class="card" id="cLogCard">
       <h2 style="justify-content:flex-start;align-items:center">상담 · 가망고객 <span>사려다 만 고객도 남기기</span><button type="button" class="btn sm ghost" id="c_newBtn" style="margin-left:auto" onclick="consultNew()" title="적던 내용을 비우고 새 상담을 입력합니다">＋ 새 상담 입력</button></h2>
       <div class="cbar" style="margin-bottom:14px">
-        <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim()})">구독 견적서 열기 ↗</button>
+        <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')})">구독 견적서 열기 ↗</button>
         <button class="btn sm ghost" onclick="openCalc()">구독료 계산기 ↗</button>
       </div>
       <div class="cstick hidden" id="c_stick" aria-live="polite">
@@ -3891,6 +3891,9 @@ const LINK_ICON={
 /* 견적서 페이지를 새 창으로.
    상담 건에서 열면 견적번호·고객·상담사·상세 관심 품목을 주소에 실어 보낸다.
    (견적서 페이지가 이 값을 읽도록 패치돼 있어야 프리필·기존 견적 열기가 된다) */
+/* 상담 줄 → 견적서에 담을 모델 코드들: 관심 모델(interest_model_code) + 내용의 '진단추천: 모델'(구독센터 상품 페이지에서 온 문의) + 관심 품목 글 속 모델형 토큰 */
+function qModels(x){ const out=[]; const add=v=>String(v||'').split(/[,\s·/]+/).forEach(t=>{ t=t.trim().toUpperCase().replace(/[^A-Z0-9\-]/g,''); if(/^[A-Z]{2}[A-Z0-9\-]{5,}$/.test(t)&&/\d/.test(t)&&!out.includes(t)) out.push(t); });
+  add(x.model); const m=/진단추천:\s*([A-Za-z0-9\-]+)/.exec(String(x.content||'')); if(m) add(m[1]); add(x.interest); return out.slice(0,8).join(','); }
 function openQuote(o){ o=o||{};
   const q=new URLSearchParams();
   if(o.no) q.set('no',o.no);
@@ -3898,6 +3901,8 @@ function openQuote(o){ o=o||{};
   if(o.name) q.set('name',o.name);
   if(o.tel)  q.set('phone',o.tel);
   if(o.memo) q.set('memo',o.memo);
+  if(o.consult) q.set('consult',o.consult);                       // 상담 id — 견적서가 어느 문의에서 나왔는지 (2026-11-04)
+  if(o.models) q.set('models',String(o.models).replace(/\s/g,'')); // 관심 모델(쉼표) — 견적서가 바로 담는다
   if(ME) q.set('counselor',ME);
   const u=QUOTE_URL+(q.toString()?'?'+q.toString():'');
   window.open(u,'sat_quote','noopener');
@@ -4402,6 +4407,7 @@ function skRowHtml(x,o){ o=o||{};
   }
   A.push(`<button class="mini" onclick="cdOpen(${x.id})">상세 보기</button>`);
   if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
+  A.push(`<button class="mini" onclick="openQuote({name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}',memo:'${esc([x.interest,x.model].filter(Boolean).join(' · ').replace(/'/g,''))}',consult:${x.id||0},models:'${esc(qModels(x))}'})">견적서 만들기 ↗</button>`);
   return `<div class="item oc skrow" id="skrow_${x.id}"><div style="flex:1;min-width:0">
       <div class="ttl">${res}<b>${esc(x.name||'-')}</b> <small style="color:var(--muted)">${esc(x.phone||'')}</small>
         ${x.kind?`<span class="tag ${x.kind==='구독'?'sub':x.kind==='직판'?'direct':''}">${esc(x.kind)}</span>`:''}
@@ -5160,7 +5166,7 @@ function renderMyConsults(){
     const sel = MC_SEL.has(x.id);
     const nm  = esc(x.name||'(이름 없음)');
     const qMemo = [x.detail, x.interest, x.model].filter(Boolean).join(' · ').replace(/'/g,'');
-    const qArg = `{no:'${esc((x.quote&&x.quote.no)||'')}',ver:${(x.quote&&x.quote.ver)||1},name:'${nm}',tel:'${esc(x.tel||'')}',memo:'${esc(qMemo)}'}`;
+    const qArg = `{no:'${esc((x.quote&&x.quote.no)||'')}',ver:${(x.quote&&x.quote.ver)||1},name:'${nm}',tel:'${esc(x.tel||'')}',memo:'${esc(qMemo)}',consult:${x.id||0},models:'${esc(qModels(x))}'}`;
     const meta = [
       String(x.at).slice(5,10).replace('-','/'),
       esc(x.route||''),
