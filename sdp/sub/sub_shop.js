@@ -533,7 +533,7 @@ window.SUB_SHOP_READY = true;
     var b = document.createElement('div'); b.id = 'ssBubble'; b.className = 'ss-bubble'; b.setAttribute('role', 'complementary');
     b.innerHTML = '<button type="button" class="ss-bubble-x" aria-label="닫기">×</button>' +
       '<p class="ss-bubble-main">💬 ' + esc(t.main) + '</p><p class="ss-bubble-gift">🎁 ' + esc(t.gift) + '</p>' +
-      '<div class="ss-bubble-btns"><a class="ss-btn" href="' + esc(consultHref(null, 'bubble')) + '" data-cta="consult">구독 문의하기</a>' +
+      '<div class="ss-bubble-btns"><a class="ss-btn" href="' + esc(consultHref(null, 'bubble')) + '" data-cta="consult">💬 온라인 문의</a>' +
       (tel ? '<a class="ss-btn-line" href="tel:' + esc(tel.replace(/[^0-9]/g, '')) + '" data-cta="tel" aria-label="전화 ' + esc(tel) + '">📞<span class="ss-tel-num"> ' + esc(tel) + '</span></a>' : '') + '</div>';
     // 말풍선이 목록 끝을 가리지 않게 (2026-11-03): 페이지 끝에 말풍선 높이만큼 빈 자리를 두고, 내려 읽는 동안은 한 줄로 접는다 (누르면 다시 펼침)
     var space = document.createElement('div'); space.id = 'ssBubbleSpace'; space.setAttribute('aria-hidden', 'true');
