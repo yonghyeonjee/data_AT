@@ -3879,8 +3879,9 @@ const NAV_HIDE=new Set(['sale','daily']);
 const NAV_GROUPS=[['상담',['home','inbox','salechk','consult','quote','sub','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
 const NAV_LABEL={home:'홈', inbox:'상담', salechk:'판매 확인 필요', consult:'상담 입력', quote:'견적서', sub:'구독 관리', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'일정(휴가)'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
-const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
-const CALC_URL ='https://www.samsungsh.co.kr/main/html.php?htmid=service/calc_subscribe.html';
+/* 상담 견적 통합 화면 (mvp_276 · /quote/) — 구독 계산기·견적서·혼수/입주/이사 일시불 계산이 한 화면. 같은 origin 이라 담당자 세션(dc_session)이 그대로 통한다 */
+const QUOTE_URL=location.origin+'/quote/';
+const CALC_URL =QUOTE_URL;
 let QUICK_LINKS=[];
 async function loadQuickLinks(){ try{ QUICK_LINKS=(await rpc('fn_store_links',{p_code:CODE}))||[]; }catch(e){ QUICK_LINKS=[]; } syncNav(); }
 const LINK_ICON={
@@ -3898,7 +3899,7 @@ function openQuote(o){ o=o||{};
   if(o.tel)  q.set('phone',o.tel);
   if(o.memo) q.set('memo',o.memo);
   if(ME) q.set('counselor',ME);
-  const u=QUOTE_URL+(q.toString()?'&'+q.toString():'');
+  const u=QUOTE_URL+(q.toString()?'?'+q.toString():'');
   window.open(u,'sat_quote','noopener');
 }
 function openCalc(){ window.open(CALC_URL,'sat_calc','noopener'); }
