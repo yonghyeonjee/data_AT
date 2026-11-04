@@ -493,7 +493,21 @@ window.SUB_SHOP_READY = true;
     m.addEventListener('click', function () { m.parentNode.removeChild(m); });
     document.body.appendChild(m); track('ss_cert');
   }
-  // 홈 html 에 자리가 없으면(고도몰에 올린 html 이 예전 판) 만들어 넣는다: 가격대별 보기 앞 → 인증점 · 인기 제품, 뒤 → 맞춤 찾기
+  // 인증점 띠 (2026-11-04) — 모든 구독센터 화면 맨 위(상단 바 아래)에 얇게 한 줄 · 누르면 위촉장 · CFG.trustBar === false 면 안 띄움
+  function drawTrustBar() {
+    if (CFG.trustBar === false || document.getElementById('ssTrustBar')) return;
+    var bar = document.createElement('div'); bar.id = 'ssTrustBar'; bar.className = 'ss-trustbar';
+    bar.innerHTML = '<button type="button" data-cert aria-label="삼성 AI 구독 파트너 인증점 위촉장 보기">' +
+      '<img src="' + esc(CERT_IMG) + '" alt="" aria-hidden="true">' +
+      '<span class="ss-trustbar-badge">✔ 삼성전자 공식 위촉</span>' +
+      '<span class="ss-trustbar-txt"><b>삼성 AI 구독 파트너 인증점</b><em> · 삼성스토어 시흥</em></span>' +
+      '<span class="ss-trustbar-more">위촉장 보기 ›</span></button>';
+    bar.addEventListener('click', function () { openCert(); });
+    var top = document.querySelector('.gd-top');
+    if (top && top.parentNode) top.parentNode.insertBefore(bar, top.nextSibling);
+    else if (root && root.parentNode) root.parentNode.insertBefore(bar, root);
+  }
+  // 홈 html 에 자리가 없으면(고도몰에 올린 html 이 예전 판) 만들어 넣는다: 가격대별 보기 앞 → 인기 제품, 뒤 → 맞춤 찾기 (인증점은 맨 위 띠로 · 2026-11-04)
   function ensureHomeSecs() {
     if (CFG.page !== 'home' || document.querySelector('[data-ss="hot"]')) return;
     var bandsEl = document.querySelector('[data-ss="bands"]'), bandsSec = bandsEl && bandsEl.closest ? bandsEl.closest('section') : null;
@@ -504,7 +518,6 @@ window.SUB_SHOP_READY = true;
       return s;
     }
     var par = bandsSec.parentNode;
-    par.insertBefore(sec('trust'), bandsSec);
     par.insertBefore(sec('hot', '지금 많이 찾는 인기 제품', '요즘 매장에서 가장 많이 문의하시는 제품입니다. 누르면 약정·케어·선납·카드별 월 납부액을 바로 계산해 볼 수 있습니다.'), bandsSec);
     par.insertBefore(sec('quiz', '나에게 맞는 구독 찾기', '세 가지만 고르면 맞는 구독 모델을 골라 드립니다.'), bandsSec.nextSibling);
   }
@@ -658,6 +671,7 @@ window.SUB_SHOP_READY = true;
     else if (t.hasAttribute('data-cta')) track('ss_click', { ss_cta: t.getAttribute('data-cta'), ss_model: t.getAttribute('data-model') || '' });
   }
   function start() {
+    drawTrustBar();
     if (navOnly) { drawNav(root); ensureCards(drawBubble); return; }
     // 기간 지난 행사 배너(html 고정 · data-until=YYYY-MM-DD)는 지운다
     var td = new Date(), today = td.getFullYear() + '-' + ('0' + (td.getMonth() + 1)).slice(-2) + '-' + ('0' + td.getDate()).slice(-2);
