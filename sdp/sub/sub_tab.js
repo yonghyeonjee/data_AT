@@ -751,6 +751,19 @@ function main() {
       ptOpt(r, 'full', '구독료로 사용 · 전액 ' + r.ptFullN + '개월', r.ptFullN ? '처음 ' + r.ptFullN + '개월 월 0원' : '포인트가 월 구독료보다 적어요') +
       ptOpt(r, 'cash', '포인트로 따로 받기', '월 ' + fmt(r.finalMonthly) + '원 결제 · ' + fmt(r.pointsAll) + 'P 현금처럼') + '</div>';
     h += '</section>';
+    // 일시불 vs 구독 한눈에 (2026-11-04 · 경쟁사 비교표) — 이 상품의 시흥몰 일시불가가 있을 때만
+    if (lump > 0) {
+      var disc = (r.prepayDisc || 0) + (r.autoDisc || 0), cmpRow = function (k, a, b, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th scope="row">' + k + '</th><td>' + a + '</td><td>' + b + '</td></tr>'; };
+      h += '<section class="subtab-field subtab-vs"><div class="subtab-legend">일시불 vs 구독 한눈에</div><table class="subtab-vs-t"><thead><tr><th></th><th>일시불 구매</th><th>AI 구독 ' + r.years + '년</th></tr></thead><tbody>' +
+        cmpRow('결제 방식', '한 번에 결제', '월 ' + fmt(r.finalMonthly) + '원 × ' + r.months + '개월') +
+        cmpRow('제품 금액', fmt(lump) + '원', fmt(r.total) + '원') +
+        (disc ? cmpRow('구독 할인', '-', '-' + fmt(disc) + '원', 'is-blue') : '') +
+        (r.cardTotal ? cmpRow('제휴카드 혜택', '-', '-' + fmt(r.cardTotal) + '원', 'is-blue') : '') +
+        (r.pointsAll ? cmpRow('포인트', '-', (cash ? '+' : '-') + fmt(r.pointsAll) + 'P' + (cash ? ' 따로 적립' : ''), 'is-blue') : '') +
+        cmpRow('무상수리', '1년', r.years + '년 내내') +
+        cmpRow('최종 부담', fmt(lump) + '원', fmt(r.netTotal) + '원', 'is-total') +
+        '</tbody></table>' + (r.netTotal < lump ? '<p class="subtab-vs-note">구독이 일시불보다 <b>' + fmt(lump - r.netTotal) + '원</b> 덜 들어요 · 상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정</p>' : '<p class="subtab-vs-note">목돈 없이 월 납부로 시작하고, 약정 기간 내내 무상수리를 받습니다.</p>') + '</section>';
+    }
 
     var cond = r.years + '년 약정 · ' + careLabel(r.care) + (r.prepay ? ' · 선납 ' + Math.round(r.prepay * 100) + '%' : '') +
       (r.cardTotal ? ' · ' + state.card + ' 적용' : '');

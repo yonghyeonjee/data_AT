@@ -222,3 +222,66 @@ def static_js(models, path):
     s = '/* 구독센터 모델별 정적 페이지 목록 (tools/gudok/build_gudok.py · 직접 고치지 마세요) */\nwindow.SUB_STATIC={"m":"%s"};\n' % ' '.join(models)
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(s)
+
+
+# ---------- 품목·홈 페이지 원본에 넣는 목록·구조화 데이터 (2026-11-04 · 2순위·3순위) ----------
+# sub_shop.js 의 PAGES 세부유형 규칙과 같다
+PAGE_SEG = {'aicombo': r'콤보', 'washer': r'^(드럼|전자동|세탁기\+건조기)', 'dryer': r'^건조기', 'airdresser': r'벌식',
+            'dishwasher': r'인용|카운터탑', 'induction': r'전기레인지|인덕션|후드'}
+OG_IMG = 'https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_4269136848/1c46bcff18e426d9029809f031d477f8_66974.png'   # 시흥몰 구독센터 배너 (공유 미리보기)
+STORE = {'name': '삼성스토어 시흥', 'legal': '(주)삼성앤텍', 'tel': '031-8042-3166',
+         'street': '서해안로1685번길 12', 'locality': '시흥시', 'region': '경기도', 'country': 'KR',
+         'hours': ['Mo-Su 10:30-20:00']}
+
+
+def cat_models(M, key, cats):
+    rx = PAGE_SEG.get(key)
+    out = []
+    for m, v in M.idx['m'].items():
+        if v[0] not in cats:
+            continue
+        seg = (M.plans.get(v[0], {}).get(m) or {}).get('s', '')
+        if rx and not (seg and re.search(rx, seg)):
+            continue
+        out.append(m)
+    return sorted(out, key=lambda m: (M.idx['m'][m][1], m))
+
+
+def cat_list_html(M, models, href):
+    """sub_shop.js 가 목록을 그리기 전(또는 JS 없이) 보이는 모델 목록 — 색상만 다른 모델은 한 줄로"""
+    fam, order = {}, []
+    for m in models:
+        k = family_key(m)
+        if k not in fam:
+            fam[k] = []; order.append(k)
+        fam[k].append(m)
+    li = []
+    for k in order:
+        ms = fam[k]; i = M.info(ms[0]); name = M.product_name(i)
+        li.append('<li><a href="%s">%s</a> <span>%s · 월 %s원~</span>%s</li>' % (
+            e(href(ms[0])), e(name), e(ms[0]), fmt(i['min']),
+            (' <small>다른 색상 ' + ' · '.join('<a href="%s">%s</a>' % (e(href(x)), e(x)) for x in ms[1:]) + '</small>') if len(ms) > 1 else ''))
+    return '<ul class="ss-static-list">' + ''.join(li) + '</ul>'
+
+
+def faq_items(body):
+    out = []
+    for q, a in re.findall(r'<dt>(.*?)</dt>\s*<dd>(.*?)</dd>', body, re.S):
+        strip = lambda s: re.sub(r'<[^>]+>', '', s).replace('&amp;', '&').replace('&quot;', '"').replace('&#x27;', "'").replace('&lt;', '<').replace('&gt;', '>').strip()
+        out.append({'@type': 'Question', 'name': strip(q), 'acceptedAnswer': {'@type': 'Answer', 'text': strip(a)}})
+    return out
+
+
+def ld_tag(objs):
+    """정적 구조화 데이터 — data-ss-static 에 종류를 적어 sub_shop.js 가 같은 종류를 또 넣지 않게 한다"""
+    types = ' '.join(o['@type'] for o in objs)
+    return '<script type="application/ld+json" data-ss-static="%s">%s</script>\n' % (types, json.dumps(objs if len(objs) > 1 else objs[0], ensure_ascii=False).replace('</', '<\\/'))
+
+
+def store_ld(site, home):
+    s = STORE
+    return {'@context': 'https://schema.org', '@type': 'ElectronicsStore', 'name': s['name'], 'legalName': s['legal'], 'url': site + home,
+            'telephone': s['tel'], 'image': 'https://db.samsungat.co.kr/sdp/sub/img/partner_cert_2026.jpg',
+            'address': {'@type': 'PostalAddress', 'streetAddress': s['street'], 'addressLocality': s['locality'], 'addressRegion': s['region'], 'addressCountry': s['country']},
+            'openingHours': s['hours'], 'brand': {'@type': 'Brand', 'name': 'Samsung'},
+            'description': '삼성전자 B2B AI 구독 파트너 · 삼성 AI 구독클럽 공식 파트너 매장. 가정·사업자 가전 구독 상담.'}

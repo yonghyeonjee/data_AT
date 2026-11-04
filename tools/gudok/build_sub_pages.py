@@ -200,12 +200,36 @@ def home_body():
         <ul class="ss-points"><li>구독 모델 1,000여 개</li><li>제휴카드 청구할인</li><li>선납 할인</li><li>방문케어 · 무상수리</li></ul>
     </header>
 
-    <!-- 11월 행사 배너: 시흥몰 메인 1번 슬라이드·구독 전용몰 목록과 같은 그림(글자 없음)에 같은 문구를 얹음 · 기간이 지나면 sub_shop.js 가 지운다 -->
+    <!-- 11월 행사 배너 (시흥몰 메인 슬라이드와 같은 그림 · 2026-11-04 여러 장 · 기간이 지나면 sub_shop.js 가 지운다 · 한 장 남으면 넘김 없음)
+         1) AI콤보·TV 행사(글자 없는 그림 + 문구)  2) 구독 페스티벌 최대 20%%  3) 혼수·입주·이사(휴대폰 그림만 있어 휴대폰에서만) -->
+    <div class="ss-promos" data-ss-slider>
     <a class="ss-promo" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=167" data-cta="promo" data-until="2026-11-30">
         <img class="ss-promo-pc" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_511517418/e8c0372e596d3c62958cf7301b7f9e2d_43657.png" alt="삼성 AI 콤보 270만원 대 · 85인치 TV 250만원 대 - 방문상담만 해도 와인 증정 (삼성스토어 시흥 11월 구독 행사)" width="1916" height="821">
         <img class="ss-promo-m" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_1053291314/9bf53cce2896f5ec0ede30a7c6841526_47297.png" alt="삼성 AI 콤보 270만원 대 · 85인치 TV 250만원 대 - 방문상담만 해도 와인 증정 (삼성스토어 시흥 11월 구독 행사)" width="640" height="800" loading="lazy">
         <div class="ss-promo-txt"><span>2026.11.01 ~ 2026.11.30</span><b>AI콤보 270만원 대<br>85인치 TV 250만원 대</b><p>방문상담만해도 와인 증정!!</p><strong>바로가기</strong></div>
     </a>
+    <a class="ss-promo" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/subscribe_festival.html" data-cta="promo_festival" data-until="2026-11-30">
+        <img class="ss-promo-pc ss-promo-all" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_511517418/b44fa7bfdba0319cca2f858dc98766ab_28852.png" alt="삼성 구독 페스티벌 최대 20%% 할인 (삼성스토어 시흥 11월)" width="1919" height="820" loading="lazy">
+    </a>
+    <a class="ss-promo is-m-only" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=83" data-cta="promo_wedding">
+        <img class="ss-promo-m" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_1053291314/d38f8113f116d5a6ee2a24f3802840e6_86467.png" alt="혼수·입주·이사 가전 구독 혜택 (삼성스토어 시흥)" width="1122" height="1402" loading="lazy">
+    </a>
+    </div>
+
+    <!-- 이달의 혜택 — 시흥몰 맨 위 혜택 띠와 같은 내용 (사은품은 구체 품목을 적지 않는다 · 2026-11-04) -->
+    <section class="ss-sec ss-month">
+        <h2>이달의 혜택 <small>2026.11.01 ~ 11.30</small></h2>
+        <ul class="ss-month-list">
+            <li data-until="2026-11-30"><b>🎉 구독 페스티벌 최대 20%% 할인</b><p>상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정</p>
+                <span><a href="https://www.samsungsh.co.kr/main/html.php?htmid=service/subscribe_festival.html" data-cta="month_festival">상세보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html" data-cta="month_festival_consult">구독 상담 신청</a></span></li>
+            <li><b>💍 혼수 · 입주 · 이사 최대 1645만원 혜택</b><p>여러 대를 한 번에 — 상시 진행</p>
+                <span><a href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=83" data-cta="month_wedding">상세보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html?evt=wedding" data-cta="month_wedding_consult">상담 신청</a></span></li>
+            <li data-until="2026-11-30" id="b2b"><b>🏢 사업자 전용 B2B 구독 페스티벌</b><p>사업자 전용 · 기본 20%% 할인 + 최대 30%% 할인 · 삼성전자 B2B AI 구독 파트너</p>
+                <span><a href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=121" data-cta="month_b2b">상세보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html?evt=b2b" data-cta="month_b2b_consult">사업자 견적 문의</a></span></li>
+            <li><b>📱 갤럭시 탭 · 북 구독</b><p>갤럭시 자급제·탭·북도 월 구독으로</p>
+                <span><a href="https://www.samsungsh.co.kr/board/view.php?page=1&amp;bdId=blog&amp;sno=132" data-cta="month_galaxy">상세보기</a><a class="is-main" href="/main/html.php?htmid=subscribe/sub_c_galaxy.html" data-cta="month_galaxy_list">구독 가격 보기</a></span></li>
+        </ul>
+    </section>
 
 <section class="ss-sec">
         <h2>월 구독료 가격대별로 보기</h2>

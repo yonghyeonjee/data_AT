@@ -195,7 +195,29 @@ class Site:
         cats = PAGE_CATS.get(key, []) if kind == 'cat' else HOME_CATS if kind == 'home' else []
         band = self.bundle_band() if kind in ('home', 'cat') else ''
         body = self.inject_home(body, self.persona_section(), band) if kind == 'home' else body + band
-        return (self.head(title, desc, kw, self.url + fname) +
+        # 2026-11-04 (2·3순위): 원본 HTML 에 모델 목록·가격 제목·구조화 데이터 — JS 가 못 도는 검색 로봇(네이버 Yeti)도 읽게
+        lds, M = [], getattr(self, 'M', None)
+        crumbs = [{'@type': 'ListItem', 'position': 1, 'name': '구독센터', 'item': self.site + self.dir + 'index.html'}]
+        if kind == 'cat' and M:
+            models = MP.cat_models(M, key, cats)
+            if models:
+                name = re.sub(r'^삼성 | 구독 가격.*$', '', re.search(r'<h1>([^<]*)</h1>', body).group(1))
+                low = min(M.idx['m'][m][1] for m in models)
+                title = '삼성 %s 구독 가격 월 %s원~ | %s개 모델 비교 · 삼성스토어 시흥 구독센터' % (name, MP.fmt(low), MP.fmt(len(models)))
+                desc = '삼성 %s 구독 %s개 모델의 월 구독료를 한 번에 비교하세요. 월 %s원부터, 제휴카드 할인·선납 할인·방문케어 주기별 요금까지. 삼성스토어 시흥 구독 상담.' % (name, MP.fmt(len(models)), MP.fmt(low))
+                body = body.replace('<div data-ss="list"></div>', '<div data-ss="list">%s</div>' % MP.cat_list_html(M, models, self.static_href), 1)
+                crumbs.append({'@type': 'ListItem', 'position': 2, 'name': name + ' 구독', 'item': self.site + self.dir + fname})
+                lds.append({'@context': 'https://schema.org', '@type': 'ItemList', 'name': '삼성 %s 구독 가격' % name, 'numberOfItems': min(len(models), 100),
+                            'itemListElement': [{'@type': 'ListItem', 'position': n + 1, 'url': self.site + self.static_href(m), 'name': M.product_name(M.info(m)) + ' ' + m}
+                                                for n, m in enumerate(models[:100])]})
+        if kind == 'cat':
+            lds.append({'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': crumbs})
+        if kind == 'home':
+            lds.append(MP.store_ld(self.site, self.dir + 'index.html'))
+        faq = MP.faq_items(body)
+        if faq:
+            lds.append({'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': faq})
+        return (self.head(title, desc, kw, self.url + fname, og_image=MP.OG_IMG, extra_head=MP.ld_tag(lds) if lds else '') +
                 '<div id="subShopRoot">\n    <div data-ss="nav"></div>\n' + self.remap(body) +
                 '    <section class="ss-sec"><div data-ss="cta"></div></section>\n</div>\n' +
                 self.foot() + self.loader('shop', 'SUB_SHOP_CONFIG', 'SUB_SHOP_READY', kind, key, cats=cats) + '</body>\n</html>\n')
@@ -351,6 +373,7 @@ class Site:
     # ---------- 전체 ----------
     def build(self, index_js):
         os.makedirs(self.out, exist_ok=True)
+        self.M = MP.Models(os.path.dirname(index_js))   # 품목 페이지 목록·모델 페이지가 같이 쓴다
         pages = []   # (파일, 내용, (우선순위, 주기))
         for fname, t, d, k, body, kind, key in B.page_list():
             new = 'index.html' if fname == 'sub_home.html' else re.sub(r'^sub_(c_)?', '', fname)
@@ -375,7 +398,7 @@ class Site:
             with open(os.path.join(self.out, fname), 'w', encoding='utf-8', newline='\n') as f:
                 f.write(html_)
         # 모델별 정적 페이지 (2026-11-04)
-        M = MP.Models(os.path.dirname(index_js))
+        M = self.M
         mdir = os.path.join(self.out, 'm'); os.makedirs(mdir, exist_ok=True)
         for old in os.listdir(mdir):
             if old.endswith('.html'): os.remove(os.path.join(mdir, old))
