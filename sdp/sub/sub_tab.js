@@ -75,6 +75,7 @@ function main() {
     prepaySet: false, tierSet: false,   // 고객이 선납·실적 구간을 직접 골랐는가 — 고르기 전엔 모델이 바뀔 때마다 정책 기본값을 다시 넣는다 (2026-11-02)
     help: {},                           // 펼친 ? 안내 (help.prepay)
     card: '', tier: '', cardOn: true,
+    ptMode: CFG.pointMode === 'cash' ? 'cash' : 'melt',   // 포인트 받는 방법 (2026-11-04): melt = 구독료에 매월 나눠 반영해 보기 · cash = 실제 결제는 그대로, 포인트는 따로 적립(현금처럼 사용)
     open: !!CFG.openConditions    // [조건별 구독가 확인하기] 펼침 — 상품상세는 요약만, 구독 전용 페이지(sub_view)는 CFG.openConditions 로 처음부터 펼침
   };
   var root, els = {};
@@ -218,11 +219,15 @@ function main() {
     r.mpoints = mpt ? mpt.amt : 0; r.mpointsInfo = mpt;
     r.pointsAll = r.points + r.mpoints;
     r.expectedNet = r.expected - r.pointsAll;
+    // 포인트 받는 방법 (2026-11-04) — cash: 보여 주는 총액·월액 = 실제 결제액(포인트는 따로 적립) · melt(기본): 포인트를 약정 개월로 나눠 월 구독료에서 뺀 실부담
+    r.ptMode = o.ptMode === 'cash' ? 'cash' : 'melt';
+    r.netTotal = r.ptMode === 'cash' ? r.expected : r.expectedNet;
+    r.netMonthly = r.ptMode === 'cash' ? r.finalMonthly : Math.max(0, r.finalMonthly - r.pointsAll / months);
     var lump = lumpFor(info && info.model);
-    r.saving = (lump > 0 && r.expectedNet < lump && CFG.lumpCompare !== 'never') ? lump - r.expectedNet : 0;
+    r.saving = (lump > 0 && r.netTotal < lump && CFG.lumpCompare !== 'never') ? lump - r.netTotal : 0;
     return r;
   }
-  function opts() { return { prepay: state.prepay, card: state.card, tier: state.tier, cardOn: state.cardOn }; }
+  function opts() { return { prepay: state.prepay, card: state.card, tier: state.tier, cardOn: state.cardOn, ptMode: state.ptMode }; }
 
   /* ---------- 세부유형 표시 이름 ---------- */
   // DPS 세부유형 원문(Entry_75-79 · Premium_4K_-49 · SD Sound Device (4,5,6) …) → 고객용 (sub_find.js · sub_view.js 의 SEG_LABEL_RULES 와 같아야 한다)
@@ -524,7 +529,7 @@ function main() {
   // 탭 머리는 "총 ○○○원 (○○만원 저렴)" 만 — 월 납부액·조건은 패널에서 (2026-10-29)
   function shortWon(v) { return v >= 10000 ? fmt(Math.floor(v / 10000)) + '만원' : fmt(v) + '원'; }
   function setHeadPrice(r) {
-    els.subPrice.textContent = '총 ' + fmt(r.expectedNet) + '원';
+    els.subPrice.textContent = '총 ' + fmt(r.netTotal) + '원';
     els.subMonth.textContent = r.saving > 0 ? '(' + shortWon(r.saving) + ' 저렴)' : '';
   }
   function renderHead() {
@@ -587,10 +592,10 @@ function main() {
     var top = h; h = '';
 
     // 약정 기간
-    h += '<fieldset class="subtab-field"><legend>약정 기간</legend><div class="subtab-grid">';
+    h += '<fieldset class="subtab-field"><legend>약정 기간</legend><div class="subtab-grid subtab-grid--years">';
     sel.years.forEach(function (y) {
       h += optBtn('data-year="' + y + '"', y === state.year,
-        (y === maxYear ? '<i class="subtab-rec">추천</i>' : '') + '<b>' + y + '년 약정</b><span>' + (y * 12) + '개월 플랜</span>');
+        (y === maxYear ? '<i class="subtab-rec">추천</i>' : '') + '<b>' + y + '년</b><span>' + (y * 12) + '개월</span>', 'subtab-opt--center');
     });
     var pps = pointPromos(info);
     if (pps.length && !r.points) {
@@ -675,14 +680,24 @@ function main() {
     if (r.prepay) h += row('선납 할인 (선납 ' + Math.round(r.prepay * 100) + '% · ' + Math.round(r.prepayRate * 100) + '%)', '-' + fmt(r.prepayDisc) + '원', 'is-blue');
     h += row(esc(autopayLabel()), '-' + fmt(r.autoDisc) + '원', 'is-blue');
     if (r.cardTotal) h += row('제휴카드 혜택 (' + esc(state.card) + ')', '-' + fmt(r.cardTotal) + '원', 'is-blue');
-    h += row('결제 예상액', fmt(r.expected) + '원', r.pointsAll ? '' : 'is-total');
-    if (r.points) h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', '-' + fmt(r.points) + '원', 'is-blue is-point');
-    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + '</small>', '-' + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
-    if (r.pointsAll) h += row('포인트 반영 실제 구독료', fmt(r.expectedNet) + '원', 'is-total');
+    var cash = r.ptMode === 'cash', sg = cash ? '+' : '-';
+    h += row('결제 예상액' + (r.pointsAll && cash ? ' <small>실제 결제</small>' : ''), fmt(r.expected) + '원', r.pointsAll && !cash ? '' : 'is-total');
+    if (r.pointsAll && cash) h += row('월 납부액 <small>실제 결제</small>', '월 ' + fmt(r.finalMonthly) + '원', 'is-strong');
+    if (r.points) h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', sg + fmt(r.points) + (cash ? 'P' : '원'), 'is-blue is-point');
+    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + '</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
+    if (r.pointsAll && !cash) {
+      h += row('포인트 반영 실제 구독료', fmt(r.expectedNet) + '원', 'is-total');
+      h += row('포인트 반영 월 실부담 <small>포인트 ÷ ' + r.months + '개월</small>', '월 ' + fmt(r.netMonthly) + '원', 'is-strong');
+    }
+    if (r.pointsAll && cash) h += row('따로 받는 포인트 <small>결제 뒤 적립 · 현금처럼 사용</small>', '+' + fmt(r.pointsAll) + 'P', 'is-blue is-strong');
     if (r.prepay) h += row('└ 선납금 (신청 시 1회)', fmt(r.prepayAmt) + '원', 'is-muted');
     var cmp = CFG.lumpCompare || 'auto';
     if (lump > 0 && (cmp === 'always' || (cmp === 'auto' && r.saving))) h += row('일시불 구매가', fmt(lump) + '원', 'is-muted');
-    h += '</dl></section>';
+    h += '</dl>';
+    if (r.pointsAll) h += '<div class="subtab-ptmode" role="radiogroup" aria-label="포인트 받는 방법"><p>포인트 받는 방법을 골라 보세요</p>' +
+      optBtn('data-ptmode="melt" role="radio" aria-checked="' + !cash + '"', !cash, '<b>구독료에 매월 녹이기</b><span>포인트만큼 월 ' + fmt(Math.max(0, r.finalMonthly - r.pointsAll / r.months)) + '원 부담으로 계산</span>') +
+      optBtn('data-ptmode="cash" role="radio" aria-checked="' + cash + '"', cash, '<b>포인트로 따로 받기</b><span>월 ' + fmt(r.finalMonthly) + '원 결제 · ' + fmt(r.pointsAll) + 'P 현금처럼 사용</span>') + '</div>';
+    h += '</section>';
 
     var cond = r.years + '년 약정 · ' + careLabel(r.care) + (r.prepay ? ' · 선납 ' + Math.round(r.prepay * 100) + '%' : '') +
       (r.cardTotal ? ' · ' + state.card + ' 적용' : '');
@@ -692,12 +707,12 @@ function main() {
       '<div class="subtab-savebox" role="note"><span class="subtab-savebox-label">선택한 혜택 적용 시 일시불 구매보다</span>' +
         '<strong>' + fmt(r.saving) + '원 저렴해요</strong>' +
         '<div class="subtab-cmp"><div><em>일시불 구매가</em><b>' + fmt(lump) + '원</b></div><i aria-hidden="true"></i>' +
-        '<div class="is-sub"><em>' + r.years + (r.pointsAll ? '년 실제 구독료<small>포인트 반영</small>' : '년 구독 총액') + '</em><b>' + fmt(r.expectedNet) + '원</b></div></div>' +
+        '<div class="is-sub"><em>' + r.years + (r.pointsAll && !cash ? '년 실제 구독료<small>포인트 반영</small>' : r.pointsAll ? '년 결제 총액<small>포인트 ' + fmt(r.pointsAll) + 'P 별도</small>' : '년 구독 총액') + '</em><b>' + fmt(r.netTotal) + '원</b></div></div>' +
         '<span class="subtab-savebox-sub">' + esc(cond) + '</span></div>' :
       // 아니면 월 구독료 + 총액
       '<div class="subtab-monthbox" role="note"><span class="subtab-monthbox-label">선택한 혜택 적용 시 월 구독료</span>' +
-        '<strong>월 ' + fmt(r.finalMonthly) + '원</strong>' +
-        '<span class="subtab-savebox-sub">' + r.years + (r.pointsAll ? '년 실제 구독료 ' : '년 구독 총액 ') + fmt(r.expectedNet) + '원 · ' + esc(cond) + '</span></div>';
+        '<strong>월 ' + fmt(r.netMonthly) + '원</strong>' + (r.pointsAll ? '<span class="subtab-savebox-sub">' + (cash ? '포인트 ' + fmt(r.pointsAll) + 'P 따로 적립' : '포인트 매월 반영 · 실제 결제 월 ' + fmt(r.finalMonthly) + '원') + '</span>' : '') +
+        '<span class="subtab-savebox-sub">' + r.years + (r.pointsAll && !cash ? '년 실제 구독료 ' : r.pointsAll ? '년 결제 총액 ' : '년 구독 총액 ') + fmt(r.netTotal) + '원 · ' + esc(cond) + '</span></div>';
     if (POL.texts.notice) h += '<p class="subtab-note">' + esc(POL.texts.notice) + '</p>';   // 안내 작은 글씨는 [조건별 구독가 확인하기] 안에만 (2026-11-03)
     h = top + sum +
       '<button type="button" class="subtab-acc" data-acc aria-expanded="' + state.open + '">조건별 구독가 확인하기<i aria-hidden="true"></i></button>' +
@@ -804,6 +819,8 @@ function main() {
       state.cycle = +t.getAttribute('data-cycle'); renderPanel(); track('sub_tab_cycle', { sub_cycle: state.cycle });
     } else if (t.hasAttribute('data-prepay')) {
       state.prepay = +t.getAttribute('data-prepay'); state.prepaySet = true; renderPanel(); track('sub_tab_prepay', { sub_prepay: state.prepay });
+    } else if (t.hasAttribute('data-ptmode')) {
+      state.ptMode = t.getAttribute('data-ptmode') === 'cash' ? 'cash' : 'melt'; renderPanel(); track('sub_tab_ptmode', { sub_ptmode: state.ptMode });
     } else if (t.hasAttribute('data-help')) {
       var hk = t.getAttribute('data-help'); state.help[hk] = !state.help[hk]; renderPanel(); track('sub_tab_help', { sub_help: hk, sub_open: !!state.help[hk] });
     } else if (t.hasAttribute('data-cta')) {
