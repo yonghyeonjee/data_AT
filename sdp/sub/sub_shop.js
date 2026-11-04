@@ -123,9 +123,17 @@ window.SUB_SHOP_READY = true;
   }
   // 주소에 ? 가 없으면 ? 로, 있으면 & 로 잇는다 (고도몰 html.php?htmid=… · /data/gudok/find.html 모두)
   function withQ(u, q) { return q ? u + (u.indexOf('?') < 0 ? '?' : '&') + q : u; }
+  // 모델별 정적 페이지(m/<모델>.html · 2026-11-04 · 검색엔진용) — 있으면 그 주소, 없으면 view.html?model= (목록 = sdp/sub/sub_static.js)
+  function staticView(m) {
+    var S = window.SUB_STATIC, b = CFG.viewStatic;
+    if (!S || !b) return '';
+    if (!S.set) { S.set = {}; String(S.m || '').split(' ').forEach(function (x) { if (x) S.set[x] = 1; }); }
+    return S.set[m] ? b + String(m).replace(/\//g, '_') + '.html' : '';
+  }
+  function modelHref(base, m, q) { var s = staticView(m); return s ? s + (q ? '?' + q : '') : base + encodeURIComponent(m) + (q ? '&' + q : ''); }
   function catHref(key) { return LINK.cat + key + '.html'; }
   function viewHref(model, medium) {
-    return LINK.view + encodeURIComponent(model) + '&utm_source=' + UTM + '&utm_medium=' + (medium || 'list');
+    return modelHref(LINK.view, model, 'utm_source=' + UTM + '&utm_medium=' + (medium || 'list'));
   }
   // SamSungSubscription.html 자동채움 파라미터 (sub_find.js 와 같은 형식)
   function consultHref(r, where) {
@@ -634,7 +642,7 @@ window.SUB_SHOP_READY = true;
       var list = rowsOf(p).sort(function (a, b) { return a.min - b.min; }).slice(0, 100);
       ld({ '@context': 'https://schema.org', '@type': 'ItemList', name: '삼성 ' + p.name + ' 구독 가격', numberOfItems: list.length,
         itemListElement: list.map(function (r, i) {
-          return { '@type': 'ListItem', position: i + 1, url: abs(LINK.view + encodeURIComponent(r.model)), name: displayName(r) + ' ' + r.model };
+          return { '@type': 'ListItem', position: i + 1, url: abs(modelHref(LINK.view, r.model)), name: displayName(r) + ' ' + r.model };
         }) });
     }
     if (CFG.page === 'home') {

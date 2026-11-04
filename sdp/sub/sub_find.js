@@ -408,8 +408,16 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       return '<a class="sf-hot-a" href="' + esc(href) + '" data-cta="hot" data-model="' + esc(h[0]) + '">' + esc(h[1]) + (r ? ' <em>월 ' + fmt(r.min) + '원~</em>' : '') + '</a>';
     }).join('');
   }
+  // 모델별 정적 페이지(m/<모델>.html · 2026-11-04 · 검색엔진용) — 있으면 그 주소, 없으면 view.html?model= (목록 = sdp/sub/sub_static.js)
+  function staticView(m) {
+    var S = window.SUB_STATIC, b = CFG.viewStatic;
+    if (!S || !b) return '';
+    if (!S.set) { S.set = {}; String(S.m || '').split(' ').forEach(function (x) { if (x) S.set[x] = 1; }); }
+    return S.set[m] ? b + String(m).replace(/\//g, '_') + '.html' : '';
+  }
+  function modelHref(base, m, q) { var s = staticView(m); return s ? s + (q ? '?' + q : '') : base + encodeURIComponent(m) + (q ? '&' + q : ''); }
   function viewHref(r) {
-    return CFG.viewUrl + encodeURIComponent(r.model) + '&utm_source=sub_find&utm_medium=list&utm_campaign=' + encodeURIComponent(r.model);
+    return modelHref(CFG.viewUrl, r.model, 'utm_source=sub_find&utm_medium=list&utm_campaign=' + encodeURIComponent(r.model));
   }
   function card(r) {
     var title = r.name || r.model;
@@ -459,7 +467,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     var nav = document.createElement('div');
     nav.id = 'subShopNav';
     root.parentNode.insertBefore(nav, root.parentNode.firstChild);   // 페이지 맨 위 (머리글보다 먼저)
-    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl,
+    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl, viewStatic: CFG.viewStatic,
       homeUrl: CFG.homeUrl, catUrl: CFG.catUrl, cardUrl: CFG.cardUrl, guideUrl: CFG.guideUrl };
     var b = CFG.dataBase || '/data/js/sub/', q = CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || (IDX && IDX.ver) || '');
     var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = b + 'sub_shop.css' + q; document.head.appendChild(l);

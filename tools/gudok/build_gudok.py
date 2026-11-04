@@ -11,7 +11,9 @@
   bundle.html                다품목 구독 계산기 (2026-10-30)
   card.html · guide.html     제휴카드 혜택 · 구독 안내
   find.html                  구독 상품 찾기
-  view.html?model=모델명       모델별 구독 상품 페이지
+  m/<모델>.html               모델별 구독 상품 정적 페이지 (2026-11-04 · 검색엔진용 · 계산기는 sub_view.js)
+  view.html?model=모델명       예전 주소 — 정적 페이지가 있으면 그리로 넘긴다(location.replace)
+  ../sdp/sub/sub_static.js    정적 페이지가 있는 모델 목록 (구독센터 JS 가 링크를 정적 주소로)
   sitemap_gudok.xml          검색엔진 제출용 (구독센터 페이지 + 모델 페이지 전부)
 
 빠르게 뜨도록 (2026-10-30)
@@ -25,6 +27,7 @@ import argparse, datetime, json, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_sub_pages as B  # noqa: E402
+import model_pages as MP  # noqa: E402  모델별 정적 페이지 (2026-11-04)
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SHOP = 'https://www.samsungsh.co.kr'
@@ -45,7 +48,7 @@ class Site:
         self.site, self.dir, self.out = site.rstrip('/'), dir_, out
         self.url = self.site + dir_
         self.links = dict(homeUrl=dir_ + 'index.html', catUrl=dir_, cardUrl=dir_ + 'card.html', guideUrl=dir_ + 'guide.html',
-                          findUrl=dir_ + 'find.html', viewUrl=dir_ + 'view.html?model=', bundleUrl=dir_ + 'bundle.html', consultUrl=CONSULT)
+                          findUrl=dir_ + 'find.html', viewUrl=dir_ + 'view.html?model=', viewStatic=dir_ + 'm/', bundleUrl=dir_ + 'bundle.html', consultUrl=CONSULT)
 
     def remap(self, s):
         """build_sub_pages 본문의 고도몰 주소(htmid=subscribe/…)를 이 사이트 주소로"""
@@ -60,7 +63,7 @@ class Site:
     def js_links(self):
         return ',\n        '.join("%s: '%s'" % kv for kv in self.links.items())
 
-    def head(self, title, desc, keywords, canonical, extra_css=''):
+    def head(self, title, desc, keywords, canonical, extra_css='', og_image='', extra_head=''):
         return '''<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -70,13 +73,12 @@ class Site:
 <title>%(title)s</title>
 <meta name="description" content="%(desc)s">
 <meta name="keywords" content="%(kw)s">
-<link rel="canonical" href="%(url)s">
-<meta property="og:type" content="website">
+%(canon)s<meta property="og:type" content="website">
 <meta property="og:site_name" content="삼성스토어 시흥">
 <meta property="og:title" content="%(title)s">
 <meta property="og:description" content="%(desc)s">
 <meta property="og:url" content="%(url)s">
-<link rel="preconnect" href="%(dc_origin)s" crossorigin>
+%(ogimg)s%(xhead)s<link rel="preconnect" href="%(dc_origin)s" crossorigin>
 <link rel="dns-prefetch" href="%(dc_origin)s">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://images.samsung.com">
@@ -102,6 +104,8 @@ class Site:
 </div></div>
 <main class="gd-main">
 ''' % dict(icon=ICON, title=e(title), desc=e(desc), kw=e(keywords), url=e(canonical), tel=B.TEL, css=extra_css, shop=SHOP,
+           canon=('<link rel="canonical" href="%s">\n' % e(canonical)) if canonical else '',
+           ogimg=('<meta property="og:image" content="%s">\n' % e(og_image)) if og_image else '', xhead=extra_head,
            dc_origin=re.sub(r'^(https?://[^/]+).*$', r'\1', B.DC))
 
     def foot(self):
@@ -113,7 +117,7 @@ class Site:
 </div></footer>
 ''' % dict(tel=B.TEL, home=self.dir + 'index.html', bundle=self.dir + 'bundle.html', consult=CONSULT, shop=SHOP, sitemap=self.dir + 'sitemap.html')
 
-    def loader(self, name, cfg_var, ready_var, page, key='', cats=None, preload=None, before_ui=''):
+    def loader(self, name, cfg_var, ready_var, page, key='', cats=None, preload=None, before_ui='', cfg_extra=''):
         """데이터센터 파일을 HTML 에 정적 태그로 적는다 → 브라우저가 HTML 을 받자마자 전부 동시에 내려받는다 (2026-11-02 · 전엔 version.js → 데이터 → 화면 3단계 순차)
            - 데이터 파일(version·index·catalog·cards·policy·plans) 은 <script src> 로 바로 실행 (순서대로 실행되므로 안전)
            - 화면 파일(sub_<name>.js · 메뉴용 sub_shop.js · 계산기 sub_tab.js) 은 <link rel=preload> 로 먼저 받아 두고, 데이터센터를 읽었는지 판단한 뒤 같은 주소로 실행
@@ -137,10 +141,10 @@ class Site:
         extraPoints: [],""" % (B.API.replace('fn_sub_catalog', 'fn_sub_goods_map'), B.API_KEY, B.API, B.API_KEY, GOODS_URL, self.site),
             'bundle': """catalogApi: { url: '%s', key: '%s', timeout: 3000 },
         site: '%s',""" % (B.API, B.API_KEY, self.site),
-        }[name]
+        }[name] + cfg_extra
         c = cfg_var
         dc = B.DC
-        data = ['sub_index.js', 'sub_catalog.js', 'sub_cards.js', 'sub_policy.js'] + ['sub_plans_%s.js' % k for k in (cats or [])]
+        data = ['sub_index.js', 'sub_static.js', 'sub_catalog.js', 'sub_cards.js', 'sub_policy.js'] + ['sub_plans_%s.js' % k for k in (cats or [])]
         css = ['sub_shop.css'] + (['sub_%s.css' % name] if name != 'shop' else []) + (['sub_tab.css'] if name == 'view' else [])
         pre = ['sub_%s.js' % name] + (['sub_shop.js'] if name != 'shop' else []) + [f for f in (preload or []) if f not in ('sub_%s.js' % name, 'sub_shop.js')]
         tag_css = ''.join('<link rel="stylesheet" href="%s%s">\n' % (dc, f) for f in css)
@@ -256,11 +260,39 @@ class Site:
     })(SUB_VIEW_CONFIG);
 </script>
 '''
+        # 2026-11-04: 원본에 canonical 을 두지 않는다(모델마다 같은 view.html 을 가리키던 것) · 정적 페이지(m/<모델>.html)가 있으면 그리로 넘긴다
+        go = '''<script src="%(dc)ssub_static.js" charset="utf-8"></script>
+<script>
+    (function () {
+        var m = (location.search.match(/[?&]model=([^&]*)/) || [])[1]; if (!m) return;
+        try { m = decodeURIComponent(m.replace(/\\+/g, ' ')); } catch (e) {}
+        m = m.replace(/\\s+/g, '').toUpperCase();
+        var S = window.SUB_STATIC; if (!S || (' ' + S.m + ' ').indexOf(' ' + m + ' ') < 0) return;
+        var q = location.search.replace(/([?&])model=[^&]*&?/, '$1').replace(/[?&]$/, '');
+        location.replace('%(dir)sm/' + m.replace(/\\//g, '_') + '.html' + q + location.hash);
+    })();
+</script>
+''' % dict(dc=B.DC, dir=self.dir)
         return (self.head('삼성 가전 구독 상품 | 삼성스토어 시흥',
                           '삼성 AI 구독 모델의 약정·케어·제휴카드별 월 구독료를 확인하고 구독 상담을 신청하세요. 삼성스토어 시흥.',
-                          '삼성 가전 구독, 삼성 구독료, AI 구독클럽, 삼성스토어 시흥', self.url + 'view.html') +
+                          '삼성 가전 구독, 삼성 구독료, AI 구독클럽, 삼성스토어 시흥', self.url + 'view.html', extra_head=go).replace(
+                              '<link rel="canonical" href="%s">\n' % e(self.url + 'view.html'), '') +
                 '<div id="subViewRoot"><p class="sv-loading">구독 상품을 불러오는 중…</p></div>\n' +
                 self.foot() + self.loader('view', 'SUB_VIEW_CONFIG', 'SUB_VIEW_READY', 'view', before_ui=pre_js, preload=['sub_tab.js']) + '</body>\n</html>\n')
+
+    def static_href(self, m):
+        return self.dir + 'm/' + m.replace('/', '_') + '.html'   # 사운드바 HW-Q990H/KR 처럼 / 가 든 모델명은 _ 로 (JS 도 같다)
+
+    def model_page(self, M, m):
+        i = M.info(m)
+        title, full, desc, kw = MP.page_meta(M, i)
+        canon = self.site + self.static_href(m)
+        ld = MP.json_ld(M, i, title, canon, self.site, self.links)
+        body = MP.body_html(M, i, title, self.links, self.static_href)
+        return (self.head(full, desc, kw, canon, og_image=i['img'], extra_head=ld) +
+                '<div id="subViewRoot" data-model="%s">%s</div>\n' % (e(m), body) +
+                self.foot() + self.loader('view', 'SUB_VIEW_CONFIG', 'SUB_VIEW_READY', 'view', preload=['sub_tab.js', 'sub_plans_%s.js' % i['cat']],
+                                          cfg_extra="\n        model: '%s'," % m) + '</body>\n</html>\n')
 
     def bundle_page(self):
         css = '''  .sb-hero { margin:16px 0 24px; }
@@ -309,7 +341,7 @@ class Site:
         body.append('<section class="top"><h2>구독센터</h2><ul>' + ''.join('<li><a href="%s">%s</a></li>' % (self.dir + f, e(n)) for f, n in pages) + '</ul></section>')
         for cat, models in models_by_cat:
             body.append('<section><h2>삼성 %s 구독 모델 <small>(%d개)</small></h2><ul>' % (e(cat_names.get(cat, cat)), len(models)) +
-                        ''.join('<li><a href="%sview.html?model=%s">%s</a></li>' % (self.dir, m, m) for m in models) + '</ul></section>')
+                        ''.join('<li><a href="%s">%s</a></li>' % (self.static_href(m), m) for m in models) + '</ul></section>')
         body.append('</div>')
         return (self.head('삼성 가전 구독 전체 페이지 · 모델별 구독 상품 목록 | 삼성스토어 시흥 구독센터',
                           '삼성스토어 시흥 구독센터의 모든 페이지와 구독 가능한 삼성 가전 모델 전체 목록. 냉장고·세탁기·TV·에어컨 등 모델별 월 구독료 페이지로 바로 이동하세요.',
@@ -342,6 +374,18 @@ class Site:
             assert '{' + '=' not in html_ and '{ #' not in html_, fname   # 고도몰 템플릿 문법이 남지 않게
             with open(os.path.join(self.out, fname), 'w', encoding='utf-8', newline='\n') as f:
                 f.write(html_)
+        # 모델별 정적 페이지 (2026-11-04)
+        M = MP.Models(os.path.dirname(index_js))
+        mdir = os.path.join(self.out, 'm'); os.makedirs(mdir, exist_ok=True)
+        for old in os.listdir(mdir):
+            if old.endswith('.html'): os.remove(os.path.join(mdir, old))
+        models = M.models()
+        for m in models:
+            fn = m.replace('/', '_')
+            assert re.match(r'^[A-Z0-9_-]+$', fn), m   # 파일 이름으로 쓸 수 있는 모델명만
+            with open(os.path.join(mdir, fn + '.html'), 'w', encoding='utf-8', newline='\n') as f:
+                f.write(self.model_page(M, m))
+        MP.static_js(models, os.path.join(os.path.dirname(index_js), 'sub_static.js'))
 
         today = datetime.date.today().isoformat()
         sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
@@ -353,7 +397,7 @@ class Site:
             src = open(index_js, encoding='utf-8').read()
             idx = json.loads(re.search(r'=\s*(\{.*\})\s*;?\s*$', src, re.S).group(1))
             for model in sorted(idx['m']):
-                sm.append('<url><loc>%s</loc><lastmod>%s</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>' % (e(self.url + 'view.html?model=' + model), today))
+                sm.append('<url><loc>%s</loc><lastmod>%s</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>' % (e(self.site + self.static_href(model)), today))
                 n_models += 1
         sm.append('</urlset>')
         with open(os.path.join(self.out, 'sitemap_gudok.xml'), 'w', encoding='utf-8', newline='\n') as f:
