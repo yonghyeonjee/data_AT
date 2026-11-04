@@ -242,7 +242,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       if (rules.length && !matchQuery(r, rules)) return false;
       if (!opts.ignoreCat && state.cat && r.cat !== state.cat) return false;
       if (!opts.ignoreSeg && state.seg && r.seg !== state.seg) return false;
-      return inBand(r, state.band);
+      return opts.ignoreBand || inBand(r, state.band);
     });
   }
   function sorted(list) {
@@ -258,18 +258,22 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       '<form class="sf-search" role="search" data-slot="form">' +
       '<input type="search" data-slot="q" placeholder="모델명·제품 검색 (예: 양문형, 식세기)" aria-label="구독 상품 검색" autocomplete="off">' +
       '<button type="submit">검색</button></form>' +
-      '<div class="sf-chips sf-cats" data-slot="cats" role="group" aria-label="카테고리"></div>' +
-      '<div class="sf-chips sf-segs" data-slot="segs" role="group" aria-label="세부 유형" hidden></div>' +
-      '<div class="sf-bar"><div class="sf-chips sf-bands" data-slot="bands" role="group" aria-label="월 구독료"></div>' +
+      '<div class="sf-hot" data-slot="hot"></div>' +
+      // 고르는 순서 (2026-11-04): ① 월 구독료(금액대) → ② 제품 종류 → ③ 세부 유형 — 아래 단계의 숫자는 위에서 고른 조건 안의 모델 수
+      '<div class="sf-step"><p class="sf-step-t"><b>1</b>월 구독료</p><div class="sf-chips sf-bands" data-slot="bands" role="group" aria-label="월 구독료"></div></div>' +
+      '<div class="sf-step"><p class="sf-step-t"><b>2</b>제품 종류</p><div class="sf-chips sf-cats" data-slot="cats" role="group" aria-label="카테고리"></div>' +
+      '<div class="sf-chips sf-segs" data-slot="segs" role="group" aria-label="세부 유형" hidden></div></div>' +
+      '<div class="sf-bar"><label class="sf-group"><input type="checkbox" data-group' + (state.group ? ' checked' : '') + '> 색상만 다른 모델은 하나로</label>' +
       '<select class="sf-sort" data-slot="sort" aria-label="정렬"></select></div>' +
       '<p class="sf-count" data-slot="count" aria-live="polite"></p>' +
       '<ul class="sf-grid" data-slot="grid"></ul>' +
       '<div class="sf-more-wrap"><button type="button" class="sf-more" data-slot="more" hidden>더 보기</button></div>' +
       '<p class="sf-note">* 월 구독료는 VAT 포함, 최저 요금제 기준입니다. 자동납부 5% 할인·제휴카드·선납 혜택은 상품 페이지 또는 상담에서 확인하세요. 실제 청구 금액과 다를 수 있습니다.</p>';
-    ['form', 'q', 'cats', 'segs', 'bands', 'sort', 'count', 'grid', 'more'].forEach(function (k) { els[k] = root.querySelector('[data-slot="' + k + '"]'); });
+    ['form', 'q', 'hot', 'cats', 'segs', 'bands', 'sort', 'count', 'grid', 'more'].forEach(function (k) { els[k] = root.querySelector('[data-slot="' + k + '"]'); });
     els.q.value = state.q;
     els.sort.innerHTML = SORTS.map(function (s) { return '<option value="' + s[0] + '">' + s[1] + '</option>'; }).join('');
     els.sort.value = state.sort;
+    drawHot();
 
     els.form.addEventListener('submit', function (ev) {
       ev.preventDefault();
@@ -320,12 +324,14 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       });
       if (state.seg && !segCnt[state.seg]) state.seg = '';
       els.segs.hidden = segList.length < 2;
-      els.segs.innerHTML = chip('data-seg', '', '전체 유형', !state.seg) +
+      els.segs.innerHTML = '<span class="sf-step-sub"><b>3</b>세부 유형</span>' + chip('data-seg', '', '전체 유형', !state.seg) +
         segList.map(function (s) { return chip('data-seg', s, esc(segLabel(s)), state.seg === s, segCnt[s]); }).join('');
     }
 
-    els.bands.innerHTML = BANDS.map(function (b) { return chip('data-band', b.k, b.label, state.band === b.k); }).join('') +
-      '<label class="sf-group"><input type="checkbox" data-group' + (state.group ? ' checked' : '') + '> 색상만 다른 모델은 하나로</label>';
+    var bBase = filtered({ ignoreBand: true, ignoreCat: true, ignoreSeg: true });
+    els.bands.innerHTML = BANDS.map(function (b) {
+      return chip('data-band', b.k, b.label, state.band === b.k, bBase.filter(function (r) { return inBand(r, b.k); }).length);
+    }).join('');
 
     var list = sorted(filtered({}));
     var total = list.length;
@@ -374,7 +380,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
   }
   // SamSungSubscription.html 의 자동채움 파라미터(product/purpose/model/memo/src/from) 사용
   function consultHref(r) {
-    var memo = r ? '[구독상품 찾기] ' + r.model + (r.seg ? ' (' + r.seg + ')' : '') + ' · 월 ' + fmt(r.min) + '원~'
+    var memo = r ? '[구독상품 찾기] ' + r.model + (r.seg ? ' (' + r.seg + ')' : '') + (r.min ? ' · 월 ' + fmt(r.min) + '원~' : '')
       : '[구독상품 찾기] 찾는 모델 없음' + (state.q ? ' · 검색어: ' + state.q : '');
     var cat = r ? r.cat : state.cat;
     var q = 'from=finder' +
@@ -390,6 +396,18 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
     return u + (u.indexOf('?') >= 0 ? '&' : '?') + q;
   }
   // 모든 모델은 구독 상품 페이지(sub_view)로 — 설정이 없으면 예전처럼 상품상세 구독탭/상담 신청으로
+  /* 자주 찾는 제품 (2026-11-04 · 매장 선정 · sub_shop.js HOT 와 같게) — 구독 요금이 있으면 상품 화면, 없으면 상담 */
+  var HOT = [['VR80F01ADG', '비스포크 AI 스팀 플러스'], ['WD90H25AHS', 'AI 콤보'], ['KU75MH80AFXKR', 'Mini LED 75인치'], ['RP13C1022Z1', '김치플러스 126L'],
+    ['RS84DB5602CW', '비스포크 양문형 846L'], ['SM-F971NZWPKOO', '갤럭시 Z 폴드8'], ['SM-X940NZAAKOO', '갤럭시 탭 S12 울트라'], ['NT940XJG-KC51G', '갤럭시 북6 프로']];
+  function drawHot() {
+    if (!els.hot) return;
+    els.hot.innerHTML = '<span class="sf-hot-t">🔥 자주 찾는 제품</span>' + HOT.map(function (h) {
+      var r = byModel[h[0]];
+      if (!r) rows.forEach(function (x) { if (x.model.indexOf(h[0]) === 0 && (!r || x.min < r.min)) r = x; });
+      var href = r && CFG.viewUrl ? viewHref(r) : consultHref(r || { model: h[0], min: 0, cat: '' });
+      return '<a class="sf-hot-a" href="' + esc(href) + '" data-cta="hot" data-model="' + esc(h[0]) + '">' + esc(h[1]) + (r ? ' <em>월 ' + fmt(r.min) + '원~</em>' : '') + '</a>';
+    }).join('');
+  }
   function viewHref(r) {
     return CFG.viewUrl + encodeURIComponent(r.model) + '&utm_source=sub_find&utm_medium=list&utm_campaign=' + encodeURIComponent(r.model);
   }
