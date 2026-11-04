@@ -423,14 +423,13 @@ window.SUB_SHOP_READY = true;
   /* ---------- 자주 찾는 인기 제품 (2026-11-04 · 매장 선정 · sub_find.js HOT 와 같게) ----------
      m: 모델(앞부분만 같아도 — 색상 코드가 붙은 구독 모델 중 가장 저렴한 것) · lump: 시흥몰 일시불 · 구독 요금이 없는 모델은 일시불 + 상담 */
   var HOT = [
-    { m: 'VR80F01ADG', name: '비스포크 AI 스팀 플러스', why: '5월 월 판매 2만 대', lump: 1480000, icon: '🧹' },
+    { m: 'VR80F01ADG', name: '비스포크 AI 스팀 플러스', why: '월 판매 2만 대', lump: 1480000, icon: '🧹' },
     { m: 'WD90H25AHS', name: 'AI 콤보 세탁건조기', why: '세탁건조기 판매 17% 증가', lump: 4050000, icon: '🌀' },
     { m: 'KU75MH80AFXKR', name: 'Mini LED MH80 75인치(189cm)', why: 'KCSI 29년 연속 1위', lump: 1800000, icon: '📺' },
     { m: 'RP13C1022Z1', name: '김치플러스 뚜껑형 126L', why: '미니 김치냉장고 검색 139% 증가', lump: 626000, icon: '🥬' },
     { m: 'RS84DB5602CW', name: '비스포크 양문형 846L', why: '구독 판매 비중 약 30%', lump: 1960000, icon: '🧊' },
-    { m: 'SM-F971NZWPKOO', name: '갤럭시 Z 폴드8 256GB', why: '사전판매 144만 대', lump: 2164000, icon: '📱' },
-    { m: 'SM-X940NZAAKOO', name: '갤럭시 탭 S12 울트라', why: '10월 출시 신제품', lump: 1899700, icon: '📱' },
-    { m: 'NT940XJG-KC51G', name: '갤럭시 북6 프로', why: '11월 행사 대상', lump: 2825000, icon: '💻' }
+    { m: 'SM-X940NZAAKOO', name: '갤럭시 탭 S12 울트라', why: '새로 나온 신제품', lump: 1899700, icon: '📱' },
+    { m: 'NT940XJG-KC51G', name: '갤럭시 북6 프로', why: '행사 대상 모델', lump: 2825000, icon: '💻' }
   ];
   function hotRow(h) {
     if (byModel[h.m]) return byModel[h.m];

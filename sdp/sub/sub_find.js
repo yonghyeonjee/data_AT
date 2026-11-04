@@ -398,7 +398,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
   // 모든 모델은 구독 상품 페이지(sub_view)로 — 설정이 없으면 예전처럼 상품상세 구독탭/상담 신청으로
   /* 자주 찾는 제품 (2026-11-04 · 매장 선정 · sub_shop.js HOT 와 같게) — 구독 요금이 있으면 상품 화면, 없으면 상담 */
   var HOT = [['VR80F01ADG', '비스포크 AI 스팀 플러스'], ['WD90H25AHS', 'AI 콤보'], ['KU75MH80AFXKR', 'Mini LED 75인치'], ['RP13C1022Z1', '김치플러스 126L'],
-    ['RS84DB5602CW', '비스포크 양문형 846L'], ['SM-F971NZWPKOO', '갤럭시 Z 폴드8'], ['SM-X940NZAAKOO', '갤럭시 탭 S12 울트라'], ['NT940XJG-KC51G', '갤럭시 북6 프로']];
+    ['RS84DB5602CW', '비스포크 양문형 846L'], ['SM-X940NZAAKOO', '갤럭시 탭 S12 울트라'], ['NT940XJG-KC51G', '갤럭시 북6 프로']];
   function drawHot() {
     if (!els.hot) return;
     els.hot.innerHTML = '<span class="sf-hot-t">🔥 자주 찾는 제품</span>' + HOT.map(function (h) {
