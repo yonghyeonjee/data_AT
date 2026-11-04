@@ -116,18 +116,24 @@ h1,h2,h3{margin:0}
 .hero .h .v{font-size:30px;font-weight:900;line-height:1.1}
 .hero .h .v small{font-size:14px;font-weight:600;opacity:.85}
 .hero .h .d{font-size:12px;opacity:.75}
-.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
-.g{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-.g .im{background:#fff;aspect-ratio:1/1;max-width:100%;display:flex;align-items:center;justify-content:center;padding:14px;font-size:48px}
-.g .im img{max-height:100%;max-width:100%;object-fit:contain}
-.g .b{padding:12px;display:flex;flex-direction:column;gap:4px;flex:1}
-.g .tag{align-self:flex-start;font-size:11px;font-weight:800;border-radius:6px;padding:2px 7px}
-.g .tag.s{background:var(--blue-soft);color:var(--sub)} .g .tag.l{background:var(--lump-soft);color:var(--lump)}
-.g .nm{font-weight:700;font-size:13.5px;line-height:1.35}
-.g .pr{margin-top:auto;padding-top:6px}
-.g .pr .m{font-size:22px;font-weight:900}
-.g .pr .m small{font-size:12px;font-weight:600;color:var(--mut)}
-.g .pr .o{font-size:12px;color:var(--mut)}
+/* 고객 보기 카드 — 구독센터 상품 페이지(view.html .sv-head) 와 같은 짜임: 사진 · 품목 · 상품명 · 모델명 · 월 구독료 · 배지 (2026-11-04) */
+.svl{display:flex;flex-direction:column;gap:12px}
+.svc{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;grid-template-columns:200px minmax(0,1fr) auto;gap:20px;align-items:start}
+.svc-img{aspect-ratio:1/1;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:48px}
+.svc-img img{width:100%;height:100%;object-fit:contain}
+.svc-cat{font-size:12.5px;color:var(--mut);margin:2px 0 4px}
+.svc-title{font-size:19px;font-weight:800;line-height:1.35;margin:0 0 4px;word-break:keep-all}
+.svc-model{font-size:12.5px;color:var(--mut);margin:0 0 10px} .svc-model b{color:var(--ink)}
+.svc-badge{display:inline-block;font-size:12px;border-radius:14px;padding:4px 10px;margin:0 0 10px}
+.svc.sub .svc-badge{background:var(--blue-soft);color:var(--sub)} .svc.lump .svc-badge{background:var(--lump-soft);color:var(--lump)}
+.svc-cmp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--mut)}
+.svc-cmp span{border:1px solid var(--line);border-radius:8px;padding:4px 8px;background:#fff;color:var(--ink)} .svc-cmp span b{font-weight:800} .svc-cmp span.on{border-color:var(--sub);background:var(--blue-soft);color:var(--sub)}
+.svc-pr{text-align:right;min-width:170px}
+.svc-pr small{display:block;font-size:12px;color:var(--mut)}
+.svc-pr .big{font-size:28px;font-weight:900;letter-spacing:-.02em;line-height:1.15} .svc.sub .big{color:var(--sub)} .svc.lump .big{color:var(--lump)}
+.svc-pr .big em{font-style:normal;font-size:13px;font-weight:700}
+.svc-pr s{display:block;font-size:12px;color:var(--mut)} .svc-pr .ln{font-size:12px;color:var(--mut);margin-top:6px} .svc-pr .pt{font-size:12.5px;color:var(--sub);font-weight:700;margin-top:4px}
+@media(max-width:720px){.svc{grid-template-columns:96px minmax(0,1fr)} .svc-pr{grid-column:1/-1;text-align:left;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline} .svc-pr .big{font-size:24px}}
 .g .pr .o s{opacity:.7}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:640px){.cmp{grid-template-columns:1fr}}
@@ -260,7 +266,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <div class="h"><span class="k">일시불 최종체감가</span><span class="v num" id="s_l">0<small>원</small></span><span class="d" id="s_l_d"></span></div>
     <div class="h"><span class="k">총 혜택 합계</span><span class="v num" id="s_b">0<small>원</small></span><span class="d">카드 청구할인 · 멤버십 포인트 · 선납 · 다품목 구독 할인 · 캐시백(송금)</span></div>
   </div>
-  <div class="gal" id="gal"></div>
+  <div class="svl" id="gal"></div>
   <div class="cmp">
     <div class="card">
       <h2>구독 · 총액 기준 <small id="c_sub_y"></small></h2>
@@ -577,9 +583,22 @@ function renderShow(){ if(!LAST) return; const {S,L}=LAST, name=Q.cust.name||'�
   $('s_m').innerHTML=(S.n?fmt(S.pay):'0')+'<small>원</small>'; $('s_m_d').textContent=S.n?`${S.preAmt?'선납 '+won(S.preAmt)+' 후 ':''}${S.maxM}개월 · 혜택 전 ${won(S.monthly)}/월`:'구독 품목 없음';
   $('s_l').innerHTML=(L.items.length?fmt(L.net):'0')+'<small>원</small>'; $('s_l_d').textContent=L.items.length?`삼성카드 6/12 ${L.months}개월 · 개월수별 납부 ${won(L.per)} · 결제가 ${won(L.amount)}`:'일시불 품목 없음';
   $('s_b').innerHTML=fmt(S.ben+L.ben)+'<small>원</small>';
-  $('gal').innerHTML=Q.items.map(it=>{ const r=S.R[it.m], im=imgOf(it.m);
-    if(it.mode==='sub'&&r) return `<div class="g"><div class="im">${im?`<img src="${esc(im)}" alt="">`:'📦'}</div><div class="b"><span class="tag s">구독 ${r.y}년 · ${esc(r.care)}</span><div class="nm">${esc(nameOf(it.m))}</div><div class="pr"><div class="m num">${fmt(r.finalMonthly)}<small>원/월</small></div><div class="o"><s>${won(r.monthly)}</s> 혜택 ${won(r.autoDisc+r.prepayDisc+r.multiOff+r.cardTotal+(r.pointsAll||0))}</div></div></div></div>`;
-    if(it.mode==='lump') return `<div class="g"><div class="im">${im?`<img src="${esc(im)}" alt="">`:'📦'}</div><div class="b"><span class="tag l">일시불</span><div class="nm">${esc(nameOf(it.m))}</div><div class="pr"><div class="m num">${fmt(it.lump)}<small>원</small></div><div class="o">${priceOf(it.m)&&priceOf(it.m)>it.lump?`<s>${won(priceOf(it.m))}</s> 매장 할인가`:'매장 할인가'}</div></div></div></div>`;
+  $('gal').innerHTML=Q.items.map(it=>{ const r=S.R[it.m], im=imgOf(it.m), info=INFO[it.m], seg=info&&info.s?' · '+esc(info.s):'';
+    const head=(cls)=>`<div class="svc ${cls}"><div class="svc-img">${im?`<img src="${esc(im)}" alt="">`:'📦'}</div><div class="svc-info">`+
+      `<p class="svc-cat">${esc(catOf(it.m)||'일시불 품목')}${seg}</p><h3 class="svc-title">${esc(nameOf(it.m))}</h3><p class="svc-model">모델명 <b>${esc(it.m)}</b>${it.free?' <span class="hint">(직접 입력)</span>':''}${it.note?' · '+esc(it.note):''}</p>`;
+    if(it.mode==='sub'&&r){
+      /* 약정 기간별 월 구독료 혜택가 — 같은 케어·카드·선납 조건으로 계약 기간만 바꿔 본다 (view.html 의 "조건별 구독가 확인하기") */
+      const ys=[...new Set(info.p.map(p=>p[0]))].sort((a,b)=>a-b);
+      const cmp=ys.map(y=>{ let pl=info.p.find(p=>p[0]===y&&p[1]===r.care)||info.p.filter(p=>p[0]===y).sort((a,b)=>a[3]-b[3])[0]; if(!pl) return '';
+        const x=y===r.y? r : C.calc(info, pl, { prepay:Q.cond.prepay, card:Q.cond.card, tier:Q.cond.tier, cardOn:Q.cond.cardOn&&!!Q.cond.card });
+        return `<span class="${y===r.y?'on':''}">${y}년 <b>월 ${fmt(Math.max(0,x.finalMonthly-(y===r.y?0:0)))}원</b></span>`; }).join('');
+      const ben=r.autoDisc+r.prepayDisc+r.multiOff+r.cardTotal+(r.pointsAll||0);
+      return head('sub')+`<p class="svc-badge">구독 ${r.y}년 · ${esc(r.care)} · 계약 기간 내 무상 A/S</p><div class="svc-cmp">계약 기간별 월 구독료 혜택가 ${cmp}</div></div>`+
+        `<div class="svc-pr"><small>월 구독료 혜택가</small><div class="big num">${fmt(r.finalMonthly)}<em>원/월</em></div><s>월 구독료 ${won(r.monthly)}</s>`+
+        `<div class="ln">총 구독료 ${won(r.total)} · 총 혜택 ${won(ben)}${r.prepayAmt?' · 선납금 '+won(r.prepayAmt):''}</div>`+
+        `${r.pointsAll?`<div class="pt">포인트 ${won(r.pointsAll)}${r.pointsInfo&&r.pointsInfo.months?' · '+r.pointsInfo.months+'개월 구독료 상당 포인트 지원':''}${r.mpoints?' · 멤버십 '+fmt(r.mpoints)+'P 포함':''}</div>`:''}</div></div>`; }
+    if(it.mode==='lump') return head('lump')+`<p class="svc-badge">일시불 · ${esc((LUMP&&LUMP.cards[L.kind]||{}).label||L.kind)} ${L.months}개월</p><div class="svc-cmp">${priceOf(it.m)&&priceOf(it.m)>it.lump?`<span>정가 ${won(priceOf(it.m))}</span>`:''}<span>청구할인·캐시백(송금)·최종체감가는 아래 일시불 합계에서</span></div></div>`+
+        `<div class="svc-pr"><small>① 결제가</small><div class="big num">${fmt(it.lump)}<em>원</em></div></div></div>`;
     return ''; }).join('');
   const T=(id,t)=>$(id).textContent=t;
   T('c_sub_y', S.maxM?(S.maxM/12)+'년 기준':''); T('c_sub_total',won(S.total)); T('c_sub_ben','−'+won(S.ben)); T('c_sub_net',won(S.net));
