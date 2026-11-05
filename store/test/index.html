@@ -6615,23 +6615,34 @@ function gnPageUrl(n){
   return 'https://'+m.domain+'/goods/goods_view.php?goodsNo='+encodeURIComponent(n.goods[0])+(n.status==='test'?'&gnote=on':'');
 }
 /* 목록 필터 (몰 · 상태 · 종류) — 같은 줄 안은 '또는', 줄끼리는 '그리고' · 아무것도 안 고르면 전부 · 이 기기에 기억 */
-let GN_F=(()=>{ try{ const v=JSON.parse(localStorage.getItem('gnFilter')||'{}'); return {mall:v.mall||[],st:v.st||[],kind:v.kind||[]}; }catch(e){ return {mall:[],st:[],kind:[]}; } })();
-function gnFSave(){ try{ localStorage.setItem('gnFilter',JSON.stringify(GN_F)); }catch(e){} }
-function gnFToggle(g,v){ const a=GN_F[g], i=a.indexOf(v); if(i<0) a.push(v); else a.splice(i,1); gnFSave(); renderGoodsNote(); }
-function gnFClear(){ GN_F={mall:[],st:[],kind:[]}; gnFSave(); renderGoodsNote(); }
-function gnFMall(ms){ const f=GN_F.mall; if(!f.length) return true; ms=ms||[]; return f.some(c=> c==='*' ? ms.includes('*') : (ms.includes(c)||ms.includes('*'))); }
-function gnFPass(n){ return gnFMall(n.malls||[n.mall]) && (!GN_F.st.length||GN_F.st.includes(n.status)) && (!GN_F.kind.length||GN_F.kind.includes(n.scope==='all'?'all':'goods')); }
-function gnFSpk(c){ return gnFMall([c.mall]) && (!GN_F.st.length||GN_F.st.includes(c.on===false?'off':'on')) && (!GN_F.kind.length||GN_F.kind.includes('all')); }
+/* 거르개 — 묶음마다 null = 전체(모두 고름) · 배열 = 고른 것만. [전체] 칩을 누르면 모두 고름/모두 풂, 하나를 풀면 [전체]도 풀리고, 다 고르면 [전체]가 켜진다 */
+const GN_FST=['on','test','off'], GN_FKIND=['all','goods'];
+function gnFAll(g){ return g==='mall' ? ((GN&&GN.malls)||[]).map(m=>m.code) : g==='st' ? GN_FST : GN_FKIND; }
+let GN_F=(()=>{ const o={mall:null,st:null,kind:null}; try{ const v=JSON.parse(localStorage.getItem('gnFilter')||'{}');
+  for(const g of ['mall','st','kind']){ let a=v[g]; if(!Array.isArray(a)) continue; a=a.filter(x=>x!=='*'); o[g]=(v.v===2||a.length)?a:null; } }catch(e){} return o; })();
+function gnFNorm(){ for(const g of ['mall','st','kind']){ const a=GN_F[g], all=gnFAll(g); if(a&&all.length&&all.every(x=>a.includes(x))) GN_F[g]=null; } }
+function gnFSave(){ try{ localStorage.setItem('gnFilter',JSON.stringify({v:2,...GN_F})); }catch(e){} }
+function gnFOn(g,v){ return GN_F[g]===null || GN_F[g].includes(v); }
+function gnFToggle(g,v){ const all=gnFAll(g);
+  if(v==='*') GN_F[g]= GN_F[g]===null ? [] : null;
+  else { let a=GN_F[g]===null ? all.slice() : GN_F[g].slice(); a=a.includes(v)?a.filter(x=>x!==v):a.concat(v); GN_F[g]=a; gnFNorm(); }
+  gnFSave(); renderGoodsNote(); }
+function gnFClear(){ GN_F={mall:null,st:null,kind:null}; gnFSave(); renderGoodsNote(); }
+function gnFMall(ms){ const f=GN_F.mall; if(f===null) return true; ms=ms||[]; return ms.includes('*') ? f.length>0 : f.some(c=>ms.includes(c)); }
+function gnFIn(g,v){ return GN_F[g]===null || GN_F[g].includes(v); }
+function gnFPass(n){ return gnFMall(n.malls||[n.mall]) && gnFIn('st',n.status) && gnFIn('kind',n.scope==='all'?'all':'goods'); }
+function gnFSpk(c){ return gnFMall([c.mall]) && gnFIn('st',c.on===false?'off':'on') && gnFIn('kind','all'); }
 function gnFilterBar(shown,total){
-  const malls=(GN&&GN.malls)||[], chip=(g,v,label,extra)=>`<button type="button" class="gf" aria-pressed="${GN_F[g].includes(v)}" onclick="gnFToggle('${g}','${v}')"><span class="bx" aria-hidden="true">${GN_F[g].includes(v)?'✓':''}</span>${extra||''}${label}</button>`;
-  const dot=c=>`<span class="dot" style="background:${c}"></span>`, any=GN_F.mall.length+GN_F.st.length+GN_F.kind.length;
+  gnFNorm();
+  const malls=(GN&&GN.malls)||[], chip=(g,v,label,extra)=>{ const on= v==='*' ? GN_F[g]===null : gnFOn(g,v); return `<button type="button" class="gf${v==='*'?' all':''}" aria-pressed="${on}" onclick="gnFToggle('${g}','${v}')"><span class="bx" aria-hidden="true">${on?'✓':''}</span>${extra||''}${label}</button>`; };
+  const dot=c=>`<span class="dot" style="background:${c}"></span>`, any=['mall','st','kind'].filter(g=>GN_F[g]!==null).length;
   /* 2줄 — ① 몰 ② 상태 · 종류 (옆으로 넘기지 않고 줄바꿈) · 맨 위 '보이는 수' 와 [모두 보기] */
   let h='<div class="gn-filter" role="group" aria-label="상품 안내 문구 거르기">'
     +`<div class="gf-top"><span>보이는 문구 <b class="gf-n">${any?shown+' / '+total:total}개</b>${any?' · 거르는 중':''}</span><button type="button" class="gf-x" onclick="gnFClear()" ${any?'':'disabled'}>필터 초기화</button></div>`;
   const grp=(l,c)=>`<div class="gf-grp"><span class="gf-l">${l}</span><div class="gf-c">${c}</div></div>`;
-  if(malls.length>1) h+='<div class="gf-r">'+grp('몰',chip('mall','*','전체 몰')+malls.map(m=>chip('mall',m.code,esc(m.name))).join(''))+'</div>';
-  h+='<div class="gf-r">'+grp('상태',chip('st','on','공개',dot('#1f9d55'))+chip('st','test','test',dot('#ff8a00'))+chip('st','off','꺼짐',dot('#9aa3ad')))
-    +grp('종류',chip('kind','all','전체 상품')+chip('kind','goods','상품 지정'))+'</div>';
+  if(malls.length>1) h+='<div class="gf-r">'+grp('몰',chip('mall','*','전체')+malls.map(m=>chip('mall',m.code,esc(m.name))).join(''))+'</div>';
+  h+='<div class="gf-r">'+grp('상태',chip('st','*','전체')+chip('st','on','공개',dot('#1f9d55'))+chip('st','test','test',dot('#ff8a00'))+chip('st','off','꺼짐',dot('#9aa3ad')))
+    +grp('종류',chip('kind','*','전체')+chip('kind','all','전체 상품')+chip('kind','goods','상품 지정'))+'</div>';
   h+='</div>';
   return h;
 }
@@ -6658,7 +6669,7 @@ function gnOpen(id){
   const L=(window.GoodsNote&&window.GoodsNote.POS_LABEL)||{price_below:'가격 아래'};
   const tones=[['blue','파랑'],['red','빨강'],['gray','회색'],['yellow','노랑'],['plain','상자 없음']];
   $('gnForm').innerHTML=`
-    <div><label>몰 (여러 개 고를 수 있음)</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_malls">${(GN.can_all?[{code:'*',name:'전체 몰'}]:[]).concat(GN.malls||[]).map(m=>`<span class="chip ${(n.malls||[n.mall]).includes(m.code)?'on':''}" data-v="${esc(m.code)}" onclick="gnMallPick(this)">${esc(m.name)}</span>`).join('')}</div><div class="gn-hint">전체 몰 = 지금 몰과 나중에 생기는 몰 모두 · 몰마다 상품번호가 달라서 상품 지정 문구를 여러 몰에 낼 때는 모델번호로 넣으세요</div></div>
+    <div><label>몰 (여러 개 고를 수 있음)</label><div style="display:flex;gap:6px;flex-wrap:wrap" id="gn_malls">${(GN.can_all?[{code:'*',name:'전체 몰'}]:[]).concat(GN.malls||[]).map(m=>`<span class="chip ${((n.malls||[n.mall]).includes(m.code)||(n.malls||[n.mall]).includes('*'))?'on':''}" data-v="${esc(m.code)}" onclick="gnMallPick(this)">${esc(m.name)}</span>`).join('')}</div><div class="gn-hint">전체 몰 = 지금 몰과 나중에 생기는 몰 모두 · 몰마다 상품번호가 달라서 상품 지정 문구를 여러 몰에 낼 때는 모델번호로 넣으세요</div></div>
     <div class="gn-two"><div><label for="gn_pos">위치</label><select class="in" id="gn_pos" oninput="gnPreview()">${Object.keys(L).map(k=>`<option value="${k}" ${k===n.pos?'selected':''}>${esc(L[k])}</option>`).join('')}</select></div><div></div></div>
     <div><fieldset class="gn-scs" id="gn_scope" role="radiogroup"><legend>노출 범위</legend>${[['all','전체 상품','고른 몰의 모든 상품 상세페이지'],['goods','상품 지정 (여러 개 가능)','상품번호·모델번호를 넣은 상품만']].map(t=>`<label class="gn-sc"><input type="radio" name="gn_scope" value="${t[0]}" ${t[0]===(n.scope||'goods')?'checked':''} onchange="gnScope()"><span>${t[1]}<small>${t[2]}</small></span></label>`).join('')}</fieldset></div>
     <div id="gn_target" style="display:grid;gap:inherit"><div><label for="gn_goods">대상 상품번호 (쉼표·줄바꿈으로 여러 개)</label><input class="in" id="gn_goods" inputmode="numeric" value="${esc((n.goods||[]).join(', '))}" placeholder="예: 1000003136"><div class="gn-hint">상품 페이지의 상품코드(주소 goodsNo=) · 몰마다 번호가 다릅니다</div></div>
@@ -6674,7 +6685,11 @@ function gnOpen(id){
     <div class="gn-two"><div><label for="gn_sort">순서 (같은 위치에 여럿일 때 작은 수가 위)</label><input class="in" id="gn_sort" inputmode="numeric" value="${esc(n.sort??100)}"></div><div><label for="gn_note">메모 (사내용)</label><input class="in" id="gn_note" value="${esc(n.note||'')}"></div></div>`;
   $('gnDlg').classList.remove('hidden'); gnScope(); GN_DLG.start=JSON.stringify(gnData()); gnDraftOffer(); setTimeout(()=>{ const f=gnData().scope==='all'?$('gn_body'):$('gn_goods'); if(f) f.focus(); },50);
 }
-function gnMallPick(el){ const box=el.parentNode, all=el.dataset.v==='*'; if(all){ const on=!el.classList.contains('on'); [...box.children].forEach(x=>x.classList.remove('on')); if(on) el.classList.add('on'); } else { const a=box.querySelector('[data-v="*"]'); if(a) a.classList.remove('on'); el.classList.toggle('on'); } gnPreview(); }
+function gnMallPick(el){ /* [전체 몰] = 모든 몰 켜짐(나중에 생기는 몰 포함) · 하나를 풀면 [전체 몰]도 풀림 · 다 켜면 [전체 몰]이 켜짐 */ const box=el.parentNode, a=box.querySelector('[data-v="*"]'), ind=[...box.children].filter(x=>x.dataset.v!=='*');
+  if(el===a){ const on=!a.classList.contains('on'); [...box.children].forEach(x=>x.classList.toggle('on',on)); }
+  else { el.classList.toggle('on'); if(a) a.classList.toggle('on', ind.length>0 && ind.every(x=>x.classList.contains('on'))); }
+  gnPreview(); }
+function gnMallVals(){ const box=$('gn_malls'), a=box.querySelector('[data-v="*"]'); return (a&&a.classList.contains('on')) ? ['*'] : [...box.querySelectorAll('.chip.on')].map(x=>x.dataset.v).filter(c=>c!=='*'); }
 function gnScope(){ const t=$('gn_target'); if(t) t.style.display=gnData().scope==='all'?'none':''; gnPreview(); }
 function gnHelp(open){ const d=$('gnHelp'); if(!d) return; d.classList.toggle('hidden',!open); if(open){ const x=d.querySelector('.lvx'); if(x) x.focus(); } }
 /* 쓰던 내용 지키기 (2026-11-04 "문구추가 하고 다른 창으로 넘기거나 잠깐 다른걸 키면 문구추가 창이 꺼져버려요")
@@ -6697,7 +6712,7 @@ function gnDraftOffer(){
 function gnApply(d){
   const set=(id,val)=>{ const e=$(id); if(e&&val!=null) e.value=Array.isArray(val)?val.join(', '):val; };
   const chips=(id,vals)=>{ const box=$(id); if(!box) return; [...box.children].forEach(c=>c.classList.toggle('on', vals.includes(c.dataset.v))); };
-  chips('gn_malls', d.malls||[]); { const r=$('gn_scope'); if(r) r.querySelectorAll('input').forEach(i=>{ i.checked=(i.value===(d.scope||'goods')); }); } chips('gn_tone',[d.tone||'blue']);
+  chips('gn_malls', (d.malls||[]).includes('*') ? [...$('gn_malls').children].map(x=>x.dataset.v) : (d.malls||[])); { const r=$('gn_scope'); if(r) r.querySelectorAll('input').forEach(i=>{ i.checked=(i.value===(d.scope||'goods')); }); } chips('gn_tone',[d.tone||'blue']);
   set('gn_pos',d.pos); set('gn_goods',d.goods); set('gn_models',d.models); set('gn_title',d.title); set('gn_body',d.body); set('gn_img',d.img);
   set('gn_btn',d.btn); set('gn_btntone',d.btnTone); set('gn_url',d.url); set('gn_from',d.from||''); set('gn_to',d.to||''); set('gn_sort',d.sort); set('gn_note',d.note);
   gnScope();
@@ -6708,7 +6723,7 @@ function gnClose(ask){
 }
 function gnData(){
   const csv=v=>v.split(/[,\n\s]+/).map(x=>x.trim()).filter(Boolean);
-  return { id:GN_DLG&&GN_DLG.n.id, scope:(($('gn_scope').querySelector('input:checked')||{}).value)||'goods', malls:[...$('gn_malls').querySelectorAll('.chip.on')].map(x=>x.dataset.v), mall:([...$('gn_malls').querySelectorAll('.chip.on')].map(x=>x.dataset.v).find(c=>c!=='*')||'pm'), pos:$('gn_pos').value, goods:csv($('gn_goods').value), models:csv($('gn_models').value).map(x=>x.toUpperCase()),
+  return { id:GN_DLG&&GN_DLG.n.id, scope:(($('gn_scope').querySelector('input:checked')||{}).value)||'goods', malls:gnMallVals(), mall:(gnMallVals().find(c=>c!=='*')||'pm'), pos:$('gn_pos').value, goods:csv($('gn_goods').value), models:csv($('gn_models').value).map(x=>x.toUpperCase()),
     title:$('gn_title').value.trim(), body:$('gn_body').value.replace(/\s+$/,''), tone:(($('gn_tone').querySelector('.chip.on')||{}).dataset||{}).v||'blue', img:$('gn_img').value.trim(),
     btn:$('gn_btn').value.trim(), btnTone:$('gn_btntone').value, url:$('gn_url').value.trim(), from:$('gn_from').value||null, to:$('gn_to').value||null,
     sort:Number($('gn_sort').value)||100, note:$('gn_note').value.trim() };
