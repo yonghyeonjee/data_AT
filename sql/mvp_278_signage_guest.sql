@@ -120,3 +120,8 @@ begin
 end $outer$;
 -- 7) 사이니지 키 (값은 _secrets.local.md 에만)
 -- insert into core.api_key(name,key_hash,note) values ('signage', encode(extensions.digest('<키>','sha256'),'hex'), '매장 사이니지 고객 이름 읽기') on conflict (name) do update set key_hash=excluded.key_hash;
+
+-- 8) (추가) 예약 경로·시각 — 네이버·삼성스토어·전화 예약
+-- alter table core.signage_guest add column src text, add column tm time; + check (src in ('네이버 예약','삼성스토어 예약','전화 예약','기타'))
+-- core.f_signage_list 가 src·time 을 주고 시각 순 정렬 · fn_store_signage_save add 가 p_data.src·time 저장 (서버에 적용됨)
+-- 9) 홈 콜백 약속 아래 방문 예약 — public.fn_store_visits(p_code, p_days=30) (core.f_staff · VOLATILE · 상담 방문 예약 + 직접 넣은 예약 · 오늘부터)
