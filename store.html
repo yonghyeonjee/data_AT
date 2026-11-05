@@ -425,6 +425,10 @@ details.salebox>summary .hint{margin-left:0;flex-basis:100%;padding-left:18px}
 .lvlt{font-size:calc(14px * var(--font-scale));font-weight:800;margin-right:2px}
 .lvtools .lvsel{width:auto;min-width:118px;min-height:40px;padding:6px 10px;font-size:calc(12.5px * var(--font-scale))}
 .lvlist{display:block}
+.dp-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}.dp-bar .in{width:auto;flex:0 1 180px}
+.dp-prev{background:#FBF7EF;border:1px solid #EADFC9;border-radius:10px;padding:10px 12px;margin-bottom:10px;line-height:1.7;word-break:keep-all}.dp-prev .lb{font-size:12px;font-weight:700;color:var(--muted);margin-right:8px}.dp-prev b{color:#B04E66}.dp-prev i{font-style:normal;color:var(--muted);margin:0 8px}
+.dprow{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto;gap:6px 10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:6px}.dprow.off{background:#F6F7F9}.dprow.off .dpn{color:var(--muted)}.dpm{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;min-width:0}.dpm .hm{font-size:12px;color:var(--muted)}.dpa{display:flex;gap:6px}.dpa .dpdel{margin-left:10px}
+.dp-add{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#F7F9F9;display:flex;flex-direction:column;gap:8px}.dp-add-t{font-weight:700}.dp-add-t span{font-weight:400;font-size:12px;color:var(--muted);margin-left:6px}.dp-add-r{display:flex;gap:8px;flex-wrap:wrap}.dp-add-r .in{flex:1 1 160px;min-width:0}.dp-add-r input[type=time]{flex:0 1 140px}.dp-add .btn{width:auto;white-space:nowrap}
 .lvr{display:grid;grid-template-columns:84px 1fr auto;gap:2px 10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:6px}
 .lvr.gone{background:#FAFBFC;border-color:var(--line)}
 .lvr.gone .dt b,.lvr.gone .nm{color:var(--muted)}
@@ -1282,6 +1286,7 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
   .lvtype button{min-height:40px}
   .btn.lvsch{min-height:40px}
 }
+  @media (max-width:999px){ #dp_src{flex-wrap:wrap} #dp_src button{min-height:40px} .dp-add-r input[type=time]{flex:1 1 120px} .dprow{grid-template-columns:minmax(0,1fr)} .dpa{flex-wrap:wrap} .dpa .mini{min-height:40px} .dp-bar .btn{min-height:40px;min-width:40px} .dp-add .btn{min-height:44px} }
 </style>
 </head>
 <body>
@@ -1388,6 +1393,7 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
       <button class="tab" data-tab="daily" data-perm="daily">일 마감</button>
       <button class="tab" data-tab="stats">상담 현황</button>
       <button class="tab" data-tab="leave" data-mgr="1">일정(휴가)</button>
+      <button class="tab" data-tab="display">디스플레이 관리</button>
       <button class="tab" data-tab="report" data-perm="report">판매현황</button>
       <button class="tab" data-tab="online" data-perm="channel">온라인</button>
       <button class="tab" data-tab="assign" data-mgr="1">배정</button>
@@ -1834,6 +1840,25 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
   </section>
 
   <!-- ── 휴가 (점장님·대표님) ── -->
+  <section class="panel hidden" id="tab-display">
+    <div class="card" id="dpCard">
+      <h2>매장 안내 디스플레이 <span id="dpSub">고객님께 보이는 매장 화면</span></h2>
+      <p class="note-in" style="margin-top:0">매장에 오신 고객님이 보시는 안내 화면입니다. <b>감사 문구</b>는 늘 뜨고, <b>방문 예약하신 고객님은 그날 성함</b>이 <b>'○○○ 고객님'</b>으로 뜹니다. <b>상담 입력에서 방문 예약</b>을 넣으면 그날 저절로 들어오고, 여기서 성함을 고치거나 숨길 수 있습니다. <b>네이버·삼성스토어·전화 예약</b>이나 예약 없이 오신 분은 아래 <b>[＋ 예약 추가]</b>. 화면에는 1분 안에 반영됩니다.</p>
+      <div class="dp-bar">
+        <button type="button" class="btn sm ghost" onclick="dpMove(-1)" aria-label="전날">‹</button>
+        <input class="in" type="date" id="dp_day" aria-label="날짜" onchange="loadDisplay(this.value)">
+        <button type="button" class="btn sm ghost" onclick="dpMove(1)" aria-label="다음 날">›</button>
+        <button type="button" class="btn sm ghost" id="dpToday" onclick="loadDisplay(null)">오늘</button>
+      </div>
+      <div class="dp-prev" id="dpPrev"></div>
+      <div id="dpList"><div class="empty">불러오는 중…</div></div>
+      <div class="dp-add">
+        <div class="dp-add-t">예약 넣기 <span>네이버 · 삼성스토어 · 전화로 받은 방문 예약, 예약 없이 오신 분도</span></div>
+        <div class="seg sm" id="dp_src" role="radiogroup" aria-label="예약 경로"><button type="button" role="radio" aria-checked="true" class="on" data-v="네이버 예약" onclick="dpSrc(this)">네이버</button><button type="button" role="radio" aria-checked="false" data-v="삼성스토어 예약" onclick="dpSrc(this)">삼성스토어</button><button type="button" role="radio" aria-checked="false" data-v="전화 예약" onclick="dpSrc(this)">전화</button><button type="button" role="radio" aria-checked="false" data-v="기타" onclick="dpSrc(this)">예약 없음 · 기타</button></div>
+        <div class="dp-add-r"><input class="in" type="time" id="dp_time" step="600" aria-label="방문 시각 (모르면 비움)"><input class="in" id="dp_new" maxlength="30" placeholder="고객 성함 (예: 홍길동)" aria-label="고객 성함" onkeydown="if(event.key==='Enter'){event.preventDefault();dpAdd()}"><button type="button" class="btn" onclick="dpAdd()">＋ 예약 추가</button></div>
+      </div>
+    </div>
+  </section>
   <section class="panel hidden" id="tab-leave">
     <div class="card hidden" id="lvCard">
       <h2>일정 · 휴가 <span id="lvSub">점장님 · 대표님만 보입니다</span></h2>
@@ -2170,6 +2195,13 @@ try{ if(localStorage.getItem('staff_code') && sessionStorage.getItem('st_open'))
           <span class="chip" onclick="quickCb(1,'10:00')">내일 10시</span><span class="chip" onclick="quickCb(1,'14:00')">내일 2시</span>
           <span class="chip" onclick="quickCb(2,'14:00')">모레 2시</span><span class="chip" onclick="quickCb(7,'14:00')">일주일 뒤</span>
           <span class="chip" onclick="$('c_cbDate').value='';$('c_cbTime').value=''">없음</span>
+        </div></div>
+      <div class="f"><label>방문 예약 <span class="hint">매장에 오시기로 한 날 — 그날 매장 화면에 '○○○ 고객님'으로 이름이 뜹니다</span></label>
+        <div class="grid2"><input class="in" type="date" id="c_vsDate" aria-label="방문 예약 날짜"><input class="in" type="time" id="c_vsTime" step="600" aria-label="방문 예약 시각"></div>
+        <div class="quick">
+          <span class="chip" onclick="quickVs(0,'')">오늘</span><span class="chip" onclick="quickVs(1,'11:00')">내일 11시</span>
+          <span class="chip" onclick="quickVs(1,'14:00')">내일 2시</span><span class="chip" onclick="quickVs(2,'14:00')">모레 2시</span>
+          <span class="chip" onclick="$('c_vsDate').value='';$('c_vsTime').value=''">없음</span>
         </div></div>
       <div class="f"><label>사은품 <span class="hint">준 게 있으면 이름과 금액</span></label>
         <div class="gift-row"><input class="in" id="c_gift" placeholder="예: 스타벅스 1만원권" autocomplete="off" list="giftList"><input class="in" id="c_gift_amt" inputmode="numeric" placeholder="금액" oninput="comma(this)"></div>
@@ -3880,6 +3912,7 @@ NAV_ICON.inbox   ='<svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6a2 2 0 0 
 NAV_ICON.quote   ='<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 12h6M10 16h4"/></svg>';
 NAV_ICON.sub     ='<svg viewBox="0 0 24 24"><path d="M4 4h16v6H4zM4 14h16v6H4z"/><path d="M8 7h.01M8 17h.01M12 7h4M12 17h4"/></svg>';   /* 구독 관리 (mvp_254) */
 NAV_ICON.customer='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+NAV_ICON.display ='<svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="18" rx="2"/><path d="M10 22h4M10 7h4M9 11h6M10 15h4"/></svg>';   /* 디스플레이 관리 (mvp_278) */
 NAV_ICON.leave   ='<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15h2M13 15h2M9 18h2"/></svg>';
 NAV_ICON.stats   ='<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>';
 NAV_ICON.assign  ='<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 8h6M19 5l3 3-3 3"/></svg>';
@@ -3887,7 +3920,7 @@ NAV_ICON.alerts  ='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 
 /* 배정은 미배정·일괄 넘기기 같은 예외 처리 자리라 '현황' 맨 아래로 (v201 · 상담 탭 [넘기기]가 평소 쓰는 길) */
 /* 메뉴(서랍·하단 탭바)에서 가린 탭 — 2026-10-29 판매 입력·일 마감. 탭 자체는 살아 있어 [구매 확정]·흐름 띠 링크로는 열린다 */
 const NAV_HIDE=new Set(['sale','daily']);
-const NAV_GROUPS=[['상담',['home','inbox','salechk','consult','quote','sub','customer','alerts']],['매장',['stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
+const NAV_GROUPS=[['상담',['home','inbox','salechk','consult','quote','sub','customer','alerts']],['매장',['display','stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
 const NAV_LABEL={home:'홈', inbox:'상담', salechk:'판매 확인 필요', consult:'상담 입력', quote:'견적서', sub:'구독 관리', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'일정(휴가)'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
 const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
@@ -3943,11 +3976,12 @@ function goTab(name, fromHistory){
   const b=document.querySelector(`.tab[data-tab="${name}"]`); if(!b || b.classList.contains('hidden')) return;
   if($('cdDlg') && !$('cdDlg').classList.contains('hidden')) cdClose();   /* 상세 팝업이 떠 있으면 탭을 옮길 때 닫는다 */
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  ['home','inbox','salechk','assign','quote','sub','customer','alerts','stats','leave','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  ['home','inbox','salechk','assign','quote','sub','customer','alerts','stats','leave','display','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='sub' && !SP_LOADED){ SP_LOADED=true; loadSubPolicy(); }
   if(name==='sub' && !GN_LOADED){ GN_LOADED=true; loadGoodsNote(); }   /* 상품 안내 문구 (mvp_266) */   /* 구독 혜택 안내 (mvp_246) */
   if(name==='sub' && !PR_LOADED){ PR_LOADED=true; loadSubPrice(); }   /* 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) */
   if(name==='leave' && !LV_LOADED){ LV_LOADED=true; loadLeave(); }
+  if(name==='display') loadDisplay();
   if(name==='stats' && !ST_LOADED){ ST_LOADED=true; stPick(todayStr().slice(0,8)+'01', todayStr()); }   /* 처음 열면 이 달 · 일별 (v233) */
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
   if(name==='sale' && !PS_LOADED){ PS_LOADED=true; loadPastSales(); }
@@ -4225,7 +4259,7 @@ function saleNew(){
 }
 /* 상담 입력 비우기 — 저장 뒤와 [＋ 새 상담 입력] 이 같은 함수를 쓴다 */
 function consultClearForm(){
-  ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_gift','c_gift_amt',
+  ['c_name','c_phone','c_model','c_amount','c_expect','c_content','c_cbDate','c_cbTime','c_vsDate','c_vsTime','c_gift','c_gift_amt',
    'c_next','c_next_date','c_next_note','c_ch_etc','c_cat_etc','c_route_etc','c_detail'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
   loadGifts(); custClear('c');
   $('c_cat').querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
@@ -4241,6 +4275,8 @@ function consultNew(){
   consultClearForm(); toast('새 상담 입력 — 비웠습니다','ok'); $('c_name').focus();
 }
 function quickCb(days,time){ const d=new Date(); d.setDate(d.getDate()+days); $('c_cbDate').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); $('c_cbTime').value=time; }
+function quickVs(days,time){ const d=new Date(); d.setDate(d.getDate()+days); $('c_vsDate').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); $('c_vsTime').value=time; }
+function vsISO(){ const d=$('c_vsDate').value, t=$('c_vsTime').value; if(!d) return null; return d+'T'+(t||'12:00')+':00+09:00'; }
 function cbISO(){ const d=$('c_cbDate').value, t=$('c_cbTime').value; if(!d) return null; return d+'T'+(t||'10:00')+':00+09:00'; }
 function fmtWhen(iso){ const d=new Date(iso); const t=new Date(); const same=d.toDateString()===t.toDateString();
   const tm=new Date(t); tm.setDate(tm.getDate()+1); const tomorrow=d.toDateString()===tm.toDateString();
@@ -4653,6 +4689,32 @@ function lvRenderList(){
     : `<div class="empty">${flt?'거르개에 맞는 일정·휴가가 없습니다':'이 달에는 일정·휴가가 없습니다 — 위 달력의 ‹ › 로 다른 달을 보세요'}</div>`;
   $('lvPg').innerHTML = rows.length>per ? `<div class="pager">${pgBar('lv',LV_PG,rows.length,'lvGo')}</div>` : '';
 }
+/* ── 디스플레이 관리 (mvp_278) — 매장 사이니지에 뜨는 그날 고객 이름 · 방문 예약은 저절로 · 이름 고치기·숨기기·직접 추가 ── */
+let DP=null;
+function dpDayStr(d){ return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+async function loadDisplay(day){
+  try{ DP=await rpc('fn_store_signage',{p_code:CODE,p_day:day||null}); }catch(e){ $('dpList').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  $('dp_day').value=DP.day; dpRender(); }
+function dpMove(n){ const d=new Date((DP&&DP.day||dpDayStr(new Date()))+'T12:00:00'); d.setDate(d.getDate()+n); loadDisplay(dpDayStr(d)); }
+function dpRender(){
+  const rows=(DP&&DP.rows)||[], today=DP&&DP.day===DP.today, show=rows.filter(x=>!x.hidden&&x.name);
+  $('dpSub').textContent=(today?'오늘':DP.day.slice(5).replace('-','/'))+' · 화면에 '+show.length+'명';
+  $('dpToday').classList.toggle('hidden',today);
+  $('dpPrev').innerHTML=show.length?`<span class="lb">${today?'지금':'그날'} 화면</span>`+show.map(x=>`<b>${esc(x.name)}</b> 고객님`).join('<i>·</i>'):`<span class="lb">${today?'지금':'그날'} 화면</span>이름 없음 — 감사 인사만 뜹니다`;
+  $('dpList').innerHTML=rows.length?rows.map((x,i)=>`<div class="dprow${x.hidden?' off':''}">
+      <div class="dpm">${x.kind==='visit'?`<span class="tag via">방문 예약 ${esc(x.time||'')}</span>${x.handler?`<span class="hm">${esc(x.handler)}</span>`:''}${x.orig&&x.orig!==x.name?`<span class="hm">상담 이름 ${esc(x.orig)}</span>`:''}`:`<span class="tag src">${esc(x.src||'직접 추가')}${x.time?' '+esc(x.time):''}</span>${x.handler?`<span class="hm">${esc(x.handler)}</span>`:''}`}${x.hidden?'<span class="tag new">화면에 안 보임</span>':''}</div>
+      <input class="in dpn" id="dpn_${i}" maxlength="30" value="${esc(x.name||'')}" aria-label="화면에 뜨는 이름" onkeydown="if(event.key==='Enter'){event.preventDefault();dpSave(${i})}">
+      <div class="dpa"><button type="button" class="mini ok" onclick="dpSave(${i})">저장</button><button type="button" class="mini" onclick="dpSave(${i},${!x.hidden})">${x.hidden?'보이기':'숨기기'}</button>${x.kind==='manual'?`<button type="button" class="mini warn dpdel" onclick="dpDel(${i})">지우기</button>`:''}</div>
+    </div>`).join(''):'<div class="empty">이 날 방문 예약·추가한 이름이 없습니다</div>'; }
+async function dpCall(data,msg){ try{ const r=await rpc('fn_store_signage_save',{p_code:CODE,p_data:Object.assign({day:DP.day},data)}); DP.rows=r.rows; dpRender(); toast(msg,'ok'); return true; }catch(e){ toast(e.message,'err'); return false; } }
+function dpSave(i,hide){ const x=DP.rows[i], nm=$('dpn_'+i).value.trim(); if(!nm&&x.kind==='manual'){ toast('이름을 적어 주세요','err'); return; }
+  const d={op:'set',name:nm,hidden:hide===undefined?x.hidden:hide}; if(x.kind==='visit') d.consult_id=x.consult_id; else d.id=x.id;
+  dpCall(d, hide===undefined?'저장했습니다 — 매장 화면에 1분 안에 반영':(hide?'화면에서 숨겼습니다':'화면에 다시 보입니다')); }
+function dpSrc(b){ $('dp_src').querySelectorAll('button').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-checked',String(on)); }); }
+async function dpAdd(){ const el=$('dp_new'), nm=el.value.trim(); if(!nm){ el.focus(); toast('성함을 적어 주세요','err'); return; }
+  const sb=$('dp_src').querySelector('button.on'), src=sb?sb.dataset.v:'기타', tm=$('dp_time').value||null;
+  if(await dpCall({op:'add',name:nm,src,time:tm},`${src==='기타'?'':src+' · '}${nm} 고객님을 넣었습니다`)){ el.value=''; $('dp_time').value=''; } }
+function dpDel(i){ const x=DP.rows[i]; if(!confirm(`'${x.name}' 이름을 지울까요?`)) return; dpCall({op:'del',id:x.id},'지웠습니다'); }
 async function loadLeave(){
   const box=$('lvList'); if(!box) return;
   try{ LV=await rpc('fn_store_leave_list',{p_code:CODE}); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
@@ -5748,7 +5810,7 @@ function consultCollect(){
     proof_status: tyProof() ? (C_PROOF||null) : null, proof_at: (tyProof()&&C_PROOF==='추후') ? (C_EV.proof_at||null) : null, extra_dates:xdList(),
     method: (($('c_method').querySelector('button.on')||{}).dataset||{}).v || null,
     sale_kind: res==='구매완료' ? cKindVal() : null, next_model_code:$('c_next').value.trim()||null, next_expected_date:$('c_next_date').value||null, next_note:$('c_next_note').value.trim()||null,
-    expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(), callback_at: cbISO(),
+    expected_amount: num($('c_amount'))||null, expected_purchase_date:$('c_expect').value||null, content:$('c_content').value.trim(), callback_at: cbISO(), visit_at: vsISO(),
     consent_marketing:$('c_consent').classList.contains('on'), gift_name:$('c_gift').value.trim()||null, gift_amount:num($('c_gift_amt'))||null };
   if(!p.customer_name && !p.buyer_key) return cGo('c_name','고객명을 입력하세요');
   if(!p.interest_category) return cGo('c_cat','관심 품목을 고르세요 — 모르면 "알 수 없음"');
@@ -5786,6 +5848,7 @@ async function submitConsult(){
                               :'<br>판매 날짜·제품·금액은 <b>DPS 에서 들어오면 이 상담에 저절로 이어집니다</b>. 다음 날 아침까지 안 이어지면 <b>판매 확인 필요</b>에 뜹니다')
              :`<br>나중에 팔리면 '상담' 탭에서 <b>판매 완료</b>를 누르면 됩니다`)
       + (r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '상담' 탭에서 알려드립니다`:'')
+      + (r.visit_at?`<br>방문 예약 <b>${fmtWhen(r.visit_at).join(' ')}</b> — 그날 매장 화면에 고객님 이름이 뜹니다 (<b>디스플레이 관리</b>에서 고치기)`:'')
       + (closedN?`<br>같은 고객의 이전 진행 중 상담 <b>${r.closed.map(esc).join(', ')}</b> 은 <b>상담완료</b>로 정리됐습니다 (기록은 남아 있고, 상세 보기에서 볼 수 있습니다)`:'');
     consultClearForm();
     await loadStatus(); render(); if(MC_LOADED) loadMyConsults(0); skLoadBadge();
