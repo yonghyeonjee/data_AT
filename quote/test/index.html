@@ -149,6 +149,11 @@ h1,h2,h3{margin:0}
 .bar i.a{background:var(--sub)} .bar i.b{background:var(--green)}
 .legend{display:flex;gap:14px;font-size:12px;color:var(--mut);flex-wrap:wrap}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.scn-wrap{overflow-x:auto} table.scn{border-collapse:collapse;width:100%;font-size:12.5px;min-width:860px}
+table.scn th{background:var(--paper);border:1px solid var(--line);padding:6px 8px;font-weight:700;white-space:nowrap;text-align:center} table.scn th small{font-weight:500;color:var(--mut)}
+table.scn td{border:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap;vertical-align:middle} table.scn td.l{text-align:left} table.scn td.minus{color:var(--green)} table.scn td.tot{background:var(--blue-soft)}
+table.scn tr.cur td{background:#fffbe6} table.scn .warn{color:#b45309;font-size:11px} table.scn .chip{font-size:11px;padding:2px 8px;margin-top:3px}
+#t_scn:empty{display:none} #t_scn .kv.cur{background:#fffbe6;border-radius:6px}
 .tl{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:4px}
 .tl div{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 6px;text-align:center;font-size:12px}
 .tl div b{display:block;font-size:14px}
@@ -277,6 +282,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <div class="tot s"><div class="k">월 구독료 혜택가 <small>(구독 · 통장에서 나가는 금액)</small></div><div class="v num" id="t_sub_m">—</div><div class="d" id="t_sub_d"></div></div>
     <div class="tot l"><div class="k">최종체감가 <small>(일시불 · 캐시백 반영)</small></div><div class="v num" id="t_lump">—</div><div class="d" id="t_lump_d"></div></div>
     <div class="card" id="t_detail"></div>
+    <div class="card" id="t_scn"></div>
     <p class="note" id="noticeTxt"></p>
   </aside>
 </section>
@@ -315,6 +321,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <h2>월별 기준 <small>기간별 월 납부 — 월 구독료 혜택가 + 삼성카드 6/12 할부 개월수별 납부금액</small></h2>
     <div class="tl" id="tl"></div>
     <p class="hint" style="margin:8px 0 0" id="tl_note"></p>
+  </div>
+  <div class="card">
+    <h2>여러 상황 비교 <small>같은 품목을 전부 일시불 · 전부 구독 · 하나만 구독으로 바꿨을 때 — 총액 기준 · 월별 기준</small></h2>
+    <div id="scn"></div>
   </div>
   <div class="card">
     <h2>진행 순서</h2>
@@ -552,9 +562,9 @@ function calcDiscount(total, rate, months){ const inner=total*rate/1.1/months; r
 function planOf(it, info){ const ys=[...new Set(info.p.map(p=>p[0]))].sort((a,b)=>b-a); if(!ys.includes(it.years)) it.years=ys[0];
   const inY=info.p.filter(p=>p[0]===it.years); if(!inY.some(p=>p[1]===it.care)){ const free=inY.find(p=>p[1]==='무상수리'); it.care=(free||inY.sort((a,b)=>a[3]-b[3])[0])[1]; }
   return inY.find(p=>p[1]===it.care); }
-function calcAll(){
+function calcAll(items){
   const subs=[], lumps=[];
-  Q.items.forEach(it=>{ if(it.hidden) return; if(it.mode==='sub' && INFO[it.m]) subs.push(it); else if(it.mode==='lump') lumps.push(it); });
+  (items||Q.items).forEach(it=>{ if(it.hidden) return; if(it.mode==='sub' && INFO[it.m]) subs.push(it); else if(it.mode==='lump') lumps.push(it); });
   const R={}; subs.forEach(it=>{ const info=INFO[it.m], plan0=planOf(it,info); let plan=plan0;
     if(+it.monthlyManual>0){ plan=plan0.slice(); plan[3]=+it.monthlyManual; plan[2]=Math.round(plan[3]*plan[0]*12); }   // 월 구독료 수기 (DPS 조회값 대신)
     const card=cardOf(it), r=C.calc(info, plan, { prepay:prepayOf(it), card, tier:tierOf(it), cardOn:!!card });
@@ -603,6 +613,36 @@ function calcLump(amount){
   o.ben=o.bill+o.sp+o.tp+o.cb+o.mem; o.net=amount+o.fee-o.ben; o.per=Math.floor((amount-o.bill)/o.months/10)*10;
   return o;
 }
+
+/* ═══ 여러 상황 비교 (2026-11-05) ═══
+   같은 품목으로 "전부 일시불 / 전부 구독 / 하나만 구독 / 하나만 일시불 / 지금 선택" 을 총액 기준·월별 기준으로 나란히 본다.
+   구독 가능한 품목(요금표에 있는 모델)만 구독으로 바꿔 보고, 일시불 결제가는 담긴 값이 없으면 가격표 정가를 쓴다. */
+function scenarios(){
+  const base=Q.items.filter(it=>!it.hidden), subable=base.filter(it=>INFO[it.m]);
+  if(!base.length) return [];
+  const mk=(label, pick)=>{ const items=base.map((it,i)=>{ const sub=pick(it,i)&&INFO[it.m]; return Object.assign({}, it, { mode:sub?'sub':'lump', lump:+it.lump||priceOf(it.m)||0 }); });
+    const r=calcAll(items); const {S,L}=r; r.label=label; r.items=items;
+    r.subN=S.n; r.lumpN=L.items.length; r.noPrice=L.items.filter(x=>!(+x.lump>0)).length;
+    r.total=S.net+L.net; r.lm=L.items.length?L.months:0; r.sm=S.n?S.maxM:0;
+    r.m1=S.pay+L.per; r.m2=(r.sm>r.lm)?S.pay:0; r.cur=items.every((x,i)=>x.mode===base[i].mode); return r; };
+  const out=[ mk('전부 일시불', ()=>false) ];
+  if(subable.length) out.push(mk('전부 구독', ()=>true));
+  if(subable.length>=2){ subable.forEach(s=>out.push(mk(`${nameOf(s.m)} 만 구독`, it=>it.m===s.m))); }
+  if(subable.length>=3){ subable.forEach(s=>out.push(mk(`${nameOf(s.m)} 만 일시불`, it=>it.m!==s.m))); }
+  if(!out.some(r=>r.cur)) out.unshift(mk('지금 선택', it=>it.mode==='sub'));
+  return out.slice(0,10);
+}
+function applyScenario(i){ const r=SCN[i]; if(!r) return; r.items.forEach(x=>{ const it=Q.items.find(y=>y.m===x.m); if(it){ it.mode=x.mode; if(x.mode==='lump'&&!(+it.lump>0)) it.lump=x.lump; } }); render(); toast(r.label+' 조합으로 바꿨습니다'); }
+let SCN=[];
+function scnHtml(){ SCN=scenarios(); if(SCN.length<2) return '<p class="hint">품목을 2개 이상 담으면 조합별 비교가 나옵니다.</p>';
+  const cols=['상황','구성','총 구독료 합계','총 혜택 합계<br><small>(구독)</small>','최종 혜택가<br><small>(구독 총 지불액)</small>','① 결제가','최종체감가<br><small>(일시불)</small>','총 지불액 합계','계약 시 선납금','월 납부'];
+  const rows=SCN.map((r,i)=>{ const {S,L}=r; const comp=`구독 ${r.subN}개 · 일시불 ${r.lumpN}개${r.noPrice?' <span class="warn">(결제가 미입력 '+r.noPrice+'개)</span>':''}`;
+    const mon=[ r.lm&&r.sm? `1~${r.lm}개월 <b>${won(r.m1)}</b>`+(r.sm>r.lm?`<br>${r.lm+1}~${r.sm}개월 <b>${won(r.m2)}</b>`:'') : r.lm? `1~${r.lm}개월 <b>${won(L.per)}</b>` : r.sm? `1~${r.sm}개월 <b>${won(S.pay)}</b>` : '—' ].join('');
+    return `<tr class="${r.cur?'cur':''}"><td class="l"><b>${esc(r.label)}</b>${r.cur?'<br><small>지금 선택</small>':`<br><button class="chip" onclick="applyScenario(${i})">이 조합으로</button>`}</td><td class="l">${comp}</td>
+      <td>${r.subN?won(S.total):'—'}</td><td class="minus">${r.subN?'−'+won(S.ben):'—'}</td><td><b>${r.subN?won(S.net):'—'}</b></td>
+      <td>${r.lumpN?won(L.amount):'—'}</td><td><b>${r.lumpN?won(L.net):'—'}</b></td><td class="tot"><b>${won(r.total)}</b></td><td>${S.preAmt?won(S.preAmt):'—'}</td><td class="l">${mon}</td></tr>`; }).join('');
+  return `<div class="scn-wrap"><table class="scn"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="hint" style="margin:8px 0 0">총 지불액 합계 = 구독 최종 혜택가(총 구독료 합계 − 총 혜택 합계) + 일시불 최종체감가(① 결제가 + 이용료 − 청구할인·캐시백). 구독은 약정 기간 동안 무상 A/S·케어가 포함된 금액이라 일시불 결제가와 1:1 로 견주는 값이 아닙니다. 월 납부 = 월 구독료 혜택가 + 삼성카드 6/12 할부 개월수별 납부금액.</p>`; }
 
 /* ═══ 그리기 ═══ */
 let LAST=null;
@@ -661,6 +701,7 @@ function renderEdit({S,L}){
     ${L.mem?`<div class="kv minus"><span>멤버십 ${(LUMP.member*100)}%</span><span class="num">−${won(L.mem)}</span></div>`:''}
     <div class="kv total"><span>최종체감가</span><span class="num">${won(L.net)}</span></div>`; }
   $('t_detail').innerHTML = d || '<span class="hint">품목을 담으면 혜택이 여기 나옵니다.</span>';
+  const sc=scenarios(); $('t_scn').innerHTML = sc.length>=2 ? `<div class="k" style="margin:10px 0 4px">여러 상황 비교 <small>총 지불액 합계 · 자세한 표는 고객과 보기</small></div>`+sc.map((r,i)=>`<div class="kv ${r.cur?'cur':''}"><span>${esc(r.label)}${r.cur?' <small>(지금)</small>':''}</span><span class="num">${won(r.total)}${r.cur?'':` <button class="chip" onclick="applyScenario(${i})">선택</button>`}</span></div>`).join('') : '';
 }
 function renderShow(){ if(!LAST) return; const {S,L}=LAST, name=Q.cust.name||'고객';
   $('s_title').textContent=`${name} 님 ${Q.cust.type} 견적`; $('s_sub').textContent=`${STORE.name} · ${(Q.issuedAt||todayStr()).replace(/-/g,'.')}${ME?' · 담당 '+ME:''} (${STORE.tel})`;
@@ -697,6 +738,7 @@ function renderShow(){ if(!LAST) return; const {S,L}=LAST, name=Q.cust.name||'�
   else if(lm) rows.push([`1~${lm}개월`,L.per,'할부 개월수별 납부금액']);
   else if(sm) rows.push([`1~${sm}개월`,S.pay,'월 구독료 혜택가']);
   $('tl').innerHTML = rows.length? rows.map(x=>`<div class="${x[3]||''}">${x[0]}<b class="num">${won(x[1])}</b><span class="hint">${x[2]}</span></div>`).join('') : '<div class="hint" style="grid-column:1/-1">담은 품목이 없습니다.</div>';
+  $('scn').innerHTML=scnHtml();
   $('tl_note').textContent = [ sm?`구독 ${sm}개월 총 지불액 ${won(S.net)} (총 구독료 합계 ${won(S.total)} − 총 혜택 ${won(S.ben)})`:'', lm?`일시불 최종체감가 ${won(L.net)} (결제가 ${won(L.amount)} + 이용료 ${won(L.fee)} − 청구할인·캐시백 ${won(L.ben)})`:'', (sm&&lm)?`합계 ${won(S.net+L.net)}`:'' ].filter(Boolean).join(' · ');
 }
 function renderSheet(){ if(!LAST) return; const {S,L}=LAST, T=(id,t)=>$(id).textContent=t;
