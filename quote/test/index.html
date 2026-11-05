@@ -115,6 +115,26 @@ details.more>summary small{font-weight:500;color:var(--mut);font-size:12px}
 .chips.one{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin} .chips.one>*{flex:none;white-space:nowrap}
 .cust.top3{grid-template-columns:auto minmax(0,1fr) minmax(0,1fr)} .cust.top3 .seg{flex-wrap:nowrap} .cust.top3 .seg button{white-space:nowrap}
 @media (max-width:640px){.cust.top3{grid-template-columns:1fr 1fr} .cust.top3 .fld:first-child{grid-column:1/-1}}
+body.iv-table .grid{grid-template-columns:minmax(0,1fr)}
+body.iv-table .sum{position:static;max-height:none;overflow:visible;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start}
+body.iv-table.v-edit .bbar{display:flex} body.iv-table.v-edit .wrap{padding-bottom:96px} body.iv-table.v-edit #toast{bottom:84px}
+.xl-wrap{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+table.xl{border-collapse:collapse;width:100%;font-size:13px;min-width:1060px;table-layout:fixed}
+table.xl .n2{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} table.xl td.md{overflow:hidden;text-overflow:ellipsis}
+table.xl th{background:#F3F5F9;font-size:12px;font-weight:700;color:#3B4252;padding:8px 6px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap;text-align:center} table.xl th small{font-weight:500;color:var(--mut)}
+table.xl td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0;height:40px;vertical-align:middle} table.xl tr>*:last-child{border-right:0}
+table.xl td.l{padding:4px 8px;text-align:left} table.xl td.c{text-align:center;color:var(--mut);font-size:12px} table.xl td.r{text-align:right;padding:4px 8px;white-space:nowrap}
+table.xl td.md{white-space:nowrap;font-size:12.5px} table.xl td.nm{font-size:12.5px;line-height:1.3;word-break:keep-all} table.xl td.nm div{margin-top:2px;display:flex;gap:3px;flex-wrap:nowrap;overflow:hidden;white-space:nowrap}
+table.xl .bd{display:inline-block;font-size:10.5px;font-weight:700;border-radius:5px;padding:0 5px;background:var(--blue-soft);color:var(--sub)} table.xl .bd.ok{background:#e6f6ee;color:#137a3f} table.xl .bd.mut{background:#eee;color:var(--mut)} table.xl .bd.warn{background:#fff3d6;color:#b45309}
+table.xl select,table.xl input{border:0;background:transparent;width:100%;height:40px;padding:0 8px;font:inherit;border-radius:0;min-width:0;color:var(--ink)}
+table.xl input.amt{text-align:right;font-variant-numeric:tabular-nums} table.xl input.need{background:#FFF8EA}
+table.xl select:focus,table.xl input:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#fff}
+table.xl tr.sub td:first-child{box-shadow:inset 3px 0 0 var(--sub)} table.xl tr.lump td:first-child{box-shadow:inset 3px 0 0 var(--lump)}
+table.xl td.hl{font-weight:800;color:var(--sub);background:var(--blue-soft)} table.xl .na{color:#B8BFCC}
+table.xl tr.hid td{opacity:.55} table.xl tr.new td{background:#FAFBFD} table.xl tr.new input{font-weight:600}
+table.xl tr.tsum td{background:#F3F5F9;font-weight:800;border-bottom:0} table.xl tr.tsum small{font-weight:500;color:var(--mut)}
+table.xl td.act{white-space:nowrap;padding:0 2px} table.xl .mini{border:0;background:transparent;min-width:32px;min-height:36px;padding:0 6px;color:var(--mut);font-weight:700;font-size:12px;border-radius:6px} table.xl .mini:hover,table.xl .mini.on{background:var(--blue-soft);color:var(--sub)}
+table.xl tr.ownrow td{height:auto;padding:0 10px 8px;background:#FAFBFD} table.xl tr.ownrow .item{display:block;border:0;padding:0;background:transparent} table.xl tr.ownrow .own{border-top:0;margin-top:0}
 .bulk{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;padding:0 2px} .bulk .sp{flex:1}
 .item select.care{border:1px solid var(--line);border-radius:9px;padding:5px 8px;min-height:36px;font-size:13px;background:var(--paper);max-width:100%}
 .bbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--paper);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));gap:12px;align-items:center}
@@ -535,7 +555,7 @@ async function loadNamecards(){ const sel=$('namecard'); if(!sel) return; try{ N
   sel.onchange=()=>{ Q.cond.namecardId=sel.value; renderSheet(); }; }
 function fillTier(){ const sel=$('subTier'); const cd=window.SUB_CARDS&&window.SUB_CARDS[Q.cond.card]; if(!cd){ sel.innerHTML='<option value="">—</option>'; sel.disabled=true; return; } sel.disabled=false;
   sel.innerHTML=Object.keys(cd.t).map(t=>`<option value="${esc(t)}"${t===Q.cond.tier?' selected':''}>전월 실적 ${esc(t.replace('↑','원 이상'))} · 월 ${fmt(cd.t[t])}원 할인</option>`).join(''); sel.onchange=()=>{ Q.cond.tier=sel.value; render(); }; }
-function initCats(){ const el=$('catChips'); Object.keys(IDX.cats).forEach(k=>{ const b=document.createElement('button'); b.className='chip'; b.textContent=IDX.cats[k]; b.onclick=()=>{ $('q').value=IDX.cats[k]; suggest(); $('q').focus(); }; el.appendChild(b); }); }
+function initCats(){ bindTable(); const el=$('catChips'); Object.keys(IDX.cats).forEach(k=>{ const b=document.createElement('button'); b.className='chip'; b.textContent=IDX.cats[k]; b.onclick=()=>{ $('q').value=IDX.cats[k]; suggest(); $('q').focus(); }; el.appendChild(b); }); }
 function bindInputs(){
   document.body.classList.add('v-edit');   // 처음은 입력 화면 — 좁은 화면의 아래 합계 띠가 이 표시를 본다
   const ct=$('ctype'); ct.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; Q.cust.type=b.dataset.t; [...ct.children].forEach(x=>x.classList.toggle('on',x===b)); render(); };
@@ -616,6 +636,58 @@ function ownHtml(it,i){
     <div class="orow"><span class="lbl">소모품</span><input class="amt" type="number" step="1000" value="${+it.consumable||''}" onchange="setItem(${i},'consumable',+this.value||0)"><span class="lbl">상품권</span><input class="amt" type="number" step="10000" value="${+it.giftcard||''}" onchange="setItem(${i},'giftcard',+this.value||0)"></div>
     <div class="orow"><span class="lbl">견적서에서</span>${seg('hidden',[{v:false,l:'보임'},{v:true,l:'숨김 (계산 제외)'}],!!it.hidden)}</div>
   </div>`; }
+/* ═══ 표로 입력 (엑셀 견적서처럼) ═══
+   한 줄 = 한 품목. 칸 이름은 엑셀 견적서·구독 견적서 말 그대로 (견적 품목 · 계약 기간 · 서비스 유형 · 월 구독료 · 월 구독료 혜택가 · ① 결제가).
+   Enter = 아래 칸 · ↑↓ = 위아래 칸(글자 칸) · Tab = 옆 칸 · 맨 아래 줄에 모델명 치고 Enter = 담기 · 엑셀에서 여러 줄(모델명 [탭] 결제가) 복사해 붙여넣기 = 한 번에 담기 */
+let IVIEW=(()=>{ let v=''; try{ v=localStorage.getItem('quote_iview')||''; }catch(e){} return v==='table'||v==='card'? v : (window.matchMedia&&matchMedia('(min-width:900px)').matches?'table':'card'); })();
+function setIView(v){ IVIEW=v; try{ localStorage.setItem('quote_iview',v); }catch(e){} render(); }
+function tableHtml(S){
+  let sumL=0, nL=0;
+  const rows=Q.items.map((it,i)=>{ const info=INFO[it.m], isS=it.mode==='sub', r=S.R[it.m];
+    const ys=info?[...new Set(info.p.map(p=>p[0]))].sort((a,b)=>b-a):[], cy=r?r.y:it.years, cares=info?[...new Set(info.p.filter(p=>p[0]===cy).map(p=>p[1]))]:[];
+    if(!isS&&!it.hidden){ sumL+=+it.lump||0; nL++; }
+    const bd=(it.hidden?'<span class="bd mut">숨김 · 계산 제외</span>':'')+(r&&r.multiRate?`<span class="bd ok" title="다품목 구독 할인 ${Math.round(r.multiRate*1000)/10}% 해당">다품목 ${Math.round(r.multiRate*1000)/10}%</span>`:'')+(r&&r.pkgOn?'<span class="bd ok" title="스마트 패키지 해당">스마트 패키지</span>':'')
+      +(r&&r.manual?'<span class="bd warn">월 구독료 수기</span>':'')+(r&&r.pointsManual?'<span class="bd warn">포인트 수기</span>':'')+(it.prepay!=null?`<span class="bd">선납 ${it.prepay?Math.round(it.prepay*100)+'%':'없음'}</span>`:'')+(it.card!=null?`<span class="bd">${esc(it.card||'카드 없음')}</span>`:'')+(it.free?'<span class="bd mut">직접 입력</span>':'');
+    return `<tr class="${it.mode}${it.hidden?' hid':''}"><td class="c">${i+1}</td><td class="l md"><b>${esc(it.m)}</b></td>
+      <td class="l nm" title="${esc(nameOf(it.m))}">${it.free?'':'<span class="n2">'+esc(nameOf(it.m))+'</span>'}${bd?'<div>'+bd+'</div>':''}</td>
+      <td><select data-k="${i}:0" aria-label="구분" onchange="setItem(${i},'mode',this.value)">${it.noSub?'':`<option value="sub"${isS?' selected':''}>구독</option>`}<option value="lump"${isS?'':' selected'}>일시불</option></select></td>
+      <td>${isS&&info?`<select data-k="${i}:1" aria-label="계약 기간" onchange="setItem(${i},'years',+this.value)">${ys.map(y=>`<option value="${y}"${y===cy?' selected':''}>${y}년</option>`).join('')}</select>`:'<span class="na">—</span>'}</td>
+      <td>${isS&&info?`<select data-k="${i}:2" aria-label="서비스 유형" onchange="setItem(${i},'care',this.value)">${cares.map(k=>`<option value="${esc(k)}"${k===(it.care||r&&r.care)?' selected':''}>${esc(k)}</option>`).join('')}</select>`:'<span class="na">—</span>'}</td>
+      <td class="r num">${isS&&r?fmt(r.monthly):'<span class="na">—</span>'}</td><td class="r num hl">${isS&&r?fmt(r.finalMonthly):(isS?'…':'<span class="na">—</span>')}</td>
+      <td><input data-k="${i}:3" class="amt${+it.lump>0?'':' need'}" type="text" inputmode="numeric" placeholder="입력 필요" aria-label="${isS?'일시불가 (비교용)':'결제가'}" value="${+it.lump?fmt(+it.lump):''}" onchange="setItem(${i},'lump',+this.value.replace(/[^0-9]/g,'')||0)"></td>
+      <td><input data-k="${i}:4" class="note" aria-label="비고" value="${esc(it.note)}" onchange="Q.items[${i}].note=this.value"></td>
+      <td class="c act">${isS&&info?`<button class="mini${it.own?' on':''}" title="품목별 조건 — 선납 · 제휴카드 · 자동결제 할인 · 수기 · 소모품 · 상품권 · 숨김" onclick="setItem(${i},'own',${it.own?'false':'true'})">${it.own?'접기':'조건'}</button>`:''}<button class="mini" aria-label="${esc(it.m)} 빼기" title="빼기" onclick="delItem(${i})">✕</button></td></tr>`
+      +(isS&&info&&it.own?`<tr class="ownrow"><td colspan="11"><div class="item">${ownHtml(it,i)}</div></td></tr>`:''); }).join('');
+  return `<div class="xl-wrap"><table class="xl"><colgroup><col style="width:34px"><col style="width:128px"><col><col style="width:76px"><col style="width:68px"><col style="width:128px"><col style="width:82px"><col style="width:96px"><col style="width:112px"><col style="width:100px"><col style="width:80px"></colgroup><thead><tr><th>No</th><th>모델명</th><th>견적 품목</th><th>구분</th><th>계약 기간</th><th>서비스 유형</th><th>월 구독료</th><th>월 구독료 혜택가</th><th>① 결제가 <small>(일시불가)</small></th><th>비고</th><th></th></tr></thead><tbody>${rows}
+    <tr class="new"><td class="c">＋</td><td colspan="2"><input data-k="new" list="mdl" placeholder="모델명 치고 Enter" autocomplete="off" aria-label="모델명 입력"></td><td colspan="8" class="l hint">모델명을 치고 Enter 로 담습니다 · 엑셀에서 모델명(옆 칸에 결제가) 여러 줄을 복사해 붙여넣으면 한 번에 담깁니다 · Enter = 아래 칸</td></tr>
+    </tbody><tfoot><tr class="tsum"><td colspan="6" class="r">합계 <small>구독 ${S.n}품목 · 일시불 ${nL}품목</small></td><td class="r num">${S.n?fmt(S.monthly):'—'}</td><td class="r num hl">${S.n?fmt(S.pay):'—'}</td><td class="r num">${nL?fmt(sumL):'—'}</td><td colspan="2" class="l hint">월 구독료 합계 · 월 구독료 혜택가 · ① 결제가(일시불 품목)</td></tr></tfoot></table></div>`; }
+/* 모델명 한 줄 담기: 요금표에 있으면 구독으로, 없고 모델명 꼴이면 일시불 품목(직접 입력)으로 */
+function tnewAdd(v){ v=String(v||'').trim(); if(!v) return true; if(/[?&]items=/.test(v)){ applyBundle(parseBundle(v)); return true; }
+  const k=norm(v), all=Object.keys(IDX.m); let m=IDX.m[k]?k:'';
+  if(!m){ let c=all.filter(x=>x.indexOf(k)===0); if(!c.length){ const terms=v.toUpperCase().split(/\s+/); c=all.filter(x=>{ const hay=(x+' '+nameOf(x)).toUpperCase(); return terms.every(t=>hay.indexOf(t)>=0); }); }
+    if(c.length===1) m=c[0]; else if(c.length>1){ toast(`'${v}' 에 맞는 모델이 ${c.length}개입니다 — 모델명을 더 적거나 목록에서 골라 주세요`); return false; } }
+  if(m){ if(Q.items.some(x=>x.m===m)){ toast('이미 담긴 모델입니다'); return true; } addModel(m); return true; }
+  if(/^[A-Z0-9\-\/]{6,}$/.test(k)&&/[A-Z]/.test(k)&&/\d/.test(k)){ addFree(k); toast(`'${k}' 는 구독 요금표에 없는 모델 — 일시불 품목(직접 입력)으로 담았습니다. 결제가를 넣어 주세요`); return true; }
+  toast(`'${v}' 를 찾지 못했습니다 — 위 [품목 담기]에서 제품명으로 찾아 주세요`); return false; }
+/* 엑셀에서 여러 줄 붙여넣기: 줄마다 모델명 칸 하나 + (있으면) 금액 칸 = 결제가 */
+function tnewPaste(text){ let ok=0, free=0, dup=0, bad=0;
+  String(text||'').split(/\r?\n/).forEach(line=>{ const cells=line.split('\t').map(c=>c.trim()).filter(Boolean); if(!cells.length) return; let m='', raw='', price=0;
+    cells.forEach(c=>{ const k=norm(c); if(!m&&IDX.m[k]){ m=k; return; } if(!price&&/^[\d,]+원?$/.test(c)){ const v=+c.replace(/[^0-9]/g,''); if(v>=10000){ price=v; return; } } if(!raw&&/^[A-Z0-9\-\/]{6,}$/.test(k)&&/[A-Z]/.test(k)&&/\d/.test(k)) raw=k; });
+    if(m){ if(Q.items.some(x=>x.m===m)){ dup++; return; } const it=Object.assign({m, mode:'sub', years:0, care:'', lump:price||priceOf(m), note:''}, ITEM_DEF); Q.items.push(it); ensureInfo(m).then(info=>{ if(!info){ it.mode='lump'; it.noSub=true; } render(); }); ok++; }
+    else if(raw){ if(Q.items.some(x=>x.m===raw)){ dup++; return; } Q.items.push(Object.assign({m:raw, mode:'lump', noSub:true, years:0, care:'', lump:price, note:'', free:true}, ITEM_DEF)); free++; }
+    else bad++; });
+  render(); toast(`${ok+free}개 담았습니다`+(free?` · 요금표에 없는 ${free}개는 일시불 품목(직접 입력)`:'')+(dup?` · 이미 담긴 ${dup}개 건너뜀`:'')+(bad?` · 모델명을 못 찾은 줄 ${bad}개`:'')); }
+function bindTable(){ const ib=$('items'); if(ib.dataset.tb) return; ib.dataset.tb='1';
+  ib.addEventListener('keydown',e=>{ const t=e.target, k=t.dataset&&t.dataset.k; if(!k) return;
+    if(k==='new'){ if(e.key==='Enter'){ e.preventDefault(); const v=t.value; t.value=''; if(tnewAdd(v)===false){ const n2=ib.querySelector('[data-k="new"]'); if(n2) n2.value=v; } }
+      else if(e.key==='ArrowUp'&&Q.items.length&&!t.value){ const pv=ib.querySelector(`[data-k="${Q.items.length-1}:3"]`); if(pv){ e.preventDefault(); pv.focus(); pv.select(); } } return; }
+    const rc=k.split(':').map(Number), isIn=t.tagName==='INPUT'; let nr=null;
+    if(e.key==='Enter'||(isIn&&e.key==='ArrowDown')) nr=rc[0]+1; else if(isIn&&e.key==='ArrowUp') nr=rc[0]-1; if(nr===null||nr<0) return;
+    e.preventDefault(); const nx=ib.querySelector(`[data-k="${nr}:${rc[1]}"]`)||ib.querySelector(`[data-k="${nr}:3"]`)||(nr>rc[0]?ib.querySelector('[data-k="new"]'):null); if(nx){ nx.focus(); if(nx.tagName==='INPUT'&&nx.dataset.k!=='new') nx.select(); } });
+  ib.addEventListener('input',e=>{ const t=e.target; if(t.dataset&&t.dataset.k==='new'&&e.inputType!=='insertText'&&e.inputType!=='deleteContentBackward'&&IDX.m[norm(t.value)]){ const v=t.value; t.value=''; tnewAdd(v); } });   // 목록에서 고르면 바로 담기
+  ib.addEventListener('paste',e=>{ const t=e.target; if(!(t.dataset&&t.dataset.k==='new')) return; const tx=(e.clipboardData||window.clipboardData).getData('text')||'';
+    if(/[?&]items=/.test(tx)){ e.preventDefault(); applyBundle(parseBundle(tx)); } else if(/[\n\t]/.test(tx.trim())){ e.preventDefault(); tnewPaste(tx); } });
+  const dl=document.createElement('datalist'); dl.id='mdl'; dl.innerHTML=Object.keys(IDX.m).map(m=>`<option value="${esc(m)}" label="${esc(nameOf(m))}"></option>`).join(''); document.body.appendChild(dl); }
 let UNDO=null, undoT;   // 방금 뺀 품목 — 15초 동안 되돌릴 수 있다
 function keepUndo(){ UNDO=Q.items.slice(); clearTimeout(undoT); undoT=setTimeout(()=>{ UNDO=null; const b=$('undoBtn'); if(b) b.remove(); },15000); }
 function delItem(i){ keepUndo(); Q.items.splice(i,1); render(); toast('뺐습니다 — [뺀 품목 되돌리기]로 되살릴 수 있습니다'); }
@@ -720,7 +792,9 @@ let LAST=null;
 function render(){ LAST=calcAll(); renderEdit(LAST); renderShow(); renderSheet(); }
 function renderEdit({S,L}){
   const box=$('items');
-  box.innerHTML = Q.items.length? Q.items.map((it,i)=>{ const info=INFO[it.m], isS=it.mode==='sub', r=S.R[it.m];
+  document.body.classList.toggle('iv-table',IVIEW==='table');   // 표로 입력: 표가 화면 폭을 다 쓰고 결제 조건·혜택은 표 아래로, 합계는 아래 띠에 늘 보인다
+  const _af=document.activeElement, _fk=_af&&_af.dataset&&box.contains(_af)?_af.dataset.k:'', _fv=_fk&&_af.tagName==='INPUT'?_af.value:null;   // 다시 그려도 치던 칸에 그대로 있게
+  box.innerHTML = IVIEW==='table'? tableHtml(S) : Q.items.length? Q.items.map((it,i)=>{ const info=INFO[it.m], isS=it.mode==='sub', r=S.R[it.m];
     const ys=info?[...new Set(info.p.map(p=>p[0]))].sort((a,b)=>b-a):[], cares=info?[...new Set(info.p.filter(p=>p[0]===it.years).map(p=>p[1]))]:[];
     let rt=''; if(isS&&r) rt=`<div class="big s num">${won(r.finalMonthly)}<span style="font-size:12px;font-weight:600">/월</span></div><div class="sm">정가 ${won(r.monthly)}/월${r.prepayAmt?' · 선납 '+won(r.prepayAmt):''}</div>`;
     else if(isS) rt=`<div class="sm">${info===null?'구독 요금 없음':'요금표 읽는 중…'}</div>`;
@@ -743,6 +817,7 @@ function renderEdit({S,L}){
         ${isS&&info&&it.own? ownHtml(it,i) : ''}</div>
       <div class="rt">${rt}<button class="del" onclick="delItem(${i})">빼기</button></div></div>`; }).join('')
     : `<div class="card hint">아직 담은 품목이 없습니다. 위에서 모델을 찾거나 품목 버튼을 누르세요.</div>`;
+  if(_fk){ const e=box.querySelector('[data-k="'+_fk+'"]'); if(e){ if(_fv!==null&&_fk==='new') e.value=_fv; e.focus(); if(e.tagName==='INPUT'&&_fk!=='new') e.select(); } }
   $('t_sub_m').textContent = S.n? won(S.pay)+'/월' : '—';
   $('t_sub_d').textContent = S.n? `${S.n}품목${S.preAmt?' · 선납 '+won(S.preAmt)+' 별도':''} · 체감 ${won(S.feel)}/월` : '구독 품목 없음';
   const AL=L.items.length?null:allLump();   // 구독만 담았어도 "같은 품목을 전부 일시불로 사면" 을 같이 보여 준다
@@ -752,9 +827,9 @@ function renderEdit({S,L}){
     : (AL? (AL.noPrice? `비교용 · 일시불가가 없는 품목 ${AL.noPrice}개 — 품목 줄의 [일시불가] 칸에 넣어 주세요` : `비교용 · 같은 ${AL.lumpN}품목을 전부 일시불로 살 때 · 결제가 ${won(AL.L.amount)} · ${AL.L.months}개월 월 ${won(AL.L.per)} · 구독 총 지불액 ${won(S.net)} 과 ${won(Math.abs(AL.L.net-S.net))} 차이`) : '일시불 품목 없음');
   $('bb_s').textContent=S.n? won(S.pay)+'/월':'—'; $('bb_n').textContent=S.n? won(S.net):'—';
   $('bb_l').textContent=L.items.length? won(L.net)+(missL?' + α':'') : (AL&&!AL.noPrice? won(AL.L.net) : (AL? '일시불가 입력 필요':'—'));
-  const bk=$('bulk'), nI=Q.items.length; bk.classList.toggle('hidden', !nI&&!UNDO);
+  const bk=$('bulk'), nI=Q.items.length; bk.classList.remove('hidden');
   const ysAll=[...new Set([].concat(...Q.items.map(it=>it.mode==='sub'&&INFO[it.m]?INFO[it.m].p.map(p=>p[0]):[])))].sort((a,b)=>b-a);
-  bk.innerHTML=`<b>담은 품목 ${nI}개</b>`+(nI>=2?`<span class="hint">· 한 번에</span><button class="chip" onclick="allMode('sub')">전부 구독</button><button class="chip" onclick="allMode('lump')">전부 일시불</button>${ysAll.length>1?'<span class="hint">· 계약 기간</span>'+ysAll.map(y=>`<button class="chip" onclick="allYears(${y})">${y}년</button>`).join(''):''}`:'')
+  bk.innerHTML=`<div class="seg sm"><button class="${IVIEW==='table'?'on':''}" onclick="setIView('table')" title="엑셀처럼 한 줄에 한 품목 — Enter 로 아래 칸, 모델명 치고 Enter 로 담기">표로 입력</button><button class="${IVIEW==='table'?'':'on'}" onclick="setIView('card')">카드로 보기</button></div><b>담은 품목 ${nI}개</b>`+(nI>=2?`<span class="hint">· 한 번에</span><button class="chip" onclick="allMode('sub')">전부 구독</button><button class="chip" onclick="allMode('lump')">전부 일시불</button>${ysAll.length>1?'<span class="hint">· 계약 기간</span>'+ysAll.map(y=>`<button class="chip" onclick="allYears(${y})">${y}년</button>`).join(''):''}`:'')
     +'<span class="sp"></span>'+(UNDO?'<button class="chip on" id="undoBtn" onclick="undoDel()">↩ 뺀 품목 되돌리기</button>':'')+(nI>=2?'<button class="chip" onclick="clearItems()">모두 빼기</button>':'');
   const cm=[]; if(Q.cond.reward&&Q.cond.reward!=='0'&&Q.cond.reward!=='off') cm.push('이벤트 리워드'); if(+Q.cond.pointCommon) cm.push('포인트 공통 '+won(+Q.cond.pointCommon)); const ex=(Q.extra||[]).filter(e=>+e.amount>0).length; if(ex) cm.push('기타 혜택 '+ex+'건'); if(Q.cond.namecardId) cm.push('네임카드');
   $('condMoreLbl').textContent=cm.length? cm.join(' · ')+' 적용 중' : '필요할 때만 펼치기'; if(cm.length&&!$('condMore').dataset.t){ $('condMore').open=true; $('condMore').dataset.t='1'; }
