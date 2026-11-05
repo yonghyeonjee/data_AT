@@ -87,6 +87,7 @@ h1,h2,h3{margin:0}
 .item .own select,.item .own input.amt{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12.5px} .item .own input.amt{width:120px;text-align:right}
 .cond .xrow{display:flex;gap:6px;margin-bottom:6px} .cond .xrow input.in{border:1px solid var(--line);border-radius:8px;padding:6px 8px;flex:1;min-width:0} .cond .xrow input.num{max-width:120px;text-align:right}
 .cond input#pointCommon{border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:150px;text-align:right}
+.item input.amt.need{border-color:#e0a23a;background:#fff8ea}
 .item .rt .del{border:0;background:transparent;color:var(--mut);font-size:12px;margin-top:6px;text-decoration:underline;min-height:28px}
 .mode{display:inline-flex;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
 .mode button{border:0;background:transparent;padding:6px 12px;font-weight:800;font-size:12.5px;min-height:34px}
@@ -243,7 +244,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
       <h2>품목 담기 <small>모델명·제품명으로 찾기 · 구독센터 [담기]에서 가져오기</small></h2>
       <div class="add">
         <input id="q" placeholder="예: WD90H25AHS, AI 콤보, 83형" autocomplete="off">
-        <button class="chip" onclick="importBundle()" title="구독센터 다품목 계산기에 담아 둔 모델">구독센터 담기 가져오기</button>
+        <button class="chip" onclick="importBundle()" title="구독센터 다품목 계산기 주소(bundle.html?items=…)를 붙여넣으면 모델·약정·케어·선납·카드까지 가져옵니다">구독센터에서 가져오기</button>
+        <button class="chip" onclick="openBundle()" title="지금 담긴 구독 품목을 구독센터 다품목 계산기로 엽니다">구독센터에서 열기 ↗</button>
         <div class="sug hidden" id="sug"></div>
       </div>
       <div class="chips" style="margin-top:10px" id="catChips"><span class="hint">품목으로 찾기 ·</span></div>
@@ -449,7 +451,8 @@ function loadJs(src){ return new Promise((ok,no)=>{ const s=document.createEleme
   if(Q.no) await loadQuote(Q.no); else { prefillModels(); render(); }
 })();
 /* 매장 상담 줄 [견적서 만들기] · 구독센터 문의에서 넘어온 관심 모델을 바로 담는다: ?models=WD90H25AHW,RF85DB91A1AP (요금표에 없는 모델은 일시불 줄) */
-function prefillModels(){ const ms=String(P.get('models')||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+function bindBundlePaste(){ const q=$('q'); if(!q||q.dataset.bp) return; q.dataset.bp='1'; q.addEventListener('paste',e=>{ const t=(e.clipboardData||window.clipboardData).getData('text')||''; if(/[?&]items=/.test(t)){ e.preventDefault(); applyBundle(parseBundle(t)); } }); }
+function prefillModels(){ bindBundlePaste(); if(P.get('items')){ applyBundle(parseBundle(location.search), true); } const ms=String(P.get('models')||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
   ms.forEach(m=>{ if(Q.items.some(x=>x.m===m)) return; if(IDX&&IDX.m&&IDX.m[m]) addModel(m); else if(priceOf(m)) addModel(m,'lump'); else addFree(m); });
   if(ms.length) toast('문의하신 모델 '+ms.length+'개를 담았습니다'); }
 
@@ -536,9 +539,33 @@ function cardOf(it){ return it.card==null ? (Q.cond.cardOn&&Q.cond.card||'') : i
 function tierOf(it){ return it.card==null ? Q.cond.tier : (it.tier||C.defaultTier(it.card)||''); }
 function prepayOf(it){ return it.prepay==null ? Q.cond.prepay : it.prepay; }
 function ensureInfo(m){ return new Promise(ok=>{ if(INFO[m]!==undefined) return ok(INFO[m]); C.getInfo(m, info=>{ INFO[m]=info||null; ok(INFO[m]); }); }); }
-function importBundle(){ let list=[]; try{ list=JSON.parse(localStorage.getItem('ss_bundle_v1')||'[]'); }catch(e){} list=Array.isArray(list)?list:(list.items||[]);
-  const ms=list.map(x=>typeof x==='string'?x:(x.m||x.model)).filter(Boolean); if(!ms.length){ toast('구독센터 담기 목록이 이 브라우저에 없습니다 (같은 기기의 구독센터에서 담은 것만)'); return; }
-  ms.forEach(m=>{ if(!Q.items.some(x=>x.m===m)) addModel(m); }); toast(ms.length+'개 가져옴'); }
+/* 구독센터 다품목 계산기(www.samsungsh.co.kr/data/gudok/bundle.html) ↔ 견적서 (2026-11-05)
+   두 화면은 도메인이 달라 담기 목록(localStorage)을 같이 못 쓴다 → 주소가 다리다.
+   bundle.html?items=모델~약정~케어~선납,… &card=삼성카드 &tier=30만↑ (&cardoff=1) — sub_bundle.js shareUrl 과 같은 꼴.
+   가져오기: 검색칸에 그 주소를 붙여넣기만 하면 된다 (또는 붙여넣고 [구독센터에서 가져오기]) · /quote/?items=…&card=…&tier=… 로 열어도 된다.
+   보내기: [구독센터에서 열기] 가 지금 구독 품목·조건으로 같은 주소를 만들어 새 창으로 연다. */
+function parseBundle(str){ str=String(str||'').trim(); const qi=str.indexOf('?'); const qs=new URLSearchParams(qi>=0?str.slice(qi+1).replace(/#.*$/,''):str);
+  const items=String(qs.get('items')||'').split(',').map(t=>t.trim()).filter(Boolean).map(t=>{ const a=t.split('~'); return { m:norm(a[0]), y:a[1]?+a[1]:0, c:a[2]||'', p:a[3]?+a[3]:null }; }).filter(x=>x.m);
+  return { items, card:qs.get('card')||'', tier:qs.get('tier')||'', cardOff:qs.get('cardoff')==='1' }; }
+async function applyBundle(b, quiet){ if(!b||!b.items.length){ if(!quiet) toast('가져올 품목이 없습니다 — 구독센터 다품목 계산기 주소(…bundle.html?items=…)를 검색칸에 붙여넣어 주세요'); return 0; }
+  let n=0; const miss=[];
+  for(const x of b.items){ if(!IDX.m[x.m]){ miss.push(x.m); continue; }
+    let it=Q.items.find(i=>i.m===x.m); if(!it){ it=Object.assign({m:x.m, mode:'sub', years:0, care:'', lump:priceOf(x.m), note:''}, ITEM_DEF); Q.items.push(it); }
+    it.mode='sub'; if(x.y) it.years=x.y; if(x.c) it.care=x.c; it.prepay=(x.p!=null?x.p:0); await ensureInfo(x.m); n++; }   // 구독센터 주소에 선납이 없으면 그 화면처럼 선납 없음
+  if(b.cardOff){ Q.cond.card=''; Q.cond.cardOn=false; }
+  else if(b.card && C.cardNames().indexOf(b.card)>=0){ Q.cond.card=b.card; Q.cond.cardOn=true; const cd=window.SUB_CARDS&&window.SUB_CARDS[b.card]; Q.cond.tier=(cd&&cd.t&&cd.t[b.tier]!==undefined)?b.tier:(C.defaultTier(b.card)||''); }
+  if($('subCard')){ $('subCard').value=Q.cond.cardOn?Q.cond.card:''; fillTier(); }
+  render(); toast(`구독센터에서 ${n}개 가져옴${b.card&&!b.cardOff?' · '+b.card+' '+Q.cond.tier:''}${miss.length?' · 요금표에 없는 모델 '+miss.join(', '):''}`); return n; }
+function importBundle(){ const v=$('q').value.trim();
+  if(/items=/.test(v)){ $('q').value=''; $('sug').classList.add('hidden'); applyBundle(parseBundle(v)); return; }
+  let list=[]; try{ list=JSON.parse(localStorage.getItem('ss_bundle_v1')||'[]'); }catch(e){} list=Array.isArray(list)?list:(list.items||[]);
+  const items=list.map(x=>typeof x==='string'?{m:norm(x),y:0,c:'',p:null}:{m:norm(x.m||x.model||''),y:+x.y||0,c:x.c||'',p:x.p!=null?+x.p:null}).filter(x=>x.m);
+  if(items.length){ applyBundle({items, card:'', tier:'', cardOff:false}); return; }
+  toast('구독센터 다품목 계산기 주소(…bundle.html?items=…)를 복사해 검색칸에 붙여넣어 주세요'); $('q').focus(); }
+function bundleUrl(){ if(!LAST) return BUNDLE_URL; const {S}=LAST;
+  const items=S.items.map(it=>{ const r=S.R[it.m], pp=prepayOf(it)||0; return it.m+'~'+r.y+'~'+r.care+(pp?'~'+pp:''); });
+  return BUNDLE_URL+'?items='+encodeURIComponent(items.join(','))+(Q.cond.cardOn&&Q.cond.card?'&card='+encodeURIComponent(Q.cond.card)+'&tier='+encodeURIComponent(Q.cond.tier):'&cardoff=1'); }
+function openBundle(){ if(!LAST||!LAST.S.n){ toast('구독 품목을 먼저 담아 주세요'); return; } window.open(bundleUrl(),'_blank','noopener'); }
 function setItem(i,k,v){ const it=Q.items[i]; it[k]=v; if(k==='years'){ it.care=''; } if(k==='card'){ it.tier=v?(C.defaultTier(v)||''):''; } render(); }
 /* 품목별 조건 (고도몰 견적서의 상품 카드 입력칸과 같은 항목): 선납 · 제휴카드 · 자동결제 할인 · 월 구독료 수기 · 멤버십 포인트 수기 · 소모품 · 상품권 · 숨김 */
 function ownHtml(it,i){
@@ -632,15 +659,16 @@ function scenarios(){
   if(!out.some(r=>r.cur)) out.unshift(mk('지금 선택', it=>it.mode==='sub'));
   return out.slice(0,10);
 }
+function allLump(){ const base=Q.items.filter(it=>!it.hidden); if(!base.length) return null; const items=base.map(it=>Object.assign({},it,{mode:'lump',lump:+it.lump||priceOf(it.m)||0})); const r=calcAll(items); r.lumpN=items.length; r.noPrice=items.filter(x=>!(+x.lump>0)).length; return r; }
 function applyScenario(i){ const r=SCN[i]; if(!r) return; r.items.forEach(x=>{ const it=Q.items.find(y=>y.m===x.m); if(it){ it.mode=x.mode; if(x.mode==='lump'&&!(+it.lump>0)) it.lump=x.lump; } }); render(); toast(r.label+' 조합으로 바꿨습니다'); }
 let SCN=[];
 function scnHtml(){ SCN=scenarios(); if(SCN.length<2) return '<p class="hint">품목을 2개 이상 담으면 조합별 비교가 나옵니다.</p>';
   const cols=['상황','구성','총 구독료 합계','총 혜택 합계<br><small>(구독)</small>','최종 혜택가<br><small>(구독 총 지불액)</small>','① 결제가','최종체감가<br><small>(일시불)</small>','총 지불액 합계','계약 시 선납금','월 납부'];
-  const rows=SCN.map((r,i)=>{ const {S,L}=r; const comp=`구독 ${r.subN}개 · 일시불 ${r.lumpN}개${r.noPrice?' <span class="warn">(결제가 미입력 '+r.noPrice+'개)</span>':''}`;
+  const rows=SCN.map((r,i)=>{ const {S,L}=r; const comp=`구독 ${r.subN}개 · 일시불 ${r.lumpN}개`;
     const mon=[ r.lm&&r.sm? `1~${r.lm}개월 <b>${won(r.m1)}</b>`+(r.sm>r.lm?`<br>${r.lm+1}~${r.sm}개월 <b>${won(r.m2)}</b>`:'') : r.lm? `1~${r.lm}개월 <b>${won(L.per)}</b>` : r.sm? `1~${r.sm}개월 <b>${won(S.pay)}</b>` : '—' ].join('');
     return `<tr class="${r.cur?'cur':''}"><td class="l"><b>${esc(r.label)}</b>${r.cur?'<br><small>지금 선택</small>':`<br><button class="chip" onclick="applyScenario(${i})">이 조합으로</button>`}</td><td class="l">${comp}</td>
       <td>${r.subN?won(S.total):'—'}</td><td class="minus">${r.subN?'−'+won(S.ben):'—'}</td><td><b>${r.subN?won(S.net):'—'}</b></td>
-      <td>${r.lumpN?won(L.amount):'—'}</td><td><b>${r.lumpN?won(L.net):'—'}</b></td><td class="tot"><b>${won(r.total)}</b></td><td>${S.preAmt?won(S.preAmt):'—'}</td><td class="l">${mon}</td></tr>`; }).join('');
+      <td>${r.lumpN?won(L.amount)+(r.noPrice?' <span class="warn">+α</span>':''):'—'}</td><td><b>${r.lumpN?won(L.net)+(r.noPrice?' <span class="warn">+α</span>':''):'—'}</b></td><td class="tot">${r.noPrice?`<span class="warn">일시불가 ${r.noPrice}개 미입력<br>${won(r.total)} + α</span>`:`<b>${won(r.total)}</b>`}</td><td>${S.preAmt?won(S.preAmt):'—'}</td><td class="l">${mon}</td></tr>`; }).join('');
   return `<div class="scn-wrap"><table class="scn"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
     <p class="hint" style="margin:8px 0 0">총 지불액 합계 = 구독 최종 혜택가(총 구독료 합계 − 총 혜택 합계) + 일시불 최종체감가(① 결제가 + 이용료 − 청구할인·캐시백). 구독은 약정 기간 동안 무상 A/S·케어가 포함된 금액이라 일시불 결제가와 1:1 로 견주는 값이 아닙니다. 월 납부 = 월 구독료 혜택가 + 삼성카드 6/12 할부 개월수별 납부금액.</p>`; }
 
@@ -664,7 +692,8 @@ function renderEdit({S,L}){
           <div class="mode">${it.noSub?'':`<button class="s ${isS?'on':''}" onclick="setItem(${i},'mode','sub')">구독</button>`}<button class="l ${isS?'':'on'}" onclick="setItem(${i},'mode','lump')">일시불</button></div>
           ${isS&&info? `<div class="seg sm">${ys.map(y=>`<button class="${y===it.years?'on':''}" onclick="setItem(${i},'years',${y})">${y}년</button>`).join('')}</div>
                  <div class="seg sm">${cares.map(k=>`<button class="${k===it.care?'on':''}" onclick="setItem(${i},'care','${esc(k)}')">${esc(k)}</button>`).join('')}</div>`
-               : (isS?'':`<label class="hint">결제가 <input class="amt" type="number" step="10000" value="${+it.lump||''}" onchange="setItem(${i},'lump',+this.value)" aria-label="결제가"></label>`)}
+               : (isS?`<label class="hint" title="같은 제품을 일시불로 살 때의 결제가 — 여러 상황 비교(전부 일시불 등)에 씁니다. 시흥몰 판매가가 있으면 자동으로 채워집니다">일시불가 <input class="amt${+it.lump>0?'':' need'}" type="number" step="10000" placeholder="입력 필요" value="${+it.lump||''}" onchange="setItem(${i},'lump',+this.value)" aria-label="일시불가 (비교용)"></label>`
+                     :`<label class="hint">결제가 <input class="amt" type="number" step="10000" value="${+it.lump||''}" onchange="setItem(${i},'lump',+this.value)" aria-label="결제가"></label>`)}
           <input class="note" placeholder="비고 (색상·설치 조건)" value="${esc(it.note)}" onchange="Q.items[${i}].note=this.value">
           ${isS&&info?`<button class="chip ${it.own?'on':''}" onclick="setItem(${i},'own',${it.own?'false':'true'})">조건 따로 ${it.own?'▲':'▼'}</button>`:''}
         </div>
@@ -673,8 +702,10 @@ function renderEdit({S,L}){
     : `<div class="card hint">아직 담은 품목이 없습니다. 위에서 모델을 찾거나 품목 버튼을 누르세요.</div>`;
   $('t_sub_m').textContent = S.n? won(S.pay)+'/월' : '—';
   $('t_sub_d').textContent = S.n? `${S.n}품목${S.preAmt?' · 선납 '+won(S.preAmt)+' 별도':''} · 체감 ${won(S.feel)}/월` : '구독 품목 없음';
-  $('t_lump').textContent = L.items.length? won(L.net) : '—';
-  $('t_lump_d').textContent = L.items.length? `${L.items.length}품목 · 할인가 ${won(L.amount)} · ${L.months}개월 월 ${won(L.per)}` : '일시불 품목 없음';
+  const AL=L.items.length?null:allLump();   // 구독만 담았어도 "같은 품목을 전부 일시불로 사면" 을 같이 보여 준다
+  $('t_lump').textContent = L.items.length? won(L.net) : (AL? (AL.noPrice? '일시불가 입력 필요' : won(AL.L.net)) : '—');
+  $('t_lump_d').textContent = L.items.length? `${L.items.length}품목 · 할인가 ${won(L.amount)} · ${L.months}개월 월 ${won(L.per)}`
+    : (AL? (AL.noPrice? `비교용 · 일시불가가 없는 품목 ${AL.noPrice}개 — 품목 줄의 [일시불가] 칸에 넣어 주세요` : `비교용 · 같은 ${AL.lumpN}품목을 전부 일시불로 살 때 · 결제가 ${won(AL.L.amount)} · ${AL.L.months}개월 월 ${won(AL.L.per)} · 구독 총 지불액 ${won(S.net)} 과 ${won(Math.abs(AL.L.net-S.net))} 차이`) : '일시불 품목 없음');
   let d='';
   if(S.n){ d+=`<div class="lbl" style="margin-bottom:4px">구독 혜택</div>
     <div class="kv"><span>총 구독료</span><b class="num">${won(S.total)}</b></div>
@@ -701,12 +732,15 @@ function renderEdit({S,L}){
     ${L.mem?`<div class="kv minus"><span>멤버십 ${(LUMP.member*100)}%</span><span class="num">−${won(L.mem)}</span></div>`:''}
     <div class="kv total"><span>최종체감가</span><span class="num">${won(L.net)}</span></div>`; }
   $('t_detail').innerHTML = d || '<span class="hint">품목을 담으면 혜택이 여기 나옵니다.</span>';
-  const sc=scenarios(); $('t_scn').innerHTML = sc.length>=2 ? `<div class="k" style="margin:10px 0 4px">여러 상황 비교 <small>총 지불액 합계 · 자세한 표는 고객과 보기</small></div>`+sc.map((r,i)=>`<div class="kv ${r.cur?'cur':''}"><span>${esc(r.label)}${r.cur?' <small>(지금)</small>':''}</span><span class="num">${won(r.total)}${r.cur?'':` <button class="chip" onclick="applyScenario(${i})">선택</button>`}</span></div>`).join('') : '';
+  const sc=scenarios(); $('t_scn').innerHTML = sc.length>=2 ? `<div class="k" style="margin:10px 0 4px">여러 상황 비교 <small>총 지불액 합계 · 자세한 표는 고객과 보기</small></div>`+sc.map((r,i)=>`<div class="kv ${r.cur?'cur':''}"><span>${esc(r.label)}${r.cur?' <small>(지금)</small>':''}</span><span class="num">${won(r.total)}${r.noPrice?' <small style="color:#b45309">+α</small>':''}${r.cur?'':` <button class="chip" onclick="applyScenario(${i})">선택</button>`}</span></div>`).join('') : '';
 }
 function renderShow(){ if(!LAST) return; const {S,L}=LAST, name=Q.cust.name||'고객';
   $('s_title').textContent=`${name} 님 ${Q.cust.type} 견적`; $('s_sub').textContent=`${STORE.name} · ${(Q.issuedAt||todayStr()).replace(/-/g,'.')}${ME?' · 담당 '+ME:''} (${STORE.tel})`;
   $('s_m').innerHTML=(S.n?fmt(S.pay):'0')+'<small>원</small>'; $('s_m_d').textContent=S.n?`${S.preAmt?'선납 '+won(S.preAmt)+' 후 ':''}${S.maxM}개월 · 혜택 전 ${won(S.monthly)}/월`:'구독 품목 없음';
-  $('s_l').innerHTML=(L.items.length?fmt(L.net):'0')+'<small>원</small>'; $('s_l_d').textContent=L.items.length?`삼성카드 6/12 ${L.months}개월 · 개월수별 납부 ${won(L.per)} · 결제가 ${won(L.amount)}`:'일시불 품목 없음';
+  const AL=L.items.length?null:allLump();
+  $('s_l').innerHTML=(L.items.length?fmt(L.net):(AL&&!AL.noPrice?fmt(AL.L.net):'0'))+'<small>원</small>';
+  $('s_l_d').textContent=L.items.length?`삼성카드 6/12 ${L.months}개월 · 개월수별 납부 ${won(L.per)} · 결제가 ${won(L.amount)}`
+    : (AL&&!AL.noPrice? `비교 · 같은 품목을 전부 일시불로 살 때 (결제가 ${won(AL.L.amount)} · ${AL.L.months}개월 월 ${won(AL.L.per)})` : (AL&&AL.noPrice? `일시불가가 없는 품목 ${AL.noPrice}개 — 비교하려면 일시불가 입력` : '일시불 품목 없음'));
   $('s_b').innerHTML=fmt(S.ben+L.ben)+'<small>원</small>';
   $('gal').innerHTML=Q.items.filter(it=>!it.hidden).map(it=>{ const r=S.R[it.m], im=imgOf(it.m), info=INFO[it.m], seg=info&&info.s?' · '+esc(info.s):'';
     const head=(cls)=>`<div class="svc ${cls}"><div class="svc-img">${im?`<img src="${esc(im)}" alt="">`:'📦'}</div><div class="svc-info">`+
