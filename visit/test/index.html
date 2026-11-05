@@ -640,7 +640,7 @@ function ledFit(){ if(!document.documentElement.classList.contains('ledon')) ret
   const t=$('ledT1'), row=t.parentNode, z=(+document.documentElement.dataset.zoom)||1, r=row.getBoundingClientRect(), h=r.height/z, w=r.width/z;
   const fs=Math.max(40,Math.floor(Math.min(h*0.9,w*0.8))); t.style.fontSize=fs+'px';
   const one=LED_MSG.map(m=>`<span>${m}</span><span class="led-sep" aria-hidden="true">✦</span>`).join(''); t.innerHTML=one+one;
-  requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--ld',Math.max(10,half/(fs*1.2))+'s'); }); }
+  requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--ld',Math.max(20,half/(fs*0.6))  /* v273 · 0.5배속 */+'s'); }); }
 function ledSet(on){ document.documentElement.classList.toggle('ledon',on); try{localStorage.setItem('sg_led',on?'1':'0');}catch(e){}
   try{ if(YTP&&YTP.pauseVideo){ if(on) YTP.pauseVideo(); else if(document.documentElement.classList.contains('land')){ YTP.mute(); YTP.playVideo(); ytKick(); } } }catch(e){} sgPlayAt=Date.now(); if(on) ledFit(); }
 /* 멈춤 감시 — 재생 시간이 1분 넘게 안 흐르면(버퍼링에 멈춤 포함) 다음 영상, 5분이면 새로 고침(인터넷이 있을 때만) */
