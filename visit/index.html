@@ -24,7 +24,7 @@ body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Malgu
 body::before{content:"";position:fixed;inset:0;background:radial-gradient(900px 500px at 85% 5%,rgba(122,140,232,.35),transparent 60%),radial-gradient(700px 400px at 5% 100%,rgba(15,123,108,.3),transparent 60%);pointer-events:none}
 button,input,textarea{font:inherit;color:inherit}
 .hidden{display:none!important}
-.app{position:relative;height:100%;display:flex;flex-direction:column;padding:28px 36px}
+.app{position:relative;height:var(--app-h,100%);display:flex;flex-direction:column;padding:28px 36px}
 .top{display:flex;align-items:center;justify-content:space-between;color:#fff}
 .top .brand{font-size:12px;letter-spacing:.32em;font-weight:700;color:#9FB0F5}
 .top .brand b{display:block;letter-spacing:-.01em;font-size:20px;color:#fff;margin-top:2px}
@@ -60,6 +60,16 @@ h2 small{display:block;font-size:17px;font-weight:500;color:var(--muted);margin-
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
 .welcome .tips{display:flex;justify-content:center;gap:28px;margin-top:40px;font-size:15px;color:#9FB0F5}
 .welcome .tips span::before{content:"·";margin-right:8px}
+/* v263 · 전면 감사 인사 + 아래 문의 */
+#s-welcome{justify-content:flex-start;padding:0;overflow:hidden}
+#s-welcome .welcome{flex:1;display:flex;flex-direction:column;max-width:none;width:100%;min-height:0}
+.wl-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 0;min-height:0}
+.welcome .wl-hero h1{font-size:72px;line-height:1.22;margin:22px 0 0}
+.wl-ask{padding:30px 0 34px;border-top:1px solid rgba(255,255,255,.16)}
+.wl-ask .ask-t{font-size:34px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+.wl-ask p{font-size:19px}
+.welcome .wl-ask .start{margin-top:26px}
+.welcome .wl-ask .tips{margin-top:24px}
 /* contact */
 .contact{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:16px;min-height:0}
 #s-contact .panel{max-height:none;padding:30px 40px;margin:auto}
@@ -99,13 +109,14 @@ textarea.in{font-size:16px;min-height:64px;resize:none}
 .foot{color:#7A8CE8;font-size:12.5px;text-align:center;padding-top:8px}
 .idle{position:fixed;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.15)}
 .idle i{display:block;height:100%;background:#7A8CE8;width:0;transition:width 1s linear}
-@media(max-width:900px){.opts{grid-template-columns:repeat(3,1fr)}.contact{grid-template-columns:1fr}.panel{padding:28px 24px;border-radius:22px}h2{font-size:27px}.welcome h1{font-size:38px}.app{padding:20px}}
+@media(max-width:900px){.welcome .wl-hero h1{font-size:44px}.wl-ask .ask-t{font-size:26px}.opts{grid-template-columns:repeat(3,1fr)}.contact{grid-template-columns:1fr}.panel{padding:28px 24px;border-radius:22px}h2{font-size:27px}.welcome h1{font-size:38px}.app{padding:20px}}
 @media(max-width:600px){.opts{grid-template-columns:repeat(2,1fr)}.opt{min-height:84px;font-size:17px}.btn{min-width:0;padding:16px 20px;font-size:18px}}
 @media(max-height:700px){.opt{min-height:78px;font-size:17px}.opt .em{font-size:26px}h2{font-size:26px}.panel{padding:26px 32px}.opts{margin-top:18px}.actions{margin-top:18px}}
 /* 휴대폰 : 키오스크(고정 높이) 대신 페이지가 통째로 스크롤되게 — 카드가 잘려 보이던 문제 */
 @media(max-width:700px),(max-height:640px){
   html,body{height:auto;min-height:100%} body{overflow-y:auto;-webkit-overflow-scrolling:touch}
   .app{height:auto;min-height:100%;padding:16px 14px 0}
+  #s-welcome{overflow:visible} .wl-hero{min-height:46vh} .welcome .wl-hero h1{font-size:34px} .wl-ask .ask-t{font-size:23px} .welcome .tips{flex-wrap:wrap;gap:6px 18px}
   .stage{overflow:visible;justify-content:flex-start;padding:14px 0 0}
   .panel{max-height:none;overflow:visible;padding:22px 18px 0;border-radius:20px}
   .opts{overflow:visible;margin-top:18px}
@@ -138,11 +149,17 @@ textarea.in{font-size:16px;min-height:64px;resize:none}
   <!-- 0. 환영 -->
   <div class="stage" id="s-welcome">
     <div class="welcome">
-      <div class="hi">WELCOME</div>
-      <h1>어서 오세요,<br>무엇을 도와드릴까요?</h1>
-      <p>방문 목적을 알려주시면 담당 프로가 더 빠르게 도와드립니다.<br>연락처는 남기지 않으셔도 됩니다.</p>
-      <button class="start" onclick="go(1)">방문 접수 시작하기<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-      <div class="tips"><span>30초면 충분합니다</span><span>화면을 터치해 주세요</span><span>직원 호출은 카운터로</span></div>
+      <!-- 전면 = 감사 인사 · 문의(방문 접수)는 맨 아래 (v263) -->
+      <div class="wl-hero">
+        <div class="hi">WELCOME</div>
+        <h1>삼성스토어 시흥에<br>방문해주셔서 감사합니다.</h1>
+      </div>
+      <div class="wl-ask">
+        <div class="ask-t">무엇을 도와드릴까요?</div>
+        <p>방문 목적을 알려주시면 담당 프로가 더 빠르게 도와드립니다.<br>연락처는 남기지 않으셔도 됩니다.</p>
+        <button class="start" onclick="go(1)">방문 접수 시작하기<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <div class="tips"><span>30초면 충분합니다</span><span>화면을 터치해 주세요</span><span>직원 호출은 카운터로</span></div>
+      </div>
     </div>
   </div>
 
@@ -224,6 +241,12 @@ textarea.in{font-size:16px;min-height:64px;resize:none}
 <script>
 const sb = window.supabase.createClient("https://wdahskrcpjooqhwwxjiu.supabase.co","sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW");
 const $=id=>document.getElementById(id);
+/* 큰 세로 화면(4K 사이니지 등)에서 글자가 손톱만 하게 · 흐릿하게 보이던 것 — 1080×1920(세로) / 1920×1080(가로) 기준으로
+   화면을 통째로 키운다(zoom = 글자를 화면 해상도로 다시 그려 선명함). 기준보다 15% 이상 클 때만. */
+function fitScreen(){ const W=innerWidth,H=innerHeight,port=H>=W, bw=port?1080:1920, bh=port?1920:1080;
+  let z=Math.min(W/bw,H/bh); z=z>1.15?Math.floor(z*100)/100:1;
+  const r=document.documentElement; r.style.zoom=z===1?'':String(z); r.style.setProperty('--app-h',(H/z)+'px'); r.dataset.zoom=z; }
+fitScreen(); addEventListener('resize',fitScreen);
 const PURPOSE=[['🛒','구매 상담','견적·혜택 문의'],['👀','구경·둘러보기','편하게 보러 왔어요'],['📦','제품 수령·설치','주문·배송 확인'],['🔧','A/S·사용 문의','고장·사용법'],['🔁','구독·렌탈 상담','AI 구독클럽·렌탈'],['🎁','이벤트·행사','사은품·프로모션'],['📱','휴대폰·태블릿','갤럭시 개통·기기변경'],['💬','기타','직원에게 말씀해 주세요']];
 const INTEREST=[['🧊','냉장고·김치냉장고'],['🫧','세탁기·건조기'],['📺','TV·사운드바'],['❄️','에어컨·공기청정기'],['🧹','청소기'],['🍳','주방가전'],['📱','갤럭시 폰·태블릿·워치'],['💻','노트북·모니터'],['💧','정수기·렌탈'],['✨','기타·미정']];
 const ROUTE=[['🚶','지나가다','근처 살아요'],['🤝','지인 소개','가족·지인 추천'],['🔍','네이버·검색','지도·블로그'],['📸','SNS·유튜브','인스타·유튜브'],['📨','문자·전화 안내','매장 안내 받음'],['🖥️','삼성닷컴·온라인','온라인 보고 방문'],['⭐','재방문','이전에 구매·상담'],['💬','기타','']];
