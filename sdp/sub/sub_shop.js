@@ -599,31 +599,34 @@ window.SUB_SHOP_READY = true;
     try { if (sessionStorage.getItem('ss_bubble_off')) return; } catch (e) {}
     var t = bubbleTexts(), tel = CFG.tel || (POL && POL.defaults && POL.defaults.tel) || '';
     var b = document.createElement('div'); b.id = 'ssBubble'; b.className = 'ss-bubble'; b.setAttribute('role', 'complementary');
-    b.innerHTML = '<button type="button" class="ss-bubble-x" aria-label="닫기">×</button>' +
+    b.innerHTML = '<button type="button" class="ss-bubble-fold" aria-expanded="true" aria-label="문의 바 내리기"><span aria-hidden="true">▼</span><em>내리기</em></button>' +
+      '<button type="button" class="ss-bubble-x" aria-label="닫기">×</button>' +
       '<p class="ss-bubble-main">💬 ' + esc(t.main) + '</p><p class="ss-bubble-gift">🎁 ' + esc(t.gift) + '</p>' +
       '<div class="ss-bubble-btns"><a class="ss-btn" href="' + esc(consultHref(null, 'bubble')) + '" data-cta="consult">💬 온라인 문의</a>' +
       (tel ? '<a class="ss-btn-line" href="tel:' + esc(tel.replace(/[^0-9]/g, '')) + '" data-cta="tel" aria-label="전화 ' + esc(tel) + '">📞<span class="ss-tel-num"> ' + esc(tel) + '</span></a>' : '') + '</div>';
-    // 말풍선이 목록 끝을 가리지 않게 (2026-11-03): 페이지 끝에 말풍선 높이만큼 빈 자리를 두고, 내려 읽는 동안은 한 줄로 접는다 (누르면 다시 펼침)
+    // 말풍선이 목록 끝을 가리지 않게 (2026-11-03): 페이지 끝에 말풍선 높이만큼 빈 자리를 둔다
     var space = document.createElement('div'); space.id = 'ssBubbleSpace'; space.setAttribute('aria-hidden', 'true');
     document.body.appendChild(space);
     document.body.appendChild(b);
-    function fit() { space.style.height = b.classList.contains('is-on') ? (b.offsetHeight + 24) + 'px' : '0'; }
-    var userOpen = false;
-    function onScroll() {
-      if (!b.classList.contains('is-on')) return;
-      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
-      if (y > 300 && !userOpen && !b.classList.contains('is-mini')) { b.classList.add('is-mini'); fit(); }
-      else if (y < 120 && b.classList.contains('is-mini')) { b.classList.remove('is-mini'); userOpen = false; fit(); }
+    // 스크롤해도 크기 그대로 (2026-11-05) · ▼ 버튼으로 아래로 내리고 ▲ 로 다시 올린다 (이 브라우저 세션 동안 기억)
+    function fit() { space.style.height = b.classList.contains('is-on') && !b.classList.contains('is-fold') ? (b.offsetHeight + 24) + 'px' : '0'; }
+    var fb = b.querySelector('.ss-bubble-fold');
+    function setFold(on) {
+      b.classList.toggle('is-fold', on);
+      fb.setAttribute('aria-expanded', on ? 'false' : 'true');
+      fb.setAttribute('aria-label', on ? '문의 바 올리기' : '문의 바 내리기');
+      fb.innerHTML = on ? '<span aria-hidden="true">▲</span><em>문의</em>' : '<span aria-hidden="true">▼</span><em>내리기</em>';
+      try { sessionStorage.setItem('ss_bubble_fold', on ? '1' : ''); } catch (e) {}
+      fit();
     }
-    window.addEventListener('scroll', onScroll, { passive: true });
+    try { if (sessionStorage.getItem('ss_bubble_fold')) setFold(true); } catch (e) {}
     window.addEventListener('resize', fit);
-    setTimeout(function () { b.classList.add('is-on'); fit(); onScroll(); track('ss_bubble_view'); }, 1500);
+    setTimeout(function () { b.classList.add('is-on'); fit(); track('ss_bubble_view'); }, 1500);
     b.addEventListener('click', function (ev) {
-      var x = ev.target.closest ? ev.target.closest('.ss-bubble-x, a[data-cta]') : null;
+      var x = ev.target.closest ? ev.target.closest('.ss-bubble-x, .ss-bubble-fold, a[data-cta]') : null;
+      if (x && x.classList.contains('ss-bubble-fold')) { var f = !b.classList.contains('is-fold'); setFold(f); track(f ? 'ss_bubble_fold' : 'ss_bubble_unfold'); return; }
       if (!x) {
-        // 휴대폰에서 접힌 하단 바를 누르면 바로 구독 문의로 이동 (2026-11-03)
-        if (b.classList.contains('is-mini') && window.matchMedia && window.matchMedia('(max-width:760px)').matches) { track('ss_bubble_click', { ss_cta: 'consult_bar' }); location.href = consultHref(null, 'bubble'); return; }
-        if (b.classList.contains('is-mini')) { b.classList.remove('is-mini'); userOpen = true; fit(); track('ss_bubble_open'); }
+        if (b.classList.contains('is-fold')) { setFold(false); track('ss_bubble_unfold'); }
         return;
       }
       if (x.classList.contains('ss-bubble-x')) { b.classList.remove('is-on'); fit(); try { sessionStorage.setItem('ss_bubble_off', '1'); } catch (e) {} track('ss_bubble_close'); }
