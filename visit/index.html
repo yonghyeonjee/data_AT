@@ -245,9 +245,9 @@ html.land .sg-hero{text-align:left}
 #sign>#led{position:absolute;inset:0;z-index:20;background:#050505;display:none;flex-direction:column}
 html.ledon #sign>#led{display:flex}
 .led-row{flex:1;min-height:0;position:relative;overflow:hidden;display:flex;align-items:center}
-.led-row+.led-row{border-top:6px solid #111}
 .led-t{display:inline-flex;white-space:nowrap;will-change:transform;animation:sgMq var(--ld,60s) linear infinite;font-weight:900;letter-spacing:.02em;line-height:1}
-.led-t span{padding-right:.8em}
+.led-t span{padding-right:.5em}
+.led-t .led-sep{color:#FFD24A;font-size:.5em;align-self:center;text-shadow:0 0 18px rgba(255,200,80,.9)}
 .led-t{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.75),0 0 44px rgba(255,255,255,.28)}
 /* 강조 — 금빛→주황→분홍이 흐르는 글자 + 숨 쉬는 빛 (2줄은 하늘→파랑→보라) */
 .led-t b{font-weight:900;background:linear-gradient(90deg,#FFE14A,#FF8A3D,#FF3D8B,#FFE14A);background-size:300% 100%;
@@ -261,7 +261,6 @@ html.ledon #sign>#led{display:flex}
 /* 빛줄기가 가끔 쓸고 지나감 */
 .led-row::before{content:"";position:absolute;top:0;bottom:0;left:-30%;width:22%;z-index:1;pointer-events:none;
   background:linear-gradient(100deg,transparent,rgba(255,255,255,.10),transparent);animation:ledSweep 7s ease-in-out infinite}
-.led-row.r2::before{animation-delay:3.5s}
 @keyframes ledSweep{0%,55%{left:-30%}100%{left:120%}}
 /* 점 무늬 — 전광판 LED 알갱이 (흰 글자가 잘 읽히게 촘촘히) */
 .led-row::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(circle at center,transparent 0 50%,rgba(0,0,0,.85) 62%) 0 0/12px 12px}
@@ -293,7 +292,6 @@ html.ledon #sign>#led{display:flex}
   <footer class="sg-mq" aria-label="안내"><div class="sg-mq-t" id="sgMq"></div><button class="sg-ledbtn" id="ledOn" type="button"><i></i>LED 모드</button></footer>
   <div id="led" aria-live="off">
     <div class="led-row r1"><div class="led-t" id="ledT1"></div></div>
-    <div class="led-row r2"><div class="led-t" id="ledT2"></div></div>
     <div class="led-bar"><button class="led-off" id="ledOff" type="button">LED 모드 해제</button></div>
   </div>
 </div>
@@ -535,12 +533,13 @@ function ytTouch(){ if(!YTP) return; try{ YTP.mute(); YTP.playVideo(); }catch(e)
 function sgSound(){ if(!YTP||!YTP.isMuted) return; clearTimeout(sgSndT);
   if(YTP.isMuted()){ YTP.unMute(); YTP.setVolume(60); $('sgSnd').textContent='🔊 소리 켜짐 · 누르면 끔'; sgSndT=setTimeout(()=>{ YTP.mute(); $('sgSnd').textContent='🔇 화면을 누르면 소리'; },180e3); }
   else { YTP.mute(); $('sgSnd').textContent='🔇 화면을 누르면 소리'; } }
-/* LED 모드 — 두 줄이 화면을 나눠 가득 · 켠 상태는 기억(새로 고침해도 그대로) · 켜 있는 동안 영상은 멈춤 */
+/* LED 모드 — 한 줄로 두 문구가 이어 흐름 · 글자는 줄 높이 62%(세로 화면은 폭 36%까지) · 켠 상태는 기억(새로 고침해도 그대로) · 켜 있는 동안 영상은 멈춤 */
 const LED_MSG=['삼성 가전 <b>20% 할인 대축제</b> 중! 많은 관심 부탁드립니다.','<b class="c2">삼성스토어 시흥</b>을 검색해 보세요.'];
 function ledFit(){ if(!document.documentElement.classList.contains('ledon')) return;
-  [['ledT1',0],['ledT2',1]].forEach(([id,k])=>{ const t=$(id), row=t.parentNode, h=row.getBoundingClientRect().height/((+document.documentElement.dataset.zoom)||1);
-    const fs=Math.max(40,Math.floor(h*0.62)); t.style.fontSize=fs+'px'; t.innerHTML=`<span>${LED_MSG[k]}</span>`.repeat(2);
-    requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--ld',Math.max(10,half/(fs*0.9))+'s'); }); }); }
+  const t=$('ledT1'), row=t.parentNode, z=(+document.documentElement.dataset.zoom)||1, r=row.getBoundingClientRect(), h=r.height/z, w=r.width/z;
+  const fs=Math.max(40,Math.floor(Math.min(h*0.62,w*0.36))); t.style.fontSize=fs+'px';
+  const one=LED_MSG.map(m=>`<span>${m}</span><span class="led-sep" aria-hidden="true">✦</span>`).join(''); t.innerHTML=one+one;
+  requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--ld',Math.max(10,half/(fs*0.9))+'s'); }); }
 function ledSet(on){ document.documentElement.classList.toggle('ledon',on); try{localStorage.setItem('sg_led',on?'1':'0');}catch(e){}
   try{ if(YTP&&YTP.pauseVideo){ if(on) YTP.pauseVideo(); else { YTP.mute(); YTP.playVideo(); ytKick(); } } }catch(e){} sgPlayAt=Date.now(); if(on) ledFit(); }
 /* 멈춤 감시 — 재생 시간이 1분 넘게 안 흐르면(버퍼링에 멈춤 포함) 다음 영상, 5분이면 새로 고침(인터넷이 있을 때만) */
