@@ -175,8 +175,8 @@ html.checkin #sign{display:none!important}
 .sg-brand b{display:block;font-size:40px;font-weight:800;letter-spacing:-.02em;margin-top:4px}
 .sg-date{font-size:30px;font-weight:600;color:#C8D0F2;align-self:center;font-variant-numeric:tabular-nums}
 .sg-now{text-align:right}
-.sg-time{font-size:104px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
-.sg-time small{font-size:40px;font-weight:700;margin-right:12px;color:#C8D0F2;letter-spacing:0}
+.sg-time{font-size:72px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.sg-time small{font-size:28px;font-weight:700;margin-right:10px;color:#C8D0F2;letter-spacing:0}
 .sg-time .cl{animation:sgBlink 1s steps(1) infinite}
 @keyframes sgBlink{50%{opacity:.25}}
 .sg-wx{display:inline-flex;align-items:center;gap:12px;margin-top:14px;padding:10px 20px;border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);font-size:28px;font-weight:600;white-space:nowrap}
@@ -213,6 +213,9 @@ html.checkin #sign{display:none!important}
 .sg-in{position:absolute;inset:0;border-radius:28px;overflow:hidden;background:#000}
 .sg-in iframe,#sgPlayer{position:absolute;inset:0;width:100%;height:100%;border:0}
 .sg-shield{position:absolute;inset:0;cursor:pointer}
+.sg-tap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border:0;background:rgba(5,10,40,.72);color:#fff;font:inherit;font-size:34px;font-weight:800;cursor:pointer}
+.sg-tap[hidden]{display:none}
+.sg-tap small{font-size:22px;font-weight:600;color:#C8D0F2}
 .sg-badge{position:absolute;left:18px;top:18px;display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border-radius:999px;background:rgba(0,0,0,.55);font-size:22px;font-weight:700;pointer-events:none}
 .sg-badge i{width:12px;height:12px;border-radius:50%;background:#FF4D4D;animation:sgBlink 1.2s steps(1) infinite}
 .sg-snd{position:absolute;right:16px;bottom:16px;min-height:52px;padding:10px 18px;border-radius:999px;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:22px;font-weight:700;pointer-events:none}
@@ -284,7 +287,7 @@ html.ledon #sign>#led{display:flex}
   </div>
   <section class="sg-vid">
     <div class="sg-box" id="sgBox"><div class="sg-frame" id="sgFrame"><div class="sg-in"><div id="sgPlayer"></div><div class="sg-shield" id="sgShield" title="터치하면 소리 켜기/끄기"></div>
-      <span class="sg-badge"><i></i>삼성 AI 구독클럽</span><span class="sg-snd" id="sgSnd">🔇 화면을 누르면 소리</span></div></div></div>
+      <span class="sg-badge"><i></i>삼성 AI 구독클럽</span><span class="sg-snd" id="sgSnd">🔇 화면을 누르면 소리</span><button class="sg-tap" id="sgTap" type="button" hidden>▶ 화면을 한 번 눌러 주세요<small>영상이 이어서 재생됩니다</small></button></div></div></div>
     <div class="sg-dots" id="sgDots"></div>
   </section>
   <footer class="sg-mq" aria-label="안내"><div class="sg-mq-t" id="sgMq"></div><button class="sg-ledbtn" id="ledOn" type="button"><i></i>LED 모드</button></footer>
@@ -505,18 +508,29 @@ async function sgWeather(){
 function sgMarquee(){ const one=`<span><i>✦</i>${SG_MQ}</span>`; const t=$('sgMq'); t.innerHTML=one.repeat(3)+one.repeat(3);
   requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--mqd',Math.max(12,half/140)+'s'); }); }
 function sgDots(i){ $('sgDots').innerHTML=SG_VIDS.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join(''); }
-/* 유튜브 쇼츠 8편 — 소리 끔 자동 재생 · 다음 영상 · 끝나면 처음부터 */
-function sgYT(){ if(window.YT&&YT.Player) return onYouTubeIframeAPIReady(); const s=document.createElement('script'); s.src='https://www.youtube.com/iframe_api'; s.async=true; document.head.appendChild(s); }
+/* 유튜브 쇼츠 8편 — 소리 끔 자동 재생 · 한 편씩 직접 이어 틀기(재생목록 기능은 자동 재생이 막히는 기기가 있다) · 끝나면 처음부터 */
+let ytIdx=0, ytKickT=null;
+function sgYT(){ if(window.YT&&YT.Player) return onYouTubeIframeAPIReady(); if(document.getElementById('ytApi')) return; const s=document.createElement('script'); s.id='ytApi'; s.src='https://www.youtube.com/iframe_api'; s.async=true; document.head.appendChild(s); }
+function ytLoad(i){ ytIdx=((i%SG_VIDS.length)+SG_VIDS.length)%SG_VIDS.length; sgDots(ytIdx); try{ YTP.mute(); YTP.loadVideoById(SG_VIDS[ytIdx]); }catch(e){} ytKick(); }
+function sgNext(){ if(YTP) ytLoad(ytIdx+1); }
+/* 재생이 안 붙으면 다시 밀어 주고, 그래도 안 되면 '눌러서 시작' 안내 */
+function ytKick(){ clearTimeout(ytKickT); let n=0; const go=()=>{ if(!YTP||document.documentElement.classList.contains('ledon')) return; let st=-9; try{ st=YTP.getPlayerState(); }catch(e){}
+    if(st===1||st===3){ ytTap(false); return; } try{ YTP.mute(); YTP.playVideo(); }catch(e){} n++; if(n>=3) ytTap(true); else ytKickT=setTimeout(go,2500); };
+  ytKickT=setTimeout(go,2500); }
+function ytTap(on){ $('sgTap').hidden=!on; }
 window.onYouTubeIframeAPIReady=function(){
   if(YTP) return;
-  YTP=new YT.Player('sgPlayer',{width:'100%',height:'100%',host:'https://www.youtube-nocookie.com',
-    playerVars:{autoplay:1,mute:1,controls:0,playsinline:1,rel:0,modestbranding:1,iv_load_policy:3,disablekb:1,fs:0,cc_load_policy:0},
+  const pv={autoplay:1,mute:1,controls:0,playsinline:1,rel:0,modestbranding:1,iv_load_policy:3,disablekb:1,fs:0,cc_load_policy:0,enablejsapi:1};
+  if(/^https?:/.test(location.protocol)) pv.origin=location.origin;
+  YTP=new YT.Player('sgPlayer',{width:'100%',height:'100%',videoId:SG_VIDS[0],playerVars:pv,
     events:{
-      onReady:e=>{ const p=e.target; p.mute(); p.loadPlaylist(SG_VIDS,0,0); p.setLoop(true); if(document.documentElement.classList.contains('ledon')) setTimeout(()=>{try{p.pauseVideo()}catch(_){}} ,1500); },
-      onStateChange:e=>{ const p=YTP; if(e.data===1){ sgPlayAt=Date.now(); p.setLoop(true); const i=p.getPlaylistIndex(); if(i>=0) sgDots(i); }
-        if(e.data===0){ const i=p.getPlaylistIndex(); if(i<0||i>=SG_VIDS.length-1) p.playVideoAt(0); else p.nextVideo(); } },
-      onError:()=>{ const p=YTP, i=p.getPlaylistIndex(); setTimeout(()=>p.playVideoAt(((i<0?0:i)+1)%SG_VIDS.length),800); } } });
+      onReady:e=>{ const p=e.target; p.mute(); ytIdx=0; sgDots(0); if(document.documentElement.classList.contains('ledon')) return; p.playVideo(); ytKick(); },
+      onStateChange:e=>{ if(e.data===1){ sgPlayAt=Date.now(); ytTap(false); sgDots(ytIdx); } if(e.data===0) sgNext(); },
+      onError:()=>{ setTimeout(sgNext,800); } } });
 };
+/* 첫 터치 — 자동 재생을 막는 기기에서도 한 번 누르면 계속 돈다 */
+function ytFirst(){ if(!YTP) return; document.removeEventListener('pointerdown',ytFirst,true); ytTouch(); }
+function ytTouch(){ if(!YTP) return; try{ YTP.mute(); YTP.playVideo(); }catch(e){} ytTap(false); }
 /* 화면을 누르면 소리 켜기/끄기 · 3분 뒤 다시 끔 */
 function sgSound(){ if(!YTP||!YTP.isMuted) return; clearTimeout(sgSndT);
   if(YTP.isMuted()){ YTP.unMute(); YTP.setVolume(60); $('sgSnd').textContent='🔊 소리 켜짐 · 누르면 끔'; sgSndT=setTimeout(()=>{ YTP.mute(); $('sgSnd').textContent='🔇 화면을 누르면 소리'; },180e3); }
@@ -528,16 +542,19 @@ function ledFit(){ if(!document.documentElement.classList.contains('ledon')) ret
     const fs=Math.max(40,Math.floor(h*0.62)); t.style.fontSize=fs+'px'; t.innerHTML=`<span>${LED_MSG[k]}</span>`.repeat(2);
     requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--ld',Math.max(10,half/(fs*0.9))+'s'); }); }); }
 function ledSet(on){ document.documentElement.classList.toggle('ledon',on); try{localStorage.setItem('sg_led',on?'1':'0');}catch(e){}
-  try{ if(YTP&&YTP.pauseVideo){ on?YTP.pauseVideo():YTP.playVideo(); } }catch(e){} sgPlayAt=Date.now(); if(on) ledFit(); }
-/* 멈춤 감시 — 2분 넘게 재생이 없으면 다음 영상, 5분이면 새로 고침(인터넷이 있을 때만) */
-setInterval(()=>{ if(!SIGN) return; if(document.documentElement.classList.contains('ledon')){ sgPlayAt=Date.now(); return; } const idle=Date.now()-sgPlayAt; let st=-9; try{ st=YTP?YTP.getPlayerState():-9; }catch(e){}
-  if(st===1||st===3){ sgPlayAt=Date.now(); return; }
+  try{ if(YTP&&YTP.pauseVideo){ if(on) YTP.pauseVideo(); else { YTP.mute(); YTP.playVideo(); ytKick(); } } }catch(e){} sgPlayAt=Date.now(); if(on) ledFit(); }
+/* 멈춤 감시 — 재생 시간이 1분 넘게 안 흐르면(버퍼링에 멈춤 포함) 다음 영상, 5분이면 새로 고침(인터넷이 있을 때만) */
+let sgLastT=-1;
+setInterval(()=>{ if(!SIGN) return; if(document.documentElement.classList.contains('ledon')){ sgPlayAt=Date.now(); return; } let st=-9, ct=-1; try{ st=YTP?YTP.getPlayerState():-9; ct=YTP?+YTP.getCurrentTime():-1; }catch(e){}
+  if((st===1||st===3)&&ct!==sgLastT){ sgLastT=ct; sgPlayAt=Date.now(); return; }
+  if(!$('sgTap').hidden){ sgPlayAt=Date.now(); return; }  /* 자동 재생이 막힌 기기 — 누를 때까지 기다림 */
+  const idle=Date.now()-sgPlayAt;
   if(idle>300e3&&navigator.onLine) location.reload();
-  else if(idle>120e3&&YTP&&YTP.playVideoAt){ try{ const i=YTP.getPlaylistIndex(); YTP.playVideoAt(((i<0?0:i)+1)%SG_VIDS.length); }catch(e){} }
-  else if(!YTP&&idle>60e3) sgYT(); },20000);
+  else if(idle>60e3&&YTP){ sgPlayAt=Date.now()-30e3; sgLastT=-1; sgNext(); }
+  else if(!YTP&&idle>60e3) sgYT(); },15000);
 if(SIGN){ if(window.ResizeObserver) new ResizeObserver(()=>sgFit()).observe($('sgBox')); addEventListener('load',sgFit); document.fonts&&document.fonts.ready.then(sgFit); setTimeout(sgFit,1500);
   sgClock(); setInterval(sgClock,1000); sgWeather(); setInterval(sgWeather,20*60e3); sgMarquee(); sgDots(0); sgFit();
-  $('sgShield').addEventListener('click',sgSound); $('ledOn').addEventListener('click',()=>ledSet(true)); $('ledOff').addEventListener('click',()=>ledSet(false));
+  $('sgShield').addEventListener('click',sgSound); $('sgTap').addEventListener('click',ytTouch); document.addEventListener('pointerdown',ytFirst,true); $('ledOn').addEventListener('click',()=>ledSet(true)); $('ledOff').addEventListener('click',()=>ledSet(false));
   let led0=new URLSearchParams(location.search).get('led'); if(led0==null){ try{ led0=localStorage.getItem('sg_led'); }catch(e){} }
   if(led0==='1') ledSet(true); addEventListener('resize',()=>setTimeout(ledFit,50)); sgYT(); }
 /* 키오스크 모드: ?fs=1 이면 첫 터치에서 전체화면 */
