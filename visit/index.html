@@ -165,7 +165,7 @@ html.checkin #sign{display:none!important}
 .sg-bg i:nth-child(2){width:620px;height:620px;right:-200px;top:900px;background:#0FA58E;animation-duration:30s;opacity:.35}
 .sg-bg i:nth-child(3){width:520px;height:520px;left:260px;bottom:-260px;background:#6E4BE8;animation-duration:27s;opacity:.4}
 @keyframes sgDrift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(120px,-90px) scale(1.18)}}
-#sign>*:not(.sg-bg){position:relative}
+#sign>*:not(.sg-bg):not(.sg-fx){position:relative}
 /* 머리 — 상호 · 날짜 / 큰 시계 · 날씨 */
 .sg-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;row-gap:14px;column-gap:24px}
 .sg-brand,.sg-date,.sg-time{white-space:nowrap} .sg-time{justify-self:end;text-align:right}
@@ -184,15 +184,6 @@ html.checkin #sign{display:none!important}
 .sg-wx b{font-size:34px;font-weight:800}
 .sg-wx em{font-style:normal;color:#B9C4EE;font-size:24px}
 .sg-wx:empty{display:none}
-/* 네이버페이 띠 — 눈에 띄되 가리지 않게 */
-.sg-promo{display:flex;align-items:center;gap:22px;padding:14px 28px 14px 16px;border-radius:22px;overflow:hidden;
-  background:linear-gradient(90deg,rgba(3,199,90,.20),rgba(3,199,90,.06));border:1px solid rgba(43,226,128,.45)}
-.sg-promo::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent);animation:sgShine 6s ease-in-out infinite}
-@keyframes sgShine{0%,60%{left:-40%}100%{left:130%}}
-.sg-ticket{flex:none;width:150px;height:85px;border-radius:12px;background:#2EE27F url("https://godomall-storage.cdn-nhncommerce.com/bbfe079be9069f71afe7ad9a5bf9cee9/editor/board/blog/167/7e6cf154368d1520c79fa93c88f238c1.png") center/124% auto no-repeat}
-.sg-promo b{display:block;font-size:36px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
-.sg-promo b em{font-style:normal;color:#3CF08F}
-.sg-promo small{display:block;font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#CFE9DA;margin-top:4px}
 /* 환영 인사 — 가장 큰 글자 */
 .sg-hero{text-align:center;padding:6px 0 2px}
 .sg-w{font-size:70px;font-weight:900;letter-spacing:.05em;line-height:1.05;
@@ -239,6 +230,68 @@ html.land .sg-mq{grid-column:1/-1;margin:0 -56px}
 html.land .sg-frame{width:100%}
 html.land .sg-hero{text-align:left}
 .sg-main{display:flex;flex-direction:column;gap:26px}
+/* v269 · 세로 화면 = 영상 없이 날씨에 맞춘 감사 인사 + 고객님께 드리는 마음(브랜드 관계 품질 — 신뢰·이해·헌신·친밀·동반) · 날씨·기온이 화면 색과 움직임에 스며듦 */
+html:not(.land) .sg-vid{display:none}
+html.land .sg-care{display:none}
+html:not(.land) .sg-sub .sg-wx{display:none}
+html:not(.land) .sg-hero h1{font-size:54px}
+html:not(.land) .sg-hero h1 strong{font-size:92px;margin-top:10px}
+.sg-care{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-evenly;gap:30px;padding-bottom:10px}
+.sg-hero h1,.sg-wxc .tip,.sg-brq p{text-wrap:balance}
+.sg-wxc{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:36px;padding:34px 44px;border-radius:40px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.2)}
+.sg-wxc[hidden]{display:none}
+.sg-wxc .ic svg{width:200px;height:200px;display:block;filter:drop-shadow(0 10px 30px rgba(0,0,0,.25));animation:wxFloat 6s ease-in-out infinite}
+@keyframes wxFloat{50%{transform:translateY(-12px)}}
+.sg-wxc .tp{font-size:124px;font-weight:900;line-height:.95;letter-spacing:-.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sg-wxc .tp small{font-size:52px;font-weight:800;margin-left:16px;letter-spacing:-.01em;vertical-align:middle}
+.sg-wxc .mt{font-size:32px;font-weight:600;color:rgba(255,255,255,.85);margin-top:14px}
+.sg-wxc .tip{grid-column:1/-1;margin-top:26px;padding-top:24px;border-top:1px solid rgba(255,255,255,.22);font-size:44px;font-weight:700;line-height:1.35;letter-spacing:-.02em}
+.sg-brq{padding:34px 44px 30px;border-radius:40px;background:rgba(255,255,255,.95);color:#0E1A6B;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.sg-brq .lb{display:flex;align-items:center;gap:14px;font-size:28px;font-weight:800;letter-spacing:.02em;color:#1428A0}
+.sg-brq .lb span{color:#E2456B;font-size:30px}
+.sg-brq p{font-size:52px;font-weight:800;line-height:1.32;letter-spacing:-.03em;margin-top:16px;min-height:2.64em;transition:opacity .6s}
+.sg-brq p.out{opacity:0}
+.sg-brq .bd{display:flex;gap:10px;margin-top:16px}
+.sg-brq .bd i{width:12px;height:12px;border-radius:99px;background:#CDD3DE;transition:.4s}
+.sg-brq .bd i.on{width:40px;background:#1428A0}
+/* 날씨별 하늘 */
+#sign{background:var(--sg-sky,transparent)}
+#sign[data-wx=sun]{--sg-sky:linear-gradient(170deg,#0A2F7A 0%,#1858C8 55%,#2A6FD0 100%)}
+#sign[data-wx=part]{--sg-sky:linear-gradient(170deg,#102A66 0%,#24529E 60%,#33609F 100%)}
+#sign[data-wx=night]{--sg-sky:linear-gradient(170deg,#03061A 0%,#0B1240 60%,#16205E 100%)}
+#sign[data-wx=cloud]{--sg-sky:linear-gradient(170deg,#18213A 0%,#2D3A58 60%,#414E68 100%)}
+#sign[data-wx=rain]{--sg-sky:linear-gradient(170deg,#0A1426 0%,#16283F 60%,#22395A 100%)}
+#sign[data-wx=storm]{--sg-sky:linear-gradient(170deg,#06080F 0%,#141A2C 60%,#252C44 100%)}
+#sign[data-wx=snow]{--sg-sky:linear-gradient(170deg,#1B2C52 0%,#33507F 60%,#4A6696 100%)}
+#sign[data-wx=fog]{--sg-sky:linear-gradient(170deg,#262E40 0%,#3A4558 60%,#4A5568 100%)}
+/* 기온별 빛깔 — 더우면 주황 · 따뜻하면 노랑 · 쌀쌀하면 하늘 · 추우면 얼음빛 */
+#sign[data-temp=hot] .sg-bg i:nth-child(1){background:#FF7A2E}#sign[data-temp=hot] .sg-bg i:nth-child(2){background:#FFB020}#sign[data-temp=hot] .sg-bg i:nth-child(3){background:#E2456B}
+#sign[data-temp=warm] .sg-bg i:nth-child(1){background:#F59E42}#sign[data-temp=warm] .sg-bg i:nth-child(2){background:#2BB59A}
+#sign[data-temp=cool] .sg-bg i:nth-child(1){background:#3A7BD5}#sign[data-temp=cool] .sg-bg i:nth-child(2){background:#4FC3F7}
+#sign[data-temp=cold] .sg-bg i:nth-child(1){background:#5AC8FA}#sign[data-temp=cold] .sg-bg i:nth-child(2){background:#B3E5FC}#sign[data-temp=cold] .sg-bg i:nth-child(3){background:#7C9CFF}
+.sg-fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#sign[data-temp=hot] .sg-fx::after{content:"";position:absolute;inset:0;background:radial-gradient(1300px 700px at 50% 112%,rgba(255,140,40,.42),transparent 70%);animation:fxHeat 5s ease-in-out infinite}
+@keyframes fxHeat{50%{opacity:.55;transform:scaleY(1.06)}}
+#sign[data-temp=cold] .sg-fx::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 180px rgba(190,235,255,.42);animation:fxFrost 6s ease-in-out infinite}
+@keyframes fxFrost{50%{opacity:.6}}
+.sg-fx .rn{position:absolute;top:0;width:3px;height:110px;border-radius:2px;background:linear-gradient(transparent,rgba(170,205,255,.8));animation:fxRain linear infinite;transform:translate(0,-160px) rotate(12deg)}
+@keyframes fxRain{to{transform:translate(-460px,2200px) rotate(12deg)}}
+.sg-fx .sn{position:absolute;top:0;border-radius:50%;background:#fff;opacity:.85;animation:fxSnow linear infinite;transform:translate(0,-40px)}
+@keyframes fxSnow{50%{transform:translate(70px,1080px)}100%{transform:translate(0,2200px)}}
+.sg-fx .st{position:absolute;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 8px #fff;animation:fxTw ease-in-out infinite}
+@keyframes fxTw{50%{opacity:.15}}
+.sg-fx .sun{position:absolute;right:-300px;top:-300px;width:1000px;height:1000px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,224,130,.6),rgba(255,180,60,.18) 55%,transparent);animation:fxSun 8s ease-in-out infinite}
+.sg-fx .ray{position:absolute;right:-700px;top:-700px;width:1800px;height:1800px;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,232,160,.09) 0 5deg,transparent 5deg 16deg);
+  -webkit-mask-image:radial-gradient(closest-side,#000 20%,transparent 70%);mask-image:radial-gradient(closest-side,#000 20%,transparent 70%);animation:fxSpin 90s linear infinite}
+@keyframes fxSun{50%{transform:scale(1.08);opacity:.8}}
+@keyframes fxSpin{to{transform:rotate(360deg)}}
+.sg-fx .moon{position:absolute;right:80px;top:150px;width:240px;height:240px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,236,180,.55),rgba(255,236,180,.12) 60%,transparent);animation:fxSun 9s ease-in-out infinite}
+.sg-fx .cl{position:absolute;left:0;width:760px;height:240px;border-radius:50%;background:rgba(255,255,255,.16);filter:blur(34px);animation:fxCloud linear infinite}
+@keyframes fxCloud{from{transform:translateX(-900px)}to{transform:translateX(2300px)}}
+.sg-fx .fg{position:absolute;left:-50%;width:200%;height:280px;background:linear-gradient(90deg,transparent,rgba(225,232,244,.22),transparent);filter:blur(24px);animation:fxFog ease-in-out infinite alternate}
+@keyframes fxFog{to{transform:translateX(25%)}}
+.sg-fx .fl{position:absolute;inset:0;background:#fff;opacity:0;animation:fxFlash 9s infinite}
+@keyframes fxFlash{0%,90%,92.5%,95%,100%{opacity:0}91%{opacity:.35}94%{opacity:.22}}
 /* LED 모드 — 화면 가득 LED 전광판처럼 흐르는 글 · 아래 작은 버튼으로 켜고 끔 */
 .sg-ledbtn{position:absolute;right:16px;top:50%;transform:translateY(-50%);z-index:2;min-height:52px;padding:8px 20px;border-radius:999px;border:1px solid rgba(20,40,160,.25);background:rgba(255,255,255,.92);color:#0E1A6B;font-size:20px;font-weight:800;cursor:pointer;box-shadow:-24px 0 24px #fff}
 .sg-ledbtn i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#FF3B30;margin-right:8px;vertical-align:middle;box-shadow:0 0 8px #FF3B30}
@@ -267,23 +320,27 @@ html.ledon #sign>#led{display:flex}
 .led-bar{flex:none;height:76px;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;background:#000;border-top:1px solid #222}
 .led-off{min-height:52px;padding:8px 22px;border-radius:999px;border:1px solid #444;background:#1A1A1A;color:#ddd;font-size:20px;font-weight:700;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.led-t{animation-duration:calc(var(--ld,60s)*2)}.led-t b,.led-row::before{animation:none}}
-@media (prefers-reduced-motion:reduce){.sg-bg i,.sg-promo::after,.sg-w,.sg-frame::before,.sg-frame::after,.sg-mq-t em,.sg-time .cl{animation:none}}
+@media (prefers-reduced-motion:reduce){.sg-bg i,.sg-fx *,.sg-fx::after,.sg-wxc .ic svg,.sg-w,.sg-frame::before,.sg-frame::after,.sg-mq-t em,.sg-time .cl{animation:none}}
 </style>
 <script>/* 방문 접수 태블릿은 ?checkin=1 — 기본은 매장 사이니지 */if(/[?&]checkin=1/.test(location.search))document.documentElement.classList.add("checkin")</script>
 </head>
 <body>
-<!-- v265 · 매장 사이니지 (기본) -->
+<!-- v269 · 매장 사이니지 (기본) — 세로는 날씨 감사 인사 · 가로는 영상 -->
 <div id="sign">
   <div class="sg-bg"><i></i><i></i><i></i></div>
+  <div class="sg-fx" id="sgFx" aria-hidden="true"></div>
   <header class="sg-top">
     <div class="sg-brand"><span>SAMSUNG STORE</span><b>삼성스토어 시흥</b></div>
     <div class="sg-time" id="sgTime"></div>
     <div class="sg-sub"><div class="sg-date" id="sgDate"></div><div class="sg-wx" id="sgWx"></div></div>
   </header>
   <div class="sg-main">
-    <div class="sg-promo" role="note"><i class="sg-ticket" aria-hidden="true"></i><div><b>상담 완료 시 <em>네이버페이 1만원</em> 지급</b><small>매장 상담을 마치신 고객님께 드립니다 · 자세한 내용은 직원에게 문의해 주세요</small></div></div>
-    <section class="sg-hero"><div class="sg-w">WELCOME TO SAMSUNG</div><h1>삼성스토어 시흥을 방문 주신 고객님<strong>진심으로 환영합니다.</strong></h1></section>
+    <section class="sg-hero"><div class="sg-w">WELCOME TO SAMSUNG</div><h1 id="sgGreet">삼성스토어 시흥을 방문 주신 고객님<strong>진심으로 환영합니다.</strong></h1></section>
   </div>
+  <section class="sg-care" id="sgCare">
+    <div class="sg-wxc" id="sgWxc" hidden><div class="ic" id="sgWxIc"></div><div><div class="tp" id="sgWxTp"></div><div class="mt" id="sgWxMt"></div></div><div class="tip" id="sgWxTip"></div></div>
+    <div class="sg-brq"><div class="lb"><span aria-hidden="true">♥</span> 고객님께 드리는 마음</div><p id="sgBrq"></p><div class="bd" id="sgBrqD"></div></div>
+  </section>
   <section class="sg-vid">
     <div class="sg-box" id="sgBox"><div class="sg-frame" id="sgFrame"><div class="sg-in"><div id="sgPlayer"></div><div class="sg-shield" id="sgShield" title="터치하면 소리 켜기/끄기"></div>
       <span class="sg-badge"><i></i>삼성 AI 구독클럽</span><span class="sg-snd" id="sgSnd">🔇 화면을 누르면 소리</span><button class="sg-tap" id="sgTap" type="button" hidden>▶ 화면을 한 번 눌러 주세요<small>영상이 이어서 재생됩니다</small></button></div></div></div>
@@ -494,9 +551,46 @@ const WX_SVG={
 function wxKind(c,day){ if(c<=1) return [day?'sun':'moon','맑음']; if(c===2) return [day?'part':'cloud','구름 조금']; if(c===3) return ['cloud','흐림'];
   if(c===45||c===48) return ['fog','안개']; if(c>=95) return ['storm','뇌우']; if((c>=71&&c<=77)||c===85||c===86) return ['snow','눈'];
   if(c>=51&&c<=67) return ['rain',c<=57?'이슬비':'비']; if(c>=80&&c<=82) return ['rain','소나기']; return ['cloud','흐림']; }
-function wxPaint(d){ try{ const c=d.current, dl=d.daily; const [k,t]=wxKind(+c.weather_code, +c.is_day!==0);
+/* 날씨·기온 → 인사말 · 화면 하늘색 · 움직임 (가로 화면도 같은 하늘·인사) */
+function wxBand(t){ return t>=28?'hot':t>=20?'warm':t>=10?'mild':t>=1?'cool':'cold'; }
+function wxGreet(k,band,day){
+  if(k==='storm') return ['궂은 날씨를 뚫고 와 주신 고객님','오시는 길 많이 힘드셨지요. 여기서는 마음 편히 쉬어 가세요.'];
+  if(k==='rain') return ['빗속을 걸어와 주신 고객님','젖은 어깨부터 털고, 잠시 따뜻하게 쉬어 가세요.'];
+  if(k==='snow') return ['눈길을 걸어와 주신 고객님','미끄러운 길 오시느라 애쓰셨어요. 따뜻하게 녹이고 가세요.'];
+  if(band==='hot') return ['더위 속에 찾아와 주신 고객님','땀 식히시며 천천히 둘러보세요. 서두르지 않으셔도 괜찮아요.'];
+  if(band==='cold') return ['추위를 뚫고 와 주신 고객님','언 손 녹이시는 동안, 마음 편히 둘러보세요.'];
+  if(band==='cool') return ['쌀쌀한 바람을 지나 와 주신 고객님','따뜻한 이곳에서 마음 편히 머물다 가세요.'];
+  if(k==='fog') return ['안개 낀 길을 지나 와 주신 고객님','오시는 길 조심스러우셨지요. 이제 편히 쉬어 가세요.'];
+  if(!day) return ['하루의 끝에 들러 주신 고객님','오늘 하루도 정말 수고 많으셨습니다.'];
+  if(k==='sun') return ['이 맑은 날, 저희를 떠올려 주신 고객님','오늘의 햇살처럼 환한 하루가 집에서도 이어지길 바랍니다.'];
+  if(k==='part') return ['수많은 곳 중 이곳을 찾아주신 고객님','오늘 이 걸음이 오래 기억될 좋은 날이 되길 바랍니다.'];
+  return ['흐린 날에도 발걸음해 주신 고객님','오늘 저희가 고객님 하루의 맑은 순간이 되어 드릴게요.']; }
+function wxScene(k,band){ const s=$('sign'), th=k==='moon'?'night':k; if(s.dataset.wx===th&&s.dataset.temp===band) return; s.dataset.wx=th; s.dataset.temp=band;
+  const R=(a,b)=>a+Math.random()*(b-a), H=[];
+  const n=(c,f)=>{ for(let i=0;i<c;i++) H.push(f(i)); };
+  if(th==='rain'||th==='storm') n(th==='storm'?90:70,()=>`<i class="rn" style="left:${R(-5,125)}%;animation-duration:${R(.7,1.15).toFixed(2)}s;animation-delay:-${R(0,1.2).toFixed(2)}s;opacity:${R(.4,.95).toFixed(2)}"></i>`);
+  if(th==='storm') H.push('<i class="fl"></i>');
+  if(th==='snow') n(60,()=>{ const z=R(6,16); return `<i class="sn" style="left:${R(-5,105)}%;width:${z}px;height:${z}px;animation-duration:${R(9,18).toFixed(1)}s;animation-delay:-${R(0,18).toFixed(1)}s;opacity:${R(.5,.95).toFixed(2)}"></i>`; });
+  if(th==='night') { H.push('<i class="moon"></i>'); n(70,()=>`<i class="st" style="left:${R(0,100)}%;top:${R(0,70)}%;animation-duration:${R(2,5).toFixed(1)}s;animation-delay:-${R(0,5).toFixed(1)}s"></i>`); }
+  if(th==='sun'||th==='part') H.push('<i class="ray"></i><i class="sun"></i>');
+  if(th==='part'||th==='cloud'||th==='rain'||th==='storm') n(th==='part'?2:4,i=>`<i class="cl" style="top:${R(2,60)}%;animation-duration:${R(90,150)|0}s;animation-delay:-${R(0,150)|0}s;opacity:${R(.5,1).toFixed(2)}"></i>`);
+  if(th==='fog') n(5,i=>`<i class="fg" style="top:${10+i*18}%;animation-duration:${R(14,24)|0}s;animation-delay:-${R(0,20)|0}s"></i>`);
+  $('sgFx').innerHTML=H.join(''); }
+function wxPaint(d){ try{ const c=d.current, dl=d.daily, day=+c.is_day!==0, tc=Math.round(c.temperature_2m); const [k,t]=wxKind(+c.weather_code, day);
     const hi=Math.round(dl.temperature_2m_max[0]), lo=Math.round(dl.temperature_2m_min[0]), pp=dl.precipitation_probability_max?dl.precipitation_probability_max[0]:null;
-    $('sgWx').innerHTML=`${WX_SVG[k]}<b>${Math.round(c.temperature_2m)}°</b>${t}<em>최고 ${hi}° · 최저 ${lo}°${pp!=null?` · 강수 ${pp}%`:''}</em>`; }catch(e){} }
+    $('sgWx').innerHTML=`${WX_SVG[k]}<b>${tc}°</b>${t}<em>최고 ${hi}° · 최저 ${lo}°${pp!=null?` · 강수 ${pp}%`:''}</em>`;
+    const band=wxBand(c.temperature_2m), [lead,tip]=wxGreet(k,band,day);
+    $('sgGreet').innerHTML=`${lead}<strong>진심으로 감사합니다.</strong>`;
+    $('sgWxIc').innerHTML=WX_SVG[k]; $('sgWxTp').innerHTML=`${tc}°<small>${t}</small>`;
+    $('sgWxMt').textContent=`${SG_GEO.name} · 최고 ${hi}° · 최저 ${lo}°${pp!=null?` · 강수 확률 ${pp}%`:''}`;
+    $('sgWxTip').textContent=tip; $('sgWxc').hidden=false; wxScene(k,band); }catch(e){} }
+/* 고객님께 드리는 마음 — 9초마다 한 문장 */
+const SG_BRQ=['고객님의 집에 들어갈 가전이기에, 제 집 일처럼 고르겠습니다.','오늘 처음 뵈었어도, 오래 기억하고 먼저 안부를 여쭙겠습니다.','가족과 함께할 시간이 더 편안해지도록, 마음을 다해 돕겠습니다.','작은 질문 하나도 소중히, 끝까지 귀 기울이겠습니다.','언제든 다시 찾고 싶은 곳, 고객님 곁의 매장이 되겠습니다.'];
+let brqI=-1, brqT=null;
+function brqShow(i){ brqI=(i+SG_BRQ.length)%SG_BRQ.length; const m=SG_BRQ[brqI], p=$('sgBrq');
+  const put=()=>{ p.textContent=m; $('sgBrqD').innerHTML=SG_BRQ.map((_,j)=>`<i class="${j===brqI?'on':''}"></i>`).join(''); p.classList.remove('out'); };
+  if(p.textContent){ p.classList.add('out'); clearTimeout(brqT); brqT=setTimeout(put,600); } else put(); }
+function brqNext(){ brqShow(brqI+1); }
 async function sgWeather(){
   const u=`https://api.open-meteo.com/v1/forecast?latitude=${SG_GEO.lat}&longitude=${SG_GEO.lon}&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FSeoul&forecast_days=1`;
   try{ const ac=new AbortController(), t=setTimeout(()=>ac.abort(),8000); const r=await fetch(u,{signal:ac.signal}); clearTimeout(t);
@@ -533,18 +627,19 @@ function ytTouch(){ if(!YTP) return; try{ YTP.mute(); YTP.playVideo(); }catch(e)
 function sgSound(){ if(!YTP||!YTP.isMuted) return; clearTimeout(sgSndT);
   if(YTP.isMuted()){ YTP.unMute(); YTP.setVolume(60); $('sgSnd').textContent='🔊 소리 켜짐 · 누르면 끔'; sgSndT=setTimeout(()=>{ YTP.mute(); $('sgSnd').textContent='🔇 화면을 누르면 소리'; },180e3); }
   else { YTP.mute(); $('sgSnd').textContent='🔇 화면을 누르면 소리'; } }
-/* LED 모드 — 한 줄로 두 문구가 이어 흐름 · 글자는 줄 높이 62%(세로 화면은 폭 36%까지) · 켠 상태는 기억(새로 고침해도 그대로) · 켜 있는 동안 영상은 멈춤 */
+/* LED 모드 — 한 줄로 두 문구가 이어 흐름 · 글자는 최대(줄 높이 90% · 한 글자가 화면 폭을 넘지 않게 폭 80%까지) · 켠 상태는 기억(새로 고침해도 그대로) · 켜 있는 동안 영상은 멈춤 */
 const LED_MSG=['삼성 가전 <b>20% 할인 대축제</b> 중! 많은 관심 부탁드립니다.','<b class="c2">삼성스토어 시흥</b>을 검색해 보세요.'];
 function ledFit(){ if(!document.documentElement.classList.contains('ledon')) return;
   const t=$('ledT1'), row=t.parentNode, z=(+document.documentElement.dataset.zoom)||1, r=row.getBoundingClientRect(), h=r.height/z, w=r.width/z;
-  const fs=Math.max(40,Math.floor(Math.min(h*0.62,w*0.36))); t.style.fontSize=fs+'px';
+  const fs=Math.max(40,Math.floor(Math.min(h*0.9,w*0.8))); t.style.fontSize=fs+'px';
   const one=LED_MSG.map(m=>`<span>${m}</span><span class="led-sep" aria-hidden="true">✦</span>`).join(''); t.innerHTML=one+one;
-  requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--ld',Math.max(10,half/(fs*0.9))+'s'); }); }
+  requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--ld',Math.max(10,half/(fs*1.2))+'s'); }); }
 function ledSet(on){ document.documentElement.classList.toggle('ledon',on); try{localStorage.setItem('sg_led',on?'1':'0');}catch(e){}
-  try{ if(YTP&&YTP.pauseVideo){ if(on) YTP.pauseVideo(); else { YTP.mute(); YTP.playVideo(); ytKick(); } } }catch(e){} sgPlayAt=Date.now(); if(on) ledFit(); }
+  try{ if(YTP&&YTP.pauseVideo){ if(on) YTP.pauseVideo(); else if(document.documentElement.classList.contains('land')){ YTP.mute(); YTP.playVideo(); ytKick(); } } }catch(e){} sgPlayAt=Date.now(); if(on) ledFit(); }
 /* 멈춤 감시 — 재생 시간이 1분 넘게 안 흐르면(버퍼링에 멈춤 포함) 다음 영상, 5분이면 새로 고침(인터넷이 있을 때만) */
 let sgLastT=-1;
-setInterval(()=>{ if(!SIGN) return; if(document.documentElement.classList.contains('ledon')){ sgPlayAt=Date.now(); return; } let st=-9, ct=-1; try{ st=YTP?YTP.getPlayerState():-9; ct=YTP?+YTP.getCurrentTime():-1; }catch(e){}
+setInterval(()=>{ if(!SIGN) return; if(document.documentElement.classList.contains('ledon')){ sgPlayAt=Date.now(); return; }
+  if(!document.documentElement.classList.contains('land')){ sgPlayAt=Date.now(); try{ if(YTP) YTP.pauseVideo(); }catch(e){} return; }  /* 세로 화면은 영상 없음 */ let st=-9, ct=-1; try{ st=YTP?YTP.getPlayerState():-9; ct=YTP?+YTP.getCurrentTime():-1; }catch(e){}
   if((st===1||st===3)&&ct!==sgLastT){ sgLastT=ct; sgPlayAt=Date.now(); return; }
   if(!$('sgTap').hidden){ sgPlayAt=Date.now(); return; }  /* 자동 재생이 막힌 기기 — 누를 때까지 기다림 */
   const idle=Date.now()-sgPlayAt;
@@ -555,7 +650,9 @@ if(SIGN){ if(window.ResizeObserver) new ResizeObserver(()=>sgFit()).observe($('s
   sgClock(); setInterval(sgClock,1000); sgWeather(); setInterval(sgWeather,20*60e3); sgMarquee(); sgDots(0); sgFit();
   $('sgShield').addEventListener('click',sgSound); $('sgTap').addEventListener('click',ytTouch); document.addEventListener('pointerdown',ytFirst,true); $('ledOn').addEventListener('click',()=>ledSet(true)); $('ledOff').addEventListener('click',()=>ledSet(false));
   let led0=new URLSearchParams(location.search).get('led'); if(led0==null){ try{ led0=localStorage.getItem('sg_led'); }catch(e){} }
-  if(led0==='1') ledSet(true); addEventListener('resize',()=>setTimeout(ledFit,50)); sgYT(); }
+  if(led0==='1') ledSet(true); addEventListener('resize',()=>setTimeout(ledFit,50));
+  brqShow(0); setInterval(brqNext,9000);
+  const land=()=>document.documentElement.classList.contains('land'); if(land()) sgYT(); addEventListener('resize',()=>{ if(land()) sgYT(); }); }
 /* 키오스크 모드: ?fs=1 이면 첫 터치에서 전체화면 */
 if(new URLSearchParams(location.search).get('fs')==='1'){ document.addEventListener('pointerdown',()=>{ document.documentElement.requestFullscreen?.().catch(()=>{}); },{once:true}); }
 </script>
