@@ -12,6 +12,8 @@
 <link rel="preconnect" href="https://wdahskrcpjooqhwwxjiu.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 :root{--ink:#141820;--ink-2:#2E3542;--muted:#646D7C;--faint:#6B7484;--line:#E4E7EE;--line-2:#CDD3DE;
@@ -165,7 +167,7 @@ html.checkin #sign{display:none!important}
 .sg-bg i:nth-child(2){width:620px;height:620px;right:-200px;top:900px;background:#0FA58E;animation-duration:30s;opacity:.35}
 .sg-bg i:nth-child(3){width:520px;height:520px;left:260px;bottom:-260px;background:#6E4BE8;animation-duration:27s;opacity:.4}
 @keyframes sgDrift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(120px,-90px) scale(1.18)}}
-#sign>*:not(.sg-bg){position:relative}
+#sign>*:not(.sg-bg):not(.sg-fx){position:relative}
 /* 머리 — 상호 · 날짜 / 큰 시계 · 날씨 */
 .sg-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;row-gap:14px;column-gap:24px}
 .sg-brand,.sg-date,.sg-time{white-space:nowrap} .sg-time{justify-self:end;text-align:right}
@@ -175,8 +177,8 @@ html.checkin #sign{display:none!important}
 .sg-brand b{display:block;font-size:40px;font-weight:800;letter-spacing:-.02em;margin-top:4px}
 .sg-date{font-size:30px;font-weight:600;color:#C8D0F2;align-self:center;font-variant-numeric:tabular-nums}
 .sg-now{text-align:right}
-.sg-time{font-size:104px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
-.sg-time small{font-size:40px;font-weight:700;margin-right:12px;color:#C8D0F2;letter-spacing:0}
+.sg-time{font-size:72px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.sg-time small{font-size:28px;font-weight:700;margin-right:10px;color:#C8D0F2;letter-spacing:0}
 .sg-time .cl{animation:sgBlink 1s steps(1) infinite}
 @keyframes sgBlink{50%{opacity:.25}}
 .sg-wx{display:inline-flex;align-items:center;gap:12px;margin-top:14px;padding:10px 20px;border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);font-size:28px;font-weight:600;white-space:nowrap}
@@ -184,15 +186,6 @@ html.checkin #sign{display:none!important}
 .sg-wx b{font-size:34px;font-weight:800}
 .sg-wx em{font-style:normal;color:#B9C4EE;font-size:24px}
 .sg-wx:empty{display:none}
-/* 네이버페이 띠 — 눈에 띄되 가리지 않게 */
-.sg-promo{display:flex;align-items:center;gap:22px;padding:14px 28px 14px 16px;border-radius:22px;overflow:hidden;
-  background:linear-gradient(90deg,rgba(3,199,90,.20),rgba(3,199,90,.06));border:1px solid rgba(43,226,128,.45)}
-.sg-promo::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent);animation:sgShine 6s ease-in-out infinite}
-@keyframes sgShine{0%,60%{left:-40%}100%{left:130%}}
-.sg-ticket{flex:none;width:150px;height:85px;border-radius:12px;background:#2EE27F url("https://godomall-storage.cdn-nhncommerce.com/bbfe079be9069f71afe7ad9a5bf9cee9/editor/board/blog/167/7e6cf154368d1520c79fa93c88f238c1.png") center/124% auto no-repeat}
-.sg-promo b{display:block;font-size:36px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
-.sg-promo b em{font-style:normal;color:#3CF08F}
-.sg-promo small{display:block;font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#CFE9DA;margin-top:4px}
 /* 환영 인사 — 가장 큰 글자 */
 .sg-hero{text-align:center;padding:6px 0 2px}
 .sg-w{font-size:70px;font-weight:900;letter-spacing:.05em;line-height:1.05;
@@ -213,6 +206,9 @@ html.checkin #sign{display:none!important}
 .sg-in{position:absolute;inset:0;border-radius:28px;overflow:hidden;background:#000}
 .sg-in iframe,#sgPlayer{position:absolute;inset:0;width:100%;height:100%;border:0}
 .sg-shield{position:absolute;inset:0;cursor:pointer}
+.sg-tap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border:0;background:rgba(5,10,40,.72);color:#fff;font:inherit;font-size:34px;font-weight:800;cursor:pointer}
+.sg-tap[hidden]{display:none}
+.sg-tap small{font-size:22px;font-weight:600;color:#C8D0F2}
 .sg-badge{position:absolute;left:18px;top:18px;display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border-radius:999px;background:rgba(0,0,0,.55);font-size:22px;font-weight:700;pointer-events:none}
 .sg-badge i{width:12px;height:12px;border-radius:50%;background:#FF4D4D;animation:sgBlink 1.2s steps(1) infinite}
 .sg-snd{position:absolute;right:16px;bottom:16px;min-height:52px;padding:10px 18px;border-radius:999px;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:22px;font-weight:700;pointer-events:none}
@@ -220,31 +216,87 @@ html.checkin #sign{display:none!important}
 .sg-dots i{width:14px;height:14px;border-radius:99px;background:rgba(255,255,255,.25);transition:.4s}
 .sg-dots i.on{width:44px;background:#3CF08F}
 /* 아래 흐르는 글 */
-.sg-mq{flex:none;margin:0 -48px;height:104px;display:flex;align-items:center;overflow:hidden;background:#fff;color:#0E1A6B;box-shadow:0 -10px 30px rgba(0,0,0,.25)}
-.sg-mq-t{display:inline-flex;white-space:nowrap;will-change:transform;animation:sgMq var(--mqd,40s) linear infinite}
-.sg-mq-t span{font-size:44px;font-weight:800;letter-spacing:-.02em;padding-right:90px}
-.sg-mq-t em{font-style:normal;color:#fff;background:#1428A0;border-radius:12px;padding:2px 14px;margin:0 4px;animation:sgPop 2.4s ease-in-out infinite;display:inline-block}
-.sg-mq-t span i{font-style:normal;color:#03A84E;margin-right:18px}
 @keyframes sgMq{to{transform:translateX(-50%)}}
-@keyframes sgPop{50%{transform:scale(1.08);background:#03A84E}}
 /* 가로 화면(1920×1080 기준) — 왼쪽 글 · 오른쪽 영상 */
-html.land #sign{display:grid;grid-template-columns:1fr 560px;grid-template-rows:auto 1fr auto;column-gap:56px;row-gap:24px;padding:36px 56px 0}
-html.land .sg-top{grid-column:1/-1}
-html.land .sg-main{grid-column:1;display:flex;flex-direction:column;justify-content:center;gap:40px}
-html.land .sg-vid{grid-column:2;grid-row:2}
-html.land .sg-mq{grid-column:1/-1;margin:0 -56px}
-html.land .sg-frame{width:100%}
-html.land .sg-hero{text-align:left}
 .sg-main{display:flex;flex-direction:column;gap:26px}
+/* v272 · 사이니지 = 감사 인사만 (가로·세로 모두 · 머리·영상·흐르는 글·LED 버튼 없음) · 날씨·기온은 하늘색과 움직임으로만 · LED 모드는 ?led=1 로만 */
+.sg-vid,.sg-top,#sign>#ledOn{display:none}
+#sign{padding:60px 64px;justify-content:center}
+.sg-main{flex:1;min-height:0;justify-content:center;padding-bottom:80px}
+/* v272 · 꽃 테두리 초대장 — 연한 바탕 · 꽃 덩굴 테두리(#sgFlora, 직접 그린 SVG) · 문구는 위쪽 · 날씨·하늘·움직임 없음 */
+#sign.flora{background:#F7F5F0!important;color:#2B3040}
+#sign.flora .sg-bg,#sign.flora .sg-fx{display:none}
+.sg-flora{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+#sign>#sgFlora{position:absolute}
+#sign.flora{padding:0}
+#sign.flora .sg-hero{font-family:'Nanum Myeongjo','Noto Serif KR','AppleMyungjo','Batang',serif}
+#sign.flora .sg-main{flex:1;min-height:0;justify-content:flex-start;padding:250px 110px 0;z-index:1}
+#sign.flora .sg-hero{text-align:center;padding:0}
+#sign.flora .sg-w{font-size:58px;font-weight:800;letter-spacing:.08em;color:#6E7A3C;background:none;-webkit-background-clip:border-box;background-clip:border-box;animation:none}
+#sign.flora .sg-hero h1{font-size:62px;font-weight:800;line-height:1.5;margin-top:30px;color:#2B3040;letter-spacing:-.03em}
+.sg-orn{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:28px}
+.sg-orn svg{width:44px;height:44px}
+#sgGreet span{display:block;white-space:nowrap}
+.sg-orn i{width:150px;height:2px;background:linear-gradient(90deg,transparent,#D9A7A4)}
+.sg-orn i:last-child{transform:scaleX(-1)}
+.sg-names{list-style:none;margin:64px auto 0;padding:56px 0 0;width:min(78%,760px);display:flex;flex-direction:column;gap:24px;position:relative}
+.sg-names::before{content:"";position:absolute;left:12%;right:12%;top:0;height:2px;background:linear-gradient(90deg,transparent,#D9A7A4,transparent)}
+.sg-names:empty{display:none}
+.sg-names li{font-size:100px;font-weight:900;letter-spacing:-.03em;line-height:1.12;white-space:nowrap;color:#B04E66}
+.sg-names li small{font-size:58px;font-weight:700;margin-left:18px;color:#5A6070}
+html.land #sign.flora .sg-main{padding:150px 230px 0}
+html.land #sign.flora .sg-w{font-size:48px}
+html.land #sign.flora .sg-hero h1{font-size:58px;margin-top:24px}
+html.land .sg-names{margin-top:36px;padding-top:34px;gap:12px}
+html.land .sg-names li{font-size:78px}
+html.land .sg-names li small{font-size:48px}
+/* 날씨별 하늘 */
+#sign{background:var(--sg-sky,transparent)}
+#sign[data-wx=sun]{--sg-sky:linear-gradient(170deg,#0A2F7A 0%,#1858C8 55%,#2A6FD0 100%)}
+#sign[data-wx=part]{--sg-sky:linear-gradient(170deg,#102A66 0%,#24529E 60%,#33609F 100%)}
+#sign[data-wx=night]{--sg-sky:linear-gradient(170deg,#03061A 0%,#0B1240 60%,#16205E 100%)}
+#sign[data-wx=cloud]{--sg-sky:linear-gradient(170deg,#18213A 0%,#2D3A58 60%,#414E68 100%)}
+#sign[data-wx=rain]{--sg-sky:linear-gradient(170deg,#0A1426 0%,#16283F 60%,#22395A 100%)}
+#sign[data-wx=storm]{--sg-sky:linear-gradient(170deg,#06080F 0%,#141A2C 60%,#252C44 100%)}
+#sign[data-wx=snow]{--sg-sky:linear-gradient(170deg,#1B2C52 0%,#33507F 60%,#4A6696 100%)}
+#sign[data-wx=fog]{--sg-sky:linear-gradient(170deg,#262E40 0%,#3A4558 60%,#4A5568 100%)}
+/* 기온별 빛깔 — 더우면 주황 · 따뜻하면 노랑 · 쌀쌀하면 하늘 · 추우면 얼음빛 */
+#sign[data-temp=hot] .sg-bg i:nth-child(1){background:#FF7A2E}#sign[data-temp=hot] .sg-bg i:nth-child(2){background:#FFB020}#sign[data-temp=hot] .sg-bg i:nth-child(3){background:#E2456B}
+#sign[data-temp=warm] .sg-bg i:nth-child(1){background:#F59E42}#sign[data-temp=warm] .sg-bg i:nth-child(2){background:#2BB59A}
+#sign[data-temp=cool] .sg-bg i:nth-child(1){background:#3A7BD5}#sign[data-temp=cool] .sg-bg i:nth-child(2){background:#4FC3F7}
+#sign[data-temp=cold] .sg-bg i:nth-child(1){background:#5AC8FA}#sign[data-temp=cold] .sg-bg i:nth-child(2){background:#B3E5FC}#sign[data-temp=cold] .sg-bg i:nth-child(3){background:#7C9CFF}
+.sg-fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#sign[data-temp=hot] .sg-fx::after{content:"";position:absolute;inset:0;background:radial-gradient(1300px 700px at 50% 112%,rgba(255,140,40,.42),transparent 70%);animation:fxHeat 5s ease-in-out infinite}
+@keyframes fxHeat{50%{opacity:.55;transform:scaleY(1.06)}}
+#sign[data-temp=cold] .sg-fx::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 180px rgba(190,235,255,.42);animation:fxFrost 6s ease-in-out infinite}
+@keyframes fxFrost{50%{opacity:.6}}
+.sg-fx .rn{position:absolute;top:0;width:3px;height:110px;border-radius:2px;background:linear-gradient(transparent,rgba(170,205,255,.8));animation:fxRain linear infinite;transform:translate(0,-160px) rotate(12deg)}
+@keyframes fxRain{to{transform:translate(-460px,2200px) rotate(12deg)}}
+.sg-fx .sn{position:absolute;top:0;border-radius:50%;background:#fff;opacity:.85;animation:fxSnow linear infinite;transform:translate(0,-40px)}
+@keyframes fxSnow{50%{transform:translate(70px,1080px)}100%{transform:translate(0,2200px)}}
+.sg-fx .st{position:absolute;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 8px #fff;animation:fxTw ease-in-out infinite}
+@keyframes fxTw{50%{opacity:.15}}
+.sg-fx .sun{position:absolute;right:-300px;top:-300px;width:1000px;height:1000px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,224,130,.6),rgba(255,180,60,.18) 55%,transparent);animation:fxSun 8s ease-in-out infinite}
+.sg-fx .ray{position:absolute;right:-700px;top:-700px;width:1800px;height:1800px;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,232,160,.09) 0 5deg,transparent 5deg 16deg);
+  -webkit-mask-image:radial-gradient(closest-side,#000 20%,transparent 70%);mask-image:radial-gradient(closest-side,#000 20%,transparent 70%);animation:fxSpin 90s linear infinite}
+@keyframes fxSun{50%{transform:scale(1.08);opacity:.8}}
+@keyframes fxSpin{to{transform:rotate(360deg)}}
+.sg-fx .moon{position:absolute;right:80px;top:150px;width:240px;height:240px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,236,180,.55),rgba(255,236,180,.12) 60%,transparent);animation:fxSun 9s ease-in-out infinite}
+.sg-fx .cl{position:absolute;left:0;width:760px;height:240px;border-radius:50%;background:rgba(255,255,255,.16);filter:blur(34px);animation:fxCloud linear infinite}
+@keyframes fxCloud{from{transform:translateX(-900px)}to{transform:translateX(2300px)}}
+.sg-fx .fg{position:absolute;left:-50%;width:200%;height:280px;background:linear-gradient(90deg,transparent,rgba(225,232,244,.22),transparent);filter:blur(24px);animation:fxFog ease-in-out infinite alternate}
+@keyframes fxFog{to{transform:translateX(25%)}}
+.sg-fx .fl{position:absolute;inset:0;background:#fff;opacity:0;animation:fxFlash 9s infinite}
+@keyframes fxFlash{0%,90%,92.5%,95%,100%{opacity:0}91%{opacity:.35}94%{opacity:.22}}
 /* LED 모드 — 화면 가득 LED 전광판처럼 흐르는 글 · 아래 작은 버튼으로 켜고 끔 */
-.sg-ledbtn{position:absolute;right:16px;top:50%;transform:translateY(-50%);z-index:2;min-height:52px;padding:8px 20px;border-radius:999px;border:1px solid rgba(20,40,160,.25);background:rgba(255,255,255,.92);color:#0E1A6B;font-size:20px;font-weight:800;cursor:pointer;box-shadow:-24px 0 24px #fff}
+#sign>#ledOn{position:absolute;right:16px;bottom:26px;z-index:5;min-height:52px;padding:8px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.12);color:#fff;font-size:20px;font-weight:800;cursor:pointer;opacity:.75}
 .sg-ledbtn i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#FF3B30;margin-right:8px;vertical-align:middle;box-shadow:0 0 8px #FF3B30}
 #sign>#led{position:absolute;inset:0;z-index:20;background:#050505;display:none;flex-direction:column}
 html.ledon #sign>#led{display:flex}
 .led-row{flex:1;min-height:0;position:relative;overflow:hidden;display:flex;align-items:center}
-.led-row+.led-row{border-top:6px solid #111}
 .led-t{display:inline-flex;white-space:nowrap;will-change:transform;animation:sgMq var(--ld,60s) linear infinite;font-weight:900;letter-spacing:.02em;line-height:1}
-.led-t span{padding-right:.8em}
+.led-t span{padding-right:.5em}
+.led-t .led-sep{color:#FFD24A;font-size:.5em;align-self:center;text-shadow:0 0 18px rgba(255,200,80,.9)}
 .led-t{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.75),0 0 44px rgba(255,255,255,.28)}
 /* 강조 — 금빛→주황→분홍이 흐르는 글자 + 숨 쉬는 빛 (2줄은 하늘→파랑→보라) */
 .led-t b{font-weight:900;background:linear-gradient(90deg,#FFE14A,#FF8A3D,#FF3D8B,#FFE14A);background-size:300% 100%;
@@ -258,39 +310,38 @@ html.ledon #sign>#led{display:flex}
 /* 빛줄기가 가끔 쓸고 지나감 */
 .led-row::before{content:"";position:absolute;top:0;bottom:0;left:-30%;width:22%;z-index:1;pointer-events:none;
   background:linear-gradient(100deg,transparent,rgba(255,255,255,.10),transparent);animation:ledSweep 7s ease-in-out infinite}
-.led-row.r2::before{animation-delay:3.5s}
 @keyframes ledSweep{0%,55%{left:-30%}100%{left:120%}}
 /* 점 무늬 — 전광판 LED 알갱이 (흰 글자가 잘 읽히게 촘촘히) */
 .led-row::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(circle at center,transparent 0 50%,rgba(0,0,0,.85) 62%) 0 0/12px 12px}
 .led-bar{flex:none;height:76px;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;background:#000;border-top:1px solid #222}
 .led-off{min-height:52px;padding:8px 22px;border-radius:999px;border:1px solid #444;background:#1A1A1A;color:#ddd;font-size:20px;font-weight:700;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.led-t{animation-duration:calc(var(--ld,60s)*2)}.led-t b,.led-row::before{animation:none}}
-@media (prefers-reduced-motion:reduce){.sg-bg i,.sg-promo::after,.sg-w,.sg-frame::before,.sg-frame::after,.sg-mq-t em,.sg-time .cl{animation:none}}
+@media (prefers-reduced-motion:reduce){.sg-bg i,.sg-fx *,.sg-fx::after,.sg-w,.sg-frame::before,.sg-frame::after,.sg-time .cl{animation:none}}
 </style>
 <script>/* 방문 접수 태블릿은 ?checkin=1 — 기본은 매장 사이니지 */if(/[?&]checkin=1/.test(location.search))document.documentElement.classList.add("checkin")</script>
 </head>
 <body>
-<!-- v265 · 매장 사이니지 (기본) -->
-<div id="sign">
+<!-- v272 · 매장 사이니지 (기본) — 꽃 테두리 · 위쪽에 고정 감사 문구 + 고객 이름 -->
+<div id="sign" class="flora">
   <div class="sg-bg"><i></i><i></i><i></i></div>
+  <div class="sg-fx" id="sgFx" aria-hidden="true"></div>
+  <svg class="sg-flora" id="sgFlora" aria-hidden="true"></svg>
   <header class="sg-top">
     <div class="sg-brand"><span>SAMSUNG STORE</span><b>삼성스토어 시흥</b></div>
     <div class="sg-time" id="sgTime"></div>
     <div class="sg-sub"><div class="sg-date" id="sgDate"></div><div class="sg-wx" id="sgWx"></div></div>
   </header>
   <div class="sg-main">
-    <div class="sg-promo" role="note"><i class="sg-ticket" aria-hidden="true"></i><div><b>상담 완료 시 <em>네이버페이 1만원</em> 지급</b><small>매장 상담을 마치신 고객님께 드립니다 · 자세한 내용은 직원에게 문의해 주세요</small></div></div>
-    <section class="sg-hero"><div class="sg-w">WELCOME TO SAMSUNG</div><h1>삼성스토어 시흥을 방문 주신 고객님<strong>진심으로 환영합니다.</strong></h1></section>
+    <section class="sg-hero"><div class="sg-w">삼성스토어 시흥</div><div class="sg-orn" aria-hidden="true"><i></i><svg viewBox="-30 -30 60 60"><g fill="#E6A3A1"><ellipse rx="9" ry="17" transform="translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(72) translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(144) translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(216) translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(288) translate(0 -11)"/></g><circle r="6" fill="#F1CF6E"/></svg><i></i></div><h1 id="sgGreet"><span>매장에 귀한 걸음해주신</span><span>고객님 진심으로 감사합니다.</span></h1><ul class="sg-names" id="sgNames"></ul></section>
   </div>
   <section class="sg-vid">
     <div class="sg-box" id="sgBox"><div class="sg-frame" id="sgFrame"><div class="sg-in"><div id="sgPlayer"></div><div class="sg-shield" id="sgShield" title="터치하면 소리 켜기/끄기"></div>
-      <span class="sg-badge"><i></i>삼성 AI 구독클럽</span><span class="sg-snd" id="sgSnd">🔇 화면을 누르면 소리</span></div></div></div>
+      <span class="sg-badge"><i></i>삼성 AI 구독클럽</span><span class="sg-snd" id="sgSnd">🔇 화면을 누르면 소리</span><button class="sg-tap" id="sgTap" type="button" hidden>▶ 화면을 한 번 눌러 주세요<small>영상이 이어서 재생됩니다</small></button></div></div></div>
     <div class="sg-dots" id="sgDots"></div>
   </section>
-  <footer class="sg-mq" aria-label="안내"><div class="sg-mq-t" id="sgMq"></div><button class="sg-ledbtn" id="ledOn" type="button"><i></i>LED 모드</button></footer>
+  <button class="sg-ledbtn" id="ledOn" type="button"><i></i>LED 모드</button>
   <div id="led" aria-live="off">
     <div class="led-row r1"><div class="led-t" id="ledT1"></div></div>
-    <div class="led-row r2"><div class="led-t" id="ledT2"></div></div>
     <div class="led-bar"><button class="led-off" id="ledOff" type="button">LED 모드 해제</button></div>
   </div>
 </div>
@@ -466,8 +517,35 @@ setInterval(()=>{ if(step===0){ $('idleBar').style.width='0'; return; } idleT++;
 function clock(){ const d=new Date(); $('clock').innerHTML=d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'})+'<br>'+d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}); }
 clock(); setInterval(clock,15000); render(); go(0);
 /* ===== v265 · 사이니지 ===== */
+/* v272 · 환영할 고객 이름 — 바꾸려면 이 배열, 또는 주소에 ?names=홍길동,김철수 (비우면 이름 줄 없음) */
+const SG_NAMES=['장성원','차효범'];
+function sgNames(){ let n=SG_NAMES; const q=new URLSearchParams(location.search).get('names'); if(q!=null) n=q.split(',').map(x=>x.trim()).filter(Boolean);
+  const E=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  document.getElementById('sgNames').innerHTML=n.map(x=>`<li>${E(x)}<small>고객님</small></li>`).join(''); }
+/* v272 · 꽃 덩굴 테두리 — 화면 크기에 맞춰 둘레를 따라 잎·분홍 꽃·물망초를 놓는다(같은 씨앗 → 늘 같은 모양) */
+function sgFlora(){ const sv=$('sgFlora'), sg=$('sign'); if(!sv) return; const W=sg.clientWidth, H=sg.clientHeight; if(!W||!H) return;
+  let seed=7; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647), R=(a,b)=>a+rnd()*(b-a);
+  const m=Math.round(Math.min(W,H)*0.085), P=[]; // 덩굴 선(둥근 사각형) 위의 점
+  const L=[[m,m,W-m,m],[W-m,m,W-m,H-m],[W-m,H-m,m,H-m],[m,H-m,m,m]];
+  const leaf=(x,y,a,s,c)=>`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${a.toFixed(1)}) scale(${s.toFixed(2)})"><path d="M0 0C12-17 40-17 54 0C40 17 12 17 0 0Z" fill="${c}"/><path d="M2 0L48 0" stroke="#7E8A43" stroke-width="1.6" opacity=".55"/></g>`;
+  const blossom=(x,y,a,s)=>`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${a.toFixed(1)}) scale(${s.toFixed(2)})"><path d="M0 26C-30 18-34-18-14-34C-6-20 0-14 0-14S6-20 14-34C34-18 30 18 0 26Z" fill="#F0BDB8"/><path d="M0 26C-18 14-20-14-8-30C-2-14 0-8 0-8S2-14 8-30C20-14 18 14 0 26Z" fill="#E6A3A1"/><path d="M0 22C-8 10-8-10 0-24C8-10 8 10 0 22Z" fill="#F7D3CE"/><path d="M0 26L0 44" stroke="#8C9A4E" stroke-width="3"/></g>`;
+  const forget=(x,y,s)=>{ let h=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(2)})">`; for(let i=0;i<5;i++){ const t=i*72*Math.PI/180; h+=`<circle cx="${(Math.cos(t)*5.5).toFixed(1)}" cy="${(Math.sin(t)*5.5).toFixed(1)}" r="4.6" fill="${i%2?'#86C3D4':'#9FD0DC'}"/>`; } return h+`<circle r="2.6" fill="#F1CF6E"/></g>`; };
+  const bud=(x,y,s)=>`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(2)})"><circle r="5" fill="#EBB7C2"/><circle r="2" fill="#F8E1E6"/></g>`;
+  const G=[], F=[], B=[];
+  L.forEach(([x1,y1,x2,y2])=>{ const len=Math.hypot(x2-x1,y2-y1), ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI, nx=-(y2-y1)/len, ny=(x2-x1)/len; const step=34; let k=0;
+    for(let d=0; d<len; d+=step, k++){ const x=x1+(x2-x1)*d/len, y=y1+(y2-y1)*d/len, side=k%2?1:-1, wob=R(-6,6);
+      const px=x+nx*wob, py=y+ny*wob;
+      G.push(leaf(px,py,ang+side*R(35,70)+(side<0?180:0),R(0.7,1.05),rnd()<.5?'#A9B46A':'#BCC47E'));
+      if(k%5===2) F.push(blossom(px+nx*side*6,py+ny*side*6,ang+90+R(-35,35)+(side<0?180:0),R(0.85,1.2)));
+      else if(k%3===0){ for(let j=0;j<3;j++) B.push(forget(px+R(-18,18),py+R(-18,18),R(.8,1.25))); }
+      else if(rnd()<.6) B.push(bud(px+R(-14,14),py+R(-14,14),R(.8,1.3)));
+    } });
+  // 네 모서리에 큰 꽃 묶음
+  [[m,m],[W-m,m],[W-m,H-m],[m,H-m]].forEach(([x,y],i)=>{ F.push(blossom(x,y,45+i*90,1.45)); for(let j=0;j<5;j++) B.push(forget(x+R(-34,34),y+R(-34,34),R(1,1.4))); G.push(leaf(x,y,i*90+R(-20,20),1.2,'#A3AE62'),leaf(x,y,i*90+90+R(-20,20),1.1,'#B6BF78')); });
+  sv.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  sv.innerHTML=`<rect x="${m}" y="${m}" width="${W-2*m}" height="${H-2*m}" rx="18" fill="none" stroke="#B3BC7C" stroke-width="2" opacity=".8"/>`+G.join('')+B.join('')+F.join(''); }
+const SG_VIDEO=false;  /* v272 · 영상 뺌 — 다시 쓰려면 true + CSS .sg-vid·.sg-top 숨김 풀기 */
 const SG_VIDS=['CPsl0JPvzpA','kpV8-3S7gow','VPn1YUe2SeU','k7STVYyGwys','LGM7H9k6axg','0_b1jsrO2B4','2oHqZXR-CH4','rZ7b749rjN8'];
-const SG_MQ='일시불보다 저렴한 <em>구독가</em> 제품이 있는지 꼭 문의해 보세요';
 const SG_GEO={lat:37.38,lon:126.80,name:'시흥'};
 let YTP=null, sgPlayAt=Date.now(), sgSndT=null, sgStart=Date.now();
 /* 영상 틀 = 남는 공간 안에서 9:16 이 가장 크게 (확대 배율과 무관하게 비율로 계산) */
@@ -493,53 +571,94 @@ const WX_SVG={
 function wxKind(c,day){ if(c<=1) return [day?'sun':'moon','맑음']; if(c===2) return [day?'part':'cloud','구름 조금']; if(c===3) return ['cloud','흐림'];
   if(c===45||c===48) return ['fog','안개']; if(c>=95) return ['storm','뇌우']; if((c>=71&&c<=77)||c===85||c===86) return ['snow','눈'];
   if(c>=51&&c<=67) return ['rain',c<=57?'이슬비':'비']; if(c>=80&&c<=82) return ['rain','소나기']; return ['cloud','흐림']; }
-function wxPaint(d){ try{ const c=d.current, dl=d.daily; const [k,t]=wxKind(+c.weather_code, +c.is_day!==0);
+/* 날씨·기온 → 인사말 · 화면 하늘색 · 움직임 (가로 화면도 같은 하늘·인사) */
+function wxBand(t){ return t>=28?'hot':t>=20?'warm':t>=10?'mild':t>=1?'cool':'cold'; }
+function wxGreet(k,band,day){
+  if(k==='storm') return ['궂은 날씨를 뚫고 와 주신 고객님','오시는 길 많이 힘드셨지요. 여기서는 마음 편히 쉬어 가세요.'];
+  if(k==='rain') return ['빗속을 걸어와 주신 고객님','젖은 어깨부터 털고, 잠시 따뜻하게 쉬어 가세요.'];
+  if(k==='snow') return ['눈길을 걸어와 주신 고객님','미끄러운 길 오시느라 애쓰셨어요. 따뜻하게 녹이고 가세요.'];
+  if(band==='hot') return ['더위 속에 찾아와 주신 고객님','땀 식히시며 천천히 둘러보세요. 서두르지 않으셔도 괜찮아요.'];
+  if(band==='cold') return ['추위를 뚫고 와 주신 고객님','언 손 녹이시는 동안, 마음 편히 둘러보세요.'];
+  if(band==='cool') return ['쌀쌀한 바람을 지나 와 주신 고객님','따뜻한 이곳에서 마음 편히 머물다 가세요.'];
+  if(k==='fog') return ['안개 낀 길을 지나 와 주신 고객님','오시는 길 조심스러우셨지요. 이제 편히 쉬어 가세요.'];
+  if(!day) return ['하루의 끝에 들러 주신 고객님','오늘 하루도 정말 수고 많으셨습니다.'];
+  if(k==='sun') return ['이 맑은 날, 저희를 떠올려 주신 고객님','오늘의 햇살처럼 환한 하루가 집에서도 이어지길 바랍니다.'];
+  if(k==='part') return ['수많은 곳 중 이곳을 찾아주신 고객님','오늘 이 걸음이 오래 기억될 좋은 날이 되길 바랍니다.'];
+  return ['흐린 날에도 발걸음해 주신 고객님','오늘 저희가 고객님 하루의 맑은 순간이 되어 드릴게요.']; }
+function wxScene(k,band){ const s=$('sign'), th=k==='moon'?'night':k; if(s.dataset.wx===th&&s.dataset.temp===band) return; s.dataset.wx=th; s.dataset.temp=band;
+  const R=(a,b)=>a+Math.random()*(b-a), H=[];
+  const n=(c,f)=>{ for(let i=0;i<c;i++) H.push(f(i)); };
+  if(th==='rain'||th==='storm') n(th==='storm'?90:70,()=>`<i class="rn" style="left:${R(-5,125)}%;animation-duration:${R(.7,1.15).toFixed(2)}s;animation-delay:-${R(0,1.2).toFixed(2)}s;opacity:${R(.4,.95).toFixed(2)}"></i>`);
+  if(th==='storm') H.push('<i class="fl"></i>');
+  if(th==='snow') n(60,()=>{ const z=R(6,16); return `<i class="sn" style="left:${R(-5,105)}%;width:${z}px;height:${z}px;animation-duration:${R(9,18).toFixed(1)}s;animation-delay:-${R(0,18).toFixed(1)}s;opacity:${R(.5,.95).toFixed(2)}"></i>`; });
+  if(th==='night') { H.push('<i class="moon"></i>'); n(70,()=>`<i class="st" style="left:${R(0,100)}%;top:${R(0,70)}%;animation-duration:${R(2,5).toFixed(1)}s;animation-delay:-${R(0,5).toFixed(1)}s"></i>`); }
+  if(th==='sun'||th==='part') H.push('<i class="ray"></i><i class="sun"></i>');
+  if(th==='part'||th==='cloud'||th==='rain'||th==='storm') n(th==='part'?2:4,i=>`<i class="cl" style="top:${R(2,60)}%;animation-duration:${R(90,150)|0}s;animation-delay:-${R(0,150)|0}s;opacity:${R(.5,1).toFixed(2)}"></i>`);
+  if(th==='fog') n(5,i=>`<i class="fg" style="top:${10+i*18}%;animation-duration:${R(14,24)|0}s;animation-delay:-${R(0,20)|0}s"></i>`);
+  $('sgFx').innerHTML=H.join(''); }
+function wxPaint(d){ try{ const c=d.current, dl=d.daily, day=+c.is_day!==0, tc=Math.round(c.temperature_2m); const [k,t]=wxKind(+c.weather_code, day);
     const hi=Math.round(dl.temperature_2m_max[0]), lo=Math.round(dl.temperature_2m_min[0]), pp=dl.precipitation_probability_max?dl.precipitation_probability_max[0]:null;
-    $('sgWx').innerHTML=`${WX_SVG[k]}<b>${Math.round(c.temperature_2m)}°</b>${t}<em>최고 ${hi}° · 최저 ${lo}°${pp!=null?` · 강수 ${pp}%`:''}</em>`; }catch(e){} }
+    $('sgWx').innerHTML=`${WX_SVG[k]}<b>${tc}°</b>${t}<em>최고 ${hi}° · 최저 ${lo}°${pp!=null?` · 강수 ${pp}%`:''}</em>`;
+    const band=wxBand(c.temperature_2m), [lead,tip]=wxGreet(k,band,day);
+    wxScene(k,band); }catch(e){} }  /* v272 · 문구는 고정 — 날씨는 하늘색·움직임만 */
 async function sgWeather(){
   const u=`https://api.open-meteo.com/v1/forecast?latitude=${SG_GEO.lat}&longitude=${SG_GEO.lon}&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FSeoul&forecast_days=1`;
   try{ const ac=new AbortController(), t=setTimeout(()=>ac.abort(),8000); const r=await fetch(u,{signal:ac.signal}); clearTimeout(t);
     if(!r.ok) throw 0; const d=await r.json(); wxPaint(d); try{localStorage.setItem('sg_wx',JSON.stringify({at:Date.now(),d}));}catch(e){} }
   catch(e){ try{ const v=JSON.parse(localStorage.getItem('sg_wx')||'null'); if(v&&Date.now()-v.at<6*3600e3) wxPaint(v.d); }catch(_){} } }
-/* 흐르는 글 — 두 벌을 이어 붙여 끊김 없이 · 속도는 글 길이에 맞춰 */
-function sgMarquee(){ const one=`<span><i>✦</i>${SG_MQ}</span>`; const t=$('sgMq'); t.innerHTML=one.repeat(3)+one.repeat(3);
-  requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--mqd',Math.max(12,half/140)+'s'); }); }
 function sgDots(i){ $('sgDots').innerHTML=SG_VIDS.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join(''); }
-/* 유튜브 쇼츠 8편 — 소리 끔 자동 재생 · 다음 영상 · 끝나면 처음부터 */
-function sgYT(){ if(window.YT&&YT.Player) return onYouTubeIframeAPIReady(); const s=document.createElement('script'); s.src='https://www.youtube.com/iframe_api'; s.async=true; document.head.appendChild(s); }
+/* 유튜브 쇼츠 8편 — 소리 끔 자동 재생 · 한 편씩 직접 이어 틀기(재생목록 기능은 자동 재생이 막히는 기기가 있다) · 끝나면 처음부터 */
+let ytIdx=0, ytKickT=null;
+function sgYT(){ if(window.YT&&YT.Player) return onYouTubeIframeAPIReady(); if(document.getElementById('ytApi')) return; const s=document.createElement('script'); s.id='ytApi'; s.src='https://www.youtube.com/iframe_api'; s.async=true; document.head.appendChild(s); }
+function ytLoad(i){ ytIdx=((i%SG_VIDS.length)+SG_VIDS.length)%SG_VIDS.length; sgDots(ytIdx); try{ YTP.mute(); YTP.loadVideoById(SG_VIDS[ytIdx]); }catch(e){} ytKick(); }
+function sgNext(){ if(YTP) ytLoad(ytIdx+1); }
+/* 재생이 안 붙으면 다시 밀어 주고, 그래도 안 되면 '눌러서 시작' 안내 */
+function ytKick(){ clearTimeout(ytKickT); let n=0; const go=()=>{ if(!YTP||document.documentElement.classList.contains('ledon')) return; let st=-9; try{ st=YTP.getPlayerState(); }catch(e){}
+    if(st===1||st===3){ ytTap(false); return; } try{ YTP.mute(); YTP.playVideo(); }catch(e){} n++; if(n>=3) ytTap(true); else ytKickT=setTimeout(go,2500); };
+  ytKickT=setTimeout(go,2500); }
+function ytTap(on){ $('sgTap').hidden=!on; }
 window.onYouTubeIframeAPIReady=function(){
   if(YTP) return;
-  YTP=new YT.Player('sgPlayer',{width:'100%',height:'100%',host:'https://www.youtube-nocookie.com',
-    playerVars:{autoplay:1,mute:1,controls:0,playsinline:1,rel:0,modestbranding:1,iv_load_policy:3,disablekb:1,fs:0,cc_load_policy:0},
+  const pv={autoplay:1,mute:1,controls:0,playsinline:1,rel:0,modestbranding:1,iv_load_policy:3,disablekb:1,fs:0,cc_load_policy:0,enablejsapi:1};
+  if(/^https?:/.test(location.protocol)) pv.origin=location.origin;
+  YTP=new YT.Player('sgPlayer',{width:'100%',height:'100%',videoId:SG_VIDS[0],playerVars:pv,
     events:{
-      onReady:e=>{ const p=e.target; p.mute(); p.loadPlaylist(SG_VIDS,0,0); p.setLoop(true); if(document.documentElement.classList.contains('ledon')) setTimeout(()=>{try{p.pauseVideo()}catch(_){}} ,1500); },
-      onStateChange:e=>{ const p=YTP; if(e.data===1){ sgPlayAt=Date.now(); p.setLoop(true); const i=p.getPlaylistIndex(); if(i>=0) sgDots(i); }
-        if(e.data===0){ const i=p.getPlaylistIndex(); if(i<0||i>=SG_VIDS.length-1) p.playVideoAt(0); else p.nextVideo(); } },
-      onError:()=>{ const p=YTP, i=p.getPlaylistIndex(); setTimeout(()=>p.playVideoAt(((i<0?0:i)+1)%SG_VIDS.length),800); } } });
+      onReady:e=>{ const p=e.target; p.mute(); ytIdx=0; sgDots(0); if(document.documentElement.classList.contains('ledon')) return; p.playVideo(); ytKick(); },
+      onStateChange:e=>{ if(e.data===1){ sgPlayAt=Date.now(); ytTap(false); sgDots(ytIdx); } if(e.data===0) sgNext(); },
+      onError:()=>{ setTimeout(sgNext,800); } } });
 };
+/* 첫 터치 — 자동 재생을 막는 기기에서도 한 번 누르면 계속 돈다 */
+function ytFirst(){ if(!YTP) return; document.removeEventListener('pointerdown',ytFirst,true); ytTouch(); }
+function ytTouch(){ if(!YTP) return; try{ YTP.mute(); YTP.playVideo(); }catch(e){} ytTap(false); }
 /* 화면을 누르면 소리 켜기/끄기 · 3분 뒤 다시 끔 */
 function sgSound(){ if(!YTP||!YTP.isMuted) return; clearTimeout(sgSndT);
   if(YTP.isMuted()){ YTP.unMute(); YTP.setVolume(60); $('sgSnd').textContent='🔊 소리 켜짐 · 누르면 끔'; sgSndT=setTimeout(()=>{ YTP.mute(); $('sgSnd').textContent='🔇 화면을 누르면 소리'; },180e3); }
   else { YTP.mute(); $('sgSnd').textContent='🔇 화면을 누르면 소리'; } }
-/* LED 모드 — 두 줄이 화면을 나눠 가득 · 켠 상태는 기억(새로 고침해도 그대로) · 켜 있는 동안 영상은 멈춤 */
+/* LED 모드 — 한 줄로 두 문구가 이어 흐름 · 글자는 최대(줄 높이 90% · 한 글자가 화면 폭을 넘지 않게 폭 80%까지) · 켠 상태는 기억(새로 고침해도 그대로) · 켜 있는 동안 영상은 멈춤 */
 const LED_MSG=['삼성 가전 <b>20% 할인 대축제</b> 중! 많은 관심 부탁드립니다.','<b class="c2">삼성스토어 시흥</b>을 검색해 보세요.'];
 function ledFit(){ if(!document.documentElement.classList.contains('ledon')) return;
-  [['ledT1',0],['ledT2',1]].forEach(([id,k])=>{ const t=$(id), row=t.parentNode, h=row.getBoundingClientRect().height/((+document.documentElement.dataset.zoom)||1);
-    const fs=Math.max(40,Math.floor(h*0.62)); t.style.fontSize=fs+'px'; t.innerHTML=`<span>${LED_MSG[k]}</span>`.repeat(2);
-    requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--ld',Math.max(10,half/(fs*0.9))+'s'); }); }); }
+  const t=$('ledT1'), row=t.parentNode, z=(+document.documentElement.dataset.zoom)||1, r=row.getBoundingClientRect(), h=r.height/z, w=r.width/z;
+  const fs=Math.max(40,Math.floor(Math.min(h*0.9,w*0.8))); t.style.fontSize=fs+'px';
+  const one=LED_MSG.map(m=>`<span>${m}</span><span class="led-sep" aria-hidden="true">✦</span>`).join(''); t.innerHTML=one+one;
+  requestAnimationFrame(()=>{ const half=t.scrollWidth/2; t.style.setProperty('--ld',Math.max(10,half/(fs*1.2))+'s'); }); }
 function ledSet(on){ document.documentElement.classList.toggle('ledon',on); try{localStorage.setItem('sg_led',on?'1':'0');}catch(e){}
-  try{ if(YTP&&YTP.pauseVideo){ on?YTP.pauseVideo():YTP.playVideo(); } }catch(e){} sgPlayAt=Date.now(); if(on) ledFit(); }
-/* 멈춤 감시 — 2분 넘게 재생이 없으면 다음 영상, 5분이면 새로 고침(인터넷이 있을 때만) */
-setInterval(()=>{ if(!SIGN) return; if(document.documentElement.classList.contains('ledon')){ sgPlayAt=Date.now(); return; } const idle=Date.now()-sgPlayAt; let st=-9; try{ st=YTP?YTP.getPlayerState():-9; }catch(e){}
-  if(st===1||st===3){ sgPlayAt=Date.now(); return; }
+  try{ if(YTP&&YTP.pauseVideo){ if(on) YTP.pauseVideo(); else if(document.documentElement.classList.contains('land')){ YTP.mute(); YTP.playVideo(); ytKick(); } } }catch(e){} sgPlayAt=Date.now(); if(on) ledFit(); }
+/* 멈춤 감시 — 재생 시간이 1분 넘게 안 흐르면(버퍼링에 멈춤 포함) 다음 영상, 5분이면 새로 고침(인터넷이 있을 때만) */
+let sgLastT=-1;
+setInterval(()=>{ if(!SIGN) return; if(document.documentElement.classList.contains('ledon')){ sgPlayAt=Date.now(); return; }
+  if(!SG_VIDEO){ sgPlayAt=Date.now(); try{ if(YTP) YTP.pauseVideo(); }catch(e){} return; }  /* v272 영상 안 씀 */ let st=-9, ct=-1; try{ st=YTP?YTP.getPlayerState():-9; ct=YTP?+YTP.getCurrentTime():-1; }catch(e){}
+  if((st===1||st===3)&&ct!==sgLastT){ sgLastT=ct; sgPlayAt=Date.now(); return; }
+  if(!$('sgTap').hidden){ sgPlayAt=Date.now(); return; }  /* 자동 재생이 막힌 기기 — 누를 때까지 기다림 */
+  const idle=Date.now()-sgPlayAt;
   if(idle>300e3&&navigator.onLine) location.reload();
-  else if(idle>120e3&&YTP&&YTP.playVideoAt){ try{ const i=YTP.getPlaylistIndex(); YTP.playVideoAt(((i<0?0:i)+1)%SG_VIDS.length); }catch(e){} }
-  else if(!YTP&&idle>60e3) sgYT(); },20000);
+  else if(idle>60e3&&YTP){ sgPlayAt=Date.now()-30e3; sgLastT=-1; sgNext(); }
+  else if(!YTP&&idle>60e3) sgYT(); },15000);
 if(SIGN){ if(window.ResizeObserver) new ResizeObserver(()=>sgFit()).observe($('sgBox')); addEventListener('load',sgFit); document.fonts&&document.fonts.ready.then(sgFit); setTimeout(sgFit,1500);
-  sgClock(); setInterval(sgClock,1000); sgWeather(); setInterval(sgWeather,20*60e3); sgMarquee(); sgDots(0); sgFit();
-  $('sgShield').addEventListener('click',sgSound); $('ledOn').addEventListener('click',()=>ledSet(true)); $('ledOff').addEventListener('click',()=>ledSet(false));
+  sgClock(); setInterval(sgClock,1000); sgDots(0); sgFit();
+  $('sgShield').addEventListener('click',sgSound); $('sgTap').addEventListener('click',ytTouch); document.addEventListener('pointerdown',ytFirst,true); $('ledOn').addEventListener('click',()=>ledSet(true)); $('ledOff').addEventListener('click',()=>ledSet(false));
   let led0=new URLSearchParams(location.search).get('led'); if(led0==null){ try{ led0=localStorage.getItem('sg_led'); }catch(e){} }
-  if(led0==='1') ledSet(true); addEventListener('resize',()=>setTimeout(ledFit,50)); sgYT(); }
+  if(led0==='1') ledSet(true); addEventListener('resize',()=>setTimeout(ledFit,50));
+  sgNames(); sgFlora(); let flT=0; addEventListener('resize',()=>{ clearTimeout(flT); flT=setTimeout(sgFlora,150); }); if(SG_VIDEO) sgYT(); }
 /* 키오스크 모드: ?fs=1 이면 첫 터치에서 전체화면 */
 if(new URLSearchParams(location.search).get('fs')==='1'){ document.addEventListener('pointerdown',()=>{ document.documentElement.requestFullscreen?.().catch(()=>{}); },{once:true}); }
 </script>
