@@ -646,6 +646,22 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     h += '</div></div>';
     function srow(l, v){ if(v <= 0) return ''; return '<tr><th>' + l + '</th><td class="num">-' + won(v) + '</td></tr>'; }
     blocks.push(h);
+    /* 일시불 묶음 (상담 견적 화면 /quote/ 가 넣는 q.lump · mvp_276) — 구독 아래에 카드 혜택 반영 실 부담을 같은 표 양식으로 */
+    if(q.lump && q.lump.items && q.lump.items.length){
+      var L = q.lump, lb = '<div class="q-box"><h3>💳 일시불 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + ' · ' + num(L.months) + '개월)</span>' : '') + '</h3><table class="q-tbl">';
+      L.items.forEach(function(x, i){ lb += '<tr><th>' + (i + 1) + '. ' + esc(x.name || x.model || '') + (x.model && x.name ? ' <span style="font-weight:500;color:#666">' + esc(x.model) + '</span>' : '') + (x.note ? ' <span style="font-weight:500;color:#666">· ' + esc(x.note) + '</span>' : '') + '</th><td class="num">' + won(x.amount) + '</td></tr>'; });
+      lb += '<tr class="tot"><th>총 할인가</th><td class="num">' + won(L.amount) + '</td></tr>';
+      if(num(L.fee) > 0) lb += '<tr><th>플러스페이 이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
+      if(num(L.bill) > 0) lb += '<tr><th>카드 청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
+      if(num(L.sPoint) > 0) lb += '<tr><th>금액별 S포인트</th><td class="num">-' + won(L.sPoint) + '</td></tr>';
+      if(num(L.typePoint) > 0) lb += '<tr><th>' + esc(L.typeLabel || '포인트') + '</th><td class="num">-' + won(L.typePoint) + '</td></tr>';
+      if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
+      if(num(L.member) > 0) lb += '<tr><th>멤버십 기본 적립</th><td class="num">-' + won(L.member) + '</td></tr>';
+      lb += '<tr class="ben"><th>혜택 합계</th><td class="num">-' + won(L.benefit) + '</td></tr>';
+      lb += '<tr class="tot"><th>혜택 반영 실 부담' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
+      lb += '</table></div>';
+      blocks.push('<div class="q-sum solo">' + lb + '</div>');
+    }
     blocks.push('<div class="q-memo"><div class="t">세부 상담 내용</div>'
       + (EDIT ? '<textarea class="q-memo-in" data-q="cust.memo" placeholder="희망 설치일, 색상, 특이사항, 안내한 조건 등">' + esc(q.cust.memo) + '</textarea>'
               : (q.cust.memo ? esc(q.cust.memo) : '<span style="color:#bbb">-</span>')) + '</div>');
