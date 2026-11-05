@@ -214,7 +214,7 @@ html.checkin #sign{display:none!important}
 .sg-dots i{width:14px;height:14px;border-radius:99px;background:rgba(255,255,255,.25);transition:.4s}
 .sg-dots i.on{width:44px;background:#3CF08F}
 /* 아래 흐르는 글 */
-@keyframes sgMq{to{transform:translateX(-50%)}}
+@keyframes sgMq{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
 /* 가로 화면(1920×1080 기준) — 왼쪽 글 · 오른쪽 영상 */
 .sg-main{display:flex;flex-direction:column;gap:26px}
 /* v272 · 사이니지 = 감사 인사만 (가로·세로 모두 · 머리·영상·흐르는 글·LED 버튼 없음) · 날씨·기온은 하늘색과 움직임으로만 · LED 모드는 ?led=1 로만 */
@@ -238,7 +238,7 @@ html.checkin #sign{display:none!important}
 #sign.flora .sg-hero *{font-weight:400!important}
 #sign.flora .sg-main{flex:1;min-height:0;justify-content:center;padding:0 110px 220px;z-index:1}
 #sign.flora .sg-hero{text-align:center;padding:0}
-#sign.flora .sg-w{font-size:76px;font-weight:400;letter-spacing:.04em;color:#6E7A3C;background:none;-webkit-background-clip:border-box;background-clip:border-box;animation:none}
+#sign.flora .sg-w{font-size:76px;font-weight:700;-webkit-text-stroke:2px currentColor;paint-order:stroke fill;letter-spacing:.04em;color:#6E7A3C;background:none;-webkit-background-clip:border-box;background-clip:border-box;animation:none}
 #sign.flora .sg-hero h1{font-size:80px;line-height:1.4;margin-top:30px;color:#2B3040;letter-spacing:-.01em}
 .sg-orn{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:28px}
 .sg-orn svg{width:44px;height:44px}
@@ -249,7 +249,7 @@ html.checkin #sign{display:none!important}
 .sg-names{list-style:none;margin:64px auto 0;padding:56px 0 0;width:min(78%,760px);display:flex;flex-direction:column;gap:24px;position:relative}
 .sg-names::before{content:"";position:absolute;left:12%;right:12%;top:0;height:2px;background:linear-gradient(90deg,transparent,#D9A7A4,transparent)}
 .sg-names:empty{display:none}
-/* 아래 버튼 3개 — 잘 보이게 · 글자 없이 그림만 (v277) : 왼쪽 연필 = 이름 직접 입력 · 가운데 사람 = 예시 이름 · 오른쪽 ● LED */
+/* 아래 버튼 — 잘 보이게 · 글자 없이 그림만 (v277·v278) : 왼쪽 연필 = 이름 직접 입력 · 오른쪽 ● LED (예시 이름 버튼은 v278 에 없앰) */
 #sign>#sgEditBtn,#sign>#sgDemo,#sign>#ledOn{position:absolute;bottom:22px;z-index:6;display:inline-flex;align-items:center;justify-content:center;gap:12px;white-space:nowrap;padding:0;font-family:'Pretendard Variable',Pretendard,system-ui,sans-serif;font-weight:800;cursor:pointer;border-radius:999px;-webkit-tap-highlight-color:transparent;box-shadow:0 6px 18px rgba(80,60,30,.18)}
 #sign>#sgEditBtn{left:24px;width:112px;height:112px;border:4px solid #7A5A2E;background:#FFF8EC;color:#5A3F18}
 #sign>#sgEditBtn svg{width:60px;height:60px}
@@ -293,8 +293,11 @@ html.land .sg-names li{font-size:92px}
 html.land .sg-names li small{font-size:56px}
 html.land .sg-names.n4 li{font-size:74px}html.land .sg-names.n4 li small{font-size:44px}
 html.land .sg-names.many{width:min(90%,1200px);grid-template-columns:repeat(3,1fr)}
-html.land .sg-names.many li{font-size:62px}html.land .sg-names.many li small{font-size:38px}
-html.land .sg-names.lots li{font-size:50px}html.land .sg-names.lots li small{font-size:30px}
+html.land .sg-names.many li{font-size:80px}html.land .sg-names.many li small{font-size:46px}
+/* v278 · 가로는 이름을 옆으로 — 2~4명 2열 · 5~8명 3열 · 9명↑ 4열 (위 문구가 너무 올라가지 않게) */
+html.land .sg-names.k2{display:grid;grid-template-columns:repeat(2,auto);justify-content:center;column-gap:90px;row-gap:10px;width:min(92%,1300px)}
+html.land .sg-names.lots{grid-template-columns:repeat(4,1fr);width:min(96%,1400px)}
+html.land .sg-names.lots li{font-size:64px}html.land .sg-names.lots li small{font-size:38px}
 /* 날씨별 하늘 */
 #sign{background:var(--sg-sky,transparent)}
 #sign[data-wx=sun]{--sg-sky:linear-gradient(170deg,#0A2F7A 0%,#1858C8 55%,#2A6FD0 100%)}
@@ -344,25 +347,20 @@ html.ledon #sign>#led{display:flex}
 .led-t{display:inline-flex;white-space:nowrap;will-change:transform;animation:sgMq var(--ld,60s) linear infinite;font-weight:900;letter-spacing:.02em;line-height:1}
 .led-t span{padding-right:.5em}
 .led-t .led-sep{color:#FFD24A;font-size:.5em;align-self:center;text-shadow:0 0 18px rgba(255,200,80,.9)}
-.led-t{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.75),0 0 44px rgba(255,255,255,.28)}
+.led-t{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.6)}
+html.ledon #sign>:not(#led){visibility:hidden} /* v278 · LED 동안 뒤 화면(꽃·종이 질감)은 그리지 않음 */
 /* 강조 — 금빛→주황→분홍이 흐르는 글자 + 숨 쉬는 빛 (2줄은 하늘→파랑→보라) */
-.led-t b{font-weight:900;background:linear-gradient(90deg,#FFE14A,#FF8A3D,#FF3D8B,#FFE14A);background-size:300% 100%;
-  -webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;
-  filter:drop-shadow(0 0 18px rgba(255,170,60,.85));animation:ledHue 3.2s linear infinite,ledGlow 1.6s ease-in-out infinite}
-.led-t b.c2{background-image:linear-gradient(90deg,#46F0FF,#4C7BFF,#B07CFF,#46F0FF);filter:drop-shadow(0 0 18px rgba(80,170,255,.9))}
-@keyframes ledHue{to{background-position:-300% 0}}
-@keyframes ledGlow{50%{filter:drop-shadow(0 0 34px rgba(255,200,80,1)) brightness(1.15)}}
-.led-t b.c2{animation:ledHue 3.2s linear infinite,ledGlow2 1.6s ease-in-out infinite}
-@keyframes ledGlow2{50%{filter:drop-shadow(0 0 34px rgba(90,190,255,1)) brightness(1.15)}}
+.led-t b{font-weight:900;color:#FFD84A;text-shadow:0 0 18px rgba(255,170,60,.75)}
+.led-t b.c2{color:#5FD0FF;text-shadow:0 0 18px rgba(80,170,255,.8)}
 /* 빛줄기가 가끔 쓸고 지나감 */
 .led-row::before{content:"";position:absolute;top:0;bottom:0;left:-30%;width:22%;z-index:1;pointer-events:none;
-  background:linear-gradient(100deg,transparent,rgba(255,255,255,.10),transparent);animation:ledSweep 7s ease-in-out infinite}
-@keyframes ledSweep{0%,55%{left:-30%}100%{left:120%}}
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.10),transparent);will-change:transform;animation:ledSweep 7s ease-in-out infinite}
+@keyframes ledSweep{0%,55%{transform:translate3d(0,0,0)}100%{transform:translate3d(680%,0,0)}}
 /* 점 무늬 — 전광판 LED 알갱이 (흰 글자가 잘 읽히게 촘촘히) */
 .led-row::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(circle at center,transparent 0 50%,rgba(0,0,0,.85) 62%) 0 0/12px 12px}
 .led-bar{flex:none;height:76px;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;background:#000;border-top:1px solid #222}
 .led-off{min-height:52px;padding:8px 22px;border-radius:999px;border:1px solid #444;background:#1A1A1A;color:#ddd;font-size:20px;font-weight:700;cursor:pointer}
-@media (prefers-reduced-motion:reduce){.led-t{animation-duration:calc(var(--ld,60s)*2)}.led-t b,.led-row::before{animation:none}}
+@media (prefers-reduced-motion:reduce){.led-t{animation-duration:calc(var(--ld,60s)*2)}.led-row::before{animation:none}}
 @media (prefers-reduced-motion:reduce){.sg-bg i,.sg-fx *,.sg-fx::after,.sg-w,.sg-frame::before,.sg-frame::after,.sg-time .cl{animation:none}}
 </style>
 <script>/* 방문 접수 태블릿은 ?checkin=1 — 기본은 매장 사이니지 */if(/[?&]checkin=1/.test(location.search))document.documentElement.classList.add("checkin")</script>
@@ -373,7 +371,6 @@ html.ledon #sign>#led{display:flex}
   <div class="sg-bg"><i></i><i></i><i></i></div>
   <div class="sg-fx" id="sgFx" aria-hidden="true"></div>
   <svg class="sg-flora" id="sgFlora" aria-hidden="true"></svg>
-  <button type="button" id="sgDemo" aria-label="예시 이름 켜기·끄기" aria-pressed="false"><i></i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 19.5c.6-3.4 3.2-5.4 6.2-5.4s5.6 2 6.2 5.4"/><circle cx="17" cy="9" r="2.6"/><path d="M16.2 14.2c2.6.1 4.5 1.9 5 5"/></svg></button>
   <button type="button" id="sgEditBtn" aria-label="화면 이름 직접 입력" aria-pressed="false"><i></i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>
   <div id="sgEdit" role="dialog" aria-modal="true" aria-labelledby="sgEditT" hidden>
     <div class="se-box">
@@ -580,7 +577,7 @@ clock(); setInterval(clock,15000); render(); go(0);
 const SG_Q=new URLSearchParams(location.search);
 let SG_KEY=SG_Q.get('sk'); try{ if(SG_KEY){ localStorage.setItem('sg_key',SG_KEY); SG_Q.delete('sk'); history.replaceState(null,'',location.pathname+(SG_Q.toString()?'?'+SG_Q:'')); } else SG_KEY=localStorage.getItem('sg_key'); }catch(e){}
 function sgNamesPaint(n){ const E=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const ul=document.getElementById('sgNames'); ul.className='sg-names'+(n.length>8?' many lots':n.length>4?' many':n.length>3?' n4':'');
+  const ul=document.getElementById('sgNames'); ul.className='sg-names'+(n.length>8?' many lots':n.length>4?' many':n.length>3?' n4':'')+(n.length>1&&n.length<5?' k2':'');
   ul.innerHTML=n.map(x=>`<li>${E(x)}<small>고객님</small></li>`).join('');
   /* 명단이 있으면 예약 감사 문구로 (v277) */
   const g=document.getElementById('sgGreet'), rsv=n.length>0;
@@ -589,8 +586,8 @@ function sgNamesPaint(n){ const E=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;
 function sgDayKey(){ return new Date(Date.now()+9*3600e3).toISOString().slice(0,10); }
 /* 예시 이름 — 맨 아래 가운데 점을 누르면 켜고 끔 (localStorage sg_demo · 기본 꺼짐) */
 const SG_DEMO=['김철수','이영희'];
-let sgDemoOn=false; try{ sgDemoOn=localStorage.getItem('sg_demo')==='1'; }catch(e){}
-function sgDemoSet(on){ sgDemoOn=on; try{ localStorage.setItem('sg_demo',on?'1':'0'); }catch(e){} document.getElementById('sgDemo').setAttribute('aria-pressed',String(on)); sgNames(); }
+let sgDemoOn=false; try{ localStorage.removeItem('sg_demo'); }catch(e){} /* v278 · 예시 이름 버튼 없앰 (미리보기는 ?names=) */
+function sgDemoSet(on){ sgDemoOn=false; }
 /* 이름 직접 바꾸기 — 이 기기에서 그날만 (localStorage sg_local {day,n}) · 담당자 화면이 안 될 때 */
 function sgLocal(){ try{ const v=JSON.parse(localStorage.getItem('sg_local')||'null'); return v&&v.day===sgDayKey()&&Array.isArray(v.n)?v.n:null; }catch(e){ return null; } }
 function sgEditOpen(){ const l=sgLocal(); let cur=l; if(!cur){ cur=[...document.querySelectorAll('#sgNames li')].map(li=>li.firstChild?li.firstChild.textContent:''); }
@@ -605,7 +602,7 @@ async function sgNames(){ const q=SG_Q.get('names'); $('sgEditBtn').setAttribute
   { const l=sgLocal(); if(l) return sgNamesPaint(l); }
   if(!SG_KEY){ sgNamesPaint([]); return; }
   try{ const {data,error}=await sb.rpc('fn_signage_guests',{p_key:SG_KEY}); if(error) throw error;
-    const n=(data&&data.names)||[]; sgNamesPaint(n); try{ localStorage.setItem('sg_names',JSON.stringify({day:data.day,n})); }catch(e){} }
+    const n=(data&&data.names)||[]; sgNamesPaint(n); if(data&&data.led) ledMsgSet(data.led); try{ localStorage.setItem('sg_names',JSON.stringify({day:data.day,n})); }catch(e){} }
   catch(e){ try{ const v=JSON.parse(localStorage.getItem('sg_names')||'null'); sgNamesPaint(v&&v.day===sgDayKey()?v.n:[]); }catch(_){ sgNamesPaint([]); } } }
 /* v272 · 꽃 덩굴 테두리 — 화면 크기에 맞춰 둘레를 따라 잎·분홍 꽃·물망초를 놓는다(같은 씨앗 → 늘 같은 모양) */
 function sgFlora(){ const sv=$('sgFlora'), sg=$('sign'); if(!sv) return; const W=sg.clientWidth, H=sg.clientHeight; if(!W||!H) return;
@@ -720,7 +717,14 @@ function sgSound(){ if(!YTP||!YTP.isMuted) return; clearTimeout(sgSndT);
   if(YTP.isMuted()){ YTP.unMute(); YTP.setVolume(60); $('sgSnd').textContent='🔊 소리 켜짐 · 누르면 끔'; sgSndT=setTimeout(()=>{ YTP.mute(); $('sgSnd').textContent='🔇 화면을 누르면 소리'; },180e3); }
   else { YTP.mute(); $('sgSnd').textContent='🔇 화면을 누르면 소리'; } }
 /* LED 모드 — 한 줄로 두 문구가 이어 흐름 · 글자는 최대(줄 높이 90% · 한 글자가 화면 폭을 넘지 않게 폭 80%까지) · 켠 상태는 기억(새로 고침해도 그대로) · 켜 있는 동안 영상은 멈춤 */
-const LED_MSG=['삼성 가전 <b>20% 할인 대축제</b> 중! 많은 관심 부탁드립니다.','<b class="c2">삼성스토어 시흥</b>을 검색해 보세요.'];
+/* v278 · 문구는 담당자 화면 [디스플레이 관리] › LED 문구에서 (서버 → localStorage sg_led_msg) · [ ] 안은 강조 색 */
+const LED_DEF=['삼성 가전 [20% 할인 대축제] 중! 많은 관심 부탁드립니다.','[삼성스토어 시흥]을 검색해 보세요.'];
+function ledHtml(arr){ let k=0; const E=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  return arr.map(m=>E(m).replace(/\[([^\]]+)\]/g,(_,x)=>`<b${(k++)%2?' class="c2"':''}>${x}</b>`)); }
+let LED_SRC=LED_DEF; try{ const v=JSON.parse(localStorage.getItem('sg_led_msg')||'null'); if(Array.isArray(v)&&v.length) LED_SRC=v; }catch(e){}
+let LED_MSG=ledHtml(LED_SRC);
+function ledMsgSet(arr){ if(!Array.isArray(arr)||!arr.length||JSON.stringify(arr)===JSON.stringify(LED_SRC)) return; LED_SRC=arr; LED_MSG=ledHtml(arr);
+  try{ localStorage.setItem('sg_led_msg',JSON.stringify(arr)); }catch(e){} ledFit(); }
 function ledFit(){ if(!document.documentElement.classList.contains('ledon')) return;
   const t=$('ledT1'), row=t.parentNode, z=(+document.documentElement.dataset.zoom)||1, r=row.getBoundingClientRect(), h=r.height/z, w=r.width/z;
   const fs=Math.max(40,Math.floor(Math.min(h*0.9,w*0.8))); t.style.fontSize=fs+'px';
@@ -743,7 +747,7 @@ if(SIGN){ if(window.ResizeObserver) new ResizeObserver(()=>sgFit()).observe($('s
   $('sgShield').addEventListener('click',sgSound); $('sgTap').addEventListener('click',ytTouch); document.addEventListener('pointerdown',ytFirst,true); $('ledOn').addEventListener('click',()=>ledSet(true)); $('ledOff').addEventListener('click',()=>ledSet(false));
   let led0=new URLSearchParams(location.search).get('led'); if(led0==null){ try{ led0=localStorage.getItem('sg_led'); }catch(e){} }
   if(led0==='1') ledSet(true); addEventListener('resize',()=>setTimeout(ledFit,50));
-  $('sgDemo').setAttribute('aria-pressed',String(sgDemoOn)); $('sgDemo').addEventListener('click',()=>sgDemoSet(!sgDemoOn));
+
   $('sgEditBtn').addEventListener('click',sgEditOpen); $('sgEditOk').addEventListener('click',sgEditSave); $('sgEditX').addEventListener('click',sgEditClose); $('sgEditClr').addEventListener('click',sgEditClear);
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('sgEdit').hidden) sgEditClose(); });
   sgNames(); setInterval(sgNames,60e3); sgFlora(); let flT=0; addEventListener('resize',()=>{ clearTimeout(flT); flT=setTimeout(sgFlora,150); }); if(SG_VIDEO) sgYT(); }
