@@ -66,10 +66,10 @@ h1,h2,h3{margin:0}
 .sug .p{font-size:12px;white-space:nowrap;color:var(--sub);font-weight:700}
 /* 품목 카드 */
 .items{display:flex;flex-direction:column;gap:10px}
-.item{display:grid;grid-template-columns:88px minmax(0,1fr) auto;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;align-items:start}
+.item{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;align-items:start}
 .item.sub{border-left:4px solid var(--sub)}
 .item.lump{border-left:4px solid var(--lump)}
-.item .im{width:88px;height:88px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:28px}
+.item .im{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:28px}
 .item .nm{font-weight:700;font-size:14px;line-height:1.35}
 .item .md{font-size:12px;color:var(--mut)}
 .item .opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
@@ -98,8 +98,32 @@ h1,h2,h3{margin:0}
 .cond{display:flex;flex-direction:column;gap:12px}
 .cond .row{display:flex;flex-direction:column;gap:5px}
 .cond select{border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--paper);width:100%}
-.sum{position:sticky;top:58px;display:flex;flex-direction:column;gap:10px}
-@media (max-width:900px){.sum{position:static}}
+.sum{position:sticky;top:58px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 68px);overflow-y:auto;overscroll-behavior:contain;padding-bottom:4px}
+.sum>*{flex:none}
+@media (max-width:900px){.sum{position:static;max-height:none;overflow:visible}}
+details.more{border-top:1px dashed var(--line);margin-top:10px;padding-top:6px}
+.cond details.more{margin-top:0}
+details.more>summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--blue);list-style:none;display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-height:34px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:'＋';font-weight:900} details.more[open]>summary::before{content:'－'}
+details.more>summary small{font-weight:500;color:var(--mut);font-size:12px}
+.item .mid{display:contents}
+.item .im{grid-row:1/3} .item .nm{grid-column:2;grid-row:1} .item .md{grid-column:2;grid-row:2} .item .rt{grid-column:3;grid-row:1/3}
+.item .opts,.item .own{grid-column:1/-1} .item .opts{margin-top:0} .item{row-gap:4px}
+.item .opts input.amt{width:112px} .item .opts input.note{min-width:120px}
+@media (max-width:560px){.item .rt{grid-column:1/-1;grid-row:auto}}
+.chips.one{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin} .chips.one>*{flex:none;white-space:nowrap}
+.cust.top3{grid-template-columns:auto minmax(0,1fr) minmax(0,1fr)} .cust.top3 .seg{flex-wrap:nowrap} .cust.top3 .seg button{white-space:nowrap}
+@media (max-width:640px){.cust.top3{grid-template-columns:1fr 1fr} .cust.top3 .fld:first-child{grid-column:1/-1}}
+.bulk{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;padding:0 2px} .bulk .sp{flex:1}
+.item select.care{border:1px solid var(--line);border-radius:9px;padding:5px 8px;min-height:36px;font-size:13px;background:var(--paper);max-width:100%}
+.bbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--paper);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));gap:12px;align-items:center}
+.bbar .b{display:flex;flex-direction:column;min-width:0;flex:1} .bbar .b span{font-size:11px;color:var(--mut);white-space:nowrap} .bbar .b b{font-size:16px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bbar .b.s b{color:var(--sub)} .bbar .b.l b{color:var(--lump)}
+.bbar button{border:0;border-radius:9px;background:var(--blue);color:#fff;font-weight:800;padding:0 14px;min-height:42px;white-space:nowrap}
+@media (max-width:900px){body.v-edit .bbar{display:flex} body.v-edit .wrap{padding-bottom:96px} body.v-edit #toast{bottom:84px}}
+@media (max-width:560px){.bbar .b.n{display:none}}
+@media print{.bbar{display:none!important}}
 .tot{border-radius:12px;padding:12px 14px;border:1px solid var(--line);background:var(--paper)}
 .tot.s{background:var(--blue-soft);border-color:transparent}
 .tot.l{background:var(--lump-soft);border-color:transparent}
@@ -126,7 +150,7 @@ h1,h2,h3{margin:0}
 .hero .h .d{font-size:12px;opacity:.75}
 /* 고객 보기 카드 — 구독센터 상품 페이지(view.html .sv-head) 와 같은 짜임: 사진 · 품목 · 상품명 · 모델명 · 월 구독료 · 배지 (2026-11-04) */
 .svl{display:flex;flex-direction:column;gap:12px}
-.svc{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;grid-template-columns:200px minmax(0,1fr) auto;gap:20px;align-items:start}
+.svc{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;grid-template-columns:150px minmax(0,1fr) minmax(170px,300px);gap:18px;align-items:start}
 .svc-img{aspect-ratio:1/1;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:48px}
 .svc-img img{width:100%;height:100%;object-fit:contain}
 .svc-cat{font-size:12.5px;color:var(--mut);margin:2px 0 4px}
@@ -222,11 +246,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
     <div class="card">
       <h2>고객 · 상담 <small>담당자 화면에서 열면 채워져 옵니다</small></h2>
-      <div class="cust">
+      <div class="cust top3">
         <div class="fld"><span class="lbl">상담 종류</span>
           <div class="seg" id="ctype"><button data-t="혼수">혼수</button><button data-t="입주">입주</button><button data-t="이사">이사</button><button data-t="일반">일반</button></div></div>
         <div class="fld"><label class="lbl" for="c_name">성명 *</label><input id="c_name" autocomplete="off"></div>
         <div class="fld"><label class="lbl" for="c_tel">연락처 *</label><input id="c_tel" inputmode="tel" autocomplete="off"></div>
+      </div>
+      <details class="more" id="custMore"><summary>고객 정보 더 보기 <small>설치 주소 · 증빙 · 유효기한 · 생년월일 · 통신사 · 예식 일자 · 입주 일자 · 재상담 예약 · 세부 상담 내용</small></summary>
+      <div class="cust" style="margin-top:10px">
         <div class="fld"><label class="lbl" for="c_addr">설치 주소</label><input id="c_addr"></div>
         <div class="fld"><label class="lbl" for="c_proof">증빙 (혼수·입주)</label><select id="c_proof"><option value="">-</option><option value="recv">접수</option><option value="supp">보완</option><option value="appr">승인</option></select></div>
         <div class="fld"><label class="lbl" for="c_until">유효기한</label><input id="c_until" type="date"></div>
@@ -236,7 +263,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <div class="fld"><label class="lbl" for="c_movein">입주 일자</label><input id="c_movein" placeholder="2026.11.01"></div>
         <div class="fld" style="grid-column:1/-1"><label class="lbl" for="c_revisit">재상담 예약</label><input id="c_revisit" placeholder="재방문·재상담 예약 일시 (예: 2026.09.10 오후 2시 매장 방문)"></div>
         <div class="fld" style="grid-column:1/-1"><label class="lbl" for="c_memo">세부 상담 내용</label><textarea id="c_memo" placeholder="희망 설치일, 색상, 특이사항, 안내한 조건 등"></textarea></div>
-      </div>
+      </div></details>
     </div>
 
     <div class="card">
@@ -247,13 +274,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <button class="chip" onclick="openBundle()" title="지금 담긴 구독 품목을 구독센터 다품목 계산기로 엽니다">구독센터에서 열기 ↗</button>
         <div class="sug hidden" id="sug"></div>
       </div>
-      <div class="chips" style="margin-top:10px" id="catChips"><span class="hint">품목으로 찾기 ·</span></div>
+      <div class="chips one" style="margin-top:10px" id="catChips"><span class="hint">품목으로 찾기 ·</span></div>
     </div>
 
+    <div class="bulk hidden" id="bulk"></div>
     <div class="items" id="items"></div>
   </div>
 
   <aside class="sum">
+    <div class="tot s"><div class="k">월 구독료 혜택가 <small>(구독 · 통장에서 나가는 금액)</small></div><div class="v num" id="t_sub_m">—</div><div class="d" id="t_sub_d"></div></div>
+    <div class="tot l"><div class="k">최종체감가 <small>(일시불 · 캐시백 반영)</small></div><div class="v num" id="t_lump">—</div><div class="d" id="t_lump_d"></div></div>
     <div class="card cond">
       <h2>결제 조건 <small>전체 품목에 같이 적용</small></h2>
       <div class="row"><span class="lbl">구독 자동결제 카드</span>
@@ -269,6 +299,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <span class="hint" id="lumpHint"></span></div>
       <div class="row"><span class="lbl">조건부 캐시백 <span id="cbCond"></span></span>
         <div class="seg sm" id="cb"><button data-v="1">사용</button><button data-v="0">미사용</button></div></div>
+      <details class="more" id="condMore"><summary>포인트 · 기타 혜택 · 네임카드 <small id="condMoreLbl"></small></summary><div class="cond" style="margin-top:10px">
       <div class="row"><span class="lbl">⭐ 멤버십 포인트 표기</span>
         <div class="seg sm" id="pointMode"></div></div>
       <div class="row"><span class="lbl">💵 이벤트 리워드 (1%)</span>
@@ -279,9 +310,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <div id="extraRows" style="flex:1;min-width:0"></div></div>
       <div class="row"><span class="lbl">네임카드</span>
         <select id="namecard"><option value="">(없음)</option></select></div>
+      </div></details>
     </div>
-    <div class="tot s"><div class="k">월 구독료 혜택가 <small>(구독 · 통장에서 나가는 금액)</small></div><div class="v num" id="t_sub_m">—</div><div class="d" id="t_sub_d"></div></div>
-    <div class="tot l"><div class="k">최종체감가 <small>(일시불 · 캐시백 반영)</small></div><div class="v num" id="t_lump">—</div><div class="d" id="t_lump_d"></div></div>
     <div class="card" id="t_detail"></div>
     <div class="card" id="t_scn"></div>
     <p class="note" id="noticeTxt"></p>
@@ -386,6 +416,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <div id="shareBody"></div>
 </div></div>
 
+<div class="bbar" id="bbar"><div class="b s"><span>월 구독료 혜택가</span><b class="num" id="bb_s">—</b></div><div class="b n"><span>최종 혜택가 <small>(총 지불액)</small></span><b class="num" id="bb_n">—</b></div><div class="b l"><span>최종체감가 <small>(일시불)</small></span><b class="num" id="bb_l">—</b></div><button onclick="setView('show')">고객과 보기</button></div>
 <div id="toast" class="hidden"></div>
 
 <script>
@@ -498,13 +529,16 @@ function fillTier(){ const sel=$('subTier'); const cd=window.SUB_CARDS&&window.S
   sel.innerHTML=Object.keys(cd.t).map(t=>`<option value="${esc(t)}"${t===Q.cond.tier?' selected':''}>전월 실적 ${esc(t.replace('↑','원 이상'))} · 월 ${fmt(cd.t[t])}원 할인</option>`).join(''); sel.onchange=()=>{ Q.cond.tier=sel.value; render(); }; }
 function initCats(){ const el=$('catChips'); Object.keys(IDX.cats).forEach(k=>{ const b=document.createElement('button'); b.className='chip'; b.textContent=IDX.cats[k]; b.onclick=()=>{ $('q').value=IDX.cats[k]; suggest(); $('q').focus(); }; el.appendChild(b); }); }
 function bindInputs(){
+  document.body.classList.add('v-edit');   // 처음은 입력 화면 — 좁은 화면의 아래 합계 띠가 이 표시를 본다
   const ct=$('ctype'); ct.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; Q.cust.type=b.dataset.t; [...ct.children].forEach(x=>x.classList.toggle('on',x===b)); render(); };
   ['c_name','c_tel','c_addr','c_memo','c_until','c_proof','c_birth','c_carrier','c_wedding','c_movein','c_revisit'].forEach(id=>$(id).addEventListener('input',()=>{ Q.cust.name=$('c_name').value.trim(); Q.cust.phone=$('c_tel').value.trim(); Q.cust.addr=$('c_addr').value.trim(); Q.cust.memo=$('c_memo').value; Q.cust.until=$('c_until').value; Q.cust.proof=$('c_proof').value;
     Q.cust.birth=$('c_birth').value.trim(); Q.cust.carrier=$('c_carrier').value.trim(); Q.cust.wedding=$('c_wedding').value.trim(); Q.cust.movein=$('c_movein').value.trim(); Q.cust.revisit=$('c_revisit').value.trim(); renderShow(); renderSheet(); }));
-  const q=$('q'); q.addEventListener('input',suggest); q.addEventListener('keydown',e=>{ if(e.key==='Enter'){ const b=$('sug').querySelector('button.on')||$('sug').querySelector('button'); if(b) b.click(); } if(e.key==='Escape') $('sug').classList.add('hidden'); });
+  const q=$('q'); q.addEventListener('input',suggest); q.addEventListener('keydown',e=>{ if(e.key==='ArrowDown'||e.key==='ArrowUp'){ const bs=[...$('sug').querySelectorAll('button')]; if(bs.length&&!$('sug').classList.contains('hidden')){ e.preventDefault(); let k=bs.findIndex(b=>b.classList.contains('on')); k=(k+(e.key==='ArrowDown'?1:-1)+bs.length)%bs.length; bs.forEach((b,j)=>b.classList.toggle('on',j===k)); bs[k].scrollIntoView({block:'nearest'}); } }
+    if(e.key==='Enter'){ const b=$('sug').querySelector('button.on')||$('sug').querySelector('button'); if(b) b.click(); } if(e.key==='Escape') $('sug').classList.add('hidden'); });
   document.addEventListener('click',e=>{ if(!e.target.closest('.add')) $('sug').classList.add('hidden'); });
 }
-function fillCust(){ [...$('ctype').children].forEach(b=>b.classList.toggle('on',b.dataset.t===Q.cust.type)); $('c_name').value=Q.cust.name; $('c_tel').value=Q.cust.phone; $('c_addr').value=Q.cust.addr; $('c_memo').value=Q.cust.memo; $('c_until').value=Q.cust.until; $('c_proof').value=Q.cust.proof; ['birth','carrier','wedding','movein','revisit'].forEach(k=>$('c_'+k).value=Q.cust[k]||''); }
+function fillCust(){ [...$('ctype').children].forEach(b=>b.classList.toggle('on',b.dataset.t===Q.cust.type)); $('c_name').value=Q.cust.name; $('c_tel').value=Q.cust.phone; $('c_addr').value=Q.cust.addr; $('c_memo').value=Q.cust.memo; $('c_until').value=Q.cust.until; $('c_proof').value=Q.cust.proof; ['birth','carrier','wedding','movein','revisit'].forEach(k=>$('c_'+k).value=Q.cust[k]||'');
+  $('custMore').open=!!(Q.cust.addr||Q.cust.memo||Q.cust.proof||Q.cust.birth||Q.cust.carrier||Q.cust.wedding||Q.cust.movein||Q.cust.revisit); }   // 채워진 칸이 있으면 펼쳐서 보여 준다
 
 /* ═══ 모델 찾기 ═══ */
 const norm=s=>String(s||'').replace(/\s+/g,'').toUpperCase();
@@ -520,7 +554,7 @@ function suggest(){
   box.innerHTML=out.length? out.slice(0,12).map((m,i)=>`<button class="${i===0?'on':''}" data-m="${esc(m)}">${imgOf(m)?`<img src="${esc(imgOf(m))}" alt="">`:'<span style="width:36px"></span>'}<span class="t"><b>${esc(nameOf(m))}</b><span>${esc(m)} · ${esc(catOf(m))}</span></span><span class="p">${priceOf(m)?won(priceOf(m)):''}</span></button>`).join('')
     : '<div class="hint" style="padding:10px">구독 요금표에 없는 모델입니다. 일시불 전용이면 아래 [직접 입력]으로 담으세요.</div><button data-free="1"><span class="t"><b>직접 입력: '+esc(raw)+'</b><span>일시불 품목으로 담기 (구독 요금 없음)</span></span></button>';
   box.classList.remove('hidden');
-  box.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; if(b.dataset.free) addFree(raw); else addModel(b.dataset.m); $('q').value=''; box.classList.add('hidden'); };
+  box.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; if(b.dataset.free) addFree(raw); else addModel(b.dataset.m); $('q').value=''; box.classList.add('hidden'); $('q').focus(); };
 }
 const ITEM_DEF={ prepay:null, card:null, tier:'', autoOff:false, monthlyManual:0, pointManual:null, consumable:0, giftcard:0, hidden:false, own:false };   // 품목별 조건 (null = 결제 조건 패널의 전체 값)
 function addModel(m, mode){ if(Q.items.some(x=>x.m===m)){ toast('이미 담긴 모델입니다'); return; } const it=Object.assign({m, mode:mode||'sub', years:0, care:'', lump:priceOf(m), note:''}, ITEM_DEF); Q.items.push(it);
@@ -574,7 +608,16 @@ function ownHtml(it,i){
     <div class="orow"><span class="lbl">소모품</span><input class="amt" type="number" step="1000" value="${+it.consumable||''}" onchange="setItem(${i},'consumable',+this.value||0)"><span class="lbl">상품권</span><input class="amt" type="number" step="10000" value="${+it.giftcard||''}" onchange="setItem(${i},'giftcard',+this.value||0)"></div>
     <div class="orow"><span class="lbl">견적서에서</span>${seg('hidden',[{v:false,l:'보임'},{v:true,l:'숨김 (계산 제외)'}],!!it.hidden)}</div>
   </div>`; }
-function delItem(i){ Q.items.splice(i,1); render(); }
+let UNDO=null, undoT;   // 방금 뺀 품목 — 15초 동안 되돌릴 수 있다
+function keepUndo(){ UNDO=Q.items.slice(); clearTimeout(undoT); undoT=setTimeout(()=>{ UNDO=null; const b=$('undoBtn'); if(b) b.remove(); },15000); }
+function delItem(i){ keepUndo(); Q.items.splice(i,1); render(); toast('뺐습니다 — [뺀 품목 되돌리기]로 되살릴 수 있습니다'); }
+function clearItems(){ keepUndo(); Q.items=[]; render(); toast('모두 뺐습니다 — [뺀 품목 되돌리기]로 되살릴 수 있습니다'); }
+function undoDel(){ if(!UNDO) return; Q.items=UNDO; UNDO=null; clearTimeout(undoT); render(); toast('되돌렸습니다'); }
+function allMode(mode){ let k=0, skip=0; Q.items.forEach(it=>{ if(mode==='sub'&&(it.noSub||!INFO[it.m])){ skip++; return; } it.mode=mode; if(mode==='lump'&&!(+it.lump>0)) it.lump=priceOf(it.m)||0; k++; }); render();
+  const miss=mode==='lump'? Q.items.filter(it=>!(+it.lump>0)).length : 0;
+  toast((mode==='sub'?'전부 구독':'전부 일시불')+`으로 바꿨습니다 (${k}개)`+(skip?` · 구독 요금이 없는 ${skip}개는 일시불 그대로`:'')+(miss?` · 결제가를 넣어야 하는 품목 ${miss}개`:'')); }
+function allYears(y){ let k=0, skip=0; Q.items.forEach(it=>{ const info=INFO[it.m]; if(it.mode!=='sub'||!info) return; if(info.p.some(p=>p[0]===y)){ if(it.years!==y){ it.years=y; it.care=''; } k++; } else skip++; }); render();
+  toast(`구독 ${k}개 품목을 ${y}년으로 바꿨습니다`+(skip?` · ${y}년 요금이 없는 ${skip}개는 그대로`:'')); }
 
 /* ═══ 계산 ═══ */
 function calcDiscount(total, rate, months){ const inner=total*rate/1.1/months; return Math.round(Math.ceil(Math.round(inner*1000000)/1000000/100)*100*months*1.1); }
@@ -676,16 +719,16 @@ function renderEdit({S,L}){
     else rt=`<div class="big l num">${won(it.lump)}</div><div class="sm">${priceOf(it.m)?'정가 '+won(priceOf(it.m)):'할인가 직접 입력'}</div>`;
     return `<div class="item ${it.mode}${it.hidden?' hid':''}">
       ${imgOf(it.m)?`<img class="im" src="${esc(imgOf(it.m))}" alt="">`:`<div class="im">📦</div>`}
-      <div style="min-width:0"><div class="nm">${esc(nameOf(it.m))}${it.hidden?' <span class="bd mut">숨김 · 계산 제외</span>':''}</div><div class="md">${esc(it.m)}${catOf(it.m)?' · '+esc(catOf(it.m)):''}
+      <div class="mid"><div class="nm">${esc(nameOf(it.m))}${it.hidden?' <span class="bd mut">숨김 · 계산 제외</span>':''}</div><div class="md">${esc(it.m)}${catOf(it.m)?' · '+esc(catOf(it.m)):''}
           ${r? (r.multiRate?`<span class="bd ok">다품목 구독 할인 ${Math.round(r.multiRate*1000)/10}% 해당</span>`:(S.n>=2?`<span class="bd mut">다품목 미해당</span>`:'')) : ''}
           ${r&&r.pkgOn?`<span class="bd ok">스마트 패키지 해당${S.pkg?' · '+S.pkgN+'품목 정액 '+won(S.pkg):' (다른 품목군 '+S.pkgMin+'개부터 정액 적용)'}</span>`:''}
           ${r&&r.manual?'<span class="bd warn">월 구독료 수기</span>':''}${r&&r.pointsManual?'<span class="bd warn">포인트 수기</span>':''}${it.prepay!=null?`<span class="bd">선납 ${it.prepay?Math.round(it.prepay*100)+'%':'없음'}</span>`:''}${it.card!=null?`<span class="bd">${esc(it.card||'카드 없음')}</span>`:''}</div>
         <div class="opts">
           <div class="mode">${it.noSub?'':`<button class="s ${isS?'on':''}" onclick="setItem(${i},'mode','sub')">구독</button>`}<button class="l ${isS?'':'on'}" onclick="setItem(${i},'mode','lump')">일시불</button></div>
           ${isS&&info? `<div class="seg sm">${ys.map(y=>`<button class="${y===it.years?'on':''}" onclick="setItem(${i},'years',${y})">${y}년</button>`).join('')}</div>
-                 <div class="seg sm">${cares.map(k=>`<button class="${k===it.care?'on':''}" onclick="setItem(${i},'care','${esc(k)}')">${esc(k)}</button>`).join('')}</div>`
-               : (isS?`<label class="hint" title="같은 제품을 일시불로 살 때의 결제가 — 여러 상황 비교(전부 일시불 등)에 씁니다. 시흥몰 판매가가 있으면 자동으로 채워집니다">일시불가 <input class="amt${+it.lump>0?'':' need'}" type="number" step="10000" placeholder="입력 필요" value="${+it.lump||''}" onchange="setItem(${i},'lump',+this.value)" aria-label="일시불가 (비교용)"></label>`
-                     :`<label class="hint">결제가 <input class="amt" type="number" step="10000" value="${+it.lump||''}" onchange="setItem(${i},'lump',+this.value)" aria-label="결제가"></label>`)}
+                 <select class="care" aria-label="서비스 유형" title="서비스 유형" onchange="setItem(${i},'care',this.value)">${cares.map(k=>`<option value="${esc(k)}"${k===(it.care||r&&r.care)?' selected':''}>${esc(k)}</option>`).join('')}</select>` : ''}
+          ${isS?`<label class="hint" title="같은 제품을 일시불로 살 때의 결제가 — 여러 상황 비교(전부 일시불 등)에 씁니다. 시흥몰 판매가가 있으면 자동으로 채워집니다">일시불가 <input class="amt${+it.lump>0?'':' need'}" type="text" inputmode="numeric" placeholder="입력 필요" value="${+it.lump?fmt(+it.lump):''}" onchange="setItem(${i},'lump',+this.value.replace(/[^0-9]/g,'')||0)" aria-label="일시불가 (비교용)"></label>`
+               :`<label class="hint">결제가 <input class="amt${+it.lump>0?'':' need'}" type="text" inputmode="numeric" placeholder="입력 필요" value="${+it.lump?fmt(+it.lump):''}" onchange="setItem(${i},'lump',+this.value.replace(/[^0-9]/g,'')||0)" aria-label="결제가"></label>`}
           <input class="note" placeholder="비고 (색상·설치 조건)" value="${esc(it.note)}" onchange="Q.items[${i}].note=this.value">
           ${isS&&info?`<button class="chip ${it.own?'on':''}" onclick="setItem(${i},'own',${it.own?'false':'true'})">조건 따로 ${it.own?'▲':'▼'}</button>`:''}
         </div>
@@ -695,9 +738,18 @@ function renderEdit({S,L}){
   $('t_sub_m').textContent = S.n? won(S.pay)+'/월' : '—';
   $('t_sub_d').textContent = S.n? `${S.n}품목${S.preAmt?' · 선납 '+won(S.preAmt)+' 별도':''} · 체감 ${won(S.feel)}/월` : '구독 품목 없음';
   const AL=L.items.length?null:allLump();   // 구독만 담았어도 "같은 품목을 전부 일시불로 사면" 을 같이 보여 준다
-  $('t_lump').textContent = L.items.length? won(L.net) : (AL? (AL.noPrice? '일시불가 입력 필요' : won(AL.L.net)) : '—');
-  $('t_lump_d').textContent = L.items.length? `${L.items.length}품목 · 할인가 ${won(L.amount)} · ${L.months}개월 월 ${won(L.per)}`
+  const missL=Q.items.filter(it=>!it.hidden&&it.mode==='lump'&&!(+it.lump>0)).length;   // 결제가를 안 넣은 일시불 품목 — 합계에서 조용히 빠지지 않게 알린다
+  $('t_lump').textContent = L.items.length? won(L.net)+(missL?' + α':'') : (AL? (AL.noPrice? '일시불가 입력 필요' : won(AL.L.net)) : '—');
+  $('t_lump_d').textContent = L.items.length? `${missL?'결제가를 안 넣은 품목 '+missL+'개 — 품목 줄의 [결제가] 칸에 넣어 주세요 · ':''}${L.items.length}품목 · 할인가 ${won(L.amount)} · ${L.months}개월 월 ${won(L.per)}`
     : (AL? (AL.noPrice? `비교용 · 일시불가가 없는 품목 ${AL.noPrice}개 — 품목 줄의 [일시불가] 칸에 넣어 주세요` : `비교용 · 같은 ${AL.lumpN}품목을 전부 일시불로 살 때 · 결제가 ${won(AL.L.amount)} · ${AL.L.months}개월 월 ${won(AL.L.per)} · 구독 총 지불액 ${won(S.net)} 과 ${won(Math.abs(AL.L.net-S.net))} 차이`) : '일시불 품목 없음');
+  $('bb_s').textContent=S.n? won(S.pay)+'/월':'—'; $('bb_n').textContent=S.n? won(S.net):'—';
+  $('bb_l').textContent=L.items.length? won(L.net)+(missL?' + α':'') : (AL&&!AL.noPrice? won(AL.L.net) : (AL? '일시불가 입력 필요':'—'));
+  const bk=$('bulk'), nI=Q.items.length; bk.classList.toggle('hidden', !nI&&!UNDO);
+  const ysAll=[...new Set([].concat(...Q.items.map(it=>it.mode==='sub'&&INFO[it.m]?INFO[it.m].p.map(p=>p[0]):[])))].sort((a,b)=>b-a);
+  bk.innerHTML=`<b>담은 품목 ${nI}개</b>`+(nI>=2?`<span class="hint">· 한 번에</span><button class="chip" onclick="allMode('sub')">전부 구독</button><button class="chip" onclick="allMode('lump')">전부 일시불</button>${ysAll.length>1?'<span class="hint">· 계약 기간</span>'+ysAll.map(y=>`<button class="chip" onclick="allYears(${y})">${y}년</button>`).join(''):''}`:'')
+    +'<span class="sp"></span>'+(UNDO?'<button class="chip on" id="undoBtn" onclick="undoDel()">↩ 뺀 품목 되돌리기</button>':'')+(nI>=2?'<button class="chip" onclick="clearItems()">모두 빼기</button>':'');
+  const cm=[]; if(Q.cond.reward&&Q.cond.reward!=='0'&&Q.cond.reward!=='off') cm.push('이벤트 리워드'); if(+Q.cond.pointCommon) cm.push('포인트 공통 '+won(+Q.cond.pointCommon)); const ex=(Q.extra||[]).filter(e=>+e.amount>0).length; if(ex) cm.push('기타 혜택 '+ex+'건'); if(Q.cond.namecardId) cm.push('네임카드');
+  $('condMoreLbl').textContent=cm.length? cm.join(' · ')+' 적용 중' : '필요할 때만 펼치기'; if(cm.length&&!$('condMore').dataset.t){ $('condMore').open=true; $('condMore').dataset.t='1'; }
   let d='';
   if(S.n){ d+=`<div class="lbl" style="margin-bottom:4px">구독 혜택</div>
     <div class="kv"><span>총 구독료</span><b class="num">${won(S.total)}</b></div>
@@ -730,8 +782,9 @@ function renderShow(){ if(!LAST) return; const {S,L}=LAST, name=Q.cust.name||'�
   $('s_title').textContent=`${name} 님 ${Q.cust.type} 견적`; $('s_sub').textContent=`${STORE.name} · ${(Q.issuedAt||todayStr()).replace(/-/g,'.')}${ME?' · 담당 '+ME:''} (${STORE.tel})`;
   $('s_m').innerHTML=(S.n?fmt(S.pay):'0')+'<small>원</small>'; $('s_m_d').textContent=S.n?`${S.preAmt?'선납 '+won(S.preAmt)+' 후 ':''}${S.maxM}개월 · 혜택 전 ${won(S.monthly)}/월`:'구독 품목 없음';
   const AL=L.items.length?null:allLump();
-  $('s_l').innerHTML=(L.items.length?fmt(L.net):(AL&&!AL.noPrice?fmt(AL.L.net):'0'))+'<small>원</small>';
-  $('s_l_d').textContent=L.items.length?`삼성카드 6/12 ${L.months}개월 · 개월수별 납부 ${won(L.per)} · 결제가 ${won(L.amount)}`
+  const missL=Q.items.filter(it=>!it.hidden&&it.mode==='lump'&&!(+it.lump>0)).length;
+  $('s_l').innerHTML=(L.items.length?fmt(L.net):(AL&&!AL.noPrice?fmt(AL.L.net):'0'))+'<small>원'+(missL?' + α':'')+'</small>';
+  $('s_l_d').textContent=L.items.length?`${missL?'결제가를 안 넣은 품목 '+missL+'개 제외 · ':''}삼성카드 6/12 ${L.months}개월 · 개월수별 납부 ${won(L.per)} · 결제가 ${won(L.amount)}`
     : (AL&&!AL.noPrice? `비교 · 같은 품목을 전부 일시불로 살 때 (결제가 ${won(AL.L.amount)} · ${AL.L.months}개월 월 ${won(AL.L.per)})` : (AL&&AL.noPrice? `일시불가가 없는 품목 ${AL.noPrice}개 — 비교하려면 일시불가 입력` : '일시불 품목 없음'));
   $('s_b').innerHTML=fmt(S.ben+L.ben)+'<small>원</small>';
   $('gal').innerHTML=Q.items.filter(it=>!it.hidden).map(it=>{ const r=S.R[it.m], im=imgOf(it.m), info=INFO[it.m], seg=info&&info.s?' · '+esc(info.s):'';
@@ -786,7 +839,7 @@ function renderSheet(){ if(!LAST) return; const {S,L}=LAST, T=(id,t)=>$(id).text
   const notes=[].concat((LUMP&&LUMP.notes)||[]); if(POL.texts&&POL.texts.notice) notes.push(POL.texts.notice.replace(/^\*\s*/,''));
   $('x_foot').innerHTML = notes.map((t,i)=>(i+1)+'. '+esc(t)).join(' ')+`<br>${esc(STORE.name)} · ${esc(STORE.addr)} · T ${esc(STORE.tel)} · 요금표 ${esc(IDX.ver||'')}`;
 }
-function setView(v){ ['edit','show','sheet'].forEach(k=>$('v-'+k).classList.toggle('hidden',k!==v)); document.querySelectorAll('.views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo({top:0}); }
+function setView(v){ document.body.classList.toggle('v-edit',v==='edit'); ['edit','show','sheet'].forEach(k=>$('v-'+k).classList.toggle('hidden',k!==v)); document.querySelectorAll('.views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo({top:0}); }
 
 /* ═══ 저장 · 내역 · 보내기 (fn_quote_page_* · mvp_138 · 세션 통과 mvp_276) ═══ */
 function toQuoteJson(){
