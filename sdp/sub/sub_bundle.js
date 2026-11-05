@@ -37,7 +37,15 @@ window.SUB_BUNDLE_READY = true;
   function cleanName(s) { return String(s || '').replace(/\s*\*+\s*$/, '').replace(/\s*(삼성본사직배송|본사직배송)\s*/g, ' ').replace(/\s{2,}/g, ' ').replace(/^\s|\s$/g, ''); }
   function loadScript(src, ok, fail) { var s = document.createElement('script'); s.src = src; s.charset = 'utf-8'; s.onload = ok; s.onerror = fail || ok; document.head.appendChild(s); }
   var BASE = CFG.dataBase || '/data/js/sub/', VQ = CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || IDX.ver || '');   // 데이터센터는 ?v= 없이 (HTML 의 preload 와 같은 주소)
-  function viewUrl(m) { return (CFG.viewUrl || '/main/html.php?htmid=subscribe/sub_view.html&model=') + encodeURIComponent(m) + '&utm_source=sub_bundle&utm_medium=item'; }
+  // 모델별 정적 페이지(m/<모델>.html · 2026-11-04 · 검색엔진용) — 있으면 그 주소, 없으면 view.html?model= (목록 = sdp/sub/sub_static.js)
+  function staticView(m) {
+    var S = window.SUB_STATIC, b = CFG.viewStatic;
+    if (!S || !b) return '';
+    if (!S.set) { S.set = {}; String(S.m || '').split(' ').forEach(function (x) { if (x) S.set[x] = 1; }); }
+    return S.set[m] ? b + String(m).replace(/\//g, '_') + '.html' : '';
+  }
+  function modelHref(base, m, q) { var s = staticView(m); return s ? s + (q ? '?' + q : '') : base + encodeURIComponent(m) + (q ? '&' + q : ''); }
+  function viewUrl(m) { return modelHref(CFG.viewUrl || '/main/html.php?htmid=subscribe/sub_view.html&model=', m, 'utm_source=sub_bundle&utm_medium=item'); }
   function familyKey(m) {
     if (window.SUB_FAMILY) return window.SUB_FAMILY(m);
     var x = /^(.*\d)([A-Z]+?)(N\d)?$/.exec(String(m || '').toUpperCase());
@@ -480,7 +488,7 @@ window.SUB_BUNDLE_READY = true;
     if (CFG.centerNav === false || document.getElementById('subShopNav')) return;
     var nav = document.createElement('div'); nav.id = 'subShopNav';
     root.parentNode.insertBefore(nav, root.parentNode.firstChild);
-    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: 'bundle', key: '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl,
+    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: 'bundle', key: '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl, viewStatic: CFG.viewStatic,
       homeUrl: CFG.homeUrl, catUrl: CFG.catUrl, cardUrl: CFG.cardUrl, guideUrl: CFG.guideUrl, bundleUrl: CFG.bundleUrl };
     if (!document.querySelector('link[href*="sub_shop.css"]')) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = BASE + 'sub_shop.css' + VQ; document.head.appendChild(l); }
     if (!window.SUB_CART) loadScript(BASE + 'sub_shop.js' + VQ);

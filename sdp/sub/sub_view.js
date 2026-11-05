@@ -46,7 +46,15 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   // 구독센터 페이지 폴더: 지금 페이지 주소(htmid=<폴더>/sub_…)를 따른다 — 웹FTP subscribe/ · 예전 service/ 모두 동작
   var PAGE_DIR = CFG.pageDir || (/[?&]htmid=([\w-]+\/)sub_/.exec(location.search) || [])[1] || 'subscribe/';
   function findUrl(q) { var u = CFG.findUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_find.html'; return q ? u + (u.indexOf('?') < 0 ? '?' : '&') + q : u; }
-  function viewUrl(model) { return (CFG.viewUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_view.html&model=') + encodeURIComponent(model); }
+  // 모델별 정적 페이지(m/<모델>.html · 2026-11-04 · 검색엔진용) — 있으면 그 주소, 없으면 view.html?model= (목록 = sdp/sub/sub_static.js)
+  function staticView(m) {
+    var S = window.SUB_STATIC, b = CFG.viewStatic;
+    if (!S || !b) return '';
+    if (!S.set) { S.set = {}; String(S.m || '').split(' ').forEach(function (x) { if (x) S.set[x] = 1; }); }
+    return S.set[m] ? b + String(m).replace(/\//g, '_') + '.html' : '';
+  }
+  function modelHref(base, m, q) { var s = staticView(m); return s ? s + (q ? '?' + q : '') : base + encodeURIComponent(m) + (q ? '&' + q : ''); }
+  function viewUrl(model) { return modelHref(CFG.viewUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_view.html&model=', model); }
   function track(name, extra) {
     var ev = { event: name, sub_model: model };
     for (var k in extra) ev[k] = extra[k];
@@ -68,7 +76,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     return s.replace(/\s+/g, ' ').replace(/^\s|\s$/g, '');
   }
 
-  var model = norm(param('model'));
+  var model = norm(CFG.model || root.getAttribute('data-model') || param('model'));
   if (!IDX || !IDX.m) { root.innerHTML = '<p class="sv-empty">구독 요금 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</p>'; return; }
   var entry = IDX.m[model];
   if (!entry) {
@@ -283,6 +291,35 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
       .catch(function () { box.innerHTML = ''; });
   }
 
+  /* ---------- 삼성닷컴 후기 (2026-11-04 · tools/subreview/collect.py → sdp/sub/sub_reviews.js · review/<goodsId>.json) ----------
+     원문이 아니라 별점·건수·분포와 최근 후기 앞부분(60자)만 · "삼성닷컴 후기" 표시 + 원문 링크 · 같은 모델 패밀리(크기·색상) 후기를 함께 센다 */
+  function renderReview() {
+    var box = root.querySelector('[data-slot="review"]');
+    var b = CFG.dataBase || '/data/js/sub/';
+    if (!box || !window.fetch) return;
+    if (!window.SUB_REVIEWS) { if (!renderReview.loading) { renderReview.loading = 1; loadScript(b + 'sub_reviews.js', function () { if (window.SUB_REVIEWS) renderReview(); }); } return; }   // HTML 에 없어도 데이터센터에서 받는다 (고도몰 파일을 다시 올리지 않게)
+    var R = window.SUB_REVIEWS.m && window.SUB_REVIEWS.m[model];
+    if (!R) return;
+    fetch(b + 'review/' + encodeURIComponent(R[2]) + '.json', { cache: 'force-cache' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) {
+        var stars = function (n) { var s = ''; for (var i = 1; i <= 5; i++) s += i <= Math.round(n) ? '★' : '☆'; return s; };
+        var tot = (d.dist || []).reduce(function (a, x) { return a + x; }, 0) || d.count || 1;
+        var lab = ['최고', '만족', '보통', '별로', '나쁨'];
+        box.innerHTML = '<h2 class="sv-h2">삼성닷컴 후기 <small>삼성닷컴 구매 고객 후기</small></h2>' +
+          '<div class="sv-rv"><div class="sv-rv-sum"><b>' + (+d.rating).toFixed(1) + '</b><span class="sv-rv-stars" aria-hidden="true">' + stars(d.rating) + '</span><em>후기 ' + fmt(d.count) + '건</em></div>' +
+          (d.dist ? '<ul class="sv-rv-dist">' + d.dist.map(function (n, i) { return '<li><span>' + lab[i] + '</span><i><s style="width:' + Math.round(n * 100 / tot) + '%"></s></i><em>' + fmt(n) + '</em></li>'; }).join('') + '</ul>' : '') + '</div>' +
+          (d.recent && d.recent.length ? '<ul class="sv-rv-list">' + d.recent.map(function (x) {
+            return '<li><p class="sv-rv-meta"><span class="sv-rv-stars">' + stars(x.s) + '</span> ' + esc(x.u) + ' · ' + esc(x.d) + (x.p ? ' · 사진' : '') + '</p>' +
+              (x.v ? '<p class="sv-rv-var">' + esc(x.v) + '</p>' : '') + '<p class="sv-rv-txt">' + esc(x.t) + '</p></li>';
+          }).join('') + '</ul>' : '') +
+          '<p class="sv-note">삼성닷컴에 올라온 같은 모델(크기·색상 포함) 후기의 별점과 앞부분입니다. ' + (d.at ? esc(d.at) + ' 기준. ' : '') +
+          '<a href="' + esc(d.link || 'https://www.samsung.com/sec/') + '" target="_blank" rel="noopener">삼성닷컴에서 후기 전체 보기 →</a></p>';
+        track('sub_view_review', { sv_reviews: d.count });
+      })
+      .catch(function () { box.innerHTML = ''; });
+  }
+
   /* ---------- 같은 세부유형 다른 모델 ---------- */
   function renderSiblings() {
     var P = (window.SUB_PLANS || {})[cat];
@@ -306,7 +343,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     var nav = document.createElement('div');
     nav.id = 'subShopNav';
     root.parentNode.insertBefore(nav, root.parentNode.firstChild);   // 페이지 맨 위 (머리글보다 먼저)
-    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl,
+    window.SUB_SHOP_CONFIG = window.SUB_SHOP_CONFIG || { page: page, key: key || '', tel: CFG.tel || '', consultUrl: CFG.consultUrl, findUrl: CFG.findUrl, viewUrl: CFG.viewUrl, viewStatic: CFG.viewStatic,
       homeUrl: CFG.homeUrl, catUrl: CFG.catUrl, cardUrl: CFG.cardUrl, guideUrl: CFG.guideUrl };
     var b = CFG.dataBase || '/data/js/sub/', q = CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || (IDX && IDX.ver) || '');
     var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = b + 'sub_shop.css' + q; document.head.appendChild(l);
@@ -314,11 +351,16 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   }
 
   /* ---------- 골격 ---------- */
+  // 정적 페이지(m/<모델>.html)에 미리 적힌 "약정 기간별 월 구독료" 표는 계산기 아래에 그대로 둔다 (2026-11-04)
+  var preTable = root.querySelector('.sv-static-t');
+  preTable = preTable && preTable.closest ? preTable.closest('section') : null;
+  preTable = preTable ? preTable.outerHTML : '';
   root.innerHTML =
     '<div data-slot="head"></div>' +
     '<section class="sv-calc"><h2 class="sv-h2">구독 요금 계산</h2><div id="subTabRoot" hidden></div>' +
-    '<p class="sv-loading" data-slot="loading">요금 정보를 불러오는 중…</p></section>' +
+    '<p class="sv-loading" data-slot="loading">요금 정보를 불러오는 중…</p></section>' + preTable +
     '<section data-slot="variants"></section>' +
+    '<section data-slot="review"></section>' +
     '<section data-slot="desc"></section>' +
     '<section data-slot="reco"></section>' +
     '<section data-slot="more"></section>';
@@ -383,7 +425,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   loadScript(base + 'sub_plans_' + cat + '.js' + vq, function () {
     var P = (window.SUB_PLANS || {})[cat] || {};
     seg = P[model] ? P[model].s || '' : '';
-    renderHead(); renderVariants(); renderSiblings(); renderReco(); renderDesc();
+    renderHead(); renderVariants(); renderSiblings(); renderReco(); renderReview(); renderDesc();
     function calcFailed() {
       var ld = root.querySelector('[data-slot="loading"]');
       if (!ld) { ld = document.createElement('p'); ld.className = 'sv-loading'; ld.setAttribute('data-slot', 'loading'); root.querySelector('.sv-calc').appendChild(ld); }

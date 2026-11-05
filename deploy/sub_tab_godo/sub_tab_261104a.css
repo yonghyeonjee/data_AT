@@ -1,0 +1,220 @@
+/* ===== 상품상세 일시불/구독 탭 (sub_tab.js) ===== */
+#subTabRoot{margin:18px 0 6px;--st-blue:#1d6fe8;--st-ink:#111;--st-line:#dcdfe4;--st-soft:#f5f6f8;--st-red:#e8432d}
+#subTabRoot[hidden]{display:none}
+.subtab-hide{display:none !important}
+
+/* 탭 머리 */
+.subtab-head{display:flex;align-items:stretch;border-bottom:1.5px solid #555}
+.subtab-btn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 8px 11px;margin-bottom:-1.5px;
+  background:var(--st-soft);border:1.5px solid transparent;border-bottom-color:#555;border-radius:12px 12px 0 0;cursor:pointer;
+  font-family:inherit;color:#555;transition:background .15s}
+.subtab-btn span{font-size:14px;font-weight:700;display:flex;align-items:center;gap:5px}
+.subtab-btn strong{font-size:21px;font-weight:800;color:#333;min-height:28px;line-height:1.3;letter-spacing:-.3px}
+.subtab-btn:hover{background:#eceef1}
+.subtab-btn.is-active{background:#fff;border-color:#555;border-bottom-color:#fff;color:var(--st-ink)}
+.subtab-btn[data-tab="sub"] strong{color:var(--st-blue)}
+.subtab-btn[data-tab="sub"] small{color:var(--st-red);font-weight:800;font-size:12px}
+.subtab-badge{font-style:normal;font-size:10px;font-weight:700;line-height:1;padding:3px 5px;border-radius:9px;background:var(--st-blue);color:#fff}
+.subtab-save{font-style:normal;font-size:11px;font-weight:800;line-height:1.2;margin-top:2px;padding:3px 7px;border-radius:10px;background:var(--st-red);color:#fff;white-space:nowrap}
+.subtab-save[hidden]{display:none}
+
+/* 패널 공통 */
+.subtab-panel{padding:18px 2px 0}
+.subtab-model{font-size:12px;color:#777;margin:0 0 16px}
+.subtab-model b{color:#333}
+.subtab-field{border:0;margin:0 0 26px;padding:0;min-width:0}
+.subtab-field legend,.subtab-legend{display:flex;align-items:baseline;justify-content:space-between;gap:8px;width:100%;
+  font-size:16px;font-weight:700;color:var(--st-ink);margin-bottom:10px;padding:0}
+.subtab-field legend{display:block}
+.subtab-field legend small{margin-left:8px;font-size:11px;font-weight:400;color:#888}
+/* 선납금 ? 안내 (2026-11-02) */
+.subtab-help{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;padding:0;border:1px solid var(--st-blue);border-radius:50%;background:#fff;color:var(--st-blue);font-size:12px;font-weight:700;line-height:1;cursor:pointer;vertical-align:2px}
+.subtab-help[aria-expanded="true"]{background:var(--st-blue);color:#fff}
+.subtab-help-text{margin:0 0 10px;padding:8px 10px;border-radius:8px;background:#eef4ff;color:#1a4fa3;font-size:12px;font-weight:700;line-height:1.5}
+.subtab-legend a{font-size:12px;font-weight:700;color:var(--st-blue);text-decoration:none}
+.subtab-sub{margin:6px 0 0;font-size:11.5px;line-height:1.55;color:#888}
+.subtab-field legend + .subtab-sub{margin:0 0 8px}
+
+/* 선택 버튼 */
+.subtab-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.subtab-grid--1{grid-template-columns:1fr;gap:8px}
+.subtab-grid--2{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.subtab-opt{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px 14px;min-height:44px;
+  background:#fff;border:1px solid var(--st-line);border-radius:12px;cursor:pointer;font-family:inherit;text-align:left;transition:border-color .15s}
+.subtab-opt b{font-size:13px;font-weight:700;color:#222}
+.subtab-opt span{font-size:11px;color:#888}
+.subtab-opt:hover{border-color:var(--st-blue)}
+.subtab-opt.is-active{border:1.5px solid var(--st-blue);background:rgba(29,111,232,.06)}
+.subtab-opt.is-active b{color:var(--st-blue);font-weight:700}
+.subtab-opt--row{flex-direction:row;justify-content:space-between;align-items:center}
+.subtab-opt--row span{font-size:12px;color:#555}
+.subtab-opt--center{align-items:center;justify-content:center}
+.subtab-opt[disabled]{cursor:not-allowed;background:var(--st-soft);border-color:var(--st-line)}
+.subtab-opt[disabled] b{color:#bbb;font-weight:400}
+.subtab-rec{position:absolute;top:6px;right:6px;font-style:normal;font-size:10px;font-weight:700;line-height:1;padding:3px 6px;border-radius:8px;background:var(--st-blue);color:#fff}
+.subtab-tag{margin-left:5px;font-style:normal;font-size:11px;font-weight:700;color:var(--st-blue)}
+
+/* 카드 혜택 */
+.subtab-card{padding:16px;border-radius:12px;background:var(--st-soft)}
+.subtab-card select{width:100%;height:46px;padding:0 12px;border:1px solid rgba(0,0,0,.12);border-radius:8px;background:#fff;font-family:inherit;font-size:14px;color:#111}
+.subtab-card select[data-tier]{margin-top:6px;font-size:13px;font-weight:700;color:#155ac0}
+.subtab-card .subtab-sub{margin-top:12px}
+.subtab-check{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,.07);cursor:pointer}
+.subtab-check input{width:16px;height:16px;margin:0;accent-color:var(--st-blue)}
+.subtab-check span{flex:1;font-size:13px;font-weight:700;color:#111}
+.subtab-check strong{font-size:14px;font-weight:800;color:var(--st-blue)}
+.subtab-cardbreak{margin:8px 0 0}
+.subtab-cardbreak div{display:flex;justify-content:space-between;gap:12px;font-size:12px;line-height:1.7;color:#666}
+.subtab-cardbreak dd{margin:0}
+.subtab-cardnotes{list-style:none;margin:12px 0 0;padding:10px 0 0;border-top:1px solid rgba(0,0,0,.07)}
+.subtab-cardnotes li{position:relative;padding-left:10px;font-size:11px;line-height:1.6;color:#888}
+.subtab-cardnotes li:before{content:"·";position:absolute;left:1px}
+
+/* 일시불보다 저렴: 강조 배너 */
+.subtab-savebox{display:flex;flex-direction:column;gap:3px;margin:0 0 22px;padding:14px 16px;border-radius:12px;
+  background:linear-gradient(135deg,#fff1ee,#ffe3dc);border:1.5px solid #f6b3a6}
+.subtab-savebox-label{font-size:12px;font-weight:700;color:#b9341f}
+.subtab-savebox strong{font-size:22px;font-weight:800;color:var(--st-red);letter-spacing:-.02em}
+.subtab-savebox-sub{font-size:13px;color:#8a5a50}
+/* 일시불가 vs 구독 총액 나란히 */
+.subtab-cmp{display:flex;align-items:center;gap:10px;margin:8px 0 4px}
+.subtab-cmp>div{flex:1;min-width:0;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.7);display:flex;flex-direction:column;gap:2px}
+.subtab-cmp em{font-style:normal;font-size:11.5px;font-weight:700;color:#777}
+.subtab-cmp b{font-size:clamp(14px,4.6vw,19px);font-weight:800;color:#555;letter-spacing:-.03em;white-space:nowrap;text-decoration:line-through;text-decoration-color:#c9a39b;text-decoration-thickness:2px}   /* 좁은 화면에서 "원"이 줄바꿈되지 않게 */
+.subtab-cmp .is-sub{background:#fff;border:1.5px solid var(--st-red)}
+.subtab-cmp .is-sub em{color:var(--st-red)}
+.subtab-cmp .is-sub b{color:var(--st-red);font-size:clamp(16px,5.4vw,22px);font-weight:800;text-decoration:none}
+.subtab-cmp>i{width:9px;height:9px;flex:none;border-top:2px solid #b9341f;border-right:2px solid #b9341f;transform:rotate(45deg)}
+.subtab-monthbox .subtab-savebox-sub{color:#5a6b85}
+/* 탭 머리: 총액 크게 · 월 납부액 작게 */
+.subtab-btn small{font-size:11.5px;font-weight:700;color:#777;line-height:1.2}
+.subtab-btn small:empty{display:none}
+.subtab-btn[data-tab="sub"] small{color:var(--st-blue)}
+/* 일시불보다 저렴하지 않음: 월 구독료만 */
+.subtab-monthbox{display:flex;flex-direction:column;gap:3px;margin:0 0 22px;padding:14px 16px;border-radius:12px;background:rgba(29,111,232,.06);border:1.5px solid rgba(29,111,232,.35)}
+.subtab-monthbox-label{font-size:12px;font-weight:700;color:var(--st-blue)}
+.subtab-monthbox strong{font-size:22px;font-weight:800;color:var(--st-blue);letter-spacing:-.02em}
+/* 요약 기준 + [조건별 구독가 확인하기] 접기·펼치기 */
+.subtab-savebox,.subtab-monthbox{margin-bottom:6px}
+.subtab-cond{display:none}
+.subtab-acc{display:flex;align-items:center;justify-content:flex-start;width:100%;margin:0 0 18px;padding:14px 16px;border:1.5px solid var(--st-blue);border-radius:12px;background:#eef4ff;font:inherit;font-size:15px;font-weight:800;color:var(--st-blue);cursor:pointer;box-shadow:0 2px 8px rgba(20,80,200,.10)}
+.subtab-acc::before{content:'';width:18px;height:18px;margin-right:8px;flex:0 0 auto;border-radius:50%;background:var(--st-blue) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'><path d='M12 5v14M5 12h14'/></svg>") center/12px no-repeat}
+.subtab-acc[aria-expanded="true"]::before{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'><path d='M5 12h14'/></svg>")}
+.subtab-acc > i{margin-left:auto}
+.subtab-acc:hover{background:#e2ecff}
+.subtab-acc i{width:8px;height:8px;border-right:2px solid var(--st-blue);border-bottom:2px solid var(--st-blue);transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+.subtab-acc[aria-expanded="true"]{background:#fff}
+.subtab-acc[aria-expanded="true"] i{border-color:var(--st-blue);transform:translateY(2px) rotate(-135deg)}
+.subtab-acc-body{margin-bottom:8px}
+
+/* 결제 예상 내역 */
+.subtab-sum{margin:0}
+.subtab-sum div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.subtab-sum dt{font-size:13.5px;color:#666}
+.subtab-sum dd{margin:0;font-size:14px;font-weight:700;color:#333;white-space:nowrap}
+.subtab-sum .is-blue dt,.subtab-sum .is-blue dd{color:var(--st-blue)}
+.subtab-sum .is-total{border-bottom:0;padding-top:14px}
+.subtab-sum .is-total dt,.subtab-sum .is-total dd{font-size:16px;font-weight:800;color:#111}
+.subtab-sum .is-muted dt,.subtab-sum .is-muted dd{font-size:12.5px;font-weight:400;color:#999}
+
+.subtab-points{list-style:none;margin:6px 0 10px;padding:0}
+.subtab-points li{position:relative;padding-left:18px;font-size:13px;line-height:1.8;color:#555}
+.subtab-points li:before{content:"✓";position:absolute;left:2px;color:var(--st-blue);font-weight:700}
+.subtab-note{margin:0 0 14px;font-size:11px;line-height:1.6;color:#999}
+
+/* 하단 고정 바 (패널 안에서 스크롤해도 아래에 붙어 있음) */
+.subtab-bar{position:sticky;bottom:0;z-index:5;margin:0 -2px;padding:14px 2px 16px;background:#fff;border-top:1px solid rgba(0,0,0,.1)}
+.subtab-bar-row{display:flex;justify-content:space-between;align-items:baseline;padding:2px 0;font-size:14px;color:#888}
+.subtab-bar-row s{font-size:16px;font-weight:700;color:#999}
+.subtab-bar-row s[hidden]{display:none}
+.subtab-bar-row.is-main span{font-size:14px;font-weight:700;color:#111}
+.subtab-bar-row.is-main strong{font-size:22px;font-weight:800;color:var(--st-blue)}
+.subtab-cta{display:flex;gap:8px;margin-top:12px}
+.subtab-cta a{display:flex;align-items:center;justify-content:center;gap:6px;height:52px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none}
+.subtab-cta-main{flex:1;background:var(--st-blue);color:#fff !important}
+.subtab-cta-main:hover{background:#155ac0}
+.subtab-cta-main svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.subtab-cta-sub{flex:0 0 auto;padding:0 18px;border:1px solid #ccc;color:#222 !important;background:#fff}
+.subtab-cta-lump{flex:1;border:1px solid var(--st-blue);color:var(--st-blue) !important;background:#fff}
+.subtab-cta-lump:hover{background:#f0f5ff}
+.subtab-cta--two .subtab-cta-main{flex:1}
+
+@media (max-width:640px){
+  .subtab-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .subtab-grid--1{grid-template-columns:1fr}
+  .subtab-bar{padding:10px 2px 12px}
+  .subtab-bar-row.is-main strong{font-size:20px}
+  .subtab-cta{margin-top:8px}
+  .subtab-cta a{height:48px;font-size:14px}
+  .subtab-cta-sub{padding:0 12px;font-size:13px !important}
+  .subtab-save{white-space:normal;text-align:center}
+  .subtab-savebox strong{font-size:20px}
+}
+
+/* 같은 모델 다른 색상 · 구독 전용 모델 전환 (2026-11-02) */
+.subtab-sibs{margin:-6px 0 16px}
+.subtab-sibs-t{margin:0 0 8px;font-size:13px;color:#333;font-weight:700}
+.subtab-sibs-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.subtab-sib{flex:1 1 0;min-width:0;max-width:240px;border:1px solid #ddd;border-radius:10px;background:#fff;padding:8px 10px;text-align:left;cursor:pointer;line-height:1.35;color:#222;position:relative}
+.subtab-sib b{display:block;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subtab-sib span{display:block;font-size:14px;color:#1d6fe8;font-weight:700;margin-top:2px}
+.subtab-sib strong{display:block;font-size:13px;color:#d9480f;font-weight:800;margin-top:3px}
+.subtab-sib em{display:inline-block;margin:0 0 5px;font-style:normal;font-size:11.5px;font-weight:700;line-height:1.5;background:#555;color:#fff;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.subtab-sib.is-subonly em{background:#e8590c}
+.subtab-sib.is-active{border-color:#1d6fe8;box-shadow:0 0 0 1px #1d6fe8 inset;background:#f3f8ff}
+.subtab-sib.is-cheap{flex:1.7 1 0;max-width:400px;padding:10px 14px;border-color:#e8590c;box-shadow:0 0 0 1px #e8590c inset;background:#fff4ec}
+.subtab-sib.is-cheap span{color:#d9480f;font-size:15px}
+.subtab-sib.is-cheap strong{font-size:18px;margin-top:4px;line-height:1.3;word-break:keep-all}
+@media (max-width:640px){.subtab-btn strong{font-size:19px}.subtab-sib.is-cheap{flex-grow:1.5}.subtab-sib.is-cheap strong{font-size:16px}}
+.subtab-sib.is-cheap em{background:#d9480f}
+.subtab-sib.is-cheap.is-active{box-shadow:0 0 0 2px #e8590c inset}
+.subtab-sub--point{color:#e8590c;font-weight:700}
+.subtab-sum .is-point dd{color:#e8590c}
+.subtab-sum .is-point dt small{font-size:11px;font-weight:400;color:#999;margin-left:4px}
+.subtab-sum .is-mpoint dd{color:#1428a0}
+.subtab-cmp .is-sub em small{display:block;font-size:10px;color:#1d6fe8;font-weight:700}
+
+/* 구독 전용 상품 페이지 모드 (2026-11-02): 일시불 탭 없이 구독 계산기만 */
+.subtab-root.is-subpage .subtab-btn[data-tab="lump"], #subTabRoot.is-subpage .subtab-btn[data-tab="lump"]{display:none}
+#subTabRoot.is-subpage .subtab-head{border-bottom-color:#1d6fe8}
+#subTabRoot.is-subpage .subtab-btn[data-tab="sub"]{flex:1 1 auto;cursor:default}
+
+/* 고연령 고객 글자 크기 (2026-11-04): [조건별 구독가 확인하기] 안의 모든 글자 약 30% 크게 · 약정 기간은 한 줄에 다 들어가게 작은 칸 */
+#subTabRoot .subtab-grid--years{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
+#subTabRoot .subtab-grid--years .subtab-opt{padding:12px 4px 8px;min-height:0;gap:1px}
+#subTabRoot .subtab-grid--years .subtab-rec{top:-8px;right:50%;transform:translateX(50%);white-space:nowrap}
+#subTabRoot .subtab-acc-body .subtab-field legend,#subTabRoot .subtab-acc-body .subtab-legend{font-size:21px}
+#subTabRoot .subtab-acc-body .subtab-field legend small{font-size:14px}
+#subTabRoot .subtab-acc-body .subtab-help{width:23px;height:23px;font-size:15.5px}
+#subTabRoot .subtab-acc-body .subtab-help-text{font-size:15.5px}
+#subTabRoot .subtab-acc-body .subtab-legend a{font-size:15.5px}
+#subTabRoot .subtab-acc-body .subtab-sub{font-size:15px}
+#subTabRoot .subtab-acc-body .subtab-opt b{font-size:17px}
+#subTabRoot .subtab-acc-body .subtab-opt span{font-size:14px}
+#subTabRoot .subtab-acc-body .subtab-opt--row span{font-size:15.5px}
+#subTabRoot .subtab-acc-body .subtab-rec{font-size:13px}
+#subTabRoot .subtab-acc-body .subtab-tag{font-size:14px}
+#subTabRoot .subtab-acc-body .subtab-card select{height:54px;font-size:18px}
+#subTabRoot .subtab-acc-body .subtab-card select[data-tier]{font-size:17px}
+#subTabRoot .subtab-acc-body .subtab-check span{font-size:17px}
+#subTabRoot .subtab-acc-body .subtab-check strong{font-size:18px}
+#subTabRoot .subtab-acc-body .subtab-cardbreak div{font-size:15.5px}
+#subTabRoot .subtab-acc-body .subtab-cardnotes li{font-size:14px}
+#subTabRoot .subtab-acc-body .subtab-sum dt{font-size:17.5px}
+#subTabRoot .subtab-acc-body .subtab-sum dd{font-size:18px}
+#subTabRoot .subtab-acc-body .subtab-sum dt small{font-size:13px;font-weight:400;color:#888;margin-left:4px}
+#subTabRoot .subtab-acc-body .subtab-sum .is-total dt,#subTabRoot .subtab-acc-body .subtab-sum .is-total dd{font-size:21px}
+#subTabRoot .subtab-acc-body .subtab-sum .is-strong dt,#subTabRoot .subtab-acc-body .subtab-sum .is-strong dd{font-weight:800;color:#111}
+#subTabRoot .subtab-acc-body .subtab-sum .is-blue.is-strong dt,#subTabRoot .subtab-acc-body .subtab-sum .is-blue.is-strong dd{color:var(--st-blue)}
+#subTabRoot .subtab-acc-body .subtab-sum .is-muted dt,#subTabRoot .subtab-acc-body .subtab-sum .is-muted dd{font-size:16px}
+#subTabRoot .subtab-acc-body .subtab-note{font-size:14px}
+/* 포인트 받는 방법 (2026-11-04) */
+#subTabRoot .subtab-ptmode{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;padding:12px;border-radius:12px;background:#f3f7ff}
+#subTabRoot .subtab-ptmode p{grid-column:1/-1;margin:0;font-size:16px;font-weight:800;color:#1a4fa3}
+#subTabRoot .subtab-ptmode .subtab-opt{padding:12px}
+#subTabRoot .subtab-ptmode .subtab-opt span{line-height:1.45;word-break:keep-all}
+@media (max-width:640px){
+  #subTabRoot .subtab-grid--years .subtab-opt b{font-size:16px}
+  #subTabRoot .subtab-grid--years .subtab-opt span{font-size:12.5px}
+  #subTabRoot .subtab-ptmode{grid-template-columns:1fr}
+}
