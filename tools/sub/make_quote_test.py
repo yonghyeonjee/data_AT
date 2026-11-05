@@ -18,7 +18,7 @@ for m in re.finditer(r"select sub\.f_promo_save\('(.*?)'::jsonb", io.open(os.pat
 inject = ("\n/* ── 시험판: 운영 DB 에 아직 없는 정책을 심는다 (tools/sub/make_quote_test.py · mvp_276 lump · mvp_277 행사 %d줄) ── */\n"
           "window.QUOTE_TEST_POLICY=%s;\n"
           "function applyTestPolicy(){ const P=window.SUB_POLICY; if(!P) return; const T=window.QUOTE_TEST_POLICY; if(!P.lump) P.lump=T.lump;\n"
-          "  P.promos=(P.promos||[]).concat(T.promos); if(P.promosAll) P.promosAll=P.promosAll.concat(T.promos); }\n"
+          "  const has=new Set((P.promos||[]).map(x=>x.text)), add=T.promos.filter(x=>!has.has(x.text)); P.promos=(P.promos||[]).concat(add); if(P.promosAll) P.promosAll=P.promosAll.concat(add); }   /* 운영에 이미 있는 줄은 다시 심지 않는다 (2026-11-05 mvp_276·277 운영 반영) */\n"
           % (len(promos), json.dumps({'lump': lump, 'promos': promos}, ensure_ascii=False, separators=(',', ':'))))
 
 out = src
@@ -30,7 +30,7 @@ rep("const ON_DC = /(^|\\.)samsungat\\.co\\.kr$/.test(location.hostname);", "con
 rep("    window.SUB_TAB_CONFIG={ apiOnly:true, dataBase:SDP_BASE, noVer:true };", "    applyTestPolicy();\n    window.SUB_TAB_CONFIG={ apiOnly:true, dataBase:SDP_BASE, noVer:true };")
 rep("/* ═══ 상태 ═══ */", inject + "\n/* ═══ 상태 ═══ */")
 rep("  showLogin(''); return false;\n}", "  $('meLbl').textContent='시험판 · 로그인 없이 보기 (저장·보내기 안 됨)'; return false;\n}")
-rep("<body>", "<body>\n<div style=\"background:#b45309;color:#fff;font-size:13px;font-weight:700;text-align:center;padding:6px 10px\">시험판 — 운영 DB 에 넣지 않은 11월 일시불 혜택표(mvp_276)·구독료 지원 행사모델(mvp_277)을 화면에 심어 계산합니다 · 저장·보내기는 안 됩니다</div>")
+rep("<body>", "<body>\n<div style=\"background:#b45309;color:#fff;font-size:13px;font-weight:700;text-align:center;padding:6px 10px\">시험판 — 로그인 없이 보는 화면입니다 (11월 일시불 혜택표·구독료 지원 행사모델은 2026-11-05 운영 반영됨) · 저장·보내기는 안 됩니다</div>")
 rep("<title>상담 견적 · 삼성스토어 시흥</title>", "<title>[시험판] 상담 견적 · 삼성스토어 시흥</title>")
 
 dst = os.path.join(ROOT, 'quote', 'test', 'index.html')
