@@ -5127,7 +5127,7 @@ function exRender(){ const d=EX.d; if(!d) return; const s=d.sales||{}, pv=d.sale
     exTile('light', '구매 고객 · 식별', n(s.buyers), '명', [[`신규 ${n(s.new_buyers)} · 재구매 ${n(s.repeat_buyers)}`,''], exCmp(s.buyers,pv.buyers,x=>n(x)+'명',L), [`오픈마켓 주문 ${n(om?om.orders:0)}건은 안심번호라 고객을 셀 수 없음`,'']]),
     exTile('light', '재구매율 · 구매 고객 중 전에도 산 사람', exPctS(s.repeat_rate), '', [[`${L} ${exPctS(pv.repeat_rate)} · 전년 동기 ${exPctS(yy.repeat_rate)}`,''], [`재구매 고객의 매출 비중 ${exPctS(s.repeat_net_share)} (전년 ${exPctS(yy.repeat_net_share)})`,''], [`식별 고객 순매출 ${wonK(s.ident_net)}`,'']]),
     exTile('light', '문의 → 구매 (90일 창)', fs?`${n(fs.bought)}<i>명 / 문의 ${n(fs.people)}명</i>`:`${n(iq.people)}<i>명 문의</i>`, '', fs?[[`전환 ${exPctS(exPct(fs.bought,fs.people))} · 견적 ${n(fs.quoted)}명 · 구매 금액 ${wonK(fs.amount)}`,''], [`문의 ${n(iq.consults)}건 (${L} ${n(iqp.consults)}건) · 견적 발행 ${n(iq.quotes)}건`,''], [`진행 중 ${n(iq.open)}건 · 구매완료 표시 ${n(iq.bought_marked)}건`,'']]:[[`문의 ${n(iq.consults)}건 (${L} ${n(iqp.consults)}건)`,''],['흐름 자료를 못 받았습니다','']]),
-    exTile('light', '유입 · GA4', tr.has?n(tr.sessions):'—', tr.has?'세션':'', tr.has?[exCmp(tr.sessions,tr.prev_sessions,x=>n(x)+'세션',L), [`사용자 ${n(tr.users)} · 조회 ${n(tr.views)} · ${tr.last_day||''}까지`,''], [`단축 링크 클릭 ${n(lk.clicks)} · 링크로 온 문의 ${n(iq.from_links)}건`,'']]:[['GA4 연결 전 — 아래 유입 카드에 설정 안내',''], [`단축 링크 클릭 ${n(lk.clicks)} (${L} ${n(lk.clicks_prev)})`,''], [`링크로 들어온 문의 ${n(iq.from_links)}건`,'']])
+    (tr.has?exTile('light', '유입 · GA4', n(tr.sessions), '세션', [exCmp(tr.sessions,tr.prev_sessions,x=>n(x)+'세션',L), [`사용자 ${n(tr.users)} · 조회 ${n(tr.views)} · ${tr.last_day||''}까지`,''], [`단축 링크 클릭 ${n(lk.clicks)} · 링크로 온 문의 ${n(iq.from_links)}건`,'']]):exTile('light', '유입 · 문자 링크', n(lk.clicks), '클릭', [exCmp(lk.clicks,lk.clicks_prev,x=>n(x)+'클릭',L), [`링크로 들어온 문의 ${n(iq.from_links)}건`,'']]))
   ].join('');
   exFlowRender(); exSeriesRender(); exGroupsRender(); exTrafficRender(); exCampRender(); exCustRender(); }
 function exFlowRender(){ const box=$('exFlow'), fl=EX.flow, d=EX.d; if(!box||!d) return;
@@ -5135,7 +5135,7 @@ function exFlowRender(){ const box=$('exFlow'), fl=EX.flow, d=EX.d; if(!box||!d)
   const s=fl.summary||{}, iq=d.inquiry||{}, tr=d.traffic||{}, lk=d.links||{}, sa=d.sales||{}; const pg=tr.pages||{};
   const pct=(a,b)=>exPctS(exPct(a,b));
   box.innerHTML=`<div class="iff">
-    <div class="st"><small>유입</small><b>${tr.has?n(tr.sessions)+'<i>세션</i>':'—'}</b><i>${tr.has?`구독 페이지 ${n(pg.subscribe_inquiry||0)} · 견적서 페이지 ${n(pg.quote||0)}`:`GA4 연결 전 · 단축 링크 클릭 ${n(lk.clicks)}`}</i></div><span class="ar" aria-hidden="true">→</span>
+    <div class="st"><small>${tr.has?'유입':'유입 · 문자 링크'}</small><b>${tr.has?n(tr.sessions)+'<i>세션</i>':n(lk.clicks)+'<i>클릭</i>'}</b><i>${tr.has?`구독 페이지 ${n(pg.subscribe_inquiry||0)} · 견적서 페이지 ${n(pg.quote||0)}`:`단축 링크 클릭 · ${esc(exCmpLbl())} ${n(lk.clicks_prev)}`}</i></div><span class="ar" aria-hidden="true">→</span>
     <div class="st"><small>문의 고객</small><b>${n(s.people)}명</b><i>문의 ${n(s.inquiries)}건 · 기존 구매 고객 ${n(s.known_buyer)} · 문자 링크로 ${n(iq.from_links)}</i></div><span class="ar" aria-hidden="true">→</span>
     <div class="st"><small>견적 발행</small><b>${n(s.quoted)}명</b><i>문의 고객의 ${pct(s.quoted,s.people)} · 기간 안 발행 ${n(iq.quotes)}건 · 고객에게 보냄 ${n(iq.quotes_sent)}건</i></div><span class="ar" aria-hidden="true">→</span>
     <div class="st buy"><small>${n(fl.window)}일 내 구매</small><b>${n(s.bought)}명 · ${pct(s.bought,s.people)}</b><i>신규 ${n(s.bought_new)} · 당일 구매 ${n(s.same_day)} · 소요일 중앙값 ${s.median_days==null?'-':s.median_days+'일'} · ${wonK(s.amount)}</i></div><span class="ar" aria-hidden="true">→</span>
@@ -5165,6 +5165,9 @@ function exList(rows,k,v){ if(!rows.length) return '<div class="note">없음</di
 function exTrafficBars(S, grain){ if(!S.length) return ''; const cnt=S.length, W=Math.max(360, Math.min(760, cnt*40)), H=150, L=8,R=8,T=22,B=24, iw=W-L-R, ih=H-T-B; const mx=Math.max(1,...S.map(x=>Number(x.s)||0)); const slot=iw/cnt, bw=Math.min(28, slot*0.62); const show=cnt<=16, step=show?1:Math.ceil(cnt/12);
   return `<svg class="cdsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="기간별 세션"><line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}" stroke="#E4E7EC"/>${S.map((x,i)=>{ const cx=L+slot*i+slot/2, ht=(Number(x.s)||0)/mx*ih; return `<g><title>${esc(exFmtP(x.p,grain))} · 세션 ${n(x.s)} · 사용자 ${n(x.u)}</title><rect x="${(cx-bw/2).toFixed(1)}" y="${(T+ih-ht).toFixed(1)}" width="${bw.toFixed(1)}" height="${ht.toFixed(1)}" rx="3" fill="#0F766E"/>${show?`<text class="v" x="${cx.toFixed(1)}" y="${(T+ih-ht-4).toFixed(1)}" text-anchor="middle">${n(x.s)}</text>`:''}${i%step===0?`<text x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle">${esc(exFmtP(x.p,grain))}</text>`:''}</g>`; }).join('')}</svg>`; }
 function exTrafficRender(){ const d=EX.d, tr=d.traffic||{}, lk=d.links||{}, iq=d.inquiry||{}, box=$('exTraffic'); const L=exCmpLbl();
+  /* GA4 는 연결 전까지 가림 (v283 · 2026-11-06) — 자료가 들어오면(tr.has) 카드가 저절로 다시 보인다 · 연결 안내는 아래 옛 가지에 남겨 둠 */
+  const tc=$('exTrafficCard'); if(tc){ tc.classList.toggle('hidden', !tr.has); if(tc.parentNode) tc.parentNode.classList.toggle('g2', !!tr.has); }
+  if(!tr.has){ box.innerHTML=''; return; }
   if(!tr.has){ $('exTrSub').textContent='GA4 연결 전'; box.innerHTML=`<div class="callout warn"><b>GA4 방문량이 아직 들어오지 않습니다.</b> 수집기(<span class="mono">tools/ga/collect.mjs</span> · GitHub Actions 매일 12:10)는 준비돼 있고 GitHub 저장소 Settings › Secrets 세 개가 비어 있습니다.
       <ol style="margin:8px 0 0 18px;padding:0"><li><b>GA_PROPERTY_ID</b> — GA4 속성 ID (숫자만 · GA 관리 › 속성 설정)</li><li><b>GA_SA_JSON</b> — 서비스 계정 키 JSON 전체 · 그 계정을 GA 속성에 '뷰어'로 추가</li><li><b>GA_INGEST_KEY</b> — 데이터센터 적재 키 (개발 담당에게)</li></ol>
       <p style="margin:8px 0 0">넣은 뒤 Actions › 'GA4 방문량 수집' 을 수동 실행하면 바로 채워지고 그 뒤로는 매일 전날 자료가 들어옵니다. 들어오면 이 카드가 세션·사용자·유입 출처·캠페인별 세션으로 바뀝니다.</p></div>
@@ -6039,8 +6042,8 @@ document.querySelectorAll('#segWf button').forEach(b=>b.addEventListener('click'
 
 let DASH_SRC='dc';          // dc=현행 시스템(Datacenter) · 기존 app(gas)은 2026-10-30 가림 — 남아 있던 선택도 지운다
 try{ localStorage.removeItem('dash_src2'); }catch(e){}
-let DASH_BASIS='ledger';   // 열 때마다 원장(주문 원천, 자동 수집)으로 시작 — 고른 기준은 이 탭 안에서만(sessionStorage) · 2026-10-16 "default 원장으로" (전엔 localStorage 에 남아 DPS 를 골랐던 사람은 다음에도 DPS 로 열렸다)
-try{ localStorage.removeItem('dash_basis'); const _sb=sessionStorage.getItem('dash_basis'); if(_sb==='manual'||_sb==='dps') DASH_BASIS=_sb; }catch(e){}
+let DASH_BASIS='dps';   // 열 때마다 DPS(사원별 실적)로 시작 — 고른 기준은 이 탭 안에서만(sessionStorage) · 2026-11-06 "dps 기준으로" (10-16 부터 원장이 기본이었다)
+try{ localStorage.removeItem('dash_basis'); const _sb=sessionStorage.getItem('dash_basis'); if(_sb==='manual'||_sb==='ledger'||_sb==='dps') DASH_BASIS=_sb; }catch(e){}
 let GAS_DASH_URL=localStorage.getItem('gas_dash_url')||'';
 function setDashSrc(v){ v='dc'; DASH_SRC=v; localStorage.setItem('dash_src2',v); DASH_PAY=null; DASH_READY=false; $('dashFrame').src='about:blank'; loadDash(); }
 function setDashBasis(v){ DASH_BASIS=v; try{ sessionStorage.setItem('dash_basis',v); }catch(e){} DASH_PAY=null; loadDash(); }
@@ -6055,7 +6058,7 @@ async function setGasUrl(){
   $('dashFrame').src='about:blank'; loadDash();
 }
 let DASH_PAY=null, DASH_READY=false;
-const DASH_V='243';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
+const DASH_V='283';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
 window.addEventListener('message',e=>{ const t=e.data&&e.data.type;
   if(t==='dash-ready'){ DASH_READY=true; dpSet({frame:1}); dashSend(); }
   else if(t==='dash-rendered'){ dpDone(); } });
