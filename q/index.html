@@ -47,6 +47,7 @@ body{background:var(--c-bg);font-family:Pretendard,-apple-system,BlinkMacSystemF
   .cbrand,.cbox,.cbtn,.cfoot,.noprint{display:none!important}
   #qScale{transform:none!important;width:auto!important}
 }
+body.preview .cbrand{display:none} body.preview .cwrap{padding:8px 8px 16px}
 </style>
 </head>
 <body>
@@ -648,19 +649,19 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     blocks.push(h);
     /* 일시불 묶음 (상담 견적 화면 /quote/ 가 넣는 q.lump · mvp_276) — 구독 아래에 카드 혜택 반영 실 부담을 같은 표 양식으로 */
     if(q.lump && q.lump.items && q.lump.items.length){
-      var L = q.lump, lb = '<div class="q-box"><h3>💳 일시불 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + (num(L.months) ? ' · ' + num(L.months) + '개월' : '') + ')</span>' : '') + '</h3><table class="q-tbl">';
+      var L = q.lump, lb = '<div class="q-box"><h3>💳 일반 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + (num(L.months) ? ' · ' + num(L.months) + '개월' : '') + ')</span>' : '') + '</h3><table class="q-tbl">';
       L.items.forEach(function(x, i){ lb += '<tr><th>' + (i + 1) + '. ' + esc(x.name || x.model || '') + (x.model && x.name ? ' <span style="font-weight:500;color:#666">' + esc(x.model) + '</span>' : '') + (x.note ? ' <span style="font-weight:500;color:#666">· ' + esc(x.note) + '</span>' : '') + '</th><td class="num">' + won(x.amount) + '</td></tr>'; });
-      lb += '<tr class="tot"><th>총 할인가</th><td class="num">' + won(L.amount) + '</td></tr>';
-      if(num(L.fee) > 0) lb += '<tr><th>플러스페이 이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
-      if(num(L.bill) > 0) lb += '<tr><th>카드 청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
+      lb += '<tr class="tot"><th>① 결제가</th><td class="num">' + won(L.amount) + '</td></tr>';
+      if(num(L.fee) > 0) lb += '<tr><th>이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
+      if(num(L.bill) > 0) lb += '<tr><th>청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
       if(num(L.sPoint) > 0) lb += '<tr><th>금액별 S포인트</th><td class="num">-' + won(L.sPoint) + '</td></tr>';
       if(num(L.jPoint) > 0) lb += '<tr><th>제품별 S포인트 (J.POINT)</th><td class="num">-' + won(L.jPoint) + '</td></tr>';
       if(num(L.typePoint) > 0) lb += '<tr><th>' + esc(L.typeLabel || '포인트') + '</th><td class="num">-' + won(L.typePoint) + '</td></tr>';
       if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
-      if(num(L.member) > 0) lb += '<tr><th>멤버십 기본 적립</th><td class="num">-' + won(L.member) + '</td></tr>';
+      if(num(L.member) > 0) lb += '<tr><th>기본멤버십P 0.1%</th><td class="num">-' + won(L.member) + '</td></tr>';
       (L.extras || []).forEach(function(x){ if(num(x.amount) > 0) lb += '<tr><th>' + esc(x.label || '추가혜택') + '</th><td class="num">-' + won(x.amount) + '</td></tr>'; });
       lb += '<tr class="ben"><th>혜택 합계</th><td class="num">-' + won(L.benefit) + '</td></tr>';
-      lb += '<tr class="tot"><th>혜택 반영 실 부담' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
+      lb += '<tr class="tot"><th>최종체감가' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
       lb += '</table></div>';
       blocks.push('<div class="q-sum solo">' + lb + '</div>');
     }
@@ -712,7 +713,22 @@ function fail(ico,title,body,d){
     <p class="note">${body}</p></div>`+contactBox(d);
   $('bottom').innerHTML=`<div class="cfoot">${esc2((d&&d.store_name)||'삼성스토어 시흥점')} · 삼성전자 공식 판매점</div>`;
 }
+const PREVIEW=new URLSearchParams(location.search).get('preview')==='1';
+function postH(){ try{ (window.parent!==window?window.parent:window.opener).postMessage({t:'qh',h:document.documentElement.scrollHeight},location.origin); }catch(e){} }
+function drawPreview(d){
+  const ncId=(d.quote&&d.quote.opt&&d.quote.opt.namecardId)||'';
+  NAMECARDS = d.counselor ? [{ id:ncId, name:d.counselor, position:d.counselor_role||'프로', dept:d.counselor_title||'', store:QUOTE_CFG.store.name, mobile:d.tel||'',
+      tel:d.store_tel||QUOTE_CFG.store.tel, email:d.counselor_email||'', addr:QUOTE_CFG.store.addr }] : [];
+  QUOTE = d.quote;
+  try{ renderSheet(); trimLastPage(); }catch(e){ $('qSheet').innerHTML='<div class="cbox"><p class="note">견적서를 그리지 못했습니다 ('+esc2(e.message)+')</p></div>'; }
+  try{ fitScale(); }catch(e){} postH(); setTimeout(postH,300);
+}
 (async function(){
+  if(PREVIEW){ document.body.classList.add('preview');
+    window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; const m=e.data||{}; if(m.t==='quote'&&m.d) drawPreview(m.d); });
+    window.addEventListener('resize',()=>{ try{ fitScale(); }catch(e){} postH(); });
+    try{ (window.parent!==window?window.parent:window.opener).postMessage({t:'qready'},location.origin); }catch(e){}
+    return; }
   if(!tok) return fail('🔗','주소가 올바르지 않습니다','담당자가 보내 드린 링크를 그대로 눌러 주세요.');
   $('qSheet').innerHTML='<div class="cbox"><div class="cskel" style="width:40%"></div><div class="cskel"></div><div class="cskel" style="width:70%"></div></div>';
   let d;

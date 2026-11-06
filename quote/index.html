@@ -148,6 +148,7 @@ table.xl tr.sel td{background:#F2F7FF} .item.sel{border-color:var(--blue);box-sh
 select.ov,table.xl select.ov{background:#EAF2FF;color:var(--sub);font-weight:700}
 .selbox{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap} .selN{color:var(--blue)}
 .bsel{border:1px solid var(--line);border-radius:99px;padding:4px 10px;min-height:32px;font-size:12.5px;font-weight:600;background:var(--paper)}
+.sheetbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 2px 10px} .sheetbar .sp{flex:1}
 .bulk{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;padding:0 2px} .bulk .sp{flex:1}
 .item select.care{border:1px solid var(--line);border-radius:9px;padding:5px 8px;min-height:36px;font-size:13px;background:var(--paper);max-width:100%}
 .bbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--paper);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));gap:12px;align-items:center}
@@ -412,6 +413,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 <!-- ═══ 견적서 (양식) ═══ -->
 <section id="v-sheet" class="hidden">
+  <div class="sheetbar"><span class="hint">시흥몰 구독 견적서와 같은 모양입니다 · 입력 화면에서 바꾼 값이 바로 반영됩니다 · 고객에게 보내는 견적서도 이 모양입니다</span><span class="sp"></span><button class="chip" onclick="printSheet()">🖨 인쇄 · PDF</button></div>
+  <iframe id="sheetFrame" title="견적서" style="display:block;width:100%;border:0;min-height:640px;background:#eef1f5;border-radius:12px"></iframe>
+  <div class="hidden" id="oldSheet">
   <div class="sheet">
     <h1>견 적 서</h1>
     <div class="head2">
@@ -430,6 +434,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     </table>
     <div class="foot" id="x_foot"></div>
   </div>
+</div>
 </section>
 </div>
 
@@ -537,6 +542,14 @@ function openDisplay(){ const w=window.open(location.pathname+'?display=1','quot
   if(!w){ toast('팝업이 막혔습니다 — 주소창 오른쪽에서 이 사이트 팝업을 허용한 뒤 다시 눌러 주세요'); return; }
   DWIN=w; setTimeout(postDisplay,700); setTimeout(postDisplay,2000); toast('고객 화면을 열었습니다 — 고객 쪽 모니터로 끌어다 놓고 [전체 화면]을 눌러 주세요'); }
 function postDisplay(){ if(DISP||!BC) return; try{ BC.postMessage({t:'show', html:$('v-show').innerHTML}); }catch(e){} }
+/* [견적서] 탭: 시흥몰 구독 견적서(quote_subscribe)를 그대로 옮긴 q/index.html 을 미리보기로 띄우고, 저장하지 않은 지금 견적을 postMessage 로 넘긴다 */
+let SHF_READY=false;
+function sheetUrl(){ return location.pathname.replace(/quote\/(test\/)?(index\.html)?$/,'')+'q/index.html?preview=1'; }
+function ensureSheetFrame(){ const f=$('sheetFrame'); if(!f||f.dataset.on) return; f.dataset.on='1'; f.src=sheetUrl(); }
+window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; const d=e.data||{}; if(d.t==='qready'){ SHF_READY=true; postSheet(); } else if(d.t==='qh'){ const f=$('sheetFrame'); if(f) f.style.height=Math.max(640,+d.h||0)+'px'; } });
+function postSheet(){ const f=$('sheetFrame'); if(!f||!SHF_READY||!LAST||!f.contentWindow) return; try{ const {quote}=toQuoteJson(); const nc=(typeof NC!=='undefined'&&NC||[]).find(c=>c.id===Q.cond.namecardId)||null;
+    f.contentWindow.postMessage({t:'quote', d:{ ok:true, quote, no:Q.no||'', name:Q.cust.name||'', counselor:nc?(nc.name||''):(ME||''), counselor_role:nc?(nc.position||'프로'):'프로', counselor_title:nc?(nc.dept||''):'', tel:nc?(nc.mobile||''):'', store_tel:STORE.tel, counselor_email:nc?(nc.email||''):'' }}, location.origin); }catch(e){ console.warn('견적서 미리보기', e); } }
+function printSheet(){ const f=$('sheetFrame'); if(f&&f.contentWindow) f.contentWindow.print(); }
 function bindBundlePaste(){ const q=$('q'); if(!q||q.dataset.bp) return; q.dataset.bp='1'; q.addEventListener('paste',e=>{ const t=(e.clipboardData||window.clipboardData).getData('text')||''; if(/[?&]items=/.test(t)){ e.preventDefault(); applyBundle(parseBundle(t)); } }); }
 function prefillModels(){ bindBundlePaste(); if(P.get('items')){ applyBundle(parseBundle(location.search), true); } const ms=String(P.get('models')||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
   ms.forEach(m=>{ if(Q.items.some(x=>x.m===m)) return; if(IDX&&IDX.m&&IDX.m[m]) addModel(m); else if(priceOf(m)) addModel(m,'lump'); else addFree(m); });
@@ -1015,7 +1028,7 @@ function renderShow0(){ const {S,L}=LASTC||LAST, name=Q.cust.name||'고객';
   $('scn').innerHTML=scnHtml();
   $('tl_note').textContent = [ sm?`구독 ${sm}개월 총 지불액 ${won(S.net)} (총 구독료 합계 ${won(S.total)} − 총 혜택 ${won(S.ben)})`:'', lm?`일반 구매 최종체감가 ${won(L.net)} (결제가 ${won(L.amount)} + 이용료 ${won(L.fee)} − 청구할인·캐시백 ${won(L.ben)})`:'', (sm&&lm)?`합계 ${won(S.net+L.net)}`:'' ].filter(Boolean).join(' · ');
 }
-function renderSheet(){ if(!LAST) return; const {S,L}=LAST, T=(id,t)=>$(id).textContent=t;
+function renderSheet(){ if(!LAST) return; postSheet(); const {S,L}=LAST, T=(id,t)=>$(id).textContent=t;
   T('x_type',Q.cust.type); T('x_name',Q.cust.name); T('x_tel',Q.cust.phone); T('x_date',(Q.issuedAt||todayStr()).replace(/-/g,'.')); T('x_until',Q.cust.until?Q.cust.until.replace(/-/g,'.'):'별도 없음'); T('x_me',(ME?ME+' 프로 · ':'')+STORE.name+' '+STORE.tel);
   const pr={recv:'증빙 접수',supp:'증빙 보완',appr:'증빙 승인'}[Q.cust.proof]; $('x_proof').classList.toggle('hidden',!pr); if(pr) T('x_proof',pr); T('x_tp',Q.cust.type+' 포인트');
   const nc=NC.find(c=>c.id===Q.cond.namecardId); if(nc) T('x_me',`담당 ${nc.name||''}${nc.position?' '+nc.position:''}${nc.mobile?' M '+nc.mobile:''} · `+STORE.name+' '+STORE.tel);
@@ -1034,7 +1047,7 @@ function renderSheet(){ if(!LAST) return; const {S,L}=LAST, T=(id,t)=>$(id).text
   const notes=[].concat((LUMP&&LUMP.notes)||[]); if(POL.texts&&POL.texts.notice) notes.push(POL.texts.notice.replace(/^\*\s*/,''));
   $('x_foot').innerHTML = notes.map((t,i)=>(i+1)+'. '+esc(t)).join(' ')+`<br>${esc(STORE.name)} · ${esc(STORE.addr)} · T ${esc(STORE.tel)} · 요금표 ${esc(IDX.ver||'')}`;
 }
-function setView(v){ document.body.classList.toggle('v-edit',v==='edit'); ['edit','show','sheet'].forEach(k=>$('v-'+k).classList.toggle('hidden',k!==v)); document.querySelectorAll('.views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo({top:0}); }
+function setView(v){ document.body.classList.toggle('v-edit',v==='edit'); if(v==='sheet') ensureSheetFrame(); ['edit','show','sheet'].forEach(k=>$('v-'+k).classList.toggle('hidden',k!==v)); document.querySelectorAll('.views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo({top:0}); }
 
 /* ═══ 저장 · 내역 · 보내기 (fn_quote_page_* · mvp_138 · 세션 통과 mvp_276) ═══ */
 function toQuoteJson(){
