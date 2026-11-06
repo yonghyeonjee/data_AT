@@ -1225,6 +1225,48 @@ th{background:var(--zone-head);color:var(--ink-2)}
 .btn.basis{background:#fff;color:var(--ink-2);border:1.5px solid var(--line-2)} .btn.basis:hover{border-color:var(--navy);color:var(--navy)}
 .btn.basis.on{background:#EEF2FF;color:var(--navy);border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)}
 .fk-radio button.on,.seg2 button.on{background:#fff;color:var(--navy);box-shadow:inset 0 0 0 1.5px var(--navy),0 1px 2px rgba(20,40,160,.12);font-weight:700}
+/* ═══ v284 (2026-11-06) — 사이드바 메뉴 찾기 · 묶음 기본 접힘 · 거르개 부품 손질(드롭다운 꺾쇠 · 라디오 점 · 체크 칩 · 이름표) ═══ */
+.navsearch{padding:10px 10px 0;position:relative}
+.navsearch input{width:100%;height:36px;border:1px solid rgba(255,255,255,.14);border-radius:9px;background:rgba(255,255,255,.07);color:#fff;padding:0 32px 0 32px;font:inherit;font-size:calc(13px * var(--font-scale));outline:none;-webkit-appearance:none;appearance:none}
+.navsearch input::-webkit-search-cancel-button{display:none}
+.navsearch input::placeholder{color:#8E97B0}
+.navsearch input:focus{border-color:#7A8CE8;background:rgba(255,255,255,.1);box-shadow:0 0 0 3px rgba(122,140,232,.25)}
+.navsearch .ic{position:absolute;left:20px;top:20px;width:15px;height:15px;color:#8E97B0;pointer-events:none;display:inline-flex}
+.navsearch .ic svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.navsearch .x{position:absolute;right:16px;top:14px;width:28px;height:28px;border:0;border-radius:6px;background:none;color:#AEB6CC;cursor:pointer;font-size:14px;display:none;align-items:center;justify-content:center;padding:0}
+.navsearch.has .x{display:inline-flex} .navsearch .x:hover{background:rgba(255,255,255,.1);color:#fff}
+.navsearch .cnt{display:none;padding:6px 12px 0;font-size:calc(11px * var(--font-scale));color:#8E97B0}
+.navsearch.has .cnt{display:block}
+#navBox.navq .navg:not(.qhas),#navBox.navq .nsg:not(.qhas),#navBox.navq .nav:not(.qhit){display:none}
+#navBox.navq .navg.qhas>.ngb,#navBox.navq .nsg.qhas>.nsb{display:block}
+#navBox.navq .ngh .chev,#navBox.navq .nsg>.nav .chev{display:none}
+#navBox.navq .nav.qhit{display:flex}
+#navBox .nav mark.qm{background:rgba(240,178,58,.42);color:#fff;border-radius:3px;padding:0 1px}
+@media(max-width:999px){ .navsearch input{height:40px;font-size:16px} .navsearch .ic{top:22px} .navsearch .x{top:16px} }
+/* 드롭다운 — 기본 화살표 대신 같은 꺾쇠 · 손 모양 · 누르면 남색 테두리 */
+select.in{-webkit-appearance:none;appearance:none;padding-right:30px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6474' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 10px center;background-size:13px 13px;cursor:pointer}
+select.in:hover{border-color:var(--navy)}
+select.in:focus{border-color:var(--navy);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231428A0' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M18 15l-6-6-6 6'/></svg>")}
+select.in:disabled{cursor:default;opacity:.55}
+/* 라디오(한 가지만) = 앞에 동그라미 점 · 체크(여러 개) = 네모 체크 — 모양만 보고도 하나를 고르는지 여럿을 고르는지 안다 */
+button[role=radio]{display:inline-flex;align-items:center;gap:6px}
+button[role=radio]::before{content:'';width:12px;height:12px;border-radius:50%;border:2px solid currentColor;opacity:.5;flex:none;box-sizing:border-box;transition:.12s}
+button[role=radio][aria-checked=true]::before,button[role=radio].on::before{border-width:4px;border-color:var(--navy);opacity:1;background:#fff}
+.btn.basis::before{margin-right:-2px}
+.fk-radio button,.segsel button{min-height:34px;padding:5px 12px 5px 10px}
+.fk-radio,.segsel{gap:2px}
+.chk{border-radius:999px;padding:0 11px 0 8px}
+.chk input{width:16px;height:16px;border-radius:4px}
+.chk:has(input:checked){border-color:var(--navy);background:#EEF2FF;color:var(--navy)}
+.chk:hover,.fk-chk:hover{border-color:var(--navy)}
+/* 이름표 묶음 (fkLabelize) — 이름표 + 드롭다운/세그/알약 */
+.fld{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-width:0}
+.fld:has(> select.hidden),.fld:has(> select[hidden]),.fld:has(> .fk-hid + .hidden){display:none}   /* 공통 바가 대신하는 채널 select 처럼 숨긴 칸은 이름표도 같이 숨긴다 */
+.fld>.lb{font-size:calc(11px * var(--font-scale));font-weight:700;color:var(--muted);white-space:nowrap}
+.fld>select.in{min-width:120px}
+.cbar .lb,.card .filters .lb{display:inline-flex;align-items:center;min-height:34px}
+@media(max-width:640px){ .fld{width:100%} .fld>select.in,.fld>.segsel,.fld>.fk-radio{flex:1 1 auto;min-width:0} .fld>.lb{min-width:52px} .fk-radio button,.segsel button,.chk{min-height:40px}
+  .cbar .grp{flex-wrap:wrap} .cbar .grp>.fk-radio{flex:1 1 auto;min-width:0} .cbar .grp>input.in{flex:1 1 100%;width:100%} }   /* 폰: 검색 칸이 라디오 알약 옆에서 눌리지 않게 — 줄을 바꿔 한 줄 전부 */
 </style>
 </head>
 <body>
@@ -1288,6 +1330,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
   <div class="navmask" id="navMask" onclick="toggleNav(false)"></div>
   <aside id="aside">
     <div class="brand"><small>SAMSUNG&amp;TECH</small>Datacenter<span class="envtag hidden" id="envTag" title="테스트 환경입니다 · /admin/test">TEST</span></div>
+    <div class="navsearch" id="navSearch"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><input id="navQ" type="search" placeholder="메뉴 찾기" aria-label="메뉴 찾기" autocomplete="off" oninput="navQ(this.value)" onkeydown="navQKey(event)"><button type="button" class="x" aria-label="찾기 지우기" onclick="navQClear()">✕</button><div class="cnt" id="navQCnt" aria-live="polite"></div></div>
     <nav id="navBox"></nav>
     <div class="font-ctrl">
       <div class="lbl">글자 크기</div>
@@ -1450,7 +1493,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
           <!-- 출처 [현행 시스템 | 기존 app] 은 2026-10-30 가림 — 늘 현행 시스템 -->
           <div class="seg2 hidden" aria-hidden="true"><button class="on" id="ds-dc" onclick="setDashSrc('dc')">현행 시스템</button><button id="ds-gas" onclick="setDashSrc('gas')">대시보드 v4 (기존 app)</button></div>
           <span style="font-size:calc(12.5px * var(--font-scale));color:var(--muted)">집계 기준</span>
-          <div class="seg2" id="segBasis" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커·매장 입력·DPS 매장 전표) · DPS = DPS 사원별목표/실적 기준(실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계)"><button class="on" id="db-ledger" onclick="setDashBasis('ledger')">원장</button><button id="db-dps" onclick="setDashBasis('dps')">DPS</button><button id="db-manual" onclick="setDashBasis('manual')">수기입력</button></div>
+          <div class="seg2" id="segBasis" role="radiogroup" aria-label="집계 기준" title="DPS = DPS 사원별목표/실적 기준(실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계) · 원장 = 주문 원천(샵링커·매장 입력·DPS 매장 전표) · 수기입력 = 담당자가 채널별로 적어 넣은 일매출"><button type="button" role="radio" aria-checked="true" class="on" id="db-dps" onclick="setDashBasis('dps')">DPS</button><button type="button" role="radio" aria-checked="false" id="db-ledger" onclick="setDashBasis('ledger')">원장</button><button type="button" role="radio" aria-checked="false" id="db-manual" onclick="setDashBasis('manual')">수기입력</button></div>
           <span style="flex:1"></span>
           <span class="note" id="dashNote">Datacenter 데이터 · 최근 12개월 · 기간·채널·지표는 아래 대시보드 안에서 고릅니다</span>
           <button class="btn sm hidden" id="dashFreshBtn" onclick="dashApplyFresh()">새 자료 보기</button>
@@ -1544,7 +1587,7 @@ th{background:var(--zone-head);color:var(--ink-2)}
         <div class="card">
           <div class="filters">
             <select class="in" id="oSrc" onchange="loadOrders(0)" title="데이터 출처"><option value="">전체 출처</option><option value="shoplinker" title="샵링커로 들어온 온라인 몰 주문">온라인</option><option value="godo_hist" title="고도몰 4몰 과거 주문 (2021 ~ 2025-08 · 샵링커 이전)">고도몰 과거</option><option value="ecount">이카운트(VMS)</option><option value="rental">렌탈</option><option value="store">매장 입력</option><option value="dps" title="DPS(삼성 대리점 시스템)에서 가져온 매장 판매사원 6명 전표 (2024-10 ~)">DPS 매장 전표</option></select>
-            <select class="in" id="oCh" aria-label="채널" onchange="loadOrders(0)"><option value="">전체 구분</option><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select>
+            <select class="in" id="oCh" aria-label="채널 구분" onchange="loadOrders(0)"><option value="">전체 구분</option><option>매장</option><option>직판</option><option>자사몰</option><option>오픈마켓</option><option>VMS</option><option>렌탈</option><option>직배</option></select>
             <select class="in" id="oChName" onchange="loadOrders(0)" title="채널"><option value="">전체 채널</option></select>
             <select class="in" id="oSt" onchange="loadOrders(0)" title="상태"><option value="">전체 상태</option><option value="normal">정상</option><option value="refund">환불 있음</option></select>
             <select class="in" id="oHd" aria-label="담당" onchange="loadOrders(0)"><option value="">전체 담당</option></select>
@@ -2738,7 +2781,7 @@ function rpcBar(d){
 }
 /* ── 진행 카드 — 호출마다 [기다림 → 받는 중(받은 바이트) → 끝] 을 적어 두고 250ms 마다 그린다 ── */
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
-const FN_LABEL={fn_sub_policy:'구독 혜택 정책',fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
+const FN_LABEL={fn_sub_policy:'구독 혜택 정책',fn_sub_point_list:'모델 포인트',fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
   fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
@@ -3093,9 +3136,10 @@ function renderSubPolicy(){
   h.push(`<div class="spol-sec"><h4>기본 기준 · 상담 연락처 ${spStamp(up.defaults)}</h4>
     <div class="spol-row"><label>처음 선택되는 제휴카드 <select class="in" id="sp_def_card">${cardOpts.map(c=>`<option ${c===D.card?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
       <label>실적 구간 <input class="in" id="sp_def_tier" value="${esc(D.tier||'')}" placeholder="30만↑" style="width:90px"></label>
+      <label title="모델(또는 모델 앞글자)=구간 · 쉼표로 여럿 · 예: WD90H25=70만↑ (AI 콤보 전 색상·수납함)">모델별 실적 구간 <input class="in" id="sp_def_tierby" value="${esc(Object.entries(D.tierByModel||{}).map(([k,v])=>k+'='+v).join(', '))}" placeholder="WD90H25=70만↑" style="width:200px"></label>
       <label>전화 <input class="in" id="sp_def_tel" value="${esc(D.tel||'')}" placeholder="031-8042-3166" style="width:140px"></label></div>
     <div class="spol-row"><label style="flex:1;min-width:300px">상담 신청 주소 <input class="in" id="sp_def_consult" value="${esc(D.consultUrl||'')}" style="flex:1"></label>
-      <button class="btn sm" onclick="spSave('defaults',()=>({card:$('sp_def_card').value,tier:$('sp_def_tier').value.trim(),consultUrl:$('sp_def_consult').value.trim(),tel:$('sp_def_tel').value.trim()}))">저장</button></div>
+      <button class="btn sm" onclick="spSave('defaults',()=>({card:$('sp_def_card').value,tier:$('sp_def_tier').value.trim(),tierByModel:spPairs($('sp_def_tierby').value),consultUrl:$('sp_def_consult').value.trim(),tel:$('sp_def_tel').value.trim()}))">저장</button></div>
     <p class="spol-hint">상품상세 구독탭 머리의 금액·"카드 적용 시 최대 ○원 저렴" 배지, 구독센터 목록의 "카드 할인 시" 금액, 상세의 처음 선택값이 모두 이 카드·실적 구간으로 계산됩니다. 실적 구간은 카드 금액표의 구간 이름 그대로 (없는 이름이면 가장 낮은 구간). 전화를 비우면 전화 버튼이 빠집니다.</p></div>`);
   /* 1 자동납부 */
   h.push(`<div class="spol-sec"><h4>자동납부 할인 ${spStamp(up.autopay)}</h4>
@@ -3111,12 +3155,14 @@ function renderSubPolicy(){
       <div><div class="spol-hint" style="margin:0 0 6px">선납 비율 → 선납 할인율 (고객에게 보이는 버튼 순서대로)</div>
         <table class="spol-t"><thead><tr><th>선납</th><th>할인</th><th></th></tr></thead><tbody id="sp_steps">${steps.map(([s,r])=>spStepRow(s,r)).join('')}</tbody></table>
         <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_steps').insertAdjacentHTML('beforeend',spStepRow('',''))">+ 단계</button>
-        <div class="spol-row" style="margin-top:10px"><label>규칙에 없는 품목의 최대 선납 <input class="in num" id="sp_defmax" value="${esc(spPct(R.defaultMax??0.5))}"> %</label></div></div>
+        <div class="spol-row" style="margin-top:10px"><label>규칙에 없는 품목의 최대 선납 <input class="in num" id="sp_defmax" value="${esc(spPct(R.defaultMax??0.5))}"> %</label></div>
+        <div class="spol-row" style="margin-top:6px"><label title="고객이 고르기 전에 선택돼 있는 선납 비율 · 품목 한도를 넘으면 한도 안의 가장 큰 단계 · 0 이면 선납 없음">처음 선택되는 선납 <input class="in num" id="sp_initial" value="${esc(spPct(R.initial??0))}"> %</label></div></div>
       <div><div class="spol-hint" style="margin:0 0 6px">품목별 최대 선납 비율 (비우면 기본값) · 아래 이름 규칙이 먼저 적용됩니다</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px" id="sp_maxcat">${cats.map(c=>`<label style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:calc(12px * var(--font-scale))"><span>${esc(c)}</span><span><input class="in num" data-cat="${esc(c)}" value="${esc(spPct((R.maxByCat||{})[c]))}" style="width:56px"> %</span></label>`).join('')}</div>
         <div class="spol-hint" style="margin:10px 0 6px">이름 규칙: 품목 안에서 모델 이름에 이 글자가 들어가면 (예: 의류케어 › 에어드레서 50%)</div>
         <table class="spol-t"><thead><tr><th>품목</th><th>이름에 포함</th><th>최대</th><th></th></tr></thead><tbody id="sp_byname">${(R.maxByName||[]).map(m=>spNameRow(m,cats)).join('')}</tbody></table>
         <button class="btn sm ghost" style="margin-top:6px" onclick="$('sp_byname').insertAdjacentHTML('beforeend',spNameRow({},${JSON.stringify(cats).replace(/"/g,'&quot;')}))">+ 규칙</button></div></div>
+    <div class="spol-hint" style="margin-top:10px">선납금 옆 ? 아이콘을 누르면 보이는 안내 (비우면 아이콘 없음)</div><input class="in" id="sp_prehelp" value="${esc(R.help||'')}" style="width:100%;box-sizing:border-box" placeholder="일시불 구매보다 일부 선납후 구독 전환하면 A/S 기간 및 추가 할인이 가능합니다.">
     <div class="spol-hint" style="margin-top:10px">선납금 아래 안내 (한 줄에 한 문장)</div><textarea class="in" id="sp_prenotes">${esc((R.notes||[]).join('\n'))}</textarea>
     <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSavePrepay()">선납 정책 저장</button></div></div>`);
   /* 3 카드 */
@@ -3134,23 +3180,49 @@ function renderSubPolicy(){
     <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSave('card_notes',()=>spLines($('sp_cardnotes').value))">공통 유의사항 저장</button></div></div>`);
   /* 4 행사 */
   const ST={on:['진행 중','y'],soon:['예정','n'],ended:['끝남','n'],off:['꺼짐','n']};
-  h.push(`<div class="spol-sec"><h4>행사 문구 <small>기간·대상이 맞을 때만 구독탭 혜택 목록에 한 줄로 나갑니다 (금액 계산에는 들어가지 않음)</small></h4>
+  h.push(`<div class="spol-sec"><h4>행사 문구 <small>기간·대상이 맞을 때만 구독탭 혜택 목록에 한 줄로 나갑니다. 포인트 지원(개월 수·금액)을 적은 행사는 결제 예상액에서 빼서 "실제 구독료" 로 계산됩니다 (최장 약정 선택 시)</small></h4>
     <table class="spol-t"><thead><tr><th>상태</th><th>문구</th><th>기간</th><th>대상</th><th class="num">순서</th><th></th></tr></thead><tbody>
-    ${promos.length?promos.map(p=>`<tr><td><span class="tag ${ST[p.state][1]}">${ST[p.state][0]}</span></td><td>${esc(p.text)}${(p.malls||[]).length?`<div class="spol-hint" style="margin:0">몰: ${esc(p.malls.map(c=>(((SPOL&&SPOL.malls)||[]).find(m=>m.code===c)||{name:c}).name).join(', '))}</div>`:''}${p.note?`<div class="spol-hint" style="margin:0">${esc(p.note)}</div>`:''}</td>
+    ${promos.length?promos.map(p=>`<tr><td><span class="tag ${ST[p.state][1]}">${ST[p.state][0]}</span></td><td>${esc(p.text)}${spPointChip(p)}${(p.malls||[]).length?`<div class="spol-hint" style="margin:0">몰: ${esc(p.malls.map(c=>(((SPOL&&SPOL.malls)||[]).find(m=>m.code===c)||{name:c}).name).join(', '))}</div>`:''}${p.note?`<div class="spol-hint" style="margin:0">${esc(p.note)}</div>`:''}</td>
       <td style="white-space:nowrap">${esc(p.from||'')}${p.from||p.to?' ~ ':'상시'}${esc(p.to||'')}</td>
       <td>${(p.cats||[]).map(c=>`<span class="spol-chip">${esc(c)}</span>`).join('')}${(p.models||[]).map(c=>`<span class="spol-chip mono">${esc(c)}</span>`).join('')}${(p.goods||[]).map(c=>`<span class="spol-chip">#${esc(c)}</span>`).join('')}${!(p.cats||[]).length&&!(p.models||[]).length&&!(p.goods||[]).length?'<span class="spol-chip">전체</span>':''}</td>
       <td class="num">${n(p.sort)}</td>
       <td style="white-space:nowrap"><button class="btn sm ghost" onclick="spPromoEdit(${p.id})">고치기</button> <button class="btn sm ghost" onclick="spPromoToggle(${p.id},${p.active?'false':'true'})">${p.active?'끄기':'켜기'}</button></td></tr>`).join('')
       :'<tr><td colspan="6" class="note">등록된 행사 문구가 없습니다. 오른쪽 위 [+ 행사 문구]</td></tr>'}</tbody></table></div>`);
+  /* 4b 모델 포인트 (mvp_258) — 삼성닷컴 "적립 예정 멤버십 포인트" · 수집기(tools/subpoint · 매일 06:00 전부 다시)가 채우고 여기서 손 입력·되돌리기 */
+  const PT=d.points||{}, PL=PT.last;
+  h.push(`<div class="spol-sec" id="spPtSec"><h4>모델 포인트 <small>삼성닷컴 "적립 예정 멤버십 포인트"(정률 + 기본 0.1% + 상품별 추가) — 구독탭·구독센터가 제품분 금액(총 구독금액 − 무상수리료 · 삼성닷컴과 같은 기준, 선납·카드와 무관) × 정률 + 추가 포인트로 보여 주고 실제 구독료에서 뺍니다. 위 행사 포인트와는 별도로 둘 다 적용</small></h4>
+    <div class="spol-row"><span class="spol-chip">마지막 수집 ${PL?esc(PL.at)+' · 대상 '+n(PL.targets||0)+' · 찾음 '+n(PL.found||0)+' · 못 찾음 '+n(PL.missed||0)+' · 오류 '+n(PL.errors||0)+(PL.kept_manual?' · 손 입력 보호 '+n(PL.kept_manual):''):'아직 없음 (매일 06:00 자동 · 또는 [지금 수집])'}</span>
+      <span class="spol-chip">모델 ${n(PT.n||0)} / 활성 ${n(PT.n_active||0)} · 추가 포인트 있는 모델 ${n(PT.n_add||0)} · 손 입력 ${n(PT.n_manual||0)} · 못 찾은 모델 ${n(PT.n_missed||0)}</span>
+      <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="spPointCollect()">지금 수집</button><button class="btn sm" onclick="spPointEdit(null)">+ 손 입력</button></span></div>
+    <div class="spol-row"><input class="in" id="spPtQ" placeholder="모델번호 · 품목 검색" style="min-width:200px" onkeydown="if(event.key==='Enter')spPointLoad()"><button class="btn sm ghost" onclick="spPointLoad()">찾기</button>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="spPtMiss" onchange="spPointLoad()"> 못 찾은 모델 보기</label></div>
+    <div id="spPtBody"><div class="spol-hint">[찾기] 를 누르면 표가 나옵니다 (손 입력·최근 바뀐 것 먼저 · 300건)</div></div></div>`);
+  /* 4c 다품목 스마트 패키지 (mvp_264) — 품목 수별 정액 포인트(정책 bundle) + 대상 모델 목록(sub.pkg_model). 구독 대상 모델만 다품목 계산기(구독센터)로 나간다 */
+  const B=P.bundle||{}, BT=B.tiers||{}, PK=d.pkg||{};
+  h.push(`<div class="spol-sec" id="spPkgSec"><h4>다품목 스마트 패키지 ${spStamp(up.bundle)} <small>본사 월별 정액표 — 대상 모델을 2품목 이상 동시 구매(구독 대상 모델은 구독으로 사도)하면 품목 수별 포인트. 다품목 계산기가 담긴 모델 중 구독 대상 모델의 품목 수를 세어 "실제 구독료" 에서 뺍니다. TV 와 2nd TV 는 다른 품목 · 『3만 혜택』 모델은 일반 구매 때만이라 구독 계산에 안 들어감</small></h4>
+    <div class="spol-row"><label>이름 <input class="in" id="sp_bd_name" value="${esc(B.name||'스마트 패키지')}" style="width:140px"></label>
+      <label>기간 <input class="in" type="date" id="sp_bd_from" value="${esc(B.from||'')}"> ~ <input class="in" type="date" id="sp_bd_to" value="${esc(B.to||'')}"></label>
+      <label>최소 품목 <input class="in num" id="sp_bd_min" value="${esc(B.min||2)}" style="width:50px"></label></div>
+    <div class="spol-hint" style="margin:6px 0">품목 수 → 포인트(만원) · 비우면 그 줄은 뺍니다 (표에 없는 품목 수는 바로 아래 구간 금액)</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:4px 10px" id="sp_bd_tiers">${Array.from({length:21},(_,i)=>i+2).map(k=>`<label style="display:flex;justify-content:space-between;align-items:center;gap:4px;font-size:calc(12px * var(--font-scale))"><span>${k}품목</span><span><input class="in num" data-tier="${k}" value="${BT[k]!=null?BT[k]/10000:''}" style="width:52px"> 만</span></label>`).join('')}</div>
+    <div class="spol-row" style="margin-top:8px"><input class="in" id="sp_bd_text" value="${esc(B.text||'')}" placeholder="고객 안내 문구 (계산기 아래 한 줄)" style="flex:1;min-width:280px"><button class="btn sm" onclick="spSaveBundle()">정액표 저장</button></div>
+    <div class="spol-row" style="margin-top:10px"><span class="spol-chip">대상 모델 ${n(PK.n||0)} · 구독 대상 ${n(PK.n_sub||0)} (지금 구독 운영 중인 모델과 맞는 것 ${n(PK.n_dps||0)}) · 3만 혜택 ${n(PK.n_bonus||0)}${PK.updated?' · '+esc(PK.updated):''}</span>
+      <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" onclick="spPkgLoad()">모델 목록 보기</button><button class="btn sm ghost" onclick="$('spPkgImp').hidden=!$('spPkgImp').hidden">목록 바꾸기</button></span></div>
+    <div class="spol-hint">${(PK.cats||[]).map(c=>`<span class="spol-chip">${esc(c.cat)} ${n(c.n_sub)}/${n(c.n)}</span>`).join('')}</div>
+    <div id="spPkgImp" hidden><div class="spol-hint" style="margin:8px 0 4px">본사 엑셀의 품목 · 모델군 · 모델명 · 구독여부 네 열을 그대로 붙여 넣기 (탭 구분 · 한 줄에 한 모델 · 구독여부가 '구독' 이면 구독 대상 · 『3만 혜택』 모델은 구독여부 자리에 '3만'). PC 에서는 tools/sub/pkg_from_xlsx.py 로 엑셀을 바로 읽을 수도 있습니다</div>
+      <textarea class="in" id="sp_pkg_txt" style="min-height:120px" placeholder="TV	Neo QLED	KQ85QNH80AFXKR	구독"></textarea>
+      <div class="spol-row" style="margin-top:6px"><label><input type="checkbox" id="sp_pkg_replace" checked> 붙여 넣은 목록에 없는 기존 모델은 끄기 (달이 바뀔 때)</label><button class="btn sm" onclick="spPkgImport()">모델 목록 저장</button></div></div>
+    <div id="spPkgBody"></div></div>`);
   /* 5 문구 */
   h.push(`<div class="spol-sec"><h4>기본 문구 ${spStamp(up.texts)}</h4>
     <div class="spol-hint" style="margin:0 0 4px">혜택 목록 기본 문장 (한 줄에 한 문장 · 행사 문구는 이 아래에 붙습니다)</div><textarea class="in" id="sp_points">${esc((T.points||[]).join('\n'))}</textarea>
     <div class="spol-hint" style="margin:8px 0 4px">맨 아래 안내문</div><textarea class="in" id="sp_notice" style="min-height:72px">${esc(T.notice||'')}</textarea>
     <div class="spol-row" style="margin-top:8px;justify-content:flex-end"><button class="btn sm" onclick="spSave('texts',()=>({points:spLines($('sp_points').value),notice:$('sp_notice').value.trim()}))">문구 저장</button></div></div>`);
   /* 6 기록 */
-  if((d.log||[]).length) h.push(`<div class="spol-sec"><h4>최근 바뀐 것 <small>20건</small></h4><div class="spol-log">${d.log.map(l=>`<div>${esc(l.at)} · ${esc({policy:'정책',card:'카드',promo:'행사'}[l.kind]||l.kind)} <b>${esc(l.key)}</b> · ${esc(l.by||'')}</div>`).join('')}</div></div>`);
+  if((d.log||[]).length) h.push(`<div class="spol-sec"><h4>최근 바뀐 것 <small>20건</small></h4><div class="spol-log">${d.log.map(l=>`<div>${esc(l.at)} · ${esc({policy:'정책',card:'카드',promo:'행사',point:'모델 포인트'}[l.kind]||l.kind)} <b>${esc(l.key)}</b> · ${esc(l.by||'')}</div>`).join('')}</div></div>`);
   $('spolBody').innerHTML=h.join('');
 }
+function spPairs(v){ const o={}; String(v||'').split(/[,\n]/).forEach(x=>{ const i=x.indexOf('='); if(i<1) return; const k=x.slice(0,i).trim().toUpperCase(), t=x.slice(i+1).trim(); if(k&&t) o[k]=t; }); return o; }
 function spStepRow(s,r){ return `<tr><td><input class="in num" data-k="step" value="${esc(spPct(s))}" style="width:56px"> %</td><td><input class="in num" data-k="rate" value="${esc(spPct(r))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
 function spNameRow(m,cats){ return `<tr><td><select class="in" data-k="cat">${cats.map(c=>`<option ${c===m.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></td><td><input class="in" data-k="contains" value="${esc(m.contains||'')}"></td><td><input class="in num" data-k="max" value="${esc(spPct(m.max))}" style="width:56px"> %</td><td><button class="btn sm ghost" onclick="this.closest('tr').remove()">빼기</button></td></tr>`; }
 async function spSave(key, make){
@@ -3163,8 +3235,35 @@ function spSavePrepay(){
     $('sp_steps').querySelectorAll('tr').forEach(tr=>{ const s=spRate(tr.querySelector('[data-k=step]').value), r=spRate(tr.querySelector('[data-k=rate]').value); if(s==null) return; steps.push(s); if(r!=null) rates[String(s)]=r; });
     const maxByCat={}; $('sp_maxcat').querySelectorAll('input[data-cat]').forEach(i=>{ const r=spRate(i.value); if(r!=null) maxByCat[i.dataset.cat]=r; });
     const maxByName=[]; $('sp_byname').querySelectorAll('tr').forEach(tr=>{ const c=tr.querySelector('[data-k=cat]').value, t=tr.querySelector('[data-k=contains]').value.trim(), m=spRate(tr.querySelector('[data-k=max]').value); if(!t && m==null) return; maxByName.push({cat:c,contains:t,max:m}); });
-    return {steps, rates, defaultMax:spRate($('sp_defmax').value)??0.5, maxByCat, maxByName, notes:spLines($('sp_prenotes').value)};
+    const initial=spRate($('sp_initial').value), help=$('sp_prehelp').value.trim();
+    return {steps, rates, defaultMax:spRate($('sp_defmax').value)??0.5, maxByCat, maxByName, notes:spLines($('sp_prenotes').value), ...(initial!=null?{initial}:{}), ...(help?{help}:{})};
   });
+}
+/* 다품목 스마트 패키지 (mvp_264) — 정액표는 정책 키 bundle 로, 모델 목록은 fn_sub_pkg_import 로 */
+function spSaveBundle(){
+  spSave('bundle',()=>{
+    const tiers={}; $('sp_bd_tiers').querySelectorAll('input[data-tier]').forEach(i=>{ const v=Number(String(i.value).replace(/[^0-9.]/g,'')); if(v>0) tiers[i.dataset.tier]=Math.round(v*10000); });
+    if(!Object.keys(tiers).length) throw new Error('품목 수별 포인트를 하나 이상 적어 주세요');
+    const o={kind:'package',name:$('sp_bd_name').value.trim()||'스마트 패키지',tiers,min:Math.max(2,Number($('sp_bd_min').value)||2),text:$('sp_bd_text').value.trim()};
+    const f=$('sp_bd_from').value, t=$('sp_bd_to').value; if(f) o.from=f; if(t) o.to=t;
+    return o;
+  });
+}
+async function spPkgImport(){
+  const rows=[];
+  String($('sp_pkg_txt').value||'').split(/\r?\n/).forEach(l=>{ const c=l.split('\t').map(x=>x.trim()); if(c.length<3||!c[2]) return; rows.push({cat:c[0],grp:c[1],model:c[2].toUpperCase(),sub_ok:/구독/.test(c[3]||''),bonus:/3만/.test(c[3]||'')}); });
+  if(!rows.length) return toast('붙여 넣은 줄에서 품목·모델군·모델명을 찾지 못했습니다 (탭으로 구분된 네 열)','bad');
+  const rep=$('sp_pkg_replace').checked;
+  if(!confirm(`${rows.length}개 모델을 저장할까요?${rep?' 목록에 없는 기존 모델은 꺼집니다.':''}`)) return;
+  try{ const r=await rpc('fn_sub_pkg_import',{p_rows:rows,p_replace:rep}); toast(`저장 ${n(r.in)} · 끔 ${n(r.off)} · 대상 ${n(r.n)} (구독 대상 ${n(r.n_sub)}) · 바로 배포됩니다 (1~3분)`,'ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+async function spPkgLoad(){
+  const box=$('spPkgBody'); box.innerHTML='<div class="spol-hint">불러오는 중…</div>';
+  try{
+    const L=await rpc('fn_sub_pkg_list',{p_q:null},{fresh:true})||[], subs=L.filter(r=>r.sub_ok), noDps=subs.filter(r=>!r.dps).length;
+    box.innerHTML=`<div class="spol-hint">구독 대상 ${n(subs.length)}개 (전체 ${n(L.length)}) · <b>DPS 없음 ${n(noDps)}</b> = 지금 구독으로 운영되지 않아 계산기에 담을 수 없는 모델 (본사 표가 앞서거나 모델번호 표기가 다른 것)</div>
+      <div style="max-height:360px;overflow:auto"><table class="spol-t"><thead><tr><th>품목</th><th>모델군</th><th>모델</th><th>구독</th><th>DPS</th></tr></thead><tbody>${L.map(r=>`<tr><td>${esc(r.cat)}</td><td>${esc(r.grp||'')}</td><td class="mono">${esc(r.model)}${r.bonus?' <span class="tag n">3만</span>':''}</td><td>${r.sub_ok?'구독':''}</td><td>${r.sub_ok?(r.dps?'있음':'<span class="tag 보류">없음</span>'):''}</td></tr>`).join('')}</tbody></table></div>`;
+  }catch(e){ box.innerHTML=`<div class="note">${esc(e.message)}</div>`; }
 }
 async function spSaveCard(tr){
   const g=k=>tr.querySelector(`[data-k=${k}]`);
@@ -3184,17 +3283,87 @@ async function spPromoEdit(id){
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 모델번호 (쉼표로 여러 개 · 비우면 전체)</div><input class="in mono" id="pm_models" value="${esc((p.models||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
       <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">대상 고도몰 상품번호 (쉼표 · 비우면 전체)</div><input class="in mono" id="pm_goods" value="${esc((p.goods||[]).join(', '))}" style="width:100%;box-sizing:border-box"></label>
       <div><div class="spol-hint" style="margin:0 0 3px">대상 몰 (아무것도 안 고르면 모든 몰 · 상품번호로 고르면 몰을 꼭 고르세요 — 안 고르면 시흥몰)</div><div id="pm_malls" style="display:flex;flex-wrap:wrap;gap:4px">${((SPOL&&SPOL.malls)||[]).map(m=>`<label class="tag ${(p.malls||[]).includes(m.code)?'y':'n'}" style="cursor:pointer"><input type="checkbox" value="${esc(m.code)}" ${(p.malls||[]).includes(m.code)?'checked':''} style="display:none" onchange="this.parentNode.className='tag '+(this.checked?'y':'n')">${esc(m.name)}</label>`).join('')}</div></div>
-      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용)</div><input class="in" id="pm_note" value="${esc(p.note||'')}" style="width:100%;box-sizing:border-box"></label></div>`,
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용)</div><input class="in" id="pm_note" value="${esc(p.note||'')}" style="width:100%;box-sizing:border-box"></label>
+      <div style="border-top:1px dashed var(--line,#ddd);padding-top:8px"><div class="spol-hint" style="margin:0 0 6px"><b>포인트 지원</b> (삼성 "N개월 구독료 상당 포인트" 행사일 때만 · 비우면 문구만 나갑니다) — 금액 우선순위: 모델별 금액 → 공통 금액 → 개월 수 × 고객이 고른 요금제 월 구독료</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><label><div class="spol-hint" style="margin:0 0 3px">지원 개월 수</div><input class="in num" id="pm_months" value="${esc(p.months??'')}" style="width:70px" placeholder="6"></label>
+          <label><div class="spol-hint" style="margin:0 0 3px">공통 금액 (원 · 모델마다 다르면 아래 표)</div><input class="in num" id="pm_amount" value="${esc(p.amount??'')}" style="width:120px" placeholder="540000"></label>
+          <label style="display:flex;align-items:center;gap:6px;padding-bottom:6px;cursor:pointer"><input type="checkbox" id="pm_maxterm" ${p.maxTerm===false?'':'checked'}> 최장 약정을 골랐을 때만 지급 (삼성 기준)</label></div>
+        <label style="display:block;margin-top:6px"><div class="spol-hint" style="margin:0 0 3px">모델별 금액표 (한 줄에 <span class="mono">모델번호 금액</span> · 삼성 "N개월 대상모델 LIST" 를 그대로 붙여 넣어도 됩니다 · 여기 적은 모델은 대상 모델번호에도 자동으로 들어갑니다)</div><textarea class="in mono" id="pm_amounts" rows="4" style="width:100%;box-sizing:border-box" placeholder="WD90H25AHW 540000&#10;RF85DB9792AP 420000">${esc(Object.entries(p.amounts||{}).map(([k,v])=>k+' '+v).join('\n'))}</textarea></label></div></div>`,
     collect:()=>{ const t=$('pm_text').value.trim(); if(!t) throw new Error('문구를 적어 주세요');
+      const months=$('pm_months').value.trim()?Number($('pm_months').value):null; if(months!=null && !(Number.isInteger(months)&&months>=1&&months<=72)) throw new Error('지원 개월 수는 1~72 사이 숫자여야 합니다');
+      const amount=$('pm_amount').value.replace(/[^0-9]/g,'')?Number($('pm_amount').value.replace(/[^0-9]/g,'')):null;
+      const amounts={}; $('pm_amounts').value.split(/\r?\n/).forEach((ln,i)=>{ ln=ln.trim(); if(!ln) return; const m=/^([A-Za-z0-9\-\/]+)[\s,\t:=]+([0-9][0-9,\.]*)\s*(원)?/.exec(ln); if(!m) throw new Error((i+1)+'번째 줄을 읽지 못했습니다: "'+ln+'" (예: WD90H25AHW 540000)'); amounts[m[1].toUpperCase()]=Number(m[2].replace(/[^0-9]/g,'')); });
+      let models=spCsv($('pm_models').value).map(x=>x.toUpperCase()); Object.keys(amounts).forEach(m=>{ if(!models.includes(m)) models.push(m); });
       return {id:p.id, text:t, from:$('pm_from').value||null, to:$('pm_to').value||null, sort:Number($('pm_sort').value)||100, active:p.active!==false,
-              cats:[...$('pm_cats').querySelectorAll('input:checked')].map(i=>i.value), models:spCsv($('pm_models').value), goods:spCsv($('pm_goods').value), malls:[...$('pm_malls').querySelectorAll('input:checked')].map(i=>i.value), note:$('pm_note').value.trim()}; }});
+              cats:[...$('pm_cats').querySelectorAll('input:checked')].map(i=>i.value), models, goods:spCsv($('pm_goods').value), malls:[...$('pm_malls').querySelectorAll('input:checked')].map(i=>i.value), note:$('pm_note').value.trim(),
+              months, amount, amounts:Object.keys(amounts).length?amounts:null, maxTerm:$('pm_maxterm').checked}; }});
   if(!data) return;
   try{ await rpc('fn_sub_promo_save',{p_data:data}); toast('행사 문구를 저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); }catch(e){ toast(e.message,'bad'); }
+}
+/* 행사의 포인트 지원 요약 칩 (mvp_257) */
+function spPointChip(p){
+  if(!(p.months>0||p.amount>0||(p.amounts&&Object.keys(p.amounts).length))) return '';
+  const n=p.amounts?Object.keys(p.amounts).length:0;
+  return `<div style="margin-top:2px"><span class="spol-chip" style="background:#fff3e8;border-color:#f3c7a0;color:#b4480b">★ 포인트 ${p.months?p.months+'개월':''}${p.amount?' 공통 '+fmt(p.amount)+'원':''}${n?' 모델별 '+n+'개':''}${p.maxTerm===false?' · 모든 약정':' · 최장 약정만'}</span></div>`;
+}
+/* ── 모델 포인트 (mvp_258) : fn_sub_point_list · fn_sub_point_save · [지금 수집] = Edge Function sub-deploy?wf=sub-point → GitHub Actions sub-point.yml ── */
+let SPT=null;
+async function spPointLoad(){
+  const box=$('spPtBody'); if(!box) return; const q=$('spPtQ').value.trim(); box.innerHTML='<div class="note">불러오는 중…</div>';
+  try{ SPT=await rpc('fn_sub_point_list',{p_q:q||null,p_limit:300},{fresh:true}); }catch(e){ box.innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
+  if(!SPT){ box.innerHTML='<div class="note">권한이 없습니다</div>'; return; }
+  spPointRender();
+}
+function spPointRender(){
+  const box=$('spPtBody'), d=SPT||{rows:[],missed:[]}, J=s=>JSON.stringify(s).replace(/"/g,'&quot;');
+  if($('spPtMiss').checked){
+    box.innerHTML=(d.missed||[]).length?`<table class="spol-t"><thead><tr><th>모델</th><th>마지막 확인</th><th class="num">실패</th><th>이유</th><th></th></tr></thead><tbody>${d.missed.map(m=>`<tr><td class="mono">${esc(m.model)}</td><td>${esc(m.at)}</td><td class="num">${n(m.n)}</td><td>${esc(m.err||'')}</td><td><button class="btn sm ghost" onclick="spPointEdit(${J(m.model)})">손 입력</button></td></tr>`).join('')}</tbody></table>
+      <p class="spol-hint">삼성닷컴에 구독 상품 페이지가 없는 모델(매장 전용·단종 등)입니다. 포인트가 있다면 손 입력하세요. 7~30일 뒤 자동으로 다시 확인합니다.</p>`:'<div class="note">못 찾은 모델이 없습니다</div>'; return; }
+  const rows=d.rows||[];
+  box.innerHTML=rows.length?`<table class="spol-t"><thead><tr><th>모델</th><th>품목</th><th class="num">정률</th><th class="num">기본</th><th class="num">추가 포인트</th><th class="num">기준 총액 → 총 포인트</th><th>출처</th><th>수집·수정</th><th></th></tr></thead><tbody>
+    ${rows.map(r=>`<tr${r.active?'':' style="opacity:.55" title="지금 DPS 구독 목록에 없는 모델"'}><td class="mono"><b>${esc(r.model)}</b>${r.sub_only?' <span class="tag y" title="일시불 판매 없음 · 구독센터·구독탭에서 일시불 비교를 뺍니다">구독 전용</span>':''}${r.goods_id?`<div class="spol-hint" style="margin:0">${esc(r.goods_id)}</div>`:''}</td><td>${esc(r.cat||'')}${r.seg?` <small style="color:var(--faint)">${esc(r.seg)}</small>`:''}</td>
+      <td class="num">${r.rate!=null?Number(r.rate)+'%':'-'}</td><td class="num">${r.base!=null?Number(r.base)+'%':'-'}</td><td class="num">${r.add?fmt(r.add)+'P':'-'}</td>
+      <td class="num">${r.price?fmt(r.price)+'원 → '+(r.total!=null?fmt(r.total)+'P':'-'):'-'}</td>
+      <td>${r.src==='manual'?'<span class="tag y">손 입력</span>':'<span class="tag n">삼성닷컴</span>'}${r.note?`<div class="spol-hint" style="margin:0">${esc(r.note)}</div>`:''}</td>
+      <td style="white-space:nowrap">${esc(r.src==='manual'?(r.updated||''):(r.fetched||r.updated||''))}${r.by?`<div class="spol-hint" style="margin:0">${esc(r.by)}</div>`:''}</td>
+      <td style="white-space:nowrap"><button class="btn sm ghost" onclick="spPointEdit(${J(r.model)})">고치기</button>${r.src==='manual'?` <button class="btn sm ghost" onclick="spPointRelease(${J(r.model)})">수집값으로</button> <button class="btn sm ghost" onclick="spPointRemove(${J(r.model)})">지우기</button>`:''}</td></tr>`).join('')}</tbody></table>`
+    :'<div class="note">해당하는 모델이 없습니다 (아직 수집 전이면 [지금 수집])</div>';
+}
+async function spPointEdit(model){
+  const r=(model&&(SPT&&SPT.rows||[]).find(x=>x.model===model))||{model:model||''};
+  const data=await modal({title:model?model+' 포인트 손 입력':'모델 포인트 손 입력', ok:'저장',
+    html:`<div class="spol-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">모델번호</div><input class="in mono" id="pt_model" value="${esc(r.model||'')}" ${model?'readonly':''} style="width:100%;box-sizing:border-box" placeholder="WD90H25AHW"></label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><label><div class="spol-hint" style="margin:0 0 3px">상품별 추가 포인트 (P)</div><input class="in num" id="pt_add" value="${esc(r.add??'')}" style="width:120px" placeholder="50000"></label>
+        <label><div class="spol-hint" style="margin:0 0 3px">정률 % (비우면 수집값 유지)</div><input class="in num" id="pt_rate" value="${esc(r.rate??'')}" style="width:80px" placeholder="6"></label>
+        <label><div class="spol-hint" style="margin:0 0 3px">기본 %</div><input class="in num" id="pt_base" value="${esc(r.base??'0.1')}" style="width:80px"></label></div>
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="pt_subonly" ${r.sub_only?'checked':''}> <b>구독 전용 모델</b> <span class="spol-hint" style="margin:0">일시불 판매 없음 — 시흥몰에 일시불 상품이 있어도 구독센터·구독탭이 일시불 가격·비교를 내지 않습니다 (예: AI 콤보 화이트 WD90H25BHW)</span></label>
+      <label style="display:block"><div class="spol-hint" style="margin:0 0 3px">메모 (사내용 · 출처·기간)</div><input class="in" id="pt_note" value="${esc(r.note||'')}" style="width:100%;box-sizing:border-box"></label>
+      <p class="spol-hint" style="margin:0">저장하면 '손 입력' 이 되어 매일 수집이 덮지 않습니다. 삼성닷컴 값으로 되돌리려면 표에서 [수집값으로]. 화면 계산 = 제품분 금액(총 구독금액 − 무상수리료) × (정률+기본)% + 추가 포인트 (선납·카드와 무관 · 삼성닷컴과 같은 기준).</p></div>`,
+    collect:()=>{ const m=$('pt_model').value.trim().toUpperCase(); if(!m) throw new Error('모델번호를 적어 주세요');
+      const o={model:m, note:$('pt_note').value.trim(), subOnly:$('pt_subonly').checked};
+      // 포인트 칸을 하나도 안 적고 구독 전용만 바꾸면 포인트 행은 건드리지 않는다 (정률 없는 '손 입력' 행이 생겨 포인트가 사라지지 않게 · mvp_259)
+      const addV=$('pt_add').value.trim(), rateV=$('pt_rate').value.trim(), baseV=$('pt_base').value.trim();
+      if(addV!==''||rateV!==''||(r.src&&r.src!=='none')) o.add=addV===''?null:Number(addV.replace(/[^0-9]/g,''));
+      if(rateV!=='') o.rate=Number(rateV); if(baseV!==''&&(o.add!==undefined||o.rate!==undefined)) o.base=Number(baseV); return o; }});
+  if(!data) return;
+  try{ await rpc('fn_sub_point_save',{p_data:data}); toast('저장했습니다 · 바로 배포됩니다 (1~3분)','ok'); loadSubPolicy(true); spPointLoad(); }catch(e){ toast(e.message,'bad'); }
+}
+async function spPointRelease(model){ if(!confirm(model+' 을 삼성닷컴 수집값으로 되돌릴까요? (다음 수집에서 덮어씁니다)')) return; try{ await rpc('fn_sub_point_save',{p_data:{model,release:true}}); toast('되돌렸습니다','ok'); loadSubPolicy(true); spPointLoad(); }catch(e){ toast(e.message,'bad'); } }
+async function spPointRemove(model){ if(!confirm(model+' 포인트를 지울까요? (다음 수집에서 삼성닷컴 값이 있으면 다시 들어옵니다)')) return; try{ await rpc('fn_sub_point_save',{p_data:{model,remove:true}}); toast('지웠습니다','ok'); loadSubPolicy(true); spPointLoad(); }catch(e){ toast(e.message,'bad'); } }
+async function spPointCollect(){
+  if(!confirm('삼성닷컴에서 모델 포인트를 지금 수집할까요? (활성 모델 전부 다시 · GitHub Actions 에서 5~10분 · 끝나면 자동 배포)')) return;
+  let tok=null; try{ const {data}=await sb.auth.getSession(); tok=data&&data.session&&data.session.access_token; }catch(e){}
+  if(!tok) return toast('로그인이 필요합니다','bad');
+  try{ const res=await fetch(SUPABASE_URL+'/functions/v1/sub-deploy?by=admin&wf=sub-point&all=1',{method:'POST',headers:{Authorization:'Bearer '+tok,apikey:SUPABASE_KEY,'Content-Type':'application/json'},body:'{}'});
+    const j=await res.json().catch(()=>({})); if(!res.ok||!j.ok) throw new Error(j.error||('HTTP '+res.status));
+    toast(j.skipped?'이미 수집이 돌고 있습니다 · '+j.reason:'수집을 시작했습니다 · 10~20분 뒤 [새로고침]','ok'); }
+  catch(e){ toast('수집 요청 실패: '+e.message+' — GitHub › Actions › 구독 멤버십 포인트 › Run workflow 로 직접 실행하세요','bad'); }
 }
 async function spPromoToggle(id,on){
   const p=(SPOL&&SPOL.promos||[]).find(x=>x.id===id); if(!p) return;
   try{
-    if(on) await rpc('fn_sub_promo_save',{p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,malls:p.malls||[],sort:p.sort,note:p.note,active:true}});
+    if(on) await rpc('fn_sub_promo_save',{p_data:{id:p.id,text:p.text,from:p.from,to:p.to,cats:p.cats,models:p.models,goods:p.goods,malls:p.malls||[],sort:p.sort,note:p.note,active:true,months:p.months,amount:p.amount,amounts:p.amounts,maxTerm:p.maxTerm!==false}});
     else await rpc('fn_sub_promo_remove',{p_id:id});
     toast(on?'다시 켰습니다':'껐습니다 (기록은 남습니다)','ok'); loadSubPolicy(true);
   }catch(e){ toast(e.message,'bad'); }
@@ -5379,15 +5548,16 @@ async function loadMenu(pre){
     if(i.label) TITLES[i.code]=i.label; }));
   renderNav();
 }
-/* 메뉴 묶음은 아코디언 (v223) — 묶음 머리를 누르면 접고 펼친다. 처음엔 다 펼침 · 고른 상태는 브라우저에 기억 ·
-   지금 화면이 든 묶음은 저절로 펼친다 · 접힌 묶음 안에 뱃지(새 문의 등)가 있으면 머리에 빨간 점 */
+/* 메뉴 묶음은 아코디언 (v223) — 묶음 머리를 누르면 접고 펼친다. v284 부터 처음엔 다 접힘 · 직접 펼친 묶음만 브라우저에 기억 ·
+   지금 화면이 든 묶음은 잠시 펼쳐 보이고(기억 안 함) 다른 화면으로 가면 다시 접힌다 · 접힌 묶음 안에 뱃지(새 문의 등)가 있으면 머리에 빨간 점 */
 const NAV_GICON={sales:'dash',crm:'customers',inv:'stock',data:'upload',ops:'option'};
 let NAV_OPEN={}; try{ NAV_OPEN=JSON.parse(localStorage.getItem('dc_nav_open')||'{}')||{}; }catch(e){ NAV_OPEN={}; }
 function navGroupSet(g, open){ g.classList.toggle('open', open); const b=g.querySelector('.ngh'); if(b) b.setAttribute('aria-expanded', String(open));
   NAV_OPEN[g.dataset.g]=open; try{ localStorage.setItem('dc_nav_open', JSON.stringify(NAV_OPEN)); }catch(e){} navBadgeSync(); }
-function navReveal(v){ document.querySelectorAll('#navBox .navg').forEach(g=>g.classList.toggle('hascur', !!g.querySelector(`.nav[data-v="${v}"]`)));
-  const el=document.querySelector(`#navBox .nav[data-v="${v}"]`); const g=el&&el.closest('.navg'); if(g && !g.classList.contains('open')) navGroupSet(g, true);
-  if(NAV_SUB[v]) navSubSet(v, true); }
+function navReveal(v){ document.querySelectorAll('#navBox .navg').forEach(g=>{ const cur=!!g.querySelector(`.nav[data-v="${v}"]`); g.classList.toggle('hascur', cur);
+    /* v284 — 기본 접힘: 지금 화면이 든 묶음과 직접 펼쳐 둔 묶음(dc_nav_open true)만 펼친다. 지금 화면 때문에 펼친 건 기억하지 않는다 */
+    const open=cur || NAV_OPEN[g.dataset.g]===true; g.classList.toggle('open', open); const b=g.querySelector('.ngh'); if(b) b.setAttribute('aria-expanded', String(open)); });
+  if(NAV_SUB[v]) navSubSet(v, true); navBadgeSync(); }
 function navBadgeSync(){ document.querySelectorAll('#navBox .navg').forEach(g=>g.classList.toggle('hasbadge', [...g.querySelectorAll('.ngb .badge')].some(b=>!b.classList.contains('hidden')&&b.textContent.trim()))); }
 /* 메뉴 안의 하위 메뉴 (v224) — 한 화면에 카드가 많은 메뉴는 카드 하나씩을 하위 메뉴로 · 누르면 그 카드만 보인다(센드온처럼 따로 쪽) ·
    고른 하위 메뉴는 브라우저에 기억(dc_sub_cur) · 펼침 상태는 dc_nav_open 의 'sub:<코드>' */
@@ -5452,7 +5622,7 @@ function renderNav(){
     const items=(g.items||[]).filter(i=>i.state!=='off' && TITLES[i.code]);
     if(!items.length) return;
     if(g.group==='_top' || !g.group_label){ items.forEach(i=>h.push(item(i))); return; }
-    const open=NAV_OPEN[g.group]!==false, gid='ngb_'+g.group;
+    const open=NAV_OPEN[g.group]===true, gid='ngb_'+g.group;   /* v284 — 기본 접힘 (직접 펼친 묶음만 기억) */
     h.push(`<div class="navg${open?' open':''}" data-g="${esc(g.group)}"><button type="button" class="ngh" aria-expanded="${open}" aria-controls="${gid}">`
       +`<span class="ic">${NAV_ICON[NAV_GICON[g.group]]||NAV_ICON.settings}</span><span>${esc(g.group_label)}</span><span class="gdot" aria-hidden="true"></span>`
       +`<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></span></button>`
@@ -5462,6 +5632,29 @@ function renderNav(){
   try{ if(VIEW){ navReveal(VIEW); subApply(VIEW); } }catch(e){}
   navBadgeSync();
 }
+/* 메뉴 찾기 (v284) — 사이드바 맨 위 칸에 적으면 이름이 맞는 메뉴·하위 메뉴만 보인다(묶음은 전부 펼쳐 보이고 접힘 상태는 안 건드린다).
+   묶음 이름이 맞으면 그 묶음 전부 · 메뉴가 맞으면 그 하위 메뉴 전부 · 하위 메뉴만 맞으면 그 줄과 부모. Enter = 첫 번째로 · Esc = 지움 · 화면을 옮기면 저절로 지움 */
+const navNorm=s=>(s||'').toLowerCase().replace(/[\s·]+/g,'');
+function navQ(q){ const box=$('navBox'), w=$('navSearch'), cnt=$('navQCnt'); if(!box||!w) return; const raw=(q||'').trim().toLowerCase(); q=navNorm(q);
+  box.querySelectorAll('mark.qm').forEach(m=>{ const t=document.createTextNode(m.textContent); m.replaceWith(t); t.parentNode&&t.parentNode.normalize(); });
+  box.querySelectorAll('.qhit,.qhas').forEach(x=>x.classList.remove('qhit','qhas'));
+  w.classList.toggle('has', !!q); box.classList.toggle('navq', !!q);
+  if(!q){ if(cnt) cnt.textContent=''; return; }
+  const txt=el=>[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('');
+  const hit=el=>el.classList.add('qhit');
+  box.querySelectorAll('.navg').forEach(g=>{ const nm=g.querySelector('.ngh span:nth-of-type(2)'); if(nm && navNorm(nm.textContent).includes(q)) g.querySelectorAll('.nav').forEach(hit); });
+  box.querySelectorAll('.nav').forEach(el=>{ if(navNorm(txt(el)).includes(q)) hit(el); });
+  box.querySelectorAll('.nsg').forEach(sg=>{ const par=sg.querySelector(':scope > .nav'), subs=[...sg.querySelectorAll(':scope > .nsb > .nav')]; if(!par) return;
+    const ph=par.classList.contains('qhit'), sh=subs.some(x=>x.classList.contains('qhit'));
+    if(ph) subs.forEach(hit); else if(sh) hit(par); if(ph||sh) sg.classList.add('qhas'); });
+  box.querySelectorAll('.navg').forEach(g=>{ if(g.querySelector('.nav.qhit')) g.classList.add('qhas'); });
+  /* 맞는 글자 강조 (띄어쓰기 그대로 들어 있을 때만) */
+  if(raw) box.querySelectorAll('.nav.qhit').forEach(el=>{ [...el.childNodes].filter(n=>n.nodeType===3).forEach(n=>{ const i=n.textContent.toLowerCase().indexOf(raw); if(i<0) return;
+    const m=document.createElement('mark'); m.className='qm'; m.textContent=n.textContent.slice(i,i+raw.length); const after=document.createTextNode(n.textContent.slice(i+raw.length)); n.textContent=n.textContent.slice(0,i); n.after(m, after); }); });
+  const n=box.querySelectorAll('.nav.qhit').length; if(cnt) cnt.textContent=n?`맞는 메뉴 ${n}개 · Enter = 첫 번째로`:'맞는 메뉴가 없습니다'; }
+function navQClear(){ const i=$('navQ'); if(i){ i.value=''; navQ(''); i.focus(); } }
+function navQKey(e){ if(e.key==='Escape'){ e.preventDefault(); navQClear(); return; }
+  if(e.key==='Enter'||e.key==='ArrowDown'){ e.preventDefault(); const first=[...document.querySelectorAll('#navBox .nav.qhit')].find(x=>x.offsetParent!==null); if(!first) return; if(e.key==='ArrowDown'){ first.setAttribute('tabindex','0'); first.focus(); return; } first.click(); } }
 new MutationObserver(()=>navBadgeSync()).observe(document.getElementById('navBox')||document.body, {subtree:true, attributes:true, attributeFilter:['class'], childList:true, characterData:true});
 /* 개발 중인 메뉴를 눌렀을 때 나오는 공사장 안내 */
 function renderUnderConstruction(v){
@@ -5502,6 +5695,7 @@ function show(v, opt){ if(!TITLES[v]) v='home';
      메뉴를 못 읽어 기본 구성으로 떨어진 경우엔 전부 들어 있으므로 막히지 않는다 */
   if(v!=='home' && MENU_STATE && Object.keys(MENU_STATE).length && !MENU_STATE[v]) v='home';
   toggleNav(false); opt=opt||{};
+  try{ const nq=$('navQ'); if(nq && nq.value){ nq.value=''; navQ(''); } }catch(e){}   /* 메뉴 찾기는 화면을 옮기면 지운다 (v284) */
   /* 메뉴는 DB에서 오지만 화면은 이 파일에 있다 — 메뉴만 먼저 생긴 경우(화면 파일이 옛 버전) 빈 화면 대신 안내 */
   if(!$('v-'+v) && v!=='home'){ VIEW=v; document.querySelectorAll('.view').forEach(x=>x.classList.toggle('hidden', x.id!=='v-dev'));
     document.querySelectorAll('.nav[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===v)); navReveal(v); $('title').textContent=TITLES[v];
@@ -5609,6 +5803,20 @@ function segify(root){
     g.addEventListener('keydown',e=>{ if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight') return; e.preventDefault(); const k=sel.options.length; sel.selectedIndex=(sel.selectedIndex+(e.key==='ArrowRight'?1:k-1))%k; paint(); const on=g.querySelector('button.on'); if(on) on.focus(); sel.dispatchEvent(new Event('change',{bubbles:true})); });
     sel.insertAdjacentElement('afterend', g);
   });
+  try{ fkLabelize(root); }catch(e){}
+}
+/* 이름표 (v284) — 거르개 줄의 select(세그로 바뀐 것 · 알약으로 바뀐 것 포함)에 aria-label 또는 첫 선택지 '전체 ○○' 의 ○○ 를 작은 이름표로 앞에 붙인다.
+   이미 이름표(.lb·label)가 앞에 있으면 그대로. 묶음 <span class="fld"> 하나가 공통 바로 옮겨 다닌다 */
+function fkLabelize(root){
+  (root||document).querySelectorAll('.filters > select.in, .cbar .extra > select.in, .cbar > select.in').forEach(sel=>{
+    if(sel.closest('.fld') || sel.dataset.nolb==='1') return;
+    const prev=sel.previousElementSibling; if(prev && (prev.matches('.lb,label') || (prev.tagName==='SPAN' && !prev.children.length && prev.textContent.trim().length>0 && prev.textContent.trim().length<=8))) return;
+    let lb=sel.getAttribute('aria-label')||sel.getAttribute('title')||''; if(!lb){ const o=sel.options[0]; const m=o&&o.textContent.trim().match(/^전체\s+(.+)$/); lb=m?m[1]:''; }
+    lb=lb.replace(/\s*(선택|고르기)$/,'').trim(); if(!lb||lb.length>12) return;
+    const nx=sel.nextElementSibling, pair=nx && (nx.classList.contains('segsel')||nx.classList.contains('fk-radio')) ? nx : null;
+    const w=document.createElement('span'); w.className='fld'; sel.parentNode.insertBefore(w, sel);
+    const l=document.createElement('span'); l.className='lb'; l.textContent=lb; w.appendChild(l); w.appendChild(sel); if(pair) w.appendChild(pair);
+  });
 }
 /* select 값을 코드로 바꿨을 때(초기화 등) 버튼 표시를 맞춘다 */
 function segSync(){ document.querySelectorAll('select.segd').forEach(sel=>{ const g=sel.nextElementSibling; if(!g||!g.classList.contains('segsel')) return;
@@ -5621,7 +5829,7 @@ function cbarPull(first){
   const ex=$('cbExtra'); const fl=first.querySelector(':scope > .filters'); if(!fl||!ex) return;
   [...fl.children].forEach(ch=>{ if(ch.classList.contains('hidden')) return;
     if(ch.tagName==='BUTTON' && /^(조회|초기화)$/.test(ch.textContent.trim())){ ch.classList.add('hidden'); ch.dataset.cbHid='1'; return; }   /* 공통 바의 조회·초기화로 대신 */
-    const isFilter = ch.matches('.seg2, select.in, input.in, label.switch, .switch, label, .cb-move, span.lb, span.note');
+    const isFilter = ch.matches('.seg2, select.in, input.in, label.switch, .switch, label, .cb-move, span.lb, span.note, .fld');
     if(!isFilter) return;
     CB_MOVED.push({el:ch, parent:fl, next:ch.nextSibling}); ex.appendChild(ch); });
   ex.hidden=!ex.children.length;
@@ -5932,7 +6140,7 @@ async function setGasUrl(){
   $('dashFrame').src='about:blank'; loadDash();
 }
 let DASH_PAY=null, DASH_READY=false;
-const DASH_V='283';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
+const DASH_V='284';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
 window.addEventListener('message',e=>{ const t=e.data&&e.data.type;
   if(t==='dash-ready'){ DASH_READY=true; dpSet({frame:1}); dashSend(); }
   else if(t==='dash-rendered'){ dpDone(); } });
@@ -6093,7 +6301,7 @@ function loadDashGas(){
 }
 async function loadDash(){
   $('ds-dc').classList.toggle('on',DASH_SRC==='dc'); $('ds-gas').classList.toggle('on',DASH_SRC==='gas');
-  $('db-manual').classList.toggle('on',DASH_BASIS==='manual'); $('db-ledger').classList.toggle('on',DASH_BASIS==='ledger'); $('db-dps').classList.toggle('on',DASH_BASIS==='dps');
+  ['dps','ledger','manual'].forEach(k=>{ const b=$('db-'+k); if(!b) return; const on=DASH_BASIS===k; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
   const dc=DASH_SRC==='dc';
   $('segBasis').style.opacity=dc?'1':'.35'; $('segBasis').style.pointerEvents=dc?'auto':'none';
   $('segBasis').title=dc?'':'기존 app 은 구글 시트 원장만 씁니다';
@@ -8495,7 +8703,7 @@ async function loadDataStatus(){
   let d; try{ d=await rpc('fn_data_status'); }
   catch(e){ $('dsBody').innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
   DSD=d; const src=d.sources||[], late=src.filter(x=>x.state!=='정상'&&x.state!=='준비 중'), soon=src.filter(x=>x.state==='준비 중');
-  $('dsHead').innerHTML=`${late.length?`<span class="tag 보류">확인 필요 ${late.length}</span> `:'<span class="tag y">모두 정상</span> '}${soon.length?`<span class="tag" title="${esc(soon.map(x=>x.label).join(' · '))}">준비 중 ${soon.length}</span> `:''}<span style="color:var(--faint)">${esc(d.db.span||'')} · ${esc(d.db.size)}</span>`;
+  $('dsHead').innerHTML=`${late.length?`<span class="tag 보류">확인 필요 ${late.length}</span> `:'<span class="tag y">모두 정상</span> '}${soon.length?`<span class="tag" title="${esc(soon.map(x=>x.label).join(' · '))}">준비 중 ${soon.length}</span> `:''}<span style="color:var(--faint)">${esc((d.db||{}).span||'')} · ${esc((d.db||{}).size||'')}</span>`;
   const malls=Object.fromEntries((d.malls||[]).map(m=>[m.mall,m.rows]));
   /* 카드가 열다섯 장이라 다 펼치면 화면을 덮는다.
      기본은 지금 손이 필요한 것(지연·없음·준비 중)만 보이고, 나머지는 접어 둔다. */
