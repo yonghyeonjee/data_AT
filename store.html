@@ -1342,10 +1342,10 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
 </div>
 <div class="lvmask hidden" id="qrDlg" onclick="if(event.target===this)qrClose()">
   <div class="lvdlg qrdlg" role="dialog" aria-modal="true" aria-label="이 화면의 QR">
-    <h3>이 화면의 QR</h3>
+    <h3 id="qrTitle">이 화면의 QR</h3>
     <div class="qrbox" id="qrBox"></div>
     <div class="qrurl" id="qrUrl"></div>
-    <p class="note-in" style="margin:8px 0 0">폰 카메라로 찍으면 이 주소가 바로 열립니다. 아이디와 비밀번호는 각자 넣습니다.</p>
+    <p class="note-in" id="qrNote" style="margin:8px 0 0">폰 카메라로 찍으면 이 주소가 바로 열립니다. 아이디와 비밀번호는 각자 넣습니다.</p>
     <div class="btns" style="margin-top:12px"><button class="btn" onclick="qrClose()">닫기</button></div>
   </div>
 </div>
@@ -1890,6 +1890,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       <div class="dp-prev" id="dpPrev"></div>
       <div class="dp-opt">
         <button type="button" class="dp-sw" id="dpMask" role="switch" aria-checked="false" onclick="dpMaskSet()"><i></i>이름 가운데 가리기 <span>장성원 → 장○원</span></button>
+        <button type="button" class="btn sm ghost" onclick="sgLinkShow()">사이니지 기기 연결</button>
         <button type="button" class="btn sm ghost" id="dpPvBtn" aria-expanded="false" onclick="dpPvToggle()">매장 화면 미리보기 ▾</button>
       </div>
       <div class="dp-pv hidden" id="dpPv"><div class="dp-pvseg seg sm" role="radiogroup" aria-label="화면 방향"><button type="button" role="radio" aria-checked="true" class="on" data-o="p" onclick="dpPvOri(this)">세로</button><button type="button" role="radio" aria-checked="false" data-o="l" onclick="dpPvOri(this)">가로</button></div><div class="dp-pvbox" id="dpPvBox"><iframe id="dpPvF" title="매장 화면 미리보기" tabindex="-1"></iframe></div><p class="note-in">저장한 이름·문구로 그린 미리보기입니다. 실제 화면에는 1분 안에 반영됩니다.</p></div>
@@ -4827,6 +4828,8 @@ async function ledSave(){ const ls=$('ledTa').value.split('\n').map(x=>x.trim())
   catch(e){ toast(e.message,'err'); } }
 function dpMk(n){ n=String(n||''); if(!(DP&&DP.mask)||n.length<2) return n; return n.length===2?n[0]+'○':n[0]+'○'.repeat(n.length-2)+n.slice(-1); }
 async function dpMaskSet(){ const on=!(DP&&DP.mask); try{ const r=await rpc('fn_store_signage_mask_save',{p_code:CODE,p_mask:on}); DP.mask=r.mask; dpRender(); dpPvDraw(); toast(on?'이름 가운데를 가립니다 (장○원)':'이름을 그대로 보입니다','ok'); }catch(e){ toast(e.message,'err'); } }
+async function sgLinkShow(){ try{ const r=await rpc('fn_store_signage_link',{p_code:CODE}); try{ await navigator.clipboard.writeText(r.url); }catch(e){}
+  qrShow(r.url,'사이니지 기기 연결','매장 화면 기기에서 이 주소를 한 번 열면(또는 QR 을 찍으면) 그 기기에 연결 정보가 저장되어 예약 고객 이름이 뜹니다. 주소는 복사해 두었습니다 — 다른 곳에 공유하지 마세요.'); }catch(e){ toast(e.message,'err'); } }
 let DP_PV=false, DP_ORI='p';
 function dpPvToggle(){ DP_PV=!DP_PV; $('dpPv').classList.toggle('hidden',!DP_PV); $('dpPvBtn').setAttribute('aria-expanded',String(DP_PV)); $('dpPvBtn').textContent='매장 화면 미리보기 '+(DP_PV?'▴':'▾'); dpPvDraw(); }
 function dpPvOri(b){ DP_ORI=b.dataset.o; b.parentNode.querySelectorAll('button').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-checked',String(on)); }); dpPvDraw(); }
@@ -5677,7 +5680,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   return {matrix, svg};
 })();
 /* 로그인 화면 [QR 보기] — 이 페이지 주소를 QR 로. 카메라로 찍으면 바로 열린다 */
-function qrShow(){ const url=location.origin+location.pathname; const box=document.getElementById('qrDlg'); if(!box) return;
+function qrShow(u,title,note){ const url=u||(location.origin+location.pathname); const box=document.getElementById('qrDlg'); if(!box) return;
+  document.getElementById('qrTitle').textContent=title||'이 화면의 QR'; document.getElementById('qrNote').textContent=note||'폰 카메라로 찍으면 이 주소가 바로 열립니다. 아이디와 비밀번호는 각자 넣습니다.';
   document.getElementById('qrBox').innerHTML=QR.svg(url,260); document.getElementById('qrUrl').textContent=url; box.classList.remove('hidden'); }
 function qrClose(){ const box=document.getElementById('qrDlg'); if(box) box.classList.add('hidden'); }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') qrClose(); });
