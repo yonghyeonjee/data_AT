@@ -98,7 +98,7 @@ h1,h2,h3{margin:0}
 .cond{display:flex;flex-direction:column;gap:12px}
 .cond .row{display:flex;flex-direction:column;gap:5px}
 .cond select{border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--paper);width:100%}
-.sum{position:sticky;top:58px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 68px);overflow-y:auto;overscroll-behavior:contain;padding-bottom:4px}
+.sum{position:sticky;top:58px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 68px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding-bottom:4px}
 .sum>*{flex:none}
 @media (max-width:900px){.sum{position:static;max-height:none;overflow:visible}}
 details.more{border-top:1px dashed var(--line);margin-top:10px;padding-top:6px}
@@ -154,6 +154,13 @@ table.xl tr.ownrow td{height:auto;padding:0 10px 8px;background:#FAFBFD} table.x
 .kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0;border-bottom:1px dashed var(--line)}
 .kv:last-child{border-bottom:0}
 .kv b{font-weight:700}
+.kv>span:first-child{min-width:0} .kv .why{display:block;font-size:11.5px;font-weight:400;color:var(--mut);line-height:1.35;margin-top:1px}
+.kv>.num,.kv>b{white-space:nowrap;align-self:center}
+.kv.total2{font-weight:800;background:#F3F5F9;border-radius:6px;padding:6px 8px;border-bottom:0;margin:2px 0}
+.kv.in{align-items:center} .kv.in input.lx{width:118px;flex:none;text-align:right;border:1px solid #E0A23A;background:#FFF8EA;border-radius:8px;padding:6px 8px;font:inherit;font-variant-numeric:tabular-nums}
+.stepn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:800;flex:none}
+body.iv-table .sum>.tot{display:none} body.iv-table .sum{grid-template-columns:minmax(300px,2fr) minmax(320px,3fr)} body.iv-table #t_scn,body.iv-table #noticeTxt{grid-column:1/-1}
+@media (max-width:760px){body.iv-table .sum{grid-template-columns:minmax(0,1fr)}}
 .kv.minus span:last-child{color:var(--green)}
 .kv.plus span:last-child{color:var(--bad)}
 .kv.total{font-weight:900;font-size:14px;border-top:2px solid var(--ink);border-bottom:0;margin-top:4px;padding-top:8px}
@@ -265,7 +272,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <section id="v-edit" class="grid hidden">
   <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
     <div class="card">
-      <h2>고객 · 상담 <small>담당자 화면에서 열면 채워져 옵니다</small></h2>
+      <h2><span class="stepn">1</span>고객 · 상담 <small>담당자 화면에서 열면 채워져 옵니다</small></h2>
       <div class="cust top3">
         <div class="fld"><span class="lbl">상담 종류</span>
           <div class="seg" id="ctype"><button data-t="혼수">혼수</button><button data-t="입주">입주</button><button data-t="이사">이사</button><button data-t="일반">일반</button></div></div>
@@ -287,7 +294,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     </div>
 
     <div class="card">
-      <h2>품목 담기 <small>모델명·제품명으로 찾기 · 구독센터 [담기]에서 가져오기</small></h2>
+      <h2><span class="stepn">2</span>품목 담기 <small>모델명·제품명으로 찾기 · 구독센터 [담기]에서 가져오기</small></h2>
       <div class="add">
         <input id="q" placeholder="예: WD90H25AHS, AI 콤보, 83형" autocomplete="off">
         <button class="chip" onclick="importBundle()" title="구독센터 다품목 계산기 주소(bundle.html?items=…)를 붙여넣으면 모델·약정·케어·선납·카드까지 가져옵니다">구독센터에서 가져오기</button>
@@ -305,7 +312,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <div class="tot s"><div class="k">월 구독료 혜택가 <small>(구독 · 통장에서 나가는 금액)</small></div><div class="v num" id="t_sub_m">—</div><div class="d" id="t_sub_d"></div></div>
     <div class="tot l"><div class="k">최종체감가 <small>(일시불 · 캐시백 반영)</small></div><div class="v num" id="t_lump">—</div><div class="d" id="t_lump_d"></div></div>
     <div class="card cond">
-      <h2>결제 조건 <small>전체 품목에 같이 적용</small></h2>
+      <h2><span class="stepn">3</span>결제 조건 <small>전체 품목에 같이 적용</small></h2>
       <div class="row"><span class="lbl">구독 자동결제 카드</span>
         <select id="subCard"></select>
         <select id="subTier"></select></div>
@@ -682,6 +689,7 @@ function bindTable(){ const ib=$('items'); if(ib.dataset.tb) return; ib.dataset.
   const dl=document.createElement('datalist'); dl.id='mdl'; dl.innerHTML=Object.keys(IDX.m).map(m=>`<option value="${esc(m)}" label="${esc(nameOf(m))}"></option>`).join(''); document.body.appendChild(dl); }
 let UNDO=null, undoT;   // 방금 뺀 품목 — 15초 동안 되돌릴 수 있다
 function keepUndo(){ UNDO=Q.items.slice(); clearTimeout(undoT); undoT=setTimeout(()=>{ UNDO=null; const b=$('undoBtn'); if(b) b.remove(); },15000); }
+function setLx(k,v){ (Q.cond.lx=Q.cond.lx||{})[k]=+String(v).replace(/[^0-9]/g,'')||0; render(); }
 function delItem(i){ keepUndo(); Q.items.splice(i,1); render(); toast('뺐습니다 — [뺀 품목 되돌리기]로 되살릴 수 있습니다'); }
 function clearItems(){ keepUndo(); Q.items=[]; render(); toast('모두 뺐습니다 — [뺀 품목 되돌리기]로 되살릴 수 있습니다'); }
 function undoDel(){ if(!UNDO) return; Q.items=UNDO; UNDO=null; clearTimeout(undoT); render(); toast('되돌렸습니다'); }
@@ -737,14 +745,19 @@ function pkgIdx(bp,model){ const m=norm(model); if(bp.models[m]!==undefined) ret
 /* 일시불 — sub.policy lump (엑셀 '6-12 할부_조건부' 시트). 구간표 [하한, 값] 내림차순 · 값 "2%" 는 비율 */
 function tier(tbl, a){ for(const [k,v] of (tbl||[])) if(a>=k) return typeof v==='string'&&/%$/.test(v)? Math.round(a*parseFloat(v)/100) : +v||0; return 0; }
 function calcLump(amount){
-  const o={amount, fee:0, bill:0, sp:0, tp:0, cb:0, mem:0, ben:0, net:amount, per:0, kind:Q.cond.lumpKind, months:Q.cond.lumpMonths};
+  const o={amount, fee:0, bill:0, sp:0, jp:0, tp:0, cb:0, mem:0, cash:0, card:amount, ext:0, opt:0, ben:0, net:amount, netOpt:amount, per:0, kind:Q.cond.lumpKind, months:Q.cond.lumpMonths};
   if(!amount) return o;
+  /* 엑셀 '견적서-일반+구독' 의 수기 줄: ④ J.POINT(제품별 S포인트) · 로열등급 · 삼성카드몰 쇼핑몰 쿠폰 · 신세계 상품권 = 최종체감가에서 빼고, IPTV · 구독 30만원 적용시 = "선택 포함" 에서만 뺀다 */
+  const X=Q.cond.lx||{}; o.jp=+X.jp||0; o.ext=(+X.royal||0)+(+X.coupon||0)+(+X.gift||0); o.opt=(+X.iptv||0)+(+X.sub30||0);
   if(LUMP){ const cd=LUMP.cards[o.kind]||{}, m=String(o.months);
     if(cd.plus){ o.fee=Math.round(amount*(+(LUMP.fee||{})[m]||0)); o.bill=tier((LUMP.billDisc||{})[m],amount); o.sp=tier(LUMP.sPoint,amount); }
     o.tp=tier((LUMP.typePoint||{})[Q.cust.type],amount);
     if(cd.cashback&&Q.cond.cb) o.cb=tier((LUMP.cashback||{})[m],amount);
     o.mem=Math.floor(amount*(+LUMP.member||0)); }
-  o.ben=o.bill+o.sp+o.tp+o.cb+o.mem; o.net=amount+o.fee-o.ben; o.per=Math.floor((amount-o.bill)/o.months/10)*10;
+  o.cash=o.sp+o.jp+o.tp+o.mem;                 // 캐시백(송금) = A 금액별 S포인트 + B 제품별 S포인트 + C 혼수·입주·이사 포인트 + D 기본멤버십P  ('6-12 할부_조건부'!N20)
+  o.card=amount-o.bill+o.fee-o.cash;           // 삼성카드 6/12월 혜택가 = 결제가 − 청구할인 + 이용료 − 캐시백(송금)  ('6-12 할부_조건부'!K23)
+  o.ben=o.bill+o.cash+o.cb+o.ext; o.net=amount+o.fee-o.ben; o.netOpt=o.net-o.opt;   // 최종체감가 = 혜택가 − 조건부 캐시백 − 로열등급 − 쿠폰 − 상품권 ('견적서-일반+구독'!I31) · 선택 포함 = − IPTV − 구독 30만원 (I34)
+  o.per=Math.floor((amount-o.bill)/o.months/10)*10;
   return o;
 }
 
@@ -825,14 +838,17 @@ function renderEdit({S,L}){
     +'<span class="sp"></span>'+(UNDO?'<button class="chip on" id="undoBtn" onclick="undoDel()">↩ 뺀 품목 되돌리기</button>':'')+(nI>=2?'<button class="chip" onclick="clearItems()">모두 빼기</button>':'');
   const cm=[]; if(Q.cond.reward&&Q.cond.reward!=='0'&&Q.cond.reward!=='off') cm.push('이벤트 리워드'); if(+Q.cond.pointCommon) cm.push('포인트 공통 '+won(+Q.cond.pointCommon)); const ex=(Q.extra||[]).filter(e=>+e.amount>0).length; if(ex) cm.push('기타 혜택 '+ex+'건'); if(Q.cond.namecardId) cm.push('네임카드');
   $('condMoreLbl').textContent=cm.length? cm.join(' · ')+' 적용 중' : '필요할 때만 펼치기'; if(cm.length&&!$('condMore').dataset.t){ $('condMore').open=true; $('condMore').dataset.t='1'; }
-  let d='';
-  if(S.n){ d+=`<div class="lbl" style="margin-bottom:4px">구독 혜택</div>
-    <div class="kv"><span>총 구독료</span><b class="num">${won(S.total)}</b></div>
+  const why=t=>`<small class="why">${t}</small>`;
+  let d='<h2 style="margin-bottom:6px">금액 확인 · 계산 풀이 <small>엑셀 견적서와 같은 순서 · 회색 글씨 = 어떻게 나온 값인지 · 노란 칸 = 직접 입력</small></h2>';
+  if(S.n){ d+=`<div class="lbl" style="margin-bottom:4px">구독 <span class="hint">(${S.n}품목 · ${S.maxM}개월)</span></div>
+    <div class="kv"><span>월 구독료 합계${why('품목별 월 구독료(요금표)를 더한 값')}</span><b class="num">${won(S.monthly)}</b></div>
+    <div class="kv total2"><span>월 구독료 혜택가 합계${why('월 구독료 합계 − 자동결제·선납·다품목 할인 − 카드 청구할인(월) · 통장에서 나가는 금액')}</span><b class="num">${won(S.pay)}</b></div>
+    <div class="kv"><span>총 구독료${why('월 구독료 × 계약 개월수, 품목별 합계 (엑셀의 구독료합계)')}</span><b class="num">${won(S.total)}</b></div>
     <div class="kv minus"><span>자동결제 ${Math.round((POL.autopay&&POL.autopay.rate||0)*100)}%</span><span class="num">−${won(S.auto)}</span></div>
     ${S.pre?`<div class="kv minus"><span>선납 할인</span><span class="num">−${won(S.pre)}</span></div>`:''}
-    ${S.multi?`<div class="kv minus"><span>다품목 할인 (${S.multiN}대)</span><span class="num">−${won(S.multi)}</span></div>`:''}
-    ${S.card?`<div class="kv minus"><span>카드 청구할인 (${esc(Q.cond.card)} ${esc(Q.cond.tier)})</span><span class="num">−${won(S.card)}</span></div>`:''}
-    ${S.points?`<div class="kv minus"><span>멤버십 포인트</span><span class="num">−${won(S.points)}</span></div>`:''}
+    ${S.multi?`<div class="kv minus"><span>다품목 할인 (${S.multiN}대)${why('구독 2품목 이상일 때 계약 기간별 할인율')}</span><span class="num">−${won(S.multi)}</span></div>`:''}
+    ${S.card?`<div class="kv minus"><span>카드 청구할인 (${esc(Q.cond.card)} ${esc(Q.cond.tier)})${why('전월 실적을 채우면 매달 할인 × 계약 개월수 (엑셀의 30만원 이용시 AI구독카드)')}</span><span class="num">−${won(S.card)}</span></div>`:''}
+    ${S.points?`<div class="kv minus"><span>멤버십 포인트${why('행사모델 N개월 구독료 상당 포인트 + 멤버십 적립 (엑셀의 3% P · 6개월 P)')}</span><span class="num">−${won(S.points)}</span></div>`:''}
     ${S.pkg?`<div class="kv minus"><span>스마트 패키지 ${S.pkgN}품목</span><span class="num">−${won(S.pkg)}</span></div>`:''}
     ${S.cons?`<div class="kv minus"><span>소모품</span><span class="num">−${won(S.cons)}</span></div>`:''}
     ${S.gift?`<div class="kv minus"><span>상품권</span><span class="num">−${won(S.gift)}</span></div>`:''}
@@ -840,17 +856,30 @@ function renderEdit({S,L}){
     ${S.reward?`<div class="kv minus"><span>💵 이벤트 리워드 (1%)</span><span class="num">−${won(S.reward)}</span></div>`:''}
     ${S.pointCommon?`<div class="kv minus"><span>⭐ 멤버십 포인트 공통</span><span class="num">−${won(S.pointCommon)}</span></div>`:''}
     <div class="kv total"><span>총 혜택 합계</span><span class="num">${won(S.ben)}</span></div>
-    <div class="kv total"><span>최종 혜택가 (총 지불액)</span><span class="num">${won(S.net)}</span></div>`; }
-  if(L.items.length){ d+=`<div class="lbl" style="margin:10px 0 4px">일시불 혜택 (${esc((LUMP&&LUMP.cards[L.kind]||{}).label||L.kind)} · ${L.months}개월)</div>
-    <div class="kv"><span>① 결제가</span><b class="num">${won(L.amount)}</b></div>
-    ${L.fee?`<div class="kv plus"><span>플러스페이 이용료</span><span class="num">+${won(L.fee)}</span></div>`:''}
-    ${L.bill?`<div class="kv minus"><span>카드 청구할인</span><span class="num">−${won(L.bill)}</span></div>`:''}
-    ${L.sp?`<div class="kv minus"><span>금액별 S포인트</span><span class="num">−${won(L.sp)}</span></div>`:''}
-    ${L.tp?`<div class="kv minus"><span>${esc(Q.cust.type)} 포인트</span><span class="num">−${won(L.tp)}</span></div>`:''}
-    ${L.cb?`<div class="kv minus"><span>조건부 캐시백</span><span class="num">−${won(L.cb)}</span></div>`:''}
-    ${L.mem?`<div class="kv minus"><span>멤버십 ${(LUMP.member*100)}%</span><span class="num">−${won(L.mem)}</span></div>`:''}
-    <div class="kv total"><span>최종체감가</span><span class="num">${won(L.net)}</span></div>`; }
-  $('t_detail').innerHTML = d || '<span class="hint">품목을 담으면 혜택이 여기 나옵니다.</span>';
+    <div class="kv total"><span>최종 혜택가 (총 지불액)${why('총 구독료 − 총 혜택 합계 (엑셀의 구독 혜택가 합계)')}</span><span class="num">${won(S.net)}</span></div>
+    <div class="kv"><span>월 체감 구독료${why('최종 혜택가 ÷ '+S.maxM+'개월 — 포인트·상품권까지 뺀 한 달 부담 (엑셀의 월 체감 구독료)')}</span><b class="num">${won(S.feel)}</b></div>`; }
+  if(L.items.length){ const X=Q.cond.lx||{}, cdL=(LUMP&&LUMP.cards[L.kind])||{}, rate=+(((LUMP||{}).fee||{})[String(L.months)]||0);
+    const inp=(k,label,w)=>`<div class="kv in"><span>${label}${why(w)}</span><input class="lx" data-k="lx:${k}" type="text" inputmode="numeric" placeholder="0" aria-label="${label.replace(/<[^>]+>/g,'')}" value="${+X[k]?fmt(+X[k]):''}" onchange="setLx('${k}',this.value)"></div>`;
+    d+=`<div class="lbl" style="margin:12px 0 4px">일시불 <span class="hint">(${esc(cdL.label||L.kind)} · ${L.months}개월 · ${esc(Q.cust.type)})</span></div>
+    <div class="kv"><span>① 결제가${why('일시불 품목 '+L.items.length+'개의 결제가 합계'+(missL?' · 결제가를 안 넣은 품목 '+missL+'개 제외':''))}</span><b class="num">${won(L.amount)}</b></div>
+    <div class="kv minus"><span>청구할인${why(!cdL.plus?'삼성카드 6/12 할부가 아니면 없음':(L.amount>=5000000?'결제가 × 2% (500만 원 이상)':'결제가 구간별 정액 — 300만↑ 10만 · 200만↑ 6만 · 100만↑ 4만'))}</span><span class="num">−${won(L.bill)}</span></div>
+    <div class="kv plus"><span>이용료${why(!cdL.plus?'삼성카드 6/12 할부가 아니면 없음':'결제가 × '+(Math.round(rate*1000)/10)+'% — '+(L.months>=12?'1·2회차에 나눠 청구':'1회차에 청구'))}</span><span class="num">+${won(L.fee)}</span></div>
+    ${inp('jp','④ J.POINT <span class="hint">(제품별 S포인트)</span>','DPS 모델별 포인트 합계를 넣습니다 — 아래 캐시백(송금)에 더해집니다')}
+    <div class="kv minus"><span>캐시백(송금) 차차월 5~6일${why('A 금액별 S포인트 '+fmt(L.sp)+' + B 제품별 S포인트 '+fmt(L.jp)+' + C '+esc(Q.cust.type)+' 포인트 '+fmt(L.tp)+' + D 기본멤버십P 0.1% '+fmt(L.mem))}</span><span class="num">−${won(L.cash)}</span></div>
+    <div class="kv total2"><span>삼성카드 ${L.months}월 혜택가${why('① 결제가 − 청구할인 + 이용료 − 캐시백(송금)')}</span><b class="num">${won(L.card)}</b></div>
+    ${inp('royal','로열등급','설치 후 차차월 이후 현금 계좌 입금')}
+    ${inp('coupon','삼성카드몰 쇼핑몰 쿠폰','(제휴카드) 차차월 15일')}
+    <div class="kv minus"><span>조건부 캐시백${why(cdL.cashback?(Q.cond.cb?'차월 50만 원 이상 1회 이용 시 (제휴카드) — 결제 조건에서 사용/미사용':'결제 조건에서 [미사용] 으로 둠'):'제휴(베네핏) 카드만 해당')}</span><span class="num">−${won(L.cb)}</span></div>
+    ${inp('gift','신세계 상품권','차차월 이후 택배 발송')}
+    <div class="kv total"><span>최종체감가${why('혜택가 − 로열등급 − 쿠폰 − 조건부 캐시백 − 신세계 상품권')}</span><span class="num">${won(L.net)}</span></div>
+    ${inp('iptv','IPTV <span class="hint">(선택)</span>','SKB 500M↑ + IPTV 가입 조건')}
+    ${inp('sub30','구독 30만원 적용시 <span class="hint">(선택)</span>','AI구독카드 72개월 지원')}
+    ${L.opt?`<div class="kv total"><span>최종체감가 (선택 포함)${why('최종체감가 − IPTV − 구독 30만원 적용시')}</span><span class="num">${won(L.netOpt)}</span></div>`:''}
+    <div class="kv"><span>삼성카드 6/12 할부 개월수별 납부금액${why('(① 결제가 − 청구할인) ÷ '+L.months+'개월, 10원 미만 버림 · 1회차에 이용료가 더해지고 2회차에서 캐시백(송금)이 빠집니다')}</span><b class="num">${won(L.per)} × ${L.months}</b></div>`; }
+  else if(S.n){ d+=`<p class="hint" style="margin-top:10px">일시불 품목이 없습니다 — 표의 [구분] 을 일시불로 바꾸면 ① 결제가부터 최종체감가까지 엑셀 견적서 순서대로 나옵니다.</p>`; }
+  const _dk=document.activeElement&&$('t_detail').contains(document.activeElement)?document.activeElement.dataset.k:'';
+  $('t_detail').innerHTML = (S.n||L.items.length)? d : '<span class="hint">품목을 담으면 혜택이 여기 나옵니다.</span>';
+  if(_dk){ const e=$('t_detail').querySelector('[data-k="'+_dk+'"]'); if(e){ e.focus(); e.select(); } }
   const sc=scenarios(); $('t_scn').innerHTML = sc.length>=2 ? `<div class="k" style="margin:10px 0 4px">여러 상황 비교 <small>총 지불액 합계 · 자세한 표는 고객과 보기</small></div>`+sc.map((r,i)=>`<div class="kv ${r.cur?'cur':''}"><span>${esc(r.label)}${r.cur?' <small>(지금)</small>':''}</span><span class="num">${won(r.total)}${r.noPrice?' <small style="color:#b45309">+α</small>':''}${r.cur?'':` <button class="chip" onclick="applyScenario(${i})">선택</button>`}</span></div>`).join('') : '';
 }
 function renderShow(){ if(!LAST) return; const {S,L}=LAST, name=Q.cust.name||'고객';
@@ -910,7 +939,7 @@ function renderSheet(){ if(!LAST) return; const {S,L}=LAST, T=(id,t)=>$(id).text
       +`<tr class="tot"><td></td><td class="l">합계${S.preAmt?' · 선납 '+won(S.preAmt)+' 별도':''}</td><td colspan="2"></td><td>${fmt(S.monthly)}</td><td>${fmt(S.total)}</td><td>${fmt(S.auto)}</td><td>${fmt(S.pre)}</td><td>${fmt(S.multi)}</td><td>${fmt(S.card)}</td><td>${fmt(S.points)}</td><td>${fmt(S.ben)}</td><td>${fmt(S.feel)}</td></tr>` : `<tr><td colspan="13" class="l hint">구독 품목 없음</td></tr>`);
   const tb2=$('x_lump').querySelector('tbody');
   tb2.innerHTML = L.items.map((it,i)=>`<tr><td>${i+1}</td><td class="l">${esc(nameOf(it.m))}<br><span class="hint">${esc(it.free?'':it.m)}${it.note?' · '+esc(it.note):''}</span></td><td>${fmt(it.lump)}</td><td colspan="6" class="hint">묶음 합계 기준</td></tr>`).join('')
-    + (L.items.length?`<tr class="tot"><td></td><td class="l">합계 (${esc((LUMP&&LUMP.cards[L.kind]||{}).label||L.kind)} ${L.months}개월)</td><td>${fmt(L.amount)}</td><td>${fmt(L.bill)}</td><td>${fmt(L.sp)}</td><td>${fmt(L.tp)}</td><td>${fmt(L.cb)}</td><td>${fmt(L.fee)}</td><td>${fmt(L.net)}</td></tr>`:`<tr><td colspan="9" class="l hint">일시불 품목 없음</td></tr>`);
+    + (L.items.length?`<tr class="tot"><td></td><td class="l">합계 (${esc((LUMP&&LUMP.cards[L.kind]||{}).label||L.kind)} ${L.months}개월)</td><td>${fmt(L.amount)}</td><td>${fmt(L.bill)}</td><td>${fmt(L.sp+L.jp)}</td><td>${fmt(L.tp)}</td><td>${fmt(L.cb)}</td><td>${fmt(L.fee)}</td><td>${fmt(L.net)}</td></tr>`+(L.ext||L.mem?`<tr><td></td><td class="l" colspan="7">${[L.jp?'④ J.POINT '+fmt(L.jp)+' 포함':'',L.mem?'기본멤버십P 0.1% '+fmt(L.mem):'',+(Q.cond.lx||{}).royal?'로열등급 '+fmt(+Q.cond.lx.royal):'',+(Q.cond.lx||{}).coupon?'삼성카드몰 쇼핑몰 쿠폰 '+fmt(+Q.cond.lx.coupon):'',+(Q.cond.lx||{}).gift?'신세계 상품권 '+fmt(+Q.cond.lx.gift):''].filter(Boolean).join(' · ')}</td><td></td></tr>`:''):`<tr><td colspan="9" class="l hint">일시불 품목 없음</td></tr>`);
   const notes=[].concat((LUMP&&LUMP.notes)||[]); if(POL.texts&&POL.texts.notice) notes.push(POL.texts.notice.replace(/^\*\s*/,''));
   $('x_foot').innerHTML = notes.map((t,i)=>(i+1)+'. '+esc(t)).join(' ')+`<br>${esc(STORE.name)} · ${esc(STORE.addr)} · T ${esc(STORE.tel)} · 요금표 ${esc(IDX.ver||'')}`;
 }
@@ -924,7 +953,7 @@ function toQuoteJson(){
     auto:{total:!r.manual,card:true}, disc:{ sub:r.autoDisc, multi:r.multiOff, prepay:r.prepayDisc, point:r.pointsAll||0, card:r.cardTotal } }); });
   Q.items.filter(it=>it.hidden).forEach(it=>items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:(it.years||6)*12, monthly:0, care:it.care||'', note:it.note||'', hidden:true, auto:{total:true,card:true}, disc:{} }));
   const proof={recv:false,supp:false,appr:false}; if(Q.cust.proof) proof[Q.cust.proof]=true;
-  const lump = L.items.length? { items:L.items.map(it=>({model:it.free?'':it.m, name:nameOf(it.m), amount:+it.lump||0, note:it.note||''})), kind:L.kind, kindLabel:(LUMP&&LUMP.cards[L.kind]||{}).label||L.kind, months:L.months, amount:L.amount, fee:L.fee, bill:L.bill, sPoint:L.sp, typePoint:L.tp, typeLabel:Q.cust.type+' 포인트', cashback:L.cb, member:L.mem, benefit:L.ben, net:L.net, per:L.per } : null;
+  const lump = L.items.length? { items:L.items.map(it=>({model:it.free?'':it.m, name:nameOf(it.m), amount:+it.lump||0, note:it.note||''})), kind:L.kind, kindLabel:(LUMP&&LUMP.cards[L.kind]||{}).label||L.kind, months:L.months, amount:L.amount, fee:L.fee, bill:L.bill, sPoint:L.sp, jPoint:L.jp, extras:[['로열등급','royal'],['삼성카드몰 쇼핑몰 쿠폰','coupon'],['신세계 상품권','gift']].map(x=>({label:x[0],amount:+(Q.cond.lx||{})[x[1]]||0})).filter(x=>x.amount>0), options:[['IPTV','iptv'],['구독 30만원 적용시','sub30']].map(x=>({label:x[0],amount:+(Q.cond.lx||{})[x[1]]||0})).filter(x=>x.amount>0), cardBenefit:L.card, netOpt:L.netOpt, typePoint:L.tp, typeLabel:Q.cust.type+' 포인트', cashback:L.cb, member:L.mem, benefit:L.ben, net:L.net, per:L.per } : null;
   const quote={ cust:{ name:Q.cust.name, phone:Q.cust.phone, addr:Q.cust.addr, type:Q.cust.type, proof, memo:Q.cust.memo, until:Q.cust.until, untilMode:Q.cust.until?'date':'none', date:Q.issuedAt||todayStr(),
       birth:Q.cust.birth||'', carrier:Q.cust.carrier||'', wedding:Q.cust.wedding||'', movein:Q.cust.movein||'', revisit:Q.cust.revisit||'' },
     items, extra:(Q.extra||[]).filter(e=>+e.amount>0||e.label).map(e=>({label:e.label||'기타 혜택', amount:+e.amount||0})), lump,
