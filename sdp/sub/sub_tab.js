@@ -175,11 +175,11 @@ function main() {
     });
     return best;
   }
-  /* 적립 예정 멤버십 포인트 (mvp_258) — 삼성닷컴 구독 상품의 정률(rate %) + 기본(base %) 을 제품분 금액에 곱하고 상품별 추가 포인트(add)를 더한다.
+  /* 적립 예정 멤버십 포인트 (mvp_258) — 삼성닷컴 구독 상품의 정률(rate %) + 기본(base %) 을 총구독료에 곱하고 상품별 추가 포인트(add)를 더한다.
      원본은 sub.model_point (수집기 tools/subpoint/collect.mjs 가 매일 삼성닷컴에서 받아 온다 · 관리자·매장에서 손 입력 가능) → sub_policy.js points[모델]
      행사 포인트(pointsOf · N개월 구독료 상당)와는 중복 지급이라 둘 다 보여 주고 둘 다 뺀다.
-     기준금액(base)은 요금제 행의 제품분 금액(plan[4] · 총 구독금액에서 무상수리료를 뺀 DPS product_fee) — 삼성닷컴 계산기와 같이 선납·카드를 바꿔도 변하지 않는다 (mvp_264 · 2026-11-03 AI 콤보 6년 6,066,720 × 6.1% = 370,069P 로 확인).
-     제품분이 없는 행(요금 직접 관리로 넣은 요금제)은 총 구독금액으로 */
+     기준금액(base)은 요금제 행의 총구독료(plan[2] · DPS 올인원구독모델조회 '총구독료' total_fee) — 선납·카드를 바꿔도 변하지 않는다.
+     2026-11-06 매장 결정: 제품구독료(product_fee · plan[4]) 가 아니라 총구독료 기준으로 안내한다 */
   function modelPointOf(model) { var pts = POL.points || {}; return pts[norm(model)] || null; }
   function memberPoints(model, base) {
     var mp = modelPointOf(model); if (!mp) return null;
@@ -213,8 +213,8 @@ function main() {
     // N개월 구독료 상당 포인트 지원 (mvp_257) — 결제 총액에서 빼서 "실제 구독료" 로 보여준다 (포인트는 결제 뒤 지급되므로 월 납부액은 그대로)
     var pt = pointsOf(info, plan);
     r.points = pt ? pt.amt : 0; r.pointsInfo = pt;
-    // 적립 예정 멤버십 포인트 (mvp_258) — 행사 포인트와 별도로 더 뺀다. 기준은 제품분 금액(plan[4] · 없으면 총 구독금액) — 삼성닷컴과 같이 선납·카드와 무관 (mvp_264)
-    r.pointBase = plan[4] > 0 ? plan[4] : total;
+    // 적립 예정 멤버십 포인트 (mvp_258) — 행사 포인트와 별도로 더 뺀다. 기준은 총구독료(plan[2]) — 선납·카드와 무관 (2026-11-06 제품구독료 → 총구독료)
+    r.pointBase = total;
     var mpt = memberPoints(info && info.model, r.pointBase);
     r.mpoints = mpt ? mpt.amt : 0; r.mpointsInfo = mpt;
     r.pointsAll = r.points + r.mpoints;

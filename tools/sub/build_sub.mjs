@@ -220,7 +220,9 @@ export function buildSubFiles(rel, policy, dps, ui) {
         rec.w = {}; for (const [k, v] of Object.entries(WATER[model])) rec.w[k] = [v.disc, v.prepay];
       }
       plans[m] = rec;
-      index[m] = [key, Math.min(...p.map(x => x[3])), Math.min(...p.map(x => netTotal(x, autopay)))];
+      // [품목키, 최저 월 구독료, 최저 자동납부 반영 총액, 월 구독료가 가장 낮은 요금제의 총구독료(멤버십 포인트 기준 · 2026-11-06)]
+      const cheap = p.reduce((a, x) => (x[3] < a[3] || (x[3] === a[3] && x[2] < a[2])) ? x : a, p[0]);
+      index[m] = [key, Math.min(...p.map(x => x[3])), Math.min(...p.map(x => netTotal(x, autopay))), cheap[2]];
     }
     out[`sub_plans_${key}.js`] = head + `(window.SUB_PLANS=window.SUB_PLANS||{})[${JSON.stringify(key)}]=${JSON.stringify(plans)};\n`;
   }

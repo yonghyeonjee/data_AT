@@ -261,12 +261,12 @@ window.SUB_SHOP_READY = true;
 
   /* ---------- 카드 혜택 배지 (2026-11-04 · 경쟁사처럼 최대혜택가·포인트·구독료 지원을 카드에서 바로) ----------
      포인트 = 데이터센터 정책 SUB_POLICY.points[모델] (삼성닷컴 적립 예정 멤버십 포인트 · 구독탭과 같은 원본)
-       total 이 있으면 그 값, 없으면 요금 색인의 제품분 금액(SUB_INDEX.m[모델][2]) × (정률+기본)% + 추가
+       요금 색인의 총구독료(SUB_INDEX.m[모델][3] · 월 구독료가 가장 낮은 요금제의 DPS 총구독료) × (정률+기본)% + 추가
+       (2026-11-06: 제품구독료 기준인 삼성닷컴 totalPoint(pt.total) 는 쓰지 않는다 · 색인에 총구독료가 없으면 배지 안 붙임)
      구독료 지원 = SUB_POLICY.promos 중 기간 안 · 이 모델이 대상인 "N개월 구독료 상당" 행사 */
   function pointOf(m) {
     var pt = POL && POL.points && POL.points[m]; if (!pt) return 0;
-    if (pt.total > 0) return +pt.total;
-    var e = IDX.m[m], base = e && e[2] > 0 ? e[2] : 0;
+    var e = IDX.m[m], base = e && e[3] > 0 ? e[3] : 0;
     var v = Math.floor(base * ((+pt.rate || 0) + (+pt.base || 0)) / 100) + (+pt.add || 0);
     return v > 0 ? v : 0;
   }
