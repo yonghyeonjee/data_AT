@@ -510,8 +510,8 @@ body{background:
       <button id="s-gas" aria-pressed="false">대시보드 v4 (기존 app)</button>
     </div>
     <div class="seg" role="group" aria-label="집계 기준" id="basisseg" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커 등)에서 집계한 값">
-      <button id="m-ledger" aria-pressed="true">원장</button>
-      <button id="m-dps" aria-pressed="false" title="DPS 사원별목표/실적 기준 (실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계)">DPS</button>
+      <button id="m-ledger" aria-pressed="false">원장</button>
+      <button id="m-dps" aria-pressed="true" title="DPS 사원별목표/실적 기준 (실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계)">DPS</button>
       <button id="m-manual" aria-pressed="false">수기입력</button>
     </div>
     <button class="ghost" id="b-refresh" title="원본을 다시 읽어 대시보드를 새로 만듭니다">데이터 갱신</button>
@@ -734,7 +734,7 @@ const SHARE_URL = '__PASTE_ANYONE_DEPLOY_EXEC_URL__';
 const DC_URL = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_dash_payload_pub';
 const DC_ANON = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 const DC_MONTHS = 24;   // 자체 모드로 불러올 기간(개월) — 전년 동기 비교를 위해 24 (2026-09-19)
-function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='manual'?'manual':v==='dps'?'dps':'ledger'; }   /* 기본 = 원장(주문 원천, 자동 수집). 수기입력은 대사표를 올렸을 때만 (2026-09-17) */
+function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='manual'?'manual':v==='ledger'?'ledger':'dps'; }   /* 기본 = DPS 사원별 실적 (2026-11-06 · 전엔 원장). 원장은 ?mode=ledger · 수기입력은 대사표를 올렸을 때만 (2026-09-17) */
 const GAS_READY = SHARE_URL.indexOf('http')===0;   // 기존 app(GAS) 공유 주소가 실제로 설정돼 있는가
 function dashSrc(){ if(!GAS_READY){ try{ if(sessionStorage.getItem('dash_src')==='gas') sessionStorage.removeItem('dash_src'); }catch(e){} return 'dc'; }
   let v=''; try{ v=new URLSearchParams(location.search).get('src')||sessionStorage.getItem('dash_src')||''; }catch(e){} return v==='gas'?'gas':'dc'; }
