@@ -185,7 +185,7 @@ class Guides:
             e(links['homeUrl']), e(links['guideUrl']), e(a['title']), e(a['answer']), a['body'],
             ''.join('<dt>%s</dt><dd>%s</dd>' % (e(q), e(ans)) for q, ans in a['faq']), ' · '.join(a['links']),
             e(links['consultUrl'] + '&from=guide&purpose=' + '%EC%8B%A0%EA%B7%9C%EA%B5%AC%EB%8F%85' + '&memo=' + '%5B%EA%B5%AC%EB%8F%85%EA%B0%80%EC%9D%B4%EB%93%9C%5D%20' + a['slug']))
-        return head(a['title'] + ' | 삼성스토어 시흥 구독센터', a['desc'], a['kw'], url, og_image=MP.OG_IMG, extra_head=ld) + \
+        return head(a['title'] + ' | 삼성스토어 구독센터', a['desc'], a['kw'], url, og_image=MP.OG_IMG, extra_head=ld) + \
             '<div id="subShopRoot">\n    <div data-ss="nav"></div>\n' + body + '    <section class="ss-sec"><div data-ss="cta"></div></section>\n</div>\n' + foot() + loader() + '</body>\n</html>\n'
 
     @staticmethod

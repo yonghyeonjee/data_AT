@@ -562,14 +562,19 @@ window.SUB_SHOP_READY = true;
   }
   // 인증점 띠 (2026-11-04) — 모든 구독센터 화면 맨 위(상단 바 아래)에 얇게 한 줄 · 누르면 위촉장 · CFG.trustBar === false 면 안 띄움
   function drawTrustBar() {
-    if (CFG.trustBar === false || document.getElementById('ssTrustBar')) return;
-    var bar = document.createElement('div'); bar.id = 'ssTrustBar'; bar.className = 'ss-trustbar';
+    // 원본 HTML 에 빈 띠 자리가 있으면 그걸 채운다 (2026-11-07 · 나중에 끼우면 화면이 한 칸 밀려 깜빡인다)
+    var bar = document.getElementById('ssTrustBar');
+    if (CFG.trustBar === false) { if (bar && bar.parentNode) bar.parentNode.removeChild(bar); return; }
+    if (bar && bar.firstChild) return;
+    var fresh = !bar;
+    if (fresh) { bar = document.createElement('div'); bar.id = 'ssTrustBar'; bar.className = 'ss-trustbar'; }
     bar.innerHTML = '<button type="button" data-cert aria-label="삼성 AI 구독 파트너 인증점 위촉장 보기">' +
       '<img src="' + esc(CERT_IMG) + '" alt="" aria-hidden="true">' +
       '<span class="ss-trustbar-badge">✔ 삼성전자 공식 위촉</span>' +
       '<span class="ss-trustbar-txt"><b>삼성 AI 구독 파트너 인증점</b><em> · 삼성스토어 시흥</em></span>' +
       '<span class="ss-trustbar-more">위촉장 보기 ›</span></button>';
     bar.addEventListener('click', function () { openCert(); });
+    if (!fresh) return;
     var top = document.querySelector('.gd-top');
     if (top && top.parentNode) top.parentNode.insertBefore(bar, top.nextSibling);
     else if (root && root.parentNode) root.parentNode.insertBefore(bar, root);
@@ -716,7 +721,7 @@ window.SUB_SHOP_READY = true;
     var p = PAGE_BY[CFG.key];
     if (CFG.page !== 'cat' || !p || CFG.keepTitle) return;
     var all = rowsOf(p); if (!all.length) return;
-    document.title = '삼성 ' + p.name + ' 구독 가격 월 ' + fmt(minOf(all)) + '원~ | ' + fmt(all.length) + '개 모델 비교 · 삼성스토어 시흥 구독센터';
+    document.title = '삼성 ' + p.name + ' 구독 가격 월 ' + fmt(minOf(all)) + '원~ | ' + fmt(all.length) + '개 모델 비교 · 삼성스토어 구독센터';
     var d = document.querySelector('meta[name="description"]');
     if (d) d.setAttribute('content', '삼성 ' + p.name + ' 구독 ' + fmt(all.length) + '개 모델의 월 구독료를 한 번에 비교하세요. 월 ' + fmt(minOf(all)) + '원부터, 제휴카드 할인·선납 할인·방문케어 주기별 요금까지. 삼성스토어 시흥 구독 상담.');
   }
