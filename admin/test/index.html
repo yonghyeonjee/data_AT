@@ -134,7 +134,7 @@ nav::-webkit-scrollbar{width:6px} nav::-webkit-scrollbar-thumb{background:rgba(2
 .nsg>.nav .chev{margin-left:auto;display:inline-flex;transition:transform .15s;opacity:.7}
 .nsg>.nav .chev svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .nsg:not(.open)>.nav .chev{transform:rotate(180deg)}
-.nsg:not(.open)>.nsb{display:none}
+.nsg>.nsb{display:none}   /* v285 — 사이드바의 하위 메뉴 줄은 메뉴 찾기 결과로만 보인다 */
 .nsb{margin:0 0 4px}
 .nsb>.nav.nsub{padding:6px 12px 6px 56px;font-size:calc(12.8px * var(--font-scale));font-weight:400;color:#97A0B8}
 .nav.nsub::before{content:'';position:absolute;left:44px;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:currentColor;opacity:.55}
@@ -1267,6 +1267,13 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
 .cbar .lb,.card .filters .lb{display:inline-flex;align-items:center;min-height:34px}
 @media(max-width:640px){ .fld{width:100%} .fld>select.in,.fld>.segsel,.fld>.fk-radio{flex:1 1 auto;min-width:0} .fld>.lb{min-width:52px} .fk-radio button,.segsel button,.chk{min-height:40px}
   .cbar .grp{flex-wrap:wrap} .cbar .grp>.fk-radio{flex:1 1 auto;min-width:0} .cbar .grp>input.in{flex:1 1 100%;width:100%} }   /* 폰: 검색 칸이 라디오 알약 옆에서 눌리지 않게 — 줄을 바꿔 한 줄 전부 */
+/* ── v285 — 하위 메뉴는 사이드바가 아니라 헤더 아래 떠 있는 탭 줄(#subTabs.sw) · 스크롤해도 그 자리 · 누르면 그 카드만 ── */
+.subtabs.sw{gap:0;padding:0 max(28px,calc((100% - var(--maxw))/2));background:var(--surface);border-bottom:1px solid var(--line)}
+.subtabs.sw button{appearance:none;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:10px 14px;min-height:42px;font:inherit;font-size:calc(13.5px * var(--font-scale));font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;line-height:1.2;border-radius:0}
+.subtabs.sw button:hover{color:var(--ink);background:var(--surface-2)}
+.subtabs.sw button.on{color:var(--navy);border-bottom-color:var(--navy);font-weight:700}
+.subtabs.sw button:focus-visible{outline:2px solid var(--navy);outline-offset:-2px}
+@media(max-width:999px){ .subtabs.sw{padding:0 6px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)} .subtabs.sw button{min-height:44px;padding:10px 12px} }   /* 폰: 오른쪽 끝을 흐려 '더 있다'는 걸 보인다(옆으로 넘김) */
 </style>
 </head>
 <body>
@@ -5586,9 +5593,7 @@ const NAV_SUB={sms:[
   notify:[{k:'chan',label:'보내는 곳',ids:['nsc-notify-0']},{k:'rule',label:'보낼 일',ids:['nsc-notify-1']},{k:'log',label:'최근 발송',ids:['nsc-notify-2']}]};
 let SUB_CUR={}; try{ SUB_CUR=JSON.parse(localStorage.getItem('dc_sub_cur')||'{}')||{}; }catch(e){ SUB_CUR={}; }
 function subCur(v){ const L=NAV_SUB[v]; if(!L) return null; return L.find(d=>d.k===SUB_CUR[v])||L[0]; }
-function navSubSet(v, open){ const g=document.querySelector(`#navBox .nsg[data-sv="${v}"]`); if(!g) return; g.classList.toggle('open', open);
-  const b=g.querySelector(':scope > .nav'); if(b) b.setAttribute('aria-expanded', String(open));
-  NAV_OPEN['sub:'+v]=open; try{ localStorage.setItem('dc_nav_open', JSON.stringify(NAV_OPEN)); }catch(e){} }
+function navSubSet(v, open){ /* v285 — 사이드바 하위 메뉴 접기/펼치기는 없어졌다(탭 줄로) · 부르는 곳이 남아 있어 빈 함수로 둔다 */ }
 /* 그 화면에서 고른 카드만 보이게 하고, 하위 메뉴 켜짐·제목을 맞춘다 */
 function subApply(v){ document.querySelectorAll('#navBox .nav.nsub.on').forEach(x=>{ if(x.dataset.sv!==VIEW){ x.classList.remove('on'); x.removeAttribute('aria-current'); } });
   const L=NAV_SUB[v]; if(!L) return; const cur=subCur(v); const idsOf=d=>d.ids||[d.id]; const on=new Set(idsOf(cur));
@@ -5612,12 +5617,13 @@ function goSec(v, elId, block){
 function renderNav(){
   const h=[];
   const item=i=>{ const dev=i.state==='dev', bid=NAV_BADGE[i.code], sub=!dev&&NAV_SUB[i.code];
-    const row=`<div class="nav${dev?' dev':''}" data-v="${i.code}"${dev?' title="개발 중입니다"':''}${sub?` aria-expanded="${NAV_OPEN['sub:'+i.code]===true}" aria-controls="nsb_${i.code}"`:''}>`
+    const row=`<div class="nav${dev?' dev':''}" data-v="${i.code}"${dev?' title="개발 중입니다"':''}>`
       +`<span class="ic">${NAV_ICON[i.code]||NAV_ICON.settings}</span>${esc(i.label||TITLES[i.code])}`
       +(dev?'<span class="devtag">개발중</span>':(bid?`<span class="badge hidden" id="${bid}"></span>`:''))
-      +(sub?'<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></span>':'')+`</div>`;
+      +`</div>`;
     if(!sub) return row;
-    return `<div class="nsg${NAV_OPEN['sub:'+i.code]===true?' open':''}" data-sv="${i.code}">${row}<div class="nsb" id="nsb_${i.code}">`
+    /* v285 — 하위 메뉴 줄은 사이드바에 안 보인다(헤더 아래 떠 있는 탭 줄 #subTabs.sw 로) · 메뉴 찾기 결과에서만 나타난다 */
+    return `<div class="nsg" data-sv="${i.code}">${row}<div class="nsb" id="nsb_${i.code}">`
       +sub.map(d=>`<div class="nav nsub" role="link" tabindex="0" data-sv="${i.code}" data-sub="${d.k}">${esc(d.label)}</div>`).join('')+`</div></div>`; };
   MENU.forEach(g=>{
     const items=(g.items||[]).filter(i=>i.state!=='off' && TITLES[i.code]);
@@ -5711,7 +5717,7 @@ function show(v, opt){ if(!TITLES[v]) v='home';
   $('title').textContent=TITLES[v]; renderTitleLink(v);
   if(!opt.fromHistory) pushView(v, !!opt.replace);
   if(dev){ $('periodBar').classList.add('hidden'); $('pageIntro').classList.add('hidden'); renderUnderConstruction(v); return; }
-  placePeriodBar(v); placeCbar(v); renderIntro(v); { const b=$('subTabs'); if(b){ b.classList.add('hidden'); b.innerHTML=''; } } subApply(v); refreshView(); }
+  placePeriodBar(v); placeCbar(v); renderIntro(v); { const b=$('subTabs'); if(b && !NAV_SUB[v]){ b.classList.add('hidden'); b.classList.remove('sw'); b.innerHTML=''; } } subApply(v); if(NAV_SUB[v]){ try{ buildSubTabs(v); }catch(e){} } refreshView(); }
 /* 기간 바는 그 페이지의 첫 카드 맨 위(필터 바로 위)로 옮겨 붙인다 */
 const PERIOD_VIEWS=['exec','orders','daily','consults','log','moves','inbox','flow','cdash'];
 
@@ -5911,7 +5917,6 @@ $('navBox').addEventListener('click',e=>{ const hd=e.target.closest('.ngh'); if(
   const sb=e.target.closest('.nav.nsub'); if(sb){ navSubGo(sb.dataset.sv, sb.dataset.sub); return; }
   const n=e.target.closest('.nav[data-v]'); if(!n) return; const v=n.dataset.v;
   /* 하위 메뉴가 있는 메뉴 : 이 화면에 있을 때 다시 누르면 하위 메뉴만 접고 편다 */
-  if(NAV_SUB[v] && VIEW===v && n.parentElement.classList.contains('nsg')){ const g=n.parentElement; navSubSet(v, !g.classList.contains('open')); return; }
   show(v); });
 $('navBox').addEventListener('keydown',e=>{ const sb=e.target.closest&&e.target.closest('.nav.nsub'); if(sb && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); navSubGo(sb.dataset.sv, sb.dataset.sub); } });
 
@@ -5953,6 +5958,13 @@ async function refreshView(){
 function subTabTitle(c){ const h=c.querySelector(':scope > h3'); if(!h) return ''; const t=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').replace(/\s+/g,' ').trim(); return (t||h.textContent.replace(/\s+/g,' ').trim()).slice(0,24); }
 function buildSubTabs(v){
   const bar=$('subTabs'); const view=$('v-'+v); if(!bar) return;
+  const L=NAV_SUB[v]; const isDev=(MENU_STATE[v]&&MENU_STATE[v].state==='dev')&&!(typeof ME!=='undefined'&&ME&&ME.is_dev);
+  if(L && L.length>1 && !isDev){   /* v285 — 하위 메뉴가 있는 화면: 헤더 아래 떠 있는 탭 줄(스크롤해도 그 자리) · 누르면 그 카드만 */
+    const cur=subCur(v); bar.className='subtabs sw'; bar.setAttribute('role','tablist'); bar.setAttribute('aria-label','하위 메뉴');
+    bar.innerHTML=L.map(d=>`<button type="button" role="tab" class="${d.k===cur.k?'on':''}" aria-selected="${d.k===cur.k}" data-sub="${esc(d.k)}" onclick="navSubGo('${v}','${d.k}')">${esc(d.label)}</button>`).join('');
+    const on=bar.querySelector('button.on'); if(on){ try{ on.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(e){} }
+    return; }
+  bar.className='subtabs hidden'; bar.setAttribute('role','navigation'); bar.setAttribute('aria-label','화면 안 이동');
   const cards=view?[...view.querySelectorAll('.card')].filter(c=>!c.closest('.card .card') && !c.classList.contains('hidden') && c.offsetParent!==null && subTabTitle(c)):[];
   if(cards.length<2){ bar.classList.add('hidden'); bar.innerHTML=''; return; }
   const cur=bar.querySelector('a.on')?.dataset.sec;
