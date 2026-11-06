@@ -5531,8 +5531,9 @@ async function fuCsv(k){ const S=FU[k]; if(!S.rows.length) return toast('복사�
 let MENU=[], MENU_STATE={};
 /* DB를 못 읽어도 화면은 떠야 하므로 기본 구성을 갖고 있는다 */
 const NAV_FALLBACK=[
-  {group:'_top',group_label:'',items:[{code:'home',label:'홈',state:'on'},{code:'exec',label:'경영 지표',state:'on'}]},
-  {group:'sales',group_label:'매출',items:[{code:'dash',label:'매출 대시보드',state:'on'},{code:'flow',label:'주문 · 판매 · 매출',state:'on'},{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'}]},
+  {group:'_top',group_label:'',items:[{code:'home',label:'홈',state:'on'}]},
+  {group:'dashboard',group_label:'대시보드',items:[{code:'exec',label:'경영 지표',state:'on'},{code:'dash',label:'매출 대시보드',state:'on'},{code:'cdash',label:'상담 대시보드',state:'on'}]},
+  {group:'sales',group_label:'매출',items:[{code:'flow',label:'주문 · 판매 · 매출',state:'on'},{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'}]},
   {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출 · 수동',state:'on'},{code:'followup',label:'자동 발송 대상',state:'on'},{code:'sms',label:'메시지 발송 관리',state:'on'}]},
   {group:'inv',group_label:'재고',items:[{code:'stock',label:'재고 현황',state:'on'},{code:'moves',label:'입출고',state:'on'},{code:'items',label:'품목',state:'on'},{code:'oq',label:'주문서 · 전송',state:'on'},{code:'wiz',label:'주문 변환',state:'on'}]},
   {group:'data',group_label:'데이터',items:[{code:'upload',label:'데이터 가져오기',state:'on'},{code:'log',label:'서비스 로그',state:'on'},{code:'settings',label:'설정 · 담당자',state:'on'}]},
@@ -5550,7 +5551,7 @@ async function loadMenu(pre){
 }
 /* 메뉴 묶음은 아코디언 (v223) — 묶음 머리를 누르면 접고 펼친다. v284 부터 처음엔 다 접힘 · 직접 펼친 묶음만 브라우저에 기억 ·
    지금 화면이 든 묶음은 잠시 펼쳐 보이고(기억 안 함) 다른 화면으로 가면 다시 접힌다 · 접힌 묶음 안에 뱃지(새 문의 등)가 있으면 머리에 빨간 점 */
-const NAV_GICON={sales:'dash',crm:'customers',inv:'stock',data:'upload',ops:'option'};
+const NAV_GICON={dashboard:'exec',sales:'orders',crm:'customers',inv:'stock',data:'upload',ops:'option'};
 let NAV_OPEN={}; try{ NAV_OPEN=JSON.parse(localStorage.getItem('dc_nav_open')||'{}')||{}; }catch(e){ NAV_OPEN={}; }
 function navGroupSet(g, open){ g.classList.toggle('open', open); const b=g.querySelector('.ngh'); if(b) b.setAttribute('aria-expanded', String(open));
   NAV_OPEN[g.dataset.g]=open; try{ localStorage.setItem('dc_nav_open', JSON.stringify(NAV_OPEN)); }catch(e){} navBadgeSync(); }
