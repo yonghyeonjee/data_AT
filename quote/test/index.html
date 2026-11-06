@@ -666,7 +666,7 @@ function tableHtml(S){
       <td class="c act">${isS&&info?`<button class="mini${it.own?' on':''}" title="품목별 조건 — 선납 · 제휴카드 · 자동결제 할인 · 수기 · 소모품 · 상품권 · 숨김" onclick="setItem(${i},'own',${it.own?'false':'true'})">${it.own?'접기':'조건'}</button>`:''}<button class="mini" aria-label="${esc(it.m)} 빼기" title="빼기" onclick="delItem(${i})">✕</button></td></tr>`
       +(isS&&info&&it.own?`<tr class="ownrow"><td colspan="11"><div class="item">${ownHtml(it,i)}</div></td></tr>`:''); }).join('');
   return `<div class="xl-wrap"><table class="xl"><colgroup><col style="width:34px"><col style="width:128px"><col><col style="width:76px"><col style="width:68px"><col style="width:128px"><col style="width:82px"><col style="width:96px"><col style="width:112px"><col style="width:100px"><col style="width:80px"></colgroup><thead><tr><th>No</th><th>모델명</th><th>견적 품목</th><th>구분</th><th>계약 기간</th><th>서비스 유형</th><th>월 구독료</th><th>월 구독료 혜택가</th><th>① 결제가 <small>(일시불가)</small></th><th>비고</th><th></th></tr></thead><tbody>${rows}
-    <tr class="new"><td class="c">＋</td><td colspan="2"><input data-k="new" list="mdl" placeholder="모델명 치고 Enter" autocomplete="off" aria-label="모델명 입력"></td><td colspan="8" class="l hint">모델명을 치고 Enter 로 담습니다 · 엑셀에서 모델명(옆 칸에 결제가) 여러 줄을 복사해 붙여넣으면 한 번에 담깁니다 · Enter = 아래 칸</td></tr>
+    <tr class="new"><td class="c">＋</td><td colspan="2"><input data-k="new" list="mdl" placeholder="모델명 치고 Enter" autocomplete="off" aria-label="모델명 입력"></td><td colspan="8" class="l hint">모델명을 치고 Enter 로 담습니다 · 여러 줄을 복사해 붙여넣으면 한 번에 담깁니다</td></tr>
     </tbody><tfoot><tr class="tsum"><td colspan="6" class="r">합계 <small>구독 ${S.n}품목 · 일시불 ${nL}품목</small></td><td class="r num">${S.n?fmt(S.monthly):'—'}</td><td class="r num hl">${S.n?fmt(S.pay):'—'}</td><td class="r num">${nL?fmt(sumL):'—'}</td><td colspan="2" class="l hint">월 구독료 합계 · 월 구독료 혜택가 · ① 결제가(일시불 품목)</td></tr></tfoot></table></div>`; }
 /* 모델명 한 줄 담기: 요금표에 있으면 구독으로, 없고 모델명 꼴이면 일시불 품목(직접 입력)으로 */
 function tnewAdd(v){ v=String(v||'').trim(); if(!v) return true; if(/[?&]items=/.test(v)){ applyBundle(parseBundle(v)); return true; }
@@ -842,21 +842,21 @@ function renderEdit({S,L}){
   $('bb_l').textContent=L.items.length? won(L.net)+(missL?' + α':'') : (AL&&!AL.noPrice? won(AL.L.net) : (AL? '일시불가 입력 필요':'—'));
   const bk=$('bulk'), nI=Q.items.length; bk.classList.remove('hidden');
   const ysAll=[...new Set([].concat(...Q.items.map(it=>it.mode==='sub'&&INFO[it.m]?INFO[it.m].p.map(p=>p[0]):[])))].sort((a,b)=>b-a);
-  bk.innerHTML=`<div class="seg sm"><button class="${IVIEW==='table'?'on':''}" onclick="setIView('table')" title="엑셀처럼 한 줄에 한 품목 — Enter 로 아래 칸, 모델명 치고 Enter 로 담기">표로 입력</button><button class="${IVIEW==='table'?'':'on'}" onclick="setIView('card')">카드로 보기</button></div><b>담은 품목 ${nI}개</b>`+(nI>=2?`<span class="hint">· 한 번에</span><button class="chip" onclick="allMode('sub')">전부 구독</button><button class="chip" onclick="allMode('lump')">전부 일시불</button>${ysAll.length>1?'<span class="hint">· 계약 기간</span>'+ysAll.map(y=>`<button class="chip" onclick="allYears(${y})">${y}년</button>`).join(''):''}`:'')
+  bk.innerHTML=`<div class="seg sm"><button class="${IVIEW==='table'?'on':''}" onclick="setIView('table')" title="한 줄에 한 품목 — Enter 로 아래 칸, 모델명 치고 Enter 로 담기">표로 입력</button><button class="${IVIEW==='table'?'':'on'}" onclick="setIView('card')">카드로 보기</button></div><b>담은 품목 ${nI}개</b>`+(nI>=2?`<span class="hint">· 한 번에</span><button class="chip" onclick="allMode('sub')">전부 구독</button><button class="chip" onclick="allMode('lump')">전부 일시불</button>${ysAll.length>1?'<span class="hint">· 계약 기간</span>'+ysAll.map(y=>`<button class="chip" onclick="allYears(${y})">${y}년</button>`).join(''):''}`:'')
     +'<span class="sp"></span>'+(UNDO?'<button class="chip on" id="undoBtn" onclick="undoDel()">↩ 뺀 품목 되돌리기</button>':'')+(nI>=2?'<button class="chip" onclick="clearItems()">모두 빼기</button>':'');
   const cm=[]; if(Q.cond.reward&&Q.cond.reward!=='0'&&Q.cond.reward!=='off') cm.push('이벤트 리워드'); if(+Q.cond.pointCommon) cm.push('포인트 공통 '+won(+Q.cond.pointCommon)); const ex=(Q.extra||[]).filter(e=>+e.amount>0).length; if(ex) cm.push('기타 혜택 '+ex+'건'); if(Q.cond.namecardId) cm.push('네임카드');
   $('condMoreLbl').textContent=cm.length? cm.join(' · ')+' 적용 중' : '필요할 때만 펼치기'; if(cm.length&&!$('condMore').dataset.t){ $('condMore').open=true; $('condMore').dataset.t='1'; }
   const why=t=>`<small class="why">${t}</small>`;
-  let d='<h2 style="margin-bottom:6px">금액 확인 · 계산 풀이 <small>엑셀 견적서와 같은 순서 · 회색 글씨 = 어떻게 나온 값인지 · 노란 칸 = 직접 입력</small></h2>';
+  let d='<h2 style="margin-bottom:6px">금액 확인 · 계산 풀이 <small>회색 글씨 = 어떻게 나온 값인지 · 노란 칸 = 직접 입력</small></h2>';
   if(S.n){ d+=`<div class="lbl" style="margin-bottom:4px">구독 <span class="hint">(${S.n}품목 · ${S.maxM}개월)</span></div>
     <div class="kv"><span>월 구독료 합계${why('품목별 월 구독료(요금표)를 더한 값')}</span><b class="num">${won(S.monthly)}</b></div>
     <div class="kv total2"><span>월 구독료 혜택가 합계${why('월 구독료 합계 − 자동결제·선납·다품목 할인 − 카드 청구할인(월) · 통장에서 나가는 금액')}</span><b class="num">${won(S.pay)}</b></div>
-    <div class="kv"><span>총 구독료${why('월 구독료 × 계약 개월수, 품목별 합계 (엑셀의 구독료합계)')}</span><b class="num">${won(S.total)}</b></div>
+    <div class="kv"><span>총 구독료${why('월 구독료 × 계약 개월수, 품목별 합계')}</span><b class="num">${won(S.total)}</b></div>
     <div class="kv minus"><span>자동결제 ${Math.round((POL.autopay&&POL.autopay.rate||0)*100)}%</span><span class="num">−${won(S.auto)}</span></div>
     ${S.pre?`<div class="kv minus"><span>선납 할인</span><span class="num">−${won(S.pre)}</span></div>`:''}
     ${S.multi?`<div class="kv minus"><span>다품목 할인 (${S.multiN}대)${why('구독 2품목 이상일 때 계약 기간별 할인율')}</span><span class="num">−${won(S.multi)}</span></div>`:''}
-    ${S.card?`<div class="kv minus"><span>카드 청구할인 (${esc(Q.cond.card)} ${esc(Q.cond.tier)})${why('전월 실적을 채우면 매달 할인 × 계약 개월수 (엑셀의 30만원 이용시 AI구독카드)')}</span><span class="num">−${won(S.card)}</span></div>`:''}
-    ${S.points?`<div class="kv minus"><span>멤버십 포인트${why('행사모델 N개월 구독료 상당 포인트 + 멤버십 적립 (엑셀의 3% P · 6개월 P)')}</span><span class="num">−${won(S.points)}</span></div>`:''}
+    ${S.card?`<div class="kv minus"><span>카드 청구할인 (${esc(Q.cond.card)} ${esc(Q.cond.tier)})${why('전월 실적을 채우면 매달 할인 × 계약 개월수')}</span><span class="num">−${won(S.card)}</span></div>`:''}
+    ${S.points?`<div class="kv minus"><span>멤버십 포인트${why('행사모델 N개월 구독료 상당 포인트 + 멤버십 적립')}</span><span class="num">−${won(S.points)}</span></div>`:''}
     ${S.pkg?`<div class="kv minus"><span>스마트 패키지 ${S.pkgN}품목</span><span class="num">−${won(S.pkg)}</span></div>`:''}
     ${S.cons?`<div class="kv minus"><span>소모품</span><span class="num">−${won(S.cons)}</span></div>`:''}
     ${S.gift?`<div class="kv minus"><span>상품권</span><span class="num">−${won(S.gift)}</span></div>`:''}
@@ -864,8 +864,8 @@ function renderEdit({S,L}){
     ${S.reward?`<div class="kv minus"><span>💵 이벤트 리워드 (1%)</span><span class="num">−${won(S.reward)}</span></div>`:''}
     ${S.pointCommon?`<div class="kv minus"><span>⭐ 멤버십 포인트 공통</span><span class="num">−${won(S.pointCommon)}</span></div>`:''}
     <div class="kv total"><span>총 혜택 합계</span><span class="num">${won(S.ben)}</span></div>
-    <div class="kv total"><span>최종 혜택가 (총 지불액)${why('총 구독료 − 총 혜택 합계 (엑셀의 구독 혜택가 합계)')}</span><span class="num">${won(S.net)}</span></div>
-    <div class="kv"><span>월 체감 구독료${why('최종 혜택가 ÷ '+S.maxM+'개월 — 포인트·상품권까지 뺀 한 달 부담 (엑셀의 월 체감 구독료)')}</span><b class="num">${won(S.feel)}</b></div>`; }
+    <div class="kv total"><span>최종 혜택가 (총 지불액)${why('총 구독료 − 총 혜택 합계')}</span><span class="num">${won(S.net)}</span></div>
+    <div class="kv"><span>월 체감 구독료${why('최종 혜택가 ÷ '+S.maxM+'개월 — 포인트·상품권까지 뺀 한 달 부담')}</span><b class="num">${won(S.feel)}</b></div>`; }
   if(L.items.length){ const X=Q.cond.lx||{}, cdL=(LUMP&&LUMP.cards[L.kind])||{}, rate=+(((LUMP||{}).fee||{})[String(L.months)]||0);
     const inp=(k,label,w)=>`<div class="kv in"><span>${label}${why(w)}</span><input class="lx" data-k="lx:${k}" type="text" inputmode="numeric" placeholder="0" aria-label="${label.replace(/<[^>]+>/g,'')}" value="${+X[k]?fmt(+X[k]):''}" onchange="setLx('${k}',this.value)"></div>`;
     d+=`<div class="lbl" style="margin:12px 0 4px">일시불 <span class="hint">(${esc(cdL.label||L.kind)} · ${L.months}개월 · ${esc(Q.cust.type)})</span></div>
@@ -884,7 +884,7 @@ function renderEdit({S,L}){
     ${inp('sub30','구독 30만원 적용시 <span class="hint">(선택)</span>','AI구독카드 72개월 지원')}
     ${L.opt?`<div class="kv total"><span>최종체감가 (선택 포함)${why('최종체감가 − IPTV − 구독 30만원 적용시')}</span><span class="num">${won(L.netOpt)}</span></div>`:''}
     <div class="kv"><span>삼성카드 6/12 할부 개월수별 납부금액${why('(① 결제가 − 청구할인) ÷ '+L.months+'개월, 10원 미만 버림 · 1회차에 이용료가 더해지고 2회차에서 캐시백(송금)이 빠집니다')}</span><b class="num">${won(L.per)} × ${L.months}</b></div>`; }
-  else if(S.n){ d+=`<p class="hint" style="margin-top:10px">일시불 품목이 없습니다 — 표의 [구분] 을 일시불로 바꾸면 ① 결제가부터 최종체감가까지 엑셀 견적서 순서대로 나옵니다.</p>`; }
+  else if(S.n){ d+=`<p class="hint" style="margin-top:10px">일시불 품목이 없습니다 — 표의 [구분] 을 일시불로 바꾸면 ① 결제가부터 최종체감가까지 차례로 나옵니다.</p>`; }
   const _dk=document.activeElement&&$('t_detail').contains(document.activeElement)?document.activeElement.dataset.k:'';
   $('t_detail').innerHTML = (S.n||L.items.length)? d : '<span class="hint">품목을 담으면 혜택이 여기 나옵니다.</span>';
   if(_dk){ const e=$('t_detail').querySelector('[data-k="'+_dk+'"]'); if(e){ e.focus(); e.select(); } }
