@@ -648,7 +648,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     blocks.push(h);
     /* 일시불 묶음 (상담 견적 화면 /quote/ 가 넣는 q.lump · mvp_276) — 구독 아래에 카드 혜택 반영 실 부담을 같은 표 양식으로 */
     if(q.lump && q.lump.items && q.lump.items.length){
-      var L = q.lump, lb = '<div class="q-box"><h3>💳 일시불 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + ' · ' + num(L.months) + '개월)</span>' : '') + '</h3><table class="q-tbl">';
+      var L = q.lump, lb = '<div class="q-box"><h3>💳 일시불 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + (num(L.months) ? ' · ' + num(L.months) + '개월' : '') + ')</span>' : '') + '</h3><table class="q-tbl">';
       L.items.forEach(function(x, i){ lb += '<tr><th>' + (i + 1) + '. ' + esc(x.name || x.model || '') + (x.model && x.name ? ' <span style="font-weight:500;color:#666">' + esc(x.model) + '</span>' : '') + (x.note ? ' <span style="font-weight:500;color:#666">· ' + esc(x.note) + '</span>' : '') + '</th><td class="num">' + won(x.amount) + '</td></tr>'; });
       lb += '<tr class="tot"><th>총 할인가</th><td class="num">' + won(L.amount) + '</td></tr>';
       if(num(L.fee) > 0) lb += '<tr><th>플러스페이 이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
