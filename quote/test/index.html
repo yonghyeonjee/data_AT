@@ -140,6 +140,19 @@ table.xl tr.ownrow td{height:auto;padding:0 10px 8px;background:#FAFBFD} table.x
 .greet.wait{text-align:center;padding:60px 22px;margin-top:20vh}
 body.disp .top,body.disp #v-edit,body.disp #v-sheet,body.disp .bbar,body.disp #toast{display:none!important} body.disp #v-show button{display:none!important} body.disp .wrap{max-width:1500px}
 body.disp .greet .g1{font-size:24px} body.disp .greet .g2,body.disp .greet .g3{font-size:18px}
+.guide{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px;box-sizing:border-box;background:#fff;color:#111}
+.guide .glogo{height:34px;margin-bottom:6px} .guide .gstore{font-size:15px;letter-spacing:.3em;color:#555;margin-bottom:44px}
+.guide h1{font-size:34px;line-height:1.45;margin:0 0 10px;font-weight:800;color:#111;word-break:keep-all} .guide h1 b{color:#1428A0}
+.guide .gsub{font-size:22px;color:#333;margin:0 0 40px;word-break:keep-all}
+.guide .gcards{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:44px}
+.guide .gcard{background:#F4F6FB;border-radius:18px;padding:22px 26px;min-width:300px;max-width:420px;font-size:20px;line-height:1.5;word-break:keep-all} .guide .gcard .ic{font-size:34px;display:block;margin-bottom:6px}
+.guide .gon{border-top:1px solid #E3E6EE;padding-top:30px;max-width:900px;width:100%}
+.guide .gon p{font-size:19px;color:#333;margin:0 0 20px;word-break:keep-all}
+.guide .qrs{display:flex;gap:44px;justify-content:center;flex-wrap:wrap}
+.guide .qr{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:17px;font-weight:700} .guide .qr svg{width:150px;height:150px;background:#fff}
+.guide .gsearch{margin-top:22px;font-size:18px;color:#444} .guide .gsearch b{display:inline-block;border:2px solid #1428A0;border-radius:999px;padding:4px 18px;color:#1428A0;margin-right:6px}
+.guide .gme{margin-top:26px;font-size:17px;color:#666}
+body.disp.guiding .wrap{max-width:none;padding:0} body.disp.guiding #fsBtn{opacity:.25}
 #fsBtn{position:fixed;right:14px;bottom:14px;z-index:20;border:0;border-radius:10px;background:var(--navy);color:#fff;font-weight:800;padding:10px 16px;opacity:.85} #fsBtn.hidden{display:none}
 .hidetag{display:inline-block;font-size:10.5px;font-weight:700;color:#9A3412;background:#FFEDD5;border-radius:5px;padding:0 5px;margin-left:4px;vertical-align:1px}
 .ck{display:inline-flex;align-items:center;gap:5px;cursor:pointer;margin-right:6px;vertical-align:middle} .ck input{width:18px;height:18px;margin:0;accent-color:var(--blue);cursor:pointer}
@@ -278,6 +291,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <button class="tb" onclick="openList()">내역</button>
   <button class="tb" id="btnSave" onclick="saveQuote()">저장 · 발행</button>
   <button class="tb" id="btnDisp" onclick="openDisplay()" title="모니터가 2개일 때 — 새 창을 고객 쪽 모니터로 옮겨 전체 화면으로 띄웁니다. 고객 창에는 상품권·기타 혜택이 나오지 않습니다">고객 화면 띄우기 ⧉</button>
+  <button class="tb hidden" id="btnShowQ" onclick="toggleShowQ()" title="고객 화면 창은 처음에 매장 안내만 보여 줍니다 — 견적이 준비되면 눌러서 보여 주세요">고객 화면에 견적 보여주기 ▶</button>
   <button class="tb pri" id="btnShare" onclick="shareQuote()">고객에게 보내기</button>
 </div></div>
 
@@ -513,7 +527,21 @@ if(P.get('counselor')) ME=P.get('counselor');
 const DISP=P.get('display')==='1'; let BC=null; try{ BC=new BroadcastChannel('quote_cust'); }catch(e){}
 let HIDE=false, LASTC=null;   // HIDE = 고객 화면용 계산 (상품권 · 기타 혜택 빼고)
 const SEL=new Set();           // 체크한 품목 (모델명)
-const NPAY_TXT='상담이 완료되고 고객등록을 마치시면 <b>네이버 페이 1만원</b>을 지급드립니다.';
+const LOGO_URL='https://gdadmin-samsungsh70.godomall.com/data/Samsung_wordmark.svg';
+const QR_PORTAL=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 49 49" class="segno"><path class="qrline" stroke="#000" d="M2 2.5h7m2 0h2m1 0h2m2 0h1m3 0h1m1 0h2m2 0h1m3 0h1m1 0h1m3 0h1m1 0h7m-45 1h1m5 0h1m1 0h4m2 0h1m2 0h1m1 0h1m1 0h1m2 0h1m1 0h1m8 0h1m2 0h1m5 0h1m-45 1h1m1 0h3m1 0h1m1 0h1m2 0h3m1 0h3m3 0h1m1 0h1m1 0h2m1 0h2m2 0h2m1 0h1m2 0h1m1 0h3m1 0h1m-45 1h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h3m1 0h2m4 0h1m1 0h9m1 0h2m1 0h1m1 0h3m1 0h1m-45 1h1m1 0h3m1 0h1m3 0h3m1 0h4m1 0h7m3 0h3m2 0h3m1 0h1m1 0h3m1 0h1m-45 1h1m5 0h1m4 0h2m1 0h3m1 0h1m1 0h1m3 0h4m3 0h3m4 0h1m5 0h1m-45 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-37 1h1m1 0h1m1 0h1m3 0h5m3 0h1m2 0h4m1 0h2m1 0h2m-37 1h1m5 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h9m7 0h1m2 0h2m2 0h3m-44 1h3m1 0h2m3 0h1m2 0h1m2 0h1m1 0h3m1 0h2m1 0h4m1 0h2m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m-41 1h1m1 0h2m4 0h2m1 0h1m1 0h2m5 0h1m2 0h1m2 0h1m1 0h2m1 0h1m1 0h4m3 0h1m-40 1h1m2 0h2m1 0h2m5 0h4m6 0h4m1 0h1m1 0h2m1 0h2m1 0h1m1 0h1m-43 1h2m1 0h2m1 0h1m2 0h1m1 0h1m1 0h2m3 0h2m5 0h1m1 0h2m1 0h1m1 0h4m2 0h1m1 0h2m1 0h1m-43 1h5m2 0h4m2 0h3m2 0h2m4 0h1m1 0h1m1 0h2m2 0h1m1 0h3m6 0h1m-45 1h1m3 0h4m4 0h1m3 0h3m1 0h1m2 0h4m1 0h1m2 0h1m2 0h1m1 0h1m1 0h2m1 0h3m-44 1h6m1 0h1m2 0h2m2 0h2m1 0h4m1 0h2m1 0h1m1 0h1m1 0h1m3 0h1m2 0h1m1 0h2m1 0h3m-44 1h2m2 0h3m2 0h3m1 0h2m2 0h2m5 0h3m2 0h3m1 0h3m2 0h1m2 0h4m-45 1h2m1 0h2m3 0h1m2 0h2m1 0h3m2 0h1m1 0h2m2 0h1m1 0h7m1 0h3m1 0h6m-44 1h3m2 0h1m1 0h1m2 0h5m1 0h2m2 0h1m2 0h1m6 0h3m7 0h2m1 0h1m-45 1h1m1 0h1m1 0h2m1 0h1m1 0h1m1 0h2m1 0h1m1 0h1m2 0h1m1 0h1m1 0h1m4 0h1m3 0h2m1 0h1m1 0h2m1 0h3m1 0h1m-45 1h1m1 0h1m1 0h7m1 0h1m1 0h1m2 0h2m1 0h6m3 0h3m4 0h5m-40 1h2m1 0h1m3 0h2m1 0h6m2 0h2m3 0h4m1 0h3m1 0h4m3 0h3m-43 1h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h4m1 0h2m1 0h1m1 0h4m3 0h2m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m-44 1h1m2 0h2m3 0h1m2 0h1m7 0h2m3 0h1m1 0h1m1 0h3m1 0h2m2 0h1m3 0h4m-40 1h5m2 0h1m1 0h3m3 0h8m1 0h1m1 0h1m1 0h1m3 0h5m2 0h1m-42 1h2m4 0h2m1 0h1m4 0h1m1 0h2m2 0h1m1 0h1m3 0h4m1 0h1m2 0h1m2 0h1m1 0h1m2 0h1m-45 1h2m2 0h4m1 0h6m1 0h1m5 0h1m3 0h1m1 0h2m1 0h2m1 0h4m1 0h1m1 0h1m1 0h1m-44 1h2m2 0h1m2 0h2m1 0h1m2 0h1m2 0h1m1 0h4m1 0h4m2 0h3m2 0h2m3 0h4m-39 1h5m1 0h2m1 0h1m1 0h2m1 0h1m1 0h1m2 0h1m2 0h1m3 0h2m1 0h1m4 0h1m1 0h1m-39 1h1m1 0h1m4 0h3m2 0h1m2 0h2m3 0h1m1 0h2m1 0h1m1 0h2m5 0h1m1 0h2m1 0h1m1 0h1m-43 1h2m1 0h3m2 0h3m1 0h1m2 0h4m3 0h3m2 0h2m1 0h1m3 0h1m1 0h4m3 0h1m-45 1h2m1 0h1m1 0h1m1 0h1m1 0h4m2 0h1m1 0h1m3 0h1m2 0h2m1 0h1m2 0h3m1 0h2m2 0h1m2 0h3m-42 1h1m3 0h1m2 0h2m1 0h1m1 0h2m1 0h1m2 0h1m3 0h2m3 0h1m1 0h1m1 0h1m2 0h3m1 0h2m1 0h1m-39 1h1m2 0h1m2 0h3m1 0h1m1 0h1m1 0h1m1 0h1m2 0h7m2 0h3m2 0h3m2 0h1m-40 1h1m1 0h1m1 0h1m2 0h1m4 0h1m1 0h1m1 0h1m1 0h1m2 0h2m1 0h2m1 0h2m1 0h3m3 0h4m-43 1h4m3 0h2m4 0h2m1 0h3m2 0h3m2 0h5m1 0h1m1 0h2m1 0h1m2 0h3m-44 1h1m2 0h2m1 0h1m3 0h1m2 0h1m1 0h1m1 0h9m2 0h3m1 0h9m2 0h1m-36 1h1m1 0h4m2 0h1m3 0h1m3 0h1m2 0h1m2 0h2m1 0h1m1 0h2m3 0h3m1 0h1m-45 1h7m2 0h3m1 0h1m1 0h2m2 0h2m1 0h1m1 0h1m3 0h2m1 0h6m1 0h1m1 0h1m1 0h2m-44 1h1m5 0h1m3 0h1m3 0h7m3 0h2m3 0h2m2 0h4m3 0h5m-45 1h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m3 0h1m1 0h5m1 0h1m3 0h2m2 0h8m-42 1h1m1 0h3m1 0h1m2 0h2m1 0h8m1 0h2m2 0h1m1 0h1m1 0h2m4 0h1m1 0h1m2 0h1m2 0h2m-45 1h1m1 0h3m1 0h1m3 0h1m1 0h1m6 0h1m1 0h5m2 0h2m2 0h2m2 0h3m1 0h3m1 0h1m-45 1h1m5 0h1m3 0h2m1 0h1m5 0h2m1 0h1m3 0h3m3 0h6m3 0h2m-43 1h7m1 0h2m2 0h3m1 0h4m2 0h4m3 0h3m2 0h1m1 0h1m1 0h2m1 0h1m1 0h1"/></svg>`;
+const QR_MALL=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" class="segno"><path class="qrline" stroke="#000" d="M2 2.5h7m1 0h1m4 0h2m1 0h2m1 0h2m1 0h5m3 0h7m-37 1h1m5 0h1m1 0h1m1 0h5m1 0h4m1 0h2m1 0h1m1 0h1m1 0h1m1 0h1m5 0h1m-37 1h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h2m4 0h1m1 0h6m3 0h1m1 0h3m1 0h1m-37 1h1m1 0h3m1 0h1m2 0h1m2 0h2m2 0h2m3 0h1m2 0h2m1 0h1m2 0h1m1 0h3m1 0h1m-37 1h1m1 0h3m1 0h1m1 0h2m1 0h5m2 0h2m1 0h1m2 0h2m2 0h1m1 0h1m1 0h3m1 0h1m-37 1h1m5 0h1m2 0h2m1 0h2m1 0h1m4 0h1m1 0h2m2 0h1m3 0h1m5 0h1m-37 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-28 1h1m1 0h2m2 0h1m1 0h2m4 0h1m1 0h1m2 0h1m-29 1h1m2 0h7m1 0h2m8 0h3m2 0h1m2 0h1m2 0h1m1 0h3m-36 1h1m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m2 0h3m2 0h3m2 0h1m4 0h5m-34 1h2m2 0h2m2 0h1m3 0h3m2 0h2m2 0h1m3 0h2m1 0h1m1 0h1m3 0h1m-36 1h5m1 0h2m7 0h2m1 0h2m2 0h2m1 0h1m4 0h6m-35 1h6m1 0h4m1 0h2m7 0h2m3 0h1m1 0h1m3 0h1m1 0h1m-33 1h2m2 0h2m1 0h3m1 0h2m2 0h1m1 0h3m1 0h5m2 0h2m-34 1h1m3 0h1m1 0h1m3 0h2m1 0h1m1 0h1m2 0h3m4 0h3m2 0h1m1 0h5m-35 1h4m1 0h3m2 0h1m1 0h3m4 0h4m3 0h4m1 0h2m-33 1h1m2 0h2m3 0h1m2 0h1m1 0h1m1 0h3m1 0h3m1 0h1m1 0h1m2 0h1m3 0h3m-36 1h2m2 0h1m2 0h2m2 0h1m1 0h1m2 0h1m4 0h1m2 0h1m1 0h1m3 0h1m1 0h1m-34 1h3m1 0h1m1 0h1m5 0h2m2 0h2m1 0h1m2 0h2m3 0h2m1 0h3m3 0h1m-37 1h1m3 0h2m5 0h6m2 0h2m4 0h2m1 0h2m1 0h3m2 0h1m-37 1h3m3 0h1m1 0h1m1 0h1m2 0h1m3 0h1m1 0h1m2 0h3m1 0h8m-34 1h2m1 0h2m5 0h1m1 0h1m2 0h1m1 0h1m1 0h1m2 0h2m2 0h2m1 0h1m2 0h1m1 0h2m-36 1h1m1 0h2m1 0h2m2 0h1m3 0h4m3 0h2m1 0h2m2 0h3m1 0h1m1 0h1m2 0h1m-36 1h1m3 0h1m1 0h1m1 0h2m1 0h3m3 0h1m1 0h1m6 0h2m1 0h5m-34 1h4m1 0h1m1 0h1m8 0h1m1 0h4m4 0h1m1 0h2m-31 1h1m1 0h1m1 0h1m3 0h2m1 0h1m1 0h1m4 0h2m1 0h8m3 0h2m-34 1h3m1 0h7m1 0h1m1 0h2m1 0h2m7 0h2m1 0h2m1 0h5m-37 1h1m6 0h2m7 0h1m1 0h2m9 0h1m2 0h4m-36 1h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h4m2 0h1m4 0h2m1 0h10m-29 1h3m2 0h1m1 0h7m2 0h5m3 0h1m1 0h2m-36 1h7m1 0h3m1 0h4m1 0h3m3 0h4m1 0h1m1 0h1m1 0h1m3 0h1m-37 1h1m5 0h1m1 0h1m2 0h2m3 0h1m2 0h1m1 0h1m2 0h2m1 0h2m3 0h1m3 0h1m-37 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m1 0h2m1 0h4m1 0h2m1 0h7m2 0h2m-37 1h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h1m5 0h4m6 0h1m5 0h1m-37 1h1m1 0h3m1 0h1m5 0h2m4 0h1m3 0h2m1 0h2m1 0h2m2 0h1m3 0h1m-37 1h1m5 0h1m2 0h2m2 0h3m1 0h1m5 0h1m2 0h2m2 0h1m1 0h5m-37 1h7m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m3 0h2m3 0h2m1 0h1m4 0h1"/></svg>`;
+let SHOWQ=false;   // 상담사가 [고객 화면에 견적 보여주기]를 누르기 전까지 고객 창은 안내 화면
+function guideHtml(name,me){ const nm=name?`<b>${esc(name)}</b>님`:'고객님';
+  return `<div class="guide"><img class="glogo" src="${LOGO_URL}" alt="SAMSUNG" onerror="this.outerHTML='<b style=&quot;font-size:30px;letter-spacing:.12em;color:#1428A0&quot;>SAMSUNG</b>'"><div class="gstore">${esc(STORE.name)}</div>
+<h1>${esc(STORE.name)}을 찾아주신 ${nm}, 감사합니다.<br>감사의 마음을 담아 최적의 견적을 준비하고 있습니다.</h1>
+<p class="gsub">잠시만 기다려 주세요.</p>
+<div class="gcards"><div class="gcard"><span class="ic">☕</span>기다리시는 동안 음료를 무료로 드립니다.<br>원하시는 음료를 편하게 말씀해 주세요.</div>
+<div class="gcard"><span class="ic">🎁</span>고객 등록을 마치시면<br>소정의 사은품을 드립니다.</div></div>
+<div class="gon"><p>매장에서는 <b>1:1 맞춤 견적</b>을, 온라인에서는 <b>간편한 문의와 구매</b>를 도와드립니다.</p>
+<div class="qrs"><div class="qr">${QR_PORTAL}<span>${esc(STORE.name)} 문의</span></div><div class="qr">${QR_MALL}<span>${esc(STORE.name)} 쇼핑몰</span></div></div>
+<div class="gsearch">검색창에 <b>${esc(STORE.name)}</b>을 검색해 보세요.</div></div>
+${me?`<div class="gme">오늘 상담은 <b>${esc(me)} 프로</b>가 도와드립니다.</div>`:''}</div>`; }
+const NPAY_TXT='고객 등록을 마치시면 <b>소정의 사은품</b>을 드립니다.';
 let C=null, POL=null, IDX=null, CAT=null, LUMP=null;
 const INFO={};   // 모델 → info (요금표)
 
@@ -537,19 +565,22 @@ function loadJs(src){ return new Promise((ok,no)=>{ const s=document.createEleme
 })();
 /* 매장 상담 줄 [견적서 만들기] · 구독센터 문의에서 넘어온 관심 모델을 바로 담는다: ?models=WD90H25AHW,RF85DB91A1AP (요금표에 없는 모델은 일시불 줄) */
 function initDisplay(){ document.body.classList.add('disp'); $('boot').classList.add('hidden'); const v=$('v-show'); v.classList.remove('hidden');
-  v.innerHTML=`<div class="greet wait"><p class="g1">${esc(STORE.name)}을 찾아주셔서 감사합니다.</p><p class="g2">잠시만 기다려 주세요 — 상담사 화면과 연결하는 중입니다.</p></div>`;
+  document.body.classList.add('guiding'); v.innerHTML=guideHtml('','');
   const fs=document.createElement('button'); fs.id='fsBtn'; fs.textContent='전체 화면'; fs.onclick=()=>{ (document.documentElement.requestFullscreen||function(){}).call(document.documentElement); }; document.body.appendChild(fs);
   document.addEventListener('fullscreenchange',()=>fs.classList.toggle('hidden',!!document.fullscreenElement));
   document.title='고객 화면 · '+STORE.name;
   if(!BC){ v.innerHTML='<div class="greet wait"><p class="g2">이 브라우저는 고객 화면 연결을 지원하지 않습니다. 크롬이나 엣지로 열어 주세요.</p></div>'; return; }
-  BC.onmessage=e=>{ const d=e.data||{}; if(d.t==='show'){ const y=scrollY; v.innerHTML=d.html; scrollTo(0,y); } else if(d.t==='scroll'){ scrollTo({top:d.y*(document.documentElement.scrollHeight-innerHeight),behavior:'smooth'}); } };
+  BC.onmessage=e=>{ const d=e.data||{}; if(d.t==='show'){ const was=document.body.classList.contains('guiding'); document.body.classList.remove('guiding'); const y=was?0:scrollY; v.innerHTML=d.html; scrollTo(0,y); }
+    else if(d.t==='guide'){ const h=guideHtml(d.name||'',d.me||''); document.body.classList.add('guiding'); if(v.innerHTML!==h){ v.innerHTML=h; scrollTo(0,0); } } else if(d.t==='scroll'){ scrollTo({top:d.y*(document.documentElement.scrollHeight-innerHeight),behavior:'smooth'}); } };
   BC.postMessage({t:'hello'}); }
-if(BC&&!DISP) BC.onmessage=e=>{ if(e.data&&e.data.t==='hello') postDisplay(); };
+if(BC&&!DISP) BC.onmessage=e=>{ if(e.data&&e.data.t==='hello'){ const b=$('btnShowQ'); if(b&&b.classList.contains('hidden')) toggleShowQ(false); else postDisplay(); } };
 let DWIN=null;
 function openDisplay(){ const w=window.open(location.pathname+'?display=1','quote_cust','popup=yes,width=1280,height=860');
   if(!w){ toast('팝업이 막혔습니다 — 주소창 오른쪽에서 이 사이트 팝업을 허용한 뒤 다시 눌러 주세요'); return; }
-  DWIN=w; setTimeout(postDisplay,700); setTimeout(postDisplay,2000); toast('고객 화면을 열었습니다 — 고객 쪽 모니터로 끌어다 놓고 [전체 화면]을 눌러 주세요'); }
-function postDisplay(){ if(DISP||!BC) return; try{ BC.postMessage({t:'show', html:$('v-show').innerHTML}); }catch(e){} }
+  DWIN=w; toggleShowQ(false); setTimeout(postDisplay,700); setTimeout(postDisplay,2000); toast('고객 화면을 열었습니다 — 고객 쪽 모니터로 끌어다 놓고 [전체 화면]을 눌러 주세요'); }
+function postDisplay(){ if(DISP||!BC) return; try{ BC.postMessage(SHOWQ? {t:'show', html:$('v-show').innerHTML} : {t:'guide', name:Q.cust.name||'', me:ME||''}); }catch(e){} }
+function toggleShowQ(on){ SHOWQ=on==null?!SHOWQ:!!on; const b=$('btnShowQ'); if(b){ b.classList.remove('hidden'); b.classList.toggle('pri',!SHOWQ); b.textContent=SHOWQ?'고객 화면 → 안내로 돌리기':'고객 화면에 견적 보여주기 ▶'; }
+  postDisplay(); if(on==null) toast(SHOWQ?'고객 화면에 견적을 띄웠습니다 (상품권·기타 혜택은 빠집니다)':'고객 화면을 안내 화면으로 돌렸습니다'); }
 /* [견적서] 탭: 시흥몰 구독 견적서(quote_subscribe)를 그대로 옮긴 q/index.html 을 미리보기로 띄우고, 저장하지 않은 지금 견적을 postMessage 로 넘긴다 */
 let SHF_READY=false;
 function sheetUrl(){ return location.pathname.replace(/quote\/(test\/)?(index\.html)?$/,'')+'q/index.html?preview=1'; }
