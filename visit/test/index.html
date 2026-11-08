@@ -244,6 +244,15 @@ html.checkin #sign{display:none!important}
 .sg-orn svg{width:44px;height:44px}
 #sgGreet span{display:block;white-space:nowrap}
 #sign.flora .sg-close{margin-top:56px;font-size:78px;line-height:1.4;color:#2B3040}#sign.flora .sg-names.many~.sg-close{display:none}#sign.flora .sg-close[hidden]{display:none}.sg-close span{display:block;white-space:nowrap}
+/* v288 · 이름이 없을 때 따옴표 문구(SG_TX.none) · 기기 연결 번호(연결 전에만 · 아래 가운데) */
+#sign.flora .sg-close.none{margin-top:72px;color:#3A4254}
+html.land #sign.flora .sg-close.none{margin-top:36px;font-size:60px}
+#sign>#sgPair{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);z-index:6;display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:min(640px,70%);padding:16px 34px 18px;border-radius:24px;background:rgba(255,252,246,.93);border:2px solid #C9B88F;color:#4A3F2A;font-family:'Pretendard Variable',Pretendard,system-ui,sans-serif;text-align:center;box-shadow:0 10px 30px rgba(60,40,10,.12)}
+#sign>#sgPair[hidden]{display:none}
+#sgPair b{font-size:26px;font-weight:800;letter-spacing:.02em}
+#sgPair strong{font-size:76px;font-weight:900;letter-spacing:.14em;line-height:1.1;color:#1F4E9C;font-variant-numeric:tabular-nums}
+#sgPair span{font-size:21px;line-height:1.4;color:#6B5E44;white-space:normal}
+.se-warn{color:#B3261E!important;font-weight:700}
 .sg-orn i{width:150px;height:2px;background:linear-gradient(90deg,transparent,#D9A7A4)}
 .sg-orn i:last-child{transform:scaleX(-1)}
 .sg-names{list-style:none;margin:64px auto 0;padding:56px 0 0;width:min(78%,760px);display:flex;flex-direction:column;gap:24px;position:relative}
@@ -377,18 +386,20 @@ html.ledon #sign>:not(#led){visibility:hidden} /* v278 · LED 동안 뒤 화면(
     <div class="se-box">
       <h2 id="sgEditT">✎ 이름 직접 입력</h2>
       <p>여기서 넣은 이름은 <b>담당자 화면의 예약 명단에 더해져</b> 함께 뜹니다(오늘 하루). 담당자 화면 [디스플레이 관리]에서도 보이고 고치거나 숨길 수 있습니다.</p>
+      <p class="se-warn" id="sgEditWarn" hidden>아직 담당자 화면과 연결되지 않은 기기입니다 — 이 이름은 이 화면에만 뜹니다. 화면 아래 연결 번호를 담당자 화면 [디스플레이 관리]에 넣으면 이어집니다.</p>
       <label for="sgEditTa">한 줄에 한 분씩 성함만 (고객님은 저절로 붙음)</label>
       <textarea id="sgEditTa" rows="4" maxlength="400" placeholder="홍길동&#10;김영희"></textarea>
       <div class="se-btns"><button type="button" class="se-clr" id="sgEditClr">여기서 넣은 이름 지우기</button><span></span><button type="button" id="sgEditX">닫기</button><button type="button" class="se-ok" id="sgEditOk">화면에 띄우기</button></div>
     </div>
   </div>
+  <div id="sgPair" hidden aria-live="polite"><b>매장 화면 연결 번호</b><strong id="sgPairCode">—</strong><span>담당자 화면 › 디스플레이 관리 › [매장 화면 기기 연결]에 이 번호를 넣어 주세요</span></div>
   <header class="sg-top">
     <div class="sg-brand"><span>SAMSUNG STORE</span><b>삼성스토어 시흥</b></div>
     <div class="sg-time" id="sgTime"></div>
     <div class="sg-sub"><div class="sg-date" id="sgDate"></div><div class="sg-wx" id="sgWx"></div></div>
   </header>
   <div class="sg-main">
-    <section class="sg-hero"><div class="sg-w" id="sgW">삼성스토어 시흥</div><div class="sg-orn" aria-hidden="true"><i></i><svg viewBox="-30 -30 60 60"><g fill="#E6A3A1"><ellipse rx="9" ry="17" transform="translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(72) translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(144) translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(216) translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(288) translate(0 -11)"/></g><circle r="6" fill="#F1CF6E"/></svg><i></i></div><h1 id="sgGreet"><span>매장에 귀한 걸음해주신</span><span>고객님 진심으로 감사합니다.</span></h1><ul class="sg-names" id="sgNames"></ul><p class="sg-close" id="sgClose" hidden><span>오늘의 방문이 기분 좋은 </span><span>기억으로 남도록 </span><span>정성을 다해 모시겠습니다.</span></p></section>
+    <section class="sg-hero"><div class="sg-w" id="sgW">삼성스토어 시흥</div><div class="sg-orn" aria-hidden="true"><i></i><svg viewBox="-30 -30 60 60"><g fill="#E6A3A1"><ellipse rx="9" ry="17" transform="translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(72) translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(144) translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(216) translate(0 -11)"/><ellipse rx="9" ry="17" transform="rotate(288) translate(0 -11)"/></g><circle r="6" fill="#F1CF6E"/></svg><i></i></div><h1 id="sgGreet"><span>매장에 귀한 걸음해주신</span><span>고객님 진심으로 감사합니다.</span></h1><ul class="sg-names" id="sgNames"></ul><p class="sg-close" id="sgClose" hidden><span>오늘의 방문이 기분 좋은 </span><span>기억으로 남도록 </span><span>정성을 다해 모시겠습니다.</span></p><p class="sg-close none" id="sgNone" hidden></p></section>
   </div>
   <section class="sg-vid">
     <div class="sg-box" id="sgBox"><div class="sg-frame" id="sgFrame"><div class="sg-in"><div id="sgPlayer"></div><div class="sg-shield" id="sgShield" title="터치하면 소리 켜기/끄기"></div>
@@ -574,7 +585,8 @@ function clock(){ const d=new Date(); $('clock').innerHTML=d.toLocaleDateString(
 clock(); setInterval(clock,15000); render(); go(0);
 /* ===== v265 · 사이니지 ===== */
 /* v273 · 환영할 고객 이름 — 담당자 화면 [디스플레이 관리] + 상담 입력 '방문 예약'(그날) · fn_signage_guests(키)
-   키는 사이니지 기기에서 한 번 ?sk=키 로 열면 localStorage sg_key 에 남는다(주소창에서 바로 지움) · ?names=홍길동,김철수 = 미리보기 */
+   키는 사이니지 기기에서 한 번 ?sk=키 로 열면 localStorage sg_key 에 남는다(주소창에서 바로 지움) · ?names=홍길동,김철수 = 미리보기
+   v288 · 키가 없으면 화면 아래 '연결 번호'를 띄우고 담당자가 [디스플레이 관리] 에서 그 번호를 넣으면 기기 번호(sg_dev)가 키가 된다(아래 sgPair) */
 const SG_Q=new URLSearchParams(location.search);
 let SG_KEY=SG_Q.get('sk'); try{ if(SG_KEY){ localStorage.setItem('sg_key',SG_KEY); SG_Q.delete('sk'); history.replaceState(null,'',location.pathname+(SG_Q.toString()?'?'+SG_Q:'')); } else SG_KEY=localStorage.getItem('sg_key'); }catch(e){}
 function sgNamesPaint(n){ const E=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -584,6 +596,9 @@ function sgNamesPaint(n){ const E=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;
   const g=document.getElementById('sgGreet'), rsv=n.length>0;
   const sp=t=>String(t||'').split('\n').filter(Boolean).map(x=>`<span>${E(x)}</span>`).join('');
   g.innerHTML=sp(rsv?SG_TX.rsv:SG_TX.greet); $('sgClose').innerHTML=sp(SG_TX.close).replace(/<\/span><span>/g,' </span><span>'); $('sgW').textContent=SG_TX.w;
+  /* v288 · 이름이 없을 때는 감사 문구 아래에 따옴표 문구(SG_TX.none) */
+  const nl=String(SG_TX.none||'').split('\n').map(x=>x.trim()).filter(Boolean); if(nl.length){ nl[0]='“'+nl[0]; nl[nl.length-1]+='”'; }
+  $('sgNone').innerHTML=nl.map(x=>`<span>${E(x)}</span>`).join(' '); $('sgNone').hidden=rsv||!nl.length;
   document.getElementById('sgClose').hidden=!rsv; document.getElementById('sign').classList.toggle('rsv',rsv); }
 function sgDayKey(){ return new Date(Date.now()+9*3600e3).toISOString().slice(0,10); }
 /* 예시 이름 — 맨 아래 가운데 점을 누르면 켜고 끔 (localStorage sg_demo · 기본 꺼짐) */
@@ -593,14 +608,14 @@ function sgDemoSet(on){ sgDemoOn=false; }
 /* 이름 직접 바꾸기 — 이 기기에서 그날만 (localStorage sg_local {day,n}) · 담당자 화면이 안 될 때 */
 /* 사이니지에서 넣은 이름 — 서버(core.signage_guest src '사이니지 입력')에 저장돼 예약 명단에 더해진다 (v284)
    서버에 못 보냈으면 이 기기에 sg_local {day,n} 로 두고 다음 새로 고침 때 다시 보낸다(그동안은 명단에 더해 보임) */
-const SG_TX_DEF={w:'삼성스토어 시흥',greet:'매장에 귀한 걸음해주신\n고객님 진심으로 감사합니다.',rsv:'소중한 시간을 내어 예약해 주신\n고객님께 마음 깊이 감사드립니다.',close:'오늘의 방문이 기분 좋은\n기억으로 남도록\n정성을 다해 모시겠습니다.'};
+const SG_TX_DEF={w:'삼성스토어 시흥',greet:'매장에 귀한 걸음해주신\n고객님 진심으로 감사합니다.',rsv:'소중한 시간을 내어 예약해 주신\n고객님께 마음 깊이 감사드립니다.',close:'오늘의 방문이 기분 좋은\n기억으로 남도록\n정성을 다해 모시겠습니다.',none:'정성을 다해서\n상담 도와드리겠습니다'};
 let SG_TX=Object.assign({},SG_TX_DEF); try{ const t=JSON.parse(localStorage.getItem('sg_texts')||'null'); if(t) SG_TX=Object.assign({},SG_TX_DEF,t); }catch(e){}
 let SG_SIGN=[]; { const t=SG_Q.get('tx'); if(t){ try{ SG_TX=Object.assign({},SG_TX_DEF,JSON.parse(t)); }catch(e){} } }
 function sgLocal(){ try{ const v=JSON.parse(localStorage.getItem('sg_local')||'null'); return v&&v.day===sgDayKey()&&Array.isArray(v.n)?v.n:null; }catch(e){ return null; } }
-function sgEditOpen(){ const l=sgLocal(); $('sgEditTa').value=(l||SG_SIGN).join('\n'); $('sgEditClr').disabled=!(l||SG_SIGN).length; $('sgEdit').hidden=false; setTimeout(()=>$('sgEditTa').focus(),30); }
+function sgEditOpen(){ const l=sgLocal(); $('sgEditWarn').hidden=!!SG_KEY; $('sgEditTa').value=(l||SG_SIGN).join('\n'); $('sgEditClr').disabled=!(l||SG_SIGN).length; $('sgEdit').hidden=false; setTimeout(()=>$('sgEditTa').focus(),30); }
 function sgEditClose(){ $('sgEdit').hidden=true; }
 async function sgPush(n){ if(!SG_KEY) return false;
-  try{ const {data,error}=await sb.rpc('fn_signage_names_save',{p_key:SG_KEY,p_names:n}); if(error) throw error; try{ localStorage.removeItem('sg_local'); }catch(e){} sgApply(data); return true; }catch(e){ return false; } }
+  try{ const {data,error}=await sb.rpc('fn_signage_names_save',{p_key:SG_KEY,p_names:n}); if(error) throw error; try{ localStorage.removeItem('sg_local'); }catch(e){} sgApply(data); return true; }catch(e){ if(sgDenied(e)) sgUnpair(); return false; } }
 async function sgEditSave(){ const n=$('sgEditTa').value.split(/\n|,/).map(x=>x.trim().replace(/\s*고객님$/,'')).filter(Boolean).slice(0,12).map(x=>x.slice(0,30));
   sgEditClose(); if(!(await sgPush(n))){ try{ if(n.length) localStorage.setItem('sg_local',JSON.stringify({day:sgDayKey(),n})); else localStorage.removeItem('sg_local'); }catch(e){} sgNames(); } }
 function sgEditClear(){ $('sgEditTa').value=''; sgEditSave(); }
@@ -611,9 +626,28 @@ function sgApply(data){ if(data.texts&&!SG_Q.get('tx')){ SG_TX=Object.assign({},
 async function sgNames(){ const q=SG_Q.get('names');
   if(q!=null) return sgNamesPaint(q.split(',').map(x=>x.trim()).filter(Boolean));
   const l=sgLocal(); if(l&&SG_KEY&&await sgPush(l)) return;
-  if(!SG_KEY){ $('sgEditBtn').setAttribute('aria-pressed',String(!!(l&&l.length))); sgNamesPaint(l||[]); return; }
+  if(!SG_KEY){ $('sgEditBtn').setAttribute('aria-pressed',String(!!(l&&l.length))); sgNamesPaint(l||[]); sgPairStart(); return; }
   try{ const {data,error}=await sb.rpc('fn_signage_guests',{p_key:SG_KEY}); if(error) throw error; sgApply(data); }
-  catch(e){ let n=[]; try{ const v=JSON.parse(localStorage.getItem('sg_names')||'null'); if(v&&v.day===sgDayKey()) n=v.n; }catch(_){} if(l) l.forEach(x=>{ if(!n.includes(x)) n.push(x); }); sgNamesPaint(n); } }
+  catch(e){ if(sgDenied(e)){ sgUnpair(); sgNamesPaint(l||[]); return; } let n=[]; try{ const v=JSON.parse(localStorage.getItem('sg_names')||'null'); if(v&&v.day===sgDayKey()) n=v.n; }catch(_){} if(l) l.forEach(x=>{ if(!n.includes(x)) n.push(x); }); sgNamesPaint(n); } }
+/* v288 · 기기 연결 번호 — 키가 없는 기기는 화면 아래에 6자리 '연결 번호'를 띄우고(fn_signage_pair · 10초마다 · 15분 뒤엔 1분마다),
+   담당자가 [디스플레이 관리] › [매장 화면 기기 연결]에 그 번호를 넣으면 이 기기 번호(localStorage sg_dev · uuid)가 열쇠(sg_key)가 되어
+   예약 이름이 뜨고, 여기서 넣은 이름도 담당자 화면에 간다. 담당자가 연결을 해제하면(42501) 열쇠를 버리고 다시 번호를 띄운다.
+   미리보기(?names= · ?tx= · iframe)에서는 번호를 띄우지 않는다. */
+function sgUuid(){ const h=a=>[...a].map(x=>x.toString(16).padStart(2,'0')).join('').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/,'$1-$2-$3-$4-$5');
+  try{ if(crypto.randomUUID) return crypto.randomUUID(); const a=crypto.getRandomValues(new Uint8Array(16)); a[6]=(a[6]&15)|64; a[8]=(a[8]&63)|128; return h(a); }
+  catch(e){ const a=new Uint8Array(16); for(let i=0;i<16;i++) a[i]=Math.floor(Math.random()*256); a[6]=(a[6]&15)|64; a[8]=(a[8]&63)|128; return h(a); } }
+const sgDenied=e=>!!e&&(String(e.code||'')==='42501'||/권한이 없습니다/.test(String(e.message||'')));
+let SG_DEV=null, sgPairT=null, sgPairN=0;
+function sgPairable(){ return SIGN && !SG_KEY && SG_Q.get('names')==null && !SG_Q.get('tx') && window.self===window.top; }
+async function sgPair(){ if(!sgPairable()){ $('sgPair').hidden=true; if(sgPairT){ clearInterval(sgPairT); sgPairT=null; } return; }
+  sgPairN++; if(sgPairN>90&&sgPairN%6) return;
+  if(!SG_DEV){ try{ SG_DEV=localStorage.getItem('sg_dev'); }catch(e){} if(!SG_DEV||!/^[0-9a-f-]{36}$/.test(SG_DEV)){ SG_DEV=sgUuid(); try{ localStorage.setItem('sg_dev',SG_DEV); }catch(e){} } }
+  try{ const {data,error}=await sb.rpc('fn_signage_pair',{p_device:SG_DEV,p_ua:String(navigator.userAgent||'').slice(0,200)}); if(error) throw error;
+    if(data&&data.paired===true){ SG_KEY=SG_DEV; try{ localStorage.setItem('sg_key',SG_KEY); }catch(e){} $('sgPair').hidden=true; if(sgPairT){ clearInterval(sgPairT); sgPairT=null; } sgNames(); return; }
+    const c=data&&data.code?String(data.code).replace(/\D/g,''):''; $('sgPairCode').textContent=c?c.slice(0,3)+' '+c.slice(3):'—'; $('sgPair').hidden=c.length!==6; }
+  catch(e){ $('sgPair').hidden=true; } }
+function sgPairStart(){ if(!sgPairable()||sgPairT) return; sgPairN=0; sgPair(); sgPairT=setInterval(sgPair,10e3); }
+function sgUnpair(){ SG_KEY=null; try{ localStorage.removeItem('sg_key'); }catch(e){} sgPairStart(); }
 /* v272 · 꽃 덩굴 테두리 — 화면 크기에 맞춰 둘레를 따라 잎·분홍 꽃·물망초를 놓는다(같은 씨앗 → 늘 같은 모양) */
 function sgFlora(){ const sv=$('sgFlora'), sg=$('sign'); if(!sv) return; const W=sg.clientWidth, H=sg.clientHeight; if(!W||!H) return;
   let seed=7; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647), R=(a,b)=>a+rnd()*(b-a);
@@ -760,7 +794,7 @@ if(SIGN){ if(window.ResizeObserver) new ResizeObserver(()=>sgFit()).observe($('s
 
   $('sgEditBtn').addEventListener('click',sgEditOpen); $('sgEditOk').addEventListener('click',sgEditSave); $('sgEditX').addEventListener('click',sgEditClose); $('sgEditClr').addEventListener('click',sgEditClear);
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('sgEdit').hidden) sgEditClose(); });
-  sgNames(); setInterval(sgNames,60e3); sgFlora(); let flT=0; addEventListener('resize',()=>{ clearTimeout(flT); flT=setTimeout(sgFlora,150); }); if(SG_VIDEO) sgYT(); }
+  sgNames(); setInterval(sgNames,60e3); sgPairStart(); sgFlora(); let flT=0; addEventListener('resize',()=>{ clearTimeout(flT); flT=setTimeout(sgFlora,150); }); if(SG_VIDEO) sgYT(); }
 /* 키오스크 모드: ?fs=1 이면 첫 터치에서 전체화면 */
 if(new URLSearchParams(location.search).get('fs')==='1'){ document.addEventListener('pointerdown',()=>{ document.documentElement.requestFullscreen?.().catch(()=>{}); },{once:true}); }
 </script>
