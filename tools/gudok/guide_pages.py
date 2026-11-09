@@ -3,7 +3,7 @@
 
 경쟁사(빌리고 인포툰·케어솔루션 블로그)처럼 손님이 검색하는 질문 하나에 글 하나.
 숫자(카드 할인·선납·다품목·자동납부)는 데이터센터 정책 파일(sub_policy.js · sub_cards.js)에서 읽어
-정책이 바뀌면 다시 빌드할 때 같이 바뀐다. 사은품은 구체 품목을 적지 않는다(상담 완료 시 사은품 · 방문 구매 완료 시 와인).
+정책이 바뀌면 다시 빌드할 때 같이 바뀐다. 사은품 문구: 상담완료 시 네이버 페이 1만원 · 방문 구매 완료 시 와인 (2026-11-09).
 """
 import json, os, re
 import model_pages as MP
@@ -71,7 +71,7 @@ class Guides:
         cat = lambda k, n: '<a href="%s%s.html">%s 구독 가격</a>' % (links['catUrl'], k, n)
         auto = pct((self.pol.get('autopay') or {}).get('rate', 0.05))
         yrs, mperiod, mu = self.multi_text()
-        gift = '상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정'
+        gift = '상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정'
         A = []
         A.append(dict(slug='subscribe-vs-buy', title='삼성 가전, 구독이 나을까 일시불이 나을까?',
             desc='삼성 AI 구독과 일시불 구매를 총 비용·할인·포인트·무상수리 기간으로 비교했습니다. 모델별 실제 비교표로 바로 확인하세요.',
@@ -181,7 +181,7 @@ class Guides:
             {'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': faq}])
         body = ('<article class="ss-guide">\n<p class="ss-crumb"><a href="%s">구독센터</a> › <a href="%s">구독 안내</a></p>\n<h1>%s</h1>\n'
                 '<p class="ss-guide-answer"><b>한 줄 답</b> %s</p>\n%s\n<h2>자주 묻는 질문</h2>\n<dl class="ss-faq">%s</dl>\n'
-                '<p class="ss-guide-links">함께 보기: %s</p>\n<p class="ss-guide-cta"><a class="ss-btn" href="%s">구독 상담 신청</a> <span>상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정</span></p>\n</article>\n') % (
+                '<p class="ss-guide-links">함께 보기: %s</p>\n<p class="ss-guide-cta"><a class="ss-btn" href="%s">구독 상담 신청</a> <span>상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정</span></p>\n</article>\n') % (
             e(links['homeUrl']), e(links['guideUrl']), e(a['title']), e(a['answer']), a['body'],
             ''.join('<dt>%s</dt><dd>%s</dd>' % (e(q), e(ans)) for q, ans in a['faq']), ' · '.join(a['links']),
             e(links['consultUrl'] + '&from=guide&purpose=' + '%EC%8B%A0%EA%B7%9C%EA%B5%AC%EB%8F%85' + '&memo=' + '%5B%EA%B5%AC%EB%8F%85%EA%B0%80%EC%9D%B4%EB%93%9C%5D%20' + a['slug']))

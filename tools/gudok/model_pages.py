@@ -203,7 +203,7 @@ def body_html(M, i, title, links, static_href):
         table = ('<section class="sv-static"><h2 class="sv-h2">약정 기간별 월 구독료</h2><table class="sv-static-t"><thead><tr><th>약정</th><th>월 구독료(부터)</th><th>케어</th></tr></thead><tbody>' +
                  ''.join('<tr><td>%d년 (%d개월)</td><td>월 %s원</td><td>%s</td></tr>' % (y, y * 12, fmt(mo), e(care)) for y, mo, care in years) +
                  '</tbody></table><p class="sv-note">자동납부·선납·제휴카드 청구할인을 넣은 실제 월 납부액은 아래 계산기에서 바로 확인할 수 있습니다. '
-                 '상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정.</p></section>')
+                 '상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정.</p></section>')
     rel = ''
     var = M.variants(i)
     if var:

@@ -32,7 +32,7 @@ PAGE_DIR = 'subscribe'   # 스킨 안 폴더 — 주소 /main/html.php?htmid=sub
 
 COMMON_FAQ = [
     ('표시된 가격보다 더 저렴하게 구독할 수 있나요?',
-     '네, 꼭 문의해 주세요. 표시된 월 구독료는 기본 요금이며, 시기별 행사·제휴카드·선납 조건을 맞추면 더 낮아질 수 있습니다. 상담을 완료하시면 사은품을, 매장 방문 구매를 완료하시면 와인을 드립니다.'),
+     '네, 꼭 문의해 주세요. 표시된 월 구독료는 기본 요금이며, 시기별 행사·제휴카드·선납 조건을 맞추면 더 낮아질 수 있습니다. 상담을 완료하시면 네이버 페이 1만원을, 매장 방문 구매를 완료하시면 와인을 드립니다.'),
     ('구독료 말고 따로 내는 돈이 있나요?',
      '표시된 월 구독료에 제품 이용료와 선택한 케어 서비스가 포함되어 있습니다. 설치 환경에 따라 추가 설치비가 생기는 경우에는 상담 단계에서 미리 안내해 드립니다.'),
     ('제휴카드 할인은 어떻게 받나요?',
@@ -214,12 +214,12 @@ def home_body():
     </a>
     </div>
 
-    <!-- 이달의 혜택 — 시흥몰 맨 위 혜택 띠와 같은 내용 (사은품은 구체 품목을 적지 않는다 · 2026-11-04) -->
+    <!-- 이달의 혜택 — 시흥몰 맨 위 혜택 띠와 같은 내용 (2026-11-04 · 사은품 문구 2026-11-09) -->
     <section class="ss-sec ss-month">
         <h2>이달의 혜택 <small>2026.11.01 ~ 11.30</small></h2>
         <details class="ss-month-more"><summary><span class="is-open-no">이달의 혜택 4가지 더보기</span><span class="is-open-yes">접기</span></summary>
         <ul class="ss-month-list">
-            <li data-until="2026-11-30"><b>🎉 구독 페스티벌 최대 20%% 할인</b><p>상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정</p>
+            <li data-until="2026-11-30"><b>🎉 구독 페스티벌 최대 20%% 할인</b><p>상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정</p>
                 <span><a href="https://www.samsungsh.co.kr/main/html.php?htmid=service/subscribe_festival.html" data-cta="month_festival">상세보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html" data-cta="month_festival_consult">구독 상담 신청</a></span></li>
             <li><b>💍 혼수 · 입주 · 이사 최대 1645만원 혜택</b><p>여러 대를 한 번에 — 상시 진행</p>
                 <span><a href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=83" data-cta="month_wedding">상세보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html?evt=wedding" data-cta="month_wedding_consult">상담 신청</a></span></li>
@@ -274,7 +274,7 @@ def home_body():
     </section>
 
 
-    <!-- 삼성스토어 시흥 구독 센터 안내 · 회사 소개 (2026-11-07 · 검색엔진이 읽는 본문 · 사은품은 구체 품목을 적지 않는다) -->
+    <!-- 삼성스토어 시흥 구독 센터 안내 · 회사 소개 (2026-11-07 · 검색엔진이 읽는 본문 ) -->
     <section class="ss-sec ss-about" id="about">
         <h2>삼성스토어 시흥 구독 센터 안내</h2>
         <p><b>삼성스토어 구독센터</b>는 경기도 시흥시 대야동의 <b>삼성스토어 시흥</b>이 운영하는 삼성 가전 구독 안내 페이지입니다. 삼성 AI 구독클럽으로 구독할 수 있는 냉장고, 김치냉장고, 세탁기와 건조기, 비스포크 AI 콤보, 에어컨과 시스템에어컨, TV, 정수기, 공기청정기, 청소기, 식기세척기, 인덕션, 모니터, 갤럭시 탭과 갤럭시 북까지 1,000여 개 모델의 월 구독료를 품목별로 모았습니다. 매장에 오시기 전에 집에서 먼저 모델과 요금을 비교해 보시고, 궁금한 점은 전화나 온라인 상담으로 편하게 물어보세요.</p>
@@ -297,7 +297,7 @@ def home_body():
             <li>여러 조건을 비교해 보신 뒤 결정하시면 됩니다. 상담 신청만으로 계약이 되지는 않습니다.</li>
             <li>계약 뒤에는 설치 환경을 확인하고 배송·설치 일정을 안내해 드립니다.</li>
         </ol>
-        <p class="ss-about-gift">🎁 상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정</p>
+        <p class="ss-about-gift">🎁 상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정</p>
         <h3>구독과 일시불, 어떻게 고를까요?</h3>
         <p>구독은 목돈 없이 매달 나누어 내면서 약정 기간 동안 무상수리나 방문케어를 함께 받는 방법입니다. 한 번에 결제할 여유가 있고 관리 서비스가 따로 필요 없다면 일시불이 더 나을 수도 있습니다. 구독센터의 모델 페이지에서는 시흥몰 일시불 가격과 구독 총액을 나란히 보여 드리므로, 두 방법의 차이를 숫자로 먼저 비교해 보신 뒤 상담에서 생활 방식에 맞는 쪽을 함께 정하시면 됩니다. 자세한 비교는 <a href="/data/gudok/g/subscribe-vs-buy.html">구독 vs 일시불 가이드</a>에서도 확인하실 수 있습니다.</p>
         <h3>혼수·입주·이사와 사업자 구독</h3>
