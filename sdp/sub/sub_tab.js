@@ -762,7 +762,7 @@ function main() {
         (r.pointsAll ? cmpRow('포인트', '-', (cash ? '+' : '-') + fmt(r.pointsAll) + 'P' + (cash ? ' 따로 적립' : ''), 'is-blue') : '') +
         cmpRow('무상수리', '1년', r.years + '년 내내') +
         cmpRow('최종 부담', fmt(lump) + '원', fmt(r.netTotal) + '원', 'is-total') +
-        '</tbody></table>' + (r.netTotal < lump ? '<p class="subtab-vs-note">구독이 일시불보다 <b>' + fmt(lump - r.netTotal) + '원</b> 덜 들어요 · 상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정</p>' : '<p class="subtab-vs-note">목돈 없이 월 납부로 시작하고, 약정 기간 내내 무상수리를 받습니다.</p>') + '</section>';
+        '</tbody></table>' + (r.netTotal < lump ? '<p class="subtab-vs-note">구독이 일시불보다 <b>' + fmt(lump - r.netTotal) + '원</b> 덜 들어요 · 상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정</p>' : '<p class="subtab-vs-note">목돈 없이 월 납부로 시작하고, 약정 기간 내내 무상수리를 받습니다.</p>') + '</section>';
     }
 
     var cond = r.years + '년 약정 · ' + careLabel(r.care) + (r.prepay ? ' · 선납 ' + Math.round(r.prepay * 100) + '%' : '') +

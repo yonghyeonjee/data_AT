@@ -615,7 +615,7 @@ window.SUB_SHOP_READY = true;
      문구는 데이터센터 정책 SUB_POLICY.texts.bubble / bubbleGift 가 있으면 그것을, 없으면 기본 문구. 닫으면 이 브라우저 세션 동안 안 뜬다 */
   function bubbleTexts() {
     var t = (POL && POL.texts) || {};
-    return { main: t.bubble || '보시는 가격보다 더 저렴하게 가능한지 꼭 문의해 주세요!', gift: t.bubbleGift || '상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정' };
+    return { main: t.bubble || '지금 삼성스토어 시흥에 문의를 남겨보세요.', gift: t.bubbleGift || '상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정' };
   }
   function drawBubble() {
     if (CFG.bubble === false || document.getElementById('ssBubble')) return;
