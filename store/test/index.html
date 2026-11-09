@@ -1404,7 +1404,8 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
         </div>
       </div>
       <div style="display:flex;gap:6px">
-        <button type="button" class="pill btnp pri" id="btnQuoteHdr" onclick="openQuote()" title="견적서 페이지를 엽니다">견적서 발행 ↗</button>
+        <button type="button" class="pill btnp pri" id="btnQuoteHdr" onclick="openQuote()" title="기존 견적서를 엽니다">견적서 발행 ↗</button>
+        <button type="button" class="pill btnp" id="btnNewQuoteHdr" onclick="openQuote({},true)" title="상담 견적 화면을 새 창으로 엽니다">new_견적서 ↗</button>
         <span class="pill" id="pillToday">오늘 0건</span>
         <span class="pill warn hidden" id="pillUnclosed"></span>
         <button type="button" class="pill btnp sess hidden" id="sessPill" onclick="sessExtend()" title="로그인 남은 시간 · 누르면 1시간 연장" aria-label="로그인 남은 시간 · 누르면 연장">⏱ <span id="sessLeft">--:--</span> 연장</button>
@@ -1569,7 +1570,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
 
   <section class="panel hidden" id="tab-quote">
     <div class="intro"><b>견적서</b>는 홈페이지 견적서 페이지에서 만들고, 여기서 찾아 고객에게 보냅니다. 상담 줄의 <b>견적서 만들기</b>를 누르면 고객 정보가 채워진 채 열립니다.</div>
-    <div class="cta2"><button onclick="openQuote()">견적서 발행 ↗</button><button class="alt" onclick="openCalc()">구독료 계산기 ↗</button></div>
+    <div class="cta2"><button onclick="openQuote()">견적서 발행 ↗</button><button class="alt" onclick="openQuote({},true)">new_견적서 ↗</button><button class="alt" style="grid-column:1/-1" onclick="openCalc()">구독료 계산기 ↗</button></div>
     <div class="card" id="qtCard">
       <h2>내 견적서 <span id="qtSub">최근 90일</span></h2>
     <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
@@ -3998,6 +3999,7 @@ const NAV_LABEL={home:'홈', inbox:'상담', salechk:'판매 확인 필요', con
 /* 견적서·구독료 계산기 = 시흥몰 기존 페이지 (2026-11-09 되돌림) */
 const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
 const CALC_URL ='https://www.samsungsh.co.kr/main/html.php?htmid=service/calc_subscribe.html';
+const NEW_QUOTE_URL=location.origin+'/quote/';   // [new_견적서] = 상담 견적 통합 화면
 let QUICK_LINKS=[];
 async function loadQuickLinks(){ try{ QUICK_LINKS=(await rpc('fn_store_links',{p_code:CODE}))||[]; }catch(e){ QUICK_LINKS=[]; } syncNav(); }
 const LINK_ICON={
@@ -4010,7 +4012,7 @@ const LINK_ICON={
 /* 상담 줄 → 견적서에 담을 모델 코드들: 관심 모델(interest_model_code) + 내용의 '진단추천: 모델'(구독센터 상품 페이지에서 온 문의) + 관심 품목 글 속 모델형 토큰 */
 function qModels(x){ const out=[]; const add=v=>String(v||'').split(/[,\s·/]+/).forEach(t=>{ t=t.trim().toUpperCase().replace(/[^A-Z0-9\-]/g,''); if(/^[A-Z]{2}[A-Z0-9\-]{5,}$/.test(t)&&/\d/.test(t)&&!out.includes(t)) out.push(t); });
   add(x.model); const m=/진단추천:\s*([A-Za-z0-9\-]+)/.exec(String(x.content||'')); if(m) add(m[1]); add(x.interest); return out.slice(0,8).join(','); }
-function openQuote(o){ o=o||{};
+function openQuote(o,isNew){ o=o||{};
   const q=new URLSearchParams();
   if(o.no) q.set('no',o.no);
   if(o.no && o.ver) q.set('v',o.ver);
@@ -4020,8 +4022,8 @@ function openQuote(o){ o=o||{};
   if(o.consult) q.set('consult',o.consult);                       // 상담 id — 견적서가 어느 문의에서 나왔는지 (2026-11-04)
   if(o.models) q.set('models',String(o.models).replace(/\s/g,'')); // 관심 모델(쉼표) — 견적서가 바로 담는다
   if(ME) q.set('counselor',ME);
-  const u=QUOTE_URL+(q.toString()?'&'+q.toString():'');
-  window.open(u,'sat_quote','noopener');
+  const u=isNew? NEW_QUOTE_URL+(q.toString()?'?'+q.toString():'') : QUOTE_URL+(q.toString()?'&'+q.toString():'');
+  window.open(u,isNew?'sat_quote_new':'sat_quote','noopener');
 }
 function openCalc(){ window.open(CALC_URL,'sat_calc','noopener'); }
 function tabInfo(t){ const b=document.querySelector(`.tab[data-tab="${t}"]`); if(!b) return null;
@@ -4040,6 +4042,7 @@ function syncNav(){
     +`<button class="${restActive?'active':''}" onclick="sideOpen()">${NAV_ICON.more}더보기${restBadge?`<span class="n">${restBadge}</span>`:''}</button>`;
   side.innerHTML += `<div class="grp">견적서</div>`
     + `<a class="lk" href="javascript:void 0" onclick="openQuote();sideClose()">${LINK_ICON.quote}<span>견적서 발행</span><small>새 창</small></a>`
+    + `<a class="lk" href="javascript:void 0" onclick="openQuote({},true);sideClose()">${LINK_ICON.quote}<span>new_견적서</span><small>새 창</small></a>`
     + `<a class="lk" href="javascript:void 0" onclick="openCalc();sideClose()">${LINK_ICON.calc}<span>구독료 계산기</span><small>새 창</small></a>`
     + (QUICK_LINKS.length ? `<div class="grp">자주 가는 곳</div>` + QUICK_LINKS.map(l=>`<a class="lk" href="${esc(l.url)}" target="_blank" rel="noopener" onclick="sideClose()">${LINK_ICON.link||''}<span>${esc(l.name)}</span><small>${esc(l.note||'새 창')}</small></a>`).join('') : '');
   const nm=$('sideName'); if(nm) nm.textContent=$('meName').textContent||'담당자';
