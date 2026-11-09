@@ -132,7 +132,7 @@ class Guides:
 <li><b>구독료로 사용 · 전액 N개월</b> — 처음 몇 달은 구독료 전액을 포인트로 내 월 0원.</li>
 <li><b>포인트로 따로 받기</b> — 구독료는 그대로 내고, 포인트는 현금처럼 다른 곳에 씁니다.</li></ol>
 <p>구독센터 모델 페이지 계산기에서 세 방법을 눌러 보면 월 납부액과 개월별 납부가 바로 바뀝니다.</p>
-<h2>얼마나 쌓이나요?</h2><p>적립 예정 포인트는 모델마다 다르며 삼성닷컴 기준(제품분 금액 × 적립률 + 상품별 추가 포인트)을 따릅니다. 행사 기간에는 "N개월 구독료 상당" 포인트가 더해지는 모델도 있습니다.</p>''',
+<h2>얼마나 쌓이나요?</h2><p>적립 예정 포인트는 모델마다 다르며 총구독료 × 적립률 + 상품별 추가 포인트을 따릅니다. 행사 기간에는 "N개월 구독료 상당" 포인트가 더해지는 모델도 있습니다.</p>''',
             faq=[('포인트는 언제 들어오나요?', '구독 계약·설치가 끝난 뒤 적립됩니다. 적립 시점은 상담 때 안내해 드립니다.'),
                  ('유지기간이 지나면 어떻게 되나요?', '포인트 유지기간(36개월)이 지나면 남은 포인트는 사라질 수 있어, 계산기는 36개월 안에 다 쓰는 것으로 보여 드립니다.')],
             links=[cat('aicombo', 'AI 콤보'), cat('kimchi', '김치냉장고')]))
@@ -185,7 +185,7 @@ class Guides:
             e(links['homeUrl']), e(links['guideUrl']), e(a['title']), e(a['answer']), a['body'],
             ''.join('<dt>%s</dt><dd>%s</dd>' % (e(q), e(ans)) for q, ans in a['faq']), ' · '.join(a['links']),
             e(links['consultUrl'] + '&from=guide&purpose=' + '%EC%8B%A0%EA%B7%9C%EA%B5%AC%EB%8F%85' + '&memo=' + '%5B%EA%B5%AC%EB%8F%85%EA%B0%80%EC%9D%B4%EB%93%9C%5D%20' + a['slug']))
-        return head(a['title'] + ' | 삼성스토어 시흥 구독센터', a['desc'], a['kw'], url, og_image=MP.OG_IMG, extra_head=ld) + \
+        return head(a['title'] + ' | 삼성스토어 구독센터', a['desc'], a['kw'], url, og_image=MP.OG_IMG, extra_head=ld) + \
             '<div id="subShopRoot">\n    <div data-ss="nav"></div>\n' + body + '    <section class="ss-sec"><div data-ss="cta"></div></section>\n</div>\n' + foot() + loader() + '</body>\n</html>\n'
 
     @staticmethod

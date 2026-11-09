@@ -145,7 +145,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     var h = root.querySelector('[data-slot="head"]');
     if (h) h.innerHTML = headHtml();
     var title = productName();
-    document.title = title + ' 구독 가격 월 ' + fmt(entry[1]) + '원~ (' + model + ') | 삼성스토어 시흥 구독센터';
+    document.title = title + ' 구독 가격 월 ' + fmt(entry[1]) + '원~ (' + model + ') | 삼성스토어 구독센터';
     var desc = title + ' (' + model + ') 삼성 AI 구독 월 ' + fmt(entry[1]) + '원부터. 약정 기간·방문케어 주기·선납 할인·제휴카드 할인별 월 구독료를 바로 계산하고 구독 상담을 신청하세요.';
     setMeta('name', 'description', desc);
     setMeta('property', 'og:title', document.title);

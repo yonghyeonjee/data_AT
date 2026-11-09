@@ -261,12 +261,12 @@ window.SUB_SHOP_READY = true;
 
   /* ---------- 카드 혜택 배지 (2026-11-04 · 경쟁사처럼 최대혜택가·포인트·구독료 지원을 카드에서 바로) ----------
      포인트 = 데이터센터 정책 SUB_POLICY.points[모델] (삼성닷컴 적립 예정 멤버십 포인트 · 구독탭과 같은 원본)
-       total 이 있으면 그 값, 없으면 요금 색인의 제품분 금액(SUB_INDEX.m[모델][2]) × (정률+기본)% + 추가
+       요금 색인의 총구독료(SUB_INDEX.m[모델][3] · 월 구독료가 가장 낮은 요금제의 DPS 총구독료) × (정률+기본)% + 추가
+       (2026-11-06: 제품구독료 기준인 삼성닷컴 totalPoint(pt.total) 는 쓰지 않는다 · 색인에 총구독료가 없으면 배지 안 붙임)
      구독료 지원 = SUB_POLICY.promos 중 기간 안 · 이 모델이 대상인 "N개월 구독료 상당" 행사 */
   function pointOf(m) {
     var pt = POL && POL.points && POL.points[m]; if (!pt) return 0;
-    if (pt.total > 0) return +pt.total;
-    var e = IDX.m[m], base = e && e[2] > 0 ? e[2] : 0;
+    var e = IDX.m[m], base = e && e[3] > 0 ? e[3] : 0;
     var v = Math.floor(base * ((+pt.rate || 0) + (+pt.base || 0)) / 100) + (+pt.add || 0);
     return v > 0 ? v : 0;
   }
@@ -562,14 +562,19 @@ window.SUB_SHOP_READY = true;
   }
   // 인증점 띠 (2026-11-04) — 모든 구독센터 화면 맨 위(상단 바 아래)에 얇게 한 줄 · 누르면 위촉장 · CFG.trustBar === false 면 안 띄움
   function drawTrustBar() {
-    if (CFG.trustBar === false || document.getElementById('ssTrustBar')) return;
-    var bar = document.createElement('div'); bar.id = 'ssTrustBar'; bar.className = 'ss-trustbar';
+    // 원본 HTML 에 빈 띠 자리가 있으면 그걸 채운다 (2026-11-07 · 나중에 끼우면 화면이 한 칸 밀려 깜빡인다)
+    var bar = document.getElementById('ssTrustBar');
+    if (CFG.trustBar === false) { if (bar && bar.parentNode) bar.parentNode.removeChild(bar); return; }
+    if (bar && bar.firstChild) return;
+    var fresh = !bar;
+    if (fresh) { bar = document.createElement('div'); bar.id = 'ssTrustBar'; bar.className = 'ss-trustbar'; }
     bar.innerHTML = '<button type="button" data-cert aria-label="삼성 AI 구독 파트너 인증점 위촉장 보기">' +
       '<img src="' + esc(CERT_IMG) + '" alt="" aria-hidden="true">' +
       '<span class="ss-trustbar-badge">✔ 삼성전자 공식 위촉</span>' +
       '<span class="ss-trustbar-txt"><b>삼성 AI 구독 파트너 인증점</b><em> · 삼성스토어 시흥</em></span>' +
       '<span class="ss-trustbar-more">위촉장 보기 ›</span></button>';
     bar.addEventListener('click', function () { openCert(); });
+    if (!fresh) return;
     var top = document.querySelector('.gd-top');
     if (top && top.parentNode) top.parentNode.insertBefore(bar, top.nextSibling);
     else if (root && root.parentNode) root.parentNode.insertBefore(bar, root);
@@ -716,7 +721,7 @@ window.SUB_SHOP_READY = true;
     var p = PAGE_BY[CFG.key];
     if (CFG.page !== 'cat' || !p || CFG.keepTitle) return;
     var all = rowsOf(p); if (!all.length) return;
-    document.title = '삼성 ' + p.name + ' 구독 가격 월 ' + fmt(minOf(all)) + '원~ | ' + fmt(all.length) + '개 모델 비교 · 삼성스토어 시흥 구독센터';
+    document.title = '삼성 ' + p.name + ' 구독 가격 월 ' + fmt(minOf(all)) + '원~ | ' + fmt(all.length) + '개 모델 비교 · 삼성스토어 구독센터';
     var d = document.querySelector('meta[name="description"]');
     if (d) d.setAttribute('content', '삼성 ' + p.name + ' 구독 ' + fmt(all.length) + '개 모델의 월 구독료를 한 번에 비교하세요. 월 ' + fmt(minOf(all)) + '원부터, 제휴카드 할인·선납 할인·방문케어 주기별 요금까지. 삼성스토어 시흥 구독 상담.');
   }

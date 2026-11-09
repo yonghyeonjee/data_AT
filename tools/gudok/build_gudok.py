@@ -75,7 +75,7 @@ class Site:
 <meta name="description" content="%(desc)s">
 <meta name="keywords" content="%(kw)s">
 %(canon)s<meta property="og:type" content="website">
-<meta property="og:site_name" content="삼성스토어 시흥">
+<meta property="og:site_name" content="삼성스토어 구독센터">
 <meta property="og:title" content="%(title)s">
 <meta property="og:description" content="%(desc)s">
 <meta property="og:url" content="%(url)s">
@@ -108,6 +108,26 @@ class Site:
            canon=('<link rel="canonical" href="%s">\n' % e(canonical)) if canonical else '',
            ogimg=('<meta property="og:image" content="%s">\n' % e(og_image)) if og_image else '', xhead=extra_head,
            dc_origin=re.sub(r'^(https?://[^/]+).*$', r'\1', B.DC))
+
+    @staticmethod
+    def finish(html_, home=False):
+        """깜빡임 줄이기 (2026-11-07)
+           1) 본문 끝에 있던 데이터센터 CSS(sdp/sub/*.css)를 <head> 로 옮긴다 — 끝에 두면 스타일 없이 한 번 그렸다가 다시 그린다
+           2) 인증점 띠(#ssTrustBar) 자리를 원본 HTML 에 둔다 — JS 가 나중에 끼우면 화면 전체가 한 칸 밀린다 (sub_shop.js 가 빈 띠를 채운다)
+           3) JS 가 채우는 칸(메뉴·검색, 홈은 품목·인기 제품 등)의 높이를 비어 있을 때 미리 잡아 둔다"""
+        i = html_.index('</head>')
+        links = re.findall(r'<link rel="stylesheet" href="https://db\.samsungat\.co\.kr/sdp/sub/[a-z_]+\.css">\n', html_[i:])
+        for l in links:
+            html_ = html_[:i] + html_[i:].replace(l, '', 1)
+        keep = ('[data-ss="nav"]:empty { min-height:109px; } [data-ss="search"]:empty { min-height:56px; } .ss-trustbar:empty { min-height:38px; }\n'
+                '@media (max-width:760px) { [data-ss="nav"]:empty { min-height:129px; } [data-ss="search"]:empty { min-height:52px; } .ss-trustbar:empty { min-height:37px; } }\n')
+        if home:
+            keep += ('[data-ss="bands"]:empty { min-height:1071px; } [data-ss="cats"]:empty { min-height:445px; } [data-ss="pick"]:empty { min-height:500px; } [data-ss="popular"]:empty { min-height:1465px; }\n'
+                     '@media (max-width:760px) { [data-ss="bands"]:empty { min-height:1910px; } [data-ss="cats"]:empty { min-height:985px; } [data-ss="pick"]:empty { min-height:455px; } [data-ss="popular"]:empty { min-height:2576px; } }\n')
+        html_ = html_.replace('</head>', ''.join(links) + '<style>\n' + keep + '</style>\n</head>', 1)
+        if 'id="ssTrustBar"' not in html_ and '<main class="gd-main">' in html_:
+            html_ = html_.replace('<main class="gd-main">', '<div id="ssTrustBar" class="ss-trustbar"></div>\n<main class="gd-main">', 1)
+        return html_
 
     def foot(self):
         return '''</main>
@@ -204,7 +224,7 @@ class Site:
             if models:
                 name = re.sub(r'^삼성 | 구독 가격.*$', '', re.search(r'<h1>([^<]*)</h1>', body).group(1))
                 low = min(M.idx['m'][m][1] for m in models)
-                title = '삼성 %s 구독 가격 월 %s원~ | %s개 모델 비교 · 삼성스토어 시흥 구독센터' % (name, MP.fmt(low), MP.fmt(len(models)))
+                title = '삼성 %s 구독 가격 월 %s원~ | %s개 모델 비교 · 삼성스토어 구독센터' % (name, MP.fmt(low), MP.fmt(len(models)))
                 desc = '삼성 %s 구독 %s개 모델의 월 구독료를 한 번에 비교하세요. 월 %s원부터, 제휴카드 할인·선납 할인·방문케어 주기별 요금까지. 삼성스토어 시흥 구독 상담.' % (name, MP.fmt(len(models)), MP.fmt(low))
                 body = body.replace('<div data-ss="list"></div>', '<div data-ss="list">%s</div>' % MP.cat_list_html(M, models, self.static_href), 1)
                 crumbs.append({'@type': 'ListItem', 'position': 2, 'name': name + ' 구독', 'item': self.site + self.dir + fname})
@@ -215,6 +235,7 @@ class Site:
             lds.append({'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': crumbs})
         if kind == 'home':
             lds.append(MP.store_ld(self.site, self.dir + 'index.html'))
+            lds.append({'@context': 'https://schema.org', '@type': 'WebSite', 'name': '삼성스토어 구독센터', 'alternateName': ['삼성스토어 시흥 구독센터', '삼성 구독센터'], 'url': self.site + self.dir + 'index.html', 'inLanguage': 'ko-KR', 'publisher': {'@type': 'Organization', 'name': '(주)삼성앤텍'}})
         if kind == 'guide' and getattr(self, 'articles', None):   # 구독 안내 페이지에 가이드 글 목록
             mk = '    <section class="ss-sec">\n        <h2>자주 묻는 질문</h2>'
             if mk in body: body = body.replace(mk, GP.Guides.index_html(self.articles, self.links) + mk, 1)
@@ -363,15 +384,15 @@ class Site:
   .sm a:hover { color:#1d6fe8; text-decoration:underline; }
   .sm .top ul { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); font-size:14px; font-weight:600; }
 """
-        body = ['<div class="sm"><h1>삼성스토어 시흥 구독센터 전체 페이지</h1><p class="lead">구독센터의 모든 페이지와 구독 가능한 삼성 가전 모델별 상품 페이지 목록입니다. 모델을 누르면 약정·케어·제휴카드별 월 구독료를 바로 계산할 수 있습니다.</p>']
+        body = ['<div class="sm"><h1>삼성스토어 구독센터 전체 페이지</h1><p class="lead">구독센터의 모든 페이지와 구독 가능한 삼성 가전 모델별 상품 페이지 목록입니다. 모델을 누르면 약정·케어·제휴카드별 월 구독료를 바로 계산할 수 있습니다.</p>']
         body.append('<section class="top"><h2>구독센터</h2><ul>' + ''.join('<li><a href="%s">%s</a></li>' % (self.dir + f, e(n)) for f, n in pages) + '</ul></section>')
         for cat, models in models_by_cat:
             body.append('<section><h2>삼성 %s 구독 모델 <small>(%d개)</small></h2><ul>' % (e(cat_names.get(cat, cat)), len(models)) +
                         ''.join('<li><a href="%s">%s</a></li>' % (self.static_href(m), m) for m in models) + '</ul></section>')
         body.append('</div>')
-        return (self.head('삼성 가전 구독 전체 페이지 · 모델별 구독 상품 목록 | 삼성스토어 시흥 구독센터',
-                          '삼성스토어 시흥 구독센터의 모든 페이지와 구독 가능한 삼성 가전 모델 전체 목록. 냉장고·세탁기·TV·에어컨 등 모델별 월 구독료 페이지로 바로 이동하세요.',
-                          '삼성 구독 모델 목록, 삼성 가전 구독 전체, 삼성스토어 시흥 구독센터', self.url + 'sitemap.html', css) +
+        return (self.head('삼성 가전 구독 전체 페이지 · 모델별 구독 상품 목록 | 삼성스토어 구독센터',
+                          '삼성스토어 구독센터(삼성스토어 시흥)의 모든 페이지와 구독 가능한 삼성 가전 모델 전체 목록. 냉장고·세탁기·TV·에어컨 등 모델별 월 구독료 페이지로 바로 이동하세요.',
+                          '삼성 구독 모델 목록, 삼성 가전 구독 전체, 삼성스토어 구독센터', self.url + 'sitemap.html', css) +
                 chr(10).join(body) + chr(10) + self.foot() + '</body>' + chr(10) + '</html>' + chr(10))
 
     # ---------- 전체 ----------
@@ -401,7 +422,7 @@ class Site:
         for fname, html_, _ in pages:
             assert '{' + '=' not in html_ and '{ #' not in html_, fname   # 고도몰 템플릿 문법이 남지 않게
             with open(os.path.join(self.out, fname), 'w', encoding='utf-8', newline='\n') as f:
-                f.write(html_)
+                f.write(self.finish(html_, home=fname == 'index.html'))
         # 모델별 정적 페이지 (2026-11-04)
         M = self.M
         mdir = os.path.join(self.out, 'm'); os.makedirs(mdir, exist_ok=True)
@@ -412,14 +433,14 @@ class Site:
             fn = m.replace('/', '_')
             assert re.match(r'^[A-Z0-9_-]+$', fn), m   # 파일 이름으로 쓸 수 있는 모델명만
             with open(os.path.join(mdir, fn + '.html'), 'w', encoding='utf-8', newline='\n') as f:
-                f.write(self.model_page(M, m))
+                f.write(self.finish(self.model_page(M, m)))
         MP.static_js(models, os.path.join(os.path.dirname(index_js), 'sub_static.js'))
         # 질문형 가이드 글 (2026-11-04)
         gdir = os.path.join(self.out, 'g'); os.makedirs(gdir, exist_ok=True)
         for a in self.articles:
             html_ = self.G.page(self, a, self.links, self.head, self.foot, lambda: self.loader('shop', 'SUB_SHOP_CONFIG', 'SUB_SHOP_READY', 'guide', ''))
             with open(os.path.join(gdir, a['slug'] + '.html'), 'w', encoding='utf-8', newline='\n') as f:
-                f.write(html_)
+                f.write(self.finish(html_))
 
         today = datetime.date.today().isoformat()
         sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
