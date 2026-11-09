@@ -368,7 +368,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <div class="seg sm" id="lumpKind"></div>
         <span class="hint" id="lumpHint"></span></div>
       </div>
-      <div class="row"><span class="lbl">⭐ 포인트 합계 <small class="hint">(DPS 견적 제품 포인트 총합계)</small></span>
+      <div class="row"><span class="lbl">⭐ 포인트 합계 <small class="hint">(DPS 포인트시뮬 장바구니 「포인트합계」의 계 · 멤버십기본 포함)</small></span>
         <input class="in num" id="pointCommon" type="number" step="1000" placeholder="직접 입력" onchange="Q.cond.pointCommon=+this.value||0; render()"><span class="hint" id="pointWhere"></span></div>
       <div class="row" id="bnEdit"></div>
       <div class="row"><span class="lbl">조건부 캐시백 <small class="hint">(할부 품목 · 한 견적에 1회만)</small> <span id="cbCond"></span></span>
@@ -927,7 +927,7 @@ function lumpPart(amount, months, base, first, cbOk, kind){
   if(LUMP){ const cd=LUMP.cards[kind]||{}, m=String(months);
     if(cd.plus&&inst){ o.fee=Math.round(amount*(+(LUMP.fee||{})[m]||0)); o.bill=tier((LUMP.billDisc||{})[m],amount); o.sp=tier(LUMP.sPoint,amount); }
     if(first) o.tp=tier((LUMP.typePoint||{})[Q.cust.type],base);
-    if(!(cd.plus&&inst)) o.mem=Math.floor(amount*(+LUMP.member||0));   // 기본멤버십P 0.1% = 플러스페이(할부) 금액은 제외 ('6-12 할부_조건부'!B12)
+    if(!(cd.plus&&inst)&&!(+Q.cond.pointCommon>0)) o.mem=Math.floor(amount*(+LUMP.member||0));   // 기본멤버십P 0.1% = 플러스페이(할부) 금액은 제외 ('6-12 할부_조건부'!B12)
     if(cbOk&&inst&&cd.cashback&&Q.cond.cb) o.cb=tier((LUMP.cashback||{})[m],amount); }
   o.cash=o.sp+o.jp+o.tp+o.mem;
   o.per=inst? Math.floor((amount-o.bill)/o.months/10)*10 : amount-o.bill;
