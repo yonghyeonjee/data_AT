@@ -222,6 +222,10 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .tag.hd.none{background:#fff;color:#B3261E;box-shadow:inset 0 0 0 1.5px #F0B3AE}  /* 미배정 */
 .tag.re{background:#FFF1E6;color:#B45309} .tag.mth-t{background:#EDF1F6;color:#40546B}
 .tag.qt{background:#FBF1DC;color:#8A5D00}                                    /* 견적서 */
+/* 구매 구분 태그 — 구독(청록) · 일반(=일시불) · 직판 (v293) */
+.tag.kd{font-size:calc(11px * var(--font-scale));padding:1px 7px;margin-right:6px;vertical-align:1px;font-weight:800}
+.tag.kd.sub{background:#E6F4F2;color:#0B5E57;border:1px solid #BFE3DD} .tag.kd.one{background:#EEF1F5;color:#3F4B5C;border:1px solid #DDE2EA} .tag.kd.dir{background:#FBF1DC;color:#7A4F00;border:1px solid #F0DDB0}
+.kds{font-style:normal;color:#0B5E57;font-weight:700}
 .tag.new{background:#FDE7E6;color:#B3261E}
 .tag.hold{background:#FBF1DC;color:#8A5A00}
 .tag.buy{background:#E3F4E6;color:#1E6B2A}                                   /* 판매 완료 · DPS 연결됨 */
@@ -5081,6 +5085,7 @@ function cjEv(e){ const K=CJ_K[e.k]||[e.k,'#3F4B5C','#EEF1F5'], x=e.x||{}, tg=[]
     tg.push(x.sent_at?cjTag('고객에게 보냄 '+cjDate(x.sent_at)):cjTag('발행만 (안 보냄)'));
     if(Number(x.views)) tg.push(cjTag(`열람 ${x.views}회`+(x.last_view?` · 마지막 ${cjDate(x.last_view)}`:''),CJ_OK)); else if(x.sent_at) tg.push(cjTag('아직 안 열어 봄',CJ_WARN)); }
   if(e.k==='send'&&x.failed) tg.push(cjTag('발송 실패',CJ_BAD));
+  if(e.k==='buy'){ const kd=/구독/.test(e.t||'')?'구독':/일시불/.test(e.t||'')?'일시불':/직판/.test(e.t||'')?'직판':''; if(kd) tg.push(kdTag(kd)); }
   if(e.k==='buy'||e.k==='cancel'){ if(Number(x.qty)) tg.push(cjTag(`${Number(x.qty)}개`)); if(Number(x.refund)) tg.push(cjTag('환불 '+cjWon(x.refund)+'원',CJ_BAD));
     if(x.status) tg.push(cjTag(x.status)); if(x.handler) tg.push(cjTag('담당 '+x.handler)); tg.push(cjSubs(x)); }
   if(e.k==='dps'){ if(x.dup) tg.push(cjTag('원장 주문과 같은 구매일 수 있음',CJ_WARN)); tg.push(cjSubs(x)); }
@@ -5163,7 +5168,7 @@ function renderMyCustomers(){
     return `<div class="cuitem" id="cu_${esc(x.key)}">
       <div class="head" role="button" tabindex="0" aria-expanded="false" onclick="cuToggle('${esc(x.key)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cuToggle('${esc(x.key)}')}">
         <div class="who"><b>${esc(x.name||'—')}</b><span class="ph">${x.phone||'번호 없음'}</span>${x.consent?'<span class="mine">수신동의</span>':''}${x.open_callback?'<span class="mine cb">콜백 대기</span>':''}</div>
-        <div class="meta">${ru?`<span class="res ${ru[0]}">${esc(ru[1])}</span>`:'<span class="res pre">구매만</span>'}<span>상담 ${x.consult_n||0}회</span><span class="${stale?'stale':''}">${cuAgo(d)}</span>${x.last_channel?`<span class="ch">${esc(x.last_channel)}</span>`:''}${x.last_interest?`<span class="it">${esc(x.last_interest)}</span>`:''}${x.orders?`<span>구매 ${x.orders}건 ${won(x.spent)}</span>`:''}</div>
+        <div class="meta">${ru?`<span class="res ${ru[0]}">${esc(ru[1])}</span>`:'<span class="res pre">구매만</span>'}<span>상담 ${x.consult_n||0}회</span><span class="${stale?'stale':''}">${cuAgo(d)}</span>${x.last_channel?`<span class="ch">${esc(x.last_channel)}</span>`:''}${x.last_interest?`<span class="it">${esc(x.last_interest)}</span>`:''}${x.orders?`<span>구매 ${x.orders}건${x.orders_sub?` <i class="kds">구독 ${x.orders_sub}</i>`:''} ${won(x.spent)}</span>`:''}</div>
         <span class="chev" aria-hidden="true">펼치기 ▾</span>
       </div>
       <div class="body hidden" id="cub_${esc(x.key)}"></div>
@@ -5198,8 +5203,8 @@ async function cuToggle(key){
         ${k.next_cat||k.next_model?`<div class="hb">다음 관심 ${esc([k.next_cat,k.next_model].filter(Boolean).join(' '))}${k.next_date?` · ${dt(k.next_date)}`:''}</div>`:''}
       </div>`; }).join(''):'<div class="empty sm">상담 기록이 없습니다</div>'}</div>
     <div class="hsec"><div class="ht">구매 이력 <small>${os.length}건</small></div>${os.length?os.map(o=>`
-      <div class="hrow"><div class="hl"><b>${dt(o.at)}</b><span>${esc(o.product||'')}</span></div>
-        <div class="hb">${esc([o.channel,o.kind,o.status].filter(Boolean).join(' · '))}${o.n>1?` · ${o.n}줄`:''} · ${won(o.amount)}${o.refund?` (환불 ${won(o.refund)})`:''}${o.handler&&o.handler!==ME?` · 담당 ${esc(o.handler)}`:''}</div></div>`).join(''):'<div class="empty sm">구매 기록이 없습니다</div>'}</div></details>`;
+      <div class="hrow"><div class="hl"><b>${dt(o.at)}</b>${kdTag(o.kind)}<span>${esc(o.product||'')}</span></div>
+        <div class="hb">${esc([o.channel,o.status].filter(Boolean).join(' · '))}${subTxt(o)?` · ${esc(subTxt(o))}`:''}${o.n>1?` · ${o.n}줄`:''} · ${won(o.amount)}${o.refund?` (환불 ${won(o.refund)})`:''}${o.handler&&o.handler!==ME?` · 담당 ${esc(o.handler)}`:''}</div></div>`).join(''):'<div class="empty sm">구매 기록이 없습니다</div>'}</div></details>`;
   if(jr) cjPaint(body.querySelector('.cj'));
 }
 /* 내 고객 펼침 맨 위 — 과거 구매를 바로 (주문 하나 = 한 줄 · 최근 5건 · 서버 fn_store_customer_detail 이 출처·주문번호로 묶어 준다 · 상담 입력 고정 헤더도 같은 목록) (v292) */
@@ -5207,8 +5212,12 @@ function cuBuyHtml(key, os, cu){ const dt=v=>v?String(v).slice(0,10).replace(/-/
   if(!os.length) return `<div class="cubuy none"><div class="ht">구매 이력 <small>없음</small></div><div class="empty sm">원장·DPS 에 이 고객의 구매가 없습니다</div></div>`;
   const n=Number(cu&&cu.orders!=null?cu.orders:os.length), spent=cu&&cu.spent!=null?Number(cu.spent):os.reduce((s,o)=>s+(Number(o.amount)||0)-(Number(o.refund)||0),0);
   return `<div class="cubuy"><div class="ht">구매 이력 <small>${n}건 · ${won(spent)} · 마지막 ${dt(os[0].at)}</small></div>${os.slice(0,5).map(cbRow).join('')}${os.length>5?`<button type="button" class="mini more" onclick="cuDetOpen('${esc(key)}')">전체 ${os.length}건 보기 ▾</button>`:''}</div>`; }
-function cbRow(o){ const dt=v=>v?String(v).slice(0,10).replace(/-/g,'.'):'';
-  return `<div class="cbrow"><b>${dt(o.at)}</b><span class="pn">${esc(o.product||'(상품명 없음)')}</span><span class="am">${won(o.amount)}${Number(o.refund)?` <i>환불 ${won(o.refund)}</i>`:''}</span><span class="hm">${esc([o.kind,o.channel,o.status].filter(Boolean).join(' · '))}${o.n>1?` · ${o.n}줄`:''}${o.handler&&o.handler!==ME?` · 담당 ${esc(o.handler)}`:''}</span></div>`; }
+/* 구매 구분 태그 — 구독 · 일반(일시불) · 직판. DPS 구독 줄은 종류·월 요금·개월·만료(subs)를 글로 (v293) */
+const KD_LAB={'구독':['sub','구독'],'일시불':['one','일반'],'직판':['dir','직판']};
+function kdTag(kind){ const ks=String(kind||'').split('·').map(x=>x.trim()).filter(Boolean); return ks.map(x=>{ const d=KD_LAB[x]||['one',x]; return `<span class="tag kd ${d[0]}" title="${esc(x)}">${esc(d[1])}</span>`; }).join(''); }
+function subTxt(o){ const u=Array.isArray(o&&o.subs)?o.subs:[]; return u.map(s=>[s.kind, s.monthly?`월 ${won(s.monthly)}`:'', s.months?`${s.months}개월`:'', s.end?`만료 ${String(s.end).slice(0,10).replace(/-/g,'.')}`:'', s.service, s.status&&s.status!=='접수'?s.status:''].filter(Boolean).join(' · ')).join(' / '); }
+function cbRow(o){ const dt=v=>v?String(v).slice(0,10).replace(/-/g,'.'):''; const su=subTxt(o);
+  return `<div class="cbrow"><b>${dt(o.at)}</b><span class="pn">${kdTag(o.kind)}${esc(o.product||'(상품명 없음)')}</span><span class="am">${won(o.amount)}${Number(o.refund)?` <i>환불 ${won(o.refund)}</i>`:''}</span><span class="hm">${esc([o.channel,o.status].filter(Boolean).join(' · '))}${su?` · ${esc(su)}`:''}${o.n>1?` · ${o.n}줄`:''}${o.handler&&o.handler!==ME?` · 담당 ${esc(o.handler)}`:''}</span></div>`; }
 function cuDetOpen(key){ const b=$('cub_'+key); if(!b) return; const d=b.querySelector('details.cudet'); if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); } }
 /* 폰에서 찾기·기간 도구 접기/펼치기 — 값이 들어 있으면(검색어·기간) 자동으로 펼친다 */
 function toolsToggle(id, force){ const box=$(id), btn=$(id+'Btn'); if(!box||!btn) return;
@@ -5700,8 +5709,8 @@ function csShow(o){ const box=$('c_stick'); if(!box) return;
     else { bl.innerHTML=''; csBuyFold(false); } } }
 function csBuyFold(force){ const l=$('cs_buy'), b=$('cs_buyBtn'); if(!l||!b) return; const open = force!==undefined ? !!force : !l.classList.contains('open');
   l.classList.toggle('open',open); b.setAttribute('aria-expanded',open?'true':'false'); $('cs_buyI').textContent = open?'접기 ▴':'보기 ▾'; }
-function csBuyRow(o){ return `<div class="crow2"><div class="l"><b>${csDt(o.at)}</b>${o.kind?`<span class="hm">${esc(o.kind)}</span>`:''}${o.channel?`<span class="hm">${esc(o.channel)}</span>`:''}${Number(o.refund)?`<span class="hm" style="color:#B3261E">환불 ${won(o.refund)}</span>`:''}${o.handler&&o.handler!==ME?`<span class="hm">담당 ${esc(o.handler)}</span>`:''}</div>
-    <div class="c">${esc(o.product||'(상품명 없음)')}${o.n>1?` · ${o.n}줄`:''}</div><div class="r"><span class="amt">${won(o.amount)}</span></div></div>`; }
+function csBuyRow(o){ const su=subTxt(o); return `<div class="crow2"><div class="l"><b>${csDt(o.at)}</b>${kdTag(o.kind)}${o.channel?`<span class="hm">${esc(o.channel)}</span>`:''}${Number(o.refund)?`<span class="hm" style="color:#B3261E">환불 ${won(o.refund)}</span>`:''}${o.handler&&o.handler!==ME?`<span class="hm">담당 ${esc(o.handler)}</span>`:''}</div>
+    <div class="c">${esc(o.product||'(상품명 없음)')}${o.n>1?` · ${o.n}줄`:''}${su?` · ${esc(su)}`:''}</div><div class="r"><span class="amt">${won(o.amount)}</span></div></div>`; }
 function csFold(force){ const l=$('cs_list'), b=$('cs_foldBtn'); const open = force!==undefined ? !!force : !l.classList.contains('open');
   l.classList.toggle('open',open); b.setAttribute('aria-expanded',open?'true':'false'); $('cs_foldI').textContent = open?'접기 ▴':'보기 ▾'; }
 function cFindToggle(force){ const b=$('c_findBox'), btn=$('c_findBtn'); const open = force!==undefined ? !!force : !b.classList.contains('open');

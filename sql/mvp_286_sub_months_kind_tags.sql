@@ -1,0 +1,17 @@
+-- mvp_286 · 2026-11-09 · 올인원 구독 개월 수 76 → 72 · 구매 줄 구독/일반 구분 (v293)
+-- 적용됨(MCP · pg_get_functiondef 부분 치환 · 지점 수 검증). 기록용.
+--
+-- 왜: "72개월인데 76개월 나오는거 왜 그런지" — 올인원 구독의 개월 수를 총구독료 ÷ 월 요금으로 되살려 썼다(mvp_194 · DPS 의 term_months 6 이 '6년' 이라서).
+--      표본 3142117279: 2,922,480 ÷ 38,500 = 75.9 → 76. 총구독료에 케어서비스 등이 더해져 72×38,500(2,772,000) 보다 150,480 크다.
+--      전수: term_months 3·4·5·6 의 최소 비율이 정확히 36·48·60·72 → term_months 는 연 수. 비율은 1.0~2.9배까지 벌어진다(최대 210).
+--
+-- 규칙(세 함수 공통): 올인원이면 개월 = term_months × 12 (1~10 일 때) · 없으면 round(총구독료 ÷ 월 요금) · 만료 = 시작일 + 그 개월
+-- 1) core.f_customer_journey  subs CTE  months · end
+-- 2) public.fn_crm_followups  (구독 만료 예정 카드)  end_eff · months
+-- 3) core.f_dps_ledger_sync   option_text '구독 올인원 6개월 …' → '72개월'  +  기존 core.orders(dps) option_text 정정(남은 '올인원 N개월(N≤10)' 0)
+--
+-- 4) public.fn_store_customer_detail  orders[].subs = [{kind, model, service, status, monthly, months, end}] (dps.subscription · 같은 개월 규칙)
+-- 5) public.fn_store_my_customers      orders_sub = 구독 주문 수 (count distinct 주문 filter sale_kind='구독')
+--
+-- 화면(v293): 구매 줄마다 [구독](청록)·[일반](=일시불 · 회색)·[직판] 태그(kdTag) · 구독이면 '올인원 · 월 38,500원 · 72개월 · 만료 …'(subTxt) — 내 고객 펼침 구매 이력 · 상담 입력 헤더 · 상담·구매 자세히 · 고객 흐름 구매 줄 · 내 고객 줄 머리 '구독 N'.
+-- 롤백 실험: 표본 고객 journey subs months 72 · detail subs 72 · my_customers orders 2 · orders_sub 1 · fn_crm_followups('sub') 정상(d365 5 · 다음 만료 2027-05-15).
