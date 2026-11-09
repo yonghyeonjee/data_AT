@@ -1,0 +1,28 @@
+-- mvp_285 · 2026-11-09 · 내 고객 — 과거 구매가 같이 보이게 · DPS 로만 들어온 고객도 상담 입력에 번호가 채워지게 (v292)
+-- 적용됨(2026-11-09 · MCP · pg_get_functiondef 부분 치환 · 지점 수 1 검증). 이 파일은 기록용.
+--
+-- 왜
+--   · 담당자 [내 고객] → [＋ 상담 입력] 이 번호를 '이전 상담에 적힌 번호' 에서만 가져왔다 → DPS 판매로만 들어온 고객(상담 0건 · 3,810명)은 번호가 비었다.
+--     번호는 crm.customer.phone 에 전부 있었다(null 0 · 11자리 3,773).
+--   · fn_store_consult_submit 이 연결 고객(buyer_key)에서 이름만 가져오고 번호는 안 가져와 상담 줄 phone 이 NULL 로 저장됐다(3건) → 다음 번에도 못 찾는 악순환.
+--   · fn_store_customer_detail.orders 가 core.orders 줄 20개 그대로 — DPS 는 한 판매가 상품마다 여러 줄(모델 · 모델01 · 0원 줄)이라 '구매 23건' 처럼 보였다.
+--
+-- 1) fn_store_customer_detail(p_code, p_key)
+--    · orders = 주문 하나(출처 · coalesce(주문번호, id)) = 한 줄 · 최근 30건:
+--      id(min) · at(min) · order_no · source · n(줄 수) · product('A · B · C 외 N종' — 금액 큰 상품부터) · products[] · models[] · amount(합) · refund(합) · status · kind(구분 모음) · channel · handler
+--    · customer = {name, phone(실번호 — core.f_store_pii 뒤), consent, dps_no, orders(주문 수), spent, first_at, last_at}
+--    · 화면: 내 고객 펼침 맨 위 '구매 이력' 5줄(cuBuyHtml) · 상담 입력 고정 헤더 [구매 N건 · 합계 · 마지막] 펼침(csBuyRow) · pickMine 의 번호 = customer.phone → 이전 상담 번호 → 줄의 tel
+--
+-- 2) fn_store_consult_submit(p_code, p_data)
+--    · v_link(연결 고객) 가지: 이름 다음에  if v_phone is null then select c.phone into v_phone from crm.customer c where c.buyer_key = v_link; end if;
+--    · 연결 고객 update 에  phone = coalesce(nullif(phone,''), nullif(regexp_replace(coalesce(v_phone,''), '\D', '', 'g'),''))  — 명부에 번호가 없고 담당자가 적었으면 채움
+--
+-- 3) fn_store_my_customers · fn_store_customer_search
+--    · 구매 N건 = count(distinct (source, coalesce(order_no, id::text)))  (전엔 count(*) = 줄 수)
+--
+-- 4) 자료 정정
+--    update crm.consult k set phone = c.phone from crm.customer c
+--     where k.buyer_key = c.buyer_key and k.phone is null and nullif(c.phone,'') is not null and k.deleted_at is null;   -- 3건
+--
+-- 롤백 실험(이수혁 코드 · anon · raise 로 되돌림): 표본 DPS 고객 → orders 2건(23줄 → 2) · product 'RQ33DB74B1AP · RA-K27DUU01 · RA-K27DBB01 외 2종' / 'KQ75QND90AFXKR · RF91DB92K1AP · LS43DM702UKXKR 외 5종'
+--   · customer.phone 11자리 · 번호 없이 buyer_key 만으로 상담 저장 → 상담 phone = 고객 phone · 내 고객 줄 orders 2 · 남은 '번호 없는 연결 상담' 0.
