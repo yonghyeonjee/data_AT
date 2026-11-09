@@ -188,7 +188,7 @@ export function applyOverrides(DATA, ov) {
    dps: fn_sub_dps_export 응답 (있으면 요금표 원본 · 없으면 SDP 판의 DATA 로)
    ui: 화면 파일(sub_tab.js 등) 해시 — 판 번호 끝에 '+u<해시>' 로 붙여 화면만 고쳐도 상세페이지가 새 파일을 받게 한다 (?v=판 번호)
    → { 'sub_index.js': '…', 'sub_plans_tv.js': '…', …, 'sub_cards.js', 'sub_policy.js', 'version.js' } */
-export function buildSubFiles(rel, policy, dps, ui) {
+export function buildSubFiles(rel, policy, dps, ui, rank) {
   const CARD = varOf(rel, 'CARD') || {}, WATER = varOf(rel, 'WATER_POLICY') || {};
   let DATA, PREPAY_NO, src, dup = 0;
   if (dps && dps.items) { ({ DATA, PREPAY_NO, dup } = dpsToData(dps)); src = `DPS 수집 ${dps.fetch_id || ''}`; }
@@ -220,7 +220,10 @@ export function buildSubFiles(rel, policy, dps, ui) {
         rec.w = {}; for (const [k, v] of Object.entries(WATER[model])) rec.w[k] = [v.disc, v.prepay];
       }
       plans[m] = rec;
-      index[m] = [key, Math.min(...p.map(x => x[3])), Math.min(...p.map(x => netTotal(x, autopay)))];
+      // [품목키, 최저 월 구독료, 최저 자동납부 반영 총액, 월 구독료가 가장 낮은 요금제의 총구독료(멤버십 포인트 기준 · 2026-11-06)]
+      const cheap = p.reduce((a, x) => (x[3] < a[3] || (x[3] === a[3] && x[2] < a[2])) ? x : a, p[0]);
+      index[m] = [key, Math.min(...p.map(x => x[3])), Math.min(...p.map(x => netTotal(x, autopay))), cheap[2]];
+      if (rank && rank[m] > 0) index[m].push(rank[m]);   // 5번째: 최근 12개월 구독 계약 순위 (구독센터 인기순 · mvp_279 · 계약 없으면 없음)
     }
     out[`sub_plans_${key}.js`] = head + `(window.SUB_PLANS=window.SUB_PLANS||{})[${JSON.stringify(key)}]=${JSON.stringify(plans)};\n`;
   }

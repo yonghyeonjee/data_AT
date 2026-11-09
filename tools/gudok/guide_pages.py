@@ -3,7 +3,7 @@
 
 경쟁사(빌리고 인포툰·케어솔루션 블로그)처럼 손님이 검색하는 질문 하나에 글 하나.
 숫자(카드 할인·선납·다품목·자동납부)는 데이터센터 정책 파일(sub_policy.js · sub_cards.js)에서 읽어
-정책이 바뀌면 다시 빌드할 때 같이 바뀐다. 사은품은 구체 품목을 적지 않는다(상담 완료 시 사은품 · 방문 구매 완료 시 와인).
+정책이 바뀌면 다시 빌드할 때 같이 바뀐다. 사은품 문구: 상담완료 시 네이버 페이 1만원 · 방문 구매 완료 시 와인 (2026-11-09).
 """
 import json, os, re
 import model_pages as MP
@@ -71,7 +71,7 @@ class Guides:
         cat = lambda k, n: '<a href="%s%s.html">%s 구독 가격</a>' % (links['catUrl'], k, n)
         auto = pct((self.pol.get('autopay') or {}).get('rate', 0.05))
         yrs, mperiod, mu = self.multi_text()
-        gift = '상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정'
+        gift = '상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정'
         A = []
         A.append(dict(slug='subscribe-vs-buy', title='삼성 가전, 구독이 나을까 일시불이 나을까?',
             desc='삼성 AI 구독과 일시불 구매를 총 비용·할인·포인트·무상수리 기간으로 비교했습니다. 모델별 실제 비교표로 바로 확인하세요.',
@@ -132,7 +132,7 @@ class Guides:
 <li><b>구독료로 사용 · 전액 N개월</b> — 처음 몇 달은 구독료 전액을 포인트로 내 월 0원.</li>
 <li><b>포인트로 따로 받기</b> — 구독료는 그대로 내고, 포인트는 현금처럼 다른 곳에 씁니다.</li></ol>
 <p>구독센터 모델 페이지 계산기에서 세 방법을 눌러 보면 월 납부액과 개월별 납부가 바로 바뀝니다.</p>
-<h2>얼마나 쌓이나요?</h2><p>적립 예정 포인트는 모델마다 다르며 삼성닷컴 기준(제품분 금액 × 적립률 + 상품별 추가 포인트)을 따릅니다. 행사 기간에는 "N개월 구독료 상당" 포인트가 더해지는 모델도 있습니다.</p>''',
+<h2>얼마나 쌓이나요?</h2><p>적립 예정 포인트는 모델마다 다르며 총구독료 × 적립률 + 상품별 추가 포인트을 따릅니다. 행사 기간에는 "N개월 구독료 상당" 포인트가 더해지는 모델도 있습니다.</p>''',
             faq=[('포인트는 언제 들어오나요?', '구독 계약·설치가 끝난 뒤 적립됩니다. 적립 시점은 상담 때 안내해 드립니다.'),
                  ('유지기간이 지나면 어떻게 되나요?', '포인트 유지기간(36개월)이 지나면 남은 포인트는 사라질 수 있어, 계산기는 36개월 안에 다 쓰는 것으로 보여 드립니다.')],
             links=[cat('aicombo', 'AI 콤보'), cat('kimchi', '김치냉장고')]))
@@ -181,11 +181,11 @@ class Guides:
             {'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': faq}])
         body = ('<article class="ss-guide">\n<p class="ss-crumb"><a href="%s">구독센터</a> › <a href="%s">구독 안내</a></p>\n<h1>%s</h1>\n'
                 '<p class="ss-guide-answer"><b>한 줄 답</b> %s</p>\n%s\n<h2>자주 묻는 질문</h2>\n<dl class="ss-faq">%s</dl>\n'
-                '<p class="ss-guide-links">함께 보기: %s</p>\n<p class="ss-guide-cta"><a class="ss-btn" href="%s">구독 상담 신청</a> <span>상담 완료 시 사은품 증정 · 매장 방문 구매 완료 시 와인 증정</span></p>\n</article>\n') % (
+                '<p class="ss-guide-links">함께 보기: %s</p>\n<p class="ss-guide-cta"><a class="ss-btn" href="%s">구독 상담 신청</a> <span>상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정</span></p>\n</article>\n') % (
             e(links['homeUrl']), e(links['guideUrl']), e(a['title']), e(a['answer']), a['body'],
             ''.join('<dt>%s</dt><dd>%s</dd>' % (e(q), e(ans)) for q, ans in a['faq']), ' · '.join(a['links']),
             e(links['consultUrl'] + '&from=guide&purpose=' + '%EC%8B%A0%EA%B7%9C%EA%B5%AC%EB%8F%85' + '&memo=' + '%5B%EA%B5%AC%EB%8F%85%EA%B0%80%EC%9D%B4%EB%93%9C%5D%20' + a['slug']))
-        return head(a['title'] + ' | 삼성스토어 시흥 구독센터', a['desc'], a['kw'], url, og_image=MP.OG_IMG, extra_head=ld) + \
+        return head(a['title'] + ' | 삼성스토어 구독센터', a['desc'], a['kw'], url, og_image=MP.OG_IMG, extra_head=ld) + \
             '<div id="subShopRoot">\n    <div data-ss="nav"></div>\n' + body + '    <section class="ss-sec"><div data-ss="cta"></div></section>\n</div>\n' + foot() + loader() + '</body>\n</html>\n'
 
     @staticmethod
