@@ -1880,7 +1880,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
   <section class="panel hidden" id="tab-display">
     <div class="card" id="dpCard">
       <h2>매장 안내 디스플레이 <span id="dpSub">고객님께 보이는 매장 화면</span></h2>
-      <p class="note-in" style="margin-top:0">매장에 오신 고객님이 보시는 안내 화면입니다. <b>감사 문구</b>는 늘 뜨고, <b>방문 예약하신 고객님은 그날 성함</b>이 <b>'○○○ 고객님'</b>으로 뜹니다. <b>상담 입력에서 방문 예약</b>을 넣으면 그날 저절로 들어오고, 여기서 성함을 고치거나 숨길 수 있습니다. <b>네이버·삼성스토어·전화 예약</b>이나 예약 없이 오신 분은 아래 <b>[＋ 예약 추가]</b>. 이름이 없는 날에는 감사 문구 아래에 <b>'정성을 다해서 상담 도와드리겠습니다'</b> 문구가 뜹니다(아래 '매장 화면 문구'에서 고칠 수 있음). 화면에는 1분 안에 반영됩니다. 매장 화면과 이 명단은 <b>같은 것</b>입니다 — 매장 화면에서 직접 넣은 이름은 여기 <b>'사이니지 입력'</b>으로 바로 보이고, 여기서 고치거나 숨기면 매장 화면도 1분 안에 바뀝니다. 따로 연결할 것은 없습니다.</p>
+      <p class="note-in" style="margin-top:0">매장에 오신 고객님이 보시는 안내 화면입니다. <b>감사 문구</b>는 늘 뜨고, <b>방문 예약하신 고객님은 그날 성함</b>이 <b>'○○○ 고객님'</b>으로 뜹니다. <b>상담 입력에서 방문 예약</b>을 넣으면 그날 저절로 들어오고, 여기서 성함을 고치거나 숨길 수 있습니다. <b>네이버·삼성스토어·전화 예약</b>이나 예약 없이 오신 분은 아래 <b>[＋ 예약 추가]</b>. 이름이 없는 날에는 감사 문구 아래에 <b>'정성을 다해서 상담 도와드리겠습니다'</b> 문구가 뜹니다(아래 '매장 화면 문구'에서 고칠 수 있음). 화면에는 1분 안에 반영됩니다. 매장 화면과 이 명단은 <b>같은 것</b>입니다 — 매장 화면에서 직접 넣은 이름은 여기 <b>'사이니지 입력'</b>으로 바로 보이고, 여기서 고치거나 숨기면 매장 화면도 1분 안에 바뀝니다. 따로 연결할 것은 없습니다. <b>예약이 하나도 없는 날</b>에는 <b>지난 문의 고객 4명</b>의 성함을 날마다 다르게 자동으로 골라 띄웁니다(아래 <b>'예약 없는 날 자동 채움'</b> 스위치로 끄고 켬 · 줄에 '자동 선정' 표시 · 그날 예약이 들어오면 저절로 내려감 · 이름 가리기를 켜면 같이 가려짐).</p>
       <div class="dp-bar">
         <button type="button" class="btn sm ghost" onclick="dpMove(-1)" aria-label="전날">‹</button>
         <input class="in" type="date" id="dp_day" aria-label="날짜" onchange="loadDisplay(this.value)">
@@ -1890,6 +1890,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       <div class="dp-prev" id="dpPrev"></div>
       <div class="dp-opt">
         <button type="button" class="dp-sw" id="dpMask" role="switch" aria-checked="false" onclick="dpMaskSet()"><i></i>이름 가운데 가리기 <span>장성원 → 장○원</span></button>
+        <button type="button" class="dp-sw" id="dpAuto" role="switch" aria-checked="true" onclick="dpAutoSet()"><i></i>예약 없는 날 자동 채움 <span>지난 문의 고객 4명 · 매일 다르게</span></button>
         <button type="button" class="btn sm ghost" id="dpPvBtn" aria-expanded="false" onclick="dpPvToggle()">매장 화면 미리보기 ▾</button>
       </div>
       <div class="dp-pv hidden" id="dpPv"><div class="dp-pvseg seg sm" role="radiogroup" aria-label="화면 방향"><button type="button" role="radio" aria-checked="true" class="on" data-o="p" onclick="dpPvOri(this)">세로</button><button type="button" role="radio" aria-checked="false" data-o="l" onclick="dpPvOri(this)">가로</button></div><div class="dp-pvbox" id="dpPvBox"><iframe id="dpPvF" title="매장 화면 미리보기" tabindex="-1"></iframe></div><p class="note-in">저장한 이름·문구로 그린 미리보기입니다. 실제 화면에는 1분 안에 반영됩니다.</p></div>
@@ -1916,6 +1917,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       <div class="f"><label for="sgt_rsv">감사 문구 — 예약 고객 이름이 뜰 때</label><textarea class="in sgt" id="sgt_rsv" rows="2" maxlength="80"></textarea></div>
       <div class="f"><label for="sgt_close">맺음말 — 이름 아래 (4명까지일 때)</label><textarea class="in sgt" id="sgt_close" rows="3" maxlength="80"></textarea></div>
       <div class="f"><label for="sgt_none">이름이 없을 때 문구 — 감사 문구 아래 (따옴표는 저절로 붙음)</label><textarea class="in sgt" id="sgt_none" rows="2" maxlength="80"></textarea></div>
+      <div class="f"><label for="sgt_auto">감사 문구 — 지난 문의 고객을 자동으로 띄운 날 (비우면 '예약 고객이 없을 때' 감사 문구를 씀)</label><textarea class="in sgt" id="sgt_auto" rows="2" maxlength="80" placeholder="비우면 감사 문구 그대로"></textarea></div>
       <div class="led-act"><span id="sgtAt"></span><button type="button" class="btn" onclick="sgtSave()">문구 저장</button></div>
     </div>
   </section>
@@ -4801,11 +4803,12 @@ function dpMove(n){ const d=new Date((DP&&DP.day||dpDayStr(new Date()))+'T12:00:
 function dpRender(){
   const rows=(DP&&DP.rows)||[], today=DP&&DP.day===DP.today, show=rows.filter(x=>!x.hidden&&!x.done&&x.name).map(x=>Object.assign({},x,{name:dpMk(x.name)}));
   $('dpMask').setAttribute('aria-checked',String(!!(DP&&DP.mask)));
+  const au=$('dpAuto'); if(au) au.setAttribute('aria-checked',String(!(DP&&DP.auto_fill===false)));
   $('dpSub').textContent=(today?'오늘':DP.day.slice(5).replace('-','/'))+' · 화면에 '+show.length+'명';
   $('dpToday').classList.toggle('hidden',today);
   $('dpPrev').innerHTML=show.length?`<span class="lb">${today?'지금':'그날'} 화면</span>`+show.map(x=>`<b>${esc(x.name)}</b> 고객님`).join('<i>·</i>'):`<span class="lb">${today?'지금':'그날'} 화면</span>이름 없음 — 감사 인사와 '이름이 없을 때 문구'가 뜹니다`;
   $('dpList').innerHTML=rows.length?rows.map((x,i)=>`<div class="dprow${x.hidden?' off':''}">
-      <div class="dpm">${x.kind==='visit'?`<span class="tag via">방문 예약 ${esc(x.time||'')}</span>${x.handler?`<span class="hm">${esc(x.handler)}</span>`:''}${x.orig&&x.orig!==x.name?`<span class="hm">상담 이름 ${esc(x.orig)}</span>`:''}`:`<span class="tag src">${esc(x.src||'직접 추가')}${x.time?' '+esc(x.time):''}</span>${x.handler?`<span class="hm">${esc(x.handler)}</span>`:''}`}${x.hidden?'<span class="tag new">화면에 안 보임</span>':''}${x.done&&!x.hidden?'<span class="tag">상담 끝 · 화면에서 내려감</span>':''}</div>
+      <div class="dpm">${x.kind==='visit'?`<span class="tag via">방문 예약 ${esc(x.time||'')}</span>${x.handler?`<span class="hm">${esc(x.handler)}</span>`:''}${x.orig&&x.orig!==x.name?`<span class="hm">상담 이름 ${esc(x.orig)}</span>`:''}`:`${x.src==='지난 문의 고객'?`<span class="tag src">지난 문의 고객 · 자동 선정</span><span class="hm">예약이 들어오면 내려감</span>`:`<span class="tag src">${esc(x.src||'직접 추가')}${x.time?' '+esc(x.time):''}</span>`}${x.handler&&x.src!=='지난 문의 고객'?`<span class="hm">${esc(x.handler)}</span>`:''}`}${x.hidden?'<span class="tag new">화면에 안 보임</span>':''}${x.done&&!x.hidden?'<span class="tag">상담 끝 · 화면에서 내려감</span>':''}</div>
       <input class="in dpn" id="dpn_${i}" maxlength="30" value="${esc(x.name||'')}" aria-label="화면에 뜨는 이름" onkeydown="if(event.key==='Enter'){event.preventDefault();dpSave(${i})}">
       <div class="dpa"><button type="button" class="mini ok" onclick="dpSave(${i})">저장</button><button type="button" class="mini" onclick="dpSave(${i},${!x.hidden})">${x.hidden?'보이기':'숨기기'}</button>${x.kind==='manual'?`<button type="button" class="mini warn dpdel" onclick="dpDel(${i})">지우기</button>`:''}</div>
     </div>`).join(''):'<div class="empty">이 날 방문 예약·추가한 이름이 없습니다</div>'; }
@@ -4828,6 +4831,7 @@ async function ledSave(){ const ls=$('ledTa').value.split('\n').map(x=>x.trim())
   catch(e){ toast(e.message,'err'); } }
 function dpMk(n){ n=String(n||''); if(!(DP&&DP.mask)||n.length<2) return n; return n.length===2?n[0]+'○':n[0]+'○'.repeat(n.length-2)+n.slice(-1); }
 async function dpMaskSet(){ const on=!(DP&&DP.mask); try{ const r=await rpc('fn_store_signage_mask_save',{p_code:CODE,p_mask:on}); DP.mask=r.mask; dpRender(); dpPvDraw(); toast(on?'이름 가운데를 가립니다 (장○원)':'이름을 그대로 보입니다','ok'); }catch(e){ toast(e.message,'err'); } }
+async function dpAutoSet(){ const on=!!(DP&&DP.auto_fill===false); try{ const r=await rpc('fn_store_signage_autofill_save',{p_code:CODE,p_on:on}); DP.auto_fill=r.auto_fill; if(r.rows&&DP.day===DP.today) DP.rows=r.rows; dpRender(); dpPvDraw(); toast(on?'예약 없는 날은 지난 문의 고객 4명이 자동으로 뜹니다':'자동 채움을 껐습니다 — 예약 없는 날은 이름 없이 감사 문구만','ok'); }catch(e){ toast(e.message,'err'); } }
 let DP_PV=false, DP_ORI='p';
 function dpPvToggle(){ DP_PV=!DP_PV; $('dpPv').classList.toggle('hidden',!DP_PV); $('dpPvBtn').setAttribute('aria-expanded',String(DP_PV)); $('dpPvBtn').textContent='매장 화면 미리보기 '+(DP_PV?'▴':'▾'); dpPvDraw(); }
 function dpPvOri(b){ DP_ORI=b.dataset.o; b.parentNode.querySelectorAll('button').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-checked',String(on)); }); dpPvDraw(); }
@@ -4835,9 +4839,10 @@ function dpPvDraw(){ if(!DP_PV||!DP) return; const W=DP_ORI==='p'?1080:1920, H=D
   const bw=Math.min(box.parentNode.clientWidth||300, DP_ORI==='p'?300:560), z=bw/W; box.style.width=bw+'px'; box.style.height=Math.round(H*z)+'px';
   f.style.width=W+'px'; f.style.height=H+'px'; f.style.transform=`scale(${z})`;
   const n=((DP.rows||[]).filter(x=>!x.hidden&&!x.done&&x.name)).map(x=>dpMk(x.name)).join(',');
-  const u='/visit/?names='+encodeURIComponent(n)+'&tx='+encodeURIComponent(JSON.stringify(DP.texts||{}));
+  const vis=(DP.rows||[]).filter(x=>!x.hidden&&!x.done&&x.name), tx=Object.assign({},DP.texts||{}); if(vis.length&&vis.every(x=>x.src==='지난 문의 고객')) tx.rsv=tx.auto||tx.greet||tx.rsv;
+  const u='/visit/?names='+encodeURIComponent(n)+'&tx='+encodeURIComponent(JSON.stringify(tx));
   if(f.dataset.u!==u){ f.dataset.u=u; f.src=u; } }
-const SGT_K=['w','greet','rsv','close','none'];
+const SGT_K=['w','greet','rsv','close','none','auto'];
 function sgtLoad(){ if(!DP||!DP.texts) return; SGT_K.forEach(k=>{ const el=$('sgt_'+k); if(el&&document.activeElement!==el) el.value=DP.texts[k]||''; });
   $('sgtAt').textContent=DP.texts_at?('마지막 저장 '+fmtAt(DP.texts_at)+(DP.texts_by?' · '+DP.texts_by:'')):'기본 문구'; }
 async function sgtSave(){ const t={}; SGT_K.forEach(k=>{ t[k]=$('sgt_'+k).value; });
