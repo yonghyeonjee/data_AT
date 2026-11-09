@@ -346,33 +346,51 @@ window.SUB_SHOP_READY = true;
   function minOf(list) { var m = 0; list.forEach(function (r) { if (!m || r.min < m) m = r.min; }); return m; }
 
   /* 홈 — 월 구독료 가격대별 보기 (구독 전용몰 목록 sub_list.js · 상품 찾기 sub_find.js 와 같은 구간 · 2026-11-03)
-     최저 월 구독료(SUB_INDEX) 기준 · 색상만 다른 모델은 하나로 · 품목마다 대표 하나씩 먼저 보이고, 전체는 상품 찾기(max=구간) 로 */
+     최저 월 구독료(SUB_INDEX) 기준 · 색상만 다른 모델은 하나로
+     2026-11-09: 가격대 × 품목으로 거르고 인기순(최근 12개월 구독 계약 순위 SUB_INDEX 5번째 · mvp_279)·낮은 가격순·높은 가격순으로 정렬 · 더 보기로 이어서 */
   var HBANDS = [['u10', '월 1만원 미만', 0, 9999], ['u20', '월 1만 ~ 2만원', 10000, 19999], ['u40', '월 2만 ~ 4만원', 20000, 39999],
     ['u60', '월 4만 ~ 6만원', 40000, 59999], ['u100', '월 6만 ~ 10만원', 60000, 99999], ['over', '월 10만원 이상', 100000, 1e12]];
-  var HB = { k: 'u40' };
+  var HB_ALL = ['', '전체 가격', 0, 1e12];
+  var HSORTS = [['pop', '인기순'], ['low', '낮은 가격순'], ['high', '높은 가격순']];
+  var HB = { k: 'u40', c: '', s: 'pop', more: 0 };
+  function hbKey(r) { var p = pageOf(r); return p ? p.key : ''; }
+  // 색상만 다른 모델은 그중 가장 높은 순위로 (계약 이력이 없으면 맨 뒤)
+  function popRank(r) {
+    var best = 0;
+    (r.variants || [r]).forEach(function (v) { var e = IDX.m[v.model], x = e && e[4] || 0; if (x && (!best || x < best)) best = x; });
+    return best || 1e9;
+  }
   function drawBands(el) {
-    var by = {}; HBANDS.forEach(function (b) { by[b[0]] = []; });
-    groupColors(rows).forEach(function (r) {
-      for (var i = 0; i < HBANDS.length; i++) { var b = HBANDS[i]; if (r.min >= b[2] && r.min <= b[3]) { by[b[0]].push(r); break; } }
+    var all = groupColors(rows), bands = [HB_ALL].concat(HBANDS);
+    function inB(r, b) { return r.min >= b[2] && r.min <= b[3]; }
+    function bandOf(k) { return bands.filter(function (b) { return b[0] === k; })[0]; }
+    if (!all.length) { el.innerHTML = ''; return; }
+    if (HB.c && !all.some(function (r) { return hbKey(r) === HB.c; })) HB.c = '';
+    if (!all.some(function (r) { return inB(r, bandOf(HB.k)) && (!HB.c || hbKey(r) === HB.c); })) { HB.k = ''; HB.more = 0; }
+    var band = bandOf(HB.k), catN = {}, bandTotal = 0, hasRank = all.some(function (r) { return popRank(r) < 1e9; });   // 순위를 못 받은 판이면 '인기순'이라 부르지 않는다
+    all.forEach(function (r) { if (inB(r, band)) { var k = hbKey(r); catN[k] = (catN[k] || 0) + 1; bandTotal++; } });
+    var list = all.filter(function (r) { return inB(r, band) && (!HB.c || hbKey(r) === HB.c); }).sort(function (a, b) {
+      if (HB.s === 'low') return a.min - b.min || score(b) - score(a);
+      if (HB.s === 'high') return b.min - a.min || score(b) - score(a);
+      return popRank(a) - popRank(b) || score(b) - score(a) || a.min - b.min;
     });
-    if (!by[HB.k].length) { var first = HBANDS.filter(function (b) { return by[b[0]].length; })[0]; if (!first) { el.innerHTML = ''; return; } HB.k = first[0]; }
-    var n = +el.getAttribute('data-n') || 8, band = HBANDS.filter(function (b) { return b[0] === HB.k; })[0], list = by[HB.k];
-    var seen = {}, reps = [], rest = [];
-    list.slice().sort(function (a, b) { return score(b) - score(a) || a.min - b.min; }).forEach(function (r) {
-      var p = pageOf(r), k = p ? p.key : r.cat;
-      if (seen[k]) rest.push(r); else { seen[k] = 1; reps.push(r); }
-    });
-    var show = reps.concat(rest).slice(0, n);
-    var cnt = {}, order = [];
-    list.forEach(function (r) { var p = pageOf(r), nm = p ? p.name : IDX.cats[r.cat]; if (!cnt[nm]) { cnt[nm] = 0; order.push(nm); } cnt[nm]++; });
-    order.sort(function (a, b) { return cnt[b] - cnt[a]; });
-    el.innerHTML = '<div class="ss-filter ss-hb-chips" role="group" aria-label="월 구독료 가격대">' + HBANDS.map(function (b) {
-        return by[b[0]].length ? '<button type="button" data-hband="' + b[0] + '" aria-pressed="' + (b[0] === HB.k) + '">' + b[1] + ' <small>' + fmt(by[b[0]].length) + '</small></button>' : '';
+    var n = (+el.getAttribute('data-n') || 8) + HB.more, show = list.slice(0, n), cat = PAGE_BY[HB.c];
+    var old = el.querySelector('.ss-hb-cats'), scroll = old ? old.scrollLeft : 0;
+    el.innerHTML = '<div class="ss-filter ss-hb-chips" role="group" aria-label="월 구독료 가격대">' + bands.map(function (b) {
+        var c = all.filter(function (r) { return inB(r, b) && (!HB.c || hbKey(r) === HB.c); }).length;
+        return '<button type="button" data-hband="' + b[0] + '" aria-pressed="' + (b[0] === HB.k) + '"' + (c ? '' : ' disabled') + '>' + b[1] + ' <small>' + fmt(c) + '</small></button>';
       }).join('') + '</div>' +
-      '<p class="ss-summary ss-hb-sum"><b>' + band[1] + '</b> 구독 모델 <b>' + fmt(list.length) + '</b>개 <small>(색상만 다른 모델은 하나로)</small> · ' +
-        order.slice(0, 6).map(function (nm) { return esc(nm) + ' ' + fmt(cnt[nm]); }).join(' · ') + (order.length > 6 ? ' 외' : '') + '</p>' +
+      '<div class="ss-filter ss-hb-cats" role="group" aria-label="품목"><button type="button" data-hcat="" aria-pressed="' + !HB.c + '">전체 품목 <small>' + fmt(bandTotal) + '</small></button>' +
+      PAGES.map(function (p) {
+        return catN[p.key] ? '<button type="button" data-hcat="' + p.key + '" aria-pressed="' + (HB.c === p.key) + '">' + esc(p.name) + ' <small>' + fmt(catN[p.key]) + '</small></button>' : '';
+      }).join('') + '</div>' +
+      '<div class="ss-hb-bar"><p class="ss-summary ss-hb-sum"><b>' + band[1] + (cat ? ' · ' + esc(cat.name) : '') + '</b> 구독 모델 <b>' + fmt(list.length) + '</b>개 <small>(색상만 다른 모델은 하나로' + (HB.s === 'pop' && hasRank ? ' · 인기순은 최근 1년 구독 계약이 많은 순' : '') + ')</small></p>' +
+      '<div class="ss-filter ss-hb-sort" role="group" aria-label="정렬">' + HSORTS.map(function (s) {
+        return '<button type="button" data-hsort="' + s[0] + '" aria-pressed="' + (HB.s === s[0]) + '">' + (s[0] === 'pop' && !hasRank ? '추천순' : s[1]) + '</button>';
+      }).join('') + '</div></div>' +
       '<ul class="ss-grid">' + show.map(function (r) { return card(r, 'band'); }).join('') + '</ul>' +
-      '<p class="ss-more"><a href="' + esc(withQ(LINK.find, 'max=' + HB.k)) + '" data-cta="band-all">' + band[1] + ' 구독 모델 ' + fmt(list.length) + '개 전체 보기 →</a></p>';
+      (list.length > show.length ? '<p class="ss-more ss-more-c"><button type="button" class="ss-hb-more" data-hmore>더 보기 (' + fmt(show.length) + ' / ' + fmt(list.length) + ')</button></p>' : '');
+    if (scroll) { var now = el.querySelector('.ss-hb-cats'); if (now) now.scrollLeft = scroll; }
   }
 
   /* ---------- 자리별 그리기 ---------- */
@@ -745,7 +763,10 @@ window.SUB_SHOP_READY = true;
     else if (t.hasAttribute('data-qz-b')) { QZ.b = t.getAttribute('data-qz-b'); draw(['quiz']); track('ss_quiz', { ss_step: 'b', ss_v: QZ.b }); }
     else if (t.hasAttribute('data-qz-s')) { QZ.s = t.getAttribute('data-qz-s'); draw(['quiz']); track('ss_quiz', { ss_step: 's', ss_v: QZ.s }); }
     else if (t.hasAttribute('data-cert')) openCert();
-    else if (t.hasAttribute('data-hband')) { HB.k = t.getAttribute('data-hband'); draw(['bands']); track('ss_hband', { ss_band: HB.k }); }
+    else if (t.hasAttribute('data-hband')) { HB.k = t.getAttribute('data-hband'); HB.more = 0; draw(['bands']); track('ss_hband', { ss_band: HB.k }); }
+    else if (t.hasAttribute('data-hcat')) { HB.c = t.getAttribute('data-hcat'); HB.more = 0; draw(['bands']); track('ss_hband', { ss_cat: HB.c }); }
+    else if (t.hasAttribute('data-hsort')) { HB.s = t.getAttribute('data-hsort'); HB.more = 0; draw(['bands']); track('ss_hband', { ss_sort: HB.s }); }
+    else if (t.hasAttribute('data-hmore')) { HB.more += 8; draw(['bands']); }
     else if (t.hasAttribute('data-cta')) track('ss_click', { ss_cta: t.getAttribute('data-cta'), ss_model: t.getAttribute('data-model') || '' });
   }
   function start() {

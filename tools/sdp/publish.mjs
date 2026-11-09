@@ -59,7 +59,9 @@ else {
   // 화면 파일이 바뀌면 판 번호도 바뀌게 (상세페이지·구독센터는 ?v=판 번호 로 화면 파일을 부른다 — 안 바꾸면 캐시에 예전 화면이 남는다)
   const UI_FILES = ['sub_tab.js', 'sub_tab.css', 'sub_view.js', 'sub_view.css', 'sub_shop.js', 'sub_shop.css', 'sub_find.js', 'sub_find.css', 'sub_bundle.js', 'sub_bundle.css'];
   const h = createHash('md5'); for (const f of UI_FILES) if (fs.existsSync(`sdp/sub/${f}`)) h.update(fs.readFileSync(`sdp/sub/${f}`));
-  const sub = buildSubFiles(rel, policy, dps, h.digest('hex').slice(0, 4));
+  let rank = null;   // 구독센터 인기순 (mvp_279) — 못 받으면 순위 없이 배포
+  try { rank = await rpc('fn_sub_model_rank'); } catch (e) { console.log('계약 순위를 못 받았습니다 → 순위 없이:', e.message); }
+  const sub = buildSubFiles(rel, policy, dps, h.digest('hex').slice(0, 4), rank);
   // 구독센터 카탈로그(모델 → [고도몰 상품번호, 상품명, 사진, 일시불가, 사진출처]) 를 정적 파일로도 둔다 (2026-10-30)
   // 구독센터·구독 상품 페이지가 매번 RPC(1초 안팎)를 기다리지 않고 요금표와 같이 받는다. 못 받으면 이전 파일 유지 (화면은 RPC 로 되돌아간다)
   try {
