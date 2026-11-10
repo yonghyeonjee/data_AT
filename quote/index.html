@@ -835,9 +835,9 @@ function cardMd(cd,t,sum){ const md=cd.t[t]||0, base=cd.base?(cd.base[t]||md):md
 const CARD_PRESETS=[{k:'s',l:'삼성카드 70만↑',a:['삼성카드','70만↑']},{k:'l',l:'롯데카드 50만↑',a:['롯데카드','50만↑']},{k:'sl',l:'삼성카드+롯데카드 나누기',a:['삼성카드','70만↑'],b:['롯데카드','50만↑']}];
 function applyCardPreset(){ const p=CARD_PRESETS.find(x=>x.k===Q.cond.cardPreset), S=LAST&&LAST.S; if(!p||!S) return false; const rows=S.items.map(it=>({it,r:S.R[it.m]})).filter(x=>x.r); if(!rows.length) return false;
   const pick=new Array(rows.length).fill(0);
-  if(p.b){ const cA=window.SUB_CARDS[p.a[0]], cB=window.SUB_CARDS[p.b[0]], mdA=cardMd(cA,p.a[1],S.monthly), mdB=cardMd(cB,p.b[1],S.monthly), minA=(cA.minMonthly||{})[p.a[1]]||0, n=Math.min(rows.length,12); let best=null;
-    for(let mask=0;mask<(1<<n);mask++){ let pa=0,pb=0,ma=0,nb=0; rows.forEach((x,i)=>{ if(i<n&&mask>>i&1){ pb+=x.r.monthlyPay; nb++; } else { pa+=x.r.monthlyPay; ma+=x.r.monthly; } });
-      const sc=[Math.min(mdA,pa)+Math.min(mdB,pb), !minA||ma>=minA?1:0, -Math.abs(rows.length-2*nb), ma];   // 할인 합계 → 첫 카드 결제액이 기준금액 이상 → 품목 수 고르게
+  if(p.b){ const cA=window.SUB_CARDS[p.a[0]], cB=window.SUB_CARDS[p.b[0]], n=Math.min(rows.length,12); let best=null;
+    for(let mask=0;mask<(1<<n);mask++){ let pa=0,pb=0,ma=0,mb=0,nb=0; rows.forEach((x,i)=>{ if(i<n&&mask>>i&1){ pb+=x.r.monthlyPay; mb+=x.r.monthly; nb++; } else { pa+=x.r.monthlyPay; ma+=x.r.monthly; } });
+      const sc=[Math.min(cardMd(cA,p.a[1],ma),pa)+Math.min(cardMd(cB,p.b[1],mb),pb), -Math.abs(rows.length-2*nb), ma];   // 할인 합계(카드별 기준금액 반영) → 품목 수 고르게
       const d=best?sc.findIndex((v,i)=>v!==best.sc[i]):0; if(!best||(d>=0&&sc[d]>best.sc[d])) best={sc,mask}; }
     rows.forEach((x,i)=>{ if(i<n&&best.mask>>i&1) pick[i]=1; }); }
   let ch=false; rows.forEach((x,i)=>{ const t=pick[i]?p.b:p.a; if(x.it.card!==t[0]||x.it.tier!==t[1]){ x.it.card=t[0]; x.it.tier=t[1]; ch=true; } }); return ch; }
@@ -910,11 +910,10 @@ function calcAll(items){
       r.monthlyPay-=r.multiMonthly; r.cardMonthly=Math.min(r.cardInfo.md||0,Math.max(0,r.monthlyPay)); r.cardTotal=Math.round(r.cardMonthly*r.months);
       r.finalMonthly=Math.max(0,r.monthlyPay-r.cardMonthly); r.expected=r.total-r.prepayDisc-r.autoDisc-off-r.cardTotal; r.expectedNet=r.expected-(r.pointsAll||0); });
   }
-  /* 구독 제휴카드 (2026-11-10) — 같은 카드면 품목마다가 아니라 그 카드 월 납부액에 한 번만 할인한다. 카드를 나눠도 기준금액(삼성카드 7만원)은 구독 전체의 할인 전 월 구독료 합계로 본다 */
-  const subSum=subs.reduce((a,it)=>a+R[it.m].monthly,0);
+  /* 구독 제휴카드 (2026-11-10) — 같은 카드면 품목마다가 아니라 그 카드 월 납부액에 한 번만 할인한다. 기준금액(삼성카드 7만원)은 그 카드로 자동결제하는 품목의 할인 전 월 구독료 합계로 본다 — 카드사는 자기 카드로 결제된 금액만 안다. 카드가 하나면 구독 전체 합계와 같다 */
   const byCard={}; subs.forEach(it=>{ const r=R[it.m]; if(r.cardName) (byCard[r.cardName]=byCard[r.cardName]||[]).push(r); });
   Object.keys(byCard).forEach(name=>{ const g=byCard[name], cd=window.SUB_CARDS&&window.SUB_CARDS[name]; if(!cd) return;
-    let left=Math.max(...g.map(r=>cardMd(cd,r.cardTier,subSum))); const info={md:left};
+    const subSum=g.reduce((a,r)=>a+r.monthly,0); let left=Math.max(...g.map(r=>cardMd(cd,r.cardTier,subSum))); const info={md:left};
     g.slice().sort((a,b)=>b.monthlyPay-a.monthlyPay).forEach(r=>{ const use=Math.min(left,Math.max(0,r.monthlyPay)); left-=use; r.cardInfo=info; r.cardMonthly=use; r.cardTotal=Math.round(use*r.months); r.finalMonthly=Math.max(0,r.monthlyPay-use); r.expected=r.total-r.prepayDisc-r.autoDisc-r.multiOff-r.cardTotal; r.expectedNet=r.expected-(r.pointsAll||0); }); });
   /* 스마트 패키지 정액 (sub.policy bundle · mvp_264) */
   let pkg={n:0,amt:0,b:0,L:new Set()}; const bp=POL.bundle;
