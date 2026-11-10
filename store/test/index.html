@@ -1119,8 +1119,36 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 
 /* 키보드 포커스 표시 — outline:none 을 둔 칸도 Tab 으로 가면 보이게 (2026-10-03) */
 .btn:focus-visible, .mini:focus-visible, .in:focus-visible, button:focus-visible, a:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--accent) !important;outline-offset:2px}
+/* ═══ 행운 이벤트 (mvp_290) ═══ */
+.lk-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 10px}
+.lk-stats div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface-2)}
+.lk-stats b{display:block;font-size:calc(20px * var(--font-scale));line-height:1.2}
+.lk-stats span{font-size:calc(12px * var(--font-scale));color:var(--muted)}
+.lk-links{display:flex;gap:8px;flex-wrap:wrap}
+.lk-links .btn{min-height:40px}
+.lk-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+.lk-row .lk-lbl{font-weight:700}
+.lk-row .lk-lbl small{display:block;font-weight:500;color:var(--muted);font-size:calc(12.5px * var(--font-scale))}
+.lk-step{display:flex;align-items:center;gap:6px}
+.lk-step button{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--line-2);background:#fff;font-size:20px;font-weight:700;color:var(--ink-2);cursor:pointer}
+.lk-step b{min-width:34px;text-align:center;font-size:calc(20px * var(--font-scale))}
+.lk-done{margin-top:12px;border-radius:12px;background:var(--ok-soft);color:var(--ok);padding:12px 14px;font-weight:600}
+.lk-done .no{font-family:ui-monospace,Consolas,monospace;font-weight:800}
+.lk-it{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px}
+.lk-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.lk-hd small{color:var(--muted);margin-left:auto}
+.lk-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lk-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:4px 4px 4px 10px;font-size:calc(13px * var(--font-scale));background:#fff;min-height:40px}
+.lk-chip.win{border-color:var(--warn);background:var(--warn-soft)}
+.lk-chip.off{opacity:.55;text-decoration:line-through;padding-right:10px}
+.lk-chip .no{font-family:ui-monospace,Consolas,monospace;font-weight:800}
+.lk-chip .st{font-weight:700}
+.lk-chip button{min-height:40px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface-2);font-size:calc(12px * var(--font-scale));font-weight:700;padding:0 10px;cursor:pointer;color:var(--ink-2)}
+.lk-chip button.go{background:var(--accent);border-color:var(--accent);color:#fff}
+.lk-chip button.x{color:var(--bad)}
 /* ═══ 모바일 보정 — 스타일시트 맨 끝: 앞의 규칙과 특이도가 같아도 여기가 이긴다 ═══ */
 @media (max-width:640px){
+  .lk-stats{grid-template-columns:repeat(2,minmax(0,1fr))} .lk-hd small{margin-left:0;width:100%}   /* 행운 이벤트 (mvp_290) */
   .tools-toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 14px;margin:0 0 10px;border:1.5px solid var(--line);border-radius:10px;background:#F7F8FB;color:var(--ink);font:inherit;font-size:calc(13px * var(--font-scale));font-weight:700;cursor:pointer;text-align:left}
   .tools-toggle i{margin-left:auto;font-style:normal;font-weight:600;color:var(--navy)}
   .tools{display:none} .tools.open{display:block}
@@ -1428,6 +1456,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       <button class="tab" data-tab="stats">상담 현황</button>
       <button class="tab" data-tab="leave" data-mgr="1">일정(휴가)</button>
       <button class="tab" data-tab="display">디스플레이 관리</button>
+      <button class="tab" data-tab="lucky">행운 이벤트</button>
       <button class="tab" data-tab="report" data-perm="report">판매현황</button>
       <button class="tab" data-tab="online" data-perm="channel">온라인</button>
       <button class="tab" data-tab="assign" data-mgr="1">배정</button>
@@ -1918,6 +1947,40 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       <div class="f"><label for="sgt_close">맺음말 — 이름 아래 (4명까지일 때)</label><textarea class="in sgt" id="sgt_close" rows="3" maxlength="80"></textarea></div>
       <div class="f"><label for="sgt_none">이름이 없을 때 문구 — 감사 문구 아래 (따옴표는 저절로 붙음)</label><textarea class="in sgt" id="sgt_none" rows="2" maxlength="80"></textarea></div>
       <div class="led-act"><span id="sgtAt"></span><button type="button" class="btn" onclick="sgtSave()">문구 저장</button></div>
+    </div>
+  </section>
+  <section class="panel hidden" id="tab-lucky">
+    <div class="card" id="lkCard">
+      <h2>행운 이벤트 <span id="lkSub"></span></h2>
+      <p class="note-in" style="margin-top:0"><b>멤버십 간편 가입</b> 고객에게 <b>즉석뽑기(룰렛) 1회</b>, <b>100만원 이상 구매 · 구독 1계약</b>마다 <b>행운권 1장</b>을 줍니다. 고객은 휴대폰으로 <b>고객 화면</b>을 열어 <b>이름 + 휴대폰 번호</b>로 직접 룰렛을 돌리고 행운권 번호를 확인합니다. 당첨은 서버가 정하고, 경품을 드리면 아래 목록에서 <b>[지급 완료]</b>를 누르세요.</p>
+      <div class="lk-stats" id="lkStats"></div>
+      <div class="lk-links">
+        <button type="button" class="btn sm ghost" onclick="window.open(LK_URL,'sat_lucky','noopener')">고객 화면 ↗</button>
+        <button type="button" class="btn sm ghost" onclick="window.open(LK_URL+'?show=draw','sat_lucky_draw','noopener')">추첨 발표 화면 ↗</button>
+        <button type="button" class="btn sm ghost" onclick="lkCopy()">고객 화면 주소 복사</button>
+      </div>
+    </div>
+    <div class="card" id="lkGive">
+      <h2>주기 <span>즉석뽑기 · 행운권</span></h2>
+      <div class="two">
+        <div><label for="lk_name">고객 이름</label><input class="in" id="lk_name" maxlength="20" autocomplete="off" placeholder="홍길동"></div>
+        <div><label for="lk_phone">휴대폰 번호</label><input class="in" id="lk_phone" type="tel" inputmode="numeric" maxlength="13" autocomplete="off" placeholder="010-0000-0000" oninput="this.value=lkPh(this.value)"></div>
+      </div>
+      <div class="lk-row"><div class="lk-lbl">즉석뽑기 (룰렛)<small>멤버십 간편 가입 시 1회</small></div>
+        <div class="lk-step"><button type="button" onclick="lkStep('sp',-1)" aria-label="즉석뽑기 줄이기">−</button><b id="lk_sp">1</b><button type="button" onclick="lkStep('sp',1)" aria-label="즉석뽑기 늘리기">＋</button></div></div>
+      <div class="lk-row"><div class="lk-lbl">행운권<small>100만원 이상 구매 · 구독 1계약당 1장</small></div>
+        <div class="lk-step"><button type="button" onclick="lkStep('tk',-1)" aria-label="행운권 줄이기">−</button><b id="lk_tk">0</b><button type="button" onclick="lkStep('tk',1)" aria-label="행운권 늘리기">＋</button></div></div>
+      <div id="lk_tkOpt" class="hidden" style="margin-top:10px">
+        <div class="seg sm" id="lk_rs" role="radiogroup" aria-label="행운권 사유"><button type="button" role="radio" aria-checked="true" class="on" data-v="100만원 이상 구매" onclick="lkRs(this)">100만원 이상 구매</button><button type="button" role="radio" aria-checked="false" data-v="구독 계약" onclick="lkRs(this)">구독 계약</button></div>
+        <input class="in" id="lk_ref" maxlength="80" style="margin-top:8px" placeholder="모델 · 계약 메모 (선택 · 예: RF85 구독)" aria-label="모델 · 계약 메모">
+      </div>
+      <button type="button" class="btn" id="lkGo" style="margin-top:12px" onclick="lkIssue()">주기</button>
+      <div id="lkDone"></div>
+    </div>
+    <div class="card" id="lkListCard">
+      <h2>참여 고객 <span id="lkCnt">최근 순</span></h2>
+      <div class="cbar"><div class="csearchbox"><input class="in" id="lk_q" placeholder="이름 · 번호 뒷자리 · 행운권 번호" autocomplete="off" onkeydown="if(event.key==='Enter')loadLucky()"><button type="button" class="go" onclick="loadLucky()" aria-label="찾기">⌕</button></div></div>
+      <div id="lkList"><div class="empty">불러오는 중…</div></div>
     </div>
   </section>
   <section class="panel hidden" id="tab-leave">
@@ -3985,6 +4048,7 @@ NAV_ICON.inbox   ='<svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6a2 2 0 0 
 NAV_ICON.quote   ='<svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 12h6M10 16h4"/></svg>';
 NAV_ICON.sub     ='<svg viewBox="0 0 24 24"><path d="M4 4h16v6H4zM4 14h16v6H4z"/><path d="M8 7h.01M8 17h.01M12 7h4M12 17h4"/></svg>';   /* 구독 관리 (mvp_254) */
 NAV_ICON.customer='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+NAV_ICON.lucky   ='<svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg>';   /* 행운 이벤트 (mvp_290) */
 NAV_ICON.display ='<svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="18" rx="2"/><path d="M10 22h4M10 7h4M9 11h6M10 15h4"/></svg>';   /* 디스플레이 관리 (mvp_278) */
 NAV_ICON.leave   ='<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15h2M13 15h2M9 18h2"/></svg>';
 NAV_ICON.stats   ='<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>';
@@ -3993,8 +4057,8 @@ NAV_ICON.alerts  ='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 
 /* 배정은 미배정·일괄 넘기기 같은 예외 처리 자리라 '현황' 맨 아래로 (v201 · 상담 탭 [넘기기]가 평소 쓰는 길) */
 /* 메뉴(서랍·하단 탭바)에서 가린 탭 — 2026-10-29 판매 입력·일 마감. 탭 자체는 살아 있어 [구매 확정]·흐름 띠 링크로는 열린다 */
 const NAV_HIDE=new Set(['sale','daily']);
-const NAV_GROUPS=[['상담',['home','inbox','salechk','consult','quote','sub','customer','alerts']],['매장',['display','stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
-const NAV_LABEL={home:'홈', inbox:'상담', salechk:'판매 확인 필요', consult:'상담 입력', quote:'견적서', sub:'구독 관리', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'일정(휴가)'};
+const NAV_GROUPS=[['상담',['home','inbox','salechk','consult','quote','sub','customer','alerts']],['매장',['display','lucky','stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
+const NAV_LABEL={home:'홈', inbox:'상담', salechk:'판매 확인 필요', consult:'상담 입력', quote:'견적서', sub:'구독 관리', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'일정(휴가)', lucky:'행운 이벤트'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
 /* 견적서·구독료 계산기 = 시흥몰 기존 페이지 (2026-11-09 되돌림) */
 const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
@@ -4057,7 +4121,8 @@ function goTab(name, fromHistory){
   const b=document.querySelector(`.tab[data-tab="${name}"]`); if(!b || b.classList.contains('hidden')) return;
   if($('cdDlg') && !$('cdDlg').classList.contains('hidden')) cdClose();   /* 상세 팝업이 떠 있으면 탭을 옮길 때 닫는다 */
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  ['home','inbox','salechk','assign','quote','sub','customer','alerts','stats','leave','display','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  ['home','inbox','salechk','assign','quote','sub','customer','alerts','stats','leave','display','lucky','sale','consult','stock','order','daily','report','online'].forEach(t=>$('tab-'+t).classList.toggle('hidden', t!==name));
+  if(name==='lucky') loadLucky();   /* 행운 이벤트 (mvp_290) */
   if(name==='sub' && !SP_LOADED){ SP_LOADED=true; loadSubPolicy(); }
   if(name==='sub' && !GN_LOADED){ GN_LOADED=true; loadGoodsNote(); }   /* 상품 안내 문구 (mvp_266) */   /* 구독 혜택 안내 (mvp_246) */
   if(name==='sub' && !PR_LOADED){ PR_LOADED=true; loadSubPrice(); }   /* 구독 요금 직접 관리 (mvp_251 · 운영 반영 mvp_254) */
@@ -4793,6 +4858,79 @@ function lvRenderList(){
   }).join('')
     : `<div class="empty">${flt?'거르개에 맞는 일정·휴가가 없습니다':'이 달에는 일정·휴가가 없습니다 — 위 달력의 ‹ › 로 다른 달을 보세요'}</div>`;
   $('lvPg').innerHTML = rows.length>per ? `<div class="pager">${pgBar('lv',LV_PG,rows.length,'lvGo')}</div>` : '';
+}
+/* ── 행운 이벤트 (mvp_290) — 즉석뽑기(룰렛)·행운권 주기 · 지급 완료 표시 · 잘못 준 것 취소. 당첨은 서버가 정한다 ── */
+const LK_URL=location.origin+'/lucky/';
+let LK=null, LK_SP=1, LK_TK=0;
+const lkNo=n=>'No.'+String(n).padStart(4,'0');
+function lkPh(v){ const d=String(v||'').replace(/\D/g,'').slice(0,11); if(d.length<4) return d; if(d.length<8) return d.slice(0,3)+'-'+d.slice(3); return d.slice(0,3)+'-'+d.slice(3,d.length-4)+'-'+d.slice(-4); }
+function lkStep(k,d){ if(k==='sp'){ LK_SP=Math.max(0,Math.min(3,LK_SP+d)); $('lk_sp').textContent=LK_SP; } else { LK_TK=Math.max(0,Math.min(30,LK_TK+d)); $('lk_tk').textContent=LK_TK; $('lk_tkOpt').classList.toggle('hidden',!LK_TK); } }
+function lkRs(b){ document.querySelectorAll('#lk_rs button').forEach(x=>{ x.classList.toggle('on',x===b); x.setAttribute('aria-checked',x===b); }); }
+function lkCopy(){ try{ navigator.clipboard.writeText(LK_URL).then(()=>toast('고객 화면 주소를 복사했습니다','ok'),()=>toast(LK_URL)); }catch(e){ toast(LK_URL); } }
+function lkMd(d){ return d?String(d).slice(5).replace('-','/'):''; }
+async function loadLucky(){
+  const q=($('lk_q')&&$('lk_q').value.trim())||null;
+  try{ LK=await rpc('fn_store_lucky',{p_code:CODE,p_q:q}); }catch(e){ $('lkList').innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  lkRender();
+}
+function lkRender(){
+  if(!LK||!LK.event){ $('lkSub').textContent='진행 중인 회차가 없습니다'; $('lkStats').innerHTML=''; $('lkList').innerHTML='<div class="empty">관리자 화면 › 행운 이벤트에서 회차를 만들어 주세요.</div>'; $('lkGo').disabled=true; return; }
+  const e=LK.event, s=LK.stats||{}, sr=s.spin_ranks||{};
+  $('lkGo').disabled=false;
+  $('lkSub').textContent=`${e.name} · ${lkMd(e.start_date)} ~ ${lkMd(e.end_date)} · 행운권 ${e.mode==='instant'?'즉석 확인(복권)':'1회 확인(럭키드로우 '+lkMd(e.draw_date)+')'}${e.drawn?' · 추첨 끝':''}`;
+  $('lkStats').innerHTML=[
+    [s.entrants||0,`참여 고객${s.entrants_today?' · 오늘 +'+s.entrants_today:''}`],
+    [`${s.spins_used||0}/${s.spins||0}`,`즉석뽑기 사용 · 1등 ${sr['1']||0} · 2등 ${sr['2']||0} · 3등 ${sr['3']||0}`],
+    [`${s.tickets||0}장`,`행운권${s.tickets_today?' · 오늘 +'+s.tickets_today:''} · 목표 ${e.expect_tickets||'-'}장`],
+    [s.spin_redeemed||0,'즉석뽑기 경품 지급 완료']].map(([b,t])=>`<div><b>${esc(b)}</b><span>${esc(t)}</span></div>`).join('');
+  const rows=LK.rows||[];
+  $('lkCnt').textContent=($('lk_q').value.trim()?'찾은 결과 ':'최근 순 ')+rows.length+'명';
+  $('lkList').innerHTML=rows.length?rows.map(lkRow).join(''):'<div class="empty">아직 참여 고객이 없습니다. 위 [주기]로 첫 고객을 넣어 보세요.</div>';
+}
+function lkRow(r){
+  const sp=(r.spins||[]).map(x=>{
+    if(x.void) return `<span class="lk-chip off">즉석뽑기 취소</span>`;
+    if(!x.used_at) return `<span class="lk-chip"><span class="st">즉석뽑기 미사용</span><button type="button" class="x" onclick="lkMark('spin',${x.id},'void')">취소</button></span>`;
+    return `<span class="lk-chip${x.rank>0?' win':''}"><span class="st">${x.rank>0?x.rank+'등 ':''}${esc(x.label||'')}</span><span class="no">${esc(x.coupon||'')}</span>`
+      +(x.redeemed_at?`<button type="button" onclick="lkMark('spin',${x.id},'unredeem')" title="지급 완료 되돌리기">지급 완료 ✓</button>`:`<button type="button" class="go" onclick="lkMark('spin',${x.id},'redeem')">지급 완료</button>`)+`</span>`; }).join('');
+  const tk=(r.tickets||[]).map(t=>{
+    if(t.void) return `<span class="lk-chip off"><span class="no">${lkNo(t.no)}</span>취소</span>`;
+    let st='', act='';
+    if(t.mode==='instant') st=t.revealed?(t.rank>0?`${t.rank}등 ${esc(t.label||'')}`:'미당첨'):'고객 미확인';
+    else st=LK.event.drawn?(t.rank>0?`${t.rank}등 ${esc(t.label||'')}`:'미당첨'):'추첨 대기';
+    const win=t.rank>0;
+    if(win) act=t.redeemed_at?`<button type="button" onclick="lkMark('ticket',${t.id},'unredeem')">지급 완료 ✓</button>`:`<button type="button" class="go" onclick="lkMark('ticket',${t.id},'redeem')">지급 완료</button>`;
+    else if(!t.revealed && !(t.mode==='draw'&&LK.event.drawn)) act=`<button type="button" class="x" onclick="lkMark('ticket',${t.id},'void')">취소</button>`;
+    return `<span class="lk-chip${win?' win':''}" title="${esc((t.reason||'')+(t.ref?' · '+t.ref:'')+(t.issued_by?' · '+t.issued_by:''))}"><span class="no">${lkNo(t.no)}</span><span class="st">${st}</span>${act}</span>`; }).join('');
+  return `<div class="lk-it"><div class="lk-hd"><b>${esc(r.name)}</b><span>${esc(r.phone||'')}</span><small>${esc(r.created_by||'')} · ${esc(fmtWhen(r.created_at).join(' '))}</small></div>`
+    +`<div class="lk-chips">${sp}${tk}${!sp&&!tk?'<span class="lk-chip">등록만 됨</span>':''}</div></div>`;
+}
+async function lkIssue(){
+  const name=$('lk_name').value.trim(), ph=$('lk_phone').value.replace(/\D/g,'');
+  if(!name) return toast('고객 이름을 적어 주세요','err');
+  if(!/^01\d{8,9}$/.test(ph)) return toast('휴대폰 번호를 확인해 주세요','err');
+  if(!LK_SP && !LK_TK) return toast('즉석뽑기나 행운권을 1 이상으로 골라 주세요','err');
+  const ob=document.querySelector('#lk_rs button.on'), rs=ob?ob.dataset.v:'';
+  const what=[LK_SP?`즉석뽑기 ${LK_SP}회`:'',LK_TK?`행운권 ${LK_TK}장 (${rs})`:''].filter(Boolean).join(' · ');
+  if(!confirm(`${name} · ${lkPh(ph)}\n${what}\n\n이대로 줄까요?`)) return;
+  $('lkGo').disabled=true;
+  try{
+    const r=await rpc('fn_store_lucky_issue',{p_code:CODE,p_data:{name,phone:ph,spins:LK_SP,tickets:LK_TK,reason:LK_TK?rs:'',ref:LK_TK?$('lk_ref').value.trim():'',spin_reason:'멤버십 가입'}},0);
+    const nos=(r.new_tickets||[]).map(lkNo);
+    $('lkDone').innerHTML=`<div class="lk-done">${esc(name)} 고객님께 ${LK_SP?`즉석뽑기 ${LK_SP}회`:''}${LK_SP&&nos.length?' · ':''}${nos.length?`행운권 <span class="no">${nos.join(', ')}</span>`:''} 을(를) 드렸습니다.<br><span style="font-weight:500">고객 휴대폰에서 <b>${esc(LK_URL.replace(/^https?:\/\//,''))}</b> 을 열고 이름·번호로 확인합니다.</span></div>`;
+    $('lk_name').value=''; $('lk_phone').value=''; $('lk_ref').value=''; LK_SP=1; LK_TK=0; lkStep('sp',0); lkStep('tk',0);
+    toast('드렸습니다','ok'); await loadLucky();
+  }catch(e){ toast(e.message,'err'); }
+  finally{ $('lkGo').disabled=false; }
+}
+async function lkMark(kind,id,op){
+  let reason='';
+  if(op==='void'){ reason=prompt(`${kind==='spin'?'즉석뽑기':'행운권'}을 취소합니다. 사유를 적어 주세요 (예: 잘못 입력)`,'잘못 입력'); if(reason==null) return; }
+  if(op==='unredeem' && !confirm('지급 완료 표시를 되돌릴까요?')) return;
+  try{ const r=await rpc('fn_store_lucky_mark',{p_code:CODE,p_data:{kind,id,op,reason}},0);
+    const i=(LK.rows||[]).findIndex(x=>x.id===r.row.id); if(i>=0) LK.rows[i]=r.row;
+    lkRender(); toast(op==='redeem'?'지급 완료로 표시했습니다':op==='void'?'취소했습니다':'되돌렸습니다','ok');
+  }catch(e){ toast(e.message,'err'); }
 }
 /* ── 디스플레이 관리 (mvp_278) — 매장 사이니지에 뜨는 그날 고객 이름 · 방문 예약은 저절로 · 이름 고치기·숨기기·직접 추가 ── */
 let DP=null;
