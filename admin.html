@@ -1274,6 +1274,19 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
 .subtabs.sw button.on{color:var(--navy);border-bottom-color:var(--navy);font-weight:700}
 .subtabs.sw button:focus-visible{outline:2px solid var(--navy);outline-offset:-2px}
 @media(max-width:999px){ .subtabs.sw{padding:0 6px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)} .subtabs.sw button{min-height:44px;padding:10px 12px} }   /* 폰: 오른쪽 끝을 흐려 '더 있다'는 걸 보인다(옆으로 넘김) */
+/* ═══ 행운 이벤트 (mvp_290) ═══ */
+.lka-tbl td{vertical-align:top}
+.lka-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:7px;padding:2px 7px;margin:0 4px 4px 0;font-size:calc(12px * var(--font-scale));background:#fff;white-space:nowrap}
+.lka-chip.win{border-color:#E9AE2C;background:#FFF6DC}
+.lka-chip.off{opacity:.5;text-decoration:line-through}
+.lka-chip .mono{font-family:ui-monospace,Menlo,monospace;font-weight:700}
+.lka-pz td .in{width:100%;min-width:60px}
+.lka-pz td.n .in{width:80px;min-width:0}
+.lka-bar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:6px}
+.lka-bar i{display:block;height:100%;background:var(--navy);border-radius:99px}
+.lka-win{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:10px}
+.lka-win div{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.lka-win div b{color:var(--navy)}
 </style>
 </head>
 <body>
@@ -2292,6 +2305,56 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
             그래서 <b>클릭 수는 GA4 없이도 여기서 바로</b> 보이고, 구매 열은 그 캠페인으로 문자를 받은 분이 발송 뒤에 산 주문을 셉니다.<br>
             링크를 지우면 이미 나간 문자의 주소가 죽으므로 <b>[끄기]</b> 만 있습니다. 발송 이력이 있는 캠페인도 지우지 않고 <b>[접기]</b> 합니다.
           </div>
+        </div>
+      </div>
+
+      <!-- ═══ 행운 이벤트 (mvp_290) ═══ -->
+      <div class="view hidden" id="v-lucky">
+        <div class="card" id="lkaSum">
+          <h3>행사 현황 <span id="lkaSub"></span></h3>
+          <div class="filters" style="margin-bottom:10px;align-items:center">
+            <select class="in" id="lkaEv" aria-label="회차" onchange="loadLucky(Number(this.value))" style="width:auto"></select>
+            <button class="btn sm ghost" onclick="window.open('/lucky/','sat_lucky','noopener')">고객 화면 ↗</button>
+            <button class="btn sm ghost" onclick="window.open('/lucky/?show=draw','sat_lucky_draw','noopener')">추첨 발표 화면 ↗</button>
+            <button class="btn sm ghost" onclick="window.open('/lucky/?demo=1','sat_lucky_demo','noopener')">미리 보기(가짜 데이터) ↗</button>
+          </div>
+          <div class="kpis" id="lkaKpi"></div>
+          <div class="note" id="lkaCost"></div>
+        </div>
+        <div class="card" id="lkaDraw">
+          <h3>행운권 추첨 <span id="lkaDrawSub"></span></h3>
+          <div id="lkaDrawBody"></div>
+        </div>
+        <div class="card" id="lkaList">
+          <h3>참여 고객 <span id="lkaCnt"></span></h3>
+          <div class="filters" style="margin-bottom:8px"><input class="in" id="lkaQ" placeholder="이름 · 번호" aria-label="참여 고객 찾기" onkeydown="if(event.key==='Enter')loadLucky()" style="flex:1;min-width:160px"><button class="btn sm" onclick="loadLucky()">찾기</button></div>
+          <div class="tw"><table class="lka-tbl"><thead><tr><th>고객</th><th>등록</th><th>즉석뽑기 (룰렛)</th><th>행운권</th></tr></thead><tbody id="lkaRows"></tbody></table></div>
+        </div>
+        <div class="card" id="lkaSet">
+          <h3>회차 설정 <span id="lkaSetSub">관리자만 바꿀 수 있습니다</span></h3>
+          <div class="fgrid">
+            <div style="grid-column:span 2"><label for="lka_name">행사 이름</label><input class="in" id="lka_name" maxlength="60" style="width:100%"></div>
+            <div><label for="lka_from">시작일</label><input class="in" type="date" id="lka_from" style="width:100%"></div>
+            <div><label for="lka_to">끝나는 날</label><input class="in" type="date" id="lka_to" style="width:100%"></div>
+            <div><label for="lka_draw">추첨일 (1회 확인)</label><input class="in" type="date" id="lka_draw" style="width:100%"></div>
+            <div><label for="lka_expect">예상 행운권 장수</label><input class="in" type="number" min="1" id="lka_expect" style="width:100%"></div>
+          </div>
+          <label style="font-size:12px;font-weight:700;color:var(--muted)">행운권 확인 방식</label>
+          <div class="seg2" id="lka_mode" role="radiogroup" aria-label="행운권 확인 방식" style="margin:4px 0 6px"><button type="button" data-v="draw" onclick="lkaMode('draw')">1회 확인 · 럭키드로우 추첨</button><button type="button" data-v="instant" onclick="lkaMode('instant')">즉석 확인 · 복권 긁기</button></div>
+          <p class="note" style="margin:0 0 12px"><b>1회 확인</b>: 추첨일에 관리자가 [추첨하기]를 한 번 누르면 결과가 나옵니다 (발표 화면에서 5등부터 공개). <b>즉석 확인</b>: 행운권을 줄 때 서버가 당첨을 정해 두고 고객이 긁으면 공개합니다 — 확률 = 남은 경품 ÷ (예상 장수 − 이미 나간 장수), 예상 장수만큼 나가면 경품이 모두 나갑니다. 이미 나간 행운권은 방식을 바꿔도 받을 때 방식 그대로입니다.</p>
+          <h4 style="margin:6px 0">즉석뽑기 (룰렛) 경품 <span class="note">확률 % · 수량 비우면 제한 없음 · 수량이 다 나가면 그 확률은 기본 경품으로 · 등수 0 = 꽝 대신 기본 경품</span></h4>
+          <div class="tw"><table class="lka-pz"><thead><tr><th>등수</th><th>경품</th><th>설명</th><th>확률 %</th><th>최대 수량</th><th>단가(원)</th><th>이미지 주소</th></tr></thead><tbody id="lka_sp"></tbody></table></div>
+          <h4 style="margin:14px 0 6px">행운권 경품 <span class="note">등수마다 당첨 인원</span></h4>
+          <div class="tw"><table class="lka-pz"><thead><tr><th>등수</th><th>경품</th><th>설명</th><th>인원</th><th>단가(원)</th><th>이미지 주소</th></tr></thead><tbody id="lka_dp"></tbody></table></div>
+          <div class="filters" style="margin-top:6px"><button class="btn sm ghost" onclick="lkaAddDp()">+ 행운권 등수 추가</button></div>
+          <h4 style="margin:14px 0 6px">목표</h4>
+          <div class="fgrid">
+            <div><label for="lka_budget">총 예산(원)</label><input class="in" type="number" id="lka_budget" style="width:100%"></div>
+            <div><label for="lka_sales">추가 기대 매출(원)</label><input class="in" type="number" id="lka_sales" style="width:100%"></div>
+            <div><label for="lka_visitors">목표 방문(참여 고객)</label><input class="in" type="number" id="lka_visitors" style="width:100%"></div>
+            <div><label for="lka_gift">1단계 사은품 단가(원)</label><input class="in" type="number" id="lka_gift" style="width:100%"></div>
+          </div>
+          <div class="filters"><button class="btn" id="lkaSave" onclick="lkaSave(false)">이 회차 저장</button><button class="btn ghost" onclick="lkaSave(true)">새 회차로 저장</button><span class="note" id="lkaSaved"></span></div>
         </div>
       </div>
 
@@ -5125,7 +5188,7 @@ document.querySelectorAll('.preset button').forEach(b=>b.addEventListener('click
 function applyPeriod(){ if(!$('pFrom').value||!$('pTo').value) return toast('시작일과 종료일을 넣어주세요','bad'); P={from:$('pFrom').value,to:$('pTo').value}; PRESET='custom'; document.querySelectorAll('.preset button').forEach(b=>b.classList.remove('on')); periodLabel(); refreshView(); }
 
 /* ═══════════════ 네비 ═══════════════ */
-const NAV_ICON={exec:`<svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 5-7 4 5"/><path d="M3 21h18"/></svg>`,sms:`<svg viewBox="0 0 24 24"><path d="M4 4h16v12H7l-3 3z"/><path d="M8 9h8M8 12h5"/></svg>`,followup:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,cdash:`<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 6-7"/><circle cx="20" cy="6" r="1.5"/></svg>`,utm:`<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>`,home:`<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,dash:`<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,orders:`<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,flow:`<svg viewBox="0 0 24 24"><path d="M3 6h5l3 6-3 6H3M10 6h5l3 6-3 6h-5M17 6h4v12h-4"/></svg>`,online:`<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg>`,daily:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,inbox:`<svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg>`,consults:`<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>`,customers:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>`,crm:`<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>`,stock:`<svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>`,moves:`<svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg>`,items:`<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>`,wiz:`<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/><path d="M18 10l3 2-3 2"/></svg>`,oq:`<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,upload:`<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>`,log:`<svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,option:`<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>`,notify:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`};
+const NAV_ICON={lucky:`<svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg>`,exec:`<svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 5-7 4 5"/><path d="M3 21h18"/></svg>`,sms:`<svg viewBox="0 0 24 24"><path d="M4 4h16v12H7l-3 3z"/><path d="M8 9h8M8 12h5"/></svg>`,followup:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,cdash:`<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 6-7"/><circle cx="20" cy="6" r="1.5"/></svg>`,utm:`<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>`,home:`<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,dash:`<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,orders:`<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,flow:`<svg viewBox="0 0 24 24"><path d="M3 6h5l3 6-3 6H3M10 6h5l3 6-3 6h-5M17 6h4v12h-4"/></svg>`,online:`<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 13l3-3 3 2 5-5"/></svg>`,daily:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,inbox:`<svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"/></svg>`,consults:`<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>`,customers:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>`,crm:`<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>`,stock:`<svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>`,moves:`<svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v10M20 7v10"/></svg>`,items:`<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg>`,wiz:`<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/><path d="M18 10l3 2-3 2"/></svg>`,oq:`<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,upload:`<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>`,log:`<svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,option:`<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>`,notify:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`};
 /* ===== 후속 관리 (2026-10-08 · mvp_194) — 구독 만료 · 견적 보낸 뒤 N일 · 정수기·AI콤보·공기청정기 산 고객. 세 카드가 각각 fn_crm_followups 를 부른다 ===== */
 const FU={sub:{days:180,page:0,rows:[],counts:{},total:0}, quote:{days:7,page:0,rows:[],counts:{},total:0}, product:{group:'정수기',min_m:'',page:0,rows:[],counts:{},total:0}};
 const FU_SEQ={sub:0,quote:0,product:0};
@@ -5541,7 +5604,7 @@ const NAV_FALLBACK=[
   {group:'_top',group_label:'',items:[{code:'home',label:'홈',state:'on'}]},
   {group:'dashboard',group_label:'대시보드',items:[{code:'exec',label:'경영 지표',state:'on'},{code:'dash',label:'매출 대시보드',state:'on'},{code:'cdash',label:'상담 대시보드',state:'on'}]},
   {group:'sales',group_label:'매출',items:[{code:'flow',label:'주문 · 판매 · 매출',state:'on'},{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'}]},
-  {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출 · 수동',state:'on'},{code:'followup',label:'자동 발송 대상',state:'on'},{code:'sms',label:'메시지 발송 관리',state:'on'}]},
+  {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출 · 수동',state:'on'},{code:'followup',label:'자동 발송 대상',state:'on'},{code:'sms',label:'메시지 발송 관리',state:'on'},{code:'lucky',label:'행운 이벤트',state:'on'}]},
   {group:'inv',group_label:'재고',items:[{code:'stock',label:'재고 현황',state:'on'},{code:'moves',label:'입출고',state:'on'},{code:'items',label:'품목',state:'on'},{code:'oq',label:'주문서 · 전송',state:'on'},{code:'wiz',label:'주문 변환',state:'on'}]},
   {group:'data',group_label:'데이터',items:[{code:'upload',label:'데이터 가져오기',state:'on'},{code:'log',label:'서비스 로그',state:'on'},{code:'settings',label:'설정 · 담당자',state:'on'}]},
   {group:'ops',group_label:'운영',items:[{code:'option',label:'옵션 · 권한',state:'on'},{code:'notify',label:'알림 관리',state:'on'}]}];
@@ -5678,7 +5741,7 @@ function renderUnderConstruction(v){
       <div class="uc-tape"></div>
     </div>`;
 }
-const TITLES={home:'홈',exec:'경영 지표',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출 · 수동',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드',followup:'자동 발송 대상',sms:'메시지 발송 관리'};
+const TITLES={home:'홈',exec:'경영 지표',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출 · 수동',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드',followup:'자동 발송 대상',sms:'메시지 발송 관리',lucky:'행운 이벤트'};
 let VIEW='home';
 function toggleNav(force){ const on = force===undefined ? !document.body.classList.contains('nav-open') : !!force; document.body.classList.toggle('nav-open', on); }
 /* 뒤로가기 = 이전 화면. 화면을 바꿀 때마다 히스토리에 한 칸 쌓고, popstate 로 되돌아온다.
@@ -5946,7 +6009,113 @@ document.addEventListener('click', e=>{
     toast(`${lbl.replace(/[▸›]/g,'').trim()} 완료 · ${hhmm()}`,'ok'); }, 60);
 }, true);
 function hhmm(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-const LOADERS={home:loadHome,exec:loadExec,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();loadSubPolicy();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_TG){ tgApplyPending(); } else if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms};
+const LOADERS={home:loadHome,exec:loadExec,stock:loadStock,moves:()=>loadMoves(0),items:()=>{loadItems(0);loadSubPlans();loadSubPolicy();},oq:()=>loadOq(0),wiz:loadWiz,dash:loadDash,flow:loadFlow,orders:()=>loadOrders(0),online:loadOnline,daily:loadDaily,inbox:()=>{loadInquiry(0);loadInbox();},consults:()=>loadConsults(0),customers:()=>{ if(!IF.d) loadIflow(); return loadCustomers(0); },crm:()=>{setBasis(TG_BASIS);loadCrmFunnel();utmCampsEnsure().then(utmFillList); if(PENDING_TG){ tgApplyPending(); } else if(PENDING_PROD){ const o=PENDING_PROD; PENDING_PROD=null; setBasisQuiet('product'); prodSet(o.toks); $('crmFrom').value=''; $('crmTo').value=o.to||''; if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason; loadTargets(0); } },upload:loadUploads,log:()=>loadLog(0),settings:()=>{loadSettings();loadPool();},option:loadOption,notify:loadNotify,utm:loadUtm,cdash:loadCdash,followup:loadFollowup,sms:loadSms,lucky:()=>loadLucky()};
+/* ═══ 행운 이벤트 (mvp_290) — 현황 · 참여 고객 · 1회 확인 추첨 · 회차 설정 ═══ */
+let LKA=null, LKA_EV=null, LKA_MODE='draw';
+const lkaNo=n=>'No.'+String(n).padStart(4,'0');
+const lkaWon=n=>Number(n||0).toLocaleString('ko-KR');
+function lkaWhen(t){ if(!t) return ''; const d=new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+async function loadLucky(evId){
+  if(evId) LKA_EV=evId;
+  const q=($('lkaQ')&&$('lkaQ').value.trim())||null;
+  LKA=await rpc('fn_lucky_admin',{p_event:LKA_EV||null,p_q:q},{fresh:true});
+  if(LKA&&LKA.event) LKA_EV=LKA.event.id;
+  lkaRender();
+}
+function lkaRender(){
+  const D=LKA||{}, e=D.event, P=D.pub||{}, s=D.stats||{};
+  $('lkaEv').innerHTML=(D.events||[]).map(x=>`<option value="${x.id}"${e&&x.id===e.id?' selected':''}>${esc(x.name)} · ${esc(String(x.start_date).slice(5))}~${esc(String(x.end_date).slice(5))}${x.active?'':' (꺼짐)'}</option>`).join('')||'<option>회차 없음</option>';
+  if(!e){ $('lkaKpi').innerHTML=''; $('lkaRows').innerHTML='<tr><td colspan="4" class="empty">회차가 없습니다. 아래 설정에서 [새 회차로 저장]을 누르세요.</td></tr>'; lkaFill(null); return; }
+  const g=e.goal||{}, sr=s.spin_ranks||{};
+  $('lkaSub').textContent=`${e.start_date} ~ ${e.end_date} · ${e.mode==='instant'?'즉석 확인(복권)':'1회 확인(럭키드로우)'}${e.drawn_at?' · 추첨 끝':''}`;
+  /* 예상 경품 비용 = 1단계 사은품 × 참여 고객 + 즉석뽑기 나온 경품 단가 + 행운권 경품(1회 확인은 정한 인원 전부, 즉석 확인은 공개된 당첨) */
+  const spv={}; (e.spin_prizes||[]).forEach(p=>spv[p.rank]=Number(p.value||0));
+  const spinCost=Object.entries(sr).reduce((a,[k,c])=>a+(spv[k]||0)*c,0);
+  const giftCost=(Number(g.gift_unit)||0)*(s.entrants||0);
+  const drawCost=(e.draw_prizes||[]).reduce((a,p)=>a+Number(p.value||0)*Number(p.qty||1),0);
+  const cost=spinCost+giftCost+drawCost, bud=Number(g.budget)||0;
+  const kpi=(t,v,sub,pct)=>`<div class="kpi"><div class="t">${t}</div><div class="v">${v}</div><div class="s">${sub||''}</div>${pct!=null?`<div class="lka-bar"><i style="width:${Math.min(100,pct)}%"></i></div>`:''}</div>`;
+  $('lkaKpi').innerHTML=
+     kpi('참여 고객',lkaWon(s.entrants),`오늘 +${s.entrants_today||0} · 목표 ${lkaWon(g.visitors)}`,g.visitors?(s.entrants||0)/g.visitors*100:null)
+    +kpi('즉석뽑기 사용',`${lkaWon(s.spins_used)} / ${lkaWon(s.spins)}`,`1등 ${sr['1']||0} · 2등 ${sr['2']||0} · 3등 ${sr['3']||0} · 기본 ${sr['0']||0} · 지급 ${s.spin_redeemed||0}`)
+    +kpi('행운권',`${lkaWon(s.tickets)}장`,`오늘 +${s.tickets_today||0} · 예상 ${lkaWon(e.expect_tickets)} · 긁음 ${s.revealed||0}`,e.expect_tickets?(s.tickets||0)/e.expect_tickets*100:null)
+    +kpi('예상 경품 비용',`${lkaWon(cost)}원`,`예산 ${lkaWon(bud)}원${bud?` · ${Math.round(cost/bud*100)}%`:''}`,bud?cost/bud*100:null);
+  $('lkaCost').innerHTML=`사은품 ${lkaWon(giftCost)} (참여 ${lkaWon(s.entrants)}명 × ${lkaWon(g.gift_unit)}) · 즉석뽑기 ${lkaWon(spinCost)} (나온 경품 단가 합 · 50% 할인권은 단가 0 이면 빠짐) · 행운권 ${lkaWon(drawCost)} (정한 경품 전부) · 추가 기대 매출 목표 ${lkaWon(g.sales)}원`;
+  /* 추첨 */
+  const ws=P.winners||[], iw=P.instant_winners||[];
+  $('lkaDrawSub').textContent=e.mode==='instant'?'즉석 확인 — 고객이 긁을 때마다 공개':(e.draw_date?`${e.draw_date} 추첨 예정`:'추첨일 미정');
+  let h=`<p class="note" style="margin:0 0 10px">1회 확인 방식 행운권 <b>${lkaWon(s.tickets_draw)}장</b> · 즉석 확인 방식 <b>${lkaWon(s.tickets_instant)}장</b>(긁음 ${s.revealed||0}). 추첨은 1회 확인 방식으로 나간 행운권만 대상이며 1인 1경품입니다.</p>`;
+  if(e.drawn_at){
+    h+=`<div class="callout">추첨 끝 — ${lkaWhen(e.drawn_at)} · ${esc(e.drawn_by||'')}. 매장 화면에서 <b>추첨 발표 화면</b>을 열고 [발표 시작]을 누르면 5등부터 공개됩니다.</div>`
+      +`<div class="lka-win">${ws.map(w=>`<div><b>${w.rank}등</b> ${esc(w.label||'')}<br><span class="mono">${lkaNo(w.no)}</span> · ${esc(w.name)} · ${esc(w.phone4)}</div>`).join('')}</div>`
+      +(D.can_edit?`<div class="filters" style="margin-top:10px"><button class="btn sm ghost" onclick="lkaReset()">추첨 되돌리기</button><span class="note">경품을 하나라도 드렸으면 되돌릴 수 없습니다</span></div>`:'');
+  } else if(D.can_edit){
+    h+=`<div class="filters"><button class="btn" onclick="lkaRun()" ${s.tickets_draw?'':'disabled'}>추첨하기</button><span class="note">누르는 순간 결과가 정해지고 고객 화면·발표 화면에 나옵니다. 발표 화면을 먼저 켜 두면 바로 발표가 시작됩니다.</span></div>`;
+  } else h+='<p class="note">추첨은 관리자만 할 수 있습니다.</p>';
+  if(iw.length) h+=`<h4 style="margin:14px 0 4px">즉석 확인 당첨 (공개된 것)</h4><div class="lka-win">${iw.map(w=>`<div><b>${w.rank}등</b> <span class="mono">${lkaNo(w.no)}</span> · ${esc(w.name)} · ${lkaWhen(w.at)}</div>`).join('')}</div>`;
+  $('lkaDrawBody').innerHTML=h;
+  /* 참여 고객 */
+  const rows=D.rows||[];
+  $('lkaCnt').textContent=`${rows.length}명`;
+  $('lkaRows').innerHTML=rows.length?rows.map(r=>{
+    const sp=(r.spins||[]).map(x=>x.void?`<span class="lka-chip off">취소</span>`:!x.used_at?`<span class="lka-chip">미사용</span>`
+      :`<span class="lka-chip${x.rank>0?' win':''}">${x.rank>0?x.rank+'등 ':''}${esc(x.label||'')} <span class="mono">${esc(x.coupon||'')}</span>${x.redeemed_at?' ✓지급':''}</span>`).join('');
+    const tk=(r.tickets||[]).map(t=>{ if(t.void) return `<span class="lka-chip off"><span class="mono">${lkaNo(t.no)}</span></span>`;
+      let st=t.mode==='instant'?(t.revealed?(t.rank>0?`${t.rank}등`:'미당첨'):(t.rank>0?`긁기 전 · ${t.rank}등 예정`:'긁기 전')):(e.drawn_at?(t.rank>0?`${t.rank}등`:'미당첨'):'추첨 대기');
+      return `<span class="lka-chip${t.rank>0&&(t.revealed||t.mode==='draw')?' win':''}" title="${esc((t.reason||'')+(t.ref?' · '+t.ref:'')+' · '+(t.issued_by||''))}"><span class="mono">${lkaNo(t.no)}</span> ${st}${t.redeemed_at?' ✓지급':''}</span>`; }).join('');
+    return `<tr><td><b>${esc(r.name)}</b><br><span class="mono">${esc(r.phone||'')}</span></td><td>${esc(r.created_by||'')}<br><span class="note">${lkaWhen(r.created_at)}</span></td><td>${sp||'<span class="note">없음</span>'}</td><td>${tk||'<span class="note">없음</span>'}</td></tr>`;
+  }).join(''):'<tr><td colspan="4" class="empty">참여 고객이 없습니다</td></tr>';
+  lkaFill(e);
+}
+function lkaMode(m){ LKA_MODE=m; document.querySelectorAll('#lka_mode button').forEach(b=>b.classList.toggle('on',b.dataset.v===m)); }
+function lkaPzRow(p,kind){ const v=k=>esc(p[k]==null?'':p[k]);
+  return `<tr><td class="n"><input class="in" type="number" min="0" data-k="rank" value="${v('rank')}"></td><td><input class="in" data-k="label" value="${v('label')}"></td><td><input class="in" data-k="sub" value="${v('sub')}"></td>`
+    +(kind==='sp'?`<td class="n"><input class="in" type="number" step="0.1" min="0" data-k="prob" value="${v('prob')}" ${p.rank===0?'disabled placeholder="나머지"':''}></td><td class="n"><input class="in" type="number" min="0" data-k="stock" value="${v('stock')}" ${p.rank===0?'disabled':''}></td>`
+                 :`<td class="n"><input class="in" type="number" min="1" data-k="qty" value="${v('qty')}"></td>`)
+    +`<td class="n"><input class="in" type="number" min="0" data-k="value" value="${v('value')}"></td><td><input class="in" data-k="img" value="${v('img')}" placeholder="img/파일.jpg"></td></tr>`; }
+function lkaFill(e){
+  const ok=!!(LKA&&LKA.can_edit);
+  e=e||{name:'',spin_prizes:[{rank:1},{rank:2},{rank:3},{rank:0,label:'과자 + 5,000원 할인권'}],draw_prizes:[{rank:1,qty:1}],goal:{},mode:'draw',expect_tickets:400};
+  $('lka_name').value=e.name||''; $('lka_from').value=e.start_date||''; $('lka_to').value=e.end_date||''; $('lka_draw').value=e.draw_date||''; $('lka_expect').value=e.expect_tickets||400;
+  const g=e.goal||{}; $('lka_budget').value=g.budget||''; $('lka_sales').value=g.sales||''; $('lka_visitors').value=g.visitors||''; $('lka_gift').value=g.gift_unit||'';
+  lkaMode(e.mode||'draw');
+  $('lka_sp').innerHTML=(e.spin_prizes||[]).slice().sort((a,b)=>(a.rank||99)-(b.rank||99)).map(p=>lkaPzRow(p,'sp')).join('');
+  $('lka_dp').innerHTML=(e.draw_prizes||[]).map(p=>lkaPzRow(p,'dp')).join('');
+  if(!ok) $('lkaSet').querySelectorAll('input,button').forEach(x=>{ x.disabled=true; });
+  $('lkaSetSub').textContent=ok?'저장하면 고객 화면·담당자 화면에 바로 반영됩니다':'관리자만 바꿀 수 있습니다 (보기 전용)';
+}
+function lkaAddDp(){ const n=$('lka_dp').querySelectorAll('tr').length+1; $('lka_dp').insertAdjacentHTML('beforeend',lkaPzRow({rank:n,qty:1},'dp')); }
+function lkaRead(tb){ return [...$(tb).querySelectorAll('tr')].map(tr=>{ const o={}; tr.querySelectorAll('input').forEach(i=>{ const k=i.dataset.k, v=i.value.trim();
+  if(['rank','prob','stock','qty','value'].includes(k)) o[k]=v===''?null:Number(v); else if(v!=='') o[k]=v; }); return o; }).filter(o=>o.label); }
+async function lkaSave(asNew){
+  const sp=lkaRead('lka_sp'), dp=lkaRead('lka_dp');
+  const sum=sp.filter(p=>p.rank>0).reduce((a,p)=>a+(p.prob||0),0);
+  if(sum>100) return toast('즉석뽑기 확률 합이 100%를 넘습니다','bad');
+  if(!sp.some(p=>p.rank===0)) return toast('즉석뽑기 등수 0(기본 경품)이 있어야 합니다','bad');
+  if(!dp.length) return toast('행운권 경품을 한 줄 이상 적어 주세요','bad');
+  const e=LKA&&LKA.event;
+  if(!asNew && e && e.mode!==LKA_MODE && !confirm(`행운권 확인 방식을 ${LKA_MODE==='instant'?'즉석 확인(복권)':'1회 확인(럭키드로우)'}으로 바꿉니다.\n이미 나간 행운권은 받을 때 방식 그대로입니다. 계속할까요?`)) return;
+  if(asNew && !confirm('지금 입력한 내용으로 새 회차를 만듭니다. 기간이 겹치면 시작일이 늦은 회차가 진행 중으로 잡힙니다. 계속할까요?')) return;
+  const data={id:asNew?null:(e?e.id:null),name:$('lka_name').value.trim(),start_date:$('lka_from').value,end_date:$('lka_to').value,draw_date:$('lka_draw').value||null,
+    mode:LKA_MODE,expect_tickets:Number($('lka_expect').value)||400,spin_prizes:sp,draw_prizes:dp,active:true,
+    goal:Object.assign({},(e&&e.goal)||{},{budget:Number($('lka_budget').value)||0,sales:Number($('lka_sales').value)||0,visitors:Number($('lka_visitors').value)||0,gift_unit:Number($('lka_gift').value)||0})};
+  if(!data.start_date||!data.end_date) return toast('기간을 적어 주세요','bad');
+  try{ LKA=await rpcRaw('fn_lucky_admin_save',{p_data:data}); rpcClear(); LKA_EV=LKA.event&&LKA.event.id; lkaRender(); $('lkaSaved').textContent='저장했습니다 '+lkaWhen(new Date()); toast('저장했습니다','ok'); }
+  catch(err){ toast(err.message||String(err),'bad'); }
+}
+async function lkaRun(){
+  const e=LKA&&LKA.event; if(!e) return;
+  if(!confirm(`${e.name}\n1회 확인 행운권 ${LKA.stats.tickets_draw}장으로 추첨합니다 (1인 1경품).\n한 번 정해진 결과는 고객 화면에 바로 나옵니다. 추첨할까요?`)) return;
+  try{ LKA=await rpcRaw('fn_lucky_draw_run',{p_event:e.id,p_one_per_person:true}); rpcClear(); lkaRender(); toast('추첨했습니다 — 발표 화면에서 공개하세요','ok'); }
+  catch(err){ toast(err.message||String(err),'bad'); }
+}
+async function lkaReset(){
+  const e=LKA&&LKA.event; if(!e) return;
+  const t=prompt('추첨 결과를 지우고 다시 추첨할 수 있게 합니다. 고객 화면의 결과도 사라집니다.\n계속하려면 "다시 추첨" 을 그대로 적어 주세요');
+  if(t==null) return;
+  try{ LKA=await rpcRaw('fn_lucky_draw_reset',{p_event:e.id,p_confirm:t.trim()}); rpcClear(); lkaRender(); toast('추첨을 되돌렸습니다','ok'); }
+  catch(err){ toast(err.message||String(err),'bad'); }
+}
 async function refreshView(){
   const v=$('v-'+VIEW), fn=LOADERS[VIEW]; if(!fn) return;
   loadPillText((TITLES[VIEW]||'데이터')+' 불러오는 중…');
