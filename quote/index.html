@@ -33,6 +33,13 @@ h1,h2,h3{margin:0}
 .kinds{display:flex;background:rgba(255,255,255,.12);border-radius:10px;padding:3px;gap:2px}
 .kinds button{border:0;background:transparent;color:#fff;opacity:.75;padding:6px 12px;border-radius:8px;font-weight:700;white-space:nowrap;min-height:34px}
 .kinds button.on{background:#fff;color:#1B2A5B;opacity:1}
+.kinds[data-t="혼수"] button.on,.kinds button.on[data-t="혼수"]{background:#EC4899;color:#fff}
+.kinds[data-t="입주"] button.on,.kinds button.on[data-t="입주"]{background:#059669;color:#fff}
+.kinds[data-t="이사"] button.on,.kinds button.on[data-t="이사"]{background:#EA580C;color:#fff}
+.dlg.solid{background:#1B2A5B}
+.l-pin{font-size:26px;letter-spacing:.4em;text-align:center;font-weight:700;width:100%;box-sizing:border-box;padding-left:.4em}
+#loginDlg .box{overflow-x:hidden;width:min(420px,100%)}
+.l-alt{border:0;background:transparent;color:var(--blue);font-size:12.5px;text-decoration:underline;align-self:flex-start;padding:4px 0;min-height:32px}
 .calc{position:fixed;right:16px;bottom:84px;z-index:30;width:292px;max-width:calc(100vw - 24px);background:#f3f3f3;color:#111;border:1px solid #c8c8c8;border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.28);outline:0;user-select:none}
 .calc .cbar{display:flex;align-items:center;gap:6px;padding:6px 6px 2px 12px;font-size:13px;font-weight:700;cursor:move;touch-action:none}
 .calc .cbar .sp{flex:1} .calc .cbar button{border:0;background:transparent;border-radius:6px;min-width:34px;min-height:30px;font-size:13px;font-weight:600} .calc .cbar button:hover{background:#e2e2e2}
@@ -494,13 +501,20 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <!-- 로그인 -->
 <div class="dlg hidden" id="loginDlg"><div class="box">
   <h2>담당자 확인</h2>
-  <p class="hint">담당자 화면과 같은 <b>이름 + 비밀번호</b>로 들어갑니다. 담당자 화면에 이미 들어와 있으면 이 창은 뜨지 않습니다.</p>
-  <div class="fld"><label class="lbl" for="l_name">이름</label><input id="l_name" autocomplete="username"></div>
-  <div class="fld"><label class="lbl" for="l_pass">비밀번호</label><input id="l_pass" type="password" autocomplete="current-password"></div>
+  <div id="l_full" style="display:flex;flex-direction:column;gap:10px">
+  <p class="hint">담당자 화면과 같은 <b>이름 + 비밀번호</b>로 들어갑니다. 한 번 들어오면 60분 동안은 휴대폰 뒷번호 4자리만 누르면 됩니다.</p>
+  <div class="fld"><label class="lbl" for="l_name">이름</label><input id="l_name" autocomplete="username" enterkeyhint="next"></div>
+  <div class="fld"><label class="lbl" for="l_pass">비밀번호</label><input id="l_pass" type="password" autocomplete="current-password" enterkeyhint="go"></div>
+  </div>
+  <div id="l_pinBox" class="hidden" style="display:flex;flex-direction:column;gap:10px">
+  <p class="hint" id="l_pinSub">휴대폰 번호 뒷자리 4개로 확인합니다</p>
+  <div class="fld"><label class="lbl" for="l_pin">휴대폰 뒷번호 4자리</label><input id="l_pin" class="l-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" enterkeyhint="go"></div>
+  </div>
   <div class="warn hidden" id="l_err"></div>
-  <button class="btn pri" id="l_btn" onclick="doLogin()">들어가기</button>
-  <details><summary class="hint">견적서 페이지 코드로 들어가기</summary>
-    <div class="fld" style="margin-top:6px"><input id="l_code" placeholder="견적서 페이지 보안 코드"><button class="btn sm" style="margin-top:6px" onclick="doCode()">확인</button></div></details>
+  <button class="btn pri" id="l_btn" onclick="loginGo()">들어가기</button>
+  <button type="button" class="l-alt hidden" id="l_alt" onclick="showLogin('')">다른 사람 · 이름과 비밀번호로 들어가기</button>
+  <details id="l_codeBox"><summary class="hint">견적서 페이지 코드로 들어가기</summary>
+    <div class="fld" style="margin-top:6px"><input id="l_code" placeholder="견적서 페이지 보안 코드" enterkeyhint="go"><button class="btn sm" style="margin-top:6px" onclick="doCode()">확인</button></div></details>
 </div></div>
 
 <!-- 내역 -->
@@ -584,7 +598,7 @@ let ME='';
 /* ═══ 상태 ═══ */
 const P = new URLSearchParams(location.search);
 const Q = { no:P.get('no')||'', ver:+(P.get('v')||0)||0, issuedAt:'',
-  cust:{ type:P.get('type')||'혼수', name:P.get('name')||'', phone:P.get('phone')||'', addr:'', proof:'', until:'', memo:P.get('memo')||'', birth:'', carrier:'', wedding:'', movein:'', revisit:'' },
+  cust:{ type:P.get('type')||'일반', name:P.get('name')||'', phone:P.get('phone')||'', addr:'', proof:'', until:'', memo:P.get('memo')||'', birth:'', carrier:'', wedding:'', movein:'', revisit:'' },
   cond:{ card:'', tier:'', cardOn:true, prepay:null, lumpKind:'베네핏', lumpMonths:0, cb:true, bn:0,
          pointMode:'cash', ptEach:false, reward:false, pointCommon:0, pointDps:1, arsBill:false, cardPreset:'', namecardId:'' },   // 고도몰 견적서의 opt (포인트 표기 · 이벤트 리워드 1% · 멤버십 포인트 공통 · 네임카드)
   extra:[],                                                     // 기타 혜택 행 [{label, amount}]
@@ -666,15 +680,34 @@ function prefillModels(){ bindBundlePaste(); if(P.get('items')){ applyBundle(par
   if(ms.length) toast('문의하신 모델 '+ms.length+'개를 담았습니다'); }
 
 async function auth(){
-  try{ const r=await rpc('fn_quote_page_me',{p_code:CODE||null}); if(r&&r.ok){ ME=r.me||ME||localStorage.getItem('dc_login_name')||''; $('meLbl').textContent=ME?ME+' 프로':'(코드 접속)'; return true; } }catch(e){}
+  try{ const r=await rpc('fn_quote_page_me',{p_code:CODE||null}); if(r&&r.ok){ ME=r.me||ME||localStorage.getItem('dc_login_name')||''; $('meLbl').textContent=ME?ME+' 프로':'(코드 접속)'; if(r.by==='session'&&!tabOpen()) showPin(); return true; } }catch(e){}
   showLogin(''); return false;
 }
-function showLogin(msg){ $('loginDlg').classList.remove('hidden'); try{ $('l_name').value=localStorage.getItem('dc_login_name')||ME||''; }catch(e){} if(msg){ $('l_err').textContent=msg; $('l_err').classList.remove('hidden'); } }
+/* 담당자 확인 (2026-11-10) — 담당자 화면(store.html)과 같은 규칙: 로그인은 60분 유지(core.app_setting store_session_min) · 그 안에 이 창을 새로 열면 휴대폰 뒷번호 4자리만(fn_store_unlock) · 이 탭에서 한 번 확인하면 sessionStorage st_open 으로 다시 묻지 않는다 · 입력 칸은 Enter 로 넘어간다 */
+function tabOpen(){ try{ return sessionStorage.getItem('st_open')==='1'; }catch(e){ return false; } }
+function tabOpenSet(){ try{ sessionStorage.setItem('st_open','1'); }catch(e){} }
+function loginMode(pin){ const d=$('loginDlg'); d.dataset.mode=pin?'pin':'full'; d.classList.toggle('solid',!!pin); $('l_full').classList.toggle('hidden',!!pin); $('l_pinBox').classList.toggle('hidden',!pin); $('l_alt').classList.toggle('hidden',!pin); $('l_codeBox').classList.toggle('hidden',!!pin); $('l_btn').textContent=pin?'확인':'들어가기'; $('l_err').classList.add('hidden'); }
+function showPin(why){ loginMode(true); $('loginDlg').classList.remove('hidden'); $('l_pinSub').textContent=(ME?ME+'님 · ':'')+(why||'휴대폰 번호 뒷자리 4개로 확인합니다'); $('l_pin').value=''; setTimeout(()=>$('l_pin').focus(),50); }
+function loginGo(){ return $('loginDlg').dataset.mode==='pin'?doUnlock():doLogin(); }
+let UL_BUSY=false;
+async function doUnlock(){ const v=$('l_pin').value.replace(/\D/g,''), err=m=>{ $('l_err').textContent=m; $('l_err').classList.remove('hidden'); $('l_pin').value=''; $('l_pin').focus(); }; if(v.length!==4){ err('뒷번호 4자리를 입력하세요'); return; }
+  if(UL_BUSY) return; UL_BUSY=true; $('l_btn').disabled=true; $('l_err').classList.add('hidden');
+  try{ const {data,error}=await sb.rpc('fn_store_unlock',{p_last4:v});
+    if(error){ const m=String(error.message||'').replace(/^.*?: /,''); if(/\[RELOGIN\]/.test(m)){ SESSION=''; showLogin(m.replace(/^.*\[RELOGIN\]\s*/,'')); } else err(m); return; }
+    if(!data||!data.ok){ if(data&&(data.relogin||data.no_mobile)){ if(data.relogin) SESSION=''; showLogin(data.msg||'이름과 비밀번호로 다시 들어가 주세요'); } else err((data&&data.msg)||'맞지 않습니다'); return; }
+    tabOpenSet(); $('loginDlg').classList.add('hidden'); toast((ME?ME+'님, ':'')+'확인됐습니다'); }
+  catch(e){ err(e.message); }
+  finally{ UL_BUSY=false; $('l_btn').disabled=false; } }
+function bindLoginKeys(){ const on=(id,fn)=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); fn(); } });
+  on('l_name',()=>$('l_pass').focus()); on('l_pass',doLogin); on('l_code',doCode); on('l_pin',doUnlock);
+  $('l_pin').addEventListener('input',e=>{ const v=e.target.value.replace(/\D/g,'').slice(0,4); if(v!==e.target.value) e.target.value=v; if(v.length===4) doUnlock(); }); }
+bindLoginKeys();
+function showLogin(msg){ loginMode(false); setTimeout(()=>($('l_name').value?$('l_pass'):$('l_name')).focus(),50); $('loginDlg').classList.remove('hidden'); try{ $('l_name').value=localStorage.getItem('dc_login_name')||ME||''; }catch(e){} if(msg){ $('l_err').textContent=msg; $('l_err').classList.remove('hidden'); } }
 async function doLogin(){
   const v=$('l_name').value.trim(), pw=$('l_pass').value; if(!v||!pw) return;
   $('l_btn').disabled=true; $('l_err').classList.add('hidden');
   try{ const a=await rpc('fn_store_login',{p_name:v,p_pass:pw}); SESSION=a.token||''; try{ localStorage.setItem('dc_session',SESSION); localStorage.setItem('dc_login_name',v); }catch(e){}
-    ME=v; $('meLbl').textContent=ME+' 프로'; $('loginDlg').classList.add('hidden'); render(); }
+    ME=v; $('meLbl').textContent=ME+' 프로'; tabOpenSet(); $('l_pass').value=''; $('loginDlg').classList.add('hidden'); render(); }
   catch(e){ $('l_err').textContent=e.message; $('l_err').classList.remove('hidden'); }
   $('l_btn').disabled=false;
 }
@@ -726,7 +759,7 @@ function bindInputs(){
 }
 /* 상담 종류 (2026-11-10) — 맨 위에서 일반 / 특수 를 고르고, 특수면 혼수 · 입주 · 이사 중 하나를 고른다. 값은 예전 그대로 Q.cust.type 한 칸 */
 let KIND_LAST='';
-function syncKind(){ const t=Q.cust.type, sp=t!=='일반'; if(sp) KIND_LAST=t; [...$('ckind').children].forEach(b=>b.classList.toggle('on',(b.dataset.k==='특수')===sp)); $('ctype').classList.toggle('hidden',!sp); [...$('ctype').children].forEach(b=>b.classList.toggle('on',b.dataset.t===t)); }
+function syncKind(){ const t=Q.cust.type, sp=t!=='일반'; if(sp) KIND_LAST=t; $('ckind').dataset.t=sp?t:''; [...$('ckind').children].forEach(b=>b.classList.toggle('on',(b.dataset.k==='특수')===sp)); $('ctype').classList.toggle('hidden',!sp); [...$('ctype').children].forEach(b=>b.classList.toggle('on',b.dataset.t===t)); }
 function fillCust(){ syncKind(); $('c_name').value=Q.cust.name; $('c_tel').value=Q.cust.phone; $('c_addr').value=Q.cust.addr; $('c_memo').value=Q.cust.memo; $('c_until').value=Q.cust.until; $('c_proof').value=Q.cust.proof; ['birth','carrier','wedding','movein','revisit'].forEach(k=>$('c_'+k).value=Q.cust[k]||'');
   $('custMore').open=!!(Q.cust.addr||Q.cust.memo||Q.cust.proof||Q.cust.birth||Q.cust.carrier||Q.cust.wedding||Q.cust.movein||Q.cust.revisit); }   // 채워진 칸이 있으면 펼쳐서 보여 준다
 
