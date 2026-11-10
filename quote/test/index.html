@@ -457,8 +457,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     </div>
   </div>
   </details>
-  <div class="card noc">
-    <h2>여러 상황 비교 (상담사만) <small>같은 품목을 구성만 바꿨을 때의 총 지불 합계와 월 납부 금액 · 고객 화면에는 나오지 않습니다</small></h2>
+  <div class="card noc" id="scnCard">
+    <h2>여러 상황 비교 <small>같은 품목을 구성만 바꿨을 때의 총 지불 합계와 월 납부 금액</small></h2>
     <div id="scn"></div>
   </div>
   <div class="card">
@@ -1109,6 +1109,10 @@ function scenarios(){
 function allLump(){ const base=Q.items.filter(it=>!it.hidden); if(!base.length) return null; const items=base.map(it=>Object.assign({},it,{mode:'lump',lump:+it.lump||priceOf(it.m)||0})); const r=calcAll(items); r.lumpN=items.length; r.noPrice=items.filter(x=>!(+x.lump>0)).length; return r; }
 function applyScenario(i){ const r=SCN[i]; if(!r) return; r.items.forEach(x=>{ const it=Q.items.find(y=>y.m===x.m); if(it){ it.mode=x.mode; if(x.mode==='lump'&&!(+it.lump>0)) it.lump=x.lump; } }); render(); toast(r.label+' 조합으로 바꿨습니다'); }
 let SCN=[];
+/* 여러 상황 비교는 상담사가 원할 때만 (2026-11-10) — 기본은 닫힘 · [여러 상황 비교 보기] 를 눌러야 표가 나오고 그때만 고객 화면에도 나간다 · 저장하지 않는다(새로 열면 다시 닫힘) */
+let SCN_ON=false;
+function toggleScn(){ SCN_ON=!SCN_ON; render(); }
+function scnBtn(){ return `<button type="button" class="btn sm noc" style="margin-top:8px" onclick="toggleScn()">${SCN_ON?'여러 상황 비교 닫기':'여러 상황 비교 보기'}</button>`; }
 function scnMon(r){ const {S,L}=r; return r.lm&&r.sm? `1~${r.lm}개월 <b>${won(r.m1)}</b>`+(r.sm>r.lm?`<br>${r.lm+1}~${r.sm}개월 <b>${won(r.m2)}</b>`:'') : r.lm? `1~${r.lm}개월 <b>${won(L.per)}</b>` : r.sm? `1~${r.sm}개월 <b>${won(S.pay)}</b>` : '—'; }
 function scnPay(r){ return r.noPrice?`<span class="warn">일시불가 ${r.noPrice}개 미입력<br>${won(r.total)} + α</span>`:`<b>${won(r.total)}</b>`; }
 function scnMini(list){ return `<div class="scn-wrap"><table class="scn mini"><thead><tr><th>구성</th><th>총 구독료 합계</th><th>총 지불 합계</th><th>월 납부 금액</th></tr></thead><tbody>${list.map((r,i)=>`<tr class="${r.cur?'cur':''}"><td class="l"><b>${esc(r.label)}</b><br><small>구독 ${r.subN}개 · 일반 ${r.lumpN}개${r.cur?' · 지금 선택':''}</small>${r.cur?'':`<button class="chip noc" onclick="applyScenario(${i})">이 조합으로</button>`}</td><td>${r.subN?won(r.S.total):'—'}</td><td class="tot">${scnPay(r)}</td><td class="l m">${scnMon(r)}</td></tr>`).join('')}</tbody></table></div>`; }
@@ -1231,7 +1235,7 @@ function renderEdit({S,L}){
   const _dk=document.activeElement&&$('t_detail').contains(document.activeElement)?document.activeElement.dataset.k:'';
   $('t_detail').innerHTML = (S.n||L.items.length)? d : '<span class="hint">품목을 담으면 혜택이 여기 나옵니다.</span>';
   if(_dk){ const e=$('t_detail').querySelector('[data-k="'+_dk+'"]'); if(e){ e.focus(); e.select(); } }
-  const sc=scenarios(); $('t_scn').innerHTML = sc.length>=2 ? `<div class="k" style="margin:0 0 6px;font-weight:700">여러 상황 비교</div>`+scnMini(sc) : '';
+  const sc=scenarios(); $('t_scn').innerHTML = sc.length>=2 ? `<div class="k" style="margin:0 0 6px;font-weight:700">여러 상황 비교</div>`+(SCN_ON?scnMini(sc):'')+scnBtn() : '';
 }
 /* 고객 화면 = 고객과 보기 + 모니터 2대의 고객 창. 상품권(품목·신세계)과 기타 혜택(매장 자체 혜택)은 빼고 다시 계산해서 보여 준다 */
 function renderShow(){ if(!LAST) return; HIDE=true; try{ LASTC=calcAll(); renderShow0(); } finally{ HIDE=false; } postDisplay(); }
@@ -1262,7 +1266,8 @@ function renderShow0(){ const {S,L}=LASTC||LAST, name=Q.cust.name||'고객', bnK
   const st=[]; if(sm) st.push([sm,S.pay,'월 구독료 혜택가']); (L.parts||[]).filter(x=>x.inst).forEach(x=>st.push([x.months,x.per,'할부 '+x.months+'개월']));
   let prev=0; [...new Set(st.map(x=>x[0]))].sort((a,b)=>a-b).forEach(e=>{ const act=st.filter(x=>x[0]>=e); rows.push([`${prev+1}~${e}개월`,act.reduce((a,x)=>a+x[1],0),act.map(x=>x[2]+' '+won(x[1])).join(' + ')]); prev=e; });
   $('tl').innerHTML = rows.length? rows.map(x=>`<div class="${x[3]||''}">${x[0]}<b class="num">${won(x[1])}</b><span class="hint">${x[2]}</span></div>`).join('') : '<div class="hint" style="grid-column:1/-1">담은 품목이 없습니다.</div>';
-  $('scn').innerHTML=scnHtml();
+  $('scnCard').classList.toggle('noc',!SCN_ON);
+  $('scn').innerHTML=SCN_ON ? scnHtml()+scnBtn() : `<p class="hint" style="margin:0">누르면 표가 나오고, 고객 화면에도 함께 보입니다. 누르기 전에는 고객 화면에 나오지 않습니다.</p>`+scnBtn();
   const feeW=(L.parts||[]).filter(x=>x.fee>0).map(x=>x.months+'개월 할부 '+(x.months>=12?'1·2회차':'1회차')).join(', ');
   $('tl_note').textContent = [ L.fee?`이용료 ${won(L.fee)}은 ${feeW}에 더해져 나갑니다`:'', bnK?`B&케어팩 납입금 월 ${won(bnK*BN.pay)}(1~${BN.paid}회)은 위 금액과 별도입니다`:'' ].filter(Boolean).join(' · ');
 }
