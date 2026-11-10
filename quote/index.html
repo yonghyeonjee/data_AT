@@ -30,6 +30,20 @@ h1,h2,h3{margin:0}
 .views{display:flex;background:rgba(255,255,255,.12);border-radius:10px;padding:3px;gap:2px}
 .views button{border:0;background:transparent;color:#fff;opacity:.75;padding:6px 12px;border-radius:8px;font-weight:700;white-space:nowrap;min-height:34px}
 .views button.on{background:#fff;color:#1B2A5B;opacity:1}
+.kinds{display:flex;background:rgba(255,255,255,.12);border-radius:10px;padding:3px;gap:2px}
+.kinds button{border:0;background:transparent;color:#fff;opacity:.75;padding:6px 12px;border-radius:8px;font-weight:700;white-space:nowrap;min-height:34px}
+.kinds button.on{background:#fff;color:#1B2A5B;opacity:1}
+.calc{position:fixed;right:16px;bottom:84px;z-index:30;width:292px;max-width:calc(100vw - 24px);background:#f3f3f3;color:#111;border:1px solid #c8c8c8;border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.28);outline:0;user-select:none}
+.calc .cbar{display:flex;align-items:center;gap:6px;padding:6px 6px 2px 12px;font-size:13px;font-weight:700;cursor:move;touch-action:none}
+.calc .cbar .sp{flex:1} .calc .cbar button{border:0;background:transparent;border-radius:6px;min-width:34px;min-height:30px;font-size:13px;font-weight:600} .calc .cbar button:hover{background:#e2e2e2}
+.calc .cexp{min-height:18px;padding:0 14px;text-align:right;font-size:12.5px;color:#666;white-space:nowrap;overflow:hidden}
+.calc .cdisp{padding:0 14px 6px;text-align:right;font-size:34px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
+.calc .cdisp.sm{font-size:24px} .calc .cdisp.xs{font-size:17px}
+.calc .ckeys{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:4px}
+.calc .ckeys button{border:1px solid #e0e0e0;background:#fafafa;border-radius:5px;min-height:44px;font-size:16px}
+.calc .ckeys button.d{background:#fff;font-weight:700} .calc .ckeys button:hover{background:#e9e9e9}
+.calc .ckeys button.eq{background:var(--blue);border-color:var(--blue);color:#fff}
+@media print{.calc{display:none!important}}
 .tb{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;padding:6px 11px;font-weight:600;white-space:nowrap;min-height:34px}
 .tb.pri{background:var(--blue);border-color:var(--blue)}
 .tb:disabled{opacity:.5;cursor:default}
@@ -114,7 +128,7 @@ details.more>summary small{font-weight:500;color:var(--mut);font-size:12px}
 .item .opts input.amt{width:112px} .item .opts input.note{min-width:120px}
 @media (max-width:560px){.item .rt{grid-column:1/-1;grid-row:auto}}
 .chips.one{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin} .chips.one>*{flex:none;white-space:nowrap}
-.cust.top3{grid-template-columns:auto minmax(0,1fr) minmax(0,1fr)} .cust.top3 .seg{flex-wrap:nowrap} .cust.top3 .seg button{white-space:nowrap}
+.cust.top3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} .cust.top3 .seg{flex-wrap:nowrap} .cust.top3 .seg button{white-space:nowrap}
 @media (max-width:640px){.cust.top3{grid-template-columns:1fr 1fr} .cust.top3 .fld:first-child{grid-column:1/-1}}
 body.iv-table .grid{grid-template-columns:minmax(0,1fr)}
 body.iv-table .sum{position:static;max-height:none;overflow:visible;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start}
@@ -296,7 +310,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <span class="brand">삼성스토어 시흥 · 상담 견적</span>
   <span class="qno" id="qno">새 견적</span>
   <span class="me" id="meLbl"></span>
+  <div class="kinds" id="ckind" role="group" aria-label="상담 종류"><button data-k="일반">일반</button><button data-k="특수">특수</button></div>
+  <div class="kinds hidden" id="ctype" role="group" aria-label="특수 종류"><button data-t="혼수">혼수</button><button data-t="입주">입주</button><button data-t="이사">이사</button></div>
   <span class="sp"></span>
+  <button class="tb" onclick="toggleCalc()" title="계산기" aria-label="계산기">🧮</button>
   <div class="views" role="tablist">
     <button class="on" data-v="edit" onclick="setView('edit')">입력</button>
     <button data-v="show" onclick="setView('show')">고객과 보기</button>
@@ -318,8 +335,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <div class="card">
       <h2><span class="stepn">1</span>고객 · 상담 <small>담당자 화면에서 열면 채워져 옵니다</small></h2>
       <div class="cust top3">
-        <div class="fld"><span class="lbl">상담 종류</span>
-          <div class="seg" id="ctype"><button data-t="혼수">혼수</button><button data-t="입주">입주</button><button data-t="이사">이사</button><button data-t="일반">일반</button></div></div>
         <div class="fld"><label class="lbl" for="c_name">성명 *</label><input id="c_name" autocomplete="off"></div>
         <div class="fld"><label class="lbl" for="c_tel">연락처 *</label><input id="c_tel" inputmode="tel" autocomplete="off"></div>
       </div>
@@ -503,6 +518,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 <div class="bbar" id="bbar"><div class="b s"><span>월 구독료</span><b class="num" id="bb_s">—</b></div><div class="b l"><span>일반 구매 총액</span><b class="num" id="bb_l">—</b></div><div class="b n"><span>합계</span><b class="num" id="bb_n">—</b></div><button onclick="setView('show')">고객과 보기</button></div>
 <div id="toast" class="hidden"></div>
+<div class="calc hidden" id="calc" tabindex="-1" role="dialog" aria-label="계산기">
+  <div class="cbar" id="calcBar"><span>계산기</span><span class="sp"></span><button onclick="calcCopy()" title="지금 값을 복사합니다 — 금액 칸에 붙여넣을 수 있습니다">값 복사</button><button onclick="toggleCalc(false)" aria-label="계산기 닫기">✕</button></div>
+  <div class="cexp" id="calcExp"></div><div class="cdisp" id="calcDisp">0</div>
+  <div class="ckeys" id="calcKeys"></div>
+</div>
 
 <script>
 /* ═══ 설정 ═══ */
@@ -517,6 +537,38 @@ const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<'
 const fmt = n => Math.round(+n||0).toLocaleString('ko-KR');
 const won = n => fmt(n)+'원';
 const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+/* 계산기 (2026-11-10) — 윈도우 계산기 「표준」과 같은 배열·동작: 누른 순서대로 계산, % 는 앞 숫자의 퍼센트, = 을 다시 누르면 마지막 연산 반복. 계산기 창을 눌러 둔 동안만 키보드를 받는다 */
+const CALC={cur:'0',acc:null,op:'',fresh:true,has:false,lastOp:'',lastB:null,exp:'',err:false};
+const CALC_KEYS=['%','CE','C','⌫','1/x','x²','√x','÷','7','8','9','×','4','5','6','−','1','2','3','+','±','0','.','='];
+function calcNum(v){ return +(+v).toPrecision(12); }
+function calcFmt(v){ const s=String(v); if(/e|Infinity|NaN/.test(s)) return s; const neg=s[0]==='-', a=(neg?s.slice(1):s).split('.'); return (neg?'-':'')+a[0].replace(/\B(?=(\d{3})+(?!\d))/g,',')+(a.length>1?'.'+a[1]:''); }
+function calcDo(a,op,b){ return calcNum(op==='+'?a+b:op==='−'?a-b:op==='×'?a*b:op==='÷'?a/b:b); }
+function calcSet(v,exp){ const c=CALC; if(!isFinite(v)){ Object.assign(c,{cur:'0',acc:null,op:'',fresh:true,has:false,lastOp:'',exp:'',err:true}); return; } c.cur=String(calcNum(v)); c.fresh=true; c.has=true; if(exp!=null) c.exp=exp; }
+function calcKey(k){ const c=CALC; if(c.err){ c.err=false; if(k==='='||k==='⌫'){ calcShow(); return; } } const v=parseFloat(c.cur)||0;
+  if(/^\d$/.test(k)){ if(c.fresh){ c.cur=k; c.fresh=false; if(!c.op) c.exp=''; } else if(c.cur.replace(/[-.]/g,'').length<16) c.cur=c.cur==='0'?k:c.cur+k; c.has=true; }
+  else if(k==='.'){ if(c.fresh){ c.cur='0.'; c.fresh=false; if(!c.op) c.exp=''; } else if(c.cur.indexOf('.')<0) c.cur+='.'; c.has=true; }
+  else if(k==='⌫'){ if(!c.fresh) c.cur=/^-?.$/.test(c.cur)?'0':c.cur.slice(0,-1); }
+  else if(k==='CE'){ c.cur='0'; c.fresh=true; c.has=false; }
+  else if(k==='C'){ Object.assign(c,{cur:'0',acc:null,op:'',fresh:true,has:false,lastOp:'',lastB:null,exp:''}); }
+  else if(k==='±'){ if(v){ c.cur=c.cur[0]==='-'?c.cur.slice(1):'-'+c.cur; c.has=true; } }
+  else if(k==='1/x') calcSet(1/v);
+  else if(k==='x²') calcSet(v*v);
+  else if(k==='√x') calcSet(v<0?NaN:Math.sqrt(v));
+  else if(k==='%') calcSet(c.op&&c.acc!=null?c.acc*v/100:0);
+  else if('+−×÷'.indexOf(k)>=0){ if(c.op&&c.has&&c.acc!=null){ const r=calcDo(c.acc,c.op,v); if(!isFinite(r)){ calcSet(r); calcShow(); return; } c.acc=r; } else if(!c.op) c.acc=calcNum(v); c.op=k; c.lastOp=''; c.cur=String(c.acc); c.fresh=true; c.has=false; c.exp=calcFmt(c.acc)+' '+k; }
+  else if(k==='='){ if(c.op&&c.acc!=null){ const a=c.acc, op=c.op; c.lastOp=op; c.lastB=calcNum(v); c.op=''; c.acc=null; calcSet(calcDo(a,op,v), calcFmt(a)+' '+op+' '+calcFmt(calcNum(v))+' ='); }
+    else if(c.lastOp) calcSet(calcDo(v,c.lastOp,c.lastB), calcFmt(calcNum(v))+' '+c.lastOp+' '+calcFmt(c.lastB)+' ='); else c.fresh=true; }
+  calcShow(); }
+function calcShow(){ const c=CALC, d=$('calcDisp'), t=c.err?'0으로 나눌 수 없습니다':calcFmt(c.cur); d.textContent=t; d.className='cdisp'+(t.length>16?' xs':t.length>11?' sm':''); $('calcExp').textContent=c.err?'':c.exp; }
+function calcCopy(){ const t=String(parseFloat(CALC.cur)||0); try{ navigator.clipboard.writeText(t).then(()=>toast(calcFmt(t)+' 복사했습니다'),()=>toast('복사하지 못했습니다')); }catch(e){ toast('복사하지 못했습니다'); } }
+function toggleCalc(on){ const el=$('calc'); if(!el.dataset.on){ el.dataset.on='1';
+    $('calcKeys').innerHTML=CALC_KEYS.map(k=>`<button class="${/^\d$|^\.$|^±$/.test(k)?'d':k==='='?'eq':''}" data-c="${k}">${k}</button>`).join('');
+    $('calcKeys').onclick=e=>{ const b=e.target.closest('button'); if(b) calcKey(b.dataset.c); el.focus(); };
+    el.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey) return; const k=e.key, m={'*':'×','/':'÷','-':'−','+':'+','Enter':'=','=':'=','Backspace':'⌫','Delete':'CE','%':'%','.':'.'}[k]||(/^\d$/.test(k)?k:''); if(k==='Escape'){ e.preventDefault(); if(CALC.cur==='0'&&!CALC.op&&!CALC.exp) toggleCalc(false); else calcKey('C'); return; } if(m){ e.preventDefault(); calcKey(m); } });
+    const bar=$('calcBar'); let drag=null; bar.addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; const r=el.getBoundingClientRect(); drag={x:e.clientX-r.left,y:e.clientY-r.top}; bar.setPointerCapture(e.pointerId); });
+    bar.addEventListener('pointermove',e=>{ if(!drag) return; const x=Math.max(0,Math.min(innerWidth-el.offsetWidth,e.clientX-drag.x)), y=Math.max(0,Math.min(innerHeight-40,e.clientY-drag.y)); el.style.left=x+'px'; el.style.top=y+'px'; el.style.right='auto'; el.style.bottom='auto'; });
+    bar.addEventListener('pointerup',()=>{ drag=null; }); calcShow(); }
+  const show=on==null?el.classList.contains('hidden'):!!on; el.classList.toggle('hidden',!show); if(show) el.focus(); }
 let tt; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.remove('hidden'); clearTimeout(tt); tt=setTimeout(()=>t.classList.add('hidden'),2200); }
 function closeDlg(id){ $(id).classList.add('hidden'); }
 
@@ -664,14 +716,18 @@ function fillTier(){ const sel=$('subTier'); const cd=window.SUB_CARDS&&window.S
 function initCats(){ bindTable(); const el=$('catChips'); Object.keys(IDX.cats).forEach(k=>{ const b=document.createElement('button'); b.className='chip'; b.textContent=IDX.cats[k]; b.onclick=()=>{ $('q').value=IDX.cats[k]; suggest(); $('q').focus(); }; el.appendChild(b); }); }
 function bindInputs(){
   document.body.classList.add('v-edit');   // 처음은 입력 화면 — 좁은 화면의 아래 합계 띠가 이 표시를 본다
-  const ct=$('ctype'); ct.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; Q.cust.type=b.dataset.t; [...ct.children].forEach(x=>x.classList.toggle('on',x===b)); render(); };
+  const ct=$('ctype'); ct.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; Q.cust.type=b.dataset.t; syncKind(); render(); };
+  $('ckind').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; Q.cust.type=b.dataset.k==='일반'?'일반':(Q.cust.type!=='일반'?Q.cust.type:(KIND_LAST||'혼수')); syncKind(); render(); };
   ['c_name','c_tel','c_addr','c_memo','c_until','c_proof','c_birth','c_carrier','c_wedding','c_movein','c_revisit'].forEach(id=>$(id).addEventListener('input',()=>{ Q.cust.name=$('c_name').value.trim(); Q.cust.phone=$('c_tel').value.trim(); Q.cust.addr=$('c_addr').value.trim(); Q.cust.memo=$('c_memo').value; Q.cust.until=$('c_until').value; Q.cust.proof=$('c_proof').value;
     Q.cust.birth=$('c_birth').value.trim(); Q.cust.carrier=$('c_carrier').value.trim(); Q.cust.wedding=$('c_wedding').value.trim(); Q.cust.movein=$('c_movein').value.trim(); Q.cust.revisit=$('c_revisit').value.trim(); renderShow(); renderSheet(); }));
   const q=$('q'); q.addEventListener('input',suggest); q.addEventListener('keydown',e=>{ if(e.key==='ArrowDown'||e.key==='ArrowUp'){ const bs=[...$('sug').querySelectorAll('button')]; if(bs.length&&!$('sug').classList.contains('hidden')){ e.preventDefault(); let k=bs.findIndex(b=>b.classList.contains('on')); k=(k+(e.key==='ArrowDown'?1:-1)+bs.length)%bs.length; bs.forEach((b,j)=>b.classList.toggle('on',j===k)); bs[k].scrollIntoView({block:'nearest'}); } }
     if(e.key==='Enter'){ const b=$('sug').querySelector('button.on')||$('sug').querySelector('button'); if(b) b.click(); } if(e.key==='Escape') $('sug').classList.add('hidden'); });
   document.addEventListener('click',e=>{ if(!e.target.closest('.add')) $('sug').classList.add('hidden'); });
 }
-function fillCust(){ [...$('ctype').children].forEach(b=>b.classList.toggle('on',b.dataset.t===Q.cust.type)); $('c_name').value=Q.cust.name; $('c_tel').value=Q.cust.phone; $('c_addr').value=Q.cust.addr; $('c_memo').value=Q.cust.memo; $('c_until').value=Q.cust.until; $('c_proof').value=Q.cust.proof; ['birth','carrier','wedding','movein','revisit'].forEach(k=>$('c_'+k).value=Q.cust[k]||'');
+/* 상담 종류 (2026-11-10) — 맨 위에서 일반 / 특수 를 고르고, 특수면 혼수 · 입주 · 이사 중 하나를 고른다. 값은 예전 그대로 Q.cust.type 한 칸 */
+let KIND_LAST='';
+function syncKind(){ const t=Q.cust.type, sp=t!=='일반'; if(sp) KIND_LAST=t; [...$('ckind').children].forEach(b=>b.classList.toggle('on',(b.dataset.k==='특수')===sp)); $('ctype').classList.toggle('hidden',!sp); [...$('ctype').children].forEach(b=>b.classList.toggle('on',b.dataset.t===t)); }
+function fillCust(){ syncKind(); $('c_name').value=Q.cust.name; $('c_tel').value=Q.cust.phone; $('c_addr').value=Q.cust.addr; $('c_memo').value=Q.cust.memo; $('c_until').value=Q.cust.until; $('c_proof').value=Q.cust.proof; ['birth','carrier','wedding','movein','revisit'].forEach(k=>$('c_'+k).value=Q.cust[k]||'');
   $('custMore').open=!!(Q.cust.addr||Q.cust.memo||Q.cust.proof||Q.cust.birth||Q.cust.carrier||Q.cust.wedding||Q.cust.movein||Q.cust.revisit); }   // 채워진 칸이 있으면 펼쳐서 보여 준다
 
 /* ═══ 모델 찾기 ═══ */
@@ -1226,7 +1282,7 @@ async function loadQuote(no){
     Q.extra=(q.extra||[]).map(e=>({label:e.label||'', amount:+e.amount||0})); const o=q.opt||{}; Q.cond.pointMode='cash'; Q.cond.reward=!!o.rewardOn; Q.cond.namecardId=o.namecardId||'';
     if(q.src&&q.src.items){ Q.items=q.src.items.map(it=>Object.assign({},ITEM_DEF,it)); Object.assign(Q.cond,q.src.cond||{}); if((q.src.cond||{}).pointDps==null) Q.cond.pointDps=0; if(q.src.cond&&q.src.cond.arsBill==null) Q.cond.arsBill=false; if(q.src.extra) Q.extra=q.src.extra.map(e=>({label:e.label||'', amount:+e.amount||0})); if((q.src.cond||{}).ptEach==null) Q.cond.ptEach=true; const _lx=Q.cond.lx||{}; if(+_lx.jp){ Q.cond.pointCommon=(+Q.cond.pointCommon||0)+(+_lx.jp); _lx.jp=0; } Q.items.forEach(it=>{ if(it.mode==='lump'&&it.lm==null) it.lm=+((q.src.cond||{}).lumpMonths)||0; }); }
     else { Q.items=(q.items||[]).map(it=>({ m:it.model, mode:'sub', years:Math.round((+it.months||72)/12), care:it.care||'', lump:0, note:it.note||'' })); if(q.lump&&q.lump.items) q.lump.items.forEach(x=>Q.items.push({ m:x.model||x.name, mode:'lump', noSub:!x.model, free:!x.model, years:0, care:'', lump:+x.amount||0, lm:+q.lump.months||0, note:x.note||'' })); }
-    fillCust(); [...$('ctype').children].forEach(b=>b.classList.toggle('on',b.dataset.t===Q.cust.type));
+    fillCust();
     $('subCard').value=Q.cond.card||''; fillTier(); [...$('prepay').children].forEach(b=>b.classList.toggle('on',String(b.dataset.v)===String(Q.cond.prepay)));
     [...$('reward').children].forEach(b=>b.classList.toggle('on',String(b.dataset.v)===String(Q.cond.reward?1:0))); $('pointCommon').value=Q.cond.pointCommon||''; [...$('ptEach').children].forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===!!Q.cond.ptEach)); renderExtra(); if($('namecard')) $('namecard').value=Q.cond.namecardId||'';
     if(LUMP){ [...$('lumpKind').children].forEach(b=>b.classList.toggle('on',b.dataset.v===Q.cond.lumpKind));  }
