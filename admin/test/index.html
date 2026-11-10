@@ -2328,7 +2328,7 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
         <div class="card" id="lkaList">
           <h3>참여 고객 <span id="lkaCnt"></span></h3>
           <div class="filters" style="margin-bottom:8px"><input class="in" id="lkaQ" placeholder="이름 · 번호" aria-label="참여 고객 찾기" onkeydown="if(event.key==='Enter')loadLucky()" style="flex:1;min-width:160px"><button class="btn sm" onclick="loadLucky()">찾기</button></div>
-          <div class="tw"><table class="lka-tbl"><thead><tr><th>고객</th><th>등록</th><th>즉석뽑기 (룰렛)</th><th>행운권</th></tr></thead><tbody id="lkaRows"></tbody></table></div>
+          <div class="tw"><table class="lka-tbl"><thead><tr><th>고객</th><th>등록</th><th>DPS · 동의</th><th>즉석뽑기 (룰렛)</th><th>행운권</th></tr></thead><tbody id="lkaRows"></tbody></table></div>
         </div>
         <div class="card" id="lkaSet">
           <h3>회차 설정 <span id="lkaSetSub">관리자만 바꿀 수 있습니다</span></h3>
@@ -6026,7 +6026,7 @@ async function loadLucky(evId){
 function lkaRender(){
   const D=LKA||{}, e=D.event, P=D.pub||{}, s=D.stats||{};
   $('lkaEv').innerHTML=(D.events||[]).map(x=>`<option value="${x.id}"${e&&x.id===e.id?' selected':''}>${esc(x.name)} · ${esc(String(x.start_date).slice(5))}~${esc(String(x.end_date).slice(5))}${x.active?'':' (꺼짐)'}</option>`).join('')||'<option>회차 없음</option>';
-  if(!e){ $('lkaKpi').innerHTML=''; $('lkaRows').innerHTML='<tr><td colspan="4" class="empty">회차가 없습니다. 아래 설정에서 [새 회차로 저장]을 누르세요.</td></tr>'; lkaFill(null); return; }
+  if(!e){ $('lkaKpi').innerHTML=''; $('lkaRows').innerHTML='<tr><td colspan="5" class="empty">회차가 없습니다. 아래 설정에서 [새 회차로 저장]을 누르세요.</td></tr>'; lkaFill(null); return; }
   const g=e.goal||{}, sr=s.spin_ranks||{};
   $('lkaSub').textContent=`${e.start_date} ~ ${e.end_date} · ${e.mode==='instant'?'즉석 확인(복권)':'1회 확인(럭키드로우)'}${e.keep_open?' · 계속 열림':''}${e.drawn_at?' · 추첨 끝':''}`;
   /* 예상 경품 비용 = 1단계 사은품 × 참여 고객 + 즉석뽑기 나온 경품 단가 + 행운권 경품(1회 확인은 정한 인원 전부, 즉석 확인은 공개된 당첨) */
@@ -6040,6 +6040,7 @@ function lkaRender(){
      kpi('참여 고객',lkaWon(s.entrants),`오늘 +${s.entrants_today||0} · 목표 ${lkaWon(g.visitors)}`,g.visitors?(s.entrants||0)/g.visitors*100:null)
     +kpi('즉석뽑기 사용',`${lkaWon(s.spins_used)} / ${lkaWon(s.spins)}`,`1등 ${sr['1']||0} · 2등 ${sr['2']||0} · 3등 ${sr['3']||0} · 기본 ${sr['0']||0} · 지급 ${s.spin_redeemed||0}`)
     +kpi('행운권',`${lkaWon(s.tickets)}장`,`오늘 +${s.tickets_today||0} · 예상 ${lkaWon(e.expect_tickets)} · 긁음 ${s.revealed||0}`,e.expect_tickets?(s.tickets||0)/e.expect_tickets*100:null)
+    +kpi('멤버십 · 동의',`${lkaWon(s.dps_need)} 명`,`DPS 등록 필요 · 처리함 ${s.dps_done||0} · DPS 등록 ${s.dps_reg||0} · 마케팅 동의 ${s.marketing_ok||0} · 고객 직접 ${s.self_reg||0}`)
     +kpi('예상 경품 비용',`${lkaWon(cost)}원`,`예산 ${lkaWon(bud)}원${bud?` · ${Math.round(cost/bud*100)}%`:''}`,bud?cost/bud*100:null);
   $('lkaCost').innerHTML=`사은품 ${lkaWon(giftCost)} (참여 ${lkaWon(s.entrants)}명 × ${lkaWon(g.gift_unit)}) · 즉석뽑기 ${lkaWon(spinCost)} (나온 경품 단가 합 · 50% 할인권은 단가 0 이면 빠짐) · 행운권 ${lkaWon(drawCost)} (정한 경품 전부) · 추가 기대 매출 목표 ${lkaWon(g.sales)}원`;
   /* 추첨 */
@@ -6064,10 +6065,19 @@ function lkaRender(){
     const tk=(r.tickets||[]).map(t=>{ if(t.void) return `<span class="lka-chip off"><span class="mono">${lkaNo(t.no)}</span></span>`;
       let st=t.mode==='instant'?(t.revealed?(t.rank>0?`${t.rank}등`:'미당첨'):(t.rank>0?`긁기 전 · ${t.rank}등 예정`:'긁기 전')):(e.drawn_at?(t.rank>0?`${t.rank}등`:'미당첨'):'추첨 대기');
       return `<span class="lka-chip${t.rank>0&&(t.revealed||t.mode==='draw')?' win':''}" title="${esc((t.reason||'')+(t.ref?' · '+t.ref:'')+' · '+(t.issued_by||''))}"><span class="mono">${lkaNo(t.no)}</span> ${st}${t.redeemed_at?' ✓지급':''}</span>`; }).join('');
-    return `<tr><td><b>${esc(r.name)}</b><br><span class="mono">${esc(r.phone||'')}</span></td><td>${esc(r.created_by||'')}<br><span class="note">${lkaWhen(r.created_at)}</span></td><td>${sp||'<span class="note">없음</span>'}</td><td>${tk||'<span class="note">없음</span>'}</td></tr>`;
-  }).join(''):'<tr><td colspan="4" class="empty">참여 고객이 없습니다</td></tr>';
+    return `<tr><td><b>${esc(r.name)}</b><br><span class="mono">${esc(r.phone||'')}</span></td><td>${esc(r.created_by||'')}<br><span class="note">${lkaWhen(r.created_at)}</span></td><td>${lkaCons(r)}</td><td>${sp||'<span class="note">없음</span>'}</td><td>${tk||'<span class="note">없음</span>'}</td></tr>`;
+  }).join(''):'<tr><td colspan="5" class="empty">참여 고객이 없습니다</td></tr>';
   lkaFill(e);
 }
+/* 멤버십·동의 (mvp_292) — DPS 등록 여부는 현재 수집 데이터(crm.customer.dps_customer_no → dps.customer) 기준 */
+function lkaCons(r){ const d=r.dps||{}, need=(r.member_consent||r.member_answer==='join')&&!d.reg&&!r.dps_done_at;
+  const ans={member:'회원이라고 답함',join:'오늘 가입',no:'가입 안 함',unknown:'회원 여부 모름'}[r.member_answer];
+  return (d.reg?`<span class="lka-chip win">DPS ✓ ${esc(d.member?(d.grade||'회원'):'멤버십 미가입')}${d.checked?' · '+esc(String(d.checked).slice(5)):''}</span>`
+              :`<span class="lka-chip${need?' off':''}" style="${need?'text-decoration:none;opacity:1;border-color:#B3261E;color:#B3261E':''}">DPS 미등록${need?' · 등록 필요':''}</span>`)
+    +(r.dps_done_at&&!d.reg?`<span class="lka-chip">DPS 처리함 ${esc(r.dps_done_by||'')} · 수집 전</span>`:'')
+    +(ans?`<span class="lka-chip">${ans}</span>`:'')
+    +`<span class="lka-chip">개인정보 ${r.privacy?'✓':'✗'} · 마케팅 ${r.marketing_ok?'✓':'✗'} · 멤버십 가입 ${r.member_consent?'✓':'✗'}</span>`
+    +(r.self_reg?'<span class="lka-chip">고객 직접 등록</span>':''); }
 function lkaMode(m){ LKA_MODE=m; document.querySelectorAll('#lka_mode button').forEach(b=>b.classList.toggle('on',b.dataset.v===m)); }
 function lkaPzRow(p,kind){ const v=k=>esc(p[k]==null?'':p[k]);
   return `<tr><td class="n"><input class="in" type="number" min="0" data-k="rank" value="${v('rank')}"></td><td><input class="in" data-k="label" value="${v('label')}"></td><td><input class="in" data-k="sub" value="${v('sub')}"></td>`
