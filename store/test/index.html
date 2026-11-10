@@ -1990,9 +1990,9 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
         <label><input type="checkbox" id="lk_mk"><span>[선택] 마케팅 정보 수신 동의 <small>문자·전화 · CRM 수신 동의로 저장</small></span></label>
         <label><input type="checkbox" id="lk_mc"><span>[선택] 삼성멤버십 가입 동의 <small>삼성전자㈜ 제공 · DPS 고객 등록</small></span></label>
       </div>
-      <div class="lk-row"><div class="lk-lbl">즉석뽑기 (룰렛)<small>멤버십 간편 가입 시 1회</small></div>
-        <div class="lk-step"><button type="button" onclick="lkStep('sp',-1)" aria-label="즉석뽑기 줄이기">−</button><b id="lk_sp">1</b><button type="button" onclick="lkStep('sp',1)" aria-label="즉석뽑기 늘리기">＋</button></div></div>
-      <div class="lk-row"><div class="lk-lbl">행운권<small>100만원 이상 구매 · 구독 1계약당 1장</small></div>
+      <div class="lk-row"><div class="lk-lbl">추가 즉석뽑기<small>참여 등록하면 누구나 1회 자동 · 더 줄 때만</small></div>
+        <div class="lk-step"><button type="button" onclick="lkStep('sp',-1)" aria-label="즉석뽑기 줄이기">−</button><b id="lk_sp">0</b><button type="button" onclick="lkStep('sp',1)" aria-label="즉석뽑기 늘리기">＋</button></div></div>
+      <div class="lk-row"><div class="lk-lbl">구매 · 구독 행운권<small>100만원 이상 구매 · 구독 1계약당 1장 (멤버십 가입 1장은 자동)</small></div>
         <div class="lk-step"><button type="button" onclick="lkStep('tk',-1)" aria-label="행운권 줄이기">−</button><b id="lk_tk">0</b><button type="button" onclick="lkStep('tk',1)" aria-label="행운권 늘리기">＋</button></div></div>
       <div id="lk_tkOpt" class="hidden" style="margin-top:10px">
         <div class="seg sm" id="lk_rs" role="radiogroup" aria-label="행운권 사유"><button type="button" role="radio" aria-checked="true" class="on" data-v="100만원 이상 구매" onclick="lkRs(this)">100만원 이상 구매</button><button type="button" role="radio" aria-checked="false" data-v="구독 계약" onclick="lkRs(this)">구독 계약</button></div>
@@ -4885,7 +4885,7 @@ function lvRenderList(){
 }
 /* ── 행운 이벤트 (mvp_290) — 즉석뽑기(룰렛)·행운권 주기 · 지급 완료 표시 · 잘못 준 것 취소. 당첨은 서버가 정한다 ── */
 const LK_URL=location.origin+'/lucky/';
-let LK=null, LK_SP=1, LK_TK=0;
+let LK=null, LK_SP=0, LK_TK=0;
 const lkNo=n=>'No.'+String(n).padStart(4,'0');
 function lkPh(v){ const d=String(v||'').replace(/\D/g,'').slice(0,11); if(d.length<4) return d; if(d.length<8) return d.slice(0,3)+'-'+d.slice(3); return d.slice(0,3)+'-'+d.slice(3,d.length-4)+'-'+d.slice(-4); }
 function lkStep(k,d){ if(k==='sp'){ LK_SP=Math.max(0,Math.min(3,LK_SP+d)); $('lk_sp').textContent=LK_SP; } else { LK_TK=Math.max(0,Math.min(30,LK_TK+d)); $('lk_tk').textContent=LK_TK; $('lk_tkOpt').classList.toggle('hidden',!LK_TK); } }
@@ -4932,8 +4932,7 @@ function lkRow(r){
 /* 멤버십·동의 (mvp_292) — 번호를 적으면 DPS 등록 여부(현재 수집 데이터)와 이 회차 등록·동의를 보여 주고, 멤버십 답·동의를 같이 저장한다 */
 let LK_CHK_T=null, LK_CHK_PV=false;
 function lkMem(b){ document.querySelectorAll('#lk_mem button').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-checked',on); });
-  if(b&&b.dataset.v==='join') $('lk_mc').checked=true;
-  LK_SP=(b&&b.dataset.v==='no')?0:Math.max(LK_SP,1); lkStep('sp',0); }
+  if(b&&b.dataset.v==='join') $('lk_mc').checked=true; }
 function lkCons(){ const b=document.querySelector('#lk_mem button.on');
   return {privacy:$('lk_pv').checked, marketing:$('lk_mk').checked, member_consent:$('lk_mc').checked, member_answer:b?b.dataset.v:null}; }
 function lkConsReset(){ ['lk_pv','lk_mk','lk_mc'].forEach(i=>{ $(i).checked=false; }); document.querySelectorAll('#lk_mem button').forEach(x=>{ x.classList.remove('on'); x.setAttribute('aria-checked',false); });
@@ -4978,14 +4977,15 @@ async function lkIssue(){
   const cons=lkCons(); if(!cons.privacy && !LK_CHK_PV) return toast('[필수] 개인정보 수집·이용 동의를 받아 주세요','err');
   if(!cons.member_answer) return toast('삼성멤버십 가입 여부(이미 회원 · 오늘 가입 · 가입 안 함)를 골라 주세요','err');
   const ob=document.querySelector('#lk_rs button.on'), rs=ob?ob.dataset.v:'';
-  const what=[LK_SP?`즉석뽑기 ${LK_SP}회`:'',LK_TK?`행운권 ${LK_TK}장 (${rs})`:''].filter(Boolean).join(' · ')||'참여 등록·동의만 저장';
-  if(!confirm(`${name} · ${lkPh(ph)}\n${what}\n\n이대로 줄까요?`)) return;
+  const what=[LK_SP?`즉석뽑기 ${LK_SP}회`:'',LK_TK?`행운권 ${LK_TK}장 (${rs})`:''].filter(Boolean).join(' · ')||'참여 등록';
+  const auto=(cons.member_answer==='join'||cons.member_consent)?'참여 즉석뽑기 1회 · 멤버십 가입 행운권 1장 (받은 적 없으면 자동)':'참여 즉석뽑기 1회 (받은 적 없으면 자동)';
+  if(!confirm(`${name} · ${lkPh(ph)}\n${what}\n+ ${auto}\n\n이대로 저장할까요?`)) return;
   $('lkGo').disabled=true;
   try{
     const r=await rpc('fn_store_lucky_issue',{p_code:CODE,p_data:Object.assign({name,phone:ph,spins:LK_SP,tickets:LK_TK,reason:LK_TK?rs:'',ref:LK_TK?$('lk_ref').value.trim():'',spin_reason:'멤버십 가입'},cons,{privacy:cons.privacy||LK_CHK_PV})},0);
     const nos=(r.new_tickets||[]).map(lkNo);
-    $('lkDone').innerHTML=`<div class="lk-done">${esc(name)} 고객님께 ${LK_SP?`즉석뽑기 ${LK_SP}회`:''}${LK_SP&&nos.length?' · ':''}${nos.length?`행운권 <span class="no">${nos.join(', ')}</span>`:''}${!LK_SP&&!nos.length?'참여 등록·동의를 저장했습니다':' 을(를) 드렸습니다'}.<br><span style="font-weight:500">고객 휴대폰에서 <b>${esc(LK_URL.replace(/^https?:\/\//,''))}</b> 을 열고 이름·번호로 확인합니다.</span></div>`;
-    $('lk_name').value=''; $('lk_phone').value=''; $('lk_ref').value=''; LK_SP=1; LK_TK=0; lkStep('sp',0); lkStep('tk',0); lkConsReset();
+    $('lkDone').innerHTML=`<div class="lk-done">${esc(name)} 고객님께 ${LK_SP?`즉석뽑기 ${LK_SP}회`:''}${LK_SP&&nos.length?' · ':''}${nos.length?`행운권 <span class="no">${nos.join(', ')}</span>`:''}${!LK_SP&&!nos.length?'참여 등록·동의를 저장했습니다':' 을(를) 드렸습니다'}. <span style=\"font-weight:500\">(참여 즉석뽑기 · 멤버십 가입 행운권은 자동 — 아래 목록에서 확인)</span><br><span style="font-weight:500">고객 휴대폰에서 <b>${esc(LK_URL.replace(/^https?:\/\//,''))}</b> 을 열고 이름·번호로 확인합니다.</span></div>`;
+    $('lk_name').value=''; $('lk_phone').value=''; $('lk_ref').value=''; LK_SP=0; LK_TK=0; lkStep('sp',0); lkStep('tk',0); lkConsReset();
     toast('저장했습니다','ok'); await loadLucky();
   }catch(e){ toast(e.message,'err'); }
   finally{ $('lkGo').disabled=false; }
