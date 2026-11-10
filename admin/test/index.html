@@ -2338,6 +2338,7 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
             <div><label for="lka_to">끝나는 날</label><input class="in" type="date" id="lka_to" style="width:100%"></div>
             <div><label for="lka_draw">추첨일 (1회 확인)</label><input class="in" type="date" id="lka_draw" style="width:100%"></div>
             <div><label for="lka_expect">예상 행운권 장수</label><input class="in" type="number" min="1" id="lka_expect" style="width:100%"></div>
+            <div style="grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);cursor:pointer"><input type="checkbox" id="lka_keep" style="width:18px;height:18px"> 기간 밖에도 계속 열어 두기 <span class="note">(켜 두면 시작 전·끝난 뒤에도 주기·룰렛이 됩니다 · 기간은 화면 안내용)</span></label></div>
           </div>
           <label style="font-size:12px;font-weight:700;color:var(--muted)">행운권 확인 방식</label>
           <div class="seg2" id="lka_mode" role="radiogroup" aria-label="행운권 확인 방식" style="margin:4px 0 6px"><button type="button" data-v="draw" onclick="lkaMode('draw')">1회 확인 · 럭키드로우 추첨</button><button type="button" data-v="instant" onclick="lkaMode('instant')">즉석 확인 · 복권 긁기</button></div>
@@ -6027,7 +6028,7 @@ function lkaRender(){
   $('lkaEv').innerHTML=(D.events||[]).map(x=>`<option value="${x.id}"${e&&x.id===e.id?' selected':''}>${esc(x.name)} · ${esc(String(x.start_date).slice(5))}~${esc(String(x.end_date).slice(5))}${x.active?'':' (꺼짐)'}</option>`).join('')||'<option>회차 없음</option>';
   if(!e){ $('lkaKpi').innerHTML=''; $('lkaRows').innerHTML='<tr><td colspan="4" class="empty">회차가 없습니다. 아래 설정에서 [새 회차로 저장]을 누르세요.</td></tr>'; lkaFill(null); return; }
   const g=e.goal||{}, sr=s.spin_ranks||{};
-  $('lkaSub').textContent=`${e.start_date} ~ ${e.end_date} · ${e.mode==='instant'?'즉석 확인(복권)':'1회 확인(럭키드로우)'}${e.drawn_at?' · 추첨 끝':''}`;
+  $('lkaSub').textContent=`${e.start_date} ~ ${e.end_date} · ${e.mode==='instant'?'즉석 확인(복권)':'1회 확인(럭키드로우)'}${e.keep_open?' · 계속 열림':''}${e.drawn_at?' · 추첨 끝':''}`;
   /* 예상 경품 비용 = 1단계 사은품 × 참여 고객 + 즉석뽑기 나온 경품 단가 + 행운권 경품(1회 확인은 정한 인원 전부, 즉석 확인은 공개된 당첨) */
   const spv={}; (e.spin_prizes||[]).forEach(p=>spv[p.rank]=Number(p.value||0));
   const spinCost=Object.entries(sr).reduce((a,[k,c])=>a+(spv[k]||0)*c,0);
@@ -6076,7 +6077,7 @@ function lkaPzRow(p,kind){ const v=k=>esc(p[k]==null?'':p[k]);
 function lkaFill(e){
   const ok=!!(LKA&&LKA.can_edit);
   e=e||{name:'',spin_prizes:[{rank:1},{rank:2},{rank:3},{rank:0,label:'과자 + 5,000원 할인권'}],draw_prizes:[{rank:1,qty:1}],goal:{},mode:'draw',expect_tickets:400};
-  $('lka_name').value=e.name||''; $('lka_from').value=e.start_date||''; $('lka_to').value=e.end_date||''; $('lka_draw').value=e.draw_date||''; $('lka_expect').value=e.expect_tickets||400;
+  $('lka_name').value=e.name||''; $('lka_from').value=e.start_date||''; $('lka_to').value=e.end_date||''; $('lka_draw').value=e.draw_date||''; $('lka_expect').value=e.expect_tickets||400; $('lka_keep').checked=!!e.keep_open;
   const g=e.goal||{}; $('lka_budget').value=g.budget||''; $('lka_sales').value=g.sales||''; $('lka_visitors').value=g.visitors||''; $('lka_gift').value=g.gift_unit||'';
   lkaMode(e.mode||'draw');
   $('lka_sp').innerHTML=(e.spin_prizes||[]).slice().sort((a,b)=>(a.rank||99)-(b.rank||99)).map(p=>lkaPzRow(p,'sp')).join('');
@@ -6097,7 +6098,7 @@ async function lkaSave(asNew){
   if(!asNew && e && e.mode!==LKA_MODE && !confirm(`행운권 확인 방식을 ${LKA_MODE==='instant'?'즉석 확인(복권)':'1회 확인(럭키드로우)'}으로 바꿉니다.\n이미 나간 행운권은 받을 때 방식 그대로입니다. 계속할까요?`)) return;
   if(asNew && !confirm('지금 입력한 내용으로 새 회차를 만듭니다. 기간이 겹치면 시작일이 늦은 회차가 진행 중으로 잡힙니다. 계속할까요?')) return;
   const data={id:asNew?null:(e?e.id:null),name:$('lka_name').value.trim(),start_date:$('lka_from').value,end_date:$('lka_to').value,draw_date:$('lka_draw').value||null,
-    mode:LKA_MODE,expect_tickets:Number($('lka_expect').value)||400,spin_prizes:sp,draw_prizes:dp,active:true,
+    mode:LKA_MODE,keep_open:$('lka_keep').checked,expect_tickets:Number($('lka_expect').value)||400,spin_prizes:sp,draw_prizes:dp,active:true,
     goal:Object.assign({},(e&&e.goal)||{},{budget:Number($('lka_budget').value)||0,sales:Number($('lka_sales').value)||0,visitors:Number($('lka_visitors').value)||0,gift_unit:Number($('lka_gift').value)||0})};
   if(!data.start_date||!data.end_date) return toast('기간을 적어 주세요','bad');
   try{ LKA=await rpcRaw('fn_lucky_admin_save',{p_data:data}); rpcClear(); LKA_EV=LKA.event&&LKA.event.id; lkaRender(); $('lkaSaved').textContent='저장했습니다 '+lkaWhen(new Date()); toast('저장했습니다','ok'); }
