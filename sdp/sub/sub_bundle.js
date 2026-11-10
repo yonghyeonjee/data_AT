@@ -336,12 +336,12 @@ window.SUB_BUNDLE_READY = true;
   }
   function drawCart(items, results) {
     var mu = applyMulti(items, results);   // 다품목 구독 할인 (mvp_273) — results 의 월 납부·카드·결제 예상에 반영된다
-    var html = '', sum = { monthly: 0, auto: 0, prepayDisc: 0, prepayAmt: 0, card: 0, pay: 0, expected: 0, points: 0, lump: 0, lumpAll: true, n: 0 };
+    var html = '', sum = { monthly: 0, auto: 0, prepayMonthly: 0, prepayDisc: 0, prepayAmt: 0, card: 0, pay: 0, expected: 0, points: 0, lump: 0, lumpAll: true, n: 0 };
     items.forEach(function (it) {
       var r = results[it.m];
       if (!r) { html += '<li class="sb-item is-na" data-model="' + esc(it.m) + '"><div class="sb-item-head"><div class="sb-item-t"><b>' + esc(it.m) + '</b><span class="sb-item-model">지금 구독으로 운영되지 않는 모델</span></div><button type="button" class="sb-del" data-del="' + esc(it.m) + '">×</button></div></li>'; return; }
       html += itemHtml(it, r);
-      sum.n++; sum.monthly += r.monthly; sum.auto += r.autoDisc / r.months; sum.prepayDisc += r.prepayDisc; sum.prepayAmt += r.prepayAmt;
+      sum.n++; sum.monthly += r.monthly; sum.auto += r.autoDisc / r.months; sum.prepayDisc += r.prepayDisc; sum.prepayAmt += r.prepayAmt; sum.prepayMonthly += (r.prepayAmt + r.prepayDisc) / r.months;
       sum.card += r.cardMonthly; sum.pay += r.finalMonthly; sum.expected += r.expected; sum.points += r.pointsAll || r.points || 0;   // 행사 포인트 + 적립 예정 멤버십 포인트 (mvp_258)
       var lp = lumpOf(it.m); if (lp) sum.lump += lp; else sum.lumpAll = false;
     });
@@ -357,7 +357,7 @@ window.SUB_BUNDLE_READY = true;
       '<table class="sb-table"><tbody>' +
       '<tr><th>월 구독료 합계 <small>' + sum.n + '대 · 정가</small></th><td>' + fmt(sum.monthly) + '원</td></tr>' +
       '<tr class="is-off"><th>' + esc(C.autopayLabel()) + '</th><td>− ' + fmt(sum.auto) + '원</td></tr>' +
-      (sum.prepayDisc ? '<tr class="is-off"><th>선납 할인 <small>월 환산</small></th><td>− ' + fmt(sum.prepayDisc / 12 / 1) + '원</td></tr>' : '') +
+      (sum.prepayAmt ? '<tr class="is-off"><th>선납금·선납 할인 <small>월 환산</small></th><td>− ' + fmt(sum.prepayMonthly) + '원</td></tr>' : '') +
       (mu && mu.off ? '<tr class="is-off"><th>' + esc(mu.mp.name || '다품목 구독 할인') + ' <small>' + esc(mu.labels.join(' · ')) + '</small></th><td>− ' + fmt(mu.off) + '원</td></tr>' : '') +
       (cardName ? '<tr class="is-off"><th>' + esc(cardName) + ' 청구할인 <small>' + sum.n + '건</small></th><td>− ' + fmt(sum.card) + '원</td></tr>' : '') +
       (bundleOff ? '<tr class="is-off"><th>다품목 동시구독 혜택 <small>' + Math.round(bp.rate * 100) + '%</small></th><td>− ' + fmt(bundleOff) + '원</td></tr>' : '') +
@@ -433,6 +433,7 @@ window.SUB_BUNDLE_READY = true;
     if (param('cardoff') === '1') state.cardOn = false;
     if (items) {
       items.split(',').forEach(function (tok) { var p = tok.split('~'), m = norm(p[0]); if (IDX.m[m]) cartAdd(m, { y: p[1] ? +p[1] : undefined, c: p[2] || undefined, p: p[3] ? +p[3] : undefined }, true); });
+      renderPick(); renderCart();   // 공유 링크로 들어오면 담은 뒤 바로 다시 그린다 (2026-11-10)
     }
     if (preset && PRESETS[preset]) {
       presetModels(preset, function (ms) {
