@@ -246,15 +246,16 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     // ④ 총 혜택 · 최종 혜택가 — 포인트는 표기 방식과 무관하게 항상 차감,
     //    선납금은 DPS 월 구독료에 선납 할인이 이미 반영되어 있으므로 총 지불액에 "가산"
     var benefit = sub + multi + pre + card + point + cons + gift;
-    var finalP = Math.max(0, total - benefit) + preAmt;
+    var preAdd = it.preIncl ? 0 : preAmt;   // /quote/ 는 총 구독료에 선납금이 이미 들어 있다 (DPS 총구독료)
+    var finalP = Math.max(0, total - benefit) + preAdd;
     // ⑤ 월 단위 지표
-    var payM = m > 0 ? Math.round((total - sub - multi - pre) / m) : 0;                 // 할인 후 월 청구액(카드 전)
+    var payM = m > 0 ? Math.round((total - sub - multi - pre - (it.preIncl ? preAmt : 0)) / m) : 0;                 // 할인 후 월 청구액(카드 전)
     var afterCardM = Math.max(0, payM - cardMonthly);                                    // 체감 구독료 = 월구독료 − 월카드할인
     var remainM = m > 0 ? Math.max(0, Math.round((total - sub - multi - pre - card - preAmt) / m)) : 0;
     var realM = m > 0 ? Math.max(0, Math.round((finalP - preAmt) / m)) : 0;
     var freeMonths = (point > 0 && remainM > 0) ? Math.floor(point / remainM) : 0;
     return { m: m, monthly: monthly, total: total, sub: sub, multi: multi, multiRaw: multiRaw, pre: pre, point: point,
-             card: card, cardMonthly: cardMonthly, cons: cons, gift: gift, preAmt: preAmt,
+             card: card, cardMonthly: cardMonthly, cons: cons, gift: gift, preAmt: preAmt, preAdd: preAdd,
              benefit: benefit, finalP: finalP, payM: payM, afterCardM: afterCardM,
              remainM: remainM, realM: realM, freeMonths: freeMonths };
   }
@@ -266,7 +267,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       if(it.hidden) return;
       var c = calcItem(it, pm);
       T.count++; T.total += c.total; T.sub += c.sub; T.multi += c.multi; T.pre += c.pre; T.point += c.point;
-      T.card += c.card; T.cardM += c.cardMonthly; T.cons += c.cons; T.gift += c.gift; T.preAmt += c.preAmt; T.finalP += c.finalP;
+      T.card += c.card; T.cardM += c.cardMonthly; T.cons += c.cons; T.gift += c.gift; T.preAmt += c.preAmt; T.preAdd = (T.preAdd || 0) + c.preAdd; T.finalP += c.finalP;
       T.monthly += c.monthly; T.afterCardM += c.afterCardM; T.realM += c.realM; T.remainM += c.remainM;
       if(it.multiOk) T.multiCount++;
       if(c.m > T.maxM) T.maxM = c.m;
@@ -417,7 +418,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     h += discRow('상품권', p + 'giftcard', c.gift);
     /* 선납금 — 할인이 아니라 계약 시 선결제하는 지불액 (최종 혜택가에 가산) */
     if(EDIT || c.preAmt > 0) h += '<tr><th>선납금 <span style="font-weight:500;color:#666">(계약 시 선결제)</span></th><td class="num">'
-      + (EDIT ? cell(p + 'prepayAmt', c.preAmt, 'imp') : '<span style="color:#1A4FA0;font-weight:700">+' + won(c.preAmt) + '</span>') + '</td></tr>';
+      + (EDIT ? cell(p + 'prepayAmt', c.preAmt, 'imp') : '<span style="color:#1A4FA0;font-weight:700">' + (c.preAdd > 0 ? '+' : '') + won(c.preAmt) + '</span>') + '</td></tr>';
     /* 구독 혜택가 (엑셀 E16) */
     h += '<tr class="fin"><th>최종 혜택가' + (c.preAmt > 0 ? ' <span style="font-weight:600;font-size:.85em">(선납금 포함)</span>' : '') + '</th><td class="num">' + won(c.finalP) + (EDIT ? '<span class="q-fxnote">자동</span>' : '') + '</td></tr>';
     h += '</table>';
@@ -605,7 +606,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       });
       if(EDIT && !extraShown) sumBox += '<tr class="no-print"><th colspan="2" style="text-align:center;background:#fff"><button type="button" class="q-x" data-qextra="1" style="margin-left:0">＋ 기타 혜택 행 추가</button></th></tr>';
       sumBox += '<tr class="ben"><th>총 혜택 합계</th><td class="num">-' + won(T.benefit) + '</td></tr>';
-      if(T.preAmt > 0){
+      if(T.preAdd > 0){
         /* 소계: 여기까지가 할인 적용가 → 선납금 가산 → 총 지불액 (검산 가능하게) */
         sumBox += '<tr><th style="font-weight:700">혜택 적용가 <span style="font-weight:500;color:#666">(총 구독료 − 총 혜택)</span></th><td class="num" style="font-weight:700">' + won(Math.max(0, T.finalP - T.preAmt)) + '</td></tr>';
         sumBox += '<tr><th>선납금 <span style="font-weight:500;color:#666">(계약 시 선결제 · 지불액 가산)</span></th><td class="num" style="color:#1A4FA0;font-weight:700">+' + won(T.preAmt) + '</td></tr>';
@@ -655,7 +656,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       if(num(L.fee) > 0) lb += '<tr><th>이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
       if(num(L.bill) > 0) lb += '<tr><th>청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
       if(num(L.sPoint) > 0) lb += '<tr><th>금액별 S포인트</th><td class="num">-' + won(L.sPoint) + '</td></tr>';
-      if(num(L.jPoint) > 0) lb += '<tr><th>제품별 S포인트 (J.POINT)</th><td class="num">-' + won(L.jPoint) + '</td></tr>';
+      if(num(L.jPoint) > 0) lb += '<tr><th>DPS 포인트 (패키지·제휴할부 제외)</th><td class="num">-' + won(L.jPoint) + '</td></tr>';
       if(num(L.typePoint) > 0) lb += '<tr><th>' + esc(L.typeLabel || '포인트') + '</th><td class="num">-' + won(L.typePoint) + '</td></tr>';
       if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
       if(num(L.member) > 0) lb += '<tr><th>기본멤버십P 0.1%</th><td class="num">-' + won(L.member) + '</td></tr>';
