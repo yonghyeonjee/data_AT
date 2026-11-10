@@ -58,6 +58,7 @@ h1,h2,h3{margin:0}
 .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .chip{border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:5px 11px;font-size:12.5px;font-weight:600;min-height:32px}
 .chip:hover{border-color:var(--blue);color:var(--blue)}
+.chip.pick{background:var(--blue);border-color:var(--blue);color:#fff}
 .sug{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:320px;overflow:auto;margin-top:4px}
 .sug button{display:flex;gap:10px;align-items:center;width:100%;border:0;background:transparent;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
 .sug button:hover,.sug button.on{background:var(--blue-soft)}
@@ -349,6 +350,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     </div>
 
     <div class="bulk hidden" id="bulk"></div>
+    <div id="cardBar"></div>
     <div class="items" id="items"></div>
   </div>
 
@@ -539,7 +541,7 @@ const P = new URLSearchParams(location.search);
 const Q = { no:P.get('no')||'', ver:+(P.get('v')||0)||0, issuedAt:'',
   cust:{ type:P.get('type')||'혼수', name:P.get('name')||'', phone:P.get('phone')||'', addr:'', proof:'', until:'', memo:P.get('memo')||'', birth:'', carrier:'', wedding:'', movein:'', revisit:'' },
   cond:{ card:'', tier:'', cardOn:true, prepay:null, lumpKind:'베네핏', lumpMonths:0, cb:true, bn:0,
-         pointMode:'cash', ptEach:false, reward:false, pointCommon:0, pointDps:1, arsBill:false, namecardId:'' },   // 고도몰 견적서의 opt (포인트 표기 · 이벤트 리워드 1% · 멤버십 포인트 공통 · 네임카드)
+         pointMode:'cash', ptEach:false, reward:false, pointCommon:0, pointDps:1, arsBill:false, cardPreset:'', namecardId:'' },   // 고도몰 견적서의 opt (포인트 표기 · 이벤트 리워드 1% · 멤버십 포인트 공통 · 네임카드)
   extra:[],                                                     // 기타 혜택 행 [{label, amount}]
   consult:P.get('consult')||'',                               // 어느 문의(crm.consult id)에서 열렸나 — 저장 meta 에 남긴다 (2026-11-04)
   items:[] };   // {m, mode:'sub'|'lump', years, care, lump, note}
@@ -732,7 +734,7 @@ function bundleUrl(){ if(!LAST) return BUNDLE_URL; const {S}=LAST;
   const items=S.items.map(it=>{ const r=S.R[it.m], pp=prepayOf(it)||0; return it.m+'~'+r.y+'~'+r.care+(pp?'~'+pp:''); });
   return BUNDLE_URL+'?items='+encodeURIComponent(items.join(','))+(Q.cond.cardOn&&Q.cond.card?'&card='+encodeURIComponent(Q.cond.card)+'&tier='+encodeURIComponent(Q.cond.tier):'&cardoff=1'); }
 function openBundle(){ if(!LAST||!LAST.S.n){ toast('구독 품목을 먼저 담아 주세요'); return; } window.open(bundleUrl(),'_blank','noopener'); }
-function setItem(i,k,v){ const it=Q.items[i]; it[k]=v; if(k==='years'){ it.care=''; } if(k==='card'){ it.tier=v?(C.defaultTier(v)||''):''; } render(); }
+function setItem(i,k,v){ const it=Q.items[i]; it[k]=v; if(k==='years'){ it.care=''; } if(k==='card'){ Q.cond.cardPreset=''; it.tier=v?(C.defaultTier(v)||''):''; } render(); }
 /* 품목별 조건 더보기: 자동결제 할인 · 월 구독료 수기 · 멤버십 포인트 수기 · 소모품 · 상품권 · 숨김 */
 function ownHtml(it,i){
   const PP=POL.prepay||{}, steps=[0].concat(PP.steps||[]), names=C.cardNames();
@@ -836,12 +838,27 @@ async function applyDpsPaste(el){ const t=el.value, rows=parseDps(t), pt=/삼성
   if(pt){ Q.cond.pointCommon=+pt[1].replace(/,/g,'')||0; Q.cond.pointDps=1; $('pointCommon').value=Q.cond.pointCommon; }
   $('dpsMsg').textContent=[ok?'구독 '+ok+'품목 DPS 값 적용':'', pt?'포인트 합계 '+won(Q.cond.pointCommon)+' 적용':'', miss.length?'요금표에 없는 모델: '+miss.join(', '):''].filter(Boolean).join(' · '); render(); }
 function applyDps(r,d){ const m=d.y*12; Object.assign(r,{ dps:d, years:d.y, y:d.y, months:m, total:d.total, monthly:d.monthly, autoDisc:d.single, prepayAmt:d.pre, prepayDisc:d.preDisc, multiOff:d.multi, multiMonthly:d.multi/m, multiRate:d.total&&d.multi?Math.round(d.multi/d.total*100)/100:0, monthlyPre:(d.total-d.pre-d.preDisc)/m, monthlyPay:d.final, finalMonthly:d.final, cardMonthly:0, cardTotal:0, manual:true }); r.expected=d.total-d.preDisc-d.single-d.multi; r.expectedNet=r.expected-(r.pointsAll||0); }
-function setCard(i,v){ const it=Q.items[i]; if(!v){ it.card=''; it.tier=''; } else { const k=v.indexOf('|'); it.card=v.slice(0,k); it.tier=v.slice(k+1); } render(); }
+function cardMd(cd,t,sum){ const md=cd.t[t]||0, base=cd.base?(cd.base[t]||md):md; return cd.minMonthly&&cd.minMonthly[t]&&sum<cd.minMonthly[t]?base:md; }
+/* 자주 쓰는 구독 카드 (2026-11-10) — 누르면 구독 품목 전체에 넣는다. 나누기는 월 할인 합계가 가장 커지게 품목을 자동으로 두 카드에 나누고, 품목이 바뀌면 다시 나눈다. 품목에서 카드를 직접 고르면 자동은 꺼진다 */
+const CARD_PRESETS=[{k:'s',l:'삼성카드 70만↑',a:['삼성카드','70만↑']},{k:'l',l:'롯데카드 50만↑',a:['롯데카드','50만↑']},{k:'sl',l:'삼성카드+롯데카드 나누기',a:['삼성카드','70만↑'],b:['롯데카드','50만↑']}];
+function applyCardPreset(){ const p=CARD_PRESETS.find(x=>x.k===Q.cond.cardPreset), S=LAST&&LAST.S; if(!p||!S) return false; const rows=S.items.map(it=>({it,r:S.R[it.m]})).filter(x=>x.r); if(!rows.length) return false;
+  const pick=new Array(rows.length).fill(0);
+  if(p.b){ const cA=window.SUB_CARDS[p.a[0]], cB=window.SUB_CARDS[p.b[0]], mdA=cardMd(cA,p.a[1],S.monthly), mdB=cardMd(cB,p.b[1],S.monthly), minA=(cA.minMonthly||{})[p.a[1]]||0, n=Math.min(rows.length,12); let best=null;
+    for(let mask=0;mask<(1<<n);mask++){ let pa=0,pb=0,ma=0,nb=0; rows.forEach((x,i)=>{ if(i<n&&mask>>i&1){ pb+=x.r.monthlyPay; nb++; } else { pa+=x.r.monthlyPay; ma+=x.r.monthly; } });
+      const sc=[Math.min(mdA,pa)+Math.min(mdB,pb), !minA||ma>=minA?1:0, -Math.abs(rows.length-2*nb), ma];   // 할인 합계 → 첫 카드 결제액이 기준금액 이상 → 품목 수 고르게
+      const d=best?sc.findIndex((v,i)=>v!==best.sc[i]):0; if(!best||(d>=0&&sc[d]>best.sc[d])) best={sc,mask}; }
+    rows.forEach((x,i)=>{ if(i<n&&best.mask>>i&1) pick[i]=1; }); }
+  let ch=false; rows.forEach((x,i)=>{ const t=pick[i]?p.b:p.a; if(x.it.card!==t[0]||x.it.tier!==t[1]){ x.it.card=t[0]; x.it.tier=t[1]; ch=true; } }); return ch; }
+function setCardPreset(k){ Q.cond.cardPreset=k; render(); }
+function cardBar(S){ if(!S.n) return ''; const g={}; S.items.forEach(it=>{ const r=S.R[it.m]; if(!r.cardName) return; const a=g[r.cardName]=g[r.cardName]||{t:r.cardTier,md:0,n:0}; a.md+=r.cardMonthly; a.n++; });
+  const ks=Object.keys(g), sum=ks.reduce((a,k)=>a+g[k].md,0);
+  return `<div class="bulk"><b class="selN">구독 카드</b>${CARD_PRESETS.map(p=>`<button class="chip${Q.cond.cardPreset===p.k?' pick':''}" onclick="setCardPreset('${p.k}')">${esc(p.l)}</button>`).join('')}<span class="hint">${ks.length?ks.map(k=>`${esc(k)} ${esc(g[k].t)} ${g[k].n}개 월 ${fmt(g[k].md)}원`).join(' + ')+(ks.length>1?` = 월 ${fmt(sum)}원 할인`:''):'카드 없음'}</span></div>`; }
+function setCard(i,v){ Q.cond.cardPreset=''; const it=Q.items[i]; if(!v){ it.card=''; it.tier=''; } else { const k=v.indexOf('|'); it.card=v.slice(0,k); it.tier=v.slice(k+1); } render(); }
 function ckHtml(it){ return `<label class="ck" title="체크한 품목에 위 [선택한 품목에 적용]으로 한 번에 바꿉니다"><input type="checkbox"${SEL.has(it.m)?' checked':''} onchange="toggleSel('${esc(it.m)}',this.checked)" aria-label="${esc(it.m)} 고르기"></label>`; }
 function toggleSel(m,on){ if(on) SEL.add(m); else SEL.delete(m); render(); }
 function selAll(on){ SEL.clear(); if(on) Q.items.forEach(it=>SEL.add(it.m)); render(); }
 /* 체크한 품목에 한 번에: 구독/일반 · 계약 기간 · 선납 · 결제 방법 · 구독 카드 · 할부 카드 */
-function applySel(k,v){ const its=Q.items.filter(it=>SEL.has(it.m)); if(!its.length){ toast('먼저 품목 왼쪽 칸을 체크해 주세요'); return; } let ok=0, skip=0;
+function applySel(k,v){ if(k==='card') Q.cond.cardPreset=''; const its=Q.items.filter(it=>SEL.has(it.m)); if(!its.length){ toast('먼저 품목 왼쪽 칸을 체크해 주세요'); return; } let ok=0, skip=0;
   its.forEach(it=>{ const info=INFO[it.m];
     if(k==='mode'){ if(v==='sub'&&(it.noSub||!info)){ skip++; return; } it.mode=v; if(v==='lump'&&!(+it.lump>0)) it.lump=priceOf(it.m)||0; ok++; }
     else if(k==='years'){ if(it.mode!=='sub'||!info){ skip++; return; } if(info.p.some(p=>p[0]===v)){ if(it.years!==v){ it.years=v; it.care=''; } ok++; } else skip++; }
@@ -901,11 +918,11 @@ function calcAll(items){
       r.monthlyPay-=r.multiMonthly; r.cardMonthly=Math.min(r.cardInfo.md||0,Math.max(0,r.monthlyPay)); r.cardTotal=Math.round(r.cardMonthly*r.months);
       r.finalMonthly=Math.max(0,r.monthlyPay-r.cardMonthly); r.expected=r.total-r.prepayDisc-r.autoDisc-off-r.cardTotal; r.expectedNet=r.expected-(r.pointsAll||0); });
   }
-  /* 구독 제휴카드 (2026-11-09) — 같은 카드면 품목마다가 아니라 전체 월 납부액에 한 번만 할인한다. 할인 전 월 구독료 합계가 기준금액(삼성카드 7만원)에 못 미치면 추가 혜택 없이 기본 할인만 */
+  /* 구독 제휴카드 (2026-11-10) — 같은 카드면 품목마다가 아니라 그 카드 월 납부액에 한 번만 할인한다. 카드를 나눠도 기준금액(삼성카드 7만원)은 구독 전체의 할인 전 월 구독료 합계로 본다 */
+  const subSum=subs.reduce((a,it)=>a+R[it.m].monthly,0);
   const byCard={}; subs.forEach(it=>{ const r=R[it.m]; if(r.cardName) (byCard[r.cardName]=byCard[r.cardName]||[]).push(r); });
-  Object.keys(byCard).forEach(name=>{ const g=byCard[name], cd=window.SUB_CARDS&&window.SUB_CARDS[name]; if(!cd) return; const sum=g.reduce((a,r)=>a+r.monthly,0);
-    const mdOf=t=>{ const md=cd.t[t]||0, base=cd.base?(cd.base[t]||md):md; return cd.minMonthly&&cd.minMonthly[t]&&sum<cd.minMonthly[t]?base:md; };
-    let left=Math.max(...g.map(r=>mdOf(r.cardTier))); const info={md:left};
+  Object.keys(byCard).forEach(name=>{ const g=byCard[name], cd=window.SUB_CARDS&&window.SUB_CARDS[name]; if(!cd) return;
+    let left=Math.max(...g.map(r=>cardMd(cd,r.cardTier,subSum))); const info={md:left};
     g.slice().sort((a,b)=>b.monthlyPay-a.monthlyPay).forEach(r=>{ const use=Math.min(left,Math.max(0,r.monthlyPay)); left-=use; r.cardInfo=info; r.cardMonthly=use; r.cardTotal=Math.round(use*r.months); r.finalMonthly=Math.max(0,r.monthlyPay-use); r.expected=r.total-r.prepayDisc-r.autoDisc-r.multiOff-r.cardTotal; r.expectedNet=r.expected-(r.pointsAll||0); }); });
   /* 스마트 패키지 정액 (sub.policy bundle · mvp_264) */
   let pkg={n:0,amt:0,b:0,L:new Set()}; const bp=POL.bundle;
@@ -1036,7 +1053,7 @@ function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'
     +(L.fee?row('+','이용료',won(L.fee),'플러스페이 할부 이용료 · '+feeTxt(L)):'')
     +(ben>0?row('−','혜택 (포인트 · 캐시백 등)',won(ben)):'')
     +row('=','총 지출 금액',won(tot)+a,'','sum'); }
-function render(){ seedItems(); LAST=calcAll(); renderEdit(LAST); $('bnEdit').innerHTML=bnHtml(); renderShow(); renderSheet(); }
+function render(){ seedItems(); LAST=calcAll(); if(applyCardPreset()) LAST=calcAll(); renderEdit(LAST); $('bnEdit').innerHTML=bnHtml(); renderShow(); renderSheet(); }
 function renderEdit({S,L}){
   const box=$('items');
   document.body.classList.toggle('iv-table',IVIEW==='table');   // 표로 입력: 표가 화면 폭을 다 쓰고 결제 조건·혜택은 표 아래로, 합계는 아래 띠에 늘 보인다
@@ -1072,6 +1089,7 @@ function renderEdit({S,L}){
   $('t_all').innerHTML = T3.a; $('t_all_d').textContent = T3.ad;
   $('bb_s').textContent=S.n? won(S.pay)+'/월':'—'; $('bb_l').innerHTML=T3.l; $('bb_n').innerHTML=T3.a;
   $('pointWhere').textContent = !+Q.cond.pointCommon? '일반 구매가 있으면 일반 구매에서, 구독만 있으면 구독에서 뺍니다' : S.toL? '일반 구매에서 뺍니다' : S.n? '구독에서 뺍니다' : '품목을 담으면 적용됩니다';
+  $('cardBar').innerHTML=cardBar(S);
   const bk=$('bulk'), nI=Q.items.length; bk.classList.remove('hidden');
   const ysAll=[...new Set([].concat(...Q.items.map(it=>it.mode==='sub'&&INFO[it.m]?INFO[it.m].p.map(p=>p[0]):[])))].sort((a,b)=>b-a);
   bk.innerHTML=`<div class="seg sm"><button class="${IVIEW==='table'?'on':''}" onclick="setIView('table')" title="한 줄에 한 품목 — Enter 로 아래 칸, 모델명 치고 Enter 로 담기">표로 입력</button><button class="${IVIEW==='table'?'':'on'}" onclick="setIView('card')">카드로 보기</button></div><b>담은 품목 ${nI}개</b>`+(nI? `<span class="selbox">${IVIEW==='table'?'':`<label class="ck all">${ckAllHtml().replace(/^<label[^>]*>|<\/label>$/g,'')} 전체 선택</label>`}${selBar()}</span>`:'')
@@ -1194,7 +1212,7 @@ function toQuoteJson(){
   const quote={ cust:{ name:Q.cust.name, phone:Q.cust.phone, addr:Q.cust.addr, type:Q.cust.type, proof, memo:Q.cust.memo, until:Q.cust.until, untilMode:Q.cust.until?'date':'none', date:Q.issuedAt||todayStr(),
       birth:Q.cust.birth||'', carrier:Q.cust.carrier||'', wedding:Q.cust.wedding||'', movein:Q.cust.movein||'', revisit:Q.cust.revisit||'' },
     items, extra:(S.toL?[]:(Q.extra||[])).filter(e=>+e.amount>0||e.label).map(e=>({label:e.label||'기타 혜택', amount:+e.amount||0})).concat(S.bn?[{label:bnLabel(S.bnN), amount:S.bn}]:[]), lump,
-    opt:{ card:Q.cond.card?Q.cond.card+' '+Q.cond.tier:'', prepayPct:Math.round((Q.cond.prepay||0)*100), pointMode:'cash', rewardOn:!!Q.cond.reward&&!S.toL, pointCommon:(S.pkg||0)+(S.pointCommon||0), namecardId:Q.cond.namecardId||'', lumpSum:0,
+    opt:{ card:[...new Set(S.items.map(it=>S.R[it.m].cardName?S.R[it.m].cardName+' '+S.R[it.m].cardTier:'').filter(Boolean))].join(', '), prepayPct:Math.round((Q.cond.prepay||0)*100), pointMode:'cash', rewardOn:!!Q.cond.reward&&!S.toL, pointCommon:(S.pkg||0)+(S.pointCommon||0), namecardId:Q.cond.namecardId||'', lumpSum:0,
       show:{ total:true, sub:true, multi:true, sumBox:true, payband:true, realM:false, prepayLine:S.preAmt>0 }, counselor:ME },
     src:{ ver:1, items:Q.items, cond:Q.cond, extra:Q.extra||[] }, meta:{ page:'dc-quote', policyVer:POL.ver||'', idxVer:IDX.ver||'', consult:Q.consult||null } };
   const summary={ name:Q.cust.name, phone:Q.cust.phone, counselor:ME, type:Q.cust.type, models:Q.items.map(x=>x.m).join(', '), count:Q.items.length, multiCount:S.multiN,
