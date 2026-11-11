@@ -2255,7 +2255,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <div class="card" id="cLogCard">
       <h2 style="justify-content:flex-start;align-items:center">상담 · 가망고객 <span>사려다 만 고객도 남기기</span><button type="button" class="btn sm ghost" id="c_newBtn" style="margin-left:auto" onclick="consultNew()" title="적던 내용을 비우고 새 상담을 입력합니다">＋ 새 상담 입력</button></h2>
       <div class="cbar" style="margin-bottom:14px">
-        <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')})">구독 견적서 열기 ↗</button>
+        <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')})">구독 견적서 열기 ↗</button><button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')},true)" title="상담 견적(/quote/)을 이 고객·모델로 엽니다">new_견적서 ↗</button>
         <button class="btn sm ghost" onclick="openCalc()">구독료 계산기 ↗</button>
       </div>
       <div class="cstick hidden" id="c_stick" aria-live="polite">
@@ -4118,7 +4118,10 @@ const LINK_ICON={
    (견적서 페이지가 이 값을 읽도록 패치돼 있어야 프리필·기존 견적 열기가 된다) */
 /* 상담 줄 → 견적서에 담을 모델 코드들: 관심 모델(interest_model_code) + 내용의 '진단추천: 모델'(구독센터 상품 페이지에서 온 문의) + 관심 품목 글 속 모델형 토큰 */
 function qModels(x){ const out=[]; const add=v=>String(v||'').split(/[,\s·/]+/).forEach(t=>{ t=t.trim().toUpperCase().replace(/[^A-Z0-9\-]/g,''); if(/^[A-Z]{2}[A-Z0-9\-]{5,}$/.test(t)&&/\d/.test(t)&&!out.includes(t)) out.push(t); });
-  add(x.model); const m=/진단추천:\s*([A-Za-z0-9\-]+)/.exec(String(x.content||'')); if(m) add(m[1]); add(x.interest); return out.slice(0,8).join(','); }
+  add(x.model); const m=/진단추천:\s*([^/\n]+)/.exec(String(x.content||'')); if(m) add(m[1]); add(x.interest); return out.slice(0,12).join(','); }   // 2026-11-11: 진단추천 뒤 모델 전부(다품목 문의 'A,B,C')
+/* 다품목 계산기 문의의 '묶음조건(상담용): items=모델~약정~케어~선납,…&card=…&tier=…' → /quote/ 주소 값 (2026-11-11) */
+function qBundle(x){ const m=/items=([^\s/&]+)((?:&(?:card|tier|cardoff)=[^&\s/]*)*)/.exec(String(x.content||'')); if(!m) return {};
+  const o={items:m[1]}; (m[2]||'').split('&').forEach(kv=>{ const i=kv.indexOf('='); if(i>0) o[kv.slice(0,i)]=kv.slice(i+1); }); return o; }
 function openQuote(o,isNew){ o=o||{};
   const q=new URLSearchParams();
   if(o.no) q.set('no',o.no);
@@ -4128,6 +4131,8 @@ function openQuote(o,isNew){ o=o||{};
   if(o.memo) q.set('memo',o.memo);
   if(o.consult) q.set('consult',o.consult);                       // 상담 id — 견적서가 어느 문의에서 나왔는지 (2026-11-04)
   if(o.models) q.set('models',String(o.models).replace(/\s/g,'')); // 관심 모델(쉼표) — 견적서가 바로 담는다
+  if(o.items) q.set('items',o.items);                              // 다품목 계산기 묶음 조건(모델~약정~케어~선납) — /quote/ 가 그대로 담는다 (2026-11-11)
+  if(o.card) q.set('card',o.card); if(o.tier) q.set('tier',o.tier); if(o.cardoff) q.set('cardoff','1');
   if(ME) q.set('counselor',ME);
   const u=isNew? NEW_QUOTE_URL+(q.toString()?'?'+q.toString():'') : QUOTE_URL+(q.toString()?'&'+q.toString():'');
   window.open(u,isNew?'sat_quote_new':'sat_quote','noopener');
@@ -4661,6 +4666,7 @@ function skRowHtml(x,o){ o=o||{};
   A.push(`<button class="mini" onclick="cdOpen(${x.id})">상세 보기</button>`);
   if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
   A.push(`<button class="mini" onclick="openQuote({name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}',memo:'${esc([x.interest,x.model].filter(Boolean).join(' · ').replace(/'/g,''))}',consult:${x.id||0},models:'${esc(qModels(x))}'})">견적서 만들기 ↗</button>`);
+  { const bq=qBundle(x); A.push(`<button class="mini" title="상담 견적(/quote/)을 이 고객·문의 모델·조건으로 엽니다" onclick="openQuote({name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}',memo:'${esc([x.interest,x.model].filter(Boolean).join(' · ').replace(/'/g,''))}',consult:${x.id||0},models:'${esc(qModels(x))}',items:'${esc(bq.items||'')}',card:'${esc(bq.card||'')}',tier:'${esc(bq.tier||'')}',cardoff:'${esc(bq.cardoff||'')}'},true)">new_견적서 ↗</button>`); }
   return `<div class="item oc skrow" id="skrow_${x.id}"><div style="flex:1;min-width:0">
       <div class="ttl">${res}<b>${esc(x.name||'-')}</b> <small style="color:var(--muted)">${esc(x.phone||'')}</small>
         ${x.kind?`<span class="tag ${x.kind==='구독'?'sub':x.kind==='직판'?'direct':''}">${esc(x.kind)}</span>`:''}

@@ -675,7 +675,9 @@ function postSheet(){ const f=$('sheetFrame'); if(!f||!SHF_READY||!LAST||!f.cont
     f.contentWindow.postMessage({t:'quote', d:{ ok:true, quote, no:Q.no||'', name:Q.cust.name||'', counselor:nc?(nc.name||''):(ME||''), counselor_role:nc?(nc.position||'프로'):'프로', counselor_title:nc?(nc.dept||''):'', tel:nc?(nc.mobile||''):'', store_tel:STORE.tel, counselor_email:nc?(nc.email||''):'' }}, location.origin); }catch(e){ console.warn('견적서 미리보기', e); } }
 function printSheet(){ const f=$('sheetFrame'); if(f&&f.contentWindow) f.contentWindow.print(); }
 function bindBundlePaste(){ const q=$('q'); if(!q||q.dataset.bp) return; q.dataset.bp='1'; q.addEventListener('paste',e=>{ const t=(e.clipboardData||window.clipboardData).getData('text')||''; if(/[?&]items=/.test(t)){ e.preventDefault(); applyBundle(parseBundle(t)); } }); }
-function prefillModels(){ bindBundlePaste(); if(P.get('items')){ applyBundle(parseBundle(location.search), true); } const ms=String(P.get('models')||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+function prefillModels(){ bindBundlePaste(); let bm=[]; if(P.get('items')){ const b=parseBundle(location.search); bm=b.items.map(x=>x.m); applyBundle(b, true); }
+  // 매장 [new_견적서]가 묶음 조건(items)과 문의 모델(models)을 같이 보내면 묶음에 있는 모델은 묶음 조건대로만 담는다 (2026-11-11)
+  const ms=String(P.get('models')||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).filter(m=>bm.indexOf(norm(m))<0);
   ms.forEach(m=>{ if(Q.items.some(x=>x.m===m)) return; if(IDX&&IDX.m&&IDX.m[m]) addModel(m); else if(priceOf(m)) addModel(m,'lump'); else addFree(m); });
   if(ms.length) toast('문의하신 모델 '+ms.length+'개를 담았습니다'); }
 

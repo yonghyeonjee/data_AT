@@ -392,6 +392,12 @@ window.SUB_BUNDLE_READY = true;
     var lines = items.map(function (it) { var r = results[it.m]; return it.m + (r ? ' ' + r.y + '년 ' + r.plan[1] + (r.prepay ? ' 선납' + Math.round(r.prepay * 100) + '%' : '') + ' 월 ' + fmt(r.finalMonthly) + '원' : ''); });
     var muOff = 0; items.forEach(function (it) { var r = results[it.m]; if (r && r.multiMonthly) muOff += r.multiMonthly; });
     var memo = '[다품목 계산기] ' + items.length + '대 · 월 ' + fmt(pay) + '원' + (state.cardOn && state.card ? ' (' + state.card + ' ' + state.tier + ')' : '') + (muOff ? ' · 다품목 할인 월 −' + fmt(muOff) + '원 반영' : '') + ' / ' + lines.join(' / ');
+    // 상담용 묶음 조건 (2026-11-11): 매장 화면 [new_견적서] 가 이 줄을 읽어 /quote/ 에 모델·약정·케어·선납·카드를 그대로 담는다 (/quote/ ?items= 과 같은 꼴)
+    var bq = 'items=' + items.filter(function (it) { return results[it.m]; }).map(function (it) { var r = results[it.m]; return it.m + '~' + r.y + '~' + r.plan[1] + (r.prepay ? '~' + r.prepay : ''); }).join(',') +
+      (state.cardOn && state.card ? '&card=' + state.card + '&tier=' + state.tier : '&cardoff=1');
+    // 문의 양식은 메모 칸에 '[1위 추천 모델] 모델들' 줄을 앞에 붙이고, 데이터센터는 메모를 800자까지만 저장 → 묶음 조건 줄이 잘리지 않게 앞부분을 줄인다
+    var pre = 16 + items.map(function (i) { return i.m; }).join(',').length + 1;
+    memo = memo.slice(0, Math.max(120, 790 - pre - bq.length - 18)) + ' / 묶음조건(상담용): ' + bq;
     var q = 'from=bundle&purpose=' + encodeURIComponent('신규구독') + '&product=' + encodeURIComponent('다품목') + '&model=' + encodeURIComponent(items.map(function (i) { return i.m; }).join(',')) +
       '&memo=' + encodeURIComponent(memo.slice(0, 900)) + '&src=' + encodeURIComponent('다품목 계산기') + '&utm_source=sub_bundle&utm_medium=consult';
     return u + (u.indexOf('?') >= 0 ? '&' : '?') + q;
