@@ -6333,7 +6333,7 @@ async function setGasUrl(){
   $('dashFrame').src='about:blank'; loadDash();
 }
 let DASH_PAY=null, DASH_READY=false;
-const DASH_V='287';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
+const DASH_V='301';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
 window.addEventListener('message',e=>{ const t=e.data&&e.data.type;
   if(t==='dash-ready'){ DASH_READY=true; dpSet({frame:1}); dashSend(); }
   else if(t==='dash-rendered'){ dpDone(); } });
@@ -6415,7 +6415,7 @@ async function dashFetch(args, up){
     return j;
   } finally { clearTimeout(tm); }
 }
-function dashArgs(){ const to=new Date(), from=new Date(to.getFullYear(), to.getMonth()-11, 1); return {p_from:iso(from),p_to:iso(to),p_mode:DASH_BASIS}; }
+function dashArgs(){ const to=new Date(); return {p_from:'2024-10-01',p_to:iso(to),p_mode:DASH_BASIS}; }   /* 2024-10 = DPS 수집 시작 (2026-11-11 · 전엔 최근 12개월) · 워머 키와 같아야 캐시를 탄다 */
 function dashHM(ts){ const d=new Date(ts); if(!ts || isNaN(d)) return String(ts||''); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 function dashNoteSet(){ if(!DASH_PAY) return; const a=dashArgs(), b=DASH_BASIS==='ledger'?'원장(주문 원천)':DASH_BASIS==='dps'?'DPS 사원별 실적(실적일 기준)':'담당자 수기입력';
   const at=DASH_PAY.built_at ? dashHM(DASH_PAY.built_at) : (DASH_PAY.updated||'');

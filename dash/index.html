@@ -650,7 +650,7 @@ body{background:
   </section>
 
   <section class="step" data-title="사원" id="st-sec">
-    <div class="grid"><div class="card sp12">
+    <div class="grid"><div class="card sp12 fold" data-fk="o_staff" data-open="0">
       <div class="card-h"><h2>사원별 실적</h2><span class="note" id="st-note"></span></div>
       <div class="card-b"><div class="mx-scroll"><table class="tbl sttbl"><thead><tr>
         <th class="l">사원</th><th>실적</th><th>매장 일반</th><th>매장 구독</th><th>그 밖 채널</th><th class="hide-s">비중</th><th class="hide-s">전기</th><th>전기 대비</th>
@@ -781,7 +781,7 @@ const SHARE_URL = '__PASTE_ANYONE_DEPLOY_EXEC_URL__';
 /* 자체(Datacenter) 출처 — Supabase 공개키. 비밀번호는 서버(fn_dash_payload_pub)에서 검사한다 */
 const DC_URL = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_dash_payload_pub';
 const DC_ANON = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
-const DC_MONTHS = 24;   // 자체 모드로 불러올 기간(개월) — 전년 동기 비교를 위해 24 (2026-09-19)
+const DC_FROM = '2024-10-01';   // 자체 모드 시작일 = DPS 수집 시작 (2026-11-11 · "dps 수집해왔으니 2024년부터" — 전엔 최근 24개월 · 워머 f_dash_warm 에 같은 키 · f_dash_payload 상한 1500일)
 function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='manual'?'manual':v==='ledger'?'ledger':'dps'; }   /* 기본 = DPS 사원별 실적 (2026-11-06 · 전엔 원장). 원장은 ?mode=ledger · 수기입력은 대사표를 올렸을 때만 (2026-09-17) */
 const GAS_READY = SHARE_URL.indexOf('http')===0;   // 기존 app(GAS) 공유 주소가 실제로 설정돼 있는가
 function dashSrc(){ if(!GAS_READY){ try{ if(sessionStorage.getItem('dash_src')==='gas') sessionStorage.removeItem('dash_src'); }catch(e){} return 'dc'; }
@@ -1278,6 +1278,7 @@ function drawKpis(){
 /* ===== 사원별 실적 표 (DPS 기준일 때만 · mvp_248) — DPS 사원별목표/실적과 같은 합계, 구분은 판매번호의 DPS 채널 ===== */
 function drawStaff(){
   const tb=$('#strows'); if(!ST||!tb)return;
+  bindFolds($('#st-sec'));   /* 기본 접힘 (2026-11-11 · "사원별 실적은 접어두도록") */
   const key=mkey(), S=cur.st, P=prv?prv.st:null;
   let tot=0;S.forEach(s=>tot+=s[key]);
   const sg=v=>v===0?'–':(v<0?'−'+wonS(-v):wonS(v));
@@ -2492,12 +2493,12 @@ render();
     const sn=document.getElementById('srcnote');
     if(sn) sn.textContent='출처 · '+(src==='gas'
       ? '대시보드 v4 (기존 app · 구글시트 원본)'
-      : '현행 시스템 (Datacenter · 최근 '+DC_MONTHS+'개월 · '+(mode==='ledger'?'원장 기준':mode==='dps'?'DPS 사원별 실적 기준':'수기입력 기준')+')');
+      : '현행 시스템 (Datacenter · 2024-10 부터 · '+(mode==='ledger'?'원장 기준':mode==='dps'?'DPS 사원별 실적 기준':'수기입력 기준')+')');
   }
   function dcRange(){
-    const to=new Date(); const from=new Date(to.getFullYear(), to.getMonth()-DC_MONTHS+1, 1);
+    const to=new Date();
     const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    return {from:iso(from), to:iso(to)};
+    return {from:DC_FROM, to:iso(to)};
   }
   /* 사내 로그인(관리자 콘솔) 세션이 있으면 비밀번호 화면을 건너뛴다 */
   async function openWithSession(){
@@ -2527,10 +2528,9 @@ render();
         if(j.error){ err.className='err'; err.textContent='비밀번호가 올바르지 않습니다.'; pw.value=''; pw.focus(); busy=false; btn.disabled=false; return; }
         j.source='gas';
       } else {
-        const to=new Date(); const from=new Date(to.getFullYear(), to.getMonth()-DC_MONTHS+1, 1);
-        const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        const rg=dcRange();
         const r=await fetch(DC_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':DC_ANON,'Authorization':'Bearer '+DC_ANON},
-          body:JSON.stringify({p_pw:v,p_from:iso(from),p_to:iso(to),p_mode:dashBasis()})});
+          body:JSON.stringify({p_pw:v,p_from:rg.from,p_to:rg.to,p_mode:dashBasis()})});
         if(r.status===401||r.status===403||r.status===400){ const t=await r.text(); if(/unauthorized|권한/.test(t)){ err.className='err'; err.textContent='비밀번호가 올바르지 않습니다.'; pw.value=''; pw.focus(); busy=false; btn.disabled=false; return; } throw new Error('불러오지 못했습니다 ('+r.status+')'); }
         if(!r.ok){ let d=''; try{ d=(JSON.parse(await r.text()).message)||''; }catch(e){} throw new Error('불러오지 못했습니다 ('+r.status+')'+(d?' · '+d:'')); }
         j=await r.json(); if(typeof j==='string') j=JSON.parse(j);
