@@ -701,9 +701,15 @@ function main() {
     var cards = window.SUB_CARDS || {}, names = cardNames();
     h += '<section class="subtab-field"><div class="subtab-legend">카드 혜택' +
       (CFG.cardGuideUrl ? '<a href="' + esc(CFG.cardGuideUrl) + '" target="_blank">혜택 받는 방법</a>' : '') + '</div>' +
-      '<div class="subtab-card"><select data-card aria-label="제휴카드 선택"><option value="">제휴카드를 선택하세요</option>';
+      '<div class="subtab-card"><select data-card aria-label="제휴카드 선택"><option value="">제휴카드 없음 (카드 할인 없이 계산)</option>';
     names.forEach(function (n) { h += '<option value="' + esc(n) + '"' + (n === state.card ? ' selected' : '') + '>' + esc(n) + '</option>'; });
     h += '</select>';
+    // 제휴카드 없이 고른 경우도 화면에 분명히 (2026-11-11) — 카드를 고르면 얼마나 더 내려가는지 같이 보여 준다
+    if (!state.card || names.indexOf(state.card) < 0) {
+      var best = 0, bestName = '';
+      names.forEach(function (n) { var cd0 = cards[n]; if (!cd0 || !cd0.t) return; Object.keys(cd0.t).forEach(function (t) { var md = cardMonthly(n, t, r.monthlyPay).md || 0; if (md > best) { best = md; bestName = n; } }); });
+      h += '<p class="subtab-nocard"><b>제휴카드 없이 계산한 금액입니다</b>' + (best > 0 ? '<span>제휴카드를 고르면 월 최대 <em>' + fmt(best) + '원</em> 더 내려가요 (' + esc(bestName) + ' 기준)</span>' : '') + '</p>';
+    }
     if (state.card && cards[state.card] && names.indexOf(state.card) >= 0) {
       var cd = cards[state.card];
       h += '<p class="subtab-sub">' + esc(state.card) + ' 결제 시 (전월 실적)</p><select data-tier aria-label="전월 실적 구간">';
@@ -732,6 +738,7 @@ function main() {
     if (r.prepay) h += row('선납 할인 (선납 ' + Math.round(r.prepay * 100) + '% · ' + Math.round(r.prepayRate * 100) + '%)', '-' + fmt(r.prepayDisc) + '원', 'is-blue');
     h += row(esc(autopayLabel()), '-' + fmt(r.autoDisc) + '원', 'is-blue');
     if (r.cardTotal) h += row('제휴카드 혜택 (' + esc(state.card) + ')', '-' + fmt(r.cardTotal) + '원', 'is-blue');
+    else h += row('제휴카드 혜택', state.card && !state.cardOn ? '적용 안 함' : '제휴카드 없음', 'is-muted');
     var cash = r.ptMode === 'cash', sg = cash ? '+' : '-';
     h += row('결제 예상액' + (r.pointsAll && cash ? ' <small>실제 결제</small>' : ''), fmt(r.expected) + '원', r.pointsAll && !cash ? '' : 'is-total');
     if (r.pointsAll && cash) h += row('월 납부액 <small>실제 결제</small>', '월 ' + fmt(r.finalMonthly) + '원', 'is-strong');
