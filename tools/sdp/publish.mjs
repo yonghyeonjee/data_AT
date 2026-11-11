@@ -61,11 +61,14 @@ else {
   const h = createHash('md5'); for (const f of UI_FILES) if (fs.existsSync(`sdp/sub/${f}`)) h.update(fs.readFileSync(`sdp/sub/${f}`));
   let rank = null;   // 구독센터 인기순 (mvp_279) — 못 받으면 순위 없이 배포
   try { rank = await rpc('fn_sub_model_rank'); } catch (e) { console.log('계약 순위를 못 받았습니다 → 순위 없이:', e.message); }
-  const sub = buildSubFiles(rel, policy, dps, h.digest('hex').slice(0, 4), rank);
+  let cat = null, catErr = '';   // 카탈로그 일시불가 — 구독센터 카드 "일시불보다 ○○원 더 저렴" 계산에도 쓴다 (2026-11-10 · 못 받으면 문구 없이 배포)
+  try { cat = await rpc('fn_sub_catalog'); } catch (e) { catErr = e.message; }
+  const lumps = {}; for (const [m, c] of Object.entries(cat?.m || {})) if (c && c[3] > 0) lumps[m] = c[3];
+  const sub = buildSubFiles(rel, policy, dps, h.digest('hex').slice(0, 4), rank, lumps);
   // 구독센터 카탈로그(모델 → [고도몰 상품번호, 상품명, 사진, 일시불가, 사진출처]) 를 정적 파일로도 둔다 (2026-10-30)
   // 구독센터·구독 상품 페이지가 매번 RPC(1초 안팎)를 기다리지 않고 요금표와 같이 받는다. 못 받으면 이전 파일 유지 (화면은 RPC 로 되돌아간다)
   try {
-    const cat = await rpc('fn_sub_catalog');
+    if (catErr) throw new Error(catErr);
     if (cat && cat.m && Object.keys(cat.m).length > 100) {
       delete cat.ver;   // 호출 시각이라 매번 바뀐다 — 파일이 쓸데없이 바뀌지 않게 뺀다
       sub['sub_catalog.js'] = '// 구독센터 카탈로그 — 데이터센터 fn_sub_catalog 를 배포 때 받아 둔 사본 (tools/sdp/publish.mjs)\nwindow.SUB_CATALOG = ' + JSON.stringify(cat) + ';\n';

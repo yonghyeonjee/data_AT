@@ -48,7 +48,7 @@ class Site:
     def __init__(self, site, dir_, out):
         self.site, self.dir, self.out = site.rstrip('/'), dir_, out
         self.url = self.site + dir_
-        self.links = dict(homeUrl=dir_ + 'index.html', catUrl=dir_, cardUrl=dir_ + 'card.html', guideUrl=dir_ + 'guide.html',
+        self.links = dict(homeUrl=dir_ + 'index.html', catUrl=dir_, cardUrl=dir_ + 'card.html', guideUrl=dir_ + 'guide.html', eventUrl=dir_ + 'event.html',
                           findUrl=dir_ + 'find.html', viewUrl=dir_ + 'view.html?model=', viewStatic=dir_ + 'm/', guideDir=dir_ + 'g/', bundleUrl=dir_ + 'bundle.html', consultUrl=CONSULT)
 
     def remap(self, s):
@@ -56,7 +56,7 @@ class Site:
         s = s.replace(B.SITE + '/main/html.php?htmid=', '/main/html.php?htmid=')
         s = s.replace('/main/html.php?htmid=subscribe/sub_home.html', self.dir + 'index.html')
         s = re.sub(r'/main/html\.php\?htmid=subscribe/sub_c_(\w+)\.html', self.dir + r'\1.html', s)
-        s = re.sub(r'/main/html\.php\?htmid=subscribe/sub_(card|guide|find)\.html', self.dir + r'\1.html', s)
+        s = re.sub(r'/main/html\.php\?htmid=subscribe/sub_(card|guide|find|event)\.html', self.dir + r'\1.html', s)
         s = s.replace('/main/html.php?htmid=service/SamSungSubscription.html', CONSULT)
         assert 'htmid=subscribe' not in s, s[s.find('htmid=subscribe') - 80:][:200]
         return s
@@ -403,7 +403,7 @@ class Site:
         pages = []   # (파일, 내용, (우선순위, 주기))
         for fname, t, d, k, body, kind, key in B.page_list():
             new = 'index.html' if fname == 'sub_home.html' else re.sub(r'^sub_(c_)?', '', fname)
-            pri = {'home': ('1.0', 'daily'), 'cat': ('0.9', 'daily'), 'card': ('0.7', 'weekly'), 'guide': ('0.6', 'monthly')}[kind]
+            pri = {'home': ('1.0', 'daily'), 'cat': ('0.9', 'daily'), 'card': ('0.7', 'weekly'), 'guide': ('0.6', 'monthly'), 'event': ('0.8', 'daily')}[kind]
             pages.append((new, self.shop_page(new, t, d, k, body, kind, key), pri))
         pages.append(('bundle.html', self.bundle_page(), ('0.8', 'weekly')))
         pages.append(('find.html', self.find_page(), ('0.6', 'daily')))

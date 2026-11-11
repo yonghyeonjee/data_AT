@@ -346,6 +346,28 @@ def cat_body(key, name, kw, lead, points, faq):
 ''' % dict(dir=PAGE_DIR, name=e(name), lead=e(lead), points=''.join('<li>%s</li>' % e(p) for p in points), faq=faq_html(faq + COMMON_FAQ[:2]))
 
 
+def event_body():
+    return '''    <header class="ss-head">
+        <p class="ss-crumb"><a href="/main/html.php?htmid=%(dir)s/sub_home.html">구독센터</a> › 구독료 지원 이벤트</p>
+        <h1>구독료 지원 이벤트</h1>
+        <p class="ss-lead">행사 모델을 정해진 약정 기간으로 구독하면 구독료 몇 개월치에 해당하는 삼성전자 멤버십 포인트를 드립니다.
+            지원 개월 수와 품목을 골라 행사 모델을 비교해 보세요.</p>
+    </header>
+
+    <section class="ss-sec">
+        <div data-ss="event" data-n="12"></div>
+    </section>
+
+    <section class="ss-sec">
+        <h2>구독료 지원 이벤트, 자주 묻는 질문</h2>
+        %(faq)s
+    </section>
+''' % dict(dir=PAGE_DIR, faq=faq_html([
+        ('구독료 지원은 어떻게 받나요?', '행사 모델을 행사에서 정한 약정 기간으로 계약하면, 지원 개월 수만큼의 월 구독료에 해당하는 금액을 삼성전자 멤버십 포인트로 적립해 드립니다.'),
+        ('포인트는 어디에 쓸 수 있나요?', '적립된 삼성전자 멤버십 포인트는 구독료 결제에 나눠 쓰거나 삼성전자 제품 구매에 쓸 수 있습니다. 자세한 사용 방법은 상담 때 안내해 드립니다.'),
+        ('행사 기간이 지나면 어떻게 되나요?', '행사 기간 안에 신청하고 행사 조건(배송 기한 등)을 지킨 계약에만 적용됩니다. 신청 전에 상담으로 적용 여부를 꼭 확인해 주세요.')]))
+
+
 def card_body():
     return '''    <header class="ss-head">
         <p class="ss-crumb"><a href="/main/html.php?htmid=%(dir)s/sub_home.html">구독센터</a> › 제휴카드 혜택</p>
@@ -436,6 +458,9 @@ def page_list():
     files.append(('sub_card.html', '삼성 구독 제휴카드 할인 혜택 | ' + BRAND,
                   '삼성 가전 구독료를 제휴카드로 자동결제하면 매월 청구할인. 삼성카드·우리카드·KB국민카드·롯데카드·하나카드 등 카드별 실적 구간과 할인 금액을 비교하세요.',
                   '삼성 구독 카드 할인, 구독 제휴카드, 삼성카드 구독 할인, 삼성 AI 구독클럽 카드', card_body(), 'card', ''))
+    files.append(('sub_event.html', '삼성 구독료 지원 이벤트 · 구독료 지원 행사 모델 | ' + BRAND,
+                  '삼성 AI 구독클럽 구독료 지원 이벤트. 약정 기간에 따라 최대 6개월 구독료 상당 삼성전자 멤버십 포인트를 드리는 행사 모델을 품목별·월 구독료순으로 모았습니다.',
+                  '삼성 구독료 지원, 삼성 구독 이벤트, 삼성 AI 구독 페스티벌, 구독료 지원 모델, 삼성 가전 구독 행사, 삼성 AI 구독클럽', event_body(), 'event', ''))
     files.append(('sub_guide.html', '삼성 가전 구독 안내 · 자주 묻는 질문 | ' + BRAND,
                   '삼성 AI 구독클럽 이용 방법. 약정 기간, 케어 유형, 선납 할인, 제휴카드 할인으로 구독료가 정해지는 방식과 자주 묻는 질문을 정리했습니다.',
                   '삼성 구독 안내, 삼성 AI 구독클럽, 가전 구독 방법, 구독 선납 할인, 구독 해지', guide_body(), 'guide', ''))

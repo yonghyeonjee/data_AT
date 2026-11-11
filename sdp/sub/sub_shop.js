@@ -62,6 +62,8 @@ window.SUB_SHOP_READY = true;
     find: CFG.findUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_find.html',
     view: CFG.viewUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_view.html&model=',
     bundle: CFG.bundleUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_bundle.html',
+    // 이벤트(2026-11-11): 예전에 올린 정적 페이지 설정엔 eventUrl 이 없다 → 카드 혜택 주소 옆 event.html
+    event: CFG.eventUrl || (/card\.html$/.test(CFG.cardUrl || '') ? CFG.cardUrl.replace(/card\.html$/, 'event.html') : '/main/html.php?htmid=' + PAGE_DIR + 'sub_event.html'),
     b2b: CFG.b2bUrl || 'https://www.samsungsh.co.kr/board/view.php?&bdId=blog&sno=121',   // 사업자 구독 (시흥몰 B2B 구독 페스티벌 글 · 2026-11-04)
     consult: CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html'
   };
@@ -271,16 +273,21 @@ window.SUB_SHOP_READY = true;
     return v > 0 ? v : 0;
   }
   var TODAY = (function () { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
-  function promoMonths(m) {
-    var ps = (POL && POL.promos) || [], best = 0;
-    ps.forEach(function (p) {
-      if (!(p.months > 0) || (p.from && p.from > TODAY) || (p.to && p.to < TODAY)) return;
-      if (p.models && p.models.length && p.models.indexOf(m) < 0) return;
-      if (!p.models || !p.models.length) return;   // 품목 전체 행사는 상세에서 (카드에선 모델 지정 행사만)
-      if (p.months > best) best = p.months;
+  function livePromos() {
+    return ((POL && POL.promos) || []).filter(function (p) {
+      return p && p.months > 0 && !p.hidden && !(p.from && p.from > TODAY) && !(p.to && p.to < TODAY) && p.models && p.models.length;   // 품목 전체 행사는 상세에서 (카드에선 모델 지정 행사만)
+    });
+  }
+  // 이 모델의 구독료 지원 — 개월 수가 가장 많은 행사 { months, term: '6년'·'최장' … , p }
+  function promoOf(m) {
+    var best = null;
+    livePromos().forEach(function (p) {
+      if (p.models.indexOf(m) < 0) return;
+      if (!best || p.months > best.months) best = { months: p.months, term: (/(\d+년|최장) 약정/.exec(p.text || '') || [])[1] || '', p: p };
     });
     return best;
   }
+  function promoMonths(m) { var o = promoOf(m); return o ? o.months : 0; }
   // 삼성닷컴 후기 별점 — sub_reviews.js 를 HTML 이 안 실어도 받아 와서 이미 그린 카드에 배지를 붙인다 (2026-11-04)
   function loadReviews() {
     if (window.SUB_REVIEWS || loadReviews.on || !CFG.dataBase && !document.querySelector('.ss-card')) return;
@@ -302,12 +309,27 @@ window.SUB_SHOP_READY = true;
     setTimeout(loadReviews, 0);
     var out = [], pts = pointOf(r.model), pm = promoMonths(r.model), rv = window.SUB_REVIEWS && window.SUB_REVIEWS.m && window.SUB_REVIEWS.m[r.model];
     if (CARD1 && net === 0) out.push('<span class="ss-perk is-zero">최대혜택 월 0원</span>');
-    if (pm) out.push('<span class="ss-perk is-promo">구독료 지원 ' + pm + '개월</span>');
+
     if (rv && rv[1] >= 3) out.push('<span class="ss-perk is-rv">★ ' + (+rv[0]).toFixed(1) + ' <small>후기 ' + fmt(rv[1]) + '</small></span>');
     if (pts >= 1000) out.push('<span class="ss-perk">멤버십 ' + (pts >= 10000 ? fmt(Math.floor(pts / 1000) * 1000) : fmt(pts)) + 'P 적립</span>');
     return out.length ? '<span class="ss-perks">' + out.join('') + '</span>' : '';
   }
 
+  /* 일시불보다 얼마나 저렴한지 (2026-11-10) — SUB_INDEX.save[모델] = 시흥몰 일시불가 − 구독 실제 부담 최솟값 (구독탭 절감액과 같은 식 · build_sub.mjs bestNet)
+     구독이 더 저렴한 모델만 값이 있다. 색상이 여럿이면 값이 있는 색상 중 가장 작은 금액 */
+  function saveOf(r) {
+    var S = IDX.save || {}, list = r.variants || [r], v = 0;
+    list.forEach(function (x) { var a = S[x.model]; if (a > 0 && (!v || a < v)) v = a; });
+    return v;
+  }
+  function saveShort(v) { return v >= 10000 ? fmt(Math.floor(v / 10000)) + '만원' : fmt(v) + '원'; }   // 좁은 화면용 (내림)
+  function saveNote(list) {
+    return list.some(saveOf) ? '<p class="ss-save-note">일시불 비교는 시흥몰 판매가 기준이며, 자동납부·제휴카드 청구할인(전월 실적 충족 시)·적립 포인트를 반영한 선납 없음 기준 최대 금액입니다.</p>' : '';
+  }
+  function supHtml(r, medium) {
+    var o = promoOf(r.model); if (!o) return '';
+    return '<span class="ss-sup' + (medium === 'event' ? ' is-ev' : '') + '">구독료 지원 <b>' + o.months + '개월</b><small>' + (medium === 'event' && o.term ? esc(o.term) + ' 약정 시 포인트' : '상당 멤버십 포인트') + '</small></span>';
+  }
   /* ---------- 조각 ---------- */
   function priceHtml(r) {
     var net = cardNet(r);
@@ -317,8 +339,9 @@ window.SUB_SHOP_READY = true;
   function card(r, medium) {
     var p = pageOf(r), fam = r.variants && r.variants.length > 1 ? r.variants : null;
     return '<li class="ss-card' + (window.SUB_CART.has(r.model) ? ' in-cart' : '') + '"><a class="ss-card-link" href="' + esc(viewHref(r.model, medium)) + '" data-cta="view" data-model="' + esc(r.model) + '">' +
+      (saveOf(r) ? '<span class="ss-save">일시불보다 <b class="ss-save-f">' + fmt(saveOf(r)) + '원</b><b class="ss-save-s">' + saveShort(saveOf(r)) + '</b> <i>더 </i>저렴</span>' : '') +
       (fam ? '<span class="ss-fam">색상 ' + fam.length + '종</span>' : '') +
-      '<span class="ss-img">' + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
+      '<span class="ss-img">' + supHtml(r, medium) + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
         (r.imgRep ? '<span class="ss-imgnote">대표 이미지</span>' : '') : '<span class="ss-icon" aria-hidden="true">' + (p ? p.icon : '📦') + '</span>') + '</span>' +
       '<span class="ss-meta">' + esc(p ? p.name : IDX.cats[r.cat]) + (r.seg ? ' · ' + esc(segShort(r.seg)) : '') + '</span>' +
       '<strong class="ss-name">' + esc(displayName(r)) + '</strong>' +
@@ -388,8 +411,70 @@ window.SUB_SHOP_READY = true;
       '<div class="ss-filter ss-hb-sort" role="group" aria-label="정렬">' + HSORTS.map(function (s) {
         return '<button type="button" data-hsort="' + s[0] + '" aria-pressed="' + (HB.s === s[0]) + '">' + (s[0] === 'pop' && !hasRank ? '추천순' : s[1]) + '</button>';
       }).join('') + '</div></div>' +
-      '<ul class="ss-grid">' + show.map(function (r) { return card(r, 'band'); }).join('') + '</ul>' +
+      '<ul class="ss-grid">' + show.map(function (r) { return card(r, 'band'); }).join('') + '</ul>' + saveNote(show) +
       (list.length > show.length ? '<p class="ss-more ss-more-c"><button type="button" class="ss-hb-more" data-hmore>더 보기 (' + fmt(show.length) + ' / ' + fmt(list.length) + ')</button></p>' : '');
+    if (scroll) { var now = el.querySelector('.ss-hb-cats'); if (now) now.scrollLeft = scroll; }
+  }
+
+  /* ---------- 이벤트: 구독료 지원 행사 모델 (2026-11-11) ----------
+     data-ss="event" — SUB_POLICY.promos 중 지금 기간 안 · 모델 지정 행사(N개월 구독료 상당 포인트)의 모델을
+     지원 개월 수 탭(6개월 · 3개월 …) × 품목 칩 × 정렬(인기순·낮은 가격순·높은 가격순)으로. 색상만 다른 모델은 하나로 */
+  var EV = { k: '', c: '', s: 'pop', more: 0 };
+  function evDate(d) { var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(d || ''); return m ? (+m[2]) + '월 ' + (+m[3]) + '일' : ''; }
+  function drawEvent(el) {
+    var ps = livePromos();
+    var all = groupColors(rows.filter(function (r) { return !!promoOf(r.model); }));
+    all.forEach(function (r) { var b = 0; (r.variants || [r]).forEach(function (v) { b = Math.max(b, promoMonths(v.model)); }); r.evM = b; });
+    if (!ps.length || !all.length) {
+      el.innerHTML = '<p class="ss-empty">지금 진행 중인 구독료 지원 행사가 없습니다. <a href="' + esc(LINK.home) + '">구독센터 홈에서 다른 혜택 보기</a></p>';
+      return;
+    }
+    var ms = []; all.forEach(function (r) { if (ms.indexOf(r.evM) < 0) ms.push(r.evM); }); ms.sort(function (a, b) { return b - a; });
+    if (!EV.k || ms.indexOf(+EV.k) < 0) EV.k = String(ms[0]);
+    var inK = function (r) { return EV.k === 'all' || r.evM === +EV.k; };
+    if (EV.c && !all.some(function (r) { return inK(r) && hbKey(r) === EV.c; })) EV.c = '';
+    var catN = {}, kTotal = 0, hasRank = all.some(function (r) { return popRank(r) < 1e9; });
+    all.forEach(function (r) { if (inK(r)) { var k = hbKey(r); catN[k] = (catN[k] || 0) + 1; kTotal++; } });
+    var list = all.filter(function (r) { return inK(r) && (!EV.c || hbKey(r) === EV.c); }).sort(function (a, b) {
+      if (EV.s === 'low') return a.min - b.min || score(b) - score(a);
+      if (EV.s === 'high') return b.min - a.min || score(b) - score(a);
+      return popRank(a) - popRank(b) || score(b) - score(a) || a.min - b.min;
+    });
+    var n = (+el.getAttribute('data-n') || 12) + EV.more, show = list.slice(0, n), cat = PAGE_BY[EV.c];
+    // 행사 기간 · 조건 (같은 문구는 한 번만 · 괄호 안 배송 조건 등은 따로)
+    // 약정 조건별로 묶기: { '6년': [6, 3], '5년': [6], … } · 괄호 안 배송 기한 같은 조건은 따로 (기간·약정 글은 빼고)
+    var from = '', to = '', terms = {}, order = [], notes = [];
+    ps.forEach(function (p) {
+      if (p.from && (!from || p.from < from)) from = p.from;
+      if (p.to && (!to || p.to > to)) to = p.to;
+      var t = String(p.text || ''), term = (/(\d+년|최장) 약정/.exec(t) || [])[1] || '';
+      if (term) { if (!terms[term]) { terms[term] = []; order.push(term); } if (terms[term].indexOf(p.months) < 0) terms[term].push(p.months); }
+      (/\(([^)]*)\)\s*$/.exec(t) || ['', ''])[1].split('·').forEach(function (x) {
+        x = x.replace(/^\s+|\s+$/g, ''); if (x && !/약정|^~/.test(x) && notes.indexOf(x) < 0) notes.push(x);
+      });
+    });
+    order.sort(function (a, b) { return (parseInt(b, 10) || 0) - (parseInt(a, 10) || 0); });   // 6년 · 5년 · 4년 · 최장
+    var conds = order.map(function (k) { return '<b>' + esc(k) + ' 약정</b> 시 ' + terms[k].sort(function (a, b) { return b - a; }).map(function (m) { return m + '개월'; }).join(' 또는 ') + ' 구독료 지원'; });
+    var old = el.querySelector('.ss-hb-cats'), scroll = old ? old.scrollLeft : 0;
+    el.innerHTML = '<div class="ss-ev-info"><p class="ss-ev-period"><b>행사 기간</b> ' + (from ? evDate(from) : '') + ' ~ ' + (to ? evDate(to) : '') +
+        (notes.length ? ' <small>· ' + esc(notes.join(' · ')) + '</small>' : '') + '</p>' +
+        '<ul class="ss-ev-conds">' + conds.map(function (c) { return '<li>' + c + '</li>'; }).join('') + '</ul>' +
+        '<p class="ss-ev-how">모델마다 약정 기간과 지원 개월 수가 정해져 있습니다. 지원 금액은 월 구독료 × 지원 개월 수만큼의 삼성전자 멤버십 포인트입니다.</p></div>' +
+      '<div class="ss-filter ss-ev-tabs" role="group" aria-label="구독료 지원 개월 수">' + ms.map(function (k) {
+        var c = all.filter(function (r) { return r.evM === k; }).length;
+        return '<button type="button" data-evm="' + k + '" aria-pressed="' + (EV.k === String(k)) + '">' + k + '개월 구독료 지원 <small>' + fmt(c) + '</small></button>';
+      }).join('') + (ms.length > 1 ? '<button type="button" data-evm="all" aria-pressed="' + (EV.k === 'all') + '">전체 <small>' + fmt(all.length) + '</small></button>' : '') + '</div>' +
+      '<div class="ss-filter ss-hb-cats" role="group" aria-label="품목"><button type="button" data-evc="" aria-pressed="' + !EV.c + '">전체 품목 <small>' + fmt(kTotal) + '</small></button>' +
+      PAGES.map(function (p) {
+        return catN[p.key] ? '<button type="button" data-evc="' + p.key + '" aria-pressed="' + (EV.c === p.key) + '">' + esc(p.name) + ' <small>' + fmt(catN[p.key]) + '</small></button>' : '';
+      }).join('') + '</div>' +
+      '<div class="ss-hb-bar"><p class="ss-summary ss-hb-sum"><b>' + (EV.k === 'all' ? '구독료 지원' : EV.k + '개월 구독료 지원') + (cat ? ' · ' + esc(cat.name) : '') + '</b> 모델 <b>' + fmt(list.length) + '</b>개 <small>(색상만 다른 모델은 하나로' + (EV.s === 'pop' && hasRank ? ' · 인기순은 최근 1년 구독 계약 기준' : '') + ')</small></p>' +
+      '<div class="ss-filter ss-hb-sort" role="group" aria-label="정렬">' + HSORTS.map(function (s) {
+        return '<button type="button" data-evs="' + s[0] + '" aria-pressed="' + (EV.s === s[0]) + '">' + (s[0] === 'pop' && !hasRank ? '추천순' : s[1]) + '</button>';
+      }).join('') + '</div></div>' +
+      '<ul class="ss-grid">' + show.map(function (r) { return card(r, 'event'); }).join('') + '</ul>' + saveNote(show) +
+      '<p class="ss-ev-note">카드 사진 위 배지의 약정 기간으로 계약해야 구독료 지원 포인트가 적립됩니다. 모델별 금액은 상품 화면 구독 계산기에서 확인할 수 있습니다.</p>' +
+      (list.length > show.length ? '<p class="ss-more ss-more-c"><button type="button" class="ss-hb-more" data-evmore>더 보기 (' + fmt(show.length) + ' / ' + fmt(list.length) + ')</button></p>' : '');
     if (scroll) { var now = el.querySelector('.ss-hb-cats'); if (now) now.scrollLeft = scroll; }
   }
 
@@ -405,7 +490,7 @@ window.SUB_SHOP_READY = true;
   }
   function drawNav(el) {
     var cur = CFG.page === 'cat' || CFG.page === 'view' ? CFG.key : CFG.page;
-    var top = [['home', '구독 홈', LINK.home], ['bundle', '다품목 계산기', LINK.bundle, true], ['card', '카드 혜택', LINK.card], ['guide', '구독 안내', LINK.guide], ['find', '상품 찾기', LINK.find], ['b2b', '사업자 구독', LINK.b2b]];
+    var top = [['home', '구독 홈', LINK.home], ['event', '이벤트', LINK.event], ['bundle', '다품목 계산기', LINK.bundle, true], ['card', '카드 혜택', LINK.card], ['guide', '구독 안내', LINK.guide], ['find', '상품 찾기', LINK.find], ['b2b', '사업자 구독', LINK.b2b]];
     var h = '<nav class="ss-nav" aria-label="구독센터 메뉴"><div class="ss-nav-top">' +
       '<a class="ss-brand" href="' + esc(LINK.home) + '">삼성스토어 시흥 <b>구독센터</b></a>' +
       '<div class="ss-nav-links">' + top.map(function (t) {
@@ -449,13 +534,13 @@ window.SUB_SHOP_READY = true;
   function drawPick(el) {
     var p = PAGE_BY[el.getAttribute('data-key')]; if (!p) return;
     var n = +el.getAttribute('data-n') || 4, list = picks(rowsOf(p), n);
-    el.innerHTML = list.length ? '<ul class="ss-grid">' + list.map(function (r) { return card(r, 'pick'); }).join('') + '</ul>' +
+    el.innerHTML = list.length ? '<ul class="ss-grid">' + list.map(function (r) { return card(r, 'pick'); }).join('') + '</ul>' + saveNote(list) +
       '<p class="ss-more"><a href="' + esc(catHref(p.key)) + '">' + esc(p.name) + ' 구독 ' + fmt(rowsOf(p).length) + '개 모델 전체 보기 →</a></p>' : '';
   }
   function drawPopular(el) {
     var out = [];
     PAGES.forEach(function (p) { var r = picks(rowsOf(p), 1)[0]; if (r && r.name) out.push(r); });
-    el.innerHTML = '<ul class="ss-grid">' + out.slice(0, +el.getAttribute('data-n') || 12).map(function (r) { return card(r, 'popular'); }).join('') + '</ul>';
+    el.innerHTML = '<ul class="ss-grid">' + out.slice(0, +el.getAttribute('data-n') || 12).map(function (r) { return card(r, 'popular'); }).join('') + '</ul>' + saveNote(out.slice(0, +el.getAttribute('data-n') || 12));
   }
   function drawCards(el) {
     if (!CARDS) { el.innerHTML = ''; return; }
@@ -556,7 +641,7 @@ window.SUB_SHOP_READY = true;
       var list = groupColors(rowsOf(p).filter(function (r) { return !band || (r.min >= band[2] && r.min <= band[3]); }))
         .sort(function (a, b) { return (QZ.s === 'high' ? b.min - a.min : a.min - b.min) || score(b) - score(a); });
       h += '<p class="ss-qz-res"><b>' + esc(p.name) + '</b>' + (band ? ' · ' + esc(band[1]) : '') + ' 구독 모델 <b>' + fmt(list.length) + '</b>개' + (list.length ? ' 중 추천' : '') + '</p>';
-      h += list.length ? '<ul class="ss-grid">' + list.slice(0, 4).map(function (r) { return card(r, 'quiz'); }).join('') + '</ul>'
+      h += list.length ? '<ul class="ss-grid">' + list.slice(0, 4).map(function (r) { return card(r, 'quiz'); }).join('') + '</ul>' + saveNote(list.slice(0, 4))
         : '<p class="ss-qz-wait">이 예산에 맞는 ' + esc(p.name) + ' 구독 모델이 없습니다. 예산을 바꿔 보시거나 상담으로 문의해 주세요.</p>';
       h += '<p class="ss-qz-go"><a class="ss-btn" href="' + esc(consultHref(list[0] || null, 'quiz')) + '" data-cta="consult">이 조건으로 상담 받기</a>' +
         '<a class="ss-btn-line" href="' + esc(withQ(LINK.find, 'cat=' + p.cats[0] + (QZ.b ? '&max=' + QZ.b : '') + '&sort=' + QZ.s)) + '" data-cta="quiz-find">조건 그대로 전체 보기 →</a></p>';
@@ -693,7 +778,7 @@ window.SUB_SHOP_READY = true;
       }).join('') +
       '<label class="ss-group"><input type="checkbox" data-group' + (LIST.group ? ' checked' : '') + '> 색상만 다른 모델은 하나로</label>' +
       '<select data-sort aria-label="정렬"><option value="rec"' + (LIST.sort === 'rec' ? ' selected' : '') + '>추천순</option><option value="low"' + (LIST.sort === 'low' ? ' selected' : '') + '>월 구독료 낮은순</option><option value="high"' + (LIST.sort === 'high' ? ' selected' : '') + '>월 구독료 높은순</option><option value="model"' + (LIST.sort === 'model' ? ' selected' : '') + '>모델명순</option></select></div>' +
-      (list.length ? '<ul class="ss-grid">' + list.map(function (r) { return card(r, 'list'); }).join('') + '</ul>'
+      (list.length ? '<ul class="ss-grid">' + list.map(function (r) { return card(r, 'list'); }).join('') + '</ul>' + saveNote(list)
         : '<p class="ss-empty">조건에 맞는 모델이 없습니다.</p>');
   }
 
@@ -714,6 +799,7 @@ window.SUB_SHOP_READY = true;
     if (CFG.page === 'cat' && p) crumbs.push({ name: p.name + ' 구독', url: catHref(p.key) });
     if (CFG.page === 'card') crumbs.push({ name: '제휴카드 혜택', url: LINK.card });
     if (CFG.page === 'guide') crumbs.push({ name: '구독 안내', url: LINK.guide });
+    if (CFG.page === 'event') crumbs.push({ name: '구독료 지원 이벤트', url: LINK.event });
     ld({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: crumbs.map(function (c, i) {
       return { '@type': 'ListItem', position: i + 1, name: c.name, item: abs(c.url) };
     }) });
@@ -746,7 +832,7 @@ window.SUB_SHOP_READY = true;
 
   /* ---------- 시작 ---------- */
   var DRAW = { nav: drawNav, search: drawSearch, cats: drawCats, pick: drawPick, popular: drawPopular, cards: drawCards, persona: drawPersona,
-    cardtable: drawCardTable, list: drawList, related: drawRelated, cta: drawCta, bands: drawBands, hot: drawHot, quiz: drawQuiz, trust: drawTrust };
+    cardtable: drawCardTable, list: drawList, related: drawRelated, cta: drawCta, bands: drawBands, hot: drawHot, quiz: drawQuiz, trust: drawTrust, event: drawEvent };
   function draw(kinds) {
     $all('[data-ss]').forEach(function (el) {
       var k = el.getAttribute('data-ss');
@@ -767,6 +853,10 @@ window.SUB_SHOP_READY = true;
     else if (t.hasAttribute('data-hcat')) { HB.c = t.getAttribute('data-hcat'); HB.more = 0; draw(['bands']); track('ss_hband', { ss_cat: HB.c }); }
     else if (t.hasAttribute('data-hsort')) { HB.s = t.getAttribute('data-hsort'); HB.more = 0; draw(['bands']); track('ss_hband', { ss_sort: HB.s }); }
     else if (t.hasAttribute('data-hmore')) { HB.more += 8; draw(['bands']); }
+    else if (t.hasAttribute('data-evm')) { EV.k = t.getAttribute('data-evm'); EV.more = 0; draw(['event']); track('ss_event', { ss_months: EV.k }); }
+    else if (t.hasAttribute('data-evc')) { EV.c = t.getAttribute('data-evc'); EV.more = 0; draw(['event']); track('ss_event', { ss_cat: EV.c }); }
+    else if (t.hasAttribute('data-evs')) { EV.s = t.getAttribute('data-evs'); EV.more = 0; draw(['event']); track('ss_event', { ss_sort: EV.s }); }
+    else if (t.hasAttribute('data-evmore')) { EV.more += 12; draw(['event']); }
     else if (t.hasAttribute('data-cta')) track('ss_click', { ss_cta: t.getAttribute('data-cta'), ss_model: t.getAttribute('data-model') || '' });
   }
   function start() {
@@ -800,7 +890,7 @@ window.SUB_SHOP_READY = true;
     }
     CARD1 = cardInfo();
     buildRows();
-    draw(['nav', 'search', 'cta', 'cards', 'cardtable', 'persona', 'bands', 'hot', 'quiz', 'trust']);   // 요금표 없이 그릴 수 있는 것 먼저
+    draw(['nav', 'search', 'cta', 'cards', 'cardtable', 'persona', 'bands', 'hot', 'quiz', 'trust', 'event']);   // 요금표 없이 그릴 수 있는 것 먼저
     drawBubble();
     // 세부유형 이름은 요금표(sub_plans_<품목>.js)에 있다 — 품목 페이지는 그 품목만,
     // 홈은 세부유형으로 나뉘는 품목(의류케어·조리기기)만 받는다 (전부 받으면 400KB)
@@ -808,7 +898,7 @@ window.SUB_SHOP_READY = true;
     if (CFG.page === 'cat' && p) cats = p.cats;
     else if (CFG.page === 'home') PAGES.forEach(function (q) { if (q.seg) q.cats.forEach(function (c) { if (cats.indexOf(c) < 0) cats.push(c); }); });
     loadCats(cats, function () {
-      draw(['cats', 'pick', 'popular', 'list', 'related', 'bands', 'hot', 'quiz']);   // bands: 세부유형 이름이 생겨 다시
+      draw(['cats', 'pick', 'popular', 'list', 'related', 'bands', 'hot', 'quiz', 'event']);   // bands: 세부유형 이름이 생겨 다시
       setMeta();
       addLd();
       track('ss_view');

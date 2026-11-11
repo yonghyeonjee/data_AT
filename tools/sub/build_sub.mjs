@@ -78,6 +78,42 @@ export function dpsFromRows(rows, meta) {
   return { fetch_id: meta?.fetched_at || '', fetched_at: meta?.fetched_at || '', fetch_rows: rows.length, rows: rows.length, models: new Set(rows.map(r => r.model)).size, items };
 }
 
+const discountOf = (total, rate, months) => Math.round(Math.ceil(Math.round(total * rate / 1.1 / months * 1e6) / 1e6 / 100) * 100 * months * 1.1);   // sub_tab.js calcDiscount
+/* 일시불 대비 절감액용 — 요금제별 "포인트까지 뺀 실제 부담"의 최솟값 (2026-11-10 · 구독센터 카드 "일시불보다 ○○원 더 저렴")
+   sub_tab.js calc() 의 기본 조건(선납 없음 · 기본 카드 · 포인트 나눠 쓰기)과 같은 식 — 상품 구독탭의 bestSaving 과 숫자가 맞아야 한다 */
+export function bestNet(model, rec, cat, policy, CARD, today) {
+  const pol = policy || {}, df = pol.defaults || {}, rate = pol.autopay?.rate ?? 0.05, p = rec.p || [];
+  const inPeriod = o => !(o.hidden || (o.from && today < o.from) || (o.to && today > o.to));
+  const cname = df.card && CARD[df.card] && (!pol.cards?.[df.card] || inPeriod(pol.cards[df.card])) ? df.card : '';
+  const cd = cname ? CARD[cname] : null;
+  let tier = '';
+  if (cd) {
+    let want = df.tier || '', len = -1;
+    for (const [k, v] of Object.entries(df.tierByModel || {})) { const n = norm(k); if (n && model.startsWith(n) && n.length > len) { want = String(v || ''); len = n.length; } }
+    tier = Object.keys(cd.t).includes(want) ? want : Object.keys(cd.t)[0];
+  }
+  const promos = (pol.promos || []).filter(x => x && inPeriod(x)
+    && (!x.malls?.length || x.malls.includes('sh')) && (!x.cats?.length || x.cats.includes(cat))
+    && (!x.models?.length || x.models.map(norm).includes(model)) && !x.goods?.length
+    && (x.months > 0 || x.amount > 0 || (x.amounts && typeof x.amounts === 'object')));
+  const my = Math.max(...p.map(x => x[0])), pt = pol.points?.[model];
+  let best = Infinity;
+  for (const plan of p) {
+    const [y, care, total, monthly] = plan, months = y * 12, w = rec.w && rec.w[`${y}_${care}`];
+    const auto = w ? w[0] : discountOf(total, rate, months);
+    let md = 0;
+    if (cd) { md = cd.t[tier] || 0; if (cd.minMonthly?.[tier] && monthly < cd.minMonthly[tier]) md = cd.base ? (cd.base[tier] || md) : md; }
+    const pay = (total - auto) / months, card = Math.min(md, Math.max(0, pay)), M = Math.max(0, pay - card);
+    const expected = total - auto - Math.round(card * months);
+    let promo = 0;
+    for (const x of promos) { if (x.maxTerm !== false && y !== my) continue; const a = (x.amounts && +x.amounts[model]) || (+x.amount) || (x.months > 0 ? Math.round(x.months * monthly) : 0); if (a > promo) promo = a; }
+    const mp = pt ? Math.max(0, Math.floor(total * ((+pt.rate || 0) + (+pt.base || 0)) / 100) + (+pt.add || 0)) : 0;
+    const P = promo + mp, valid = Math.min(months, 36);
+    best = Math.min(best, expected - Math.min(P, Math.round(Math.min(P, M * valid))));
+  }
+  return best;
+}
+
 // 자동납부 할인 반영 총구독료 — calc_subscribe / sub_tab.js 의 calcDiscount 와 같은 식 (ROUNDUP(total×rate/1.1/months,-2)×months×1.1)
 export function netTotal(plan, autopay) {
   const [years, , total] = plan, months = years * 12;
@@ -188,7 +224,7 @@ export function applyOverrides(DATA, ov) {
    dps: fn_sub_dps_export 응답 (있으면 요금표 원본 · 없으면 SDP 판의 DATA 로)
    ui: 화면 파일(sub_tab.js 등) 해시 — 판 번호 끝에 '+u<해시>' 로 붙여 화면만 고쳐도 상세페이지가 새 파일을 받게 한다 (?v=판 번호)
    → { 'sub_index.js': '…', 'sub_plans_tv.js': '…', …, 'sub_cards.js', 'sub_policy.js', 'version.js' } */
-export function buildSubFiles(rel, policy, dps, ui, rank) {
+export function buildSubFiles(rel, policy, dps, ui, rank, lumps) {
   const CARD = varOf(rel, 'CARD') || {}, WATER = varOf(rel, 'WATER_POLICY') || {};
   let DATA, PREPAY_NO, src, dup = 0;
   if (dps && dps.items) { ({ DATA, PREPAY_NO, dup } = dpsToData(dps)); src = `DPS 수집 ${dps.fetch_id || ''}`; }
@@ -201,7 +237,8 @@ export function buildSubFiles(rel, policy, dps, ui, rank) {
   const autopay = policy?.autopay?.rate ?? 0.05;
   const ver = rel.ver + (policy?.ver ? '+' + policy.ver : '') + (dps ? '+' + dpsVer(dps) : '') + (ui ? '+u' + ui : '');
   const head = `/* 상품상세 구독탭 데이터 | 데이터센터 배포판 ${ver} (db.samsungat.co.kr/sdp/sub · 요금표 원본 ${src} · 카드표 SDP 판 ${rel.ver} · 정책 sub.policy — 직접 고치지 마세요) */\n`;
-  const out = {}, index = {}, cats = {}, missing = [];
+  const out = {}, index = {}, cats = {}, missing = [], save = {};
+  const kst = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const noPre = new Set(PREPAY_NO.map(norm));
   for (const [cat, models] of Object.entries(DATA)) {
     if (!models || !Object.keys(models).length) continue;
@@ -224,10 +261,11 @@ export function buildSubFiles(rel, policy, dps, ui, rank) {
       const cheap = p.reduce((a, x) => (x[3] < a[3] || (x[3] === a[3] && x[2] < a[2])) ? x : a, p[0]);
       index[m] = [key, Math.min(...p.map(x => x[3])), Math.min(...p.map(x => netTotal(x, autopay))), cheap[2]];
       if (rank && rank[m] > 0) index[m].push(rank[m]);   // 5번째: 최근 12개월 구독 계약 순위 (구독센터 인기순 · mvp_279 · 계약 없으면 없음)
+      if (lumps && lumps[m] > 0) { const sv = lumps[m] - bestNet(m, rec, cat, policy, CARD, kst); if (sv > 0) save[m] = sv; }   // 일시불(시흥몰 판매가)보다 저렴할 때만
     }
     out[`sub_plans_${key}.js`] = head + `(window.SUB_PLANS=window.SUB_PLANS||{})[${JSON.stringify(key)}]=${JSON.stringify(plans)};\n`;
   }
-  out['sub_index.js'] = head + `window.SUB_INDEX=${JSON.stringify({ ver, src: dps ? 'dps' : 'sdp', cats, m: index })};\n`;
+  out['sub_index.js'] = head + `window.SUB_INDEX=${JSON.stringify({ ver, src: dps ? 'dps' : 'sdp', cats, m: index, ...(Object.keys(save).length ? { save } : {}) })};\n`;
   out['sub_cards.js'] = head + `window.SUB_CARDS=${JSON.stringify(CARD)};\n`;
   if (policy) out['sub_policy.js'] = head + `window.SUB_POLICY=${JSON.stringify(policy)};\n`;
   out['version.js'] = `/* 상품상세 구독탭 데이터 판 — goods_view 가 5분마다 이 파일로 최신 판을 확인합니다 */\nvar SUB_VER = ${JSON.stringify(ver)};\nvar SUB_SDP_VER = ${JSON.stringify(rel.ver)};\nvar SUB_POLICY_VER = ${JSON.stringify(policy?.ver || '')};\nvar SUB_PUBLISHED_AT = ${JSON.stringify(rel.published_at || '')};\nvar SUB_DPS_VER = ${JSON.stringify(dps ? dpsVer(dps) : '')};\nvar SUB_MODELS = ${Object.keys(index).length};\n`;
