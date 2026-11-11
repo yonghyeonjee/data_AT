@@ -270,6 +270,7 @@ class Site:
     def inject_home(body, persona, band):
         # 홈: "품목별 대표 구독 모델" 앞에 다품목 띠, 그 뒤에 생활 유형별 추천
         marker = '    <section class="ss-sec">\n        <h2>품목별 대표 구독 모델</h2>'
+        if 'id="bundle"' in body: return body   # 2026-11-11 새 홈은 다품목 띠·추천 묶음을 본문에 직접 넣는다
         assert marker in body, '홈 본문 구조가 바뀌었습니다'
         i = body.index(marker)
         j = body.index('    </section>', i) + len('    </section>\n')

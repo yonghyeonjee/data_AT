@@ -374,8 +374,15 @@ window.SUB_SHOP_READY = true;
   var HBANDS = [['u10', '월 1만원 미만', 0, 9999], ['u20', '월 1만 ~ 2만원', 10000, 19999], ['u40', '월 2만 ~ 4만원', 20000, 39999],
     ['u60', '월 4만 ~ 6만원', 40000, 59999], ['u100', '월 6만 ~ 10만원', 60000, 99999], ['over', '월 10만원 이상', 100000, 1e12]];
   var HB_ALL = ['', '전체 가격', 0, 1e12];
-  var HSORTS = [['pop', '인기순'], ['low', '낮은 가격순'], ['high', '높은 가격순']];
-  var HB = { k: 'u40', c: '', s: 'pop', more: 0 };
+  // 최신순(2026-11-11 · 사용자: 최신 제품들로 보여주면 좋겠어) — 제품 이름의 연식(2026·2025 …)이 높은 것부터, 같으면 인기순
+  var HSORTS = [['new', '최신순'], ['pop', '인기순'], ['low', '낮은 가격순'], ['high', '높은 가격순']];
+  var HB = { k: 'u40', c: '', s: 'new', more: 0 };
+  // 연식: 이름의 '2026'·'2025' … (색상만 다른 모델은 그중 가장 최신) · 없으면 0
+  function yearOf(r) {
+    var y = 0;
+    (r.variants || [r]).forEach(function (v) { var m = /20(1\d|2\d)/.exec(v.name || ''); if (m && +m[0] > y) y = +m[0]; });
+    return y;
+  }
   function hbKey(r) { var p = pageOf(r); return p ? p.key : ''; }
   // 색상만 다른 모델은 그중 가장 높은 순위로 (계약 이력이 없으면 맨 뒤)
   function popRank(r) {
@@ -393,20 +400,24 @@ window.SUB_SHOP_READY = true;
     var band = bandOf(HB.k), catN = {}, bandTotal = 0, hasRank = all.some(function (r) { return popRank(r) < 1e9; });   // 순위를 못 받은 판이면 '인기순'이라 부르지 않는다
     all.forEach(function (r) { if (inB(r, band)) { var k = hbKey(r); catN[k] = (catN[k] || 0) + 1; bandTotal++; } });
     var list = all.filter(function (r) { return inB(r, band) && (!HB.c || hbKey(r) === HB.c); }).sort(function (a, b) {
+      if (HB.s === 'new') return yearOf(b) - yearOf(a) || popRank(a) - popRank(b) || score(b) - score(a) || a.min - b.min;
       if (HB.s === 'low') return a.min - b.min || score(b) - score(a);
       if (HB.s === 'high') return b.min - a.min || score(b) - score(a);
       return popRank(a) - popRank(b) || score(b) - score(a) || a.min - b.min;
     });
     var n = (+el.getAttribute('data-n') || 8) + HB.more, show = list.slice(0, n), cat = PAGE_BY[HB.c];
     var old = el.querySelector('.ss-hb-cats'), scroll = old ? old.scrollLeft : 0;
-    el.innerHTML = '<div class="ss-filter ss-hb-chips" role="group" aria-label="월 구독료 가격대">' + bands.map(function (b) {
+    // 칩 줄마다 소제목 (2026-11-11 · 사용자: "삼성 구독 가격대 선택 / 삼성 구독 품목 선택")
+    el.innerHTML = '<div class="ss-hb-panel"><div class="ss-hb-row"><p class="ss-hb-label" id="ssHbL1">삼성 구독 가격대 선택</p>' +
+      '<div class="ss-filter ss-hb-chips" role="group" aria-labelledby="ssHbL1">' + bands.map(function (b) {
         var c = all.filter(function (r) { return inB(r, b) && (!HB.c || hbKey(r) === HB.c); }).length;
         return '<button type="button" data-hband="' + b[0] + '" aria-pressed="' + (b[0] === HB.k) + '"' + (c ? '' : ' disabled') + '>' + b[1] + ' <small>' + fmt(c) + '</small></button>';
-      }).join('') + '</div>' +
-      '<div class="ss-filter ss-hb-cats" role="group" aria-label="품목"><button type="button" data-hcat="" aria-pressed="' + !HB.c + '">전체 품목 <small>' + fmt(bandTotal) + '</small></button>' +
+      }).join('') + '</div></div>' +
+      '<div class="ss-hb-row"><p class="ss-hb-label" id="ssHbL2">삼성 구독 품목 선택</p>' +
+      '<div class="ss-filter ss-hb-cats" role="group" aria-labelledby="ssHbL2"><button type="button" data-hcat="" aria-pressed="' + !HB.c + '">전체 품목 <small>' + fmt(bandTotal) + '</small></button>' +
       PAGES.map(function (p) {
         return catN[p.key] ? '<button type="button" data-hcat="' + p.key + '" aria-pressed="' + (HB.c === p.key) + '">' + esc(p.name) + ' <small>' + fmt(catN[p.key]) + '</small></button>' : '';
-      }).join('') + '</div>' +
+      }).join('') + '</div></div></div>' +
       '<div class="ss-hb-bar"><p class="ss-summary ss-hb-sum"><b>' + band[1] + (cat ? ' · ' + esc(cat.name) : '') + '</b> 구독 모델 <b>' + fmt(list.length) + '</b>개 <small>(색상만 다른 모델은 하나로' + (HB.s === 'pop' && hasRank ? ' · 인기순은 최근 1년 구독 계약이 많은 순' : '') + ')</small></p>' +
       '<div class="ss-filter ss-hb-sort" role="group" aria-label="정렬">' + HSORTS.map(function (s) {
         return '<button type="button" data-hsort="' + s[0] + '" aria-pressed="' + (HB.s === s[0]) + '">' + (s[0] === 'pop' && !hasRank ? '추천순' : s[1]) + '</button>';
@@ -436,6 +447,7 @@ window.SUB_SHOP_READY = true;
     var catN = {}, kTotal = 0, hasRank = all.some(function (r) { return popRank(r) < 1e9; });
     all.forEach(function (r) { if (inK(r)) { var k = hbKey(r); catN[k] = (catN[k] || 0) + 1; kTotal++; } });
     var list = all.filter(function (r) { return inK(r) && (!EV.c || hbKey(r) === EV.c); }).sort(function (a, b) {
+      if (EV.s === 'new') return yearOf(b) - yearOf(a) || popRank(a) - popRank(b) || score(b) - score(a) || a.min - b.min;
       if (EV.s === 'low') return a.min - b.min || score(b) - score(a);
       if (EV.s === 'high') return b.min - a.min || score(b) - score(a);
       return popRank(a) - popRank(b) || score(b) - score(a) || a.min - b.min;
@@ -518,6 +530,18 @@ window.SUB_SHOP_READY = true;
     });
   }
   function drawCats(el) {
+    // 새 홈(2026-11-11 · data-style="tile"): 삼성 AI 구독처럼 품목 대표 제품 사진 타일
+    if (el.getAttribute('data-style') === 'tile') {
+      el.innerHTML = '<ul class="ss-tiles">' + PAGES.map(function (p) {
+        var list = rowsOf(p), mn = minOf(list), rep = list.filter(function (r) { return r.img && !r.imgRep; }).sort(function (a, b) { return yearOf(b) - yearOf(a) || popRank(a) - popRank(b) || score(b) - score(a); })[0];
+        if (!list.length) return '';
+        return '<li><a href="' + esc(catHref(p.key)) + '" data-cta="cat_tile" data-model="' + esc(p.key) + '">' +
+          '<strong>' + esc(p.name) + '</strong>' +
+          '<span class="ss-tile-img">' + (rep ? '<img src="' + esc(rep.img) + '" alt="' + esc(p.name) + ' 구독" loading="lazy">' : '<span aria-hidden="true">' + p.icon + '</span>') + '</span>' +
+          '<span class="ss-tile-price">월 <b>' + fmt(mn) + '</b>원~</span><span class="ss-tile-n">' + fmt(list.length) + '개 모델</span></a></li>';
+      }).join('') + '</ul>';
+      return;
+    }
     el.innerHTML = '<ul class="ss-cats">' + PAGES.map(function (p) {
       var list = rowsOf(p), mn = minOf(list);
       if (!list.length) return '';

@@ -191,79 +191,78 @@ def page(fname, title, desc, keywords, body, page_kind, key, base_expr):
 
 
 def home_body():
-    return '''    <header class="ss-hero">
-        <p class="ss-eyebrow">삼성스토어 구독센터 · 삼성 AI 구독클럽 · 삼성스토어 시흥</p>
+    # 2026-11-11 새 디자인: 삼성 AI 구독 페이지(samsung.com/sec/ai-subs) 구성 참고 — 가운데 큰 소제목, 구역 10개, 흰/연회색 번갈아.
+    # 빠진 구역: 나에게 맞는 구독 찾기(퀴즈) · AI 콤보 띠 · 품목별 대표 모델 (배너·품목 타일·인기 제품과 겹침). 플로팅 바로가기 없음.
+    return '''<div class="ss-h2">
+    <header class="ss-hero">
+        <p class="ss-eyebrow">삼성전자 공식 위촉 AI 구독 파트너 · 삼성스토어 시흥</p>
         <h1>삼성스토어 구독센터 <span>삼성 가전 구독 가격, 한 번에 비교하세요</span></h1>
-        <p class="ss-lead">냉장고·AI 콤보·에어컨·TV·정수기까지 삼성 구독 모델의 월 구독료를 품목별로 모았습니다.
+        <p class="ss-lead">냉장고·AI 콤보·에어컨·TV·정수기까지 삼성 AI 구독 모델의 월 구독료를 품목별로 모았습니다.
             약정 기간, 방문케어 주기, 선납 할인, 제휴카드 할인을 반영한 실제 납부액은 상담으로 바로 안내해 드립니다.</p>
         <div data-ss="search"></div>
         <ul class="ss-points"><li>구독 모델 1,000여 개</li><li>제휴카드 청구할인</li><li>선납 할인</li><li>방문케어 · 무상수리</li></ul>
     </header>
 
-    <!-- 11월 행사 배너 (시흥몰 메인 슬라이드와 같은 그림 · 2026-11-04 여러 장 · 기간이 지나면 sub_shop.js 가 지운다 · 한 장 남으면 넘김 없음)
-         1) AI콤보·TV 행사(글자 없는 그림 + 문구)  2) 구독 페스티벌 최대 20%%  3) 혼수·입주·이사(휴대폰 그림만 있어 휴대폰에서만) -->
-    <!-- 홈 배너 — 시흥몰 최근 배너 인용 (AI콤보 blog 166 · TV/QLED blog 165 · 2026-11-05) · 이미지 아래 문구 -->
     <div class="ss-promos" data-ss-slider>
     <a class="ss-promo has-cap" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=166" data-cta="promo_combo">
         <img class="ss-promo-pc ss-promo-all" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/0518c0bdfbefc9731f1c6873d8ef5a46_31293.png" alt="비스포크 AI 콤보 25/20kg 구독 혜택 적용가 2,743,920원 · 실제 월 구독료 45,610원 (WD90H25AHW) - 삼성스토어 시흥" width="1983" height="793">
         <div class="ss-promo-cap"><b>비스포크 AI 콤보 25/20kg 구독</b><p>정상 총구독가 4,867,200원 → 혜택 적용가 <em>2,743,920원</em> · 실제 월 구독료 <em>45,610원</em> (화이트 WD90H25AHW)</p><strong>AI 콤보 구독 혜택 보기</strong></div>
     </a>
     <a class="ss-promo has-cap" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=165" data-cta="promo_tv">
-        <img class="ss-promo-pc ss-promo-all" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/914a75f108efc04047b4fb4af43fbfde_95717.png" alt="한눈에 보는 삼성 TV 가격 차이 - 85인치 Neo QLED QNH80 벽걸이형 구독 실부담 2,562,160원 · 일반 구매보다 1,297,840원 절약 - 삼성스토어 시흥" width="2172" height="724" loading="lazy">
-        <div class="ss-promo-cap"><b>85인치 Neo QLED · Mini LED TV 구독</b><p>Neo QLED QNH80 벽걸이형 구독 실부담 <em>2,562,160원</em> — 일반 구매(3,860,000원)보다 <em>1,297,840원 절약</em> · 75인치 Mini LED MH80 1,395,440원</p><strong>TV 구독 가격 비교 보기</strong></div>
+        <img class="ss-promo-pc ss-promo-all" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/ed6db87187cbbfd275219678464e29e9_88381.png" alt="한눈에 보는 삼성 TV 가격 차이 - 75인치 Mini LED MH80 구독 실부담 1,395,440원(일반 구매보다 404,560원 절약) · 85인치 Mini LED MH80 구독 실부담 2,237,920원(262,080원 절약) - 삼성스토어 시흥" width="2167" height="726">
+        <div class="ss-promo-cap"><b>75·85인치 Mini LED MH80 TV 구독</b><p>75인치 구독 실부담 <em>1,395,440원</em> — 일반 구매(1,800,000원)보다 <em>404,560원 절약</em> · 85인치 구독 실부담 <em>2,237,920원</em> — 일반 구매(2,500,000원)보다 <em>262,080원 절약</em></p><strong>TV 구독 가격 비교 보기</strong></div>
     </a>
     </div>
 
-    <!-- 이달의 혜택 — 시흥몰 맨 위 혜택 띠와 같은 내용 (2026-11-04 · 사은품 문구 2026-11-09) -->
-    <section class="ss-sec ss-month">
-        <h2>이달의 혜택 <small>2026.11.01 ~ 11.30</small></h2>
-        <details class="ss-month-more"><summary><span class="is-open-no">이달의 혜택 4가지 더보기</span><span class="is-open-yes">접기</span></summary>
-        <ul class="ss-month-list">
-            <li data-until="2026-11-30"><b>🎉 구독 페스티벌 최대 20%% 할인</b><p>상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정</p>
-                <span><a href="https://www.samsungsh.co.kr/main/html.php?htmid=service/subscribe_festival.html" data-cta="month_festival">상세보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html" data-cta="month_festival_consult">구독 상담 신청</a></span></li>
-            <li><b>💍 혼수 · 입주 · 이사 최대 1645만원 혜택</b><p>여러 대를 한 번에 — 상시 진행</p>
-                <span><a href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=83" data-cta="month_wedding">상세보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html?evt=wedding" data-cta="month_wedding_consult">상담 신청</a></span></li>
-            <li data-until="2026-11-30" id="b2b"><b>🏢 사업자 전용 B2B 구독 페스티벌</b><p>사업자 전용 · 기본 20%% 할인 + 최대 30%% 할인 · 삼성전자 B2B AI 구독 파트너</p>
-                <span><a href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=121" data-cta="month_b2b">상세보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html?evt=b2b" data-cta="month_b2b_consult">사업자 견적 문의</a></span></li>
-            <li><b>📱 갤럭시 탭 · 북 구독</b><p>갤럭시 자급제·탭·북도 월 구독으로</p>
-                <span><a href="https://www.samsungsh.co.kr/board/view.php?page=1&amp;bdId=blog&amp;sno=132" data-cta="month_galaxy">상세보기</a><a class="is-main" href="/main/html.php?htmid=subscribe/sub_c_galaxy.html" data-cta="month_galaxy_list">구독 가격 보기</a></span></li>
-        </ul>
-        </details>
+    <section class="ss-sec ss-x-cats" id="find">
+        <h2>나에게 꼭 맞는 구독 제품 찾기</h2>
+        <p class="ss-sub">품목을 고르면 모델별 최저 월 구독료를 한눈에 비교할 수 있습니다.</p>
+        <div data-ss="cats" data-style="tile"></div>
     </section>
 
-<section class="ss-sec">
+    <!-- 이달의 혜택 — 시흥몰 맨 위 혜택 띠와 같은 내용 (기간 지난 카드는 data-until 로 sub_shop.js 가 지운다) -->
+    <section class="ss-sec ss-month ss-x-gray" id="benefit">
+        <h2>이달의 구독 혜택 <small>2026.11.01 ~ 11.30</small></h2>
+        <p class="ss-sub">상담완료 시 네이버 페이 1만원 · 매장 방문 구매 완료 시 와인을 드립니다.</p>
+        <ul class="ss-month-list ss-benefits">
+            <li data-until="2026-11-30"><span class="ss-bf-ic" aria-hidden="true">🎉</span><b>구독 페스티벌<br>최대 20%% 할인</b><p>삼성 AI 구독 11월 행사 · 품목별 할인과 구독료 지원</p>
+                <span><a href="https://www.samsungsh.co.kr/main/html.php?htmid=service/subscribe_festival.html" data-cta="month_festival">자세히 보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html" data-cta="month_festival_consult">상담 신청</a></span></li>
+            <li><span class="ss-bf-ic" aria-hidden="true">💍</span><b>혼수 · 입주 · 이사<br>최대 1645만원 혜택</b><p>여러 대를 한 번에 — 상시 진행</p>
+                <span><a href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=83" data-cta="month_wedding">자세히 보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html?evt=wedding" data-cta="month_wedding_consult">상담 신청</a></span></li>
+            <li data-until="2026-11-30" id="b2b"><span class="ss-bf-ic" aria-hidden="true">🏢</span><b>사업자 전용<br>B2B 구독 페스티벌</b><p>기본 20%% 할인 + 최대 30%% 할인 · 삼성전자 B2B AI 구독 파트너</p>
+                <span><a href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=121" data-cta="month_b2b">자세히 보기</a><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html?evt=b2b" data-cta="month_b2b_consult">사업자 견적 문의</a></span></li>
+            <li><span class="ss-bf-ic" aria-hidden="true">📱</span><b>갤럭시 탭 · 북<br>구독</b><p>갤럭시 자급제·탭·북도 월 구독으로</p>
+                <span><a href="https://www.samsungsh.co.kr/board/view.php?page=1&amp;bdId=blog&amp;sno=132" data-cta="month_galaxy">자세히 보기</a><a class="is-main" href="/main/html.php?htmid=subscribe/sub_c_galaxy.html" data-cta="month_galaxy_list">구독 가격 보기</a></span></li>
+        </ul>
+    </section>
+
+    <section class="ss-sec" id="hot">
+        <h2>지금 많이 찾는 인기 구독</h2>
+        <p class="ss-sub">요즘 매장에서 가장 많이 문의하시는 제품입니다. 누르면 약정·케어·선납·카드별 월 납부액을 바로 계산해 볼 수 있습니다.</p>
+        <div data-ss="hot"></div>
+    </section>
+
+    <section class="ss-sec ss-x-gray" id="price">
         <h2>월 구독료 가격대별로 보기</h2>
-        <p class="ss-sub">월 1만원 미만부터 10만원 이상까지, 예산에 맞는 가격대를 고르면 그 가격대의 대표 모델이 보입니다. 금액은 최저 월 구독료(VAT 포함) 기준이며, 약정·케어·선납·제휴카드에 따라 실제 월 납부액은 달라집니다.</p>
+        <p class="ss-sub">예산에 맞는 가격대와 품목을 고르면 해당 모델이 보입니다. 금액은 최저 월 구독료(VAT 포함) 기준이며, 약정·케어·선납·제휴카드에 따라 실제 월 납부액은 달라집니다.</p>
         <div data-ss="bands" data-n="8"></div>
     </section>
 
-        <section class="ss-sec">
-        <h2>품목별 삼성 구독 가격</h2>
-        <p class="ss-sub">품목을 고르면 모델별 최저 월 구독료를 비교할 수 있습니다.</p>
-        <div data-ss="cats"></div>
+    <section class="ss-sec" id="bundle">
+        <h2>여러 대 함께 구독하면 더 좋아요</h2>
+        <p class="ss-sub">신혼집·입주·이사처럼 여러 대가 필요할 때, 묶음 월 납부 합계와 다품목 혜택을 한 번에 계산해 보세요.</p>
+        <div class="ss-bundle-band"><div><b>다품목 구독 계산기</b><p>냉장고 + 세탁기 + TV처럼 묶어서 약정·케어·선납·제휴카드까지 넣은 <b>월 납부 합계</b>를 바로 계산합니다.</p></div>
+            <a class="ss-btn" href="/data/gudok/bundle.html" data-cta="bundle_band">묶음 월 구독료 계산하기</a></div>
+        <div data-ss="persona"></div>
     </section>
 
-    <section class="ss-sec ss-band">
-        <div>
-            <h2>삼성 AI 콤보 구독</h2>
-            <p>세탁부터 건조까지 한 대로. 비스포크 AI 콤보 세탁건조기를 월 구독료로 만나보세요.</p>
-        </div>
-        <div data-ss="pick" data-key="aicombo" data-n="3"></div>
-    </section>
-
-    <section class="ss-sec">
-        <h2>품목별 대표 구독 모델</h2>
-        <p class="ss-sub">모델을 누르면 약정·케어·선납·제휴카드별 월 납부액을 계산해 볼 수 있습니다.</p>
-        <div data-ss="popular" data-n="12"></div>
-    </section>
-
-    <section class="ss-sec">
+    <section class="ss-sec ss-x-gray" id="card">
         <h2>제휴카드로 구독료를 더 낮추세요</h2>
         <p class="ss-sub">구독료를 제휴카드로 자동결제하면 전월 실적에 따라 매월 청구할인을 받습니다.</p>
         <div data-ss="cards"></div>
     </section>
 
-    <section class="ss-sec">
+    <section class="ss-sec" id="step">
         <h2>구독은 이렇게 진행돼요</h2>
         <ol class="ss-steps">
             <li><strong>구독 문의</strong><p>원하는 모델이나 품목을 남겨 주세요. 전화 상담도 가능합니다.</p></li>
@@ -273,8 +272,12 @@ def home_body():
         </ol>
     </section>
 
+    <section class="ss-sec ss-x-gray" id="faq">
+        <h2>자주 묻는 질문</h2>
+        %(faq)s
+    </section>
 
-    <!-- 삼성스토어 시흥 구독 센터 안내 · 회사 소개 (2026-11-07 · 검색엔진이 읽는 본문 ) -->
+    <!-- 삼성스토어 시흥 구독 센터 안내 · 회사 소개 (검색엔진이 읽는 본문) -->
     <section class="ss-sec ss-about" id="about">
         <h2>삼성스토어 시흥 구독 센터 안내</h2>
         <p><b>삼성스토어 구독센터</b>는 경기도 시흥시 대야동의 <b>삼성스토어 시흥</b>이 운영하는 삼성 가전 구독 안내 페이지입니다. 삼성 AI 구독클럽으로 구독할 수 있는 냉장고, 김치냉장고, 세탁기와 건조기, 비스포크 AI 콤보, 에어컨과 시스템에어컨, TV, 정수기, 공기청정기, 청소기, 식기세척기, 인덕션, 모니터, 갤럭시 탭과 갤럭시 북까지 1,000여 개 모델의 월 구독료를 품목별로 모았습니다. 매장에 오시기 전에 집에서 먼저 모델과 요금을 비교해 보시고, 궁금한 점은 전화나 온라인 상담으로 편하게 물어보세요.</p>
@@ -314,10 +317,7 @@ def home_body():
             <dt>통신판매업신고</dt><dd>제2024-경기시흥-2487호</dd>
         </dl>
     </section>
-    <section class="ss-sec">
-        <h2>자주 묻는 질문</h2>
-        %(faq)s
-    </section>
+</div>
 ''' % dict(faq=faq_html(COMMON_FAQ))
 
 
