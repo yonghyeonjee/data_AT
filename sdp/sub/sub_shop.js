@@ -892,8 +892,6 @@ window.SUB_SHOP_READY = true;
     buildRows();
     draw(['nav', 'search', 'cta', 'cards', 'cardtable', 'persona', 'bands', 'hot', 'quiz', 'trust', 'event']);   // 요금표 없이 그릴 수 있는 것 먼저
     drawBubble();
-    // 홈 바로가기: PC 오른쪽 목록 · 휴대폰 아래 메뉴 바 (sub_jump.js · 2026-11-11)
-    if (CFG.page === 'home' && CFG.jump !== false) loadScript((CFG.dataBase || '/data/js/sub/') + 'sub_jump.js' + (CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || '')), function () {}, function () {});
     // 세부유형 이름은 요금표(sub_plans_<품목>.js)에 있다 — 품목 페이지는 그 품목만,
     // 홈은 세부유형으로 나뉘는 품목(의류케어·조리기기)만 받는다 (전부 받으면 400KB)
     var p = PAGE_BY[CFG.key], cats = [];
