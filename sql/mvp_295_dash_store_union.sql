@@ -1,0 +1,18 @@
+-- mvp_295 · 2026-11-11 · 매출 대시보드 [DPS] 매장 = 합집합 (사원 기준 = 채널 기준)
+-- "사원과 채널에 왜 차이가 있지?" → "채널해도 빠지는 금액이 있으면 안 되지" → 1번(합집합)으로 결정.
+--
+-- 어긋남(2024-10~2026-11-11 · DPS 실적): 매장 사원 × 매장 채널 6,871건 21.8억 (양쪽 다)
+--   매장 사원인데 다른 채널로 들어간 것 748건 9.57억 (시흥 온라인 8.0억 · DPS 소모품(대량) 1.1억 · E스토어·AT몰·P몰 0.4억 · 그중 구독 전표 12건 4,344만)
+--   비매장 사원인데 매장 채널인 것 1건 (차효범 등록 · 실적 장성원 1,887만)
+--
+-- 고친 것: core.f_dash_payload 의 _dl(판매번호×실적일) 채널 판정 — 아래 치환 하나. 본문에 temp table 구문이 있어 MCP 로는 못 보내므로
+-- 서버에 저장된 prosrc 를 읽어 replace 뒤 execute (지점 1개 검증). 매장 사원 판정은 사원별 실적 표와 같은 core.staff dept='매장'.
+--   전: coalesce(max(s.channel), 'DPS 채널 미확인')
+--   후: case when bool_or(exists (select 1 from core.staff st where st.name = l.staff_name and st.dept = '매장'))
+--              then case when coalesce(bool_or(s.is_subscription), false) then '매장구독(시흥)' else '매장(시흥)' end
+--            else coalesce(max(s.channel), 'DPS 채널 미확인') end
+-- 효과: cells·ocells·ccells·pcells·staff.rows(k) 전부 _dl.channel 을 따르므로 매장 사원 판매번호는 채널이 뭐든 매장(시흥)/매장구독(시흥)에,
+--   매장 채널 판매번호는 누가 팔았든 매장에. 그 판매번호는 원래 채널(시흥 온라인 등)에서 빠진다. 전체 합계 불변.
+-- 확인(10/1~10): 채널 매장(시흥) 1억2,661만 = 매장 사원 k0 1억774만 + 비매장 k0 1,887만 · 매장 사원 k2(그 밖 채널) 0 · 전체 3억921만.
+-- 캐시: core.f_dash_mark_dirty(true) 로 예약 → dash-warm-req 가 다시 굽는다(지우지 않음).
+-- 화면(v302): dash/index.html stBasis='ch' 고정 · [사원|채널] 토글 제거(stbHtml 빈 문자열) · 사원별 실적 표 그대로 · admin DASH_V 302.
