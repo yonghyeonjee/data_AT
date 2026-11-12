@@ -48,6 +48,8 @@ body{background:var(--c-bg);font-family:Pretendard,-apple-system,BlinkMacSystemF
   #qScale{transform:none!important;width:auto!important}
 }
 body.preview .cbrand{display:none} body.preview .cwrap{padding:8px 8px 16px}
+.staff-edit{position:fixed;right:14px;bottom:14px;z-index:50;background:#1f3a8a;color:#fff;font-weight:600;font-size:13px;line-height:1.2;padding:10px 14px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.25);text-decoration:none}
+@media print{.staff-edit{display:none}}
 </style>
 </head>
 <body>
@@ -769,7 +771,15 @@ function draw(d){
     + `<div class="cfoot">${esc2(d.store_name||'삼성스토어 시흥점')} · 삼성전자 공식 판매점<br>
         이 견적은 ${esc2(d.expires_at)} 까지 보실 수 있습니다</div>`;
   document.title = `${d.name||''} 님 견적서 · ${d.no}`;
+  staffEdit(d);
 }
+/* 담당자 브라우저에서 열었을 때만 [이 견적 수정] (2026-11-12 · mvp_296) — 담당자 화면과 같은 로그인(localStorage dc_session)이 살아 있을 때만 보인다. 고객 폰에는 안 뜬다 */
+async function staffEdit(d){ let ses=''; try{ ses=localStorage.getItem('dc_session')||''; }catch(e){} if(!ses||!tok) return;
+  try{ const r=await fetch(SB_URL+'/rest/v1/rpc/fn_quote_page_me',{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json','x-dc-session':ses},body:'{}'});
+    const j=r.ok?await r.json():null; if(!j||!j.ok||j.by!=='session') return;
+    const a=document.createElement('a'); a.className='staff-edit noprint'; a.href='/quote/?t='+encodeURIComponent(tok); a.target='_blank'; a.rel='noopener';
+    a.textContent='✏️ 이 견적 수정 (담당자에게만 보임)'; a.title=(d.no||'')+' — 상담 견적 화면에서 고친 뒤 저장하면 다음 차수로 남고, 이 링크는 새 차수를 보여 줍니다';
+    document.body.appendChild(a); }catch(e){} }
 /* 화면에서는 마지막 장의 남는 아래 여백을 접는다 — 인쇄할 때는 A4 그대로 */
 function trimLastPage(){ try{
     const pgs=document.querySelectorAll('.q-page');

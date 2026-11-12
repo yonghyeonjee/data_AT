@@ -39,6 +39,7 @@ h1,h2,h3{margin:0}
 .dlg.solid{background:#1B2A5B}
 .l-pin{font-size:26px;letter-spacing:.4em;text-align:center;font-weight:700;width:100%;box-sizing:border-box;padding-left:.4em}
 #loginDlg .box{overflow-x:hidden;width:min(420px,100%)}
+.openref{display:flex;gap:8px}.openref input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .l-alt{border:0;background:transparent;color:var(--blue);font-size:12.5px;text-decoration:underline;align-self:flex-start;padding:4px 0;min-height:32px}
 .calc{position:fixed;right:16px;bottom:84px;z-index:30;width:292px;max-width:calc(100vw - 24px);background:#f3f3f3;color:#111;border:1px solid #c8c8c8;border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.28);outline:0;user-select:none}
 .calc .cbar{display:flex;align-items:center;gap:6px;padding:6px 6px 2px 12px;font-size:13px;font-weight:700;cursor:move;touch-action:none}
@@ -520,6 +521,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <!-- 내역 -->
 <div class="dlg hidden" id="listDlg"><div class="box">
   <h2>발행 내역 <button class="x" onclick="closeDlg('listDlg')" aria-label="닫기">×</button></h2>
+  <div class="openref"><input id="l_ref" placeholder="고객에게 보낸 견적서 링크 또는 견적번호(SH…) 붙여넣기" enterkeyhint="go" onkeydown="if(event.key==='Enter'&&!event.isComposing){ event.preventDefault(); openRef(this.value); }"><button class="btn sm pri" onclick="openRef($('l_ref').value)">열어서 수정</button></div>
   <input id="l_q" placeholder="고객명 · 연락처 · 견적번호" oninput="renderList()" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px">
   <div class="list" id="listBody"><div class="hint">불러오는 중…</div></div>
 </div></div>
@@ -644,8 +646,9 @@ function loadJs(src){ return new Promise((ok,no)=>{ const s=document.createEleme
   initCond(); initCats();
   $('boot').classList.add('hidden'); $('v-edit').classList.remove('hidden');
   bindInputs(); fillCust();
-  await auth();
-  if(Q.no) await loadQuote(Q.no); else { prefillModels(); render(); }
+  const authed=await auth(), bootRef=P.get('t')?'?t='+P.get('t'):(P.get('ref')||'');
+  if(!authed&&(Q.no||bootRef)){ PEND=Q.no?{no:Q.no}:{ref:bootRef}; render(); }   // 로그인 뒤 resumePend() 가 연다
+  else if(Q.no) await loadQuote(Q.no); else if(bootRef) await openRef(bootRef, true); else { prefillModels(); render(); }
 })();
 /* 매장 상담 줄 [견적서 만들기] · 구독센터 문의에서 넘어온 관심 모델을 바로 담는다: ?models=WD90H25AHW,RF85DB91A1AP (요금표에 없는 모델은 일시불 줄) */
 function initDisplay(){ document.body.classList.add('disp'); $('boot').classList.add('hidden'); const v=$('v-show'); v.classList.remove('hidden');
@@ -674,7 +677,7 @@ window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; co
 function postSheet(){ const f=$('sheetFrame'); if(!f||!SHF_READY||!LAST||!f.contentWindow) return; try{ const {quote}=toQuoteJson(); const nc=(typeof NC!=='undefined'&&NC||[]).find(c=>c.id===Q.cond.namecardId)||null;
     f.contentWindow.postMessage({t:'quote', d:{ ok:true, quote, no:Q.no||'', name:Q.cust.name||'', counselor:nc?(nc.name||''):(ME||''), counselor_role:nc?(nc.position||'프로'):'프로', counselor_title:nc?(nc.dept||''):'', tel:nc?(nc.mobile||''):'', store_tel:STORE.tel, counselor_email:nc?(nc.email||''):'' }}, location.origin); }catch(e){ console.warn('견적서 미리보기', e); } }
 function printSheet(){ const f=$('sheetFrame'); if(f&&f.contentWindow) f.contentWindow.print(); }
-function bindBundlePaste(){ const q=$('q'); if(!q||q.dataset.bp) return; q.dataset.bp='1'; q.addEventListener('paste',e=>{ const t=(e.clipboardData||window.clipboardData).getData('text')||''; if(/[?&]items=/.test(t)){ e.preventDefault(); applyBundle(parseBundle(t)); } }); }
+function bindBundlePaste(){ const q=$('q'); if(!q||q.dataset.bp) return; q.dataset.bp='1'; q.addEventListener('paste',e=>{ const t=(e.clipboardData||window.clipboardData).getData('text')||''; if(isQuoteRef(t)){ e.preventDefault(); openRef(t); return; } if(/[?&]items=/.test(t)){ e.preventDefault(); applyBundle(parseBundle(t)); } }); }
 function prefillModels(){ bindBundlePaste(); let bm=[]; if(P.get('items')){ const b=parseBundle(location.search); bm=b.items.map(x=>x.m); applyBundle(b, true); }
   // 매장 [new_견적서]가 묶음 조건(items)과 문의 모델(models)을 같이 보내면 묶음에 있는 모델은 묶음 조건대로만 담는다 (2026-11-11)
   const ms=String(P.get('models')||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).filter(m=>bm.indexOf(norm(m))<0);
@@ -697,7 +700,7 @@ async function doUnlock(){ const v=$('l_pin').value.replace(/\D/g,''), err=m=>{ 
   try{ const {data,error}=await sb.rpc('fn_store_unlock',{p_last4:v});
     if(error){ const m=String(error.message||'').replace(/^.*?: /,''); if(/\[RELOGIN\]/.test(m)){ SESSION=''; showLogin(m.replace(/^.*\[RELOGIN\]\s*/,'')); } else err(m); return; }
     if(!data||!data.ok){ if(data&&(data.relogin||data.no_mobile)){ if(data.relogin) SESSION=''; showLogin(data.msg||'이름과 비밀번호로 다시 들어가 주세요'); } else err((data&&data.msg)||'맞지 않습니다'); return; }
-    tabOpenSet(); $('loginDlg').classList.add('hidden'); toast((ME?ME+'님, ':'')+'확인됐습니다'); }
+    tabOpenSet(); $('loginDlg').classList.add('hidden'); toast((ME?ME+'님, ':'')+'확인됐습니다'); resumePend(); }
   catch(e){ err(e.message); }
   finally{ UL_BUSY=false; $('l_btn').disabled=false; } }
 function bindLoginKeys(){ const on=(id,fn)=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); fn(); } });
@@ -709,11 +712,11 @@ async function doLogin(){
   const v=$('l_name').value.trim(), pw=$('l_pass').value; if(!v||!pw) return;
   $('l_btn').disabled=true; $('l_err').classList.add('hidden');
   try{ const a=await rpc('fn_store_login',{p_name:v,p_pass:pw}); SESSION=a.token||''; try{ localStorage.setItem('dc_session',SESSION); localStorage.setItem('dc_login_name',v); }catch(e){}
-    ME=v; $('meLbl').textContent=ME+' 프로'; tabOpenSet(); $('l_pass').value=''; $('loginDlg').classList.add('hidden'); render(); }
+    ME=v; $('meLbl').textContent=ME+' 프로'; tabOpenSet(); $('l_pass').value=''; $('loginDlg').classList.add('hidden'); render(); resumePend(); }
   catch(e){ $('l_err').textContent=e.message; $('l_err').classList.remove('hidden'); }
   $('l_btn').disabled=false;
 }
-async function doCode(){ const c=$('l_code').value.trim(); if(!c) return; CODE=c; try{ sessionStorage.setItem('sh_quote_code',c); }catch(e){} if(await auth()) { $('loginDlg').classList.add('hidden'); render(); } else { $('l_err').textContent='코드가 맞지 않습니다'; $('l_err').classList.remove('hidden'); } }
+async function doCode(){ const c=$('l_code').value.trim(); if(!c) return; CODE=c; try{ sessionStorage.setItem('sh_quote_code',c); }catch(e){} if(await auth()) { $('loginDlg').classList.add('hidden'); render(); resumePend(); } else { $('l_err').textContent='코드가 맞지 않습니다'; $('l_err').classList.remove('hidden'); } }
 
 /* ═══ 결제 조건 UI ═══ */
 function segFill(id, list, cur, on){ const el=$(id); el.innerHTML=list.map(x=>`<button data-v="${esc(x.v)}" class="${String(x.v)===String(cur)?'on':''}">${esc(x.l)}</button>`).join(''); el.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; on(b.dataset.v); [...el.children].forEach(x=>x.classList.toggle('on',x===b)); render(); }; }
@@ -1332,6 +1335,17 @@ async function loadQuote(no){
     render(); }
   catch(e){ toast('불러오기 실패: '+e.message); render(); }
 }
+let PEND=null;   // 로그인 전에 링크·번호로 들어왔을 때 열 견적 — 담당자 확인이 끝나면 resumePend()
+function resumePend(){ const p=PEND; PEND=null; if(!p) return; if(p.no) loadQuote(p.no); else openRef(p.ref); }
+/* 기존 견적서 열어서 수정 (2026-11-12 · mvp_296) — 고객 링크(q/?t=…)·견적번호·옛 시흥몰 견적서 주소(&no=SH…) → fn_quote_page_resolve → loadQuote. 저장하면 같은 번호의 다음 차수 */
+async function openRef(ref, boot){ ref=String(ref||'').trim(); if(!ref){ if(boot) render(); return; }
+  try{ const r=await rpc('fn_quote_page_resolve',{p_code:CODE||null, p_ref:ref});
+    if(!r||!r.ok){ toast((r&&r.reason)||'견적서를 찾지 못했습니다'); if(boot) render(); return; }
+    closeDlg('listDlg'); if($('l_ref')) $('l_ref').value='';
+    await loadQuote(r.no); toast(`${r.name||''} ${r.no} ${r.version}차를 불러왔습니다 — 고친 뒤 [저장]하면 ${r.version+1}차로 남습니다`);
+    try{ const u=new URL(location.href); u.searchParams.delete('t'); u.searchParams.delete('ref'); u.searchParams.set('no',r.no); history.replaceState(null,'',u); }catch(e){} }
+  catch(e){ toast('열기 실패: '+e.message); if(boot) render(); } }
+const isQuoteRef=t=>/\/q\/(index\.html)?\?t=[0-9a-f]{16,}/i.test(t)||/^\s*SH\d{6}-\d{3,4}\s*$/i.test(t)||/[?&]no=SH\d{6}-\d{3,4}/i.test(t);
 let LIST=[];
 async function openList(){ $('listDlg').classList.remove('hidden'); $('listBody').innerHTML='<div class="hint">불러오는 중…</div>';
   try{ const r=await rpc('fn_quote_page_list',{p_code:CODE||null, p_limit:150}); LIST=(r&&r.quotes)||[]; renderList(); }catch(e){ $('listBody').innerHTML='<div class="warn">'+esc(e.message)+'</div>'; } }
