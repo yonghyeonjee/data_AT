@@ -433,7 +433,7 @@ window.SUB_SHOP_READY = true;
   /* ---------- 이벤트: 구독료 지원 행사 모델 (2026-11-11) ----------
      data-ss="event" — SUB_POLICY.promos 중 지금 기간 안 · 모델 지정 행사(N개월 구독료 상당 포인트)의 모델을
      지원 개월 수 탭(6개월 · 3개월 …) × 품목 칩 × 정렬(인기순·낮은 가격순·높은 가격순)으로. 색상만 다른 모델은 하나로 */
-  var EV = { k: '', c: '', s: 'pop', more: 0 };
+  var EV = { k: '', c: '', s: 'pop', more: 0, cheap: 0 };   // cheap: 일시불보다 저렴한 것만 (2026-11-12)
   function evDate(d) { var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(d || ''); return m ? (+m[2]) + '월 ' + (+m[3]) + '일' : ''; }
   // 다품목 구독 할인 (sub.policy multi · mvp_273) — 기간 안이면 이벤트 탭 하나
   function liveMulti() {
@@ -464,6 +464,8 @@ window.SUB_SHOP_READY = true;
     if (!tabs.some(function (t) { return t.k === EV.k; })) EV.k = tabs[0].k;
     var isMulti = EV.k === 'multi';
     var all = isMulti ? multiRows : promoRows.filter(function (r) { return r.evM === +EV.k; });
+    var cheapN = all.filter(saveOf).length;
+    if (EV.cheap) all = all.filter(saveOf);
     if (EV.c && !all.some(function (r) { return hbKey(r) === EV.c; })) EV.c = '';
     var catN = {}, hasRank = all.some(function (r) { return popRank(r) < 1e9; });
     all.forEach(function (r) { var k = hbKey(r); catN[k] = (catN[k] || 0) + 1; });
@@ -505,8 +507,11 @@ window.SUB_SHOP_READY = true;
       '<div class="ss-filter ss-hb-cats" role="group" aria-labelledby="ssEvL1"><button type="button" data-evc="" aria-pressed="' + !EV.c + '">전체 품목 <small>' + fmt(all.length) + '</small></button>' +
       PAGES.map(function (p) {
         return catN[p.key] ? '<button type="button" data-evc="' + p.key + '" aria-pressed="' + (EV.c === p.key) + '">' + esc(p.name) + ' <small>' + fmt(catN[p.key]) + '</small></button>' : '';
-      }).join('') + '</div></div></div>' +
-      '<div class="ss-hb-bar"><p class="ss-summary ss-hb-sum"><small>색상만 다른 모델은 하나로' + (EV.s === 'pop' && hasRank ? ' · 인기순은 최근 1년 구독 계약 기준' : '') + '</small></p>' +
+      }).join('') + '</div></div>' +
+      '<div class="ss-hb-row"><p class="ss-hb-label" id="ssEvL2">일시불 대비</p><div class="ss-filter ss-hb-cats" role="group" aria-labelledby="ssEvL2">' +
+        '<button type="button" data-evcheap="0" aria-pressed="' + !EV.cheap + '">전체 보기</button>' +
+        '<button type="button" data-evcheap="1" aria-pressed="' + !!EV.cheap + '">일시불보다 저렴한 것만 <small>' + fmt(cheapN) + '</small></button></div></div></div>' +
+      '<div class="ss-hb-bar"><p class="ss-summary ss-hb-sum"><small>색상만 다른 모델은 하나로' + (EV.cheap ? ' · 일시불(시흥몰 판매가)보다 구독 실제 부담이 적은 상품만' : '') + (EV.s === 'pop' && hasRank ? ' · 인기순은 최근 1년 구독 계약 기준' : '') + '</small></p>' +
       '<div class="ss-filter ss-hb-sort" role="group" aria-label="정렬">' + HSORTS.map(function (s) {
         return '<button type="button" data-evs="' + s[0] + '" aria-pressed="' + (EV.s === s[0]) + '">' + (s[0] === 'pop' && !hasRank ? '추천순' : s[1]) + '</button>';
       }).join('') + '</div></div>' +
@@ -910,6 +915,7 @@ window.SUB_SHOP_READY = true;
     else if (t.hasAttribute('data-evm')) { EV.k = t.getAttribute('data-evm'); EV.more = 0; draw(['event']); track('ss_event', { ss_months: EV.k }); }
     else if (t.hasAttribute('data-evc')) { EV.c = t.getAttribute('data-evc'); EV.more = 0; draw(['event']); track('ss_event', { ss_cat: EV.c }); }
     else if (t.hasAttribute('data-evs')) { EV.s = t.getAttribute('data-evs'); EV.more = 0; draw(['event']); track('ss_event', { ss_sort: EV.s }); }
+    else if (t.hasAttribute('data-evcheap')) { EV.cheap = +t.getAttribute('data-evcheap'); EV.more = 0; draw(['event']); track('ss_event', { ss_cheap: EV.cheap }); }
     else if (t.hasAttribute('data-evmore')) { EV.more += 12; draw(['event']); }
     else if (t.hasAttribute('data-cta')) track('ss_click', { ss_cta: t.getAttribute('data-cta'), ss_model: t.getAttribute('data-model') || '' });
   }
@@ -950,7 +956,7 @@ window.SUB_SHOP_READY = true;
     // 홈은 세부유형으로 나뉘는 품목(의류케어·조리기기)만 받는다 (전부 받으면 400KB)
     var p = PAGE_BY[CFG.key], cats = [];
     if (CFG.page === 'cat' && p) cats = p.cats;
-    else if (CFG.page === 'home') PAGES.forEach(function (q) { if (q.seg) q.cats.forEach(function (c) { if (cats.indexOf(c) < 0) cats.push(c); }); });
+    else if (CFG.page === 'home' || CFG.page === 'event') PAGES.forEach(function (q) { if (q.seg) q.cats.forEach(function (c) { if (cats.indexOf(c) < 0) cats.push(c); }); });
     loadCats(cats, function () {
       draw(['cats', 'pick', 'popular', 'list', 'related', 'bands', 'hot', 'quiz', 'event']);   // bands: 세부유형 이름이 생겨 다시
       setMeta();
