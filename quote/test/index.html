@@ -749,7 +749,7 @@ function renderExtra(){ const box=$('extraRows'); if(!box) return;
   box.innerHTML=(Q.extra||[]).map((e,i)=>`<div class="xrow"><input class="in" placeholder="혜택 이름 (예: 신세계 상품권)" value="${esc(e.label||'')}" onchange="Q.extra[${i}].label=this.value; render()"><input class="in num" type="number" step="10000" placeholder="금액" value="${+e.amount||''}" onchange="Q.extra[${i}].amount=+this.value||0; render()"><button class="chip" onclick="Q.extra.splice(${i},1); renderExtra(); render()">빼기</button></div>`).join('')
     +`<button class="chip" onclick="Q.extra.push({label:'',amount:0}); renderExtra()">＋ 기타 혜택 행 추가</button>`; }
 let NC=[];
-async function loadNamecards(){ const sel=$('namecard'); if(!sel) return; try{ NC=(await rpc('fn_quote_nc_list',{p_code:CODE||null}))||[]; }catch(e){ NC=[]; }
+async function loadNamecards(){ const sel=$('namecard'); if(!sel) return; try{ const r=await rpc('fn_quote_nc_list',{p_code:CODE||null}); NC=Array.isArray(r)?r:(r&&Array.isArray(r.cards)?r.cards:[]); }catch(e){ NC=[]; }   // 답은 {ok,cards} (2026-11-12 견적서 빈 화면 고침)
   sel.innerHTML='<option value="">(없음)</option>'+NC.map(c=>`<option value="${esc(c.id)}"${c.id===Q.cond.namecardId?' selected':''}>${esc(c.name||'')}${c.position?' '+esc(c.position):''}${c.mobile?' · '+esc(c.mobile):''}</option>`).join('');
   sel.onchange=()=>{ Q.cond.namecardId=sel.value; renderSheet(); }; }
 function fillTier(){ const sel=$('subTier'); const cd=window.SUB_CARDS&&window.SUB_CARDS[Q.cond.card]; if(!cd){ sel.innerHTML='<option value="">—</option>'; sel.disabled=true; return; } sel.disabled=false;
