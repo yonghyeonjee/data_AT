@@ -4135,7 +4135,8 @@ function openQuote(o,isNew){ o=o||{};
   if(o.card) q.set('card',o.card); if(o.tier) q.set('tier',o.tier); if(o.cardoff) q.set('cardoff','1');
   if(ME) q.set('counselor',ME);
   const u=isNew? NEW_QUOTE_URL+(q.toString()?'?'+q.toString():'') : QUOTE_URL+(q.toString()?'&'+q.toString():'');
-  window.open(u,isNew?'sat_quote_new':'sat_quote','noopener');
+  // 상담 견적(/quote/)은 우리 화면 — noopener 를 빼야 이 창의 확인 상태(sessionStorage st_open)가 넘어가 뒷번호를 다시 묻지 않는다 (2026-11-12) · 옛 시흥몰 견적서는 그대로 끊고 연다
+  if(isNew) window.open(u,'_blank'); else window.open(u,'sat_quote','noopener');
 }
 function openCalc(){ window.open(CALC_URL,'sat_calc','noopener'); }
 function tabInfo(t){ const b=document.querySelector(`.tab[data-tab="${t}"]`); if(!b) return null;
