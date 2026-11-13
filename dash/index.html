@@ -599,7 +599,7 @@ body{background:
   <section class="step" data-title="매장 일반 · 구독" id="kd-sec">
     <div class="grid">
       <div class="card sp5">
-        <div class="card-h"><h2>매장(시흥) 일반 · 구독</h2><span class="note" id="kd-note"></span></div>
+        <div class="card-h"><h2 id="kd-title">매장(시흥) 일반 · 구독</h2><span class="note" id="kd-note"></span></div>
         <div class="card-b" id="kd-cmp"></div>
       </div>
       <div class="card sp7">
@@ -812,13 +812,18 @@ function storeMerge(D){
   const chs=D.channels||[]; const si=chs.findIndex(c=>c.name==='매장(시흥)'), ki=chs.findIndex(c=>c.name==='매장구독(시흥)');
   if(si<0||ki<0) return false;
   const map=chs.map((c,i)=>i===ki?(si>ki?si-1:si):(i>ki?i-1:i));   /* 옛 채널 번호 → 새 번호 */
-  const fix=(arr,pos)=>{ if(!Array.isArray(arr)) return; for(const c of arr){ if(!Array.isArray(c)||typeof c[pos]!=='number') continue; if(c[pos]===ki) c.sub=1; c[pos]=map[c[pos]]; } };
+  const fix=(arr,pos)=>{ if(!Array.isArray(arr)) return; for(const c of arr){ if(!Array.isArray(c)||typeof c[pos]!=='number') continue; if(c[pos]===ki){ c.sub=1; if(arr===D.cells){ c.sg=c[2]; c.sr=c[3]; } } c[pos]=map[c[pos]]; } };
   fix(D.cells,1); fix(D.ocells,1); fix(D.ccells,1); fix(D.pcells,1); if(D.subs&&D.subs.rows) fix(D.subs.rows,1);
   (D.events||[]).forEach(e=>{ if(e&&e[3]==='매장구독(시흥)') e[3]='매장(시흥)'; });
   chs[si].kinds=['일반','구독']; chs.splice(ki,1);
   return true;
 }
+/* ===== 채널마다 구독 몫 (v303 · mvp_296) — 서버 kcells [일, 채널, 매출, 환불] = 그 날 그 채널 셀 가운데 구독 전표(dps.sale.is_subscription) 몫.
+   셀에 sg(매출)·sr(환불) 로 붙여 두면 어느 몰이든 일반 = 셀 − 구독, 구독 = sg/sr 로 가를 수 있다. 합치기(storeMerge) 전에 붙인다(그때는 (일, 채널) 이 하나뿐). */
+function kcellsApply(D){ const K=D.kcells||[]; if(!K.length) return; const m=new Map(); (D.cells||[]).forEach(c=>m.set(c[0]+'|'+c[1],c));
+  for(const k of K){ const c=m.get(k[0]+'|'+k[1]); if(c){ c.sg=k[2]; c.sr=k[3]; } } }
 function startDash(){
+kcellsApply(DATA);
 storeMerge(DATA);
 const $=s=>document.querySelector(s);
 const DAYS=DATA.days, CH=DATA.channels, CELLS=DATA.cells, ND=DAYS.length, NC=CH.length;
@@ -894,6 +899,7 @@ function selLoad(){try{const v=JSON.parse(sessionStorage.getItem('dash_sel')||'n
 function agg(lo,hi,all){
   const byCh=new Array(NC),byDay=new Array(hi-lo+1);
   for(let i=0;i<NC;i++)byCh[i]={g:0,r:0,n:0,o:0,b:0,nb:0};
+  const ks=new Array(NC); for(let i=0;i<NC;i++)ks[i]={g:0,r:0,n:0};   /* 채널마다 구독 몫 (v303) */
   for(let i=0;i<byDay.length;i++)byDay[i]={g:0,r:0,n:0};
   const kd=[{g:0,r:0,n:0,o:0,b:0,nb:0},{g:0,r:0,n:0,o:0,b:0,nb:0}];   /* 매장(시흥) 안의 [일반, 구독] (v286) */
   let G=0,R=0,O=0;
@@ -902,6 +908,7 @@ function agg(lo,hi,all){
     if(di<lo||di>hi)continue;
     byCh[c[1]].g+=c[2];byCh[c[1]].r+=c[3];byCh[c[1]].n+=c[2]-c[3];
     if(c[1]===KD){const x=kd[c.sub?1:0];x.g+=c[2];x.r+=c[3];x.n+=c[2]-c[3];}
+    if(c.sg||c.sr){const x=ks[c[1]];x.g+=c.sg||0;x.r+=c.sr||0;x.n+=(c.sg||0)-(c.sr||0);}
     if(!all&&!inScope(c[1]))continue;
     byDay[di-lo].g+=c[2];byDay[di-lo].r+=c[3];byDay[di-lo].n+=c[2]-c[3];
     G+=c[2];R+=c[3];
@@ -921,22 +928,26 @@ function agg(lo,hi,all){
     if(c[1]===KD){const x=kd[c.sub?1:0];x.b+=c[2];x.nb+=c[3];}
     if(all||inScope(c[1])){B+=c[2];NB+=c[3];}
   }
-  return {g:G,r:R,n:G-R,o:O,b:B,nb:NB,byCh:byCh,byDay:byDay,kd:kd,lo:lo,hi:hi,days:hi-lo+1,st:stAgg(lo,hi)};
+  return {g:G,r:R,n:G-R,o:O,b:B,nb:NB,byCh:byCh,byDay:byDay,kd:kd,ks:ks,lo:lo,hi:hi,days:hi-lo+1,st:stAgg(lo,hi)};
 }
-/* 매장(시흥) 안의 일반·구독 값 — 합친 채널이 없으면(매장구독 전표가 payload 에 없음) 일반 = 그 채널 전부 (v286) */
-function kdVals(A,key){ if(!A||STORE_CH<0)return [0,0]; return KD>=0?[A.kd[0][key],A.kd[1][key]]:[A.byCh[STORE_CH][key],0]; }
+/* 채널 안의 일반·구독 값 [일반, 구독] — ci 없으면 매장(시흥). 매장(시흥)은 합친 채널(kd), 다른 몰은 kcells 의 구독 몫(ks) · 자료가 없으면 일반 = 그 채널 전부 (v286 · v303) */
+function kdVals(A,key,ci){ if(ci===undefined)ci=STORE_CH; if(!A||ci<0)return [0,0]; if(ci===KD)return [A.kd[0][key],A.kd[1][key]];
+  const s=A.ks?A.ks[ci][key]:0; return [A.byCh[ci][key]-s,s]; }
+const kdCh=()=>focus!==null?focus:STORE_CH;   /* 일반·구독 비교 카드가 보는 채널 = 고른 몰, 없으면 매장(시흥) (v303) */
+const kdChHas=ci=>ci>=0&&(ci===KD||(ci===STORE_CH&&useStaff())||!!(DATA.kcells&&DATA.kcells.length));   /* 그 채널을 가를 자료가 있나 (DPS 기준은 kcells 가 전 채널) */
 function kdD(v,p,cls){ if(p===null||p===undefined)return ''; if(p===0)return v>0?'<em class="'+cls+' up">신규</em>':'';
   const x=(v-p)/Math.abs(p)*100; return '<em class="'+cls+' '+(Math.abs(x)<0.5?'flat':x>0?'up':'down')+'">'+(x>=0?'+':'')+x.toFixed(0)+'%</em>'; }
 /* 일반·구독 값을 매장 칸 기준(사원/채널)대로 — a0 일반 · a1 구독 · t 합 (v287) */
-function kdNow(A){ if(!A)return null; const key=mkey();
-  if(useStaff()){ const c=stStore(A.st,key); return c?{a0:c.a0,a1:c.a1,t:c.t}:null; }
-  const k=kdVals(A,key); return {a0:k[0],a1:k[1],t:k[0]+k[1]}; }
-const kdHas=()=>STORE_CH>=0&&(KD>=0||useStaff());   /* 구독을 가를 자료가 있나 */
+function kdNow(A,ci){ if(!A)return null; const key=mkey(); if(ci===undefined)ci=STORE_CH;
+  if(useStaff()&&ci===STORE_CH){ const c=stStore(A.st,key); return c?{a0:c.a0,a1:c.a1,t:c.t}:null; }
+  const k=kdVals(A,key,ci); return {a0:k[0],a1:k[1],t:k[0]+k[1]}; }
+const kdHas=()=>STORE_CH>=0&&(KD>=0||useStaff());   /* 매장(시흥)을 가를 자료가 있나 */
 /* 기간 묶음(일·주·월)마다 매장 합 v 와 그중 구독 v1 — 비중 추이용 */
-function kdBuckets(){ const bk=buckets(),key=mkey(),rows=bk.keys.map(k=>({k:k,l:bk.map.get(k).l,v:0,v1:0,g:0,r:0}));
+function kdBuckets(ci){ if(ci===undefined)ci=STORE_CH; const bk=buckets(),key=mkey(),rows=bk.keys.map(k=>({k:k,l:bk.map.get(k).l,v:0,v1:0,g:0,r:0}));
   const pos={}; bk.keys.forEach((k,i)=>bk.map.get(k).idx.forEach(d=>pos[d]=i));
-  if(useStaff()){ for(const c of ST.rows){ const i=pos[c[0]]; if(i===undefined||!ST.store[c[1]])continue; const v=key==='g'?c[3]:key==='r'?c[4]:c[3]-c[4]; rows[i].v+=v; if(c[2]===1)rows[i].v1+=v; } }
-  else{ for(const c of CELLS){ if(c[1]!==STORE_CH)continue; const i=pos[c[0]]; if(i===undefined)continue; const v=val(c); rows[i].v+=v; if(c.sub)rows[i].v1+=v; } }
+  if(useStaff()&&ci===STORE_CH){ for(const c of ST.rows){ const i=pos[c[0]]; if(i===undefined||!ST.store[c[1]])continue; const v=key==='g'?c[3]:key==='r'?c[4]:c[3]-c[4]; rows[i].v+=v; if(c[2]===1)rows[i].v1+=v; } }
+  else{ for(const c of CELLS){ if(c[1]!==ci)continue; const i=pos[c[0]]; if(i===undefined)continue; rows[i].v+=val(c);
+    rows[i].v1+=key==='g'?(c.sg||0):key==='r'?(c.sr||0):(c.sg||0)-(c.sr||0); } }   /* 구독 몫 = 셀의 sg/sr (합친 매장구독 셀은 전부 · 다른 몰은 kcells) */
   return {mode:bk.mode,rows:rows}; }
 function kdPill(a1,t){ return t>0?'<em class="kdp">구독 '+pct(a1,t).toFixed(0)+'%</em>':''; }
 function kdShareTxt(a1,t,p1,pt){ if(!(t>0))return ''; const sh=pct(a1,t); let x='구독 비중 '+sh.toFixed(1)+'%';
@@ -1351,10 +1362,14 @@ function drawOO(){
 
 /* ===== 매장 일반 · 구독 비교 (v287) — 비율 막대 · 금액·비중·전기 대비 · 구독 비중(%p) · 기간 묶음별 쌓은 막대(위 숫자 = 구독 비중) ===== */
 function drawKind(){
-  const el=$('#kd-cmp'), tr=$('#kd-trend'), nt=$('#kd-note'), tn=$('#kdt-note'); if(!el||!tr)return;
-  if(!kdHas()||!inScope(STORE_CH)){ el.innerHTML='<div class="empty">'+(STORE_CH<0||!inScope(STORE_CH)?'범위에 매장(시흥)이 없습니다':'구독을 가를 자료가 없습니다')+'</div>'; tr.innerHTML=''; nt.textContent=''; tn.textContent=''; return; }
-  const c1=kdNow(cur), c0=prv?kdNow(prv):null, t=c1?c1.t:0;
-  if(!c1||t<=0){ el.innerHTML='<div class="empty">이 기간에 매장 매출이 없습니다</div>'; tr.innerHTML=''; nt.textContent=''; tn.textContent=''; return; }
+  const el=$('#kd-cmp'), tr=$('#kd-trend'), nt=$('#kd-note'), tn=$('#kdt-note'), tt=$('#kd-title'); if(!el||!tr)return;
+  /* v303 — 몰을 고르면 그 몰의 일반·구독, 안 골랐으면 매장(시흥) */
+  const ci=kdCh(), nm=ci>=0?CH[ci].name:'매장(시흥)';
+  if(tt)tt.textContent=nm+' 일반 · 구독'; const sec=$('#kd-sec'); if(sec)sec.dataset.title=nm+' 일반 · 구독';
+  if(ci<0||!inScope(ci)){ el.innerHTML='<div class="empty">범위에 '+esc(nm)+' 이(가) 없습니다</div>'; tr.innerHTML=''; nt.textContent=''; tn.textContent=''; return; }
+  if(!kdChHas(ci)){ el.innerHTML='<div class="empty">'+(ci===STORE_CH?'구독을 가를 자료가 없습니다':esc(nm)+' 은(는) 이 기준에 구독 구분 자료가 없습니다 · [DPS] 기준에서 보입니다')+'</div>'; tr.innerHTML=''; nt.textContent=''; tn.textContent=''; return; }
+  const c1=kdNow(cur,ci), c0=prv?kdNow(prv,ci):null, t=c1?c1.t:0;
+  if(!c1||t<=0){ el.innerHTML='<div class="empty">이 기간에 '+esc(nm)+' 매출이 없습니다</div>'; tr.innerHTML=''; nt.textContent=''; tn.textContent=''; return; }
   const p1=pct(c1.a1,t), q1=(c0&&c0.t>0)?pct(c0.a1,c0.t):null;
   const chip=(v,p)=>{ if(!c0||p===null||p===undefined)return '<span class="dchip flat">–</span>'; if(p===0)return v>0?'<span class="dchip up">신규</span>':'<span class="dchip flat">–</span>';
     const x=(v-p)/Math.abs(p)*100; return '<span class="dchip '+(Math.abs(x)<0.5?'flat':x>0?'up':'down')+'" title="전기 '+wonS(p)+'">'+(x>=0?'+':'')+x.toFixed(1)+'%</span>'; };
@@ -1362,10 +1377,12 @@ function drawKind(){
   let h='<div class="kdbar">'+seg(c1.a0,0)+seg(c1.a1,1)+'</div>';
   h+='<div class="kdrows">'+[c1.a0,c1.a1].map((v,j)=>'<span class="nm"><i'+(j?' class="sub"':'')+'></i>'+KD_NM[j]+'</span><span class="amt">'+wonS(v)+'</span><span class="shr">'+pct(v,t).toFixed(1)+'%</span>'+chip(v,c0?(j?c0.a1:c0.a0):null)).join('')+'</div>';
   let dp=''; if(q1!==null){ const d=p1-q1; dp=' · 전기 '+q1.toFixed(1)+'% <span class="dchip '+(Math.abs(d)<0.05?'flat':d>0?'up':'down')+'">'+(d>=0?'+':'')+d.toFixed(1)+'%p</span>'; }
-  h+='<div class="kdsum"><span class="big">'+p1.toFixed(1)+'%</span><span class="lbl">구독 비중</span>'+dp+'<br>매장 합계 <b>'+wonS(t)+'</b>'+(c0?' · 전기 <b>'+wonS(c0.t)+'</b> '+chip(t,c0.t):(cmp===null?' · 비교 기간 없음':''))+'</div>';
+  h+='<div class="kdsum"><span class="big">'+p1.toFixed(1)+'%</span><span class="lbl">구독 비중</span>'+dp+'<br>'+esc(nm)+' 합계 <b>'+wonS(t)+'</b>'+(c0?' · 전기 <b>'+wonS(c0.t)+'</b> '+chip(t,c0.t):(cmp===null?' · 비교 기간 없음':''))+'</div>';
   el.innerHTML=h;
-  nt.textContent=(useStaff()?'매장 사원 실적 기준 (사원별목표/실적) · 일반 = 구독 아닌 판매번호':'판매번호의 DPS 채널 기준 · 일반 = 매장(시흥) · 구독 = 매장구독(시흥)')+' · '+mname()+(ST?' · 기준은 핵심 지표 [사원|채널]':'');
-  const kb=kdBuckets(), n=kb.rows.length;
+  nt.textContent=(ci===STORE_CH
+    ?'매장 사원 판매번호 + 매장 채널 판매번호(합집합) · 일반 = 매장(시흥) · 구독 = 매장구독(시흥)'
+    :'이 몰 판매번호의 구독 전표(DPS) = 구독 · 나머지 = 일반')+' · '+mname()+(c1.a1>0?'':' · 이 기간엔 구독 전표가 없습니다')+' · 위에서 몰을 고르면 그 몰 기준';
+  const kb=kdBuckets(ci), n=kb.rows.length;
   tr.innerHTML=n?barChart(kb.rows,'#1428A0',true,{label:r=>r.v>0?Math.round(pct(r.v1,r.v))+'%':''}):'<div class="empty">자료 없음</div>';
   tn.innerHTML=({d:'일별',w:'주별',m:'월별'})[kb.mode]+' · '+n+'구간 · <i class="kdl"></i>일반 <i class="kdl sub"></i>구독 · 막대 위 숫자 = 그 기간의 구독 비중';
 }
@@ -1808,7 +1825,7 @@ function openCh(ci){
   renderChSeries();
   document.querySelectorAll('#dw-gran button').forEach(bt=>bt.onclick=()=>{dwGran=bt.dataset.g;renderChSeries();});
   $('#dw-b').querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>openPr(+el.dataset.id));
-  focus=ci;drawTrend();drawRank();drawAbar();drawMallSel();dirtyDetail=true;if(view==='d')renderDetail();
+  focus=ci;drawTrend();drawRank();drawAbar();drawMallSel();drawKind();dirtyDetail=true;if(view==='d')renderDetail();
 }
 function openPr(pid){
   const m=PR[pid],mset=selMonths();
@@ -2110,7 +2127,7 @@ function drawMallSel(){
     dirtyC=true;
     if(focus!==null&&view!=='c')setView('c');
     else if(focus===null&&view==='c'){render();setView('o');}   /* 채널 화면에서 '전체 채널 보기' 로 돌리면 개요로 */
-    else{drawTrend();drawRank();drawAbar();drawMallSel();if(view==='c')renderCV();}
+    else{drawTrend();drawRank();drawAbar();drawMallSel();drawKind();if(view==='c')renderCV();}
   };
 }
 function drawCVChips(){
@@ -2121,7 +2138,7 @@ function drawCVChips(){
     +esc(CH[x.i].name)+' <span style="opacity:.65">'+wonS(x.v)+'</span></button>').join('');
   $('#cvchips').querySelectorAll('button').forEach(el=>el.onclick=()=>{
     const i=+el.dataset.i;if(focus===i){clearFocus();return;}focus=i;dirtyC=true;
-    renderCV();drawTrend();drawRank();drawAbar();drawMallSel();});
+    renderCV();drawTrend();drawRank();drawAbar();drawMallSel();drawKind();});
   $('#cv-note').textContent=list.length+'개 · 기간과 지표는 위 컨트롤을 그대로 따릅니다';
 }
 function renderCV(){
@@ -2148,7 +2165,7 @@ function renderCV(){
     if(prv){ const mp=selMonths(cmp.lo,cmp.hi); for(const c of PC){ if(c[1]!==ci||!mp.has(c[0]))continue; qtyP+=c[3]||0; } } }
   const openMkt=CH[ci].group==='오픈마켓';
   const K=[['순매출',won(o.n)+dl(o.n,po?po.n:null),'accent']];
-  if(ci===KD){ const kv=kdVals(cur,key),kp=prv?kdVals(prv,key):null,kt=(kv[0]+kv[1])||1;   /* 매장(시흥) 안의 일반 · 구독 (v286) */
+  if(ci===KD||(cur.ks&&(cur.ks[ci].g||cur.ks[ci].r))){ const kv=kdVals(cur,key,ci),kp=prv?kdVals(prv,key,ci):null,kt=(kv[0]+kv[1])||1;   /* 채널 안의 일반 · 구독 — 매장(시흥)은 합친 채널, 다른 몰은 구독 전표가 있을 때 (v286 · v303) */
     kv.forEach((v,j)=>K.push([KD_NM[j],won(v)+'<small>'+pct(v,kt).toFixed(0)+'%</small>'+dl(v,kp?kp[j]:null),'','kd'+j]));
     const sq=pct(kv[1],kt), pq=(kp&&(kp[0]+kp[1])>0)?pct(kp[1],kp[0]+kp[1]):null; let sd='';
     if(prv&&pq!==null){ const d=sq-pq; sd='<span class="sub '+(Math.abs(d)<0.05?'':d>0?'up':'down')+'">'+cmp.label+' '+(d>=0?'+':'')+d.toFixed(1)+'%p</span>'; }
@@ -2253,7 +2270,7 @@ function drawDvHead(){ const el=$('#dv-head'); if(!el)return; if(focus===null){e
   el.style.display=''; el.innerHTML='<div class="grid cvsticky"><div class="card sp12"><div class="card-b" style="padding:12px 18px">'+mallHead(focus,'d')+'</div></div></div>'; bindMallHead(el,'d'); }
 function cvList(){ const key=mkey(); return CH.map((c,i)=>({i:i,v:cur.byCh[i][key]})).filter(x=>inScope(x.i)&&cur.byCh[x.i].g!==0).sort((x,y)=>y.v-x.v).map(x=>x.i); }
 function cvStep(d){ const L=cvList(), i=L.indexOf(focus), j=i+d; if(i<0||j<0||j>=L.length)return;
-  focus=L[j]; cvCatOpen=null; dirtyC=true; dirtyDetail=true; if(view==='d')renderDetail(); else renderCV(); drawTrend(); drawRank(); drawAbar(); drawMallSel(); window.scrollTo(0,0); }
+  focus=L[j]; cvCatOpen=null; dirtyC=true; dirtyDetail=true; if(view==='d')renderDetail(); else renderCV(); drawTrend(); drawRank(); drawAbar(); drawMallSel(); drawKind(); window.scrollTo(0,0); }
 /* 접는 카드 — data-fk 로 상태를 기억한다 (세션 안에서만) */
 let FOLD={}; try{ FOLD=JSON.parse(sessionStorage.getItem('dash_fold')||'{}')||{}; }catch(e){ FOLD={}; }
 function bindFolds(root){
@@ -2353,7 +2370,7 @@ $('#tr-clear').onclick=()=>clearFocus();
 $('#foot').innerHTML='<b>주문 건수</b> · 샵링커 주문번호와 VMS 전표번호로 셉니다. 원장에만 있는 채널(매장·구독)은 건수가 없어 객단가도 나오지 않습니다.<br>'
   +'<b>VMS</b> · 합계(J열)가 음수인 행은 할인·반품으로 보고 환불로 집계합니다.<br>'
   +'<b>직판</b> · 담당자별로 나뉘어 있던 행을 하나의 채널로 합쳤습니다. 담당자 구분은 채널 상세의 [담당자별]에서 봅니다.<br>'
-  +'<b>매장(시흥)</b> · 일반 판매와 구독(DPS 매장구독) 전표를 한 채널로 합쳐 보입니다. 일반/구독은 그 줄 안(순위 막대 진한 쪽 = 일반 · 연한 쪽 = 구독)과 채널 화면·성적표·매트릭스의 하위 줄에서 나뉩니다. <b>매장(시흥) 일반 · 구독</b> 카드가 둘을 비교하고 구독 비중(전기 대비 %p)과 기간별 추이를 보입니다.<br>'
+  +'<b>매장(시흥)</b> · 매장 사원 판매번호 + 매장 채널 판매번호(합집합)를 한 채널로, 일반 판매와 구독(DPS 매장구독) 전표를 그 안에 합쳐 보입니다. 일반/구독은 그 줄 안(순위 막대 진한 쪽 = 일반 · 연한 쪽 = 구독)과 채널 화면·성적표·매트릭스의 하위 줄에서 나뉩니다. <b>일반 · 구독</b> 비교 카드는 몰을 고르면 그 몰(DPS 구독 전표 기준), 안 고르면 매장(시흥)을 보입니다. 최지영 프로 판매번호는 전부 <b>시흥몰</b>입니다.<br>'
   +'<b>채널 화면</b> · 상단 [채널] 탭에서 몰을 고르면 그 채널만 기간·지표를 바꿔가며 볼 수 있습니다. 몰 이름 줄의 <b>[요약 | 상세]</b> 로 같은 몰의 상세로 바로 넘어가고, <b>◀ ▶</b>(← → 키)로 다음 몰. 이 줄은 스크롤해도 위에 남습니다.<br>'
   +'<b>선택 해제</b> · 채널을 다시 누르거나, 상단 필터 칩의 ✕, 추이 카드의 “전체 채널 보기”, 또는 Esc.<br>'
   +'<b>비교 기간</b> · 어제→전주 동요일, 이번 주→전주 동기간, 지난 주→전전주, 월→전월 전체, 이번 달→전월 같은 일자까지, 올해→전년 같은 기간, 작년→전전년, 그 외→직전 동일 일수.<br>'

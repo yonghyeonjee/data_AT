@@ -1,0 +1,26 @@
+-- mvp_296 · v303 · 2026-11-13 — 매출 대시보드 일반·구독 비교 카드는 고른 몰을 따라간다 · 채널 '시흥' → '시흥몰' · 최지영 프로 판매는 전부 시흥몰
+-- 사용자: "이거 매장 프로들만 아니라 전체이지? · 몰을 고를때마다 다르게 나와야하는거아냐? · 최지영프로의 판매 내역은 모두 시흥몰로 · 시흥몰 이름이 그냥 시흥으로 되어 있는데"
+-- DB 는 2026-11-13 적용됨 (MCP · 서버 저장 본문 replace → execute · 지점 수 검증). 아래는 적용한 치환의 기록.
+--
+-- 1) 채널 이름 '시흥' → '시흥몰'
+--   core.f_channel_norm            when '시흥' then '시흥몰' when '시흥몰' then '시흥몰'   (원장 orders.channel_name '시흥몰' 2,780줄 · 시트 channel_daily ingest/upsert · f_dps_classify 가 전부 이 함수)
+--   core.f_dps_channel_norm        when '시흥' then '시흥몰'                              (DPS 수집기가 옛 이름을 보내도 새 이름)
+--   core.f_dps_group               '자사몰' 목록 'AT몰','시흥몰'
+--   fn_channel_daily_month · fn_store_channel_day   채널 목록 'AT몰','시흥몰','E스토어'
+--   core.f_dash_payload _ch        ('시흥몰','고도몰',false,4)
+--   update dps.sale set channel='시흥몰' where channel='시흥' or staff_name='최지영';     -- 1,146줄(시흥 1,143 + 최지영의 AT몰 1·DPS 소모품(대량) 2)
+--   update core.channel_daily set channel='시흥몰' where channel='시흥';                  -- 599줄 (pk biz_date·channel · 충돌 없음)
+--   관리자 정산·등록요청 select 의 '시흥' 은 crm.settlement 시트 이름이라 그대로.
+--
+-- 2) 최지영 프로 판매번호는 전부 시흥몰
+--   core.f_dps_raw_upsert   channel = case when staff_name='최지영' then '시흥몰' else core.f_dps_channel_norm(channel) end
+--   core.f_dash_payload _dl  case when bool_or(l.staff_name like '최지영%' or s.staff_name='최지영') then '시흥몰'  (매장 합집합 규칙보다 앞 · perf_line 이름은 '최지영1')
+--   확인: 최지영 dps.sale 289건 전부 시흥몰 · perf_line '최지영1' 281 판매번호 = 전부 본인 전표(교차 0) · 10월 실적 3,971만
+--   core.staff 에서 최지영 dept 가 '매장' 이라 mvp_295 합집합이 잡을 뻔했으나 perf 이름이 '최지영1' 이라 매장(시흥)에 안 들어갔었다 — 이제 규칙으로 못 박음.
+--
+-- 3) 몰마다 일반·구독 — payload 'kcells' [일, 채널, 매출, 환불] = 그 날 그 채널 셀 가운데 구독 전표(dps.sale.is_subscription) 몫 (DPS 기준만 · 원장·수기는 빈 배열)
+--   _dl 에 sub boolean(coalesce(bool_or(s.is_subscription),false)) 추가 → 'kcells', (select … from _dl dl join _ch c … where v_dps and dl.sub group by di, ci)
+--   10월 확인: 시흥몰 구독 182.6만 · 대표님(DPS) 336만 · 매장구독(시흥) 1.35억(= 채널 전부) · 다른 몰 0
+--   화면(v303): kcellsApply(DATA) 가 셀에 sg·sr 로 붙이고(합치기 전) · agg() ks[ci] · kdVals(A,key,ci) · kdCh() = focus 또는 매장(시흥) · drawKind() 제목·문구 몰 이름 · 몰 고르기(openCh·몰 select·칩·◀▶)마다 drawKind · 채널 화면 KPI 일반/구독/구독 비중 카드는 구독 전표가 있는 몰이면 다 보임
+--   캐시: 적용 뒤 f_dash_mark_dirty(true) → 11-13 11:39 KST 재빌드 확인.
+-- 테스트 ptest/kdmall.mjs 31/31 (dash·dash/test × PC·폰 · 기본 매장 → 시흥몰 30% → P몰 0%·안내 → 해제 · 옛 캐시(kcells 없음) 안내) · stfold 27/27
