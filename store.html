@@ -4135,7 +4135,8 @@ function openQuote(o,isNew){ o=o||{};
   if(o.card) q.set('card',o.card); if(o.tier) q.set('tier',o.tier); if(o.cardoff) q.set('cardoff','1');
   if(ME) q.set('counselor',ME);
   const u=isNew? NEW_QUOTE_URL+(q.toString()?'?'+q.toString():'') : QUOTE_URL+(q.toString()?'&'+q.toString():'');
-  window.open(u,isNew?'sat_quote_new':'sat_quote','noopener');
+  // 상담 견적(/quote/)은 우리 화면 — noopener 를 빼야 이 창의 확인 상태(sessionStorage st_open)가 넘어가 뒷번호를 다시 묻지 않는다 (2026-11-12) · 옛 시흥몰 견적서는 그대로 끊고 연다
+  if(isNew) window.open(u,'_blank'); else window.open(u,'sat_quote','noopener');
 }
 function openCalc(){ window.open(CALC_URL,'sat_calc','noopener'); }
 function tabInfo(t){ const b=document.querySelector(`.tab[data-tab="${t}"]`); if(!b) return null;
@@ -7604,6 +7605,25 @@ async function logoutStore(){ if(!confirm('로그아웃할까요? 다시 쓰려�
   await sessionEnd(); location.reload(); }
 /* 뒷번호로 다시 확인 (2026-11-06): 자리 비움 잠금 · 창을 다시 열었을 때 — 세션이 살아 있으면 휴대폰 뒷번호 4자리만 */
 let UL_BOOT=false, STARTED=false;
+/* 상담 견적(/quote/)에서 방금 저장한 견적을 [상담 입력] 칸에 채운다 (2026-11-13) — /quote/ 가 남긴 dc_quote_handoff(30분) 를 한 번만 읽는다.
+   고객명이 비어 있거나 같은 고객일 때만 채우고, 다른 고객을 쓰는 중이면 건드리지 않는다. 저장은 담당자가 한다 */
+function quoteHandoff(){ try{ if(!STARTED||LOCKED) return; const raw=localStorage.getItem('dc_quote_handoff'); if(!raw) return; const h=JSON.parse(raw);
+    if(!h||!h.at||Date.now()-h.at>30*60*1000){ localStorage.removeItem('dc_quote_handoff'); return; }
+    if(h.by&&ME&&h.by!==ME) return;
+    const nm=$('c_name'), cur=(nm.value||'').trim(); if(cur&&cur!==String(h.name||'').trim()) return;
+    localStorage.removeItem('dc_quote_handoff');
+    if(h.go){ try{ goTab('consult'); cMode('log'); }catch(e){} }
+    if((h.cats||[]).length){ try{ const chips=[...$('c_cat').querySelectorAll('.chip')]; if(!chips.some(x=>x.classList.contains('on'))) chips.forEach(x=>{ if(h.cats.includes(x.dataset.v)) x.classList.add('on'); }); }catch(e){} }
+    if(!cur){ nm.value=h.name||''; const ph=$('c_phone'); if(!ph.value.trim()&&h.phone){ ph.value=h.phone; hyphen(ph); } }
+    (h.models||[]).forEach(cModelAdd); if(typeof subQuoteRender==='function') subQuoteRender();
+    const am=$('c_amount'); if(!am.value.trim()&&+h.amount>0){ am.value=String(Math.round(+h.amount)); comma(am); }
+    const ct=$('c_content'); if(h.text&&ct.value.indexOf(h.text)<0) ct.value=(ct.value.trim()?ct.value.trim()+'\n':'')+h.text;
+    toast(`${h.name||''} ${h.no?'견적 '+h.no:'견적'} 내용을 상담 입력에 채웠습니다 — 확인하고 저장하세요`,'ok'); }catch(e){} }
+/* 견적 화면에서 [상담 입력으로] 넘어온 직후에는 focus 가 안 올 수 있어 처음 20초 동안 몇 번 더 본다 */
+{ let n=0; const t=setInterval(()=>{ quoteHandoff(); if(++n>=20) clearInterval(t); },1000); }
+window.addEventListener('storage',e=>{ if(e.key==='dc_quote_handoff'&&e.newValue) quoteHandoff(); });
+window.addEventListener('focus',()=>quoteHandoff());
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') quoteHandoff(); });
 function ulShow(why){ LOCKED=true; $('ulName').textContent=(ME||CODE||'')+(ME||CODE?'님':'다시 확인'); $('ulSub').textContent=why||'휴대폰 번호 뒷자리 4개로 확인합니다';
   $('ulPin').value=''; $('ulErr').textContent=''; $('pinScreen').classList.add('hidden'); $('app').classList.add('hidden'); $('ulScreen').classList.remove('hidden'); sessTick(); setTimeout(()=>$('ulPin').focus(),50); }
 function ulOther(msg){ $('ulScreen').classList.add('hidden'); LOCKED=true; if(!$('pinInput').value && CODE) $('pinInput').value=CODE;
