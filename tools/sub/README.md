@@ -79,3 +79,5 @@ python tools/sub/promo_from_xlsx.py "<리스트.xlsx>" 2026-11 sql/mvp_277_sub_p
 - 만든 SQL 은 같은 달의 예전 줄(note `promo_xlsx:YYYYMM:%`)을 `active=false` 로 하고 (약정 년 · 지원 개월) 묶음마다 `sub.f_promo_save` 한 줄 — MCP `execute_sql` 로 실행(승인 뒤). 저장 트리거가 10분 안에 `sub_policy.js promos[]` 로 배포한다.
 - 영업정책 게시판에서 받은 파일은 **NASCA DRM** 이라 openpyxl 이 못 읽는다(`BadZipFile`). 이 PC 의 Excel 은 DRM 을 풀어 열 수 있으므로 `tools/sub/xlsx_to_tsv.ps1` 로 시트를 TSV 로 뽑은 뒤 그 `.tsv` 를 넣는다 (`_s1.tsv`·`_s2.tsv` 두 장).
 - 11월 판(2026-11-04): 모델 553 (시트1 522 + 시트2 PC·Tab 31) · 6년 6개월 152 · 6년 3개월 237 · 5년 6개월 12 · 4년 6개월 72 · 4년 3개월 49 · 시트2만 있는 모델 31 은 '최장 약정 시 6개월'. 10월 판과 460 모델 겹친다. 요금표(`sub_index.js`)에 없는 모델 66(TV KQ/KMR·모니터 LS·갤럭시)은 구독센터에 상품이 없어 그냥 지나간다.
+
+- 2026-11-13: WD90H25BHW 구독 전용 표시(sub.model_flag) 해제 — 시흥몰에 일반가가 있으면 구독탭에 일시불도 노출.
