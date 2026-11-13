@@ -476,7 +476,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 <!-- ═══ 견적서 (양식) ═══ -->
 <section id="v-sheet" class="hidden">
-  <div class="sheetbar"><span class="hint">시흥몰 구독 견적서와 같은 모양입니다 · 입력 화면에서 바꾼 값이 바로 반영됩니다 · 고객에게 보내는 견적서도 이 모양입니다</span><span class="sp"></span><button class="chip" onclick="printSheet()">🖨 인쇄 · PDF</button></div>
+  <div class="sheetbar"><span class="hint">시흥몰 구독 견적서와 같은 모양입니다 · 입력 화면에서 바꾼 값이 바로 반영됩니다 · 고객에게 보내는 견적서도 이 모양입니다</span><span class="sp"></span><button class="chip" title="저장한 이 견적을 시흥몰 구독 견적서 화면에서 엽니다 — 금액 수정 · 발행 · PDF · 고객에게 보내기" onclick="openOldSheet()">시흥몰 구독 견적서로 열기 ↗</button><button class="chip" onclick="printSheet()">🖨 인쇄 · PDF</button></div>
   <iframe id="sheetFrame" title="견적서" style="display:block;width:100%;border:0;min-height:640px;background:#eef1f5;border-radius:12px"></iframe>
   <div class="hidden" id="oldSheet">
   <div class="sheet">
@@ -678,6 +678,10 @@ function ensureSheetFrame(){ const f=$('sheetFrame'); if(!f||f.dataset.on) retur
 window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; const d=e.data||{}; if(d.t==='qready'){ SHF_READY=true; postSheet(); } else if(d.t==='qh'){ const f=$('sheetFrame'); if(f) f.style.height=Math.max(640,+d.h||0)+'px'; } });
 function postSheet(){ const f=$('sheetFrame'); if(!f||!SHF_READY||!LAST||!f.contentWindow) return; try{ const {quote}=toQuoteJson(); const nc=(typeof NC!=='undefined'&&NC||[]).find(c=>c.id===Q.cond.namecardId)||null;
     f.contentWindow.postMessage({t:'quote', d:{ ok:true, quote, no:Q.no||'', name:Q.cust.name||'', counselor:nc?(nc.name||''):(ME||''), counselor_role:nc?(nc.position||'프로'):'프로', counselor_title:nc?(nc.dept||''):'', tel:nc?(nc.mobile||''):'', store_tel:STORE.tel, counselor_email:nc?(nc.email||''):'' }}, location.origin); }catch(e){ console.warn('견적서 미리보기', e); } }
+/* 시흥몰 구독 견적서(quote_subscribe)로 이 견적 열기 (2026-11-13) — 담당자 화면 견적서 줄 [열기 ↗] 와 같은 주소(no·v·name·phone·counselor). 저장한 견적만 */
+function openOldSheet(){ if(!Q.no){ toast('먼저 [저장 · 발행]을 누르세요 — 저장한 견적만 시흥몰 구독 견적서에서 열 수 있습니다'); return; }
+  const q=new URLSearchParams(); q.set('no',Q.no); if(Q.ver) q.set('v',Q.ver); if(Q.cust.name) q.set('name',Q.cust.name); if(Q.cust.phone) q.set('phone',String(Q.cust.phone).replace(/\D/g,'')); if(ME) q.set('counselor',ME);
+  window.open('https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html&'+q.toString(),'sat_quote','noopener'); }
 function printSheet(){ const f=$('sheetFrame'); if(f&&f.contentWindow) f.contentWindow.print(); }
 function bindBundlePaste(){ const q=$('q'); if(!q||q.dataset.bp) return; q.dataset.bp='1'; q.addEventListener('paste',e=>{ const t=(e.clipboardData||window.clipboardData).getData('text')||''; if(isQuoteRef(t)){ e.preventDefault(); openRef(t); return; } if(/[?&]items=/.test(t)){ e.preventDefault(); applyBundle(parseBundle(t)); } }); }
 function prefillModels(){ bindBundlePaste(); let bm=[]; if(P.get('items')){ const b=parseBundle(location.search); bm=b.items.map(x=>x.m); applyBundle(b, true); }
