@@ -45,7 +45,9 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
   }
   // 구독센터 페이지 폴더: 지금 페이지 주소(htmid=<폴더>/sub_…)를 따른다 — 웹FTP subscribe/ · 예전 service/ 모두 동작
   var PAGE_DIR = CFG.pageDir || (/[?&]htmid=([\w-]+\/)sub_/.exec(location.search) || [])[1] || 'subscribe/';
-  function findUrl(q) { var u = CFG.findUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_find.html'; return q ? u + (u.indexOf('?') < 0 ? '?' : '&') + q : u; }
+  // 2026-11-13: 고도몰 디자인 페이지(htmid=subscribe/…)가 막혀 — 설정이 없으면 웹FTP 구독센터(/data/gudok/)로
+  var GD = CFG.gudokDir || '/data/gudok/';
+  function findUrl(q) { var u = CFG.findUrl || GD + 'find.html'; return q ? u + (u.indexOf('?') < 0 ? '?' : '&') + q : u; }
   // 모델별 정적 페이지(m/<모델>.html · 2026-11-04 · 검색엔진용) — 있으면 그 주소, 없으면 view.html?model= (목록 = sdp/sub/sub_static.js)
   function staticView(m) {
     var S = window.SUB_STATIC, b = CFG.viewStatic;
@@ -54,7 +56,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     return S.set[m] ? b + String(m).replace(/\//g, '_') + '.html' : '';
   }
   function modelHref(base, m, q) { var s = staticView(m); return s ? s + (q ? '?' + q : '') : base + encodeURIComponent(m) + (q ? '&' + q : ''); }
-  function viewUrl(model) { return modelHref(CFG.viewUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_view.html&model=', model); }
+  function viewUrl(model) { return modelHref(CFG.viewUrl || GD + 'view.html?model=', model); }
   function track(name, extra) {
     var ev = { event: name, sub_model: model };
     for (var k in extra) ev[k] = extra[k];
@@ -100,8 +102,8 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     if (cat === 'laundry' || cat === 'cooking') return null;
     return { key: cat, name: catName };
   }
-  function homeUrl() { return CFG.homeUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_home.html'; }
-  function catUrl(key) { return (CFG.catUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_c_') + key + '.html'; }
+  function homeUrl() { return CFG.homeUrl || GD + 'index.html'; }
+  function catUrl(key) { return (CFG.catUrl || GD) + key + '.html'; }
   function cleanName(s) { return String(s || '').replace(/\s*\*+\s*$/, '').replace(/\s*(삼성본사직배송|본사직배송)\s*/g, ' ').replace(/\s{2,}/g, ' ').replace(/^\s|\s$/g, ''); }
   // 이름 없는 TV·모니터는 모델명에서 크기·라인업을 읽는다 (sub_shop.js 의 modelHint 와 같은 규칙)
   function modelHint() {
@@ -196,7 +198,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
     try { localStorage.setItem('ss_bundle_v1', JSON.stringify(items)); } catch (e) {}
     try { document.dispatchEvent(new CustomEvent('ss-cart')); } catch (e2) {}
   }
-  function bundleUrl() { return CFG.bundleUrl || (CFG.homeUrl ? CFG.homeUrl.replace(/index\.html$/, 'bundle.html') : '/main/html.php?htmid=' + PAGE_DIR + 'sub_bundle.html'); }
+  function bundleUrl() { return CFG.bundleUrl || (CFG.homeUrl ? CFG.homeUrl.replace(/index\.html$/, 'bundle.html') : GD + 'bundle.html'); }
   function syncBundleBtn() {
     var b = root.querySelector('[data-bundle]'); if (!b) return;
     var on = cartHas(model); b.classList.toggle('is-on', on);

@@ -54,16 +54,18 @@ window.SUB_SHOP_READY = true;
 
   // 구독센터 페이지 폴더: 지금 페이지 주소(htmid=<폴더>/sub_…)를 따른다 — 웹FTP subscribe/ · 예전 service/ 모두 동작
   var PAGE_DIR = CFG.pageDir || (/[?&]htmid=([\w-]+\/)sub_/.exec(location.search) || [])[1] || 'subscribe/';
+  // 2026-11-13: 고도몰 디자인 페이지(htmid=subscribe/…)가 '요청하신 작업을 처리할 수 없습니다' 로 막혀 — 설정이 없으면 웹FTP 구독센터(/data/gudok/)로 보낸다
+  var GD = CFG.gudokDir || '/data/gudok/';
   var LINK = {
-    home: CFG.homeUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_home.html',
-    cat: CFG.catUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_c_',
-    card: CFG.cardUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_card.html',
-    guide: CFG.guideUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_guide.html',
-    find: CFG.findUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_find.html',
-    view: CFG.viewUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_view.html&model=',
-    bundle: CFG.bundleUrl || '/main/html.php?htmid=' + PAGE_DIR + 'sub_bundle.html',
+    home: CFG.homeUrl || GD + 'index.html',
+    cat: CFG.catUrl || GD,
+    card: CFG.cardUrl || GD + 'card.html',
+    guide: CFG.guideUrl || GD + 'guide.html',
+    find: CFG.findUrl || GD + 'find.html',
+    view: CFG.viewUrl || GD + 'view.html?model=',
+    bundle: CFG.bundleUrl || GD + 'bundle.html',
     // 이벤트(2026-11-11): 예전에 올린 정적 페이지 설정엔 eventUrl 이 없다 → 카드 혜택 주소 옆 event.html
-    event: CFG.eventUrl || (/card\.html$/.test(CFG.cardUrl || '') ? CFG.cardUrl.replace(/card\.html$/, 'event.html') : '/main/html.php?htmid=' + PAGE_DIR + 'sub_event.html'),
+    event: CFG.eventUrl || (/card\.html$/.test(CFG.cardUrl || '') ? CFG.cardUrl.replace(/card\.html$/, 'event.html') : GD + 'event.html'),
     b2b: CFG.b2bUrl || 'https://www.samsungsh.co.kr/board/view.php?&bdId=blog&sno=121',   // 사업자 구독 (시흥몰 B2B 구독 페스티벌 글 · 2026-11-04)
     consult: CFG.consultUrl || '/main/html.php?htmid=service/SamSungSubscription.html'
   };

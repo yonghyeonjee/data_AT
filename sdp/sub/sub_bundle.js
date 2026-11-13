@@ -45,7 +45,7 @@ window.SUB_BUNDLE_READY = true;
     return S.set[m] ? b + String(m).replace(/\//g, '_') + '.html' : '';
   }
   function modelHref(base, m, q) { var s = staticView(m); return s ? s + (q ? '?' + q : '') : base + encodeURIComponent(m) + (q ? '&' + q : ''); }
-  function viewUrl(m) { return modelHref(CFG.viewUrl || '/main/html.php?htmid=subscribe/sub_view.html&model=', m, 'utm_source=sub_bundle&utm_medium=item'); }
+  function viewUrl(m) { return modelHref(CFG.viewUrl || '/data/gudok/view.html?model=', m, 'utm_source=sub_bundle&utm_medium=item'); }
   function familyKey(m) {
     if (window.SUB_FAMILY) return window.SUB_FAMILY(m);
     var x = /^(.*\d)([A-Z]+?)(N\d)?$/.exec(String(m || '').toUpperCase());
