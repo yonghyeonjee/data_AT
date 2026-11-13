@@ -521,7 +521,7 @@ function main() {
       '<div class="subtab-head" role="tablist" aria-label="구매방식">' +
       '<button type="button" role="tab" class="subtab-btn" data-tab="lump"><span>일시불</span><strong data-slot="lump-price"></strong></button>' +
       '<button type="button" role="tab" class="subtab-btn" data-tab="sub"><span>구독<em class="subtab-badge">혜택</em></span><strong data-slot="sub-price"></strong><small data-slot="sub-month"></small>' +
-      '<em class="subtab-save" data-slot="sub-save" hidden></em></button>' +
+      '<em class="subtab-save" data-slot="sub-save" hidden></em><em class="subtab-lions" data-slot="lions" hidden>🏆 라이온즈 우승 기념 · 구독료 +6개월</em></button>' +
       '</div><div class="subtab-panel" data-slot="panel" hidden></div>';
     els.lumpPrice = root.querySelector('[data-slot="lump-price"]');
     els.subPrice = root.querySelector('[data-slot="sub-price"]');
@@ -546,6 +546,9 @@ function main() {
     var cur = current();   // 선택한 조건(약정·케어·선납·카드) 그대로의 월 납부 예상금액 — 아래 요약·하단 바와 같은 값
     if (cur) setHeadPrice(cur);
     else { els.subPrice.textContent = state.min ? '월 ' + fmt(state.min) + '원~' : ''; els.subMonth.textContent = ''; }
+    // 라이온즈 우승 기념 말풍선 (2026-11-13 ~ 24) — 이 상품이 기간 안 라이온즈 행사 대상일 때만 구독 버튼 위에
+    var lb = root.querySelector('[data-slot="lions"]');
+    if (lb) { var li0 = false; try { li0 = (state.info ? promoTexts(state.info) : []).some(function (t) { return /라이온즈/.test(t); }); } catch (e) {} lb.hidden = !li0; }
     els.subSave.hidden = true;   // 빨간 배지는 쓰지 않는다 — 절감액은 총액 옆 "(○○만원 저렴)" 으로
     root.classList.toggle('is-cheaper', !!state.best);
     var btns = root.querySelectorAll('.subtab-btn');
@@ -642,6 +645,9 @@ function main() {
     h += siblingsHtml(info);
     // 요약(저렴한 금액 또는 월 구독료)만 먼저 보여주고, 약정·케어·선납·카드 선택과 결제 예상 내역은 [조건별 구독가 확인하기] 안에 접어 둔다
     var top = h; h = '';
+    // 라이온즈 우승 기념 안내 띠 (2026-11-13 ~ 24) — 이 상품이 대상이면 패널 맨 위에 (말풍선 모양)
+    var lionsM = 0; promoHits(info).forEach(function (p) { if (/라이온즈/.test(p.text || '') && p.months > lionsM) lionsM = p.months; });
+    if (lionsM) top = '<p class="subtab-lionsbar"><b>🏆 라이온즈 우승 기념</b><span>구독료 지원 기존 ' + (lionsM - 6) + '개월 + <em>추가 6개월</em> = <strong>' + lionsM + '개월</strong></span><small>11/13(금) ~ 11/24(화) · 최장 약정 선택 시</small></p>' + top;
 
     // 약정 기간
     h += '<fieldset class="subtab-field"><legend>약정 기간</legend><div class="subtab-grid subtab-grid--years">';
@@ -794,7 +800,7 @@ function main() {
 
     // 혜택 문구: 정책 기본 문구 + 기간 중인 행사 + 스킨 설정 extraPoints
     var points = (POL.texts.points || []).concat(promoTexts(info), CFG.extraPoints || []);
-    if (points.length) h += '<ul class="subtab-points">' + points.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+    if (points.length) h += '<ul class="subtab-points">' + points.map(function (t) { return /라이온즈/.test(t) ? '<li class="is-lions"><b>🏆 라이온즈 우승 기념</b>' + esc(t.replace(/^\s*라이온즈 우승 기념\s*·?\s*/, '')) + '</li>' : '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
 
     // 하단 고정 바 — 상담 신청만
     // CFG.source('goods'|'view'|…)·CFG.sourceName·CFG.utmSource 로 상담서에 남는 출처를 바꿀 수 있다 (구독 상품 페이지 sub_view 가 같은 파일을 쓴다)

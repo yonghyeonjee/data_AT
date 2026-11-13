@@ -285,7 +285,7 @@ window.SUB_SHOP_READY = true;
     var best = null;
     livePromos().forEach(function (p) {
       if (p.models.indexOf(m) < 0) return;
-      if (!best || p.months > best.months) best = { months: p.months, term: (/(\d+년|최장) 약정/.exec(p.text || '') || [])[1] || '', p: p };
+      if (!best || p.months > best.months) best = { months: p.months, term: (/(\d+년|최장) 약정/.exec(p.text || '') || [])[1] || '', lions: /라이온즈/.test(p.text || ''), p: p };   // lions: 라이온즈 우승 기념 추가 6개월 (2026-11-13 ~ 24)
     });
     return best;
   }
@@ -330,7 +330,7 @@ window.SUB_SHOP_READY = true;
   }
   function supHtml(r, medium) {
     var o = promoOf(r.model); if (!o) return '';
-    return '<span class="ss-sup' + (medium === 'event' ? ' is-ev' : '') + '">구독료 지원 <b>' + o.months + '개월</b><small>' + (medium === 'event' && o.term ? esc(o.term) + ' 약정 시 포인트' : '상당 멤버십 포인트') + '</small></span>';
+    return '<span class="ss-sup' + (medium === 'event' ? ' is-ev' : '') + (o.lions ? ' is-lions' : '') + '">' + (o.lions ? '<em>🏆 라이온즈 우승 기념 +6개월</em>' : '') + '구독료 지원 <b>' + o.months + '개월</b><small>' + (medium === 'event' && o.term ? esc(o.term) + ' 약정 시 포인트' : '상당 멤버십 포인트') + '</small></span>';
   }
   /* ---------- 조각 ---------- */
   function priceHtml(r) {
@@ -497,11 +497,14 @@ window.SUB_SHOP_READY = true;
       terms.sort(function (a, b) { return (parseInt(b, 10) || 0) - (parseInt(a, 10) || 0); });
       desc = '<b>' + esc(terms.join(' · ')) + ' 약정</b> 선택 시, ' + EV.k + '개월 구독료 상당 삼성전자 멤버십 포인트 적립';
     }
+    function lionsK(k) { return ps.some(function (p) { return p.months === +k && /라이온즈/.test(p.text || ''); }); }   // 라이온즈 우승 기념 탭 (2026-11-13)
     var old = el.querySelector('.ss-hb-cats'), scroll = old ? old.scrollLeft : 0;
     el.innerHTML = '<div class="ss-ev-tabbar" role="tablist" aria-label="구독 혜택">' + tabs.map(function (t) {
-        return '<button type="button" role="tab" data-evm="' + t.k + '" aria-selected="' + (t.k === EV.k) + '">' + esc(t.name) + '</button>';
+        return '<button type="button" role="tab" data-evm="' + t.k + '" aria-selected="' + (t.k === EV.k) + '">' + (lionsK(t.k) ? '<em class="ss-ev-lions">🏆 우승 기념</em>' : '') + esc(t.name) + '</button>';
       }).join('') + '</div>' +
-      '<div class="ss-ev-head"><div><h3>' + esc(cur.name) + '</h3><p>' + desc + '</p>' +
+      '<div class="ss-ev-head"><div><h3>' + esc(cur.name) + '</h3>' +
+        (lionsK(EV.k) ? '<p class="ss-ev-lionsbox"><b>🏆 라이온즈 우승 기념</b><span>기존 ' + (EV.k - 6) + '개월 + <em>추가 6개월</em> = <strong>' + EV.k + '개월</strong> 구독료 상당 멤버십 포인트</span><small>11월 13일(금) ~ 24일(화) · 12일간만</small></p>' : '') +
+        '<p>' + desc + '</p>' +
         '<p class="ss-ev-period">' + (from || to ? '행사 기간 ' + (from ? evDate(from) : '') + ' ~ ' + (to ? evDate(to) : '') : '') + (notes.length ? ' · ' + esc(notes.join(' · ')) : '') +
         (isMulti ? ' · <a href="' + esc(LINK.bundle) + '">다품목 계산기로 할인 계산하기 →</a>' : '') + '</p></div>' +
         '<span class="ss-ev-count">' + fmt(list.length) + '개 상품</span></div>' +
