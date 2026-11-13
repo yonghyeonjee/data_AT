@@ -342,6 +342,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <button class="tb" id="btnSave" onclick="saveQuote()">저장 · 발행</button>
   <button class="tb" id="btnDisp" onclick="openDisplay()" title="모니터가 2개일 때 — 새 창을 고객 쪽 모니터로 옮겨 전체 화면으로 띄웁니다. 고객 창에는 상품권·기타 혜택이 나오지 않습니다">고객 화면 띄우기 ⧉</button>
   <button class="tb hidden" id="btnShowQ" onclick="toggleShowQ()" title="고객 화면 창은 처음에 매장 안내만 보여 줍니다 — 견적이 준비되면 눌러서 보여 주세요">고객 화면에 견적 보여주기 ▶</button>
+  <button class="tb" id="btnGive" onclick="giveSheet()" title="지금 견적을 저장하고 시흥몰 구독 견적서 화면으로 엽니다 — 금액 수정 · 발행 · 인쇄 · PDF · 고객에게 보내기를 거기서 그대로 씁니다">구독 견적서로 주기 ↗</button>
   <button class="tb pri" id="btnShare" onclick="shareQuote()">고객에게 보내기</button>
 </div></div>
 
@@ -481,7 +482,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 <!-- ═══ 견적서 (양식) ═══ -->
 <section id="v-sheet" class="hidden">
-  <div class="sheetbar"><span class="hint">시흥몰 구독 견적서와 같은 모양입니다 · 입력 화면에서 바꾼 값이 바로 반영됩니다 · 고객에게 보내는 견적서도 이 모양입니다</span><span class="sp"></span><button class="chip" title="저장한 이 견적을 시흥몰 구독 견적서 화면에서 엽니다 — 금액 수정 · 발행 · PDF · 고객에게 보내기" onclick="openOldSheet()">시흥몰 구독 견적서로 열기 ↗</button><button class="chip" onclick="printSheet()">🖨 인쇄 · PDF</button></div>
+  <div class="sheetbar"><span class="hint">시흥몰 구독 견적서와 같은 모양입니다 · 입력 화면에서 바꾼 값이 바로 반영됩니다 · 고객에게 보내는 견적서도 이 모양입니다</span><span class="sp"></span><button class="chip" title="지금 견적을 저장하고 시흥몰 구독 견적서 화면으로 엽니다 — 금액 수정 · 발행 · 인쇄 · PDF · 고객에게 보내기" onclick="giveSheet()">구독 견적서로 주기 ↗</button><button class="chip" onclick="printSheet()">🖨 인쇄 · PDF</button></div>
   <iframe id="sheetFrame" title="견적서" style="display:block;width:100%;border:0;min-height:640px;background:#eef1f5;border-radius:12px"></iframe>
   <div class="hidden" id="oldSheet">
   <div class="sheet">
@@ -683,10 +684,6 @@ function ensureSheetFrame(){ const f=$('sheetFrame'); if(!f||f.dataset.on) retur
 window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; const d=e.data||{}; if(d.t==='qready'){ SHF_READY=true; postSheet(); } else if(d.t==='qh'){ const f=$('sheetFrame'); if(f) f.style.height=Math.max(640,+d.h||0)+'px'; } });
 function postSheet(){ const f=$('sheetFrame'); if(!f||!SHF_READY||!LAST||!f.contentWindow) return; try{ const {quote}=toQuoteJson(); const nc=(typeof NC!=='undefined'&&NC||[]).find(c=>c.id===Q.cond.namecardId)||null;
     f.contentWindow.postMessage({t:'quote', d:{ ok:true, quote, no:Q.no||'', name:Q.cust.name||'', counselor:nc?(nc.name||''):(ME||''), counselor_role:nc?(nc.position||'프로'):'프로', counselor_title:nc?(nc.dept||''):'', tel:nc?(nc.mobile||''):'', store_tel:STORE.tel, counselor_email:nc?(nc.email||''):'' }}, location.origin); }catch(e){ console.warn('견적서 미리보기', e); } }
-/* 시흥몰 구독 견적서(quote_subscribe)로 이 견적 열기 (2026-11-13) — 담당자 화면 견적서 줄 [열기 ↗] 와 같은 주소(no·v·name·phone·counselor). 저장한 견적만 */
-function openOldSheet(){ if(!Q.no){ toast('먼저 [저장 · 발행]을 누르세요 — 저장한 견적만 시흥몰 구독 견적서에서 열 수 있습니다'); return; }
-  const q=new URLSearchParams(); q.set('no',Q.no); if(Q.ver) q.set('v',Q.ver); if(Q.cust.name) q.set('name',Q.cust.name); if(Q.cust.phone) q.set('phone',String(Q.cust.phone).replace(/\D/g,'')); if(ME) q.set('counselor',ME);
-  window.open('https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html&'+q.toString(),'sat_quote','noopener'); }
 function printSheet(){ const f=$('sheetFrame'); if(f&&f.contentWindow) f.contentWindow.print(); }
 function bindBundlePaste(){ const q=$('q'); if(!q||q.dataset.bp) return; q.dataset.bp='1'; q.addEventListener('paste',e=>{ const t=(e.clipboardData||window.clipboardData).getData('text')||''; if(isQuoteRef(t)){ e.preventDefault(); openRef(t); return; } if(/[?&]items=/.test(t)){ e.preventDefault(); applyBundle(parseBundle(t)); } }); }
 function prefillModels(){ bindBundlePaste(); let bm=[]; if(P.get('items')){ const b=parseBundle(location.search); bm=b.items.map(x=>x.m); applyBundle(b, true); }
@@ -863,7 +860,7 @@ function ckAllHtml(){ const n=Q.items.length, k=Q.items.filter(it=>SEL.has(it.m)
 /* 칸 구성 (2026-11-13) — 상담사마다 쓰는 칸이 달라 고르게 한다 · 브라우저가 기억(quote_cols)
    간단형 = 모델명 · 구분 · 월 구독료 혜택가 · 일반가(① 결제가) · 총 구독가(총 지불액) / 전체 = 모든 칸. 간단형에서 계약 기간·서비스 유형 등은 [전체] 또는 [카드로 보기] 에서 바꾼다 */
 const COLS_ALL=['ck','md','nm','mode','y','care','pp','card','mon','pay','lump','net','note','act'], COLS_SIMPLE=['ck','md','mode','pay','lump','net','act'];
-let COLS=(()=>{ let v=''; try{ v=localStorage.getItem('quote_cols')||''; }catch(e){} return v==='simple'?'simple':'full'; })();
+let COLS=(()=>{ let v=''; try{ v=localStorage.getItem('quote_cols')||''; }catch(e){} return v==='full'?'full':'simple'; })();   // 기본 간단형 (2026-11-13)
 function setCols(v){ COLS=v; try{ localStorage.setItem('quote_cols',v); }catch(e){} render(); }
 function tableHtml(S,L){
   const simple=COLS==='simple', V=simple?COLS_SIMPLE:COLS_ALL;
@@ -1373,17 +1370,37 @@ function toQuoteJson(){
     total:S.total+L.amount, benefit:S.ben+L.ben, finalP:S.net+L.net, monthly:S.monthly, realM:S.pay, prepayAmt:S.preAmt, card:Q.cond.card||'', memo:Q.cust.memo, date:Q.issuedAt||todayStr(), lump:L.amount, lumpNet:L.net };
   return {quote, summary};
 }
+/* 저장한 뒤 바뀐 것이 있는지 — [구독 견적서로 주기] 가 다시 저장할지 정한다 */
+let SAVED_SIG='';
+function quoteSig(){ try{ return JSON.stringify([Q.no,Q.items,Q.cond,Q.cust,Q.extra||[]]); }catch(e){ return ''; } }
+/* 상담 입력으로 넘기기 (2026-11-13) — 견적을 저장하면 고객·모델·금액을 이 브라우저에 30분 동안 남긴다(dc_quote_handoff).
+   담당자 화면(store.html)이 그걸 읽어 [상담 입력] 칸을 채운다. 상담 저장은 담당자가 한다(문의 채널·유형·날짜 등 필수 칸이 따로 있다) */
+function consultHandoff(sm){ try{ const {S,L}=LAST, T=sumsOf(S,L);
+    localStorage.setItem('dc_quote_handoff', JSON.stringify({ at:Date.now(), by:ME||'', no:Q.no||'', ver:Q.ver||1, name:Q.cust.name||'', phone:String(Q.cust.phone||'').replace(/\D/g,''), type:Q.cust.type||'',
+      models:Q.items.filter(it=>!it.hidden&&!it.free).map(it=>it.m), consult:Q.consult||'', amount:Math.round(T.fin),
+      text:`견적 ${Q.no} ${Q.ver}차 · ${[S.n?'구독 '+S.n+'품목':'',L.items.length?'일반 '+L.items.length+'품목':''].filter(Boolean).join(' · ')}${T.month?' · 월 지출 '+won(T.month):''} · 총 지불금액 ${won(T.pay)}${T.cash?' · 캐시백 '+won(T.cash):''} · 최종 혜택가 ${won(T.fin)}` })); }catch(e){} }
+/* 고객과 본 견적을 시흥몰 구독 견적서로 바로 주기 (2026-11-13) — 저장하지 않았거나 저장 뒤 바뀌었으면 먼저 저장(다음 차수)하고, 그 견적번호로 구독 견적서 화면을 연다.
+   창은 누르는 순간 먼저 열어 둔다(저장을 기다린 뒤 열면 브라우저가 막는다) */
+async function giveSheet(){ if(!LAST) return;
+  if(!Q.cust.name||!Q.cust.phone){ toast('고객 성명과 연락처를 넣어 주세요'); setView('edit'); $('c_name').focus(); return; }
+  if(!Q.items.length){ toast('품목을 담아 주세요'); return; }
+  const need=!Q.no||SAVED_SIG!==quoteSig(); let w=null; try{ w=window.open('about:blank','_blank'); }catch(e){}
+  if(need){ const before=SAVED_SIG; await saveQuote(); if(!Q.no||SAVED_SIG===before||SAVED_SIG!==quoteSig()){ try{ w&&w.close(); }catch(e){} return; } }
+  const u=oldSheetUrl(); if(w){ try{ w.opener=null; }catch(e){} w.location.replace(u); } else location.href=u; }
+function oldSheetUrl(){ const q=new URLSearchParams(); q.set('no',Q.no); if(Q.ver) q.set('v',Q.ver); if(Q.cust.name) q.set('name',Q.cust.name); if(Q.cust.phone) q.set('phone',String(Q.cust.phone).replace(/\D/g,'')); if(ME) q.set('counselor',ME);
+  return 'https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html&'+q.toString(); }
 async function saveQuote(){
   if(!LAST) return; if(!Q.cust.name||!Q.cust.phone){ toast('고객 성명과 연락처를 넣어 주세요'); setView('edit'); $('c_name').focus(); return; }
   if(!Q.items.length){ toast('품목을 담아 주세요'); return; }
   const {quote,summary}=toQuoteJson(); $('btnSave').disabled=true;
   try{ const r=await rpc('fn_quote_page_save',{p_code:CODE||null, p_no:Q.no||null, p_summary:summary, p_quote:quote, p_namecard:null});
-    Q.no=r.no; Q.ver=r.version; Q.issuedAt=(r.issuedAt||'').slice(0,10).replace(/\./g,'-'); $('qno').textContent=`${Q.no} · ${Q.ver}차`; toast('저장했습니다 · '+Q.no+' '+Q.ver+'차'); renderShow(); renderSheet(); }
+    Q.no=r.no; Q.ver=r.version; Q.issuedAt=(r.issuedAt||'').slice(0,10).replace(/\./g,'-'); $('qno').textContent=`${Q.no} · ${Q.ver}차`; toast('저장했습니다 · '+Q.no+' '+Q.ver+'차'); SAVED_SIG=quoteSig(); consultHandoff(summary); renderShow(); renderSheet(); }
   catch(e){ toast('저장 실패: '+e.message); }
   $('btnSave').disabled=false;
 }
 async function loadQuote(no){
   try{ const r=await rpc('fn_quote_page_get',{p_code:CODE||null, p_no:no}); if(!r||!r.quote){ toast('견적 '+no+' 을 찾지 못했습니다'); render(); return; }
+    setTimeout(()=>{ SAVED_SIG=quoteSig(); },0);
     const q=r.quote; Q.no=r.no; Q.ver=r.version; Q.issuedAt=(r.issuedAt||'').slice(0,10).replace(/\./g,'-'); $('qno').textContent=`${Q.no} · ${Q.ver}차`;
     const c=q.cust||{}; Object.assign(Q.cust,{ type:c.type||Q.cust.type, name:c.name||'', phone:c.phone||'', addr:c.addr||'', memo:c.memo||'', until:(c.until||'').replace(/\./g,'-'), proof:c.proof?(['appr','supp','recv'].find(k=>c.proof[k])||''):'', birth:c.birth||'', carrier:c.carrier||'', wedding:c.wedding||'', movein:c.movein||'', revisit:c.revisit||'' });
     Q.extra=(q.extra||[]).map(e=>({label:e.label||'', amount:+e.amount||0})); const o=q.opt||{}; Q.cond.pointMode='cash'; Q.cond.reward=!!o.rewardOn; Q.cond.namecardId=o.namecardId||'';
