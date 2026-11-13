@@ -1,3 +1,4 @@
+2026-11-13 · 판 261113a (스킨 sub_tab_v28_1113.html · 이전 스킨 = goods/_sub_tab_261106a_bak.html): 261106a + '제휴카드 없음'(1111) + 라이온즈 우승 기념 말풍선·패널 안내 띠·혜택 문구 강조(11/13~11/24 행사 대상만). js·css = sdp/sub/sub_tab.js·css 복사본.
 상품상세 구독탭 고도몰 반영본 (2026-11-04 · 판 261104c · 고도몰 반영 완료 · 이전 스킨 = goods/_sub_tab_261104b_bak.html · 261104c = 261104b + 최종 구독가 계산 내역 보기 버튼(요약 상자·하단 바 [상세]) · 스킨 sub_tab_v24_1104.html)
 - sub_tab_261103b.js / .css : js 는 261103a 와 같음(원본 sdp/sub/sub_tab.js 의 mvp_265 몰 구분 변경은 아직 안 넣음) · css 는 sdp/sub/sub_tab.css 복사본 → 고도몰 웹FTP /data/js/sub/ 에 올린다 (같은 이름 덮어쓰기 금지 · 판을 올릴 때마다 새 이름)
 - sub_tab_v20_1103.html (uiVer 261103b · 올릴 때 이름 앞에 _ 를 붙인다 · GitHub Pages 는 _ 로 시작하는 파일을 내보내지 않음) : 스킨 goods/_sub_tab.html 새 판 (uiVer 261103a) → 웹FTP 에 올린 뒤 기존 _sub_tab.html 을 _sub_tab_v18_1102.html(261102i 였던 것) 등 다른 이름으로 rename 하고 이 파일을 _sub_tab.html 로 rename
