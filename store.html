@@ -7612,11 +7612,15 @@ function quoteHandoff(){ try{ if(!STARTED||LOCKED) return; const raw=localStorag
     if(h.by&&ME&&h.by!==ME) return;
     const nm=$('c_name'), cur=(nm.value||'').trim(); if(cur&&cur!==String(h.name||'').trim()) return;
     localStorage.removeItem('dc_quote_handoff');
+    if(h.go){ try{ goTab('consult'); cMode('log'); }catch(e){} }
+    if((h.cats||[]).length){ try{ const chips=[...$('c_cat').querySelectorAll('.chip')]; if(!chips.some(x=>x.classList.contains('on'))) chips.forEach(x=>{ if(h.cats.includes(x.dataset.v)) x.classList.add('on'); }); }catch(e){} }
     if(!cur){ nm.value=h.name||''; const ph=$('c_phone'); if(!ph.value.trim()&&h.phone){ ph.value=h.phone; hyphen(ph); } }
     (h.models||[]).forEach(cModelAdd); if(typeof subQuoteRender==='function') subQuoteRender();
     const am=$('c_amount'); if(!am.value.trim()&&+h.amount>0){ am.value=String(Math.round(+h.amount)); comma(am); }
-    const ct=$('c_content'); if(h.text&&ct.value.indexOf(h.no)<0) ct.value=(ct.value.trim()?ct.value.trim()+'\n':'')+h.text;
-    toast(`${h.name||''} 견적 ${h.no} 내용을 상담 입력에 채웠습니다 — 확인하고 저장하세요`,'ok'); }catch(e){} }
+    const ct=$('c_content'); if(h.text&&ct.value.indexOf(h.text)<0) ct.value=(ct.value.trim()?ct.value.trim()+'\n':'')+h.text;
+    toast(`${h.name||''} ${h.no?'견적 '+h.no:'견적'} 내용을 상담 입력에 채웠습니다 — 확인하고 저장하세요`,'ok'); }catch(e){} }
+/* 견적 화면에서 [상담 입력으로] 넘어온 직후에는 focus 가 안 올 수 있어 처음 20초 동안 몇 번 더 본다 */
+{ let n=0; const t=setInterval(()=>{ quoteHandoff(); if(++n>=20) clearInterval(t); },1000); }
 window.addEventListener('storage',e=>{ if(e.key==='dc_quote_handoff'&&e.newValue) quoteHandoff(); });
 window.addEventListener('focus',()=>quoteHandoff());
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') quoteHandoff(); });
