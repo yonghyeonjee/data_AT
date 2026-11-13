@@ -926,6 +926,17 @@ window.SUB_SHOP_READY = true;
     if (navOnly) { drawNav(root); ensureCards(drawBubble); return; }
     // 기간 지난 행사 배너(html 고정 · data-until=YYYY-MM-DD)는 지운다
     var td = new Date(), today = td.getFullYear() + '-' + ('0' + (td.getMonth() + 1)).slice(-2) + '-' + ('0' + td.getDate()).slice(-2);
+    /* 라이온즈 우승 기념 삼성전자 대축제 (2026-11-13 ~ 11-24) — 기간 안에만 홈 배너 맨 앞 · 이벤트 화면 맨 위에 넣는다.
+       고도몰에 올린 html 을 안 바꿔도 나오고, 11/25 부터는 저절로 안 나온다 (지원 개월 수는 SUB_POLICY.promos 의 라이온즈 행사가 같은 기간) */
+    if (today >= '2026-11-13' && today <= '2026-11-24' && !document.querySelector('[data-cta="promo_lions"]')) {
+      var lions = '<a class="ss-promo has-cap" data-until="2026-11-24" href="' + esc(LINK.event) + '" data-cta="promo_lions">' +
+        '<img class="ss-promo-pc ss-promo-all" src="https://db.samsungat.co.kr/sdp/sub/img/lions_1113.png" alt="라이온즈 우승 기념 삼성전자 대축제 · 삼성 AI 구독 최대 12개월 상당 구독 혜택 · 2026.11.13~11.24">' +
+        '<div class="ss-promo-cap"><b>라이온즈 우승 기념 · 최대 12개월 상당 구독 혜택</b><p>기존 AI 구독 페스티벌 최대 6개월 혜택에 더해 <em>구독료 6개월 상당 삼성전자 멤버십 포인트 추가 증정</em> · 11월 13일(금) ~ 24일(화) 12일간</p>' +
+        (CFG.page === 'event' ? '' : '<strong>대상 모델 보기</strong>') + '</div></a>';
+      var lsl = document.querySelector('.ss-promos[data-ss-slider]'), lev = document.querySelector('[data-ss="event"]');
+      if (lsl) lsl.insertAdjacentHTML('afterbegin', lions);
+      else if (lev) lev.insertAdjacentHTML('beforebegin', lions.replace('href="' + esc(LINK.event) + '"', 'href="#ss-event-list"'));
+    }
     $all('.ss-promo[data-until], .ss-month li[data-until]').forEach(function (a) { if (a.getAttribute('data-until') < today) a.parentNode.removeChild(a); });
     // 배너 여러 장이면 5초마다 넘긴다 (가로 스크롤 · 손으로 넘겨도 된다 · 2026-11-04)
     $all('[data-ss-slider]').forEach(function (sl) {
