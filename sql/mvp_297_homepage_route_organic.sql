@@ -16,3 +16,7 @@
 --   두 함수 insert 의 유입경로 → null (비워 둠) · 잔디 카드 route → '고객 선택: <방문경로>' (없으면 '-')
 --   core.inq_route hp_organic active=false
 --   위에서 바꾼 19건 inflow_route → null (원래 값은 raw_payload.route_orig 그대로)
+
+-- 2026-11-15 되돌림 — "아니다 상담자가 고른거면 그대로 둬봐"
+--   두 함수를 원래대로(insert 에 v_route · 카드 route = v_route) · hp_search·ad_call active=true · hp_organic active=false
+--   19건 inflow_route = raw_payload.route_orig 로 복구 후 route_orig 키 삭제 → mvp_297 전과 같은 상태
