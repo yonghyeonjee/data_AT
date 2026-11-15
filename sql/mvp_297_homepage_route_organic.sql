@@ -1,0 +1,13 @@
+-- mvp_297 · 2026-11-15 — 홈페이지 문의 유입경로를 '검색(광고)'로 저장하지 않는다 · 자연 유입 (GA 확인)
+-- 사용자: "홈페이지 문의 이제 강제로 검색광고로 분류해서 상담문의 저장하는거 빼 · 네이버 광고 안하는 중이라서 자연유입인데 어디서 들어오는지는 ga를 통해 확인해야해"
+-- 원인: 시스템이 만든 값이 아니라 맑음 홈페이지 견적 폼의 '방문경로'(etc_5) 고객 선택값('네이버 · 구글검색')을 inflow_route 에 그대로 넣었다.
+--       담당자 화면에선 VMS 경로 '검색광고-전화' 를 홈페이지 문의에 고른 건(#1020)도 있었다.
+-- DB 적용됨 (MCP · 서버 저장 본문 replace → execute · 지점 수 검증):
+--   core.f_homepage_inquiry · public.fn_inquiry_mail_ingest
+--     insert 의 v_route → '자연 유입 (GA 확인)'  (고객이 고른 방문경로는 raw_payload.route 에 그대로 남음)
+--     잔디 카드 'route' → '자연 유입 (GA 확인) · 고객 선택: <방문경로>'
+--   core.inq_route: hp_search('네이버 · 구글검색', homepage) · ad_call('검색광고-전화', vms) active=false
+--                   hp_organic('자연 유입 (GA 확인)', homepage, sort 5) 추가
+--   기존 홈페이지 채널 상담 19건 inflow_route('네이버 · 구글검색'·'검색광고-전화') → '자연 유입 (GA 확인)'
+--     원래 값은 raw_payload.route_orig 에 보관 (되돌리기: update crm.consult set inflow_route = raw_payload->>'route_orig' where raw_payload ? 'route_orig')
+-- 남은 것: GA4 수집이 아직 0행(core.web_traffic) — GitHub Secrets GA_PROPERTY_ID · GA_SA_JSON · GA_INGEST_KEY 를 넣어야 GA 유입 확인이 된다.
