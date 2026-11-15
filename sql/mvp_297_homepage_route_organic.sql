@@ -11,3 +11,8 @@
 --   기존 홈페이지 채널 상담 19건 inflow_route('네이버 · 구글검색'·'검색광고-전화') → '자연 유입 (GA 확인)'
 --     원래 값은 raw_payload.route_orig 에 보관 (되돌리기: update crm.consult set inflow_route = raw_payload->>'route_orig' where raw_payload ? 'route_orig')
 -- 남은 것: GA4 수집이 아직 0행(core.web_traffic) — GitHub Secrets GA_PROPERTY_ID · GA_SA_JSON · GA_INGEST_KEY 를 넣어야 GA 유입 확인이 된다.
+
+-- 2026-11-15 추가 — "자연 유입 (GA 확인) 이런것도 빼"
+--   두 함수 insert 의 유입경로 → null (비워 둠) · 잔디 카드 route → '고객 선택: <방문경로>' (없으면 '-')
+--   core.inq_route hp_organic active=false
+--   위에서 바꾼 19건 inflow_route → null (원래 값은 raw_payload.route_orig 그대로)
