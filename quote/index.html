@@ -1038,7 +1038,13 @@ function bnCardHtml(k){ return `<div class="bh"><span>B&amp;케어팩 ${k}구좌
   <li>납입금 <b>월 ${won(k*BN.pay)}</b> (1~${BN.paid}회) · 100~${BN.term}회는 월 0원 · 구독료와 별도로 납입</li>
   <li>${BN.term}회 만기 익월 납입금 <b>100% 환급 ${won(k*BN.refund)}</b> (상조 서비스를 쓰지 않은 경우, 신청 시)</li></ul>
   <p class="bf">상조 · B&amp;포인트 구매 · B&amp;Alliance 멤버십 3개 계약이 결합된 상품으로, 상조 보험 · 적금 등 금융 상품이 아닙니다. 계약 기간 안에 해지하면 지원금 지급은 즉시 끝나며, 중도 해약 환급금은 납입금보다 적거나 없을 수 있습니다.</p>`; }
-function calcAll(items){
+/* ⭐ 삼성전자 포인트 합계는 한 곳에서 넣은 값 그대로 뺀다 (2026-11-16).
+   일반 구매가 있으면 일반 구매에서 빼지만, 일반 구매 금액이 작아 다 못 빼는 경우에는 일반·구독으로 쪼개지 않고 통째로 구독 쪽에서 뺀다(PT_SUB). */
+let PT_SUB=false;
+function calcAll(items){ PT_SUB=false; let r=calcAll0(items);
+  if(r.L.over>0&&r.S.n){ PT_SUB=true; try{ r=calcAll0(items); }finally{ PT_SUB=false; } r.S.ptAll=true; }
+  return r; }
+function calcAll0(items){
   const subs=[], lumps=[];
   (items||Q.items).forEach(it=>{ if(it.hidden) return; if(it.mode==='sub' && INFO[it.m]) subs.push(it); else if(it.mode==='lump') lumps.push(it); });
   const R={}; subs.forEach(it=>{ const info=INFO[it.m], plan0=planOf(it,info); let plan=plan0;
@@ -1082,7 +1088,7 @@ function calcAll(items){
   /* 합계 혜택 = 품목 혜택 + 스마트 패키지 + 기타 혜택 행 + 이벤트 리워드 1%(천원 올림) + 멤버십 포인트 공통 — 고도몰 견적서 calcTotals 와 같은 순서 */
   S.benItems=S.auto+S.pre+S.multi+S.card+S.points+S.cons+S.gift;
   S.extra=HIDE?0:(Q.extra||[]).reduce((a,e)=>a+(+e.amount||0),0);
-  const toL=lumps.reduce((a,x)=>a+(+x.lump||0),0)>0; S.toL=toL;   // 일반 구매가 끼면 포인트 합계·정액 혜택은 전부 일반 구매에서 뺀다 (구독은 통장 금액 그대로)
+  const toL=!PT_SUB&&lumps.reduce((a,x)=>a+(+x.lump||0),0)>0; S.toL=toL;   // 일반 구매가 끼면 포인트 합계·정액 혜택은 전부 일반 구매에서 뺀다 (구독은 통장 금액 그대로)
   S.bnN=S.n?bnN():0; S.bn=S.bnN*BN.amt;   // B&케어팩 — 견적서(q) 의 기타 혜택 줄과 같은 순서로 리워드 전에 뺀다
   S.reward=Q.cond.reward? Math.ceil(Math.max(0,S.total-S.benItems-S.pkg-S.extra-S.bn)*0.01/1000)*1000 : 0;
   S.pointCommon=toL?0:Math.max(0,(+Q.cond.pointCommon||0)-(+Q.cond.pointDps?S.pkg:0)); S.pkgShown=S.pkg;   // DPS 합계에는 패키지가 이미 들어 있다 — 견적은 패키지를 따로 빼므로 그만큼 뺀 값만 쓴다
@@ -1100,7 +1106,7 @@ function calcAll(items){
     if(k>=0){ const pp=Math.min(moved[k].amount,+Q.cond.pointCommon); if(pp>0){ moved[k].amount-=pp; if(!(moved[k].amount>0)) moved.splice(k,1);
       L.jp+=pp; L.cash+=pp; L.card-=pp; L.ben+=pp; L.net-=pp; L.netOpt-=pp; L.pkgIn=pp; if(L.parts&&L.parts[0]){ L.parts[0].jp+=pp; L.parts[0].cash+=pp; } } } }
   L.moved=moved; L.mv=moved.reduce((a,x)=>a+x.amount,0); if(L.mv){ L.ben+=L.mv; L.net-=L.mv; L.netOpt-=L.mv; }
-  if(L.net<0){ const over=-L.net; L.net=0; L.netOpt+=over; L.ben-=over; L.jp=Math.max(0,L.jp-over); L.cash=Math.max(0,L.cash-over); S.pointCommon+=over; S.ben+=over; S.net=Math.max(0,S.total-S.ben-S.preOut); }   // 포인트가 일반 구매 금액보다 크면 남는 포인트는 구독 총액에서 뺀다 (월 납부액은 그대로)
+  if(L.net<0){ const over=-L.net; L.over=over; L.net=0; L.netOpt+=over; L.ben-=over; L.jp=Math.max(0,L.jp-over); L.cash=Math.max(0,L.cash-over); S.pointCommon+=over; S.ben+=over; S.net=Math.max(0,S.total-S.ben-S.preOut); }   // 포인트가 일반 구매 금액보다 크면 남는 포인트는 구독 총액에서 뺀다 (월 납부액은 그대로)
   /* 품목별 계산가격 — 맨 위 금액과 원 단위까지 같아지도록 나눠 넣는다 */
   const sa=allot(subs, subs.map(it=>{ const r=R[it.m]; return r.expected-(toL?0:(r.pointsAll||0)+r.cons+r.gift); }), S.net); subs.forEach(it=>R[it.m].after=sa.get(it));
   L.netBy=allot(lumps, lumps.map(it=>+it.lump||0), L.net);
@@ -1126,7 +1132,7 @@ function pctTxt(v){ return +v? Math.round(v*100)+'%' : '없음'; }
 /* 결제 한 묶음 (같은 할부 개월끼리 한 번 결제): 이용료·청구할인·금액별 S포인트는 묶음 금액으로 · 조건부 캐시백은 한 번만(가장 큰 묶음) · 유형 포인트·멤버십·수기 줄은 전체 결제가로 한 번 */
 function lumpPart(amount, months, base, first, cbOk, kind){
   const inst=months>0, o={amount, months:inst?months:1, inst, fee:0, bill:0, sp:0, jp:0, tp:0, cb:0, mem:0, cash:0, ext:0, opt:0, per:0};
-  if(first){ const X=Q.cond.lx||{}; o.jp=+Q.cond.pointCommon||0; o.ext=(+X.royal||0)+(+X.coupon||0)+(HIDE?0:(+X.gift||0)+(+X.oil||0)); o.opt=(+X.iptv||0)+(+X.sub30||0); }
+  if(first){ const X=Q.cond.lx||{}; o.jp=PT_SUB?0:(+Q.cond.pointCommon||0); o.ext=(+X.royal||0)+(+X.coupon||0)+(HIDE?0:(+X.gift||0)+(+X.oil||0)); o.opt=(+X.iptv||0)+(+X.sub30||0); }
   if(LUMP){ const cd=LUMP.cards[kind]||{}, m=String(months);
     if(cd.plus&&inst){ o.fee=Math.round(amount*(+(LUMP.fee||{})[m]||0)); o.bill=tier((LUMP.billDisc||{})[m],amount); o.sp=tier(LUMP.sPoint,amount); }
     if(!inst&&Q.cond.arsBill) o.bill=tier((LUMP.billDisc||{})['6'],amount);   // DPS 포인트시뮬 「카드 청구할인(사전ARS 신청고객 대상 한정)」 — 일시불도 같은 구간
@@ -1272,7 +1278,7 @@ function renderEdit({S,L}){
   $('t_all').innerHTML = T3.a; $('t_all_d').textContent = T3.ad;
   $('bb_s').textContent=S.n? won(S.pay)+'/월':'—'; $('bb_l').innerHTML=T3.l; $('bb_n').innerHTML=T3.a;
   $('preRow').classList.toggle('hidden',!(S.preAmt>0)); [...$('preIncl').children].forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===(Q.cond.preIncl!==false)));
-  $('pointWhere').textContent = !+Q.cond.pointCommon? '일반 구매가 있으면 일반 구매에서, 구독만 있으면 구독에서 뺍니다' : S.toL? '일반 구매에서 뺍니다' : S.n? '구독에서 뺍니다' : '품목을 담으면 적용됩니다';
+  $('pointWhere').textContent = !+Q.cond.pointCommon? '일반 구매가 있으면 일반 구매에서, 구독만 있으면 구독에서 뺍니다' : S.toL? '일반 구매에서 차감' : S.ptAll? '일반 구매 금액 초과 · 구독에서 차감' : S.n? '구독에서 차감' : '품목을 담으면 적용됩니다';
   $('cardBar').innerHTML=cardBar(S);
   const bk=$('bulk'), nI=Q.items.length; bk.classList.remove('hidden');
   const ysAll=[...new Set([].concat(...Q.items.map(it=>it.mode==='sub'&&INFO[it.m]?INFO[it.m].p.map(p=>p[0]):[])))].sort((a,b)=>b-a);
