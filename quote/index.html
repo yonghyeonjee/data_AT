@@ -302,6 +302,8 @@ table.xl thead th{background:#E9EFFA;border-bottom:1px solid #C5D0E0}
 .psm{border:1px solid #C5D0E0;border-radius:11px;padding:10px 12px;margin-top:8px;background:#F8FAFD} .psh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px} .psh b{font-size:17px;color:var(--sub)} .psh span{font-size:13px;color:#475569} .psh i{font-style:normal;margin-left:auto;font-size:12.5px;font-weight:800;color:#0F766E;background:#E0F5F1;border-radius:8px;padding:2px 9px}
 .pst{width:100%;border-collapse:collapse;font-size:14px;background:#fff} .pst th,.pst td{border:1px solid var(--line);padding:6px 9px;text-align:right} .pst th:first-child,.pst td:first-child{text-align:left}
 .pst th{background:#E9EFFA;font-size:13px;color:#14213D} .pst th small{display:block;font-weight:600;font-size:11.5px;color:#475569} .pst td b{color:#0B7A43;font-size:15px} .pst td small{display:block;font-size:11.5px;color:#64748B} .pst .off,.pst .off b{color:#9AA3B2;font-weight:500} .pst tr.cur td{background:#FFF8E1}
+table.xl tr.lump td.hl.alt,table.xl td.alt{color:#8A93A3;font-weight:600;background:#F6F1EA} table.xl td.alt input{color:#8A93A3;font-weight:600} table.xl td.alt input.ov{color:#8A5D00}
+table.xl td.alt>small{display:block;text-align:right;font-size:11px;font-weight:600;color:var(--mut);line-height:13px;white-space:nowrap} table.xl td.alt.two>small{padding:0 8px}
 .kv.mon{background:#FFF4D6;font-size:15.5px;padding:9px 10px} .kv.mon b{font-size:20px;color:#8A5D00}
 @media(max-width:480px){.hero .fx .r{font-size:15px}.hero .fx .r b{font-size:19px}.hero .fx .r.sum .k{font-size:16px}.hero .fx .r.sum b{font-size:25px}}
 /* 고객 보기 카드 — 구독센터 상품 페이지(view.html .sv-head) 와 같은 짜임: 사진 · 품목 · 상품명 · 모델명 · 월 구독료 · 배지 (2026-11-04) */
@@ -921,7 +923,7 @@ function bundleUrl(){ if(!LAST) return BUNDLE_URL; const {S}=LAST;
   return BUNDLE_URL+'?items='+encodeURIComponent(items.join(','))+(Q.cond.cardOn&&Q.cond.card?'&card='+encodeURIComponent(Q.cond.card)+'&tier='+encodeURIComponent(Q.cond.tier):'&cardoff=1'); }
 function openBundle(){ if(!LAST||!LAST.S.n){ toast('구독 품목을 먼저 담아 주세요'); return; } window.open(bundleUrl(),'_blank','noopener'); }
 function setItem(i,k,v){ const it=Q.items[i]; it[k]=v; if(k==='years'){ it.care=''; } if(k==='prepay'){ it.preManual=0; it.preMode=false; } if(k==='preManual'&&!(+v>0)) it.preMode=false;
-  if(k==='years'||k==='care'||k==='prepay'||k==='preManual'||k==='mode'||k==='monthlyManual') it.payManual=0;   // 조건이 바뀌면 수기로 넣은 혜택가는 지운다
+  if(k==='years'||k==='care'||k==='prepay'||k==='preManual'||k==='monthlyManual') it.payManual=0;   // 조건이 바뀌면 수기로 넣은 혜택가는 지운다
   if(k==='card'){ Q.cond.cardPreset=''; it.tier=v?(C.defaultTier(v)||''):''; } render(); }
 /* 품목별 조건 더보기: 기본 구독 할인(자동결제) · 월 구독료 수기 · 멤버십 포인트 수기 · 소모품 · 상품권 · 숨김 */
 function ownHtml(it,i){
@@ -961,6 +963,7 @@ function tableHtml(S,L){
   const rows=Q.items.map((it,i)=>{ const info=INFO[it.m], isS=it.mode==='sub', r=S.R[it.m];
     const ys=info?[...new Set(info.p.map(p=>p[0]))].sort((a,b)=>b-a):[], cy=r?r.y:it.years, cares=info?[...new Set(info.p.filter(p=>p[0]===cy).map(p=>p[1]))]:[];
     if(!isS&&!it.hidden){ sumL+=+it.lump||0; nL++; }
+    let pv=null; if(!isS&&!it.hidden&&info&&!it.noSub){ try{ const alt=calcAll(Q.items.map(x=>x===it?Object.assign({},x,{mode:'sub'}):x)); pv=alt.S.R[it.m]||null; }catch(e){ pv=null; } }   // 이 품목만 구독으로 바꿨을 때
     const ySel=isS&&info?`<select data-k="${i}:1" aria-label="계약 기간" title="계약 기간" onchange="setItem(${i},'years',+this.value)">${ys.map(y=>`<option value="${y}"${y===cy?' selected':''}>${y}년</option>`).join('')}</select>`:'',
       cSel=isS&&info?`<select data-k="${i}:2" aria-label="서비스 유형" title="서비스 유형(케어)" onchange="setItem(${i},'care',this.value)">${cares.map(k=>`<option value="${esc(k)}"${k===(it.care||r&&r.care)?' selected':''}>${esc(k)}</option>`).join('')}</select>`:'';
     const opts=simple&&isS&&info?`<div class="opts">${ySel}${cSel}${cardSel(it,i,i+':6')}</div>`:'';
@@ -978,16 +981,18 @@ function tableHtml(S,L){
       card:`<td>${cardSel(it,i,i+':6')}</td>`,
       mon:`<td class="r num">${isS&&r?fmt(r.monthly):'<span class="na">—</span>'}</td>`,
       pay:isS&&r&&!r.dps?`<td class="hl${r.cardMonthly>0?' two':''}"><input data-k="${i}:7" class="amt${r.payManual?' ov':''}" type="text" inputmode="numeric" aria-label="월 구독료 혜택가" title="DPS 할인반영 월구독료 직접 입력 · 비우면 요금표 계산값" value="${fmt(Math.round(r.monthlyPay))}" onchange="setItem(${i},'payManual',+this.value.replace(/[^0-9]/g,'')||0)">${r.cardMonthly>0?`<small>카드 할인 후 ${fmt(Math.round(r.finalMonthly))}</small>`:''}</td>`
+        :pv?`<td class="hl alt two"><input data-k="${i}:7" class="amt${pv.payManual?' ov':''}" type="text" inputmode="numeric" aria-label="구독 선택 시 월 구독료 혜택가" title="구독 선택 시 월 구독료 · 직접 입력 가능 · 비우면 요금표 계산값" value="${fmt(Math.round(pv.monthlyPay))}" onchange="setItem(${i},'payManual',+this.value.replace(/[^0-9]/g,'')||0)"><small>구독 선택 시</small></td>`
         :`<td class="r num hl">${isS&&r?fmt(r.monthlyPay):(isS?'…':'<span class="na">—</span>')}</td>`,
-      lump:`<td><input data-k="${i}:3" class="amt${+it.lump>0?'':' need'}" type="text" inputmode="numeric" placeholder="입력 필요" aria-label="${isS?'일시불가 (비교용)':'결제가'}" value="${+it.lump?fmt(+it.lump):''}" onchange="setItem(${i},'lump',+this.value.replace(/[^0-9]/g,'')||0)"></td>`,
-      net:`<td class="r num hl">${it.hidden?'<span class="na">—</span>':isS?(r?fmt(r.after):'…'):fmt(L.netBy.get(it)||0)}</td>`,
+      lump:`<td class="${simple&&!isS&&!it.hidden&&+it.lump>0?'two':''}"><input data-k="${i}:3" class="amt${+it.lump>0?'':' need'}" type="text" inputmode="numeric" placeholder="입력 필요" aria-label="${isS?'일시불가 (비교용)':'결제가'}" value="${+it.lump?fmt(+it.lump):''}" onchange="setItem(${i},'lump',+this.value.replace(/[^0-9]/g,'')||0)">${simple&&!isS&&!it.hidden&&+it.lump>0?`<small>할인 후 ${fmt(L.netBy.get(it)||0)}</small>`:''}</td>`,
+      net:simple&&!isS&&!it.hidden?(pv?`<td class="r num hl alt">${fmt(pv.after)}<small>구독 선택 시</small></td>`:`<td class="r num hl"><span class="na">—</span></td>`)
+        :`<td class="r num hl">${it.hidden?'<span class="na">—</span>':isS?(r?fmt(r.after):'…'):fmt(L.netBy.get(it)||0)}</td>`,
       note:`<td><input data-k="${i}:4" class="note" aria-label="비고" value="${esc(it.note)}" onchange="Q.items[${i}].note=this.value"></td>`,
       act:`<td class="c act">${isS&&info?`<button class="mini${it.own?' on':''}" title="더보기 — 기본 구독 할인 · 월 구독료 수기 · 포인트 수기 · 소모품 · 상품권 · 숨김" onclick="setItem(${i},'own',${it.own?'false':'true'})">${it.own?'접기':'더보기'}</button>`:''}<button class="mini" aria-label="${esc(it.m)} 빼기" title="빼기" onclick="delItem(${i})">✕</button></td>` };
     return `<tr class="${it.mode}${it.hidden?' hid':''}${SEL.has(it.m)?' sel':''}">${V.map(k=>C[k]).join('')}</tr>`
       +(isS&&info&&it.own?`<tr class="ownrow"><td colspan="${V.length}"><div class="item">${ownHtml(it,i)}</div></td></tr>`:''); }).join('');
   const W={ck:simple?46:40,md:simple?0:132,nm:0,mode:simple?124:98,y:58,care:96,pp:simple?112:92,card:128,mon:70,pay:simple?150:92,lump:simple?150:96,net:simple?150:96,note:60,act:simple?96:70};   // 전체 칸 구성도 가로 스크롤 없이 한 화면에 (2026-11-16)
   const H={ck:ckAllHtml(),md:'모델명',nm:'견적 품목',mode:'구분',y:'계약 기간',care:'서비스 유형',pp:simple?'선납금':'선납 · 결제 방법',card:'카드',mon:'월 구독료',pay:simple?'월 구독료 <small>(할인 후)</small>':'월 구독료 혜택가',lump:simple?'일반가':'① 결제가 <small>(일시불가)</small>',net:simple?'총 구독가':'총 지불액 <small>(할인 반영)</small>',note:'비고',act:''};
-  const SUMV={mon:S.n?fmt(S.monthly):'—',pay:S.n?fmt(Math.round(S.mpay))+(S.pay<Math.round(S.mpay)?`<small class="aft">카드 할인 후 ${fmt(S.pay)}</small>`:''):'—',lump:nL?fmt(sumL):'—',net:(S.n||nL)?fmt(S.net+L.net):'—'};
+  const SUMV={mon:S.n?fmt(S.monthly):'—',pay:S.n?fmt(Math.round(S.mpay))+(S.pay<Math.round(S.mpay)?`<small class="aft">카드 할인 후 ${fmt(S.pay)}</small>`:''):'—',lump:nL?fmt(sumL)+(simple?`<small class="aft">할인 후 ${fmt(L.net)}</small>`:''):'—',net:simple?(S.n?fmt(S.net):'—'):((S.n||nL)?fmt(S.net+L.net):'—')};
   const nums=V.filter(k=>k in SUMV), i0=V.indexOf(nums[0]), tail=V.length-i0-nums.length, mdSpan=V.filter(k=>k==='md'||k==='nm').length;
   return `<div class="xl-wrap"><table class="xl${simple?' simple':''}"><colgroup>${V.map(k=>W[k]?`<col style="width:${W[k]}px">`:'<col>').join('')}</colgroup><thead><tr>${V.map(k=>`<th>${H[k]}</th>`).join('')}</tr></thead><tbody>${rows}
     <tr class="new"><td class="c">＋</td><td colspan="${mdSpan}"><input data-k="new" list="mdl" placeholder="모델명 치고 Enter" autocomplete="off" aria-label="모델명 입력"></td><td colspan="${V.length-1-mdSpan}" class="l hint">모델명을 치고 Enter 로 담습니다 · 여러 줄을 복사해 붙여넣으면 한 번에 담깁니다</td></tr>
