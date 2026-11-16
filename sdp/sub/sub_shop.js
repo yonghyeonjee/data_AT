@@ -938,27 +938,73 @@ window.SUB_SHOP_READY = true;
        고도몰에 올린 html 을 안 바꿔도 나오고, 11/25 부터는 저절로 안 나온다 (지원 개월 수는 SUB_POLICY.promos 의 라이온즈 행사가 같은 기간) */
     if (today >= '2026-11-13' && today <= '2026-11-24' && !document.querySelector('[data-cta="promo_lions"]')) {
       var lions = '<a class="ss-promo has-cap" data-until="2026-11-24" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=193" data-cta="promo_lions">' +
-        '<img class="ss-promo-pc ss-promo-all" src="https://godomall-storage.cdn-nhncommerce.com/bbfe079be9069f71afe7ad9a5bf9cee9/editor/board/blog/189/f2374fb202701217511159e2caf96a20.jpg" alt="라이온즈 우승 기념 삼성전자 대축제 · 삼성 AI 구독 최대 12개월 상당 구독 혜택 · 2026.11.13~11.24">' +
+        '<div class="ss-promo-frame is-dark"><img class="ss-promo-pc ss-promo-all" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_511517418/e4561fc75e49ddc7c24e4fe4be90eeb2_60085.png" alt="라이온즈 우승 기념 삼성전자 대축제 · 삼성 AI 구독 최대 12개월 상당 구독 혜택 · 2026.11.13~11.24" width="1918" height="820" style="object-fit:cover">' +
+        '<div class="ss-promo-txt is-white"><span>라이온즈 우승 기념 삼성전자 대축제</span><b>함께 이룬 V9,<br>함께 누릴 12일</b><p>삼성 AI 구독 <em>최대 12개월</em> 상당 구독 혜택</p><i>2026. 11. 13(금) ~ 11. 24(화) | 12일간</i></div></div>' +
         '<div class="ss-promo-cap"><b>라이온즈 우승 기념 · 최대 12개월 상당 구독 혜택</b><p>기존 AI 구독 페스티벌 최대 6개월 혜택에 더해 <em>구독료 6개월 상당 삼성전자 멤버십 포인트 추가 증정</em> · 11월 13일(금) ~ 24일(화) 12일간</p>' +
         '<strong>자세히 보기</strong>' + '</div></a>';
       var lsl = document.querySelector('.ss-promos[data-ss-slider]'), lev = document.querySelector('[data-ss="event"]');
       if (lsl) lsl.insertAdjacentHTML('afterbegin', lions);
-      // 홈·이벤트 화면 모두 시흥몰 블로그 189 글의 그림 · 누르면 라이온즈 상세 글(블로그 193)로 (2026-11-16 사용자 지시)
+      // 홈·이벤트 화면 모두 시흥몰 메인 라이온즈 배너 배경 + 글자 · 누르면 라이온즈 상세 글(블로그 193)로 (2026-11-16 · 블로그 189 글이 지워져 그림도 사라짐)
       else if (lev) lev.insertAdjacentHTML('beforebegin', lions);
     }
     $all('.ss-promo[data-until], .ss-month li[data-until]').forEach(function (a) { if (a.getAttribute('data-until') < today) a.parentNode.removeChild(a); });
-    // 배너 여러 장이면 5초마다 넘긴다 (가로 스크롤 · 손으로 넘겨도 된다 · 2026-11-04)
+    // 배너 그림 칸을 모두 같은 비율로 (2026-11-16 · 그림 크기가 제각각이라 높이가 들쭉날쭉하던 것) — 그림은 잘리지 않게 다 보이고, 남는 곳은 같은 그림을 흐리게 깐다
+    $all('.ss-promo > img').forEach(function (img) {
+      var fr = document.createElement('div'); fr.className = 'ss-promo-frame';
+      img.parentNode.insertBefore(fr, img); fr.appendChild(img);
+    });
+    $all('.ss-promo-frame').forEach(function (fr) { var img = fr.querySelector('img'); if (img && img.getAttribute('src')) fr.style.setProperty('--ss-bg', 'url("' + img.getAttribute('src') + '")'); });
+    // 배너 여러 장이면 5초마다 넘긴다 · 손가락·마우스로 끌어 넘기기 · 좌우 화살표 · 점 눌러 이동 · 키보드 ←→ (2026-11-16 다시 만듦)
     $all('[data-ss-slider]').forEach(function (sl) {
       var vis = function () { return [].filter.call(sl.children, function (c) { return c.offsetWidth > 0; }); };
       if (vis().length < 2) return;
       sl.classList.add('is-multi');
-      var dots = document.createElement('div'); dots.className = 'ss-promo-dots'; sl.parentNode.insertBefore(dots, sl.nextSibling);
-      var cur = 0, paused = false;
-      function paint() { var v = vis(); dots.innerHTML = v.map(function (_, i) { return '<i' + (i === cur ? ' class="on"' : '') + '></i>'; }).join(''); }
-      function go(i) { var v = vis(); if (!v.length) return; cur = (i + v.length) % v.length; sl.scrollTo({ left: v[cur].offsetLeft - sl.offsetLeft, behavior: 'smooth' }); paint(); }
-      sl.addEventListener('scroll', function () { var v = vis(); for (var i = 0; i < v.length; i++) if (Math.abs(v[i].offsetLeft - sl.offsetLeft - sl.scrollLeft) < v[i].offsetWidth / 2) { if (cur !== i) { cur = i; paint(); } break; } }, { passive: true });
-      sl.addEventListener('pointerenter', function () { paused = true; }); sl.addEventListener('pointerleave', function () { paused = false; });
-      paint(); setInterval(function () { if (!paused && !document.hidden) go(cur + 1); }, 5000);
+      var wrap = document.createElement('div'); wrap.className = 'ss-promo-slider';
+      sl.parentNode.insertBefore(wrap, sl); wrap.appendChild(sl);
+      var btn = function (cls, label, txt) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ss-promo-nav ' + cls; b.setAttribute('aria-label', label); b.innerHTML = txt; wrap.appendChild(b); return b; };
+      var prev = btn('is-prev', '이전 배너', '&#8249;'), next = btn('is-next', '다음 배너', '&#8250;');
+      var dots = document.createElement('div'); dots.className = 'ss-promo-dots'; wrap.appendChild(dots);
+      sl.setAttribute('tabindex', '0'); sl.setAttribute('aria-roledescription', 'carousel');
+      var cur = 0, hold = false, last = Date.now();
+      var w = function () { return sl.clientWidth || 1; };
+      function paint() {
+        var v = vis();
+        dots.innerHTML = v.map(function (_, i) { return '<button type="button" aria-label="' + (i + 1) + '번째 배너"' + (i === cur ? ' class="on" aria-current="true"' : '') + ' data-i="' + i + '"></button>'; }).join('');
+      }
+      // 넘기는 동안은 붙음(snap)을 끄고 직접 움직인다 — 브라우저마다 smooth + snap 이 서로 막는 일이 있어서. 화면이 가려져 그림이 멈춰도 끝 위치는 맞춘다
+      var anim = 0;
+      function go(i, instant) {
+        var v = vis(); if (!v.length) return; cur = (i + v.length) % v.length; last = Date.now(); paint();
+        var to = cur * w(), from = sl.scrollLeft, t0 = 0, id = ++anim;
+        if (instant || Math.abs(to - from) < 2) { sl.scrollLeft = to; return; }
+        sl.classList.add('is-anim');
+        var end = function () { if (id !== anim) return; sl.scrollLeft = to; sl.classList.remove('is-anim'); };
+        setTimeout(end, 700);
+        (function step(ts) { if (id !== anim) return; if (!t0) t0 = ts; var k = Math.min(1, (ts - t0) / 420), e = 1 - Math.pow(1 - k, 3); sl.scrollLeft = from + (to - from) * e; if (k < 1) requestAnimationFrame(step); else end(); })(performance.now());
+      }
+      prev.addEventListener('click', function () { go(cur - 1); });
+      next.addEventListener('click', function () { go(cur + 1); });
+      dots.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) go(+b.getAttribute('data-i')); });
+      sl.addEventListener('keydown', function (e) { if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1); } else if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1); } });
+      var st = 0;
+      sl.addEventListener('scroll', function () { if (sl.classList.contains('is-anim') || drag) return; clearTimeout(st); st = setTimeout(function () { var i = Math.round(sl.scrollLeft / w()); if (i !== cur) { cur = i; last = Date.now(); paint(); } }, 80); }, { passive: true });
+      // 마우스로 끌어 넘기기 (손가락은 브라우저 가로 스크롤 그대로) — 끌었으면 링크 클릭은 막는다
+      var drag = null, moved = false;
+      sl.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse' || e.button !== 0) return; drag = { x: e.clientX, left: sl.scrollLeft }; moved = false; sl.classList.add('is-drag'); });
+      window.addEventListener('pointermove', function (e) { if (!drag) return; var dx = e.clientX - drag.x; if (Math.abs(dx) > 5) moved = true; sl.scrollLeft = drag.left - dx; });
+      window.addEventListener('pointerup', function (e) {
+        if (!drag) return; var dx = e.clientX - drag.x; drag = null; sl.classList.remove('is-drag');
+        if (moved) go(Math.abs(dx) > w() * 0.12 ? cur + (dx < 0 ? 1 : -1) : cur);
+      });
+      sl.addEventListener('click', function (e) { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+      sl.addEventListener('dragstart', function (e) { e.preventDefault(); });
+      [sl, prev, next, dots].forEach(function (el) {
+        el.addEventListener('pointerenter', function () { hold = true; }); el.addEventListener('pointerleave', function () { hold = false; });
+        el.addEventListener('focusin', function () { hold = true; }); el.addEventListener('focusout', function () { hold = false; });
+      });
+      sl.addEventListener('touchstart', function () { last = Date.now() + 4000; }, { passive: true });
+      window.addEventListener('resize', function () { go(cur, true); });
+      paint(); setInterval(function () { if (!hold && !drag && !document.hidden && Date.now() - last > 4800) go(cur + 1); }, 500);
     });
     // 홈은 가격대별 보기를 품목별 가격보다 먼저 (2026-11-03 · 고도몰에 올린 html 이 예전 순서여도 맞춘다)
     var secB = document.querySelector('[data-ss="bands"]'), secC = document.querySelector('[data-ss="cats"]');
