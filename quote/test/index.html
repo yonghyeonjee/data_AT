@@ -1418,8 +1418,7 @@ function renderEdit({S,L}){
     <div class="kv"><span>결제가${why('일반 구매 품목 '+L.items.length+'개의 결제가 합계'+(missL?' · 결제가를 안 넣은 품목 '+missL+'개 제외':''))}</span><b class="num">${won(L.amount)}</b></div>
     <div class="kv minus"><span>청구할인${why(L.parts.length>1?'할부 묶음마다 따로 — '+L.parts.map(x=>lmTxt(x.inst?x.months:0)+' '+fmt(x.bill)).join(' · '):!L.months?'일시불이면 없음':!cdL.plus?'삼성카드 6/12 할부가 아니면 없음':(L.amount>=5000000?'결제가 × 2% (500만 원 이상)':'결제가 구간별 정액 — 300만↑ 10만 · 200만↑ 6만 · 100만↑ 4만'))}</span><span class="num">−${won(L.bill)}</span></div>
     <div class="kv plus"><span>이용료${why(L.parts.length>1?'할부 묶음마다 따로 — '+L.parts.map(x=>lmTxt(x.inst?x.months:0)+' '+fmt(x.fee)).join(' · '):!L.months?'일시불이면 없음':!cdL.plus?'삼성카드 6/12 할부가 아니면 없음':'결제가 × '+(Math.round(rate*1000)/10)+'% — '+(L.months>=12?'1·2회차에 나눠 청구':'1회차에 청구'))}</span><span class="num">+${won(L.fee)}</span></div>
-    <div class="kv"><span>J.POINT <span class="hint">(제품별 S포인트)</span>${why('결제 조건의 포인트 합계(DPS) 입력값'+(L.pkgIn?' · 스마트 패키지 '+fmt(L.pkgIn)+' 포함':'')+' — 아래 캐시백(송금)에 합산')}</span><span class="num">${won(L.jp)}</span></div>
-    <div class="kv minus"><span>캐시백(송금) 차차월 5~6일${why('A 금액별 S포인트 '+fmt(L.sp)+' + B 제품별 S포인트 '+fmt(L.jp)+' + C '+esc(Q.cust.type)+' 포인트 '+fmt(L.tp)+' + D 기본멤버십P 0.1% '+fmt(L.mem))}</span><span class="num">−${won(L.cash)}</span></div>
+    <div class="kv minus"><span>캐시백(송금) 차차월 5~6일${why('A 금액별 S포인트 '+fmt(L.sp)+' + B 제품별 S포인트(J.POINT · 결제 조건의 포인트 합계 입력값'+(L.pkgIn?' · 스마트 패키지 '+fmt(L.pkgIn)+' 포함':'')+') '+fmt(L.jp)+' + C '+esc(Q.cust.type)+' 포인트 '+fmt(L.tp)+' + D 기본멤버십P 0.1% '+fmt(L.mem))}</span><span class="num">−${won(L.cash)}</span></div>
     <div class="kv total2"><span>${L.months?'삼성카드 '+(L.parts.length===1?L.months+'월 ':''):''}혜택가${why('결제가 − 청구할인 + 이용료 − 캐시백(송금)')}</span><b class="num">${won(L.card)}</b></div>
     ${inp('royal','로열등급','설치 후 차차월 이후 현금 계좌 입금')}
     ${inp('coupon','삼성카드몰 쇼핑몰 쿠폰','(제휴카드) 차차월 15일')}
