@@ -155,7 +155,7 @@ table.xl select:focus,table.xl input:focus{outline:2px solid var(--blue);outline
 table.xl tr.sub td:first-child{box-shadow:inset 4px 0 0 var(--sub)} table.xl tr.lump td:first-child{box-shadow:inset 4px 0 0 var(--lump)}
 table.xl td.md b{font-size:15px;letter-spacing:-.01em} table.xl tr.sub td.md b{color:var(--sub)} table.xl tr.lump td.md b{color:var(--lump)}
 table.xl tr.sub>td{background:#F5F9FF} table.xl tr.lump>td{background:#FBF6EF} table.xl tr.lump td.hl{background:var(--lump-soft);color:var(--lump)}
-table.xl td.mode{text-align:center;padding:0 4px}
+table.xl td.tmode{text-align:center;padding:0 4px}
 table.xl .msw{display:inline-flex;gap:2px;padding:2px;border-radius:9px;background:#E9EDF4;vertical-align:middle}
 table.xl .msw button{border:0;background:transparent;border-radius:7px;min-width:42px;height:28px;padding:0 9px;font:inherit;font-size:12.5px;font-weight:700;color:#7A8394;cursor:pointer;white-space:nowrap}
 table.xl .msw button:hover{color:var(--ink)} table.xl .msw button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
@@ -924,7 +924,7 @@ function tableHtml(S,L){
       ck:`<td class="c">${ckHtml(it)}<span class="no">${i+1}</span></td>`,
       md:`<td class="l md"${simple?` title="${esc(nameOf(it.m))}"`:''}><b>${esc(it.m)}</b>${simple&&!it.free?`<span class="n2 sub2">${esc(nameOf(it.m))}</span>`:''}${simple&&bd?'<div class="bds">'+bd+'</div>':''}</td>`,
       nm:`<td class="l nm" title="${esc(nameOf(it.m))}">${it.free?'':'<span class="n2">'+esc(nameOf(it.m))+'</span>'}${bd?'<div>'+bd+'</div>':''}</td>`,
-      mode:`<td class="mode"><div class="msw${it.noSub?' one':''}" role="group" aria-label="구분">${it.noSub?'':`<button type="button" class="s${isS?' on':''}" aria-pressed="${isS}" onclick="setItem(${i},'mode','sub')">구독</button>`}<button type="button" class="l${isS?'':' on'}" aria-pressed="${!isS}" onclick="setItem(${i},'mode','lump')">일반</button></div></td>`,
+      mode:`<td class="tmode"><div class="msw${it.noSub?' one':''}" role="group" aria-label="구분">${it.noSub?'':`<button type="button" class="s${isS?' on':''}" aria-pressed="${isS}" onclick="setItem(${i},'mode','sub')">구독</button>`}<button type="button" class="l${isS?'':' on'}" aria-pressed="${!isS}" onclick="setItem(${i},'mode','lump')">일반</button></div></td>`,
       y:`<td>${isS&&info?`<select data-k="${i}:1" aria-label="계약 기간" onchange="setItem(${i},'years',+this.value)">${ys.map(y=>`<option value="${y}"${y===cy?' selected':''}>${y}년</option>`).join('')}</select>`:'<span class="na">—</span>'}</td>`,
       care:`<td>${isS&&info?`<select data-k="${i}:2" aria-label="서비스 유형" onchange="setItem(${i},'care',this.value)">${cares.map(k=>`<option value="${esc(k)}"${k===(it.care||r&&r.care)?' selected':''}>${esc(k)}</option>`).join('')}</select>`:'<span class="na">—</span>'}</td>`,
       pp:simple?`<td class="${isS&&r&&r.prepayAmt>0?'two':''}">${isS&&info?ppSel(it,i,i+':5')+(r&&r.prepayAmt>0?`<small>${fmt(r.prepayAmt)}원</small>`:''):'<span class="na">—</span>'}</td>`
