@@ -297,6 +297,11 @@ table.xl.simple td.md{padding-top:8px;padding-bottom:8px}
 #v-edit input::placeholder,#v-edit textarea::placeholder{color:#94A3B8}
 #v-edit .xl-wrap{border:1px solid #C5D0E0;box-shadow:0 1px 4px rgba(15,23,42,.07)}
 table.xl thead th{background:#E9EFFA;border-bottom:1px solid #C5D0E0}
+.psbtn{margin-left:auto;background:#fff;border-color:#B8C4D6;font-size:13px;font-weight:700;color:var(--sub)}
+.dlg .box.ps{width:min(860px,100%)} .psq{display:flex;gap:8px} .psq input{flex:1;border:1px solid #B8C4D6;border-radius:9px;padding:9px 12px;font-size:15px;min-width:0}
+.psm{border:1px solid #C5D0E0;border-radius:11px;padding:10px 12px;margin-top:8px;background:#F8FAFD} .psh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px} .psh b{font-size:17px;color:var(--sub)} .psh span{font-size:13px;color:#475569} .psh i{font-style:normal;margin-left:auto;font-size:12.5px;font-weight:800;color:#0F766E;background:#E0F5F1;border-radius:8px;padding:2px 9px}
+.pst{width:100%;border-collapse:collapse;font-size:14px;background:#fff} .pst th,.pst td{border:1px solid var(--line);padding:6px 9px;text-align:right} .pst th:first-child,.pst td:first-child{text-align:left}
+.pst th{background:#E9EFFA;font-size:13px;color:#14213D} .pst th small{display:block;font-weight:600;font-size:11.5px;color:#475569} .pst td b{color:#0B7A43;font-size:15px} .pst td small{display:block;font-size:11.5px;color:#64748B} .pst .off,.pst .off b{color:#9AA3B2;font-weight:500} .pst tr.cur td{background:#FFF8E1}
 .kv.mon{background:#FFF4D6;font-size:15.5px;padding:9px 10px} .kv.mon b{font-size:20px;color:#8A5D00}
 @media(max-width:480px){.hero .fx .r{font-size:15px}.hero .fx .r b{font-size:19px}.hero .fx .r.sum .k{font-size:16px}.hero .fx .r.sum b{font-size:25px}}
 /* 고객 보기 카드 — 구독센터 상품 페이지(view.html .sv-head) 와 같은 짜임: 사진 · 품목 · 상품명 · 모델명 · 월 구독료 · 배지 (2026-11-04) */
@@ -443,7 +448,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     </div>
 
     <div class="card">
-      <h2><span class="stepn">2</span>품목 담기 <small>모델명·제품명으로 찾기 · 구독센터 [담기]에서 가져오기</small></h2>
+      <h2><span class="stepn">2</span>품목 담기 <small>모델명·제품명으로 찾기 · 구독센터 [담기]에서 가져오기</small><button type="button" class="chip psbtn" onclick="psOpen()" title="모델별 구독료 지원 개월 · 포인트 · 행사 기간 확인">구독료 지원 확인</button></h2>
       <div class="add">
         <input id="q" placeholder="예: WD90H25AHS, AI 콤보, 83형" autocomplete="off">
         <button class="chip" onclick="importBundle()" title="구독센터 다품목 계산기 주소(bundle.html?items=…)를 붙여넣으면 모델·약정·케어·선납·카드까지 가져옵니다">구독센터에서 가져오기</button>
@@ -606,6 +611,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 <!-- 보내기 -->
 <!-- 상담 저장 (2026-11-13) -->
+<!-- 구독료 지원 확인 (2026-11-16) -->
+<div class="dlg hidden" id="psDlg"><div class="box ps">
+  <h2>구독료 지원 확인 <button class="x" onclick="closeDlg('psDlg')" aria-label="닫기">×</button></h2>
+  <div class="psq"><input id="psQ" list="mdl" placeholder="모델명 입력 후 Enter (예: WF90F25ADS)" autocomplete="off" aria-label="모델명"><button type="button" class="btn blue" onclick="psFind()">조회</button></div>
+  <div id="psBody"></div>
+  <p class="hint" id="psNote"></p>
+</div></div>
 <div class="dlg hidden" id="csDlg"><div class="box share">
   <h2>상담 저장 <button class="x" onclick="closeDlg('csDlg')" aria-label="닫기">×</button></h2>
   <div id="csBody"></div>
@@ -1199,6 +1211,33 @@ let PKGA=null;
 function pkgA(){ if(!PKGA){ const mk=o=>{ const r={}; for(const c in o) String(o[c]||'').split(',').forEach(x=>{ if(x) r[x]=c; }); return r; }; PKGA={m:mk(PKG_ALL.cats),b:mk(PKG_ALL.bonus),y:new Set(String(PKG_ALL.subBonus||'').split(','))}; } return PKGA; }
 function pkgKey(map,model){ const m=norm(model); if(map[m]) return m; for(const k in map) if(pkgMatch(k,m)) return k; return ''; }
 function pkgName(S){ return [S.pkgN>=S.pkgMin?S.pkgN+'품목':'', S.pkgB?'3만 혜택 '+S.pkgB:''].filter(Boolean).join(' + ')||(S.pkgN+'품목'); }
+/* ═══ 구독료 지원 확인 ═══ */
+function psPromos(m){ const k=norm(m); return (POL.promos||[]).filter(p=>p&&p.months>0&&(p.models||[]).some(x=>norm(x)===k)).map(p=>{ const t=String(p.text||''), ym=/(\d)년 약정/.exec(t);
+    return { name:t.split('·')[0].trim()||'구독료 지원', months:+p.months, years:ym?+ym[1]:0, from:p.from||'', to:p.to||'', on:!(p.from||p.to)||C.inPeriod(p), text:t, fixed:p.amounts&&p.amounts[k]!=null?+p.amounts[k]:null }; }).sort((a,b)=>a.months-b.months); }
+function psDay(d){ return d?String(d).slice(5).replace('-','/'):''; }
+/* 본사 리스트(quote/promo_list.js)에 있는 모델은 리스트 숫자 그대로 — 요금표에 없는 요금제(방문/셀프 등)나 금액이 다른 줄도 리스트대로 보인다 */
+function psInPeriod(x){ const t=todayStr(); return (!x.from||t>=x.from)&&(!x.to||t<=x.to); }
+function psListModel(m,cur){ const PL=window.PROMO_LIST, e=PL&&PL.m[norm(m)]; if(!e) return ''; const rows=e[1].slice().sort((a,b)=>b[0]-a[0]||b[2]-a[2]), hasWin=rows.some(x=>x[4]>0), bOn=psInPeriod(PL.base), wOn=psInPeriod(PL.win);
+  const isCur=x=>cur&&cur.y===x[0]&&cur.monthly===x[2];
+  return `<div class="psm"><div class="psh"><b>${esc(m)}</b><span>${esc(nameOf(m)||e[0])}</span><i>${[...new Set(rows.map(x=>x[0]))].join('·')}년 계약 시</i></div>
+    <table class="pst"><thead><tr><th>계약 기간 · 서비스 유형</th><th>월 구독료</th><th class="${bOn?'':'off'}">구독료 지원<small>${psDay(PL.base.from)}~${psDay(PL.base.to)}${bOn?'':' (기간 외)'}</small></th>${hasWin?`<th class="${wOn?'':'off'}">${esc(PL.win.name)}<small>${psDay(PL.win.from)}~${psDay(PL.win.to)}${wOn?'':' (기간 외)'}</small></th>`:''}</tr></thead><tbody>
+    ${rows.map(x=>`<tr class="${isCur(x)?'cur':''}"><td>${x[0]}년 · ${esc(x[1])}${isCur(x)?' <span class="bd ok">견적 선택</span>':''}</td><td class="num">${fmt(x[2])}</td><td class="num ${bOn?'':'off'}"><b>${fmt(x[2]*x[3])}</b><small>${x[3]}개월</small></td>${hasWin?`<td class="num ${wOn&&x[4]?'':'off'}">${x[4]?`<b>${fmt(x[2]*x[4])}</b><small>${x[4]}개월</small>`:'대상 아님'}</td>`:''}</tr>`).join('')}
+    </tbody></table>${cur&&!rows.some(isCur)?`<p class="hint warn">견적 선택(${cur.y}년 · 월 ${fmt(cur.monthly)}원)과 같은 줄 없음 — 계약 기간·서비스 유형 확인</p>`:''}</div>`; }
+function psModel(m,cur){ const L0=psListModel(m,cur); if(L0) return L0; const info=INFO[m], pr=psPromos(m), nm=nameOf(m);
+  if(!info) return `<div class="psm"><div class="psh"><b>${esc(m)}</b><span>${esc(nm||'')}</span></div><p class="hint">요금표에 없는 모델 — 구독료 지원 대상 아님</p></div>`;
+  if(!pr.length) return `<div class="psm"><div class="psh"><b>${esc(m)}</b><span>${esc(nm||'')}</span></div><p class="hint">이번 달 구독료 지원 행사 대상 아님</p></div>`;
+  const maxY=Math.max(...info.p.map(x=>x[0])), yy=pr[0].years||maxY, plans=info.p.filter(x=>x[0]===yy);
+  return `<div class="psm"><div class="psh"><b>${esc(m)}</b><span>${esc(nm||'')}</span><i>${yy}년 계약 시</i></div>
+    <table class="pst"><thead><tr><th>서비스 유형</th><th>월 구독료</th>${pr.map(x=>`<th class="${x.on?'':'off'}">${esc(x.name)}<small>${x.months}개월 · ${psDay(x.from)}~${psDay(x.to)}${x.on?'':' (기간 외)'}</small></th>`).join('')}</tr></thead><tbody>
+    ${plans.map(x=>`<tr class="${cur&&cur.y===x[0]&&cur.care===x[1]?'cur':''}"><td>${esc(x[1])}${cur&&cur.y===x[0]&&cur.care===x[1]?' <span class="bd ok">견적 선택</span>':''}</td><td class="num">${fmt(x[3])}</td>${pr.map(q=>`<td class="num ${q.on?'':'off'}"><b>${fmt(q.fixed!=null?q.fixed:q.months*x[3])}</b></td>`).join('')}</tr>`).join('')}
+    </tbody></table>${cur&&cur.y!==yy?`<p class="hint warn">견적의 계약 기간 ${cur.y}년 — 구독료 지원은 ${yy}년 계약 시</p>`:''}</div>`; }
+function psRender(extra){ const subs=Q.items.filter(it=>!it.hidden&&it.mode==='sub'), LS=LAST&&LAST.S;
+  const cart=subs.map(it=>{ const r=LS&&LS.R[it.m]; return psModel(it.m, r?{y:r.y, care:r.care, monthly:r.monthly}:null); }).join('');
+  $('psBody').innerHTML=(extra?`<div class="lbl">조회 모델</div>${extra}`:'')+(cart?`<div class="lbl" style="margin-top:8px">담은 구독 품목 ${subs.length}개</div>${cart}`:(extra?'':'<p class="hint">담은 구독 품목 없음 — 위 칸에 모델명 입력 후 조회</p>'));
+  const PL=window.PROMO_LIST; $('psNote').textContent='금액 = 지원 개월 × 월 구독료 · 포인트 지급'+(PL?' · 본사 '+PL.ym.replace('-','년 ')+'월 구독료 지원 행사모델 리스트 '+PL.rows+'줄 기준':' · 요금표 '+(IDX.ver||'')+' · 행사 자료 '+(POL.ver||'')); }
+async function psOpen(){ $('psDlg').classList.remove('hidden'); $('psQ').value=''; $('psBody').innerHTML='<p class="hint">자료 불러오는 중…</p>'; if(!window.PROMO_LIST){ try{ await loadJs((ON_DC||/^(127\.|localhost$)/.test(location.hostname)?'':'https://db.samsungat.co.kr')+'/quote/promo_list.js?v='+(POL.ver||'')); }catch(e){} } psRender(''); setTimeout(()=>$('psQ').focus(),50); }
+async function psFind(){ const m=norm($('psQ').value); if(!m){ psRender(''); return; } $('psBody').innerHTML='<p class="hint">조회 중…</p>'; await ensureInfo(m); psRender(psModel(m,null)); }
+document.addEventListener('keydown',e=>{ if(e.target&&e.target.id==='psQ'&&e.key==='Enter'&&!e.isComposing){ e.preventDefault(); psFind(); } });
 function promoBd(r,m){ if(r.promoOn) return `<span class="bd ok" title="${esc(r.promoText)}">${esc(r.promoName)}${r.promoM?' '+r.promoM+'개월':''}</span>`;
   const k=norm(m), hit=(POL.promos||[]).some(p=>p&&p.months>0&&C.inPeriod(p)&&(p.models||[]).some(x=>norm(x)===k)); if(!hit||!r.info) return '';
   return `<span class="bd mut" title="행사 대상 모델이지만 지금 고른 계약 기간은 해당이 아닙니다">구독료 지원은 ${Math.max(...r.info.p.map(p=>p[0]))}년 계약 시</span>`; }
