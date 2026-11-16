@@ -74,6 +74,9 @@ rep("""        if(!QUOTE.meta) QUOTE.meta = { no: no, version: hit.version || 1,
     """        if(!QUOTE.meta) QUOTE.meta = { no: no, version: hit.version || 1, issuedAt: hit.issuedAt || '' };
         if(!QUOTE.meta.no){ QUOTE.meta.no = no; QUOTE.meta.version = QUOTE.meta.version || hit.version || 1; QUOTE.meta.issuedAt = QUOTE.meta.issuedAt || hit.issuedAt || ''; }""")
 
+# 7. 품목마다 일시불가 한 줄 (일반 구매 시 가격)
+rep("    if(it.careType || EDIT) h += '<tr><th>서비스 유형</th>", '    /* 일시불가 — 같은 제품을 일반 구매로 살 때 가격 (2026-11-16 · /quote/ 가 품목마다 넘긴다 · 고칠 수 있다) */\n    if(num(it.lumpPrice) > 0 || EDIT) h += \'<tr><th>일시불가 <span style="font-weight:500;color:#666">(일반 구매 시)</span></th><td class="num">\' + (EDIT ? cell(p + \'lumpPrice\', num(it.lumpPrice)) : won(num(it.lumpPrice))) + \'</td></tr>\';\n    if(it.careType || EDIT) h += \'<tr><th>서비스 유형</th>')
+
 def save(p, t):
     if CR: t = t.replace('\n', '\r\n')
     io.open(p, 'w', encoding='utf-8', newline='').write(t)

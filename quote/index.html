@@ -1513,7 +1513,7 @@ function bnLabel(k){ return `B&케어팩 지원금 ${k}구좌 (납입 월 ${won(
 function toQuoteJson(){
   const {S,L}=LAST, items=[];
   S.items.forEach(it=>{ const r=S.R[it.m]; items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:r.months, monthly:r.monthly, total:r.total, care:r.care, careType:C.splitCare(r.care)[0], cycle:C.splitCare(r.care)[1]?C.splitCare(r.care)[1]+'개월':'', note:it.note||'',
-    cardName:r.cardName||'', cardTier:r.cardTier||'', cardMonthly:r.cardMonthly, prepayAmt:r.prepayAmt, preIncl:true, multiOk:!!r.multiOff||!!r.pkgOn, consumable:S.toL?0:(r.cons||0), giftcard:S.toL?0:(r.gift||0), hidden:false, isMain:false,
+    cardName:r.cardName||'', cardTier:r.cardTier||'', cardMonthly:r.cardMonthly, prepayAmt:r.prepayAmt, preIncl:true, lumpPrice:+it.lump||0, multiOk:!!r.multiOff||!!r.pkgOn, consumable:S.toL?0:(r.cons||0), giftcard:S.toL?0:(r.gift||0), hidden:false, isMain:false,
     auto:{total:!r.manual,card:Math.abs(Math.round(r.cardMonthly*r.months)-Math.round(r.cardTotal))<1}, disc:{ sub:r.autoDisc, multi:r.multiOff, prepay:r.prepayDisc, point:S.toL?0:(r.pointsAll||0), card:r.cardTotal } }); });
   Q.items.filter(it=>it.hidden).forEach(it=>items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:(it.years||6)*12, monthly:0, care:it.care||'', note:it.note||'', hidden:true, auto:{total:true,card:true}, disc:{} }));
   const proof={recv:false,supp:false,appr:false}; if(Q.cust.proof) proof[Q.cust.proof]=true;
