@@ -503,7 +503,7 @@ window.SUB_SHOP_READY = true;
         return '<button type="button" role="tab" data-evm="' + t.k + '" aria-selected="' + (t.k === EV.k) + '">' + (lionsK(t.k) ? '<em class="ss-ev-lions">🏆 우승 기념</em>' : '') + esc(t.name) + '</button>';
       }).join('') + '</div>' +
       '<div class="ss-ev-head"><div><h3>' + esc(cur.name) + '</h3>' +
-        (lionsK(EV.k) ? '<p class="ss-ev-lionsbox"><b>🏆 라이온즈 우승 기념</b><span>기존 ' + (EV.k - 6) + '개월 + <em>추가 6개월</em> = <strong>' + EV.k + '개월</strong> 구독료 상당 멤버십 포인트</span><small>11월 13일(금) ~ 24일(화) · 12일간만</small></p>' : '') +
+        (lionsK(EV.k) ? '<p class="ss-ev-lionsbox"><b>🏆 라이온즈 우승 기념</b><span>기존 ' + (EV.k - 6) + '개월 + <em>추가 6개월</em> = <strong>' + EV.k + '개월</strong> 구독료 상당 멤버십 포인트</span><small>11월 13일(금) ~ 24일(화) · 12일간만</small><a class="ss-ev-lionsmore" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=193" data-cta="lions_more">라이온즈 우승 기념 행사 자세히 보기 →</a></p>' : '') +
         '<p>' + desc + '</p>' +
         '<p class="ss-ev-period">' + (from || to ? '행사 기간 ' + (from ? evDate(from) : '') + ' ~ ' + (to ? evDate(to) : '') : '') + (notes.length ? ' · ' + esc(notes.join(' · ')) : '') +
         (isMulti ? ' · <a href="' + esc(LINK.bundle) + '">다품목 계산기로 할인 계산하기 →</a>' : '') + '</p></div>' +

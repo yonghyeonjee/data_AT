@@ -652,7 +652,7 @@ function main() {
     var top = h; h = '';
     // 라이온즈 우승 기념 안내 띠 (2026-11-13 ~ 24) — 이 상품이 대상이면 패널 맨 위에 (말풍선 모양)
     var lionsM = 0; promoHits(info).forEach(function (p) { if (/라이온즈/.test(p.text || '') && p.months > lionsM) lionsM = p.months; });
-    if (lionsM) top = '<p class="subtab-lionsbar"><b>🏆 라이온즈 우승 기념</b><span>구독료 지원 기존 ' + (lionsM - 6) + '개월 + <em>추가 6개월</em> = <strong>' + lionsM + '개월</strong></span><small>11/13(금) ~ 11/24(화) · 최장 약정 선택 시</small></p>' + top;
+    if (lionsM) top = '<p class="subtab-lionsbar"><b>🏆 라이온즈 우승 기념</b><span>구독료 지원 기존 ' + (lionsM - 6) + '개월 + <em>추가 6개월</em> = <strong>' + lionsM + '개월</strong></span><small>11/13(금) ~ 11/24(화) · 최장 약정 선택 시</small><a class="subtab-lionsmore" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=193" target="_blank" rel="noopener">행사 자세히 보기 →</a></p>' + top;
 
     // 약정 기간
     h += '<fieldset class="subtab-field"><legend>약정 기간</legend><div class="subtab-grid subtab-grid--years">';
