@@ -1083,6 +1083,9 @@ function calcAll0(items){
     if(fresh) lumps.forEach(it=>{ const b=pkgKey(A.b,it.m); if(b){ bs[A.b[b]]=1; pL.add(it); return; } const k=pkgKey(A.m,it.m); if(k){ seen[A.m[k]]=1; pL.add(it); } });
     const n=Object.keys(seen).length, b=Object.keys(bs).length; let best=0, amt=0; for(const t in bp.tiers){ const tn=+t; if(tn<=n&&tn>best){ best=tn; amt=+bp.tiers[t]||0; } } if(n<min) amt=0;
     pkg={n,amt:amt+(n+b>=min?b*PKG_BONUS:0),min,b:n+b>=min?b:0,L:pL}; }
+  /* ⭐ 삼성전자 포인트 합계 = DPS 에서 구독·일반을 모두 담아 조회한 최종 포인트 (2026-11-16 사용자 설명) — 스마트 패키지도 이미 그 안에 있다.
+     합계를 넣었으면 패키지는 그 값을 넘겨서 더 빼지 않는다(합계가 패키지 표 금액보다 작아도 넣은 값이 전부). 합계를 안 넣었을 때만 패키지 표 금액을 쓴다. */
+  if(+Q.cond.pointDps&&+Q.cond.pointCommon>0&&pkg.amt>+Q.cond.pointCommon) pkg.amt=+Q.cond.pointCommon;
   const S={ items:subs, R, n:subs.length, total:0, auto:0, pre:0, preAmt:0, multi:0, multiN, card:0, points:0, cons:0, gift:0, pkg:pkg.amt, pkgN:pkg.n, pkgB:pkg.b||0, pkgL:pkg.L, pkgMin:pkg.min||2, pay:0, monthly:0, maxM:0 };
   subs.forEach(it=>{ const r=R[it.m]; S.total+=r.total; S.auto+=r.autoDisc; S.pre+=r.prepayDisc; S.preAmt+=r.prepayAmt; S.multi+=r.multiOff; S.card+=r.cardTotal; S.points+=r.pointsAll||0; S.cons+=r.cons; S.gift+=r.gift; S.pay+=r.finalMonthly; S.monthly+=r.monthly; S.maxM=Math.max(S.maxM,r.months); });
   /* 합계 혜택 = 품목 혜택 + 스마트 패키지 + 기타 혜택 행 + 이벤트 리워드 1%(천원 올림) + 멤버십 포인트 공통 — 고도몰 견적서 calcTotals 와 같은 순서 */
@@ -1100,6 +1103,8 @@ function calcAll0(items){
   S.mpay=subs.reduce((a,it)=>a+(R[it.m].monthlyPay||0),0); S.subPay=S.total-S.auto-S.pre-S.multi-S.preAmt; S.preOut=Q.cond.preIncl===false?S.preAmt:0;
   S.ben=S.benItems+S.pkg+S.extra+S.bn+S.reward+S.pointCommon; S.net=Math.max(0,S.total-S.ben-S.preOut);
   const L=calcLump(lumps,pkg.amt); L.items=lumps;
+  /* 「구독 30만원 적용시 (선택)」 = AI구독카드 72개월 지원 — 구독 쪽 카드 청구할인을 이미 뺐으면 같은 혜택이므로 다시 넣지 않는다 (2026-11-16) */
+  { const s30=+((Q.cond.lx||{}).sub30)||0; if(s30>0&&S.card>0){ L.opt-=s30; L.netOpt+=s30; L.sub30Off=true; } }
   L.bnN=toL?bnN():0; L.bn=L.bnN*BN.amt; if(L.bn){ L.ben+=L.bn; L.net-=L.bn; L.netOpt-=L.bn; }
   /* ⭐ 삼성전자 포인트 합계는 넣은 값 그대로 (2026-11-16) — 일반 구매 쪽: DPS 합계에 들어 있는 스마트 패키지를 따로 빼는 줄로 떼지 않고 J.POINT·캐시백(송금)에 넣어 보인다. 빼는 총액은 같다 */
   if(toL&&+Q.cond.pointDps&&+Q.cond.pointCommon>0){ const k=moved.findIndex(x=>String(x.label).indexOf('스마트 패키지')===0);
@@ -1324,7 +1329,7 @@ function renderEdit({S,L}){
     ${(L.moved||[]).map(x=>`<div class="kv minus"><span>${esc(x.label)}${why('일반 구매가 있으면 구독 쪽 정액 혜택도 일반 구매에서 뺍니다')}</span><span class="num">−${won(x.amount)}</span></div>`).join('')}
     <div class="kv total"><span>최종체감가${why('혜택가 − 로열등급 − 쿠폰 − 조건부 캐시백 − 신세계 상품권 − 주유 상품권'+(L.bn?' − B&케어팩 지원금':''))}</span><span class="num">${won(L.net)}</span></div>
     ${inp('iptv','IPTV <span class="hint">(선택)</span>','SKB 500M↑ + IPTV 가입 조건')}
-    ${inp('sub30','구독 30만원 적용시 <span class="hint">(선택)</span>','AI구독카드 72개월 지원')}
+    ${S.card>0?`<div class="kv"><span>구독 30만원 적용시 <span class="hint">(선택)</span>${why('AI구독카드 72개월 지원 — 구독 카드 청구할인 '+fmt(S.card)+'원에 이미 반영')}</span><span class="num hint">반영됨</span></div>`:inp('sub30','구독 30만원 적용시 <span class="hint">(선택)</span>','AI구독카드 72개월 지원')}
     ${L.opt?`<div class="kv total"><span>최종체감가 (선택 포함)${why('최종체감가 − IPTV − 구독 30만원 적용시')}</span><span class="num">${won(L.netOpt)}</span></div>`:''}
     ${L.parts.map(x=>x.inst?`<div class="kv"><span>${L.parts.length>1?x.items.length+'품목 · ':''}할부 개월수별 납부금액${why('(결제가 '+fmt(x.amount)+' − 청구할인 '+fmt(x.bill)+') ÷ '+x.months+'개월, 10원 미만 버림 · 1회차에 이용료가 더해지고 2회차에서 캐시백(송금)이 빠집니다')}</span><b class="num">${won(x.per)} × ${x.months}</b></div>`
       :`<div class="kv"><span>${L.parts.length>1?x.items.length+'품목 · ':''}일시불${why('계약 시 일시 결제')}</span><b class="num">${won(x.per)}</b></div>`).join('')}`; }
