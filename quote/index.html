@@ -1018,7 +1018,7 @@ function calcAll(items){
     if(+it.monthlyManual>0){ plan=plan0.slice(); plan[3]=+it.monthlyManual; plan[2]=Math.round(plan[3]*plan[0]*12); }   // 월 구독료 수기 (DPS 조회값 대신)
     const card=cardOf(it), r=C.calc(info, plan, { prepay:prepayOf(it), card, tier:tierOf(it), cardOn:!!card });
     r.info=info; r.plan=plan; r.y=plan[0]; r.multiOff=0; r.multiMonthly=0; r.multiRate=0; r.cardName=card; r.cardTier=card?tierOf(it):''; r.manual=+it.monthlyManual>0;
-    if(it.autoOff){ r.monthlyPay+=r.autoDisc/r.months; r.autoDisc=0; r.cardMonthly=Math.min((r.cardInfo&&r.cardInfo.md)||0,Math.max(0,r.monthlyPay)); r.cardTotal=Math.round(r.cardMonthly*r.months); r.finalMonthly=Math.max(0,r.monthlyPay-r.cardMonthly); r.expected=r.total-r.prepayDisc-r.cardTotal; r.expectedNet=r.expected-(r.pointsAll||0); }
+    if(it.autoOff){ r.monthlyPay+=r.autoDisc/r.months; r.autoDisc=0; r.cardMonthly=Math.min((r.cardInfo&&r.cardInfo.md)||0,Math.max(0,r.monthlyPay)); r.cardTotal=C.cardTotalOf?C.cardTotalOf(r.cardMonthly,r.cardInfo,r.months):Math.round(r.cardMonthly*r.months); r.finalMonthly=Math.max(0,r.monthlyPay-r.cardMonthly); r.expected=r.total-r.prepayDisc-r.cardTotal; r.expectedNet=r.expected-(r.pointsAll||0); }
     if(it.dps){ if(it.dps.sig==null) it.dps.sig=dpsSig(it); if(it.dps.sig===dpsSig(it)) applyDps(r,it.dps); else delete it.dps; }
     { const pi=r.pointsInfo; r.promoOn=!!pi; r.promoM=(pi&&pi.months)||0; r.promoText=(pi&&pi.text)||''; r.promoName=pi?(String(pi.text||'').split('·')[0].trim()||'구독료 지원'):''; }   // 포인트를 가리거나 수기로 넣어도 행사 해당 여부는 보인다
     if(it.pointManual!=null&&it.pointManual!==''){ r.pointsAll=Math.max(0,+it.pointManual||0); r.points=r.pointsAll; r.mpoints=0; r.pointsInfo=null; r.pointsManual=true; r.expectedNet=r.expected-r.pointsAll; }
@@ -1033,16 +1033,16 @@ function calcAll(items){
       if(mp.robot5>0&&r.y===5&&cat==='청소기'&&/로봇/.test(String(r.info.s||''))) rate=+mp.robot5;
       if(!(rate>0)) return; multiN++;
       const off=calcDiscount(r.total,rate,r.months); r.multiRate=rate; r.multiOff=off; r.multiMonthly=off/r.months;
-      r.monthlyPay-=r.multiMonthly; r.cardMonthly=Math.min(r.cardInfo.md||0,Math.max(0,r.monthlyPay)); r.cardTotal=Math.round(r.cardMonthly*r.months);
+      r.monthlyPay-=r.multiMonthly; r.cardMonthly=Math.min(r.cardInfo.md||0,Math.max(0,r.monthlyPay)); r.cardTotal=C.cardTotalOf?C.cardTotalOf(r.cardMonthly,r.cardInfo,r.months):Math.round(r.cardMonthly*r.months);
       r.finalMonthly=Math.max(0,r.monthlyPay-r.cardMonthly); r.expected=r.total-r.prepayDisc-r.autoDisc-off-r.cardTotal; r.expectedNet=r.expected-(r.pointsAll||0); });
   }
   /* 구독 제휴카드 (2026-11-10) — 같은 카드면 품목마다가 아니라 그 카드 월 납부액에 한 번만 할인한다. 기준금액(삼성카드 7만원)은 그 카드로 자동결제하는 품목의 할인 전 월 구독료 합계로 본다 — 카드사는 자기 카드로 결제된 금액만 안다. 카드가 하나면 구독 전체 합계와 같다 */
   const byCard={}; subs.forEach(it=>{ const r=R[it.m]; if(r.cardName) (byCard[r.cardName]=byCard[r.cardName]||[]).push(r); });
   Object.keys(byCard).forEach(name=>{ const g=byCard[name], cd=window.SUB_CARDS&&window.SUB_CARDS[name]; if(!cd) return;
-    const subSum=g.reduce((a,r)=>a+r.monthly,0); let left=Math.max(...g.map(r=>cardMd(cd,r.cardTier,subSum))); const info={md:left};
+    const subSum=g.reduce((a,r)=>a+r.monthly,0); let left=Math.max(...g.map(r=>cardMd(cd,r.cardTier,subSum))); const base0=Math.max(...g.map(r=>{ const md=cd.t[r.cardTier]||0; return Math.min(cd.base?(cd.base[r.cardTier]||md):md, cardMd(cd,r.cardTier,subSum)); })), exR=left>0?Math.max(0,left-base0)/left:0, pm=+cd.m||0; const info={md:left, base:base0, pm};   // 프로모션(t−base)은 카드사 제공 기간(m 개월)까지만 — KB국민·광주은행 36개월 (2026-11-16 본사 카드 혜택 시뮬레이션)
     // 상담사 화면: 월 납부액 큰 품목부터 채움(실제 청구와 같음) · 고객 화면(HIDE): 같은 카드 품목에 똑같이 나눠 보여 준다 (2026-11-12)
     const share=new Map(); if(HIDE){ const rest=g.slice().sort((a,b)=>a.monthlyPay-b.monthlyPay); let pool=left; rest.forEach((r,k)=>{ const cap=Math.max(0,r.monthlyPay), use=k===rest.length-1?Math.min(pool,cap):Math.min(Math.floor(pool/(rest.length-k)/10)*10,cap); share.set(r,use); pool-=use; }); }
-    g.slice().sort((a,b)=>b.monthlyPay-a.monthlyPay).forEach(r=>{ const use=HIDE?share.get(r):Math.min(left,Math.max(0,r.monthlyPay)); left-=use; r.cardInfo=info; r.cardMonthly=use; r.cardTotal=Math.round(use*r.months); r.finalMonthly=Math.max(0,r.monthlyPay-use); r.expected=r.total-r.prepayDisc-r.autoDisc-r.multiOff-r.cardTotal; r.expectedNet=r.expected-(r.pointsAll||0); }); });
+    g.slice().sort((a,b)=>b.monthlyPay-a.monthlyPay).forEach(r=>{ const use=HIDE?share.get(r):Math.min(left,Math.max(0,r.monthlyPay)); left-=use; r.cardInfo=info; r.cardMonthly=use; r.cardTotal=Math.round(use*r.months-(pm&&r.months>pm?use*exR*(r.months-pm):0)); r.finalMonthly=Math.max(0,r.monthlyPay-use); r.expected=r.total-r.prepayDisc-r.autoDisc-r.multiOff-r.cardTotal; r.expectedNet=r.expected-(r.pointsAll||0); }); });
   /* 스마트 패키지 정액 (sub.policy bundle · mvp_264) */
   let pkg={n:0,amt:0,b:0,L:new Set()}; const bp=POL.bundle;
   if(bp&&bp.tiers&&bp.models&&(!(bp.from||bp.to)||C.inPeriod(bp))){ const seen={}, bs={}, pL=new Set(), A=pkgA(), fresh=String(bp.from||'').slice(0,7)===PKG_ALL.ym, min=bp.min||2;
@@ -1246,7 +1246,7 @@ function renderEdit({S,L}){
     <div class="kv total2"><span>월 구독료 혜택가 합계${why('DPS 구독료 시뮬레이션의 「할인반영 월구독료」 합계 — 구독료 할인 · 다품목 할인 · 선납 할인이 이미 들어간 값')}</span><b class="num">${won(S.mpay)}</b></div>
     <div class="kv"><span>총 구독료${why('월 구독료 혜택가 × 계약 개월수, 품목별 합계')}</span><b class="num">${won(S.subPay)}</b></div>
     ${S.preAmt?`<div class="kv plus"><span>선납금${why(S.preOut?'계약 시 한 번에 결제 · 총 지불금액에는 더하지 않고 따로 표시 (결제 조건에서 선택)':'계약 시 한 번에 결제 · 총 지불금액에 더함 (결제 조건에서 선택)')}</span><span class="num">${S.preOut?'별도 ':'+'}${won(S.preAmt)}</span></div>`:''}
-    ${S.card?`<div class="kv minus"><span>카드 청구할인 (${esc([...new Set(S.items.map(it=>S.R[it.m].cardName?S.R[it.m].cardName+' '+S.R[it.m].cardTier:'').filter(Boolean))].join(', ')||'카드 없음')})${why('전월 실적을 채우면 매달 할인 × 계약 개월수')}</span><span class="num">−${won(S.card)}</span></div>`:''}
+    ${S.card?`<div class="kv minus"><span>카드 청구할인 (${esc([...new Set(S.items.map(it=>S.R[it.m].cardName?S.R[it.m].cardName+' '+S.R[it.m].cardTier:'').filter(Boolean))].join(', ')||'카드 없음')})${why('전월 실적을 채우면 매달 할인 × 계약 개월수 · KB국민·광주은행 프로모션은 36개월까지, 그 뒤는 기본 할인만')}</span><span class="num">−${won(S.card)}</span></div>`:''}
     ${S.pkg?`<div class="kv minus"><span>스마트 패키지 ${pkgName(S)}</span><span class="num">−${won(S.pkg)}</span></div>`:''}
     ${S.cons?`<div class="kv minus"><span>소모품</span><span class="num">−${won(S.cons)}</span></div>`:''}
     ${S.gift?`<div class="kv minus"><span>상품권</span><span class="num">−${won(S.gift)}</span></div>`:''}
@@ -1270,7 +1270,7 @@ function renderEdit({S,L}){
     <div class="kv total2"><span>${L.months?'삼성카드 '+(L.parts.length===1?L.months+'월 ':''):''}혜택가${why('① 결제가 − 청구할인 + 이용료 − 캐시백(송금)')}</span><b class="num">${won(L.card)}</b></div>
     ${inp('royal','로열등급','설치 후 차차월 이후 현금 계좌 입금')}
     ${inp('coupon','삼성카드몰 쇼핑몰 쿠폰','(제휴카드) 차차월 15일')}
-    <div class="kv minus"><span>조건부 캐시백${why(!L.months?'할부 품목이 있을 때만':cdL.cashback?(Q.cond.cb?'차월 50만 이상 1회 이용 시 (제휴카드) — 결제 조건에서 사용/미사용':'결제 조건에서 [미사용] 으로 둠'):'제휴(베네핏) 카드만 해당')}</span><span class="num">−${won(L.cb)}</span></div>
+    <div class="kv minus"><span>조건부 캐시백${why(!L.months?'할부 품목이 있을 때만':cdL.cashback?(Q.cond.cb?'제휴할부 6/12 결제 다음 달(한 달간) 제휴카드 70만 원 이상 추가 이용 시 · 1회 (11월 삼성스토어 카드정책) — 결제 조건에서 사용/미사용':'결제 조건에서 [미사용] 으로 둠'):'제휴(베네핏) 카드만 해당')}</span><span class="num">−${won(L.cb)}</span></div>
     ${inp('gift','신세계 상품권 <span class="hidetag">고객 화면에 안 보임</span>','차차월 이후 택배 발송')}
     ${inp('oil','주유 상품권 <span class="hidetag">고객 화면에 안 보임</span>','차차월 이후 택배 발송')}
     ${L.bn?`<div class="kv minus"><span>B&amp;케어팩 지원금 ${L.bnN}구좌${why('1구좌 '+won(BN.amt)+' · 납입금 월 '+won(L.bnN*BN.pay)+'은 별도')}</span><span class="num">−${won(L.bn)}</span></div>`:''}
