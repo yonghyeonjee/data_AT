@@ -155,7 +155,12 @@ table.xl select:focus,table.xl input:focus{outline:2px solid var(--blue);outline
 table.xl tr.sub td:first-child{box-shadow:inset 4px 0 0 var(--sub)} table.xl tr.lump td:first-child{box-shadow:inset 4px 0 0 var(--lump)}
 table.xl td.md b{font-size:15px;letter-spacing:-.01em} table.xl tr.sub td.md b{color:var(--sub)} table.xl tr.lump td.md b{color:var(--lump)}
 table.xl tr.sub>td{background:#F5F9FF} table.xl tr.lump>td{background:#FBF6EF} table.xl tr.lump td.hl{background:var(--lump-soft);color:var(--lump)}
-table.xl td.mode select{font-weight:800;text-align:center;color:#fff} table.xl tr.sub td.mode select{background:var(--sub)} table.xl tr.lump td.mode select{background:var(--lump)} table.xl td.mode select option{color:var(--ink);background:#fff}
+table.xl td.mode{text-align:center;padding:0 4px}
+table.xl td.mode select,table.xl.simple td.mode select{width:auto;min-width:60px;height:30px;border-radius:999px;padding:0 22px 0 11px;font-weight:800;font-size:13px;line-height:30px;color:#fff;cursor:pointer;appearance:none;-webkit-appearance:none;-moz-appearance:none;border:0;box-shadow:0 1px 2px rgba(15,23,42,.18);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
+table.xl.simple td.mode select{height:34px;line-height:34px;font-size:14px;min-width:78px;padding:0 26px 0 14px;background-position:right 11px center}
+table.xl tr.sub td.mode select,table.xl tr.sub td.mode select:focus{background-color:var(--sub)} table.xl tr.lump td.mode select,table.xl tr.lump td.mode select:focus{background-color:var(--lump)}
+table.xl td.mode select:focus{outline:2px solid #fff;outline-offset:0;box-shadow:0 0 0 4px rgba(29,111,232,.35)} table.xl td.mode select option{color:var(--ink);background:#fff;font-weight:600}
 table.xl.simple{min-width:660px;font-size:14px} table.xl.simple td{height:54px} table.xl.simple td.md{padding:6px 10px;white-space:normal} table.xl.simple td.md b{font-size:18px;display:block}
 table.xl.simple .sub2{font-size:12px;color:var(--mut);margin-top:1px} table.xl.simple .bds{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px} table.xl.simple td.r,table.xl.simple input.amt{font-size:16px} table.xl.simple select,table.xl.simple input{height:54px}
 table.xl td.hl{font-weight:800;color:var(--sub);background:var(--blue-soft)} table.xl .na{color:#B8BFCC}
@@ -1098,6 +1103,10 @@ function calcAll(items){
   S.ben=S.benItems+S.pkg+S.extra+S.bn+S.reward+S.pointCommon; S.net=Math.max(0,S.total-S.ben-S.preOut);
   const L=calcLump(lumps,pkg.amt); L.items=lumps;
   L.bnN=toL?bnN():0; L.bn=L.bnN*BN.amt; if(L.bn){ L.ben+=L.bn; L.net-=L.bn; L.netOpt-=L.bn; }
+  /* ⭐ 삼성전자 포인트 합계는 넣은 값 그대로 (2026-11-16) — 일반 구매 쪽: DPS 합계에 들어 있는 스마트 패키지를 따로 빼는 줄로 떼지 않고 J.POINT·캐시백(송금)에 넣어 보인다. 빼는 총액은 같다 */
+  if(toL&&+Q.cond.pointDps&&+Q.cond.pointCommon>0){ const k=moved.findIndex(x=>String(x.label).indexOf('스마트 패키지')===0);
+    if(k>=0){ const pp=Math.min(moved[k].amount,+Q.cond.pointCommon); if(pp>0){ moved[k].amount-=pp; if(!(moved[k].amount>0)) moved.splice(k,1);
+      L.jp+=pp; L.cash+=pp; L.card-=pp; L.ben+=pp; L.net-=pp; L.netOpt-=pp; L.pkgIn=pp; if(L.parts&&L.parts[0]){ L.parts[0].jp+=pp; L.parts[0].cash+=pp; } } } }
   L.moved=moved; L.mv=moved.reduce((a,x)=>a+x.amount,0); if(L.mv){ L.ben+=L.mv; L.net-=L.mv; L.netOpt-=L.mv; }
   if(L.net<0){ const over=-L.net; L.net=0; L.netOpt+=over; L.ben-=over; L.jp=Math.max(0,L.jp-over); L.cash=Math.max(0,L.cash-over); S.pointCommon+=over; S.ben+=over; S.net=Math.max(0,S.total-S.ben-S.preOut); }   // 포인트가 일반 구매 금액보다 크면 남는 포인트는 구독 총액에서 뺀다 (월 납부액은 그대로)
   /* 품목별 계산가격 — 맨 위 금액과 원 단위까지 같아지도록 나눠 넣는다 */
@@ -1212,7 +1221,7 @@ function feeTxt(L){ return (L.parts||[]).filter(x=>x.fee>0).map(x=>`${x.months}�
 /* ⭐ 삼성전자 포인트 합계는 견적 전체에 대해 들어가는 포인트 — 넣은 값 그대로 캐시백으로 보여 준다 (2026-11-16).
    DPS 합계에는 스마트 패키지가 들어 있으므로, 합계를 넣었으면 패키지는 따로 '할인'으로 세지 않고 캐시백 안에 넣어 보인다(빼는 총액은 그대로). */
 function pkgInPt(S,L){ if(!(+Q.cond.pointDps)||!(+Q.cond.pointCommon>0)) return 0;
-  const pk=(S.pkg||0)+(L.moved||[]).filter(x=>String(x.label).indexOf('스마트 패키지')===0).reduce((a,x)=>a+x.amount,0); return Math.min(pk,+Q.cond.pointCommon); }
+  return Math.min(S.pkg||0,+Q.cond.pointCommon); }   // 일반 구매가 끼면 패키지는 calcAll 이 L.jp·캐시백(송금)에 이미 넣는다(L.pkgIn)
 function cashOf(S,L){ return (S.points||0)+(S.pointCommon||0)+pkgInPt(S,L)+(L.cash||0)+(L.cb||0)+(L.moved||[]).filter(x=>x.label==='멤버십 포인트').reduce((a,x)=>a+x.amount,0); }
 function sumsOf(S,L){ const pre=S.n?S.preAmt-(S.preOut||0):0, sub=S.n?S.subPay:0, gross=sub+pre+L.amount+L.fee, fin=S.net+L.net, cash=Math.min(Math.max(0,gross-fin),cashOf(S,L)), pay=fin+cash;
   const subNet=S.n?Math.min(pay,Math.max(0,S.net+(S.points||0)+(S.pointCommon||0)+(S.pkg?pkgInPt(S,L):0))):0, lumpNet=Math.max(0,pay-subNet);   // 할인 뒤(캐시백 전) 구독 몫 · 일반 구매 몫
@@ -1305,7 +1314,7 @@ function renderEdit({S,L}){
     <div class="kv"><span>① 결제가${why('일반 구매 품목 '+L.items.length+'개의 결제가 합계'+(missL?' · 결제가를 안 넣은 품목 '+missL+'개 제외':''))}</span><b class="num">${won(L.amount)}</b></div>
     <div class="kv minus"><span>청구할인${why(L.parts.length>1?'할부 묶음마다 따로 — '+L.parts.map(x=>lmTxt(x.inst?x.months:0)+' '+fmt(x.bill)).join(' · '):!L.months?'일시불이면 없음':!cdL.plus?'삼성카드 6/12 할부가 아니면 없음':(L.amount>=5000000?'결제가 × 2% (500만 원 이상)':'결제가 구간별 정액 — 300만↑ 10만 · 200만↑ 6만 · 100만↑ 4만'))}</span><span class="num">−${won(L.bill)}</span></div>
     <div class="kv plus"><span>이용료${why(L.parts.length>1?'할부 묶음마다 따로 — '+L.parts.map(x=>lmTxt(x.inst?x.months:0)+' '+fmt(x.fee)).join(' · '):!L.months?'일시불이면 없음':!cdL.plus?'삼성카드 6/12 할부가 아니면 없음':'결제가 × '+(Math.round(rate*1000)/10)+'% — '+(L.months>=12?'1·2회차에 나눠 청구':'1회차에 청구'))}</span><span class="num">+${won(L.fee)}</span></div>
-    <div class="kv"><span>④ J.POINT <span class="hint">(제품별 S포인트)</span>${why('결제 조건의 포인트 합계(DPS) — 아래 캐시백(송금)에 더해집니다')}</span><span class="num">${won(L.jp)}</span></div>
+    <div class="kv"><span>④ J.POINT <span class="hint">(제품별 S포인트)</span>${why('결제 조건의 포인트 합계(DPS) 입력값'+(L.pkgIn?' · 스마트 패키지 '+fmt(L.pkgIn)+' 포함':'')+' — 아래 캐시백(송금)에 합산')}</span><span class="num">${won(L.jp)}</span></div>
     <div class="kv minus"><span>캐시백(송금) 차차월 5~6일${why('A 금액별 S포인트 '+fmt(L.sp)+' + B 제품별 S포인트 '+fmt(L.jp)+' + C '+esc(Q.cust.type)+' 포인트 '+fmt(L.tp)+' + D 기본멤버십P 0.1% '+fmt(L.mem))}</span><span class="num">−${won(L.cash)}</span></div>
     <div class="kv total2"><span>${L.months?'삼성카드 '+(L.parts.length===1?L.months+'월 ':''):''}혜택가${why('① 결제가 − 청구할인 + 이용료 − 캐시백(송금)')}</span><b class="num">${won(L.card)}</b></div>
     ${inp('royal','로열등급','설치 후 차차월 이후 현금 계좌 입금')}
