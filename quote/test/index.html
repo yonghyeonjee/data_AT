@@ -287,6 +287,16 @@ table.xl.simple .opts{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
 table.xl.simple .opts select{width:auto;max-width:150px;height:26px;border:1px solid #C9D3E3;border-radius:7px;background:#fff;font-size:12.5px;font-weight:600;color:#1F2937;padding:0 4px}
 table.xl.simple td.md{padding-top:8px;padding-bottom:8px}
 .hint{color:#5B6472}
+#v-edit .card{border:1px solid #C5D0E0;box-shadow:0 1px 4px rgba(15,23,42,.07);overflow:hidden}
+#v-edit .card>h2{margin:-14px -14px 12px;padding:11px 14px;background:#E9EFFA;border-bottom:1px solid #C5D0E0;font-size:16px;color:#14213D}
+#v-edit .card>h2 small{font-size:12.5px;color:#475569}
+#v-edit .card>h2 .stepn{width:24px;height:24px;font-size:13px}
+#v-edit .fld .lbl{font-size:12.5px;color:#334155;letter-spacing:0}
+#v-edit .fld input,#v-edit .fld select,#v-edit .fld textarea,#v-edit #q{border-color:#B8C4D6;font-size:15px}
+#v-edit .fld input:focus,#v-edit .fld select:focus,#v-edit .fld textarea:focus,#v-edit #q:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:var(--blue)}
+#v-edit input::placeholder,#v-edit textarea::placeholder{color:#94A3B8}
+#v-edit .xl-wrap{border:1px solid #C5D0E0;box-shadow:0 1px 4px rgba(15,23,42,.07)}
+table.xl thead th{background:#E9EFFA;border-bottom:1px solid #C5D0E0}
 .kv.mon{background:#FFF4D6;font-size:15.5px;padding:9px 10px} .kv.mon b{font-size:20px;color:#8A5D00}
 @media(max-width:480px){.hero .fx .r{font-size:15px}.hero .fx .r b{font-size:19px}.hero .fx .r.sum .k{font-size:16px}.hero .fx .r.sum b{font-size:25px}}
 /* 고객 보기 카드 — 구독센터 상품 페이지(view.html .sv-head) 와 같은 짜임: 사진 · 품목 · 상품명 · 모델명 · 월 구독료 · 배지 (2026-11-04) */
@@ -411,12 +421,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <div class="card">
       <h2><span class="stepn">1</span>고객 · 상담 <small>담당자 화면에서 열면 채워져 옵니다</small></h2>
       <div class="cust top3">
-        <div class="fld"><label class="lbl" for="c_name">성명 *</label><input id="c_name" autocomplete="off"></div>
-        <div class="fld"><label class="lbl" for="c_tel">연락처 *</label><input id="c_tel" inputmode="tel" autocomplete="off"></div>
+        <div class="fld"><label class="lbl" for="c_name">성명 *</label><input id="c_name" autocomplete="off" placeholder="고객 성명 (예: 홍길동)"></div>
+        <div class="fld"><label class="lbl" for="c_tel">연락처 *</label><input id="c_tel" inputmode="tel" autocomplete="off" placeholder="휴대폰 번호 (예: 010-1234-5678)"></div>
       </div>
       <details class="more" id="custMore"><summary>고객 정보 더 보기 <small>설치 주소 · 증빙 · 유효기한 · 생년월일 · 통신사 · 예식 일자 · 입주 일자 · 재상담 예약 · 세부 상담 내용</small></summary>
       <div class="cust" style="margin-top:10px">
-        <div class="fld"><label class="lbl" for="c_addr">설치 주소</label><input id="c_addr"></div>
+        <div class="fld"><label class="lbl" for="c_addr">설치 주소</label><input id="c_addr" placeholder="설치 주소 (예: 시흥시 ○○로 12, 101동 1001호)"></div>
         <div class="fld"><label class="lbl" for="c_proof">증빙 (혼수·입주)</label><select id="c_proof"><option value="">-</option><option value="recv">접수</option><option value="supp">보완</option><option value="appr">승인</option></select></div>
         <div class="fld"><label class="lbl" for="c_until">유효기한</label><input id="c_until" type="date"></div>
         <div class="fld"><label class="lbl" for="c_birth">생년월일</label><input id="c_birth" placeholder="1990.01.01"></div>
@@ -724,7 +734,7 @@ function loadJs(src){ return new Promise((ok,no)=>{ const s=document.createEleme
   bindInputs(); fillCust();
   const authed=await auth(), bootRef=P.get('t')?'?t='+P.get('t'):(P.get('ref')||'');
   if(!authed&&(Q.no||bootRef)){ PEND=Q.no?{no:Q.no}:{ref:bootRef}; render(); }   // 로그인 뒤 resumePend() 가 연다
-  else if(Q.no) await loadQuote(Q.no); else if(bootRef) await openRef(bootRef, true); else { prefillModels(); render(); }
+  else if(Q.no) await loadQuote(Q.no); else if(bootRef) await openRef(bootRef, true); else { prefillModels(); render(); await draftRestore(); }
 })();
 /* 매장 상담 줄 [견적서 만들기] · 구독센터 문의에서 넘어온 관심 모델을 바로 담는다: ?models=WD90H25AHW,RF85DB91A1AP (요금표에 없는 모델은 일시불 줄) */
 function initDisplay(){ document.body.classList.add('disp'); $('boot').classList.add('hidden'); const v=$('v-show'); v.classList.remove('hidden');
@@ -1310,7 +1320,20 @@ function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'
   return out.join('')
     +row('=','총 금액',won(T.pay)+a,(parts.length>1?parts.join(' + '):'')+(S.preOut?(parts.length>1?' · ':'')+'선납금 '+won(S.preOut)+' 별도':''),'sum')
     +(T.cash>0?row('−','캐시백 포인트',won(T.cash),'구매 후 환급 금액','minus')+row('=','최종 혜택가',won(T.fin)+a,'총 금액 − 캐시백','sum fin'):''); }
-function render(){ seedItems(); LAST=calcAll(); if(applyCardPreset()) LAST=calcAll(); renderEdit(LAST); $('bnEdit').innerHTML=bnHtml(); renderShow(); renderSheet(); }
+function render(){ seedItems(); LAST=calcAll(); if(applyCardPreset()) LAST=calcAll(); renderEdit(LAST); $('bnEdit').innerHTML=bnHtml(); renderShow(); renderSheet(); draftSave(); }
+/* 작성 중 보관 (2026-11-16) — 새로고침 확인 창은 브라우저가 그냥 넘겨 버릴 수 있어, 내용을 이 창에 두었다가 다시 열리면 되살린다 */
+let DRAFT_READY=false, DRAFT_TRIED=false; const DRAFT_KEY='dc_quote_draft';
+function draftBody(){ return JSON.stringify({cust:Q.cust, cond:Q.cond, items:Q.items, extra:Q.extra||[]}); }
+function draftSave(){ if(!DRAFT_READY||DISP) return; try{ sessionStorage.setItem(DRAFT_KEY, JSON.stringify({at:Date.now(), key:location.search, no:Q.no||'', body:draftBody()})); }catch(e){} }
+async function draftRestore(){ if(DRAFT_TRIED) return; DRAFT_TRIED=true;
+  try{ const d=JSON.parse(sessionStorage.getItem(DRAFT_KEY)||'null');
+    if(d&&d.key===location.search&&d.no===(Q.no||'')&&Date.now()-d.at<12*3600*1000&&d.body!==draftBody()){ const b=JSON.parse(d.body);
+      if((b.items||[]).length||(b.cust&&(b.cust.name||b.cust.phone))){
+        Object.assign(Q.cust,b.cust||{}); Object.assign(Q.cond,b.cond||{}); Q.items=(b.items||[]).map(it=>Object.assign({},ITEM_DEF,it)); Q.extra=b.extra||[];
+        fillCust(); try{ $('subCard').value=Q.cond.card||''; fillTier(); [...$('prepay').children].forEach(x=>x.classList.toggle('on',String(x.dataset.v)===String(Q.cond.prepay))); $('pointCommon').value=Q.cond.pointCommon||''; renderExtra(); if($('namecard')) $('namecard').value=Q.cond.namecardId||'';
+          if(LUMP) [...$('lumpKind').children].forEach(x=>x.classList.toggle('on',x.dataset.v===Q.cond.lumpKind)); [...$('cb').children].forEach(x=>x.classList.toggle('on',(x.dataset.v==='1')===!!Q.cond.cb)); [...$('arsBill').children].forEach(x=>x.classList.toggle('on',(x.dataset.v==='1')===!!Q.cond.arsBill)); if(typeof syncKind==='function') syncKind(); }catch(e){}
+        await Promise.all(Q.items.map(it=>ensureInfo(it.m))); DRAFT_READY=true; render(); toast('새로고침 전 작성 내용 복원'); return; } } }catch(e){}
+  DRAFT_READY=true; }
 function renderEdit({S,L}){
   const box=$('items');
   document.body.classList.toggle('iv-table',IVIEW==='table');   // 표로 입력: 표가 화면 폭을 다 쓰고 결제 조건·혜택은 표 아래로, 합계는 아래 띠에 늘 보인다
@@ -1591,8 +1614,8 @@ async function loadQuote(no){
     [...$('cb').children].forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===!!Q.cond.cb));
     [...$('arsBill').children].forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===!!Q.cond.arsBill));
     await Promise.all(Q.items.map(it=>ensureInfo(it.m))); Q.items.forEach(it=>{ if(it.mode==='sub'&&!INFO[it.m]){ it.mode='lump'; it.noSub=true; } });
-    render(); }
-  catch(e){ toast('불러오기 실패: '+e.message); render(); }
+    render(); await draftRestore(); }
+  catch(e){ toast('불러오기 실패: '+e.message); render(); DRAFT_READY=true; }
 }
 let PEND=null;   // 로그인 전에 링크·번호로 들어왔을 때 열 견적 — 담당자 확인이 끝나면 resumePend()
 function resumePend(){ const p=PEND; PEND=null; if(!p) return; if(p.no) loadQuote(p.no); else openRef(p.ref); }
