@@ -116,7 +116,12 @@ function main() {
     var md = cd.t[tier] || 0, base = cd.base ? (cd.base[tier] || md) : md, promoOff = false;
     // 삼성카드 추가 캐시백은 할인 전 월 구독료가 기준금액(7만원) 이상일 때만
     if (cd.minMonthly && cd.minMonthly[tier] && baseMonthly < cd.minMonthly[tier]) { md = base; promoOff = true; }
-    return { md: md, base: base, extra: md - base, promoOff: promoOff, min: cd.minMonthly && cd.minMonthly[tier] };
+    return { md: md, base: base, extra: md - base, promoOff: promoOff, min: cd.minMonthly && cd.minMonthly[tier], pm: +cd.m || 0 };
+  }
+  // 카드 혜택 총액 — 기본 할인은 계약 기간 내내, 프로모션(t − base)은 카드사 제공 기간(m 개월)까지만 (2026-11-16 본사 카드 혜택 시뮬레이션: KB국민·광주은행 36개월)
+  function cardTotalOf(use, ci, months) {
+    var ex = ci && ci.pm && months > ci.pm ? Math.max(0, use - (ci.base || 0)) : 0;
+    return Math.round(use * months - (ex ? ex * (months - ci.pm) : 0));
   }
   // 품목별 최대 선납 비율 — 이름 규칙(예: 의류케어 중 에어드레서) → 품목 → 기본값
   function prepayMax(info) {
@@ -207,7 +212,7 @@ function main() {
     r.cardInfo = (o.cardOn && o.card) ? cardMonthly(o.card, o.tier, monthly) : { md: 0 };
     r.cardMonthly = Math.min(r.cardInfo.md, Math.max(0, r.monthlyPay));
     r.cardCapped = r.cardInfo.md > r.cardMonthly;
-    r.cardTotal = Math.round(r.cardMonthly * months);
+    r.cardTotal = cardTotalOf(r.cardMonthly, r.cardInfo, months);
     r.finalMonthly = Math.max(0, r.monthlyPay - r.cardMonthly);
     r.expected = total - r.prepayDisc - r.autoDisc - r.cardTotal;   // 선납금 포함 실제 결제 총액
     // N개월 구독료 상당 포인트 지원 (mvp_257) — 결제 총액에서 빼서 "실제 구독료" 로 보여준다 (포인트는 결제 뒤 지급되므로 월 납부액은 그대로)
@@ -470,7 +475,7 @@ function main() {
   window.SUB_CALC = {
     policy: function () { return POL; },
     getInfo: getInfo, calc: calc, plansOf: plansOf, findPlan: findPlan,
-    prepayMax: prepayMax, prepayRate: prepayRate, defaultPrepay: defaultPrepay, tierByModel: tierByModel, cardNames: cardNames, cardMonthly: cardMonthly,
+    prepayMax: prepayMax, prepayRate: prepayRate, defaultPrepay: defaultPrepay, tierByModel: tierByModel, cardNames: cardNames, cardMonthly: cardMonthly, cardTotalOf: cardTotalOf,
     splitCare: splitCare, joinCare: joinCare, typeOrder: TYPE_ORDER, typeLabel: TYPE_LABEL,
     defaultCard: function () { return defaultCard(); }, defaultTier: function (c) { return defaultTier(c); },
     autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt, pointsOf: pointsOf, pointPromos: pointPromos, memberPoints: memberPoints, modelPointOf: modelPointOf, siblings: siblings, siblingList: siblingList, cheapestOf: cheapestOf, subOnlyOf: subOnlyOf,
@@ -720,15 +725,16 @@ function main() {
       var cd = cards[state.card];
       h += '<p class="subtab-sub">' + esc(state.card) + ' 결제 시 (전월 실적)</p><select data-tier aria-label="전월 실적 구간">';
       Object.keys(cd.t).forEach(function (t) {
-        var ci = cardMonthly(state.card, t, 1e12), txt = tierLabel(t) + ' · 월 -' + fmt(ci.base) + '원' + (ci.extra ? ' + 캐시백 ' + fmt(ci.extra) + '원' : '');
+        var ci = cardMonthly(state.card, t, 1e12), txt = tierLabel(t) + ' · 월 -' + fmt(ci.base) + '원' + (ci.extra ? ' + 프로모션 ' + fmt(ci.extra) + '원' : '');
         h += '<option value="' + esc(t) + '"' + (t === state.tier ? ' selected' : '') + '>' + txt + '</option>';
       });
       h += '</select><label class="subtab-check"><input type="checkbox" data-cardon' + (state.cardOn ? ' checked' : '') + '>' +
         '<span>제휴카드 혜택 적용</span><strong>' + (state.cardOn ? '월 -' + fmt(r.cardMonthly) + '원' : '미적용') + '</strong></label>';
       if (state.cardOn) {
         var ci2 = r.cardInfo;
-        h += '<dl class="subtab-cardbreak">' + row('기본 청구할인', '월 -' + fmt(ci2.base) + '원') +
-          (ci2.extra ? row('추가 캐시백 (최대 ' + cd.m + '개월)', '월 -' + fmt(ci2.extra) + '원') : '') + '</dl>';
+        h += '<dl class="subtab-cardbreak">' + row('기본 할인 (계약 기간 내내)', '월 -' + fmt(ci2.base) + '원') +
+          (ci2.extra ? row('프로모션 (최대 ' + cd.m + '개월)', '월 -' + fmt(ci2.extra) + '원') : '') + '</dl>';
+        if (ci2.extra && cd.m && r.months > cd.m) h += '<p class="subtab-sub">※ ' + r.months + '개월 중 ' + cd.m + '개월까지는 월 -' + fmt(r.cardMonthly) + '원, 그 뒤는 기본 할인만 반영했습니다.</p>';
         if (ci2.promoOff) h += '<p class="subtab-sub">※ 이 구간의 추가 캐시백은 월 구독료 ' + fmt(ci2.min) + '원 이상일 때 적용되어 기본 청구할인만 반영했습니다.</p>';
         if (r.cardCapped) h += '<p class="subtab-sub">※ 할인은 월 납부액(' + fmt(r.monthlyPay) + '원)까지만 적용됩니다.</p>';
       }

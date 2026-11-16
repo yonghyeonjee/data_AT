@@ -606,12 +606,17 @@ window.SUB_SHOP_READY = true;
     PAGES.forEach(function (p) { var r = picks(rowsOf(p), 1)[0]; if (r && r.name) out.push(r); });
     el.innerHTML = '<ul class="ss-grid">' + out.slice(0, +el.getAttribute('data-n') || 12).map(function (r) { return card(r, 'popular'); }).join('') + '</ul>' + saveNote(out.slice(0, +el.getAttribute('data-n') || 12));
   }
+  // 카드 할인 기간 — 기본 할인은 계약 기간 내내, 프로모션(t − base)만 카드사 제공 기간(m) (2026-11-16 본사 제휴카드 자료)
+  function cardSpan(cd) {
+    var ex = false; if (cd.base) for (var j in cd.t) if (cd.base[j] && cd.base[j] !== cd.t[j]) ex = true;
+    return ex && cd.m ? '기본 할인 계약 기간 내내 · 프로모션 ' + cd.m + '개월' : '계약 기간 동안 매달';
+  }
   function drawCards(el) {
     if (!CARDS) { el.innerHTML = ''; return; }
     var names = Object.keys(CARDS);
     el.innerHTML = '<ul class="ss-cardsum">' + names.map(function (k) {
       var t = CARDS[k].t || {}, mx = 0; for (var j in t) if (t[j] > mx) mx = t[j];
-      return '<li><strong>' + esc(k) + '</strong><span>최대 월 <b>' + fmt(mx) + '원</b> 할인</span><small>최장 ' + (CARDS[k].m || '') + '개월</small></li>';
+      return '<li><strong>' + esc(k) + '</strong><span>최대 월 <b>' + fmt(mx) + '원</b> 할인</span><small>' + cardSpan(CARDS[k]) + '</small></li>';
     }).join('') + '</ul><p class="ss-more"><a href="' + esc(LINK.card) + '">제휴카드별 실적 구간 자세히 보기 →</a></p>';
   }
   function drawCardTable(el) {
@@ -619,10 +624,10 @@ window.SUB_SHOP_READY = true;
     var pc = (POL && POL.cards) || {};
     el.innerHTML = Object.keys(CARDS).map(function (k) {
       var cd = CARDS[k], t = cd.t || {}, notes = (pc[k] && pc[k].notes) || [];
-      return '<section class="ss-cardbox"><h3>' + esc(k) + ' <small>할인 기간 최장 ' + (cd.m || '-') + '개월</small></h3>' +
+      return '<section class="ss-cardbox"><h3>' + esc(k) + ' <small>' + cardSpan(cd) + '</small></h3>' +
         '<table class="ss-table"><thead><tr><th scope="col">전월 이용실적</th><th scope="col">월 할인</th></tr></thead><tbody>' +
         Object.keys(t).map(function (tier) {
-          var base = cd.base && cd.base[tier] && cd.base[tier] !== t[tier] ? ' <small>(기본 ' + fmt(cd.base[tier]) + '원 + 추가 ' + fmt(t[tier] - cd.base[tier]) + '원)</small>' : '';
+          var base = cd.base && cd.base[tier] && cd.base[tier] !== t[tier] ? ' <small>(기본 ' + fmt(cd.base[tier]) + '원 + 프로모션 ' + fmt(t[tier] - cd.base[tier]) + '원' + (cd.m ? ' · ' + cd.m + '개월간' : '') + ')</small>' : '';
           return '<tr><td>' + esc(tier.replace('↑', ' 이상')) + '</td><td><b>월 ' + fmt(t[tier]) + '원</b>' + base + '</td></tr>';
         }).join('') + '</tbody></table>' +
         (notes.length ? '<ul class="ss-notes">' + notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' : '') +
