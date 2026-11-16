@@ -1543,7 +1543,7 @@ async function giveSheet(){ if(!LAST) return;
   if(need){ const before=SAVED_SIG; await saveQuote(); if(!Q.no||SAVED_SIG===before||SAVED_SIG!==quoteSig()){ try{ w&&w.close(); }catch(e){} return; } }
   const u=oldSheetUrl(); if(w){ try{ w.opener=null; }catch(e){} w.location.replace(u); } else location.href=u; }
 function oldSheetUrl(){ const q=new URLSearchParams(); q.set('no',Q.no); if(Q.ver) q.set('v',Q.ver); if(Q.cust.name) q.set('name',Q.cust.name); if(Q.cust.phone) q.set('phone',String(Q.cust.phone).replace(/\D/g,'')); if(ME) q.set('counselor',ME);
-  return 'https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html&'+q.toString(); }
+  return location.origin+'/quote/sheet/?'+q.toString(); }   // 기존 시흥몰 구독 견적서와 같은 화면·기능을 우리 시스템에서 연다 (2026-11-16 · tools/quote/old_sheet_build.py 로 같은 원본에서 만든다 · 시흥몰 쪽도 그대로 있다)
 async function saveQuote(){
   if(!LAST) return; if(!Q.cust.name||!Q.cust.phone){ toast('고객 성명과 연락처를 넣어 주세요'); setView('edit'); $('c_name').focus(); return; }
   if(!Q.items.length){ toast('품목을 담아 주세요'); return; }
