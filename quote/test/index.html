@@ -1329,7 +1329,7 @@ function renderEdit({S,L}){
 }
 /* 고객 화면 = 고객과 보기 + 모니터 2대의 고객 창. 상품권(품목·신세계)과 기타 혜택(매장 자체 혜택)은 빼고 다시 계산해서 보여 준다 */
 function renderShow(){ if(!LAST) return; HIDE=true; try{ LASTC=calcAll(); renderShow0(); } finally{ HIDE=false; } postDisplay(); }
-/* 구독 품목의 케어 표기 · 받는 혜택 말풍선 (2026-11-16) — 고객 화면 창은 이 화면을 그대로 받아 보여 주므로 스크립트 없이 열리는 details 로 만든다(연 상태가 그대로 넘어간다) */
+/* 구독 품목의 케어 표기 · [혜택 확인] 말풍선 (2026-11-16) — 고객 화면 창은 이 화면을 그대로 받아 보여 주므로 스크립트 없이 열리는 details 로 만든다(연 상태가 그대로 넘어간다) */
 function careTxt(c){ const a=C.splitCare(c||''), t=a[0]||String(c||''), cy=a[1]; return (t||'케어')+(cy?' · '+cy+'개월마다 방문':''); }
 function benPop(r){ const L=[], li=(c,k,v,d)=>L.push(`<li class="${c}"><span>${k}${d?`<small>${d}</small>`:''}</span><b>${v}</b></li>`), per=x=>'월 −'+fmt(Math.round(x/r.months/10)*10)+'원';
   li('c-care','케어 서비스',esc(careTxt(r.care)),'계약 기간 '+r.y+'년 동안 무상 A/S');
@@ -1339,7 +1339,7 @@ function benPop(r){ const L=[], li=(c,k,v,d)=>L.push(`<li class="${c}"><span>${k
   if(r.cardMonthly>0) li('c-card','카드 청구할인','월 −'+fmt(Math.round(r.cardMonthly))+'원',esc((r.cardName||'')+' '+(r.cardTier||''))+' · 전월 실적을 채우면');
   if(r.promoOn) li('c-promo',esc(r.promoName)+(r.promoM?' '+r.promoM+'개월':''),'해당',esc(r.promoText||''));
   if(r.pkgOn) li('c-pkg','스마트 패키지','해당','함께 구매한 품목 수에 따라 포인트');
-  return `<details class="benpop"><summary>받는 혜택 ${L.length}가지 보기</summary><div class="pop"><ul>${L.join('')}</ul><p>월 구독료 <s>${won(r.monthly)}</s> → <b>${won(r.finalMonthly)}</b></p></div></details>`; }
+  return `<details class="benpop"><summary>혜택 확인</summary><div class="pop"><ul>${L.join('')}</ul><p>월 구독료 <s>${won(r.monthly)}</s> → <b>${won(r.finalMonthly)}</b></p></div></details>`; }
 function renderShow0(){ const {S,L}=LASTC||LAST, name=Q.cust.name||'고객', bnK=S.bnN||L.bnN||0;
   $('bnCard').classList.toggle('hidden',!bnK); $('bnCard').innerHTML=bnK?bnCardHtml(bnK):'';
   $('c_l_ben_k').textContent='청구할인 · 캐시백(송금) · 조건부 캐시백'+(L.bn?' · B&케어팩 지원금':'')+(L.mv?' · 구독 쪽 정액 혜택':'');
