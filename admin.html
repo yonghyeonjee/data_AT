@@ -1287,6 +1287,15 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
 .lka-win{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:10px}
 .lka-win div{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .lka-win div b{color:var(--navy)}
+.ldspan{margin-bottom:10px}
+.ldkpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ldkpi>div{background:var(--zone,#F3F6FB);border:1px solid var(--zone-line,#D3DAE6);border-radius:10px;padding:10px 12px;min-width:0}
+.ldkpi b{display:block;font-size:calc(20px * var(--font-scale));color:var(--ink)}
+.ldkpi span{font-size:calc(12px * var(--font-scale));color:var(--muted)}
+.ldhr{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;height:18px}
+.ldhr i{background:#1428A0;border-radius:2px}
+.ldbar{display:inline-block;height:8px;border-radius:4px;background:#1428A0;opacity:.55;vertical-align:middle}
+@media (max-width:640px){ .ldkpi{grid-template-columns:repeat(2,minmax(0,1fr))} .ldbtn{min-height:40px;min-width:40px} }
 </style>
 </head>
 <body>
@@ -2854,7 +2863,7 @@ function rpcBar(d){
 const RPC_ACT=new Map(); let RPC_SEQ=0, LP_TICK=null, LP_DONE_T=null, LP_SR='';
 const FN_LABEL={fn_sub_policy:'구독 혜택 정책',fn_sub_point_list:'모델 포인트',fn_exec_kpi:'경영 지표',fn_auto_rules:'자동 발송 규칙',fn_auto_rule_preview:'자동 발송 대상 수',fn_auto_runs:'자동 발송 실행 기록',fn_customer_list:'고객 목록',fn_customer_stats:'고객 통계',fn_order_list:'주문 목록',fn_order_summary:'매출 요약',fn_order_export:'내보낼 주문',
   fn_inquiry_list:'문의 목록',fn_consult_stats:'상담 통계',fn_consult_list:'상담 목록',fn_home:'홈 요약',fn_data_status:'데이터 상태',fn_data_stamp:'자료 기준',
-  fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
+  fn_inv_stock:'재고',fn_inv_items:'품목',fn_inv_summary:'재고 요약',fn_crm_targets_v2:'발송 대상',fn_crm_segments:'저장 조건',fn_utm_campaigns:'캠페인',fn_utm_responses:'캠페인 문의',fn_link_daily:'날짜별 클릭',fn_product_suggest:'제품 찾기',fn_customer_journey:'고객 흐름',fn_inquiry_flow:'문의 → 구매 흐름',
   fn_quote_list:'견적 목록',fn_submission_list:'방문 접수',fn_visit_stats:'방문 통계',fn_activity_log:'활동 기록',fn_upload_history:'적재 기록',
   fn_sl_pending:'샵링커 주문',fn_sl_status:'샵링커 상태',fn_order_queue:'전표 대기열',fn_settlement_list:'정산',fn_sub_plans:'구독 플랜',fn_store_daily_list:'매장 마감',
   fn_staff_list:'담당자',fn_unpaid_list:'미입금 주문',fn_dashboard_v2:'매출 요약',fn_channel_daily_month:'온라인 일매출',fn_listing_request_list:'등록 요청',fn_menu:'메뉴',fn_crm_followups:'후속 관리',fn_product_sdp_upsert:'제품 정보',fn_sms_config_get:'문자 설정',fn_sms_log:'문자 발송 내역',fn_sms_check:'센드온 연결 확인',fn_sms_send:'문자 보내기',fn_sms_blocklist_pull:'센드온 수신거부',fn_sms_schedule_list:'예약 발송',fn_sms_schedule_save:'예약 등록',fn_sms_schedule_cancel:'예약 취소',fn_sms_batches:'발송 결과',fn_sms_batch:'발송결과 보기',fn_rental_targets:'렌탈 고객'};
@@ -7537,7 +7546,7 @@ function utmRender(){
     L.sort(SO==='clicks'?(a,b)=>(b.hits||0)-(a.hits||0):SO==='code'?(a,b)=>String(a._camp).localeCompare(String(b._camp)):(a,b)=>desc(a.created_at,b.created_at));
     const P=pgCut('utm_link',UTM_PG,L,'utmGo'); UTM_PG=P.page; $('utmPg').innerHTML=P.bar; $('utmRange').textContent=P.range||(L.length?`${n(L.length)}개`:'');
     $('utmRows').innerHTML=P.rows.map(k=>`<tr class="${k.active?'':'off'}"><td style="white-space:normal">${utmLinkCell(k,true)}</td>
-      <td class="num">${n(k.hits)}</td><td class="num">${k.hits_today?n(k.hits_today):'<span class="note">-</span>'}</td><td class="note mono">${esc(k.created_at||'')}</td>
+      <td class="num">${utmHitBtn(k.hits,{slug:k.slug})}</td><td class="num">${k.hits_today?n(k.hits_today):'<span class="note">-</span>'}</td><td class="note mono">${esc(k.created_at||'')}</td>
       <td><button class="btn sm ghost" data-slug="${esc(k.slug)}" onclick="utmLinkToggle(this.dataset.slug)">${k.active?'끄기':'켜기'}</button></td></tr>`).join('')
       || `<tr><td colspan="5" class="note" style="text-align:center;padding:24px">${q?'찾는 링크가 없습니다':'링크가 없습니다 — 캠페인 줄의 [+ 링크] 로 만듭니다'}</td></tr>`;
     return;
@@ -7558,7 +7567,7 @@ function utmRender(){
       <td>${c.segment_code?`<button class="btn sm ghost" data-code="${esc(c.code)}" data-seg="${esc(c.segment_code)}" onclick="utmExtract(this.dataset.code,this.dataset.seg)" title="이 조건으로 발송 대상 추출로 갑니다">${esc(utmSegLabel(c.segment_code))}</button>`:'<span class="note">-</span>'}</td>
       <td class="utm-lk">${tot?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmToggle(this.dataset.code)" aria-expanded="${open}">링크 ${n(tot)}${on<tot?` · 꺼짐 ${n(tot-on)}`:''} ${open?'▴':'▾'}</button>`:'<span class="note">없음</span>'}</td>
       <td class="num">${c.sent?n(c.sent):'<span class="note">-</span>'}</td>
-      <td class="num">${c.clicks?n(c.clicks):'<span class="note">-</span>'}</td>
+      <td class="num">${c.clicks?utmHitBtn(c.clicks,{camp:c.code}):'<span class="note">-</span>'}</td>
       <td class="num">${c.inquiries?`<button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmResp(this.dataset.code)" title="이 링크로 문의한 사람 — 처음 들어온 경로 · 가입일 · 구매 이력">${n(c.inquiries)}</button>`:'<span class="note">-</span>'}</td>
       <td class="num">${utmBoughtCell(c,false)}</td>
       <td class="num">${utmBoughtCell(c,true)}</td>
@@ -7566,13 +7575,53 @@ function utmRender(){
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmEdit(this.dataset.code)">수정</button>
         <button class="btn sm ghost" data-code="${esc(c.code)}" onclick="utmDel(this.dataset.code)">${c.sent?'접기':'삭제'}</button></td></tr>`;
     const sub=open?lk.map(k=>`<tr class="utm-link ${k.active?'':'off'}"><td></td><td colspan="4">${utmLinkCell(k,false)}</td>
-        <td></td><td class="num">${n(k.hits)}${k.hits_today?`<div class="note">오늘 ${n(k.hits_today)}</div>`:''}</td><td colspan="3" class="note">${esc(k.created_at||'')}</td>
+        <td></td><td class="num">${utmHitBtn(k.hits,{slug:k.slug})}${k.hits_today?`<div class="note">오늘 ${n(k.hits_today)}</div>`:''}</td><td colspan="3" class="note">${esc(k.created_at||'')}</td>
         <td><button class="btn sm ghost" data-slug="${esc(k.slug)}" onclick="utmLinkToggle(this.dataset.slug)">${k.active?'끄기':'켜기'}</button></td></tr>`).join(''):'';
     return head+sub; }).join('') || `<tr><td colspan="11" class="note" style="text-align:center;padding:24px">${q?'찾는 캠페인·링크가 없습니다':ST==='off'?'접은 캠페인이 없습니다':'캠페인이 없습니다 — [+ 새 캠페인] 으로 시작하세요'}</td></tr>`;
 }
 /* [문의] 숫자 → 이 캠페인 링크로 문의한 사람 (2026-10-08) — 처음 들어온 경로(채널) · 가입·처음 확인일 · 문의 전 구매 · 문자 받은 기록.
    문의는 구독 페이지 등 폼의 pageUrl 에 남은 utm_campaign 으로 캠페인에 붙인다 (core.f_consult_campaign) */
 let UR_CODE=null;
+/* 클릭 숫자 → 날짜별 클릭 (mvp_298 · 2026-11-16). 링크 하나 또는 캠페인 링크 전부. 날짜는 한국 시각 */
+let LD={slug:null,camp:null,span:'all'};
+function utmHitBtn(v,o){ if(!+v) return `<span class="note">0</span>`;
+  return `<button class="btn sm ghost ldbtn" data-slug="${esc(o.slug||'')}" data-camp="${esc(o.camp||'')}" onclick="utmDaily(this.dataset.slug,this.dataset.camp)" title="날짜별 클릭 보기">${n(v)}</button>`; }
+function utmDaily(slug,camp){
+  LD={slug:slug||null,camp:camp||null,span:'all'};
+  let ttl;
+  if(LD.slug){ const k=(UTM_CAMPS||[]).flatMap(c=>c.links||[]).find(x=>x.slug===LD.slug)||{}; ttl=`${k.label||LD.slug} · 날짜별 클릭`; }
+  else { const c=(UTM_CAMPS||[]).find(x=>x.code===LD.camp)||{}; ttl=`${c.name||LD.camp} · 날짜별 클릭`; }
+  modal({title:ttl, wide:true, cancel:null, ok:'닫기',
+    html:`<div class="seg ldspan" id="ldSpan" role="radiogroup" aria-label="기간">${[['all','처음부터'],['7','7일'],['14','14일'],['30','30일'],['90','90일']].map(([v,t])=>`<button type="button" role="radio" data-v="${v}" aria-checked="${v==='all'}" class="${v==='all'?'on':''}" onclick="ldSpan(this.dataset.v)">${t}</button>`).join('')}</div>
+      <div id="ldBody"><div class="note" style="padding:16px">불러오는 중…</div></div>`, init:()=>ldLoad()});
+}
+function ldSpan(v){ LD.span=v; document.querySelectorAll('#ldSpan button').forEach(b=>{ const on=b.dataset.v===v; b.classList.toggle('on',on); b.setAttribute('aria-checked',on); }); ldLoad(); }
+async function ldLoad(){
+  const today=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+  const from=LD.span==='all'?null:new Date(Date.parse(today)-(+LD.span-1)*864e5).toISOString().slice(0,10);
+  let d; try{ d=await rpc('fn_link_daily',{p_slug:LD.slug,p_campaign:LD.slug?null:LD.camp,p_from:from,p_to:null},{fresh:true}); }
+  catch(e){ const b=$('ldBody'); if(b) b.innerHTML=`<div class="note" style="color:var(--bad)">${esc(e.message)}</div>`; return; }
+  const b=$('ldBody'); if(!b) return; const D=d.days||[], mx=Math.max(1,...D.map(x=>+x.n||0));
+  const wk=s=>'일월화수목금토'[new Date(s+'T00:00:00Z').getUTCDay()];
+  const md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
+  const top=D.reduce((a,x)=>(+x.n>(+a.n||0)?x:a),{});
+  const W=Math.max(320,D.length*22), H=150, bw=Math.max(4,Math.min(18,(W-20)/Math.max(1,D.length)-4));
+  const bars=D.map((x,i)=>{ const h=Math.round((+x.n||0)/mx*(H-34)), xx=10+i*((W-20)/Math.max(1,D.length)); return `<g><rect x="${xx}" y="${H-18-h}" width="${bw}" height="${h}" rx="2" fill="${x.d===today?'#2E7D32':'#1428A0'}"><title>${md(x.d)}(${wk(x.d)}) ${n(x.n)}회</title></rect>${+x.n&&(D.length<=31||x.d===top.d)?`<text x="${xx+bw/2}" y="${H-22-h}" text-anchor="middle" font-size="10" fill="#2E3542">${n(x.n)}</text>`:''}${(D.length<=14||i%Math.ceil(D.length/12)===0)?`<text x="${xx+bw/2}" y="${H-4}" text-anchor="middle" font-size="10" fill="#5B6474">${md(x.d)}</text>`:''}</g>`; }).join('');
+  const hrs=d.hours||[], hmx=Math.max(1,...hrs.map(x=>+x.n));
+  const hmap=Object.fromEntries(hrs.map(x=>[x.h,+x.n]));
+  const tp=+d.total||0;
+  b.innerHTML=`<div class="ldkpi"><div><b>${n(d.total)}</b><span>클릭 · ${md(d.from)} ~ ${md(d.to)}</span></div>
+      <div><b>${top.d?md(top.d):'-'}</b><span>가장 많은 날${top.d?` · ${n(top.n)}회`:''}</span></div>
+      <div><b>${tp?Math.round((+d.mobile||0)/tp*100):0}%</b><span>휴대폰에서</span></div>
+      <div><b>${+d.people?n(d.people):'-'}</b><span>누른 사람${+d.people?'':' (사람별 링크 아님)'}</span></div></div>
+    <div class="tw" style="margin:10px 0"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="날짜별 클릭 막대">${bars}</svg></div>
+    <div class="ldhr" aria-label="시간대별 클릭">${Array.from({length:24},(_,h)=>`<i title="${h}시 ${n(hmap[h]||0)}회" style="opacity:${hmap[h]?(0.18+0.82*hmap[h]/hmx).toFixed(2):0.06}"></i>`).join('')}</div>
+    <div class="note" style="display:flex;justify-content:space-between;margin:2px 0 10px"><span>0시</span><span>시간대별 (진할수록 많음)</span><span>23시</span></div>
+    ${(d.by_link||[]).length>1?`<p class="note" style="margin:0 0 6px">링크별 ${(d.by_link||[]).map(x=>`<span class="tag n">${esc(x.label||x.slug)} ${n(x.n)}</span>`).join(' ')}</p>`:''}
+    <div class="tw" style="max-height:320px"><table><thead><tr><th>날짜</th><th class="num">클릭</th><th class="num">휴대폰</th>${+d.people?'<th class="num">누른 사람</th>':''}<th style="width:45%"></th></tr></thead><tbody>${
+      D.slice().reverse().map(x=>`<tr${+x.n?'':' class="off"'}><td class="mono">${esc(x.d)} <span class="note">${wk(x.d)}</span></td><td class="num"><b>${n(x.n)}</b></td><td class="num">${n(x.mob)}</td>${+d.people?`<td class="num">${n(x.ppl)}</td>`:''}<td><span class="ldbar" style="width:${Math.round((+x.n||0)/mx*100)}%"></span></td></tr>`).join('')}</tbody></table></div>
+    <p class="note" style="margin-top:8px">한국 시각 기준. 같은 사람이 여러 번 눌러도 매번 셉니다. '누른 사람' 은 사람별 링크(문자 보내기·자동 발송)로 나간 클릭만 압니다.</p>`;
+}
 /* ═══ 고객 흐름 (mvp_198) — "고객들의 문의, 구매 흐름이 명료하게". 한 사람의 문의·상담·견적(열람)·문자·구매·환불·DPS 구독을
    한 줄 타임라인으로. 관리자(fn_customer_journey)와 담당자(fn_store_customer_journey)가 같은 그리기(cjHtml)를 쓴다 ═══ */
 const CJ_K={seen:['처음 확인','#555E6C','#EEF1F5'],inq:['문의','#1D4FB8','#EAF0FC'],consult:['상담','#0B5E57','#E6F4F2'],quote:['견적','#7A4F00','#FBF1DC'],
