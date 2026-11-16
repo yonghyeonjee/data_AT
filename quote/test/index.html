@@ -246,6 +246,10 @@ body.iv-table .sum>.tot{display:none} body.iv-table .sum{grid-template-columns:m
 .hero .fx .r.sum{border-top:2px solid rgba(255,255,255,.6);padding-top:13px;margin-top:4px}
 .hero .fx .r.sum .k{font-weight:800;font-size:19px}
 .hero .fx .r.sum b{font-size:32px;font-weight:900}
+.hero .fx .r.minus b,.hero .fx .r.minus .op{color:#7EE2B8;opacity:1}
+.hero .fx .r.mon{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:14px 16px;margin-bottom:8px}
+.hero .fx .r.mon+.r{border-top:0} .hero .fx .r.mon .k{font-weight:800;font-size:20px} .hero .fx .r.mon b{font-size:38px;font-weight:900;color:#FFE08A}
+.kv.mon{background:#FFF4D6;font-size:15.5px;padding:9px 10px} .kv.mon b{font-size:20px;color:#8A5D00}
 @media(max-width:480px){.hero .fx .r{font-size:15px}.hero .fx .r b{font-size:19px}.hero .fx .r.sum .k{font-size:16px}.hero .fx .r.sum b{font-size:25px}}
 /* 고객 보기 카드 — 구독센터 상품 페이지(view.html .sv-head) 와 같은 짜임: 사진 · 품목 · 상품명 · 모델명 · 월 구독료 · 배지 (2026-11-04) */
 .svl{display:flex;flex-direction:column;gap:12px}
@@ -407,7 +411,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <div class="seg sm" id="lumpKind"></div>
         <span class="hint" id="lumpHint"></span></div>
       </div>
-      <div class="row hidden" id="preRow"><span class="lbl">선납금 <small class="hint">(고객이 계약 시 내는 돈 · 총 지불금액에)</small></span>
+      <div class="row hidden" id="preRow"><span class="lbl">선납금 <small class="hint">(고객이 계약 시 내는 돈 · 총 금액에)</small></span>
         <div class="seg" id="preIncl"><button data-v="1" onclick="Q.cond.preIncl=true; render()">더하기</button><button data-v="0" onclick="Q.cond.preIncl=false; render()">빼고 따로 표시</button></div></div>
       <div class="row"><span class="lbl">⭐ 삼성전자 포인트 합계 <small class="hint">(DPS 포인트시뮬의 값 그대로 · 캐시백)</small></span>
         <input class="in num" id="pointCommon" type="number" step="1000" placeholder="직접 입력" onchange="Q.cond.pointCommon=+this.value||0; render()"><span class="hint" id="pointWhere"></span></div>
@@ -440,15 +444,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <div class="t"><b id="s_title"></b><span id="s_sub"></span></div>
     <div class="fx" id="fx"></div>
   </div>
-  <div class="card hidden" id="vsCard"></div>
-  <div class="card">
-    <h2>매월 통장에서 나가는 금액</h2>
-    <div class="tl" id="tl"></div>
-    <p class="hint" style="margin:8px 0 0" id="tl_note"></p>
-  </div>
-  <div class="svl" id="gal"></div>
-  <div class="card bncard hidden" id="bnCard"></div>
-  <details class="scnd noc"><summary>구독 · 일반 구매 상세 열기 (상담사만)</summary>
+  <details class="scnd"><summary>구독 · 일반 구매 자세히 보기</summary>
   <div class="cmp">
     <div class="card">
       <h2>구독 · 총액 기준 <small id="c_sub_y"></small></h2>
@@ -471,6 +467,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     </div>
   </div>
   </details>
+  <div class="card hidden" id="vsCard"></div>
+  <div class="card">
+    <h2>매월 통장에서 나가는 금액</h2>
+    <div class="tl" id="tl"></div>
+    <p class="hint" style="margin:8px 0 0" id="tl_note"></p>
+  </div>
+  <div class="svl" id="gal"></div>
+  <div class="card bncard hidden" id="bnCard"></div>
   <div class="card">
     <h2>진행 순서</h2>
     <div class="steps">
@@ -1187,22 +1191,31 @@ function top3(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'&&
 /* 고객 화면 맨 위 — 구독료 합계(선납 포함) + 일시불 + 이용료 − 혜택 = 총 지출 금액. 포인트는 월 구독료에 녹이지 않고 캐시백으로만 뺀다 (2026-11-09) */
 function feeTxt(L){ return (L.parts||[]).filter(x=>x.fee>0).map(x=>`${x.months}개월 할부 ${won(x.amount)} × ${Math.round((+(LUMP.fee||{})[x.months]||0)*1000)/10}% · ${x.months>=12?'1·2회차에 나눠 청구':'1회차에 청구'}`).join(' / '); }
 /* 캐시백으로 돌려받는 포인트 — 구독: 멤버십 포인트 + 포인트 합계(DPS) · 일반 구매: 캐시백(송금) + 조건부 캐시백 + 일반 구매로 옮겨 뺀 멤버십 포인트 */
-function cashOf(S,L){ return (S.points||0)+(S.pointCommon||0)+(L.cash||0)+(L.cb||0)+(L.moved||[]).filter(x=>x.label==='멤버십 포인트').reduce((a,x)=>a+x.amount,0); }
+/* ⭐ 삼성전자 포인트 합계는 견적 전체에 대해 들어가는 포인트 — 넣은 값 그대로 캐시백으로 보여 준다 (2026-11-16).
+   DPS 합계에는 스마트 패키지가 들어 있으므로, 합계를 넣었으면 패키지는 따로 '할인'으로 세지 않고 캐시백 안에 넣어 보인다(빼는 총액은 그대로). */
+function pkgInPt(S,L){ if(!(+Q.cond.pointDps)||!(+Q.cond.pointCommon>0)) return 0;
+  const pk=(S.pkg||0)+(L.moved||[]).filter(x=>String(x.label).indexOf('스마트 패키지')===0).reduce((a,x)=>a+x.amount,0); return Math.min(pk,+Q.cond.pointCommon); }
+function cashOf(S,L){ return (S.points||0)+(S.pointCommon||0)+pkgInPt(S,L)+(L.cash||0)+(L.cb||0)+(L.moved||[]).filter(x=>x.label==='멤버십 포인트').reduce((a,x)=>a+x.amount,0); }
 function sumsOf(S,L){ const pre=S.n?S.preAmt-(S.preOut||0):0, sub=S.n?S.subPay:0, gross=sub+pre+L.amount+L.fee, fin=S.net+L.net, cash=Math.min(Math.max(0,gross-fin),cashOf(S,L)), pay=fin+cash;
-  return { pre, sub, gross, fin, cash, pay, disc:Math.max(0,gross-pay), month:(S.n?S.pay:0)+(L.parts||[]).filter(x=>x.inst).reduce((a,x)=>a+x.per,0) }; }
+  const subNet=S.n?Math.min(pay,Math.max(0,S.net+(S.points||0)+(S.pointCommon||0)+(S.pkg?pkgInPt(S,L):0))):0, lumpNet=Math.max(0,pay-subNet);   // 할인 뒤(캐시백 전) 구독 몫 · 일반 구매 몫
+  return { pre, sub, gross, fin, cash, pay, disc:Math.max(0,gross-pay), subNet, lumpNet, dS:Math.max(0,sub+pre-subNet), dL:Math.max(0,L.amount+L.fee-lumpNet),
+    mSub:S.n?S.pay:0, inst:(L.parts||[]).filter(x=>x.inst), month:(S.n?S.pay:0)+(L.parts||[]).filter(x=>x.inst).reduce((a,x)=>a+x.per,0) }; }
+/* 고객 화면 맨 위 (2026-11-16): 월 비용을 가장 크게 · 일반 구매와 구독을 나눠 · 총 금액 = 일반 + 선납 + 할인 뒤 총 구독료 · 빼는 줄은 색을 달리 */
 function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'&&!(+it.lump>0)).length, a=miss?` <small class="warn">(일시불가 미입력 ${miss}개 빠짐)</small>`:'', T=sumsOf(S,L);
   const row=(op,k,v,d,c)=>`<div class="r${c?' '+c:''}"><span class="op">${op}</span><span class="k">${k}${d?`<small>${d}</small>`:''}</span><b class="num">${v}</b></div>`;
   if(!S.n&&!L.items.length) return row('','담은 품목이 없습니다','—');
-  const out=[]; let first=true; const add=(k,v,d)=>{ out.push(row(first?'':'+',k,v,d)); first=false; };
-  if(L.items.length) add(L.months?'일반 구매':'일시불가',won(L.amount)+a);
-  if(L.fee) add('이용료',won(L.fee),'플러스페이 할부 이용료 · '+feeTxt(L));
-  if(S.n&&T.pre) add('선납금',won(T.pre),'구독 · 계약 시 한 번에 결제');
-  if(S.n) add('총 구독료',won(T.sub),'구독 · 월 구독료 혜택가 '+won(S.mpay)+' × 계약 개월수');
+  const out=[]; let first=true; const add=(k,v,d)=>{ out.push(row(first?'':'+',k,v,d)); first=false; }, sub=(k,v,d)=>out.push(row('−',k,v,d,'minus'));
+  if(T.month>0) out.push(row('','월 비용',won(T.month),[T.mSub?'구독 '+won(T.mSub):''].concat(T.inst.map(x=>'할부 '+won(x.per)+' ('+x.months+'개월)')).filter(Boolean).join(' + ')+' · 매월 통장에서 나가는 금액','mon'));
+  if(L.items.length) add(L.months?'일반 구매':'일반 구매 · 일시불가',won(L.amount)+a);
+  if(L.fee) add('일반 구매 · 이용료',won(L.fee),'플러스페이 할부 이용료 · '+feeTxt(L));
+  if(T.dL>0) sub('일반 구매 할인',won(T.dL),'청구할인 등');
+  if(S.n&&T.pre) add('구독 · 선납금',won(T.pre),'계약 시 한 번에 결제');
+  if(S.n) add('구독 · 총 구독료',won(T.sub),'월 구독료 혜택가 '+won(S.mpay)+' × 계약 개월수');
+  if(T.dS>0) sub('구독 할인',won(T.dS),'카드 청구할인 등');
+  const parts=[L.items.length?'일반 '+won(T.lumpNet):'', S.n&&T.pre?'선납 '+won(T.pre):'', S.n?'할인 뒤 총 구독료 '+won(Math.max(0,T.subNet-T.pre)):''].filter(Boolean);
   return out.join('')
-    +(T.disc>0?row('−','총 할인액',won(T.disc),'카드 청구할인 · 스마트 패키지 등'):'')
-    +row('=','총 지불금액',won(T.pay)+a,S.preOut?'선납금 '+won(S.preOut)+' 별도':'','sum')
-    +(T.cash>0?row('*','캐시백되는 포인트',won(T.cash),'구매 뒤 돌려받는 금액')+row('=','최종 혜택가',won(T.fin)+a,'총 지불금액 − 캐시백','sum'):'')
-    +(T.month>0?row('','월 지출 비용',won(T.month),'최종 월 통장에서 나가는 금액'):''); }
+    +row('=','총 금액',won(T.pay)+a,(parts.length>1?parts.join(' + '):'')+(S.preOut?(parts.length>1?' · ':'')+'선납금 '+won(S.preOut)+' 별도':''),'sum')
+    +(T.cash>0?row('−','캐시백되는 포인트',won(T.cash),'구매 뒤 돌려받는 금액','minus')+row('=','최종 혜택가',won(T.fin)+a,'총 금액 − 캐시백','sum'):''); }
 function render(){ seedItems(); LAST=calcAll(); if(applyCardPreset()) LAST=calcAll(); renderEdit(LAST); $('bnEdit').innerHTML=bnHtml(); renderShow(); renderSheet(); }
 function renderEdit({S,L}){
   const box=$('items');
@@ -1253,19 +1266,19 @@ function renderEdit({S,L}){
     <div class="kv"><span>월 구독료 합계${why('품목별 월 구독료(요금표)를 더한 값')}</span><b class="num">${won(S.monthly)}</b></div>
     <div class="kv total2"><span>월 구독료 혜택가 합계${why('DPS 구독료 시뮬레이션의 「할인반영 월구독료」 합계 — 구독료 할인 · 다품목 할인 · 선납 할인이 이미 들어간 값')}</span><b class="num">${won(S.mpay)}</b></div>
     <div class="kv"><span>총 구독료${why('월 구독료 혜택가 × 계약 개월수, 품목별 합계')}</span><b class="num">${won(S.subPay)}</b></div>
-    ${S.preAmt?`<div class="kv plus"><span>선납금${why(S.preOut?'계약 시 한 번에 결제 · 총 지불금액에는 더하지 않고 따로 표시 (결제 조건에서 선택)':'계약 시 한 번에 결제 · 총 지불금액에 더함 (결제 조건에서 선택)')}</span><span class="num">${S.preOut?'별도 ':'+'}${won(S.preAmt)}</span></div>`:''}
+    ${S.preAmt?`<div class="kv plus"><span>선납금${why(S.preOut?'계약 시 한 번에 결제 · 총 금액에는 더하지 않고 따로 표시 (결제 조건에서 선택)':'계약 시 한 번에 결제 · 총 금액에 더함 (결제 조건에서 선택)')}</span><span class="num">${S.preOut?'별도 ':'+'}${won(S.preAmt)}</span></div>`:''}
     ${S.card?`<div class="kv minus"><span>카드 청구할인 (${esc([...new Set(S.items.map(it=>S.R[it.m].cardName?S.R[it.m].cardName+' '+S.R[it.m].cardTier:'').filter(Boolean))].join(', ')||'카드 없음')})${why('전월 실적을 채우면 매달 할인 × 계약 개월수')}</span><span class="num">−${won(S.card)}</span></div>`:''}
-    ${S.pkg?`<div class="kv minus"><span>스마트 패키지 ${pkgName(S)}</span><span class="num">−${won(S.pkg)}</span></div>`:''}
+    ${S.pkg&&!pkgInPt(S,L)?`<div class="kv minus"><span>스마트 패키지 ${pkgName(S)}</span><span class="num">−${won(S.pkg)}</span></div>`:''}
     ${S.cons?`<div class="kv minus"><span>소모품</span><span class="num">−${won(S.cons)}</span></div>`:''}
     ${S.gift?`<div class="kv minus"><span>상품권</span><span class="num">−${won(S.gift)}</span></div>`:''}
     ${(S.extra?(Q.extra||[]):[]).filter(e=>+e.amount>0).map(e=>`<div class="kv minus"><span>${esc(e.label||'기타 혜택')}</span><span class="num">−${won(+e.amount)}</span></div>`).join('')}
     ${S.reward?`<div class="kv minus"><span>💵 이벤트 리워드 (1%)</span><span class="num">−${won(S.reward)}</span></div>`:''}
     ${S.bn?`<div class="kv minus"><span>B&amp;케어팩 지원금 ${S.bnN}구좌${why('1구좌 '+won(BN.amt)+' · 납입금 월 '+won(S.bnN*BN.pay)+'은 별도')}</span><span class="num">−${won(S.bn)}</span></div>`:''}
-    <div class="kv total"><span>총 지불금액${why((S.preAmt&&!S.preOut?'선납금 + ':'')+'총 구독료 − 총 할인액')}</span><span class="num">${won(S.net+S.points+S.pointCommon)}</span></div>
+    <div class="kv total"><span>총 금액${why((S.preAmt&&!S.preOut?'선납금 + ':'')+'총 구독료 − 할인')}</span><span class="num">${won(S.net+S.points+S.pointCommon+(S.pkg?pkgInPt(S,L):0))}</span></div>
     ${S.points?`<div class="kv minus"><span>멤버십 포인트 <span class="hint">(캐시백)</span>${why('행사모델 N개월 구독료 상당 포인트 + 멤버십 적립')}</span><span class="num">−${won(S.points)}</span></div>`:''}
-    ${S.pointCommon?`<div class="kv minus"><span>⭐ 포인트 합계 <span class="hint">(캐시백)</span>${why('결제 조건에 직접 넣은 DPS 포인트시뮬 값 · 스마트 패키지는 위에 따로 뺐으므로 그만큼 제외')}</span><span class="num">−${won(S.pointCommon)}</span></div>`:''}
-    <div class="kv total"><span>최종 혜택가${why('총 지불금액 − 캐시백되는 포인트')}</span><span class="num">${won(S.net)}</span></div>
-    <div class="kv total2"><span>월 지출 비용${why('월 구독료 혜택가 합계 − 카드 청구할인(월) · 최종 월 통장에서 나가는 금액')}</span><b class="num">${won(S.pay)}</b></div>
+    ${S.pointCommon||(S.pkg&&pkgInPt(S,L))?`<div class="kv minus"><span>⭐ 삼성전자 포인트 합계 <span class="hint">(캐시백)</span>${why('결제 조건에 넣은 DPS 포인트시뮬 값 그대로'+(S.pkg&&pkgInPt(S,L)?' · 스마트 패키지 '+pkgName(S)+' '+fmt(S.pkg)+' 포함':''))}</span><span class="num">−${won(S.pointCommon+(S.pkg?pkgInPt(S,L):0))}</span></div>`:''}
+    <div class="kv total"><span>최종 혜택가${why('총 금액 − 캐시백되는 포인트')}</span><span class="num">${won(S.net)}</span></div>
+    <div class="kv total2 mon"><span>월 비용${why('월 구독료 혜택가 합계 − 카드 청구할인(월) · 매월 통장에서 나가는 금액')}</span><b class="num">${won(S.pay)}</b></div>
     `; }
   if(L.items.length){ const X=Q.cond.lx||{}, cdL=(LUMP&&LUMP.cards[L.kind])||{}, rate=+(((LUMP||{}).fee||{})[String(L.months)]||0);
     const inp=(k,label,w)=>`<div class="kv in"><span>${label}${why(w)}</span><input class="lx" data-k="lx:${k}" type="text" inputmode="numeric" placeholder="0" aria-label="${label.replace(/<[^>]+>/g,'')}" value="${+X[k]?fmt(+X[k]):''}" onchange="setLx('${k}',this.value)"></div>`;
@@ -1392,7 +1405,7 @@ function quoteSig(){ try{ return JSON.stringify([Q.no,Q.items,Q.cond,Q.cust,Q.ex
 function consultHandoff(sm,go){ try{ const {S,L}=LAST, T=sumsOf(S,L);
     localStorage.setItem('dc_quote_handoff', JSON.stringify({ go:!!go, cats:csCats(), at:Date.now(), by:ME||'', no:Q.no||'', ver:Q.ver||1, name:Q.cust.name||'', phone:String(Q.cust.phone||'').replace(/\D/g,''), type:Q.cust.type||'',
       models:Q.items.filter(it=>!it.hidden&&!it.free).map(it=>it.m), consult:Q.consult||'', amount:Math.round(T.fin),
-      text:`${Q.no?'견적 '+Q.no+' '+Q.ver+'차 · ':''}${[S.n?'구독 '+S.n+'품목':'',L.items.length?'일반 '+L.items.length+'품목':''].filter(Boolean).join(' · ')}${T.month?' · 월 지출 '+won(T.month):''} · 총 지불금액 ${won(T.pay)}${T.cash?' · 캐시백 '+won(T.cash):''} · 최종 혜택가 ${won(T.fin)}` })); }catch(e){} }
+      text:`${Q.no?'견적 '+Q.no+' '+Q.ver+'차 · ':''}${[S.n?'구독 '+S.n+'품목':'',L.items.length?'일반 '+L.items.length+'품목':''].filter(Boolean).join(' · ')}${T.month?' · 월 비용 '+won(T.month):''} · 총 금액 ${won(T.pay)}${T.cash?' · 캐시백 '+won(T.cash):''} · 최종 혜택가 ${won(T.fin)}` })); }catch(e){} }
 /* 고객과 본 견적을 시흥몰 구독 견적서로 바로 주기 (2026-11-13) — 저장하지 않았거나 저장 뒤 바뀌었으면 먼저 저장(다음 차수)하고, 그 견적번호로 구독 견적서 화면을 연다.
    창은 누르는 순간 먼저 열어 둔다(저장을 기다린 뒤 열면 브라우저가 막는다) */
 /* ═══ 상담 저장 (2026-11-13) ═══
@@ -1429,7 +1442,7 @@ async function csSave(){ const etc=$('csEtc'), needEtc=!etc.classList.contains('
   const p={ customer_name:Q.cust.name.trim(), customer_phone:String(Q.cust.phone||'').trim(), interest_category:cats.join(', ')||'알 수 없음',
     interest_model_code:its.filter(it=>!it.free).map(it=>it.m).join(', '), result:'진행중', channel_code:CS_CH, channel_etc:needEtc?etc.value.trim():null,
     type_code:S.n?'subscribe':'product', type_codes:[S.n?'subscribe':'product'], method:'대면', expected_amount:Math.round(T.fin)||null,
-    content:`${Q.no?'견적 '+Q.no+' '+Q.ver+'차 · ':''}${[S.n?'구독 '+S.n+'품목':'',L.items.length?'일반 '+L.items.length+'품목':''].filter(Boolean).join(' · ')}${T.month?' · 월 지출 '+won(T.month):''} · 총 지불금액 ${won(T.pay)}${T.cash?' · 캐시백 '+won(T.cash):''} · 최종 혜택가 ${won(T.fin)}`, consent_marketing:false };
+    content:`${Q.no?'견적 '+Q.no+' '+Q.ver+'차 · ':''}${[S.n?'구독 '+S.n+'품목':'',L.items.length?'일반 '+L.items.length+'품목':''].filter(Boolean).join(' · ')}${T.month?' · 월 비용 '+won(T.month):''} · 총 금액 ${won(T.pay)}${T.cash?' · 캐시백 '+won(T.cash):''} · 최종 혜택가 ${won(T.fin)}`, consent_marketing:false };
   $('csGo').disabled=true; $('csErr').classList.add('hidden');
   try{ const r=await rpc('fn_store_consult_submit',{p_code:'', p_data:p}); CS_DONE=true; try{ localStorage.removeItem('dc_quote_handoff'); }catch(e){} closeDlg('csDlg'); toast('상담을 저장했습니다 · '+((r&&r.ref)||'')); }
   catch(e){ err(e.message||'저장 실패'); $('csGo').disabled=false; } }
