@@ -1333,10 +1333,15 @@ function render(){ seedItems(); LAST=calcAll(); if(applyCardPreset()) LAST=calcA
 /* 작성 중 보관 (2026-11-16) — 새로고침 확인 창은 브라우저가 그냥 넘겨 버릴 수 있어, 내용을 이 창에 두었다가 다시 열리면 되살린다 */
 let DRAFT_READY=false, DRAFT_TRIED=false; const DRAFT_KEY='dc_quote_draft';
 function draftBody(){ return JSON.stringify({cust:Q.cust, cond:Q.cond, items:Q.items, extra:Q.extra||[]}); }
-function draftSave(){ if(!DRAFT_READY||DISP) return; try{ sessionStorage.setItem(DRAFT_KEY, JSON.stringify({at:Date.now(), key:location.search, no:Q.no||'', body:draftBody()})); }catch(e){} }
+function draftSave(){ if(!DRAFT_READY||DISP) return; try{ sessionStorage.setItem(DRAFT_KEY, JSON.stringify({at:Date.now(), key:location.search, no:Q.no||'', ver:Q.ver||0, issuedAt:Q.issuedAt||'', body:draftBody()})); }catch(e){} }
+/* 표를 다시 그리지 않는 입력(고객 정보·메모 등)도 놓치지 않게 — 입력할 때마다, 그리고 창을 떠나는 순간에 한 번 더 둔다 */
+let draftT; document.addEventListener('input',()=>{ clearTimeout(draftT); draftT=setTimeout(draftSave,300); },true); document.addEventListener('change',()=>{ clearTimeout(draftT); draftT=setTimeout(draftSave,300); },true);
+window.addEventListener('pagehide',draftSave); window.addEventListener('beforeunload',draftSave);
 async function draftRestore(){ if(DRAFT_TRIED) return; DRAFT_TRIED=true;
   try{ const d=JSON.parse(sessionStorage.getItem(DRAFT_KEY)||'null');
-    if(d&&d.key===location.search&&d.no===(Q.no||'')&&Date.now()-d.at<12*3600*1000&&d.body!==draftBody()){ const b=JSON.parse(d.body);
+    /* 저장한 뒤 새로고침하면 주소에 견적 번호가 없어 새 견적으로 열린다 — 그때도 보관해 둔 번호·내용을 되살린다 */
+    if(d&&d.key===location.search&&(d.no===(Q.no||'')||(!Q.no&&!P.get('no')))&&Date.now()-d.at<12*3600*1000&&d.body!==draftBody()){ const b=JSON.parse(d.body);
+      if(d.no&&!Q.no){ Q.no=d.no; Q.ver=d.ver||Q.ver; Q.issuedAt=d.issuedAt||''; try{ $('qno').textContent=Q.no+' · '+Q.ver+'차'; }catch(e){} }
       if((b.items||[]).length||(b.cust&&(b.cust.name||b.cust.phone))){
         Object.assign(Q.cust,b.cust||{}); Object.assign(Q.cond,b.cond||{}); Q.items=(b.items||[]).map(it=>Object.assign({},ITEM_DEF,it)); Q.extra=b.extra||[];
         fillCust(); try{ $('subCard').value=Q.cond.card||''; fillTier(); [...$('prepay').children].forEach(x=>x.classList.toggle('on',String(x.dataset.v)===String(Q.cond.prepay))); $('pointCommon').value=Q.cond.pointCommon||''; renderExtra(); if($('namecard')) $('namecard').value=Q.cond.namecardId||'';
