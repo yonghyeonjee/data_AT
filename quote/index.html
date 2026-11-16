@@ -1290,10 +1290,14 @@ function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'
   if(T.month>0) out.push(row('','월 비용',won(T.month),[T.mSub?'구독 '+won(T.mSub):''].concat(T.inst.map(x=>'할부 '+won(x.per)+' ('+x.months+'개월)')).filter(Boolean).join(' + ')+' · 월 통장 출금액','mon'));
   if(L.items.length) add(L.months?'일반 구매':'일반 구매 · 일시불가',won(L.amount)+a);
   if(L.fee) add('일반 구매 · 이용료',won(L.fee),'플러스페이 할부 이용료 · '+feeTxt(L));
-  if(T.dL>0) sub('일반 구매 할인',won(T.dL),'청구할인 등');
+  /* B&케어 구좌 할인은 따로 한 줄 (2026-11-16) — 고객 화면에서도 구좌 수와 할인 금액이 보이게 */
+  const bnL=Math.min(L.bn||0,T.dL), bnS=Math.min(S.bn||0,T.dS), bnRow=(n,v)=>sub('B&amp;케어 '+n+'구좌 할인',won(v),'1구좌 '+won(BN.amt)+' 지원 · 납입 월 '+won(n*BN.pay)+' 별도 · 중도 해지 시 지급 종료');
+  if(T.dL-bnL>0) sub('일반 구매 할인',won(T.dL-bnL),'청구할인 등');
+  if(bnL>0) bnRow(L.bnN,bnL);
   if(S.n&&T.pre) add('구독 · 선납금',won(T.pre),'계약 시 일시 결제');
   if(S.n) add('구독 · 총 구독료',won(T.sub),'월 구독료 혜택가 '+won(S.mpay)+' × 계약 개월수');
-  if(T.dS>0) sub('구독 할인',won(T.dS),cardsOf(S).map(c=>esc(c.name)+' '+esc(c.tier)+' 월 '+fmt(Math.round(c.m))+'원').join(' + ')||'카드 청구할인 등');
+  if(bnS>0) bnRow(S.bnN,bnS);
+  if(T.dS-bnS>0) sub('구독 할인',won(T.dS-bnS),cardsOf(S).map(c=>esc(c.name)+' '+esc(c.tier)+' 월 '+fmt(Math.round(c.m))+'원').join(' + ')||'카드 청구할인 등');
   const parts=[L.items.length?'일반 '+won(T.lumpNet):'', S.n&&T.pre?'선납 '+won(T.pre):'', S.n?'할인 후 총 구독료 '+won(Math.max(0,T.subNet-T.pre)):''].filter(Boolean);
   return out.join('')
     +row('=','총 금액',won(T.pay)+a,(parts.length>1?parts.join(' + '):'')+(S.preOut?(parts.length>1?' · ':'')+'선납금 '+won(S.preOut)+' 별도':''),'sum')
