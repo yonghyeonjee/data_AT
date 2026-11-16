@@ -69,6 +69,11 @@ rep("""            if(!QUOTE.meta) QUOTE.meta = { no: no, version: r.version || 
 rep("""    try { var e = localStorage.getItem('secure_auth_expiry');""", """    try { if(localStorage.getItem('dc_session')) return true;
           var e = localStorage.getItem('secure_auth_expiry');""")
 
+# 6. 발행 내역에서 찾은 경우에도 견적 번호를 넣는다 (/quote/ 가 저장한 견적은 meta 에 번호가 없다)
+rep("""        if(!QUOTE.meta) QUOTE.meta = { no: no, version: hit.version || 1, issuedAt: hit.issuedAt || '' };""",
+    """        if(!QUOTE.meta) QUOTE.meta = { no: no, version: hit.version || 1, issuedAt: hit.issuedAt || '' };
+        if(!QUOTE.meta.no){ QUOTE.meta.no = no; QUOTE.meta.version = QUOTE.meta.version || hit.version || 1; QUOTE.meta.issuedAt = QUOTE.meta.issuedAt || hit.issuedAt || ''; }""")
+
 def save(p, t):
     if CR: t = t.replace('\n', '\r\n')
     io.open(p, 'w', encoding='utf-8', newline='').write(t)
