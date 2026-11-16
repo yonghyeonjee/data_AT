@@ -938,7 +938,9 @@ window.SUB_SHOP_READY = true;
         (CFG.page === 'event' ? '' : '<strong>대상 모델 보기</strong>') + '</div></a>';
       var lsl = document.querySelector('.ss-promos[data-ss-slider]'), lev = document.querySelector('[data-ss="event"]');
       if (lsl) lsl.insertAdjacentHTML('afterbegin', lions);
-      else if (lev) lev.insertAdjacentHTML('beforebegin', lions.replace('href="' + esc(LINK.event) + '"', 'href="#ss-event-list"'));
+      // 이벤트 화면 배너는 시흥몰 블로그 189 글의 그림 · 누르면 그 글로 (2026-11-16 사용자 지시)
+      else if (lev) lev.insertAdjacentHTML('beforebegin', lions.replace('href="' + esc(LINK.event) + '"', 'href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=189"')
+        .replace('https://db.samsungat.co.kr/sdp/sub/img/lions_1113.png', 'https://godomall-storage.cdn-nhncommerce.com/bbfe079be9069f71afe7ad9a5bf9cee9/editor/board/blog/189/f2374fb202701217511159e2caf96a20.jpg'));
     }
     $all('.ss-promo[data-until], .ss-month li[data-until]').forEach(function (a) { if (a.getAttribute('data-until') < today) a.parentNode.removeChild(a); });
     // 배너 여러 장이면 5초마다 넘긴다 (가로 스크롤 · 손으로 넘겨도 된다 · 2026-11-04)
