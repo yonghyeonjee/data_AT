@@ -69,6 +69,14 @@ rep("""            if(!QUOTE.meta) QUOTE.meta = { no: no, version: r.version || 
 rep("""    try { var e = localStorage.getItem('secure_auth_expiry');""", """    try { if(localStorage.getItem('dc_session')) return true;
           var e = localStorage.getItem('secure_auth_expiry');""")
 
+# 6. 발행 내역에서 찾은 경우에도 견적 번호를 넣는다 (/quote/ 가 저장한 견적은 meta 에 번호가 없다)
+rep("""        if(!QUOTE.meta) QUOTE.meta = { no: no, version: hit.version || 1, issuedAt: hit.issuedAt || '' };""",
+    """        if(!QUOTE.meta) QUOTE.meta = { no: no, version: hit.version || 1, issuedAt: hit.issuedAt || '' };
+        if(!QUOTE.meta.no){ QUOTE.meta.no = no; QUOTE.meta.version = QUOTE.meta.version || hit.version || 1; QUOTE.meta.issuedAt = QUOTE.meta.issuedAt || hit.issuedAt || ''; }""")
+
+# 7. 품목마다 일시불가 한 줄 (일반 구매 시 가격)
+rep("    if(it.careType || EDIT) h += '<tr><th>서비스 유형</th>", '    /* 일시불가 — 같은 제품을 일반 구매로 살 때 가격 (2026-11-16 · /quote/ 가 품목마다 넘긴다 · 고칠 수 있다) */\n    if(num(it.lumpPrice) > 0 || EDIT) h += \'<tr><th>일시불가 <span style="font-weight:500;color:#666">(일반 구매 시)</span></th><td class="num">\' + (EDIT ? cell(p + \'lumpPrice\', num(it.lumpPrice)) : won(num(it.lumpPrice))) + \'</td></tr>\';\n    if(it.careType || EDIT) h += \'<tr><th>서비스 유형</th>')
+
 def save(p, t):
     if CR: t = t.replace('\n', '\r\n')
     io.open(p, 'w', encoding='utf-8', newline='').write(t)

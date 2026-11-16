@@ -382,7 +382,11 @@ table.x tr.tot td{font-weight:900;background:var(--gold-soft);color:var(--gold)}
 .share{display:flex;flex-direction:column;gap:8px}
 .share .url{font-size:12.5px;word-break:break-all;background:var(--bg);border-radius:8px;padding:8px 10px}
 .share .btns{display:flex;gap:8px;flex-wrap:wrap}
-#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;z-index:30;max-width:90vw}
+#toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));bottom:auto!important;transform:translateX(-50%);background:var(--ink);color:#fff;padding:13px 22px;border-radius:12px;font-weight:800;font-size:16px;z-index:60;max-width:92vw;box-shadow:0 10px 28px rgba(15,23,42,.35);border:2px solid rgba(255,255,255,.25);animation:toastIn .22s ease-out}
+#toast.ask{background:#C2410C;border-color:#FED7AA}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
+#v-edit .need-now{border-color:#DC2626!important;outline:3px solid rgba(220,38,38,.35)!important;outline-offset:0!important;background:#FEF2F2!important;animation:needShake .35s 2}
+@keyframes needShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .loading{text-align:center;color:var(--mut);padding:40px 0}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 </style>
@@ -663,7 +667,12 @@ function toggleCalc(on){ const el=$('calc'); if(!el.dataset.on){ el.dataset.on='
     bar.addEventListener('pointermove',e=>{ if(!drag) return; const x=Math.max(0,Math.min(innerWidth-el.offsetWidth,e.clientX-drag.x)), y=Math.max(0,Math.min(innerHeight-40,e.clientY-drag.y)); el.style.left=x+'px'; el.style.top=y+'px'; el.style.right='auto'; el.style.bottom='auto'; });
     bar.addEventListener('pointerup',()=>{ drag=null; }); calcShow(); }
   const show=on==null?el.classList.contains('hidden'):!!on; el.classList.toggle('hidden',!show); if(show) el.focus(); }
-let tt; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.remove('hidden'); clearTimeout(tt); tt=setTimeout(()=>t.classList.add('hidden'),2200); }
+/* 알림 (2026-11-16) — 화면 위쪽에 크게. 입력을 요청하는 알림(…주세요)은 주황색으로 더 오래 띄우고, 해당 입력 칸을 빨간 테두리로 짚어 준다 */
+let tt; function toast(m){ const t=$('toast'), ask=/주세요|필요|실패|못했습니다|없습니다/.test(String(m)); t.textContent=(ask?'⚠ ':'')+m; t.classList.toggle('ask',ask); t.classList.remove('hidden'); t.style.animation='none'; void t.offsetWidth; t.style.animation='';
+  clearTimeout(tt); tt=setTimeout(()=>t.classList.add('hidden'),ask?4000:2600);
+  if(ask) setTimeout(()=>{ const els=new Set(), a=document.activeElement; if(a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)&&a.closest('#v-edit')) els.add(a);
+    if(/성명/.test(m)&&$('c_name')&&!$('c_name').value.trim()) els.add($('c_name')); if(/연락처/.test(m)&&$('c_tel')&&!$('c_tel').value.trim()) els.add($('c_tel')); if(/품목을 담아/.test(m)&&$('q')) els.add($('q'));
+    els.forEach(e=>{ e.classList.add('need-now'); setTimeout(()=>e.classList.remove('need-now'),4000); }); const f=[...els][0]; if(f) try{ f.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} },0); }
 function closeDlg(id){ $(id).classList.add('hidden'); }
 
 /* ═══ 데이터센터 연결 — 담당자 화면(store.html)과 같은 세션 토큰(localStorage dc_session · 같은 origin) ═══ */
@@ -1504,7 +1513,7 @@ function bnLabel(k){ return `B&케어팩 지원금 ${k}구좌 (납입 월 ${won(
 function toQuoteJson(){
   const {S,L}=LAST, items=[];
   S.items.forEach(it=>{ const r=S.R[it.m]; items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:r.months, monthly:r.monthly, total:r.total, care:r.care, careType:C.splitCare(r.care)[0], cycle:C.splitCare(r.care)[1]?C.splitCare(r.care)[1]+'개월':'', note:it.note||'',
-    cardName:r.cardName||'', cardTier:r.cardTier||'', cardMonthly:r.cardMonthly, prepayAmt:r.prepayAmt, preIncl:true, multiOk:!!r.multiOff||!!r.pkgOn, consumable:S.toL?0:(r.cons||0), giftcard:S.toL?0:(r.gift||0), hidden:false, isMain:false,
+    cardName:r.cardName||'', cardTier:r.cardTier||'', cardMonthly:r.cardMonthly, prepayAmt:r.prepayAmt, preIncl:true, lumpPrice:+it.lump||0, multiOk:!!r.multiOff||!!r.pkgOn, consumable:S.toL?0:(r.cons||0), giftcard:S.toL?0:(r.gift||0), hidden:false, isMain:false,
     auto:{total:!r.manual,card:Math.abs(Math.round(r.cardMonthly*r.months)-Math.round(r.cardTotal))<1}, disc:{ sub:r.autoDisc, multi:r.multiOff, prepay:r.prepayDisc, point:S.toL?0:(r.pointsAll||0), card:r.cardTotal } }); });
   Q.items.filter(it=>it.hidden).forEach(it=>items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:(it.years||6)*12, monthly:0, care:it.care||'', note:it.note||'', hidden:true, auto:{total:true,card:true}, disc:{} }));
   const proof={recv:false,supp:false,appr:false}; if(Q.cust.proof) proof[Q.cust.proof]=true;
