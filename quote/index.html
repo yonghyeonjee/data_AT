@@ -835,9 +835,9 @@ function initCond(){
   segFill('prepay', steps.map(s=>({v:s,l:s?Math.round(s*100)+'%':'없음'})), Q.cond.prepay, v=>{ Q.cond.prepay=+v; });
   const rates=(POL.prepay&&POL.prepay.rates)||{}; $('prepayHint').textContent=Object.keys(rates).map(k=>Math.round(k*100)+'% → '+Math.round(rates[k]*100)+'%').join(' · ')+' 추가 할인 · 품목별 상한 자동 적용';
   if(LUMP){
-    segFill('lumpKind', Object.keys(LUMP.cards).map(k=>({v:k,l:LUMP.cards[k].label||k})), Q.cond.lumpKind, v=>{ Q.cond.lumpKind=v; });
+    segFill('lumpKind', Object.keys(LUMP.cards).map(k=>({v:k,l:LUMP.cards[k].label||k})), Q.cond.lumpKind, v=>{ Q.cond.lumpKind=v; cbAuto(v); });
     $('lumpHint').textContent='일반 구매는 일시불이 기본이고, 할부는 품목 줄에서 고릅니다 · 플러스페이 이용료 '+Object.keys(LUMP.fee||{}).filter(k=>LUMP.fee[k]>0).map(k=>k+'개월 '+(LUMP.fee[k]*100)+'%').join(' · ')+' · 청구할인·S포인트·'+'혼수/입주/이사 포인트 반영';
-    $('cbCond').textContent=LUMP.cashbackCond?'('+LUMP.cashbackCond+')':'';
+    $('cbCond').textContent=LUMP.cashbackCond?'베네핏(제휴) 카드 전용 · '+String(LUMP.cashbackCond).replace(/^조건부 캐시백\s*[—-]\s*/,'').replace(/\s*\((?:19|20)\d\d-[\s\S]*$/,'').replace(/\s*·\s*6개월·12개월 같은 표\s*$/,''):'';   // 화면에는 조건만 — 자료 출처·변경 이력은 뺀다 (2026-11-17)
   } else { $('lumpKind').innerHTML='<span class="hint">일시불 정책(lump)이 아직 배포되지 않았습니다</span>'; }
   segFill('cb', [{v:1,l:'사용'},{v:0,l:'미사용'}], Q.cond.cb?1:0, v=>{ Q.cond.cb=v==='1'; });
   segFill('ptEach', [{v:'0',l:'가리기'},{v:'1',l:'보이기'}], Q.cond.ptEach?'1':'0', v=>{ Q.cond.ptEach=v==='1'; });
@@ -924,7 +924,9 @@ function bundleUrl(){ if(!LAST) return BUNDLE_URL; const {S}=LAST;
   const items=S.items.map(it=>{ const r=S.R[it.m], pp=prepayOf(it)||0; return it.m+'~'+r.y+'~'+r.care+(pp?'~'+pp:''); });
   return BUNDLE_URL+'?items='+encodeURIComponent(items.join(','))+(Q.cond.cardOn&&Q.cond.card?'&card='+encodeURIComponent(Q.cond.card)+'&tier='+encodeURIComponent(Q.cond.tier):'&cardoff=1'); }
 function openBundle(){ if(!LAST||!LAST.S.n){ toast('구독 품목을 먼저 담아 주세요'); return; } window.open(bundleUrl(),'_blank','noopener'); }
-function setItem(i,k,v){ const it=Q.items[i]; it[k]=v; if(k==='years'){ it.care=''; } if(k==='prepay'){ it.preManual=0; it.preMode=false; } if(k==='preManual'&&!(+v>0)) it.preMode=false;
+/* 베네핏(제휴) 카드를 고르면 조건부 캐시백을 자동으로 「사용」 (2026-11-17) — 그 카드 전용 혜택이라 꺼 둔 채로 두면 빠뜨리기 쉽다 */
+function cbAuto(kind){ if(LUMP&&(LUMP.cards[kind]||{}).cashback&&!Q.cond.cb){ Q.cond.cb=true; try{ [...$('cb').children].forEach(x=>x.classList.toggle('on',x.dataset.v==='1')); }catch(e){} toast('조건부 캐시백 자동 사용 — 베네핏(제휴) 카드 선택'); } }
+function setItem(i,k,v){ const it=Q.items[i]; it[k]=v; if(k==='lk') cbAuto(v); if(k==='lm'&&+v) cbAuto(lumpKindOf(it)); if(k==='years'){ it.care=''; } if(k==='prepay'){ it.preManual=0; it.preMode=false; } if(k==='preManual'&&!(+v>0)) it.preMode=false;
   if(k==='years'||k==='care'||k==='prepay'||k==='preManual'||k==='monthlyManual') it.payManual=0;   // 조건이 바뀌면 수기로 넣은 혜택가는 지운다
   if(k==='card'){ Q.cond.cardPreset=''; it.tier=v?(C.defaultTier(v)||''):''; } render(); }
 /* 품목별 조건 더보기: 기본 구독 할인(자동결제) · 월 구독료 수기 · 멤버십 포인트 수기 · 소모품 · 상품권 · 숨김 */
