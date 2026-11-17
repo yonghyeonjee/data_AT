@@ -344,7 +344,10 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       els.grid.innerHTML = '<li class="sf-empty">조건에 맞는 구독 모델이 없습니다.<br>' +
         '<a href="' + esc(consultHref(null)) + '" data-cta="consult-empty">찾는 모델을 알려주시면 구독 요금을 안내해 드립니다 →</a></li>';
     } else {
-      els.grid.innerHTML = list.slice(0, state.shown).map(card).join('');
+      // 구독센터 메뉴와 함께 sub_shop.js 가 오면 홈·품목과 같은 카드(띠·카드 할인가·후기·포인트)로 그린다 (2026-11-17) · 아니면 예전 카드
+      var shop = window.SUB_SHOP_CARD;
+      els.grid.className = shop ? 'ss-grid sf-ssgrid' : 'sf-grid';
+      els.grid.innerHTML = list.slice(0, state.shown).map(shop ? function (r) { return shop(r, 'find'); } : card).join('');
     }
     els.more.hidden = list.length <= state.shown;
     els.more.textContent = '더 보기 (' + fmt(Math.min(PAGE, list.length - state.shown)) + '개 / 남은 ' + fmt(Math.max(0, list.length - state.shown)) + '개)';
@@ -475,6 +478,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
   }
 
   function start() {
+    document.addEventListener('sub-shop-card', function () { if (els.grid) render(); });
     centerNav('find', '');
     readUrl();
     buildRows();
