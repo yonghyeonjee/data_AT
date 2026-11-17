@@ -257,7 +257,7 @@ body.iv-table .sum>.tot{display:none} body.iv-table .sum{grid-template-columns:m
 .hero .fx .op{font-weight:800;opacity:.75}
 .hero .fx .r b{font-size:22px;font-weight:800;white-space:nowrap}
 .hero .fx .r small{display:block;font-size:13px;opacity:.78;margin-top:2px;word-break:keep-all}
-.hero .fx .r.sum{border-top:2px solid rgba(255,255,255,.6);padding-top:13px;margin-top:4px}
+.hero .fx .r.sum{border-top:2px solid rgba(255,255,255,.6);padding-top:13px;margin-top:4px;position:static;max-height:none;overflow:visible}   /* 넓은 화면 오른쪽 합계 상자 .sum(sticky)과 이름이 겹쳐 총 금액·최종 혜택가 줄이 겹치던 문제 (2026-11-17) */
 .hero .fx .r.sum .k{font-weight:800;font-size:19px}
 .hero .fx .r.sum b{font-size:32px;font-weight:900}
 .hero .fx .r.minus b,.hero .fx .r.minus .op{color:#7EE2B8;opacity:1}
@@ -325,7 +325,7 @@ table.xl .optn{font-size:11.5px;color:#8A93A3;align-self:center;white-space:nowr
 .benpop .pop{position:absolute;left:0;top:calc(100% + 10px);z-index:6;width:min(360px,78vw);background:#fff;border:1px solid #D9CCFB;border-radius:14px;box-shadow:0 12px 28px rgba(27,42,91,.2);padding:12px 14px}
 .benpop .pop::before{content:'';position:absolute;left:22px;top:-8px;width:14px;height:14px;background:#fff;border-left:1px solid #D9CCFB;border-top:1px solid #D9CCFB;transform:rotate(45deg)}
 .benpop ul{list-style:none;margin:0;padding:0} .benpop li{display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14.5px}
-.benpop li span{font-weight:700;color:var(--ink)} .benpop li small{display:block;font-weight:500;font-size:12px;color:var(--mut);margin-top:1px} .benpop li b{white-space:nowrap;font-weight:800}
+.benpop li span{font-weight:700;color:var(--ink)} .benpop li small{display:block;font-weight:500;font-size:12px;color:var(--mut);margin-top:1px} .benpop li b{white-space:nowrap;font-weight:800} .benpop li.c-care small{white-space:nowrap;line-height:1.45}
 .benpop li.c-care b{color:#0F766E} .benpop li.c-disc b{color:#137A3F} .benpop li.c-card b{color:#1D6FE8} .benpop li.c-promo b{color:#B45309} .benpop li.c-pkg b{color:#137A3F}
 .benpop .pop p{margin:9px 0 0;font-size:14px;color:var(--mut);text-align:right} .benpop .pop p b{color:var(--sub);font-size:18px}
 @media print{.benpop .pop{position:static;box-shadow:none}}
@@ -1510,8 +1510,13 @@ function renderEdit({S,L}){
 function renderShow(){ if(!LAST) return; HIDE=true; try{ LASTC=calcAll(); renderShow0(); } finally{ HIDE=false; } postDisplay(); }
 /* 구독 품목의 케어 표기 · [혜택 확인] 말풍선 (2026-11-16) — 고객 화면 창은 이 화면을 그대로 받아 보여 주므로 스크립트 없이 열리는 details 로 만든다(연 상태가 그대로 넘어간다) */
 function careTxt(c){ const a=C.splitCare(c||''), t=a[0]||String(c||''), cy=a[1]; return (t||'케어')+(cy?' · 방문 주기 '+cy+'개월':''); }
+/* 케어 서비스 설명 (2026-11-17) — 구독센터 케어 가이드(gudok/g/care.html) 문구 기준 · 방문 횟수 = 계약 개월 ÷ 방문 주기 */
+function careDesc(r){ const a=C.splitCare(r.care||''), t=String(a[0]||r.care||''), cy=+a[1]||0, mo=r.months||r.y*12, n=cy?Math.floor(mo/cy):0, base='계약 기간 '+r.y+'년 무상 A/S';
+  if(/방문/.test(t)) return '전문가 방문 세척·점검·소모품 교체'+(cy?'<br>'+cy+'개월마다 1회 방문'+(n?' · '+r.y+'년간 '+n+'회':''):'')+'<br>'+base;
+  if(/셀프/.test(t)) return '소모품 배송 · 직접 관리'+(cy?'<br>'+cy+'개월마다 배송':'')+'<br>'+base;
+  return base+' · 고장 수리'; }
 function benPop(r){ const L=[], li=(c,k,v,d)=>L.push(`<li class="${c}"><span>${k}${d?`<small>${d}</small>`:''}</span><b>${v}</b></li>`), per=x=>'월 −'+fmt(Math.round(x/r.months/10)*10)+'원';
-  li('c-care','케어 서비스',esc(careTxt(r.care)),'계약 기간 '+r.y+'년 무상 A/S');
+  li('c-care','케어 서비스',esc(careTxt(r.care)),careDesc(r));
   if(r.autoDisc>0) li('c-disc','구독료 할인',per(r.autoDisc),'자동결제 시');
   if(r.multiOff>0) li('c-disc','다품목 구독 할인',per(r.multiOff),'구독 2품목 이상');
   if(r.prepayDisc>0) li('c-disc','선납 할인',per(r.prepayDisc),'선납금 '+won(r.prepayAmt));
