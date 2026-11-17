@@ -1512,11 +1512,18 @@ function renderShow(){ if(!LAST) return; HIDE=true; try{ LASTC=calcAll(); render
 function careTxt(c){ const a=C.splitCare(c||''), t=a[0]||String(c||''), cy=a[1]; return (t||'케어')+(cy?' · 방문 주기 '+cy+'개월':''); }
 /* 케어 서비스 설명 (2026-11-17) — 구독센터 케어 가이드(gudok/g/care.html) 문구 기준 · 방문 횟수 = 계약 개월 ÷ 방문 주기 */
 /* 필터 품목(정수기·공기청정기) — 본사 케어 안내(올인원 2.0) 기준: 방문케어 = 종합점검·필터 교체, 셀프케어 = 필터 배송, 횟수 = 계약 개월 ÷ 주기 (2026-11-17)
-   FILTER_PRICE[품목] = 필터 1회분 가격 — 값이 있으면 'n원 상당' 표시 (아직 기준 가격 미정이라 비워 둠) */
-const FILTER_ITEM={'정수기':'정수필터','공기청정기':'필터'}, FILTER_PRICE={};
+   FILTER_BY_MODEL = 모델별 교체 필터 · 1회 개수 · 개당 가격 — 삼성닷컴 기준(2026-11-17): 공기청정기 필터 찾기(구매가이드)의 모델별 필터·개수 + 소모품 판매가 */
+const FILTER_ITEM={'정수기':'정수필터','공기청정기':'필터'};
+const FILTER_BY_MODEL=[   // [모델 앞부분, 필터 모델, 1회 개수, 개당 가격]
+  [/^RWP(5|70.15|90.15)/,'HAF-HIM',1,99000],      // Bespoke 냉장고&정수기 4단계 교체용 정수필터 — RWP5…·RWP70*15*N*·RWP90*15AN* 호환
+  [/^AP70F06103/,'CFX-D100D',1,59000],            // 블루스카이 5500 — 일체형 필터 1개
+  [/^AP90(F08163|H10163|H03163)/,'CFX-L1005D',2,120000],   // Infinite Line S 필터 — 대형·소형 모두 2개
+  [/^AP90H(10198|03193)/,'',0,0]];                // 리유저블 — 필터 교체 불필요
+function filterOf(m){ const h=FILTER_BY_MODEL.find(x=>x[0].test(String(m||''))); return h?{code:h[1],qty:h[2],unit:h[3]}:null; }
 function careDesc(r,m){ const a=C.splitCare(r.care||''), t=String(a[0]||r.care||''), cy=+a[1]||0, mo=r.months||r.y*12, n=cy?Math.floor(mo/cy):0, base='계약 기간 '+r.y+'년 무상 A/S',
-    cat=m?catOf(m):'', fl=FILTER_ITEM[cat], pr=fl&&n?(+FILTER_PRICE[cat+'|'+cy]||+FILTER_PRICE[cat]||0):0, val=pr?'<br><b class="fv">필터 약 '+fmt(pr*n)+'원 상당</b> ('+fmt(pr)+'원 × '+n+'회)':'';
-  if(/방문/.test(t)) return (fl?'종합점검 · '+fl+' 교체':'전문가 방문 세척·점검·소모품 교체')+(cy?'<br>'+cy+'개월마다 1회 방문'+(n?' · '+r.y+'년간 총 '+n+'회':''):'')+val+'<br>'+base;
+    cat=m?catOf(m):'', fo=m?filterOf(m):null, reuse=fo&&!fo.code, fl=reuse?'':FILTER_ITEM[cat], per=fo&&fo.code?fo.qty*fo.unit:0,
+    val=per&&n?'<br><b class="fv">필터 약 '+fmt(per*n)+'원 상당</b> ('+fo.code+(fo.qty>1?' '+fo.qty+'개':'')+' '+fmt(per)+'원 × '+n+'회)':'';
+  if(/방문/.test(t)) return (reuse?'종합점검 · 리유저블 필터 세척':fl?'종합점검 · '+fl+' 교체':'전문가 방문 세척·점검·소모품 교체')+(cy?'<br>'+cy+'개월마다 1회 방문'+(n?' · '+r.y+'년간 총 '+n+'회':''):'')+val+'<br>'+base;
   if(/셀프/.test(t)) return (fl?fl+' 배송 · 직접 교체':'소모품 배송 · 직접 관리')+(cy?'<br>'+cy+'개월마다 배송'+(n?' · '+r.y+'년간 총 '+n+'회':''):'')+val+'<br>'+base;
   return base+' · 고장 수리'; }
 function benPop(r,m){ const L=[], li=(c,k,v,d)=>L.push(`<li class="${c}"><span>${k}${d?`<small>${d}</small>`:''}</span><b>${v}</b></li>`), per=x=>'월 −'+fmt(Math.round(x/r.months/10)*10)+'원';
