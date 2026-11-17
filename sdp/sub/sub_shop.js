@@ -963,7 +963,17 @@ window.SUB_SHOP_READY = true;
   }
   function start() {
     drawTrustBar();
-    if (navOnly) { drawNav(root); ensureCards(drawBubble); return; }
+    if (navOnly) {
+      drawNav(root);
+      ensureCards(function () {
+        drawBubble();
+        /* 상품 찾기(sub_find.js) 검색 목록도 홈·품목과 같은 카드로 (2026-11-17) — 일시불보다 저렴·+구독료 지원 띠, 삼성카드 할인가, 후기·포인트, 라이온즈 배지 */
+        CARDS = CARDS || window.SUB_CARDS || null; POL = POL || window.SUB_POLICY || null; CARD1 = CARD1 || cardInfo();
+        window.SUB_SHOP_CARD = function (r, medium) { return card(r, medium || 'find'); };
+        try { document.dispatchEvent(new Event('sub-shop-card')); } catch (e) {}
+      });
+      return;
+    }
     // 기간 지난 행사 배너(html 고정 · data-until=YYYY-MM-DD)는 지운다
     var td = new Date(), today = td.getFullYear() + '-' + ('0' + (td.getMonth() + 1)).slice(-2) + '-' + ('0' + td.getDate()).slice(-2);
     /* 라이온즈 우승 기념 삼성전자 대축제 (2026-11-13 ~ 11-24) — 기간 안에만 홈 배너 맨 앞 · 이벤트 화면 맨 위에 넣는다.
