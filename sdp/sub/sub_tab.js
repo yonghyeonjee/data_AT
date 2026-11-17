@@ -162,6 +162,13 @@ function main() {
       return true;
     });
   }
+  /* 구독료 최대 n원 지원 (2026-11-17) — 본사 구독료 지원 리스트(sub_promo_amt.js · tools/sub/promo_list_from_xlsx.py) 월구독료 × 지원 개월 의 최댓값
+     판촉 기간(라이온즈 11/13~24) 안이면 판촉 개월 값, 아니면 평소 값 · 파일이 없으면 0 (금액 표시만 빠진다) */
+  function supAmt(model) {
+    var A = window.SUB_PROMO_AMT, a = A && A.m && A.m[model]; if (!a) return 0;
+    var t = today(), on = function (w) { return w && !(w.from && w.from > t) && !(w.to && w.to < t); };
+    return on(A.win) && a[1] > 0 ? a[1] : (!A.base || on(A.base)) ? a[0] : 0;
+  }
   function promoTexts(info) { return promoHits(info).filter(function (p) { return !!p.text; }).map(function (p) { return p.text; }); }
   /* N개월 구독료 상당 포인트 지원 (삼성 AI 구독 페스티벌 · 관리자 › 구독 혜택 정책 › 행사 문구에 개월 수·금액을 적으면 켜진다 · mvp_257)
      금액 = 모델별 금액표(amounts[모델]) → 모델 공통 금액(amount) → 개월 수 × 선택 요금제의 월 구독료(할인 전)
@@ -395,7 +402,9 @@ function main() {
       }
       cb();
     }
-    loadScript('sub_policy.js', function () { return !!window.SUB_POLICY; }, done, done);
+    var left = 2, both = function () { if (--left === 0) done(); };   // 구독료 지원 금액 파일도 같이 (없어도 계속)
+    loadScript('sub_policy.js', function () { return !!window.SUB_POLICY; }, both, both);
+    loadScript('sub_promo_amt.js', function () { return !!window.SUB_PROMO_AMT; }, both, both);
   }
 
   // 파일 요금 + 구독요금(우선) 병합. 결과 요금제가 하나도 없으면 null
@@ -652,7 +661,7 @@ function main() {
     var top = h; h = '';
     // 라이온즈 우승 기념 안내 띠 (2026-11-13 ~ 24) — 이 상품이 대상이면 패널 맨 위에 (말풍선 모양)
     var lionsM = 0; promoHits(info).forEach(function (p) { if (/라이온즈/.test(p.text || '') && p.months > lionsM) lionsM = p.months; });
-    if (lionsM) top = '<p class="subtab-lionsbar"><b>🏆 라이온즈 우승 기념</b><span>구독료 지원 기존 ' + (lionsM - 6) + '개월 + <em>추가 6개월</em> = <strong>' + lionsM + '개월</strong></span><small>11/13(금) ~ 11/24(화) · 최장 약정 선택 시</small><a class="subtab-lionsmore" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=193" target="_blank" rel="noopener">행사 자세히 보기 →</a></p>' + top;
+    if (lionsM) top = '<p class="subtab-lionsbar"><b>🏆 라이온즈 우승 기념</b><span>구독료 지원 기존 ' + (lionsM - 6) + '개월 + <em>추가 6개월</em> = <strong>' + lionsM + '개월</strong></span>' + (supAmt(state.model) ? '<span class="subtab-lionsamt">구독료 최대 <strong>' + fmt(supAmt(state.model)) + '원</strong> 지원</span>' : '') + '<small>11/13(금) ~ 11/24(화) · 최장 약정 선택 시</small><a class="subtab-lionsmore" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=193" target="_blank" rel="noopener">행사 자세히 보기 →</a></p>' + top;
 
     // 약정 기간
     h += '<fieldset class="subtab-field"><legend>약정 기간</legend><div class="subtab-grid subtab-grid--years">';
@@ -805,7 +814,10 @@ function main() {
       '<div class="subtab-acc-body"' + (state.open ? '' : ' hidden') + '>' + h + '</div>';
 
     // 혜택 문구: 정책 기본 문구 + 기간 중인 행사 + 스킨 설정 extraPoints
-    var points = (POL.texts.points || []).concat(promoTexts(info), CFG.extraPoints || []);
+    // 라이온즈 띠가 위에 있으면 아래 목록의 같은 라이온즈 문구는 뺀다 (2026-11-17 중복 정리) · 구독료 지원 행사 문구 끝에 최대 금액
+    var amt = supAmt(state.model), maxM = 0, hits = promoHits(info).filter(function (p) { return !!p.text && !(lionsM && /라이온즈/.test(p.text)); });
+    hits.forEach(function (p) { if (p.months > maxM) maxM = p.months; });
+    var points = (POL.texts.points || []).concat(hits.map(function (p) { return p.text + (amt && !lionsM && maxM && p.months === maxM ? ' (최대 ' + fmt(amt) + '원)' : ''); }), CFG.extraPoints || []);
     if (points.length) h += '<ul class="subtab-points">' + points.map(function (t) { return /라이온즈/.test(t) ? '<li class="is-lions"><b>🏆 라이온즈 우승 기념</b>' + esc(t.replace(/^\s*라이온즈 우승 기념\s*·?\s*/, '')) + '</li>' : '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
 
     // 하단 고정 바 — 상담 신청만

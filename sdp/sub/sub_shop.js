@@ -328,6 +328,18 @@ window.SUB_SHOP_READY = true;
   function saveNote(list) {
     return list.some(saveOf) ? '<p class="ss-save-note">일시불 비교는 시흥몰 판매가 기준이며, 자동납부·제휴카드 청구할인(전월 실적 충족 시)·적립 포인트를 반영한 선납 없음 기준 최대 금액입니다.</p>' : '';
   }
+  /* 구독료 최대 n원 지원 (2026-11-17) — 본사 구독료 지원 리스트(sub_promo_amt.js · tools/sub/promo_list_from_xlsx.py) 월구독료 × 지원 개월 의 최댓값
+     판촉 기간(라이온즈 11/13~24) 안이면 판촉 개월 값, 아니면 평소 값 · 색상이 여럿이면 가장 큰 값 */
+  function supAmtOf(r) {
+    var A = window.SUB_PROMO_AMT; if (!A || !A.m) return 0;
+    var on = function (w) { return w && !(w.from && w.from > TODAY) && !(w.to && w.to < TODAY); }, inWin = on(A.win), inBase = !A.base || on(A.base), v = 0;
+    (r.variants || [r]).forEach(function (x) { var a = A.m[x.model]; if (!a) return; var n = inWin && a[1] > 0 ? a[1] : inBase ? a[0] : 0; if (n > v) v = n; });
+    return v;
+  }
+  function supAmtHtml(r) {
+    var v = supAmtOf(r);
+    return v ? '<span class="ss-supamt">구독료 최대 <b class="ss-save-f">' + fmt(v) + '원</b><b class="ss-save-s">' + saveShort(v) + '</b> 지원</span>' : '<span class="ss-supamt is-empty" aria-hidden="true"></span>';
+  }
   function supHtml(r, medium) {
     var o = promoOf(r.model); if (!o) return '';
     return '<span class="ss-sup' + (medium === 'event' ? ' is-ev' : '') + (o.lions ? ' is-lions' : '') + '">' + (o.lions ? '<em>🏆 라이온즈 우승 기념 +6개월</em>' : '') + '구독료 지원 <b>' + o.months + '개월</b><small>' + (medium === 'event' && o.term ? esc(o.term) + ' 약정 시 포인트' : '상당 멤버십 포인트') + '</small></span>';
@@ -343,6 +355,7 @@ window.SUB_SHOP_READY = true;
     var acts = medium === 'event';   // 이벤트 화면: 카드 아래 [담기] [상담 신청 →] (2026-11-11)
     return '<li class="ss-card' + (acts ? ' has-acts' : '') + (window.SUB_CART.has(r.model) ? ' in-cart' : '') + '"><a class="ss-card-link" href="' + esc(viewHref(r.model, medium)) + '" data-cta="view" data-model="' + esc(r.model) + '">' +
       (saveOf(r) ? '<span class="ss-save">일시불보다 <b class="ss-save-f">' + fmt(saveOf(r)) + '원</b><b class="ss-save-s">' + saveShort(saveOf(r)) + '</b> <i>더 </i>저렴</span>' : '') +
+      supAmtHtml(r) +
       (fam ? '<span class="ss-fam">색상 ' + fam.length + '종</span>' : '') +
       '<span class="ss-img">' + supHtml(r, medium) + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
         (r.imgRep ? '<span class="ss-imgnote">대표 이미지</span>' : '') : '<span class="ss-icon" aria-hidden="true">' + (p ? p.icon : '📦') + '</span>') + '</span>' +
@@ -1059,6 +1072,7 @@ window.SUB_SHOP_READY = true;
     var need = [];
     if (!window.SUB_CARDS) need.push('sub_cards.js');
     if (!window.SUB_POLICY) need.push('sub_policy.js');
+    if (!window.SUB_PROMO_AMT) need.push('sub_promo_amt.js');   // 구독료 최대 n원 지원 (없으면 띠만 안 나온다)
     var left = need.length;
     if (!left) return done();
     need.forEach(function (f) {
