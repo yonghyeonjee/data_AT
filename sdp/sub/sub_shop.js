@@ -336,9 +336,27 @@ window.SUB_SHOP_READY = true;
     (r.variants || [r]).forEach(function (x) { var a = A.m[x.model]; if (!a) return; var n = inWin && a[1] > 0 ? a[1] : inBase ? a[0] : 0; if (n > v) v = n; });
     return v;
   }
+  /* 카드 머리 띠 높이를 화면의 한 줄(행)마다 맞춘다 (2026-11-17) — 같은 행에서 띠 줄 수가 가장 많은 카드에 맞추고, 행에 띠가 하나도 없으면 띠 자리를 없앤다 */
+  function fitBands() {
+    Array.prototype.slice.call(document.querySelectorAll('.ss-grid')).forEach(function (g) {
+      var rows = {};
+      Array.prototype.slice.call(g.querySelectorAll('.ss-bands')).forEach(function (b) { var c = b.closest('.ss-card') || b, k = Math.round(c.offsetTop); (rows[k] = rows[k] || []).push(b); });
+      Object.keys(rows).forEach(function (k) {
+        var n = 0; rows[k].forEach(function (b) { if (b.children.length > n) n = b.children.length; });
+        rows[k].forEach(function (b) { if (b.getAttribute('data-rows') !== String(n)) b.setAttribute('data-rows', n); });
+      });
+    });
+  }
+  (function () {
+    var t = 0, go = function () { clearTimeout(t); t = setTimeout(fitBands, 30); };
+    window.addEventListener('resize', go);
+    if (window.MutationObserver) new MutationObserver(function (ms) {
+      for (var i = 0; i < ms.length; i++) if (ms[i].type === 'childList' && ms[i].addedNodes.length) return go();
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  })();
   function supAmtHtml(r) {
     var v = supAmtOf(r);
-    return v ? '<span class="ss-supamt">구독료 최대 <b class="ss-save-f">' + fmt(v) + '원</b><b class="ss-save-s">' + saveShort(v) + '</b> 지원</span>' : '<span class="ss-supamt is-empty" aria-hidden="true"></span>';
+    return v ? '<span class="ss-supamt">+구독료 <b class="ss-save-f">' + fmt(v) + '원</b><b class="ss-save-s">' + saveShort(v) + '</b> 지원</span>' : '';
   }
   function supHtml(r, medium) {
     var o = promoOf(r.model); if (!o) return '';
@@ -354,8 +372,9 @@ window.SUB_SHOP_READY = true;
     var p = pageOf(r), fam = r.variants && r.variants.length > 1 ? r.variants : null;
     var acts = medium === 'event';   // 이벤트 화면: 카드 아래 [담기] [상담 신청 →] (2026-11-11)
     return '<li class="ss-card' + (acts ? ' has-acts' : '') + (window.SUB_CART.has(r.model) ? ' in-cart' : '') + '"><a class="ss-card-link" href="' + esc(viewHref(r.model, medium)) + '" data-cta="view" data-model="' + esc(r.model) + '">' +
-      (saveOf(r) ? '<span class="ss-save">일시불보다 <b class="ss-save-f">' + fmt(saveOf(r)) + '원</b><b class="ss-save-s">' + saveShort(saveOf(r)) + '</b> <i>더 </i>저렴</span>' : '') +
-      supAmtHtml(r) +
+      /* 카드 머리 띠 (2026-11-17): 초록(일시불보다 저렴)·파랑(+구독료 지원)을 위에서부터 채운다 — 없는 줄은 빈칸 대신 같은 줄 카드들과 높이만 맞춘 연회색 머리 */
+      '<span class="ss-bands">' + (saveOf(r) ? '<span class="ss-save">일시불보다 <b class="ss-save-f">' + fmt(saveOf(r)) + '원</b><b class="ss-save-s">' + saveShort(saveOf(r)) + '</b> <i>더 </i>저렴</span>' : '') +
+      supAmtHtml(r) + '</span>' +
       (fam ? '<span class="ss-fam">색상 ' + fam.length + '종</span>' : '') +
       '<span class="ss-img">' + supHtml(r, medium) + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
         (r.imgRep ? '<span class="ss-imgnote">대표 이미지</span>' : '') : '<span class="ss-icon" aria-hidden="true">' + (p ? p.icon : '📦') + '</span>') + '</span>' +
