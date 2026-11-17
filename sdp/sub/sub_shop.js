@@ -1,3 +1,14 @@
+/* 구독센터 GA — 사이트 GTM(GTM-T497X5ZW) 을 구독센터 페이지(samsungsh.co.kr/data/gudok/)에서만 한 번 불러온다.
+   구독센터 html 에는 GTM 이 없어 GA 에 방문이 남지 않았다 (2026-11-17). 이미 GTM 이 있는 페이지면 건너뛴다.
+   'gtm'+'.js' 로 쪼갠 것은 고도몰 템플릿이 따옴표 안 x.js 문자열을 스킨 경로로 바꾸는 것을 피하려는 것 */
+(function (w, d, id) { try {
+  if (!/(^|\.)samsungsh\.co\.kr$/.test(location.hostname) || !/\/data\/gudok\//.test(location.pathname)) return;
+  if ((w.google_tag_manager && w.google_tag_manager[id]) || d.querySelector('script[src*="' + id + '"]')) return;
+  w.dataLayer = w.dataLayer || [];
+  w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm' + '.js' });
+  var s = d.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtm' + '.js?id=' + id;
+  (d.head || d.documentElement).appendChild(s);
+} catch (e) {} })(window, document, 'GTM-T497X5ZW');
 /* ===== 구독센터 공용 화면 | subscribe/sub_home.html · sub_c_<품목>.html · sub_card.html · sub_guide.html =====
    고도몰에는 얇은 html(검색용 제목·소개·FAQ 글 + SUB_SHOP_CONFIG)만 두고, 목록·가격·메뉴는 이 파일이 그린다.
    html 안의 자리 표시를 채운다 (없는 자리는 건너뛴다)
