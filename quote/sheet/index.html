@@ -1509,6 +1509,18 @@ var NAMECARDS = [];
     el.className = 'q-warnstrip no-print' + (ws.length ? ' show' : '');
     el.innerHTML = ws.length ? '<b>⚠️ 확인이 필요한 입력 ' + ws.length + '건</b> <span style="color:#A97B2E">(담당자 선택만 필수 · 나머지는 참고용)</span><br>' + ws.map(function(x){ return '· ' + x; }).join('<br>') : '';
   }
+  /* 가격 조건 확인 (2026-11-17) — /quote/ 에서 상담사가 체크한 조합만 q.cmp 로 넘어온다. 총 지불 금액 비교만 짧게 */
+  function cmpHtml(q){ var c = q && q.cmp; if(!c || !c.length) return '';
+    var h = '<div class="q-box q-cmp" style="margin-top:10px"><h3>📊 가격 조건 확인 <span style="font-weight:600;color:#666">(같은 제품 · 구독/일반 구매 조합별)</span></h3><table class="q-tbl" style="table-layout:fixed;width:100%"><colgroup><col style="width:34%"><col style="width:20%"><col style="width:20%"><col style="width:26%"></colgroup>'
+      + '<tr><th style="text-align:left;width:auto">구성</th><th style="width:auto;text-align:right">총 구독료</th><th style="width:auto;text-align:right">총 지불 금액</th><th style="width:auto;text-align:left">월 납부 금액</th></tr>';
+    c.forEach(function(r){
+      h += '<tr' + (r.cur ? ' style="background:#FFF8E1"' : '') + '><td style="text-align:left"><b>' + esc(r.label) + '</b>' + (r.cur ? ' <span style="color:#B45309;font-weight:700">· 이 견적</span>' : '')
+        + '<br><span style="font-size:.85em;color:#666">' + esc(r.sub || '') + '</span></td>'
+        + '<td class="num">' + (r.subTotal > 0 ? won(r.subTotal) : '—') + '</td>'
+        + '<td class="num"><b>' + (r.total == null ? '일시불가 미입력' : won(r.total)) + '</b></td>'
+        + '<td style="text-align:left;white-space:nowrap">' + esc(r.mon || '—').replace(/\n/g, '<br>') + '</td></tr>';
+    });
+    return h + '</table></div>'; }
   function renderSheet(){
     var q = QUOTE; if(!q) return;
     var sheet = document.getElementById('qSheet');
@@ -1649,6 +1661,7 @@ var NAMECARDS = [];
       lb += '</table></div>';
       blocks.push('<div class="q-sum solo">' + lb + '</div>');
     }
+    blocks.push(cmpHtml(q));   // 가격 조건 확인 (2026-11-17) — 블록은 한 요소씩 (paginate 가 첫 요소만 씀)
     blocks.push('<div class="q-memo"><div class="t">세부 상담 내용</div>'
       + (EDIT ? '<textarea class="q-memo-in" data-q="cust.memo" placeholder="희망 설치일, 색상, 특이사항, 안내한 조건 등">' + esc(q.cust.memo) + '</textarea>'
               : (q.cust.memo ? esc(q.cust.memo) : '<span style="color:#bbb">-</span>')) + '</div>');
@@ -2791,7 +2804,21 @@ var NAMECARDS = [];
     var t = setInterval(function(){ if(shAuthed()){ clearInterval(t); fn(); } }, 400);
   }
 
+  /* /quote/ [견적서] 탭 안에서 열 때 (?embed=1 · 2026-11-17) — 지금 견적(저장 전 포함)을 받아 이 화면 기능 그대로 쓴다 */
+  var SH_EMBED = /[?&]embed=1/.test(location.search);
+  if(SH_EMBED){
+    window.addEventListener('message', function(e){
+      if(e.origin !== location.origin) return; var m = e.data || {}; if(m.t !== 'quote' || !m.d || !m.d.quote) return;
+      QUOTE = JSON.parse(JSON.stringify(m.d.quote)); normalizeQuote(QUOTE);
+      if(m.d.no){ QUOTE.meta = QUOTE.meta || {}; QUOTE.meta.no = m.d.no; QUOTE.meta.version = m.d.ver || QUOTE.meta.version || 1; }
+      EDIT = false; syncEditBtn();
+      if(m.d.counselor && !applyCounselorName(m.d.counselor)) PENDING_COUNSELOR = m.d.counselor;
+      renderAll();
+    });
+    try { window.parent.postMessage({ t: 'qready' }, location.origin); } catch(e){}
+  }
   whenAuthed(function initQuoteEntry(){
+    if(SH_EMBED) return;                            // ⓪ /quote/ 견적서 탭 — 견적은 postMessage 로 온다
     if(openFromUrl()) return;                       // ① 담당자 화면에서 넘어온 주소
     var prevDraft = lsGet(LS_DRAFT);
     if(importHandoff(true)){                        // ② 계산기 핸드오프
