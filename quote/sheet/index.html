@@ -208,7 +208,7 @@ var NAMECARDS = [];
   function nowStr(){ var d = new Date(); return ymd(d) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
   function num(v){ if(typeof v === 'number') return isFinite(v) ? v : 0; var s = String(v == null ? '' : v).replace(/[^0-9.\-]/g, ''); var n = parseFloat(s); return isNaN(n) ? 0 : n; }
   function esc(s){ return escHtml(s == null ? '' : s); }
-  function won(v){ return fmt(v) + '원'; }
+  function won(v){ return (v < 0 ? '+' + fmt(-v) : fmt(v)) + '원'; }   // 0원 아래 = 고객이 받는 금액 → + (카드 청구할인이 구독료보다 큰 경우 등, 2026-11-17)
   function lsGet(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
   function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
   function getPath(o, p){ return p.split('.').reduce(function(a, k){ return a == null ? undefined : a[k]; }, o); }
@@ -916,12 +916,12 @@ var NAMECARDS = [];
     //    선납금은 DPS 월 구독료에 선납 할인이 이미 반영되어 있으므로 총 지불액에 "가산"
     var benefit = sub + multi + pre + card + point + cons + gift;
     var preAdd = it.preIncl ? 0 : preAmt;   // /quote/ 는 총 구독료에 선납금이 이미 들어 있다 (DPS 총구독료)
-    var finalP = Math.max(0, total - benefit) + preAdd;
+    var finalP = total - benefit + preAdd;
     // ⑤ 월 단위 지표
     var payM = m > 0 ? Math.round((total - sub - multi - pre - (it.preIncl ? preAmt : 0)) / m) : 0;                 // 할인 후 월 청구액(카드 전)
-    var afterCardM = Math.max(0, payM - cardMonthly);                                    // 체감 구독료 = 월구독료 − 월카드할인
-    var remainM = m > 0 ? Math.max(0, Math.round((total - sub - multi - pre - card - preAmt) / m)) : 0;
-    var realM = m > 0 ? Math.max(0, Math.round((finalP - preAmt) / m)) : 0;
+    var afterCardM = payM - cardMonthly;                                    // 체감 구독료 = 월구독료 − 월카드할인
+    var remainM = m > 0 ? Math.round((total - sub - multi - pre - card - preAmt) / m) : 0;
+    var realM = m > 0 ? Math.round((finalP - preAmt) / m) : 0;
     var freeMonths = (point > 0 && remainM > 0) ? Math.floor(point / remainM) : 0;
     return { m: m, monthly: monthly, total: total, sub: sub, multi: multi, multiRaw: multiRaw, pre: pre, point: point,
              card: card, cardMonthly: cardMonthly, cons: cons, gift: gift, preAmt: preAmt, preAdd: preAdd,
@@ -941,17 +941,17 @@ var NAMECARDS = [];
       if(c.m > T.maxM) T.maxM = c.m;
     });
     (q.extra || []).forEach(function(e){ T.extra += num(e.amount); });
-    T.finalP = Math.max(0, T.finalP - T.extra);
+    T.finalP = T.finalP - T.extra;
     /* 💵 이벤트 리워드 1% — 최종가에 실제 차감 반영 (기준: 리워드 반영 전 혜택가 · 천원 올림) */
     T.reward = 0;
     if(q.opt.rewardOn){
       T.reward = Math.ceil(Math.max(0, T.finalP) * 0.01 / 1000) * 1000;
-      T.finalP = Math.max(0, T.finalP - T.reward);
+      T.finalP = T.finalP - T.reward;
     }
     /* 공통 멤버십 포인트 (DPS 전체 합산 입력) — 합계에서만 차감, 상품별 칸과 병행 */
     T.pointItems = T.point;
     T.pointCommon = num(q.opt.pointCommon);
-    if(T.pointCommon > 0){ T.point += T.pointCommon; T.finalP = Math.max(0, T.finalP - T.pointCommon); }
+    if(T.pointCommon > 0){ T.point += T.pointCommon; T.finalP = T.finalP - T.pointCommon; }
     T.benefit = T.sub + T.multi + T.pre + T.card + T.point + T.cons + T.gift + T.extra + T.reward;
     T.pct = T.total > 0 ? (T.benefit / T.total * 100) : 0;
     return T;
@@ -1307,7 +1307,7 @@ var NAMECARDS = [];
     var cardM   = Math.round(first.card);                     // ② 카드 청구할인 합계
     var netM    = Math.round(first.net);                      // ③ 월 구독료 혜택가 (상품 카드 출금액의 합)
     var discM   = Math.max(0, monthly - cardM - netM);        // 선할인(구독료·다품목·선납) 월 환산
-    var realM   = Math.max(0, Math.round(T.realM - (num(q.opt.pointCommon) || 0) / m)); // ④ 월 체감 구독료 (공통 포인트까지 반영 · 선납금 제외)
+    var realM   = Math.round(T.realM - (num(q.opt.pointCommon) || 0) / m); // ④ 월 체감 구독료 (공통 포인트까지 반영 · 선납금 제외)
     var hasPre  = T.preAmt > 0;
     var afterPreM = Math.round(T.remainM);                     // 선납 후 남은 월 납입 (상품별 합)
     var pointOn = (q.opt.pointMode === 'replace') && T.point > 0;
@@ -1589,7 +1589,7 @@ var NAMECARDS = [];
       sumBox += '<tr class="ben"><th>총 혜택 합계</th><td class="num">-' + won(T.benefit) + '</td></tr>';
       if(T.preAdd > 0){
         /* 소계: 여기까지가 할인 적용가 → 선납금 가산 → 총 지불액 (검산 가능하게) */
-        sumBox += '<tr><th style="font-weight:700">혜택 적용가 <span style="font-weight:500;color:#666">(총 구독료 − 총 혜택)</span></th><td class="num" style="font-weight:700">' + won(Math.max(0, T.finalP - T.preAmt)) + '</td></tr>';
+        sumBox += '<tr><th style="font-weight:700">혜택 적용가 <span style="font-weight:500;color:#666">(총 구독료 − 총 혜택)</span></th><td class="num" style="font-weight:700">' + won(T.finalP - T.preAmt) + '</td></tr>';
         sumBox += '<tr><th>선납금 <span style="font-weight:500;color:#666">(계약 시 선결제 · 지불액 가산)</span></th><td class="num" style="color:#1A4FA0;font-weight:700">+' + won(T.preAmt) + '</td></tr>';
       }
       sumBox += '<tr class="tot"><th>최종 혜택가 <span style="font-weight:600;font-size:.9em">(총 지불액)</span></th><td class="num">' + won(T.finalP) + '</td></tr>';
@@ -1614,7 +1614,7 @@ var NAMECARDS = [];
     if(!payBand){   // 매달 내시는 금액 밴드가 없을 때만 (같은 숫자 중복 방지)
       h += '<div class="q-mini">'
         + '<div><div class="k">월 구독료 합계</div><div class="v">' + won(T.monthly) + '</div></div>'
-        + '<div><div class="k">월 구독료 혜택가</div><div class="v" style="color:#1A4FA0">' + won(Math.max(0, Math.round(T.afterCardM))) + '</div></div>'
+        + '<div><div class="k">월 구독료 혜택가</div><div class="v" style="color:#1A4FA0">' + won(Math.round(T.afterCardM)) + '</div></div>'
         + (mo > 0 ? '<div><div class="k">계약 기간' + (T.count > 1 ? ' (최장)' : '') + '</div><div class="v">' + mo + '개월</div></div>' : '')
         + (S.realM && mo > 0 ? '<div><div class="k">월 체감 구독료</div><div class="v">' + won(Math.round(T.finalP / mo)) + '</div></div>' : '')
         + '</div>';

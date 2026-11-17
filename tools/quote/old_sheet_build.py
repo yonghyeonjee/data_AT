@@ -77,6 +77,12 @@ rep("""        if(!QUOTE.meta) QUOTE.meta = { no: no, version: hit.version || 1,
 # 7. 품목마다 일시불가 한 줄 (일반 구매 시 가격)
 rep("    if(it.careType || EDIT) h += '<tr><th>서비스 유형</th>", '    /* 일시불가 — 같은 제품을 일반 구매로 살 때 가격 (2026-11-16 · /quote/ 가 품목마다 넘긴다 · 고칠 수 있다) */\n    if(num(it.lumpPrice) > 0 || EDIT) h += \'<tr><th>일시불가 <span style="font-weight:500;color:#666">(일반 구매 시)</span></th><td class="num">\' + (EDIT ? cell(p + \'lumpPrice\', num(it.lumpPrice)) : won(num(it.lumpPrice))) + \'</td></tr>\';\n    if(it.careType || EDIT) h += \'<tr><th>서비스 유형</th>')
 
+# 8. 0원 아래 = 고객이 받는 금액 → '+' 로 (2026-11-17) — /quote/ 가 카드 청구할인을 월 구독료보다 크게 넘기는 경우 (예: 소형 냉장고 + 삼성카드 70만↑ 17,000원)
+ZERO = [("  function won(v){ return fmt(v) + '원'; }", "  function won(v){ return (v < 0 ? '+' + fmt(-v) : fmt(v)) + '원'; }   // 0원 아래 = 고객이 받는 금액 → + (카드 청구할인이 구독료보다 큰 경우 등, 2026-11-17)"), ('    var finalP = Math.max(0, total - benefit) + preAdd;', '    var finalP = total - benefit + preAdd;'), ('    var afterCardM = Math.max(0, payM - cardMonthly);', '    var afterCardM = payM - cardMonthly;'), ('    var remainM = m > 0 ? Math.max(0, Math.round((total - sub - multi - pre - card - preAmt) / m)) : 0;', '    var remainM = m > 0 ? Math.round((total - sub - multi - pre - card - preAmt) / m) : 0;'), ('    var realM = m > 0 ? Math.max(0, Math.round((finalP - preAmt) / m)) : 0;', '    var realM = m > 0 ? Math.round((finalP - preAmt) / m) : 0;'), ('    T.finalP = Math.max(0, T.finalP - T.extra);', '    T.finalP = T.finalP - T.extra;'), ('      T.finalP = Math.max(0, T.finalP - T.reward);', '      T.finalP = T.finalP - T.reward;'), ('T.finalP = Math.max(0, T.finalP - T.pointCommon); }', 'T.finalP = T.finalP - T.pointCommon; }'), ('    var realM   = Math.max(0, Math.round(T.realM - (num(q.opt.pointCommon) || 0) / m));', '    var realM   = Math.round(T.realM - (num(q.opt.pointCommon) || 0) / m);'), ('won(Math.max(0, T.finalP - T.preAmt))', 'won(T.finalP - T.preAmt)'), ('won(Math.max(0, Math.round(T.afterCardM)))', 'won(Math.round(T.afterCardM))')]
+for a, b in ZERO:
+    if s.count(a) < 1: raise SystemExit('MISS: %r' % a[:80])
+    s = s.replace(a, b); n += 1
+
 def save(p, t):
     if CR: t = t.replace('\n', '\r\n')
     io.open(p, 'w', encoding='utf-8', newline='').write(t)
