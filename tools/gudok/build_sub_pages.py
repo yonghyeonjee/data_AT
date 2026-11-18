@@ -195,12 +195,12 @@ def home_body():
     # 빠진 구역: 나에게 맞는 구독 찾기(퀴즈) · AI 콤보 띠 · 품목별 대표 모델 (배너·품목 타일·인기 제품과 겹침). 플로팅 바로가기 없음.
     return '''<div class="ss-h2">
     <header class="ss-hero">
-        <p class="ss-eyebrow">삼성전자 공식 위촉 AI 구독 파트너 · 삼성스토어 시흥</p>
-        <h1>삼성스토어 구독센터 <span>삼성 가전 구독 가격, 한 번에 비교하세요</span></h1>
+        <p class="ss-eyebrow">SAMSUNG SUBSCRIPTION CENTER · 삼성스토어 시흥</p>
+        <h1>삼성 구독센터 <span>상담부터 설치·케어까지, 믿고 맡기는 삼성 가전 구독</span></h1>
         <p class="ss-lead">냉장고·AI 콤보·에어컨·TV·정수기까지 삼성 AI 구독 모델의 월 구독료를 품목별로 모았습니다.
             약정 기간, 방문케어 주기, 선납 할인, 제휴카드 할인을 반영한 실제 납부액은 상담으로 바로 안내해 드립니다.</p>
         <div data-ss="search"></div>
-        <ul class="ss-points"><li>구독 모델 1,000여 개</li><li>제휴카드 청구할인</li><li>선납 할인</li><li>방문케어 · 무상수리</li></ul>
+        <ul class="ss-points ss-lx-stats"><li><b>1,000+</b>구독 모델 요금 공개</li><li><b>18</b>개 품목 비교</li><li><b>매장·온라인</b>1:1 구독 상담</li><li><b>설치·케어</b>약정 기간 무상수리</li></ul>
     </header>
 
     <div class="ss-promos" data-ss-slider>
@@ -215,13 +215,32 @@ def home_body():
     </div>
 
     <section class="ss-sec ss-x-cats" id="find">
+        <p class="ss-kicker">CATEGORY</p>
         <h2>나에게 꼭 맞는 구독 제품 찾기</h2>
         <p class="ss-sub">품목을 고르면 모델별 최저 월 구독료를 한눈에 비교할 수 있습니다.</p>
         <div data-ss="cats" data-style="tile"></div>
     </section>
 
+    <!-- 신뢰 구역 (2026-11-18 고급 디자인) — 매장 상담 · 요금 공개 · 상담 후 결정 · 설치·케어 -->
+    <section class="ss-sec ss-lx-trust" id="trust">
+        <p class="ss-kicker">WHY US</p>
+        <h2>믿을 수 있는 구독 상담, 삼성 구독센터</h2>
+        <p class="ss-sub">요금은 투명하게 공개하고, 결정은 충분히 비교하신 뒤에. 상담부터 설치·케어까지 매장이 끝까지 함께합니다.</p>
+        <ul class="ss-lx-pillars">
+            <li><span class="ss-lx-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v1.5a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v7h14v-7"/><path d="M10 20v-4h4v4"/></svg></span><b>매장에서 직접 상담</b><p>시흥 대야동 삼성스토어 매장에서 실물을 보고, 구독 상담사와 조건을 맞춥니다.</p></li>
+            <li><span class="ss-lx-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></span><b>요금은 모두 공개</b><p>1,000여 개 모델의 약정·케어·제휴카드 조건별 월 구독료를 그대로 보여 드립니다.</p></li>
+            <li><span class="ss-lx-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span><b>상담 후 결정</b><p>상담 신청만으로 계약되지 않습니다. 여러 조건을 비교해 보신 뒤 결정하세요.</p></li>
+            <li><span class="ss-lx-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L4 16.8V20h3.2l5.3-5.3a4 4 0 0 0 5.2-5.4l-2.4 2.4-2.6-.6-.6-2.6z"/></svg></span><b>설치·케어까지</b><p>삼성전자 전문 기사 설치, 약정 기간 동안 방문케어와 무상수리를 받습니다.</p></li>
+        </ul>
+        <div class="ss-lx-store">
+            <div class="ss-lx-store-info"><span class="ss-lx-store-k">STORE</span><b>삼성스토어 시흥</b><p>경기도 시흥시 서해안로1685번길 12 (대야동)</p><p>구독 상담 <a href="tel:031-8042-3166" data-cta="trust_tel_txt">031-8042-3166</a></p></div>
+            <div class="ss-lx-store-btns"><a class="is-main" href="https://www.samsungsh.co.kr/main/html.php?htmid=service/SamSungSubscription.html" data-cta="trust_consult">구독 상담 신청</a><a href="tel:031-8042-3166" data-cta="trust_tel">전화 상담</a><a href="https://map.naver.com/p/search/%%EC%%82%%BC%%EC%%84%%B1%%EC%%8A%%A4%%ED%%86%%A0%%EC%%96%%B4%%20%%EC%%8B%%9C%%ED%%9D%%A5" target="_blank" rel="noopener" data-cta="trust_map">오시는 길</a></div>
+        </div>
+    </section>
+
     <!-- 이달의 혜택 — 시흥몰 맨 위 혜택 띠와 같은 내용 (기간 지난 카드는 data-until 로 sub_shop.js 가 지운다) -->
     <section class="ss-sec ss-month ss-x-gray" id="benefit">
+        <p class="ss-kicker">BENEFITS</p>
         <h2>이달의 구독 혜택 <small>2026.11.01 ~ 11.30</small></h2>
         <p class="ss-sub">상담완료 시 네이버 페이 1만원 · 매장 방문 구매 완료 시 와인을 드립니다.</p>
         <ul class="ss-month-list ss-benefits">
@@ -237,18 +256,21 @@ def home_body():
     </section>
 
     <section class="ss-sec" id="hot">
+        <p class="ss-kicker">BEST</p>
         <h2>지금 많이 찾는 인기 구독</h2>
         <p class="ss-sub">요즘 매장에서 가장 많이 문의하시는 제품입니다. 누르면 약정·케어·선납·카드별 월 납부액을 바로 계산해 볼 수 있습니다.</p>
         <div data-ss="hot"></div>
     </section>
 
     <section class="ss-sec ss-x-gray" id="price">
+        <p class="ss-kicker">PRICE</p>
         <h2>월 구독료 가격대별로 보기</h2>
         <p class="ss-sub">예산에 맞는 가격대와 품목을 고르면 해당 모델이 보입니다. 금액은 최저 월 구독료(VAT 포함) 기준이며, 약정·케어·선납·제휴카드에 따라 실제 월 납부액은 달라집니다.</p>
         <div data-ss="bands" data-n="8"></div>
     </section>
 
     <section class="ss-sec" id="bundle">
+        <p class="ss-kicker">BUNDLE</p>
         <h2>여러 대 함께 구독하면 더 좋아요</h2>
         <p class="ss-sub">신혼집·입주·이사처럼 여러 대가 필요할 때, 묶음 월 납부 합계와 다품목 혜택을 한 번에 계산해 보세요.</p>
         <div class="ss-bundle-band"><div><b>다품목 구독 계산기</b><p>냉장고 + 세탁기 + TV처럼 묶어서 약정·케어·선납·제휴카드까지 넣은 <b>월 납부 합계</b>를 바로 계산합니다.</p></div>
@@ -257,12 +279,14 @@ def home_body():
     </section>
 
     <section class="ss-sec ss-x-gray" id="card">
+        <p class="ss-kicker">CARD</p>
         <h2>제휴카드로 구독료를 더 낮추세요</h2>
         <p class="ss-sub">구독료를 제휴카드로 자동결제하면 전월 실적에 따라 매월 청구할인을 받습니다.</p>
         <div data-ss="cards"></div>
     </section>
 
     <section class="ss-sec" id="step">
+        <p class="ss-kicker">PROCESS</p>
         <h2>구독은 이렇게 진행돼요</h2>
         <ol class="ss-steps">
             <li><strong>구독 문의</strong><p>원하는 모델이나 품목을 남겨 주세요. 전화 상담도 가능합니다.</p></li>
@@ -273,15 +297,17 @@ def home_body():
     </section>
 
     <section class="ss-sec ss-x-gray" id="faq">
+        <p class="ss-kicker">FAQ</p>
         <h2>자주 묻는 질문</h2>
         %(faq)s
     </section>
 
     <!-- 삼성스토어 시흥 구독 센터 안내 · 회사 소개 (검색엔진이 읽는 본문) -->
     <section class="ss-sec ss-about" id="about">
+        <p class="ss-kicker">ABOUT</p>
         <h2>삼성스토어 시흥 구독 센터 안내</h2>
         <p><b>삼성스토어 구독센터</b>는 온라인 상담과 매장 방문 상담이 모두 가능한 삼성 구독센터 시흥으로, 경기도 시흥시 대야동의 <b>삼성스토어 시흥</b>이 운영하는 삼성 가전 구독 안내 페이지입니다. 삼성 AI 구독클럽으로 구독할 수 있는 냉장고, 김치냉장고, 세탁기와 건조기, 비스포크 AI 콤보, 에어컨과 시스템에어컨, TV, 정수기, 공기청정기, 청소기, 식기세척기, 인덕션, 모니터, 갤럭시 탭과 갤럭시 북까지 1,000여 개 모델의 월 구독료를 품목별로 모았습니다. 매장에 오시기 전에 집에서 먼저 모델과 요금을 비교해 보시고, 궁금한 점은 전화나 온라인 상담으로 편하게 물어보세요.</p>
-        <h3>삼성전자 공식 위촉 AI 구독 파트너 인증점</h3>
+        <h3>삼성전자 위촉 AI 구독 파트너</h3>
         <p>삼성스토어 시흥은 삼성전자로부터 위촉받은 <b>삼성 AI 구독 파트너 인증점</b>이자 <b>삼성전자 B2B AI 구독 파트너</b>입니다. 화면 맨 위 띠의 [위촉장 보기]에서 위촉장을 직접 확인하실 수 있습니다. 가정에서 쓰는 가전 구독은 물론, 사무실·매장·숙박시설처럼 여러 대가 필요한 사업자 구독까지 한 매장에서 상담해 드립니다.</p>
         <h3>구독센터에서 확인할 수 있는 것</h3>
         <ul>
@@ -445,7 +471,7 @@ def page_list():
     """페이지 목록 (파일, 제목, 설명, 키워드, 본문, 종류, 품목키) — build_gudok.py 도 이 목록을 쓴다"""
     files = []
     t = '삼성스토어 구독센터 시흥 | 온라인·매장 삼성 가전 구독 상담 · 구독 가격 비교 · 삼성 AI 구독클럽'
-    d = '온라인으로도, 매장에서도 상담받는 삼성 구독센터 시흥(삼성스토어 시흥). 냉장고·AI 콤보·에어컨·TV·정수기 등 1,000여 개 삼성 가전 구독 모델의 월 구독료와 제휴카드·선납 할인을 한 번에 비교하세요. 삼성전자 공식 위촉 AI 구독 파트너 삼성스토어 시흥 상담 031-8042-3166.'
+    d = '온라인으로도, 매장에서도 상담받는 삼성 구독센터 시흥(삼성스토어 시흥). 냉장고·AI 콤보·에어컨·TV·정수기 등 1,000여 개 삼성 가전 구독 모델의 월 구독료와 제휴카드·선납 할인을 한 번에 비교하세요. 삼성전자 위촉 AI 구독 파트너 삼성스토어 시흥 상담 031-8042-3166.'
     k = '삼성 온라인 구독센터 시흥, 삼성 온라인 구독 센터 시흥, 시흥 삼성 구독센터, 삼성 구독센터 시흥, 삼성 온라인 구독센터, 삼성스토어 구독센터, 삼성스토어 구독, 삼성스토어 시흥 구독센터, 삼성 구독 가격, 삼성 가전 구독, 삼성 AI 구독클럽, 삼성 AI 콤보 구독, 가전 구독료 비교, 삼성스토어 시흥'
     files.append(('sub_home.html', t, d, k, home_body(), 'home', ''))
     for key, name, kw, lead, points, faq in PAGES:

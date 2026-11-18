@@ -384,10 +384,11 @@ window.SUB_SHOP_READY = true;
     var acts = medium === 'event';   // 이벤트 화면: 카드 아래 [담기] [상담 신청 →] (2026-11-11)
     return '<li class="ss-card' + (acts ? ' has-acts' : '') + (window.SUB_CART.has(r.model) ? ' in-cart' : '') + '"><a class="ss-card-link" href="' + esc(viewHref(r.model, medium)) + '" data-cta="view" data-model="' + esc(r.model) + '">' +
       /* 카드 머리 띠 (2026-11-17): 초록(일시불보다 저렴)·파랑(+구독료 지원)을 위에서부터 채운다 — 없는 줄은 빈칸 대신 같은 줄 카드들과 높이만 맞춘 연회색 머리 */
-      '<span class="ss-bands">' + (saveOf(r) ? '<span class="ss-save">일시불보다 <b class="ss-save-f">' + fmt(saveOf(r)) + '원</b><b class="ss-save-s">' + saveShort(saveOf(r)) + '</b> <i>더 </i>저렴</span>' : '') +
-      supAmtHtml(r) + '</span>' +
+      /* 2026-11-18: 띠는 사진 칸 아래쪽에 얹는다 — 카드 위 빈칸·줄 맞춤 없이 (사용자: 빈칸 없애) */
       (fam ? '<span class="ss-fam">색상 ' + fam.length + '종</span>' : '') +
-      '<span class="ss-img">' + supHtml(r, medium) + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
+      '<span class="ss-img">' + supHtml(r, medium) +
+      '<span class="ss-bands">' + (saveOf(r) ? '<span class="ss-save">일시불보다 <b class="ss-save-f">' + fmt(saveOf(r)) + '원</b><b class="ss-save-s">' + saveShort(saveOf(r)) + '</b> <i>더 </i>저렴</span>' : '') +
+      supAmtHtml(r) + '</span>' + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
         (r.imgRep ? '<span class="ss-imgnote">대표 이미지</span>' : '') : '<span class="ss-icon" aria-hidden="true">' + (p ? p.icon : '📦') + '</span>') + '</span>' +
       '<span class="ss-meta">' + esc(p ? p.name : IDX.cats[r.cat]) + (r.seg ? ' · ' + esc(segShort(r.seg)) : '') + '</span>' +
       '<strong class="ss-name">' + esc(displayName(r)) + '</strong>' +
@@ -580,24 +581,47 @@ window.SUB_SHOP_READY = true;
     window.addEventListener('scroll', function () { if (!tick) { tick = true; (window.requestAnimationFrame || setTimeout)(check); } }, { passive: true });
     check();
   }
+  /* 메뉴 (2026-11-18 고급 디자인) — PC: 구독 홈 | 구독 상품 ▾(품목 바둑판) | 이벤트 | 다품목 계산기 | 혜택·안내 ▾ | 상품 찾기
+     휴대폰: 드롭다운 대신 예전처럼 메뉴를 가로로 밀기 (.ss-m-only) + 아래 품목 줄 */
   function drawNav(el) {
     var cur = CFG.page === 'cat' || CFG.page === 'view' ? CFG.key : CFG.page;
-    var top = [['home', '구독 홈', LINK.home], ['event', '이벤트', LINK.event], ['bundle', '다품목 계산기', LINK.bundle, true], ['card', '카드 혜택', LINK.card], ['guide', '구독 안내', LINK.guide], ['find', '상품 찾기', LINK.find], ['b2b', '사업자 구독', LINK.b2b]];
     var hasTip = cur !== 'event' && (livePromos().length || liveMulti());
+    function link(t, cls) {
+      var n = t[3] ? window.SUB_CART.count() : 0;
+      var tip = t[0] === 'event' && hasTip;   // 혜택이 있을 때만 말풍선 (2026-11-11)
+      var c = [cls, tip ? 'ss-nav-ev' : ''].filter(Boolean).join(' ');
+      return '<a href="' + esc(t[2]) + '"' + (cur === t[0] ? ' aria-current="page"' : '') + (t[3] ? ' data-nav="bundle"' : '') + (c ? ' class="' + c + '"' : '') + '>' + t[1] + (n ? ' <b class="ss-nav-n">' + n + '</b>' : '') +
+        (tip ? '<span class="ss-nav-tip" aria-hidden="true">지원되는 혜택을 확인해보세요</span>' : '') + '</a>';
+    }
+    var info = [['card', '카드 혜택', LINK.card, 0, '💳', '제휴카드 청구할인 한눈에'], ['guide', '구독 안내', LINK.guide, 0, '📘', '약정·케어·선납 알아보기'], ['b2b', '사업자 구독', LINK.b2b, 0, '🏢', '사무실·매장·숙박시설']];
+    var isCat = PAGES.some(function (p) { return p.key === cur; }), isInfo = info.some(function (t) { return t[0] === cur; });
+    var mega = '<div class="ss-dd ss-dd-cats"><button type="button" class="ss-dd-btn" aria-expanded="false" aria-haspopup="true"' + (isCat ? ' aria-current="page"' : '') + '>구독 상품<i class="ss-dd-car" aria-hidden="true"></i></button>' +
+      '<div class="ss-dd-panel ss-dd-mega" role="menu"><div class="ss-dd-grid">' + PAGES.map(function (p) {
+        return '<a role="menuitem" href="' + esc(catHref(p.key)) + '"' + (cur === p.key ? ' aria-current="page"' : '') + '><span class="ss-dd-ic" aria-hidden="true">' + p.icon + '</span><span>' + esc(p.name) + (p.hot ? ' <em class="ss-dd-hot">HOT</em>' : '') + '</span></a>';
+      }).join('') + '</div><div class="ss-dd-foot"><a href="' + esc(LINK.find) + '">전체 상품 찾기 →</a><a href="' + esc(LINK.home) + '#price">월 구독료 가격대별 보기 →</a></div></div></div>';
+    var drop = '<div class="ss-dd ss-dd-info"><button type="button" class="ss-dd-btn" aria-expanded="false" aria-haspopup="true"' + (isInfo ? ' aria-current="page"' : '') + '>혜택·안내<i class="ss-dd-car" aria-hidden="true"></i></button>' +
+      '<div class="ss-dd-panel" role="menu">' + info.map(function (t) {
+        return '<a role="menuitem" href="' + esc(t[2]) + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '><span class="ss-dd-ic" aria-hidden="true">' + t[4] + '</span><span>' + t[1] + '<small>' + t[5] + '</small></span></a>';
+      }).join('') + '</div></div>';
     var h = '<nav class="ss-nav' + (hasTip ? ' has-tip' : '') + '" aria-label="구독센터 메뉴"><div class="ss-nav-top">' +
-      '<a class="ss-brand" href="' + esc(LINK.home) + '">삼성스토어 시흥 <b>구독센터</b></a>' +
-      '<div class="ss-nav-links">' + top.map(function (t) {
-        var n = t[3] ? window.SUB_CART.count() : 0;
-        var tip = t[0] === 'event' && cur !== 'event' && (livePromos().length || liveMulti());   // 혜택이 있을 때만 말풍선 (2026-11-11)
-        return '<a href="' + esc(t[2]) + '"' + (cur === t[0] ? ' aria-current="page"' : '') + (t[3] ? ' data-nav="bundle"' : '') + (tip ? ' class="ss-nav-ev"' : '') + '>' + t[1] + (n ? ' <b class="ss-nav-n">' + n + '</b>' : '') +
-          (tip ? '<span class="ss-nav-tip" aria-hidden="true">지원되는 혜택을 확인해보세요</span>' : '') + '</a>';
-      }).join('') + '</div>' +
+      '<a class="ss-brand" href="' + esc(LINK.home) + '"><span class="ss-brand-mk" aria-hidden="true"></span><span class="ss-brand-t"><span>삼성 <b>구독센터</b></span><small>삼성스토어 시흥</small></span></a>' +
+      '<div class="ss-nav-links">' + link(['home', '구독 홈', LINK.home]) + mega + link(['event', '이벤트', LINK.event]) + link(['bundle', '다품목 계산기', LINK.bundle, true]) + drop +
+      info.map(function (t) { return link(t, 'ss-m-only'); }).join('') + link(['find', '상품 찾기', LINK.find]) + '</div>' +
       '<a class="ss-nav-cta" href="' + esc(consultHref(null, 'nav')) + '" data-cta="consult">구독 상담 신청</a></div>' +
       '<div class="ss-nav-cats">' + PAGES.map(function (p) {
         return '<a href="' + esc(catHref(p.key)) + '"' + (cur === p.key ? ' aria-current="page"' : '') + (p.hot ? ' class="is-hot"' : '') + '>' + esc(p.name) + '</a>';
       }).join('') + '</div></nav>';
     el.innerHTML = h;
     watchNavStuck(el);
+    // 드롭다운 — 마우스는 올리면 열림(CSS :hover) · 누르거나 키보드면 열고 닫기 · 밖을 누르거나 Esc 면 닫기
+    [].forEach.call(el.querySelectorAll('.ss-dd'), function (dd) {
+      var btn = dd.querySelector('.ss-dd-btn');
+      function set(on) { dd.classList.toggle('is-open', on); btn.setAttribute('aria-expanded', on ? 'true' : 'false'); }
+      btn.addEventListener('click', function (e) { e.stopPropagation(); var on = !dd.classList.contains('is-open'); [].forEach.call(el.querySelectorAll('.ss-dd.is-open'), function (o) { if (o !== dd) { o.classList.remove('is-open'); o.querySelector('.ss-dd-btn').setAttribute('aria-expanded', 'false'); } }); set(on); });
+      dd.addEventListener('mouseleave', function () { set(false); });
+      dd.addEventListener('keydown', function (e) { if (e.key === 'Escape') { set(false); btn.focus(); } });
+    });
+    if (!drawNav.doc) { drawNav.doc = 1; document.addEventListener('click', function () { [].forEach.call(document.querySelectorAll('.ss-dd.is-open'), function (o) { o.classList.remove('is-open'); var b = o.querySelector('.ss-dd-btn'); if (b) b.setAttribute('aria-expanded', 'false'); }); }); }
     var on = el.querySelector('.ss-nav-cats [aria-current]');
     if (on && on.scrollIntoView && on.parentNode.scrollWidth > on.parentNode.clientWidth) on.parentNode.scrollLeft = on.offsetLeft - 16;
   }
@@ -765,7 +789,7 @@ window.SUB_SHOP_READY = true;
   var CERT_IMG = CFG.certImg || 'https://db.samsungat.co.kr/sdp/sub/img/partner_cert_2026.jpg';
   function drawTrust(el) {
     el.innerHTML = '<div class="ss-trust"><button type="button" class="ss-trust-img" data-cert aria-label="위촉장 크게 보기"><img src="' + esc(CERT_IMG) + '" alt="삼성전자 B2B AI 구독 파트너 위촉장 (2026년 9월 18일 삼성전자 한국총괄)" loading="lazy"></button>' +
-      '<div class="ss-trust-txt"><span class="ss-trust-badge">✔ 삼성전자 공식 위촉</span><strong>삼성전자 B2B AI 구독 파트너 · 구독 인증점</strong>' +
+      '<div class="ss-trust-txt"><span class="ss-trust-badge">✔ 삼성전자 위촉</span><strong>삼성전자 B2B AI 구독 파트너 · 구독 인증점</strong>' +
       '<p>삼성스토어 시흥(삼성앤텍)은 2026년 삼성전자 한국총괄로부터 <b>B2B AI 구독 파트너</b>로 위촉된 매장입니다. 가정 구독은 물론 사업자 구독도 같은 자리에서 상담해 드립니다.</p>' +
       '<button type="button" class="ss-trust-more" data-cert>위촉장 보기</button></div></div>';
   }
@@ -785,8 +809,8 @@ window.SUB_SHOP_READY = true;
     if (fresh) { bar = document.createElement('div'); bar.id = 'ssTrustBar'; bar.className = 'ss-trustbar'; }
     bar.innerHTML = '<button type="button" data-cert aria-label="삼성 AI 구독 파트너 인증점 위촉장 보기">' +
       '<img src="' + esc(CERT_IMG) + '" alt="" aria-hidden="true">' +
-      '<span class="ss-trustbar-badge">✔ 삼성전자 공식 위촉</span>' +
-      '<span class="ss-trustbar-txt"><b>삼성 AI 구독 파트너 인증점</b><em> · 삼성스토어 시흥</em></span>' +
+      '<span class="ss-trustbar-badge">✔ 삼성전자 위촉</span>' +
+      '<span class="ss-trustbar-txt"><b>삼성 AI 구독 파트너</b><em> · 삼성 구독센터 · 삼성스토어 시흥</em></span>' +
       '<span class="ss-trustbar-more">위촉장 보기 ›</span></button>';
     bar.addEventListener('click', function () { openCert(); });
     if (!fresh) return;
@@ -972,8 +996,21 @@ window.SUB_SHOP_READY = true;
     else if (t.hasAttribute('data-evmore')) { EV.more += 12; draw(['event']); }
     else if (t.hasAttribute('data-cta')) track('ss_click', { ss_cta: t.getAttribute('data-cta'), ss_model: t.getAttribute('data-model') || '' });
   }
+  function reveal() {
+    if (!('IntersectionObserver' in window) || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var els = [].slice.call(document.querySelectorAll('.ss-h2>section.ss-sec, .ss-lx-pillars>li, .ss-benefits>li, .ss-steps>li'));
+    if (!els.length) return;
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+    var vh = window.innerHeight || 800;
+    els.forEach(function (el, k) {
+      if (el.getBoundingClientRect().top < vh) return;   // 처음 화면에 보이는 것은 그대로
+      el.classList.add('lx-rv'); if (el.tagName === 'LI') el.style.transitionDelay = (Array.prototype.indexOf.call(el.parentNode.children, el) % 4) * 70 + 'ms';
+      io.observe(el);
+    });
+  }
   function start() {
     drawTrustBar();
+    try { document.documentElement.classList.add('ss-lux'); } catch (e) {}
     if (navOnly) {
       drawNav(root);
       ensureCards(function () {
@@ -1043,8 +1080,8 @@ window.SUB_SHOP_READY = true;
       sl.addEventListener('scroll', function () { if (sl.classList.contains('is-anim') || drag) return; clearTimeout(st); st = setTimeout(function () { var i = Math.round(sl.scrollLeft / w()); if (i !== cur) { cur = i; last = Date.now(); paint(); } }, 80); }, { passive: true });
       // 마우스로 끌어 넘기기 (손가락은 브라우저 가로 스크롤 그대로) — 끌었으면 링크 클릭은 막는다
       var drag = null, moved = false;
-      sl.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse' || e.button !== 0) return; drag = { x: e.clientX, left: sl.scrollLeft }; moved = false; sl.classList.add('is-drag'); });
-      window.addEventListener('pointermove', function (e) { if (!drag) return; var dx = e.clientX - drag.x; if (Math.abs(dx) > 5) moved = true; sl.scrollLeft = drag.left - dx; });
+      sl.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse' || e.button !== 0) return; drag = { x: e.clientX, left: sl.scrollLeft }; moved = false; });   // is-drag 는 실제로 끌 때만 — 누르자마자 붙이면 링크가 안 눌림 (2026-11-18)
+      window.addEventListener('pointermove', function (e) { if (!drag) return; var dx = e.clientX - drag.x; if (Math.abs(dx) > 5 && !moved) { moved = true; sl.classList.add('is-drag'); } if (!moved) return; sl.scrollLeft = drag.left - dx; });
       window.addEventListener('pointerup', function (e) {
         if (!drag) return; var dx = e.clientX - drag.x; drag = null; sl.classList.remove('is-drag');
         if (moved) go(Math.abs(dx) > w() * 0.12 ? cur + (dx < 0 ? 1 : -1) : cur);
@@ -1059,6 +1096,7 @@ window.SUB_SHOP_READY = true;
       window.addEventListener('resize', function () { go(cur, true); });
       paint(); setInterval(function () { if (!hold && !drag && !document.hidden && Date.now() - last > 4800) go(cur + 1); }, 500);
     });
+    setTimeout(reveal, 60);   // 고급 디자인 스크롤 등장 (2026-11-18)
     // 홈은 가격대별 보기를 품목별 가격보다 먼저 (2026-11-03 · 고도몰에 올린 html 이 예전 순서여도 맞춘다)
     var secB = document.querySelector('[data-ss="bands"]'), secC = document.querySelector('[data-ss="cats"]');
     secB = secB && secB.closest ? secB.closest('section') : null; secC = secC && secC.closest ? secC.closest('section') : null;

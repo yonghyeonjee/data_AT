@@ -195,7 +195,7 @@ def body_html(M, i, title, links, static_href):
     head = ('<div class="sv-head"><div class="sv-img">%s</div><div class="sv-info">'
             '<p class="sv-cat">%s%s</p><h1 class="sv-title">%s</h1><p class="sv-model">모델명 <b>%s</b></p>'
             '<p class="sv-price"><small>구독 월</small> %s<small>원~</small></p>'
-            '<p class="sv-badge">삼성전자 AI 구독클럽 공식 파트너 · 무상수리 포함</p></div></div>') % (
+            '<p class="sv-badge">삼성 구독센터 · 무상수리 포함</p></div></div>') % (
         img, e(i['cat_name']), (' · ' + e(seg_label(i['seg']))) if i['seg'] else '', e(title), e(i['model']), fmt(i['min']))
     years = M.year_rows(i)
     table = ''
@@ -284,4 +284,4 @@ def store_ld(site, home):
             'telephone': s['tel'], 'image': 'https://db.samsungat.co.kr/sdp/sub/img/partner_cert_2026.jpg',
             'address': {'@type': 'PostalAddress', 'streetAddress': s['street'], 'addressLocality': s['locality'], 'addressRegion': s['region'], 'addressCountry': s['country']},
             'openingHours': s['hours'], 'brand': {'@type': 'Brand', 'name': 'Samsung'},
-            'description': '삼성전자 B2B AI 구독 파트너 · 삼성 AI 구독클럽 공식 파트너 매장. 가정·사업자 가전 구독 상담.'}
+            'description': '삼성전자 B2B AI 구독 파트너 · 삼성 AI 구독클럽 파트너 매장. 가정·사업자 가전 구독 상담.'}

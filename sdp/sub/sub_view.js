@@ -137,7 +137,7 @@ window.SUB_VIEW_READY = true;   // sub_view.html 이 데이터센터에서 이 �
       '<h1 class="sv-title">' + esc(title) + '</h1>' +
       '<p class="sv-model">모델명 <b>' + esc(model) + '</b></p>' +
       '<p class="sv-price"><small>구독 월</small> ' + fmt(entry[1]) + '<small>원~</small></p>' +
-      '<p class="sv-badge">삼성전자 AI 구독클럽 공식 파트너 · 무상수리 포함</p>' +
+      '<p class="sv-badge">삼성 구독센터 · 무상수리 포함</p>' +
       (subOnly ? '<p class="sv-subonly">구독 전용 모델 · 일시불 판매 없이 구독으로만 이용할 수 있는 색상·모델입니다</p>' :
         goods ? '<a class="sv-goods" data-cta="goods" href="' + esc(lumpHref()) + '">시흥몰 가격 확인하기' + (goods[3] > 0 ? ' · 일시불 ' + fmt(goods[3]) + '원' : '') + '</a>' : '') +
       '<button type="button" class="sv-bundle' + (cartHas(model) ? ' is-on' : '') + '" data-bundle="' + esc(model) + '">' + (cartHas(model) ? '묶음 계산기에 담김 ✓ · 계산하기' : '+ 다른 제품과 묶어 계산하기') + '</button>' +
