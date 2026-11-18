@@ -26,6 +26,7 @@ h1,h2,h3{margin:0}
 .top .brand{font-weight:900;font-size:15px;white-space:nowrap}
 .top .qno{font-size:12px;background:rgba(255,255,255,.15);border-radius:99px;padding:2px 10px;white-space:nowrap}
 .top .me{font-size:12px;opacity:.85;white-space:nowrap}
+.top .sess{border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer} .top .sess.warn{background:#FFF3D6;color:#7A4B00;border-color:#E9B949} .top .sess.late{background:#FDE7E7;color:#B3261E;border-color:#E5B5B1}
 .top .sp{flex:1}
 .views{display:flex;background:rgba(255,255,255,.12);border-radius:10px;padding:3px;gap:2px}
 .views button{border:0;background:transparent;color:#fff;opacity:.75;padding:6px 12px;border-radius:8px;font-weight:700;white-space:nowrap;min-height:34px}
@@ -289,7 +290,7 @@ table.xl.simple td.md{padding-top:8px;padding-bottom:8px}
 .hint{color:#5B6472}
 #v-edit .card{border:1px solid #C5D0E0;box-shadow:0 1px 4px rgba(15,23,42,.07);overflow:hidden}
 #v-edit .card>h2{margin:-14px -14px 12px;padding:11px 14px;background:#E9EFFA;border-bottom:1px solid #C5D0E0;font-size:16px;color:#14213D}
-#v-edit .card.addcard{overflow:visible;position:relative;z-index:30} #v-edit .card.addcard>h2{border-radius:11px 11px 0 0}   /* 품목 검색 목록이 카드 밖으로 펼쳐지게 (2026-11-17) */
+#v-edit .card.addcard{overflow:visible;position:relative;z-index:7} #v-edit .card.addcard>h2{border-radius:11px 11px 0 0}   /* 품목 검색 목록이 카드 밖으로 펼쳐지게 (2026-11-17) */
 /* 고객 화면에도 나오는 금액 줄 — 보라 테두리 (2026-11-17) */
 .cbx .kv.cs{box-shadow:inset 4px 0 0 #7C3AED;background:rgba(124,58,237,.07);border-radius:6px} .cbx.all .kv.cs{box-shadow:none;outline:2px solid #C4B5FD;outline-offset:2px;background:transparent}
 .cslg{display:inline-block;font-size:11.5px;font-weight:700;color:#5B21B6;background:rgba(124,58,237,.09);box-shadow:inset 4px 0 0 #7C3AED;border-radius:5px;padding:1px 7px 1px 10px;margin-left:6px;vertical-align:1px}
@@ -411,6 +412,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <span class="brand">삼성스토어 시흥 · 상담 견적</span>
   <span class="qno" id="qno">새 견적</span>
   <span class="me" id="meLbl"></span>
+  <button type="button" class="sess hidden" id="sessPill" onclick="sessExtend()" title="로그인 남은 시간 · 누르면 1시간 연장">⏱ <span id="sessLeft">--:--</span> 연장</button>
   <div class="kinds" id="ckind" role="group" aria-label="상담 종류"><button data-k="일반">일반</button><button data-k="특수">특수</button></div>
   <div class="kinds hidden" id="ctype" role="group" aria-label="특수 종류"><button data-t="혼수">혼수</button><button data-t="입주">입주</button><button data-t="이사">이사</button></div>
   <span class="sp"></span>
@@ -777,7 +779,13 @@ function openDisplay(){ const w=window.open(location.pathname+'?display=1','quot
 function postDisplay(){ if(DISP||!BC) return; try{ BC.postMessage(SHOWQ? {t:'show', html:showHtmlForCust()} : {t:'guide', name:Q.cust.name||'', me:ME||''}); }catch(e){} }
 function showHtmlForCust(){ const c=$('v-show').cloneNode(true); c.querySelectorAll('.noc').forEach(x=>x.remove()); return c.innerHTML; }
 /* 고객 화면 창을 맨 앞으로 (2026-11-17) — [고객 화면 띄우기] 처럼 [보여주기]·[안내로 돌리기] 를 누를 때도. 창을 다시 찾을 때는 이름(quote_cust)으로 */
-function raiseDisp(){ try{ if(!DWIN||DWIN.closed){ const w=window.open('','quote_cust'); if(!w) return; if(String(w.location.href)==='about:blank') w.location.replace(location.pathname+'?display=1'); DWIN=w; } DWIN.focus(); }catch(e){} }
+/* 고객 창을 맨 앞으로 (2026-11-18) — 이미 떠 있는 고객 창만 앞으로 · 새 창은 절대 안 띄움(닫혀 있으면 안내만).
+   focus() 만으로는 크롬이 다른 창을 안 올려서, 같은 이름 창에 #만 바꾼 주소로 window.open → 다시 읽지 않고 창만 앞으로 */
+function raiseDisp(){ try{ let w=DWIN&&!DWIN.closed?DWIN:null;
+  if(!w){ const f=window.open('','quote_cust'); if(!f) return; let blank=false; try{ blank=String(f.location.href)==='about:blank'; }catch(e){}
+    if(blank){ f.close(); toast('고객 화면이 닫혀 있습니다 — [고객 화면 띄우기]를 눌러 주세요'); return; } w=DWIN=f; }
+  const g=window.open(location.pathname+'?display=1#f'+Date.now(),'quote_cust'); if(g&&g!==w){ try{ g.close(); }catch(e){} }
+  try{ w.focus(); }catch(e){} }catch(e){} }
 function toggleShowQ(on){ SHOWQ=on==null?!SHOWQ:!!on; if(on==null) raiseDisp(); const b=$('btnShowQ'); if(b){ b.classList.remove('hidden'); b.classList.toggle('pri',!SHOWQ); b.textContent=SHOWQ?'고객 화면 → 안내로 돌리기':'고객 화면에 견적 보여주기 ▶'; }
   postDisplay(); if(on==null) toast(SHOWQ?'고객 화면에 견적을 띄웠습니다 (상품권·기타 혜택은 빠집니다)':'고객 화면을 안내 화면으로 돌렸습니다'); }
 /* [견적서] 탭: 구독 견적서(/quote/sheet/ — 시흥몰 구독 견적서와 같은 화면·기능)를 ?embed=1 로 띄우고, 저장하지 않은 지금 견적을 postMessage 로 넘긴다 (2026-11-17 · 전에는 q/ 미리보기)
@@ -796,12 +804,27 @@ function prefillModels(){ bindBundlePaste(); let bm=[]; if(P.get('items')){ cons
   ms.forEach(m=>{ if(Q.items.some(x=>x.m===m)) return; if(IDX&&IDX.m&&IDX.m[m]) addModel(m); else if(priceOf(m)) addModel(m,'lump'); else addFree(m); });
   if(ms.length) toast('문의하신 모델 '+ms.length+'개를 담았습니다'); }
 
+/* 로그인 남은 시간 (2026-11-18) — 담당자 화면과 같은 규칙: 로그인 60분 · 5분 전 알림 · [⏱ 연장] 1시간 · 담당자 화면과 같은 저장값(dc_session_exp)이라 어느 쪽에서 연장해도 같이 맞춰진다 */
+let SESS_EXP=0, SESS_T=null, SESS_WARNED=false; try{ SESS_EXP=Number(localStorage.getItem('dc_session_exp')||0); }catch(e){}
+function sessExpSet(v){ SESS_EXP=v?new Date(v).getTime():0; try{ if(SESS_EXP) localStorage.setItem('dc_session_exp',String(SESS_EXP)); else localStorage.removeItem('dc_session_exp'); }catch(e){} sessTick(); }
+function sessTick(){ clearTimeout(SESS_T); const pill=$('sessPill'); if(!pill) return;
+  if(DISP||!SESSION||!SESS_EXP){ pill.classList.add('hidden'); return; }
+  const left=SESS_EXP-Date.now();
+  if(left<=0){ pill.classList.add('hidden'); SESSION=''; SESS_EXP=0; showLogin('로그인한 지 1시간이 지나 로그아웃되었습니다. 이름과 비밀번호를 다시 입력하세요'); return; }
+  const m=Math.floor(left/60e3), sec=Math.floor(left%60e3/1e3); pill.classList.remove('hidden');
+  $('sessLeft').textContent=m+':'+String(sec).padStart(2,'0'); pill.classList.toggle('warn',left<=5*60e3&&left>60e3); pill.classList.toggle('late',left<=60e3);
+  if(left<=5*60e3&&!SESS_WARNED){ SESS_WARNED=true; toast('로그인이 '+(m+1)+'분 뒤 끝납니다 — 위의 ⏱ 연장을 누르세요'); }
+  if(left>5*60e3) SESS_WARNED=false;
+  SESS_T=setTimeout(sessTick,1000); }
+async function sessExtend(){ try{ const r=await rpc('fn_store_extend',{}); sessExpSet(r&&r.expires_at); SESS_WARNED=false; toast('1시간 연장했습니다'); }catch(e){ toast(e.message); } }
+async function sessSync(){ if(!SESSION) return; try{ const r=await rpc('fn_store_session',{}); if(r&&r.expires_at) sessExpSet(r.expires_at); }catch(e){} }
+window.addEventListener('storage',e=>{ if(e.key==='dc_session_exp'){ SESS_EXP=Number(e.newValue||0); sessTick(); } if(e.key==='dc_session'&&e.newValue){ SESSION=e.newValue; } });
 async function auth(){
-  try{ const r=await rpc('fn_quote_page_me',{p_code:CODE||null}); if(r&&r.ok){ ME=r.me||ME||localStorage.getItem('dc_login_name')||''; $('meLbl').textContent=ME?ME+' 프로':'(코드 접속)'; if(r.by==='session'&&!tabOpen()) showPin(); return true; } }catch(e){}
+  try{ const r=await rpc('fn_quote_page_me',{p_code:CODE||null}); if(r&&r.ok){ ME=r.me||ME||localStorage.getItem('dc_login_name')||''; $('meLbl').textContent=ME?ME+' 프로':'(코드 접속)'; if(r.by==='session'&&!tabOpen()) showPin(); if(r.by==='session') sessSync(); return true; } }catch(e){}
   showLogin(''); return false;
 }
 /* 담당자 확인 (2026-11-10) — 담당자 화면(store.html)과 같은 규칙: 로그인은 60분 유지(core.app_setting store_session_min) · 그 안에 이 창을 새로 열면 휴대폰 뒷번호 4자리만(fn_store_unlock) · 이 탭에서 한 번 확인하면 sessionStorage st_open 으로 다시 묻지 않는다 · 입력 칸은 Enter 로 넘어간다 */
-try{ if(window.opener) window.opener=null; }catch(e){}   // 담당자 화면이 이어서 연 창 — 확인 상태(st_open)만 물려받고 연결은 끊는다 (2026-11-12)
+try{ if(window.opener&&!/[?&]display=1/.test(location.search)) window.opener=null; }catch(e){}   // 고객 창은 연결 유지 — 끊으면 같은 이름으로 못 찾아 창이 하나 더 뜬다   // 담당자 화면이 이어서 연 창 — 확인 상태(st_open)만 물려받고 연결은 끊는다 (2026-11-12)
 function tabOpen(){ try{ return sessionStorage.getItem('st_open')==='1'; }catch(e){ return false; } }
 function tabOpenSet(){ try{ sessionStorage.setItem('st_open','1'); }catch(e){} }
 function loginMode(pin){ const d=$('loginDlg'); d.dataset.mode=pin?'pin':'full'; d.classList.toggle('solid',!!pin); $('l_full').classList.toggle('hidden',!!pin); $('l_pinBox').classList.toggle('hidden',!pin); $('l_alt').classList.toggle('hidden',!pin); $('l_codeBox').classList.toggle('hidden',!!pin); $('l_btn').textContent=pin?'확인':'들어가기'; $('l_err').classList.add('hidden'); }
@@ -813,7 +836,7 @@ async function doUnlock(){ const v=$('l_pin').value.replace(/\D/g,''), err=m=>{ 
   try{ const {data,error}=await sb.rpc('fn_store_unlock',{p_last4:v});
     if(error){ const m=String(error.message||'').replace(/^.*?: /,''); if(/\[RELOGIN\]/.test(m)){ SESSION=''; showLogin(m.replace(/^.*\[RELOGIN\]\s*/,'')); } else err(m); return; }
     if(!data||!data.ok){ if(data&&(data.relogin||data.no_mobile)){ if(data.relogin) SESSION=''; showLogin(data.msg||'이름과 비밀번호로 다시 들어가 주세요'); } else err((data&&data.msg)||'맞지 않습니다'); return; }
-    tabOpenSet(); $('loginDlg').classList.add('hidden'); toast((ME?ME+'님, ':'')+'확인됐습니다'); resumePend(); }
+    tabOpenSet(); sessSync(); $('loginDlg').classList.add('hidden'); toast((ME?ME+'님, ':'')+'확인됐습니다'); resumePend(); }
   catch(e){ err(e.message); }
   finally{ UL_BUSY=false; $('l_btn').disabled=false; } }
 function bindLoginKeys(){ const on=(id,fn)=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); fn(); } });
@@ -824,7 +847,7 @@ function showLogin(msg){ loginMode(false); setTimeout(()=>($('l_name').value?$('
 async function doLogin(){
   const v=$('l_name').value.trim(), pw=$('l_pass').value; if(!v||!pw) return;
   $('l_btn').disabled=true; $('l_err').classList.add('hidden');
-  try{ const a=await rpc('fn_store_login',{p_name:v,p_pass:pw}); SESSION=a.token||''; try{ localStorage.setItem('dc_session',SESSION); localStorage.setItem('dc_login_name',v); }catch(e){}
+  try{ const a=await rpc('fn_store_login',{p_name:v,p_pass:pw}); SESSION=a.token||''; sessExpSet(a.expires_at); try{ localStorage.setItem('dc_session',SESSION); localStorage.setItem('dc_login_name',v); }catch(e){}
     ME=v; $('meLbl').textContent=ME+' 프로'; tabOpenSet(); $('l_pass').value=''; $('loginDlg').classList.add('hidden'); render(); resumePend(); }
   catch(e){ $('l_err').textContent=e.message; $('l_err').classList.remove('hidden'); }
   $('l_btn').disabled=false;
