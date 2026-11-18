@@ -1080,8 +1080,8 @@ window.SUB_SHOP_READY = true;
       sl.addEventListener('scroll', function () { if (sl.classList.contains('is-anim') || drag) return; clearTimeout(st); st = setTimeout(function () { var i = Math.round(sl.scrollLeft / w()); if (i !== cur) { cur = i; last = Date.now(); paint(); } }, 80); }, { passive: true });
       // 마우스로 끌어 넘기기 (손가락은 브라우저 가로 스크롤 그대로) — 끌었으면 링크 클릭은 막는다
       var drag = null, moved = false;
-      sl.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse' || e.button !== 0) return; drag = { x: e.clientX, left: sl.scrollLeft }; moved = false; sl.classList.add('is-drag'); });
-      window.addEventListener('pointermove', function (e) { if (!drag) return; var dx = e.clientX - drag.x; if (Math.abs(dx) > 5) moved = true; sl.scrollLeft = drag.left - dx; });
+      sl.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse' || e.button !== 0) return; drag = { x: e.clientX, left: sl.scrollLeft }; moved = false; });   // is-drag 는 실제로 끌 때만 — 누르자마자 붙이면 링크가 안 눌림 (2026-11-18)
+      window.addEventListener('pointermove', function (e) { if (!drag) return; var dx = e.clientX - drag.x; if (Math.abs(dx) > 5 && !moved) { moved = true; sl.classList.add('is-drag'); } if (!moved) return; sl.scrollLeft = drag.left - dx; });
       window.addEventListener('pointerup', function (e) {
         if (!drag) return; var dx = e.clientX - drag.x; drag = null; sl.classList.remove('is-drag');
         if (moved) go(Math.abs(dx) > w() * 0.12 ? cur + (dx < 0 ? 1 : -1) : cur);
