@@ -384,10 +384,11 @@ window.SUB_SHOP_READY = true;
     var acts = medium === 'event';   // 이벤트 화면: 카드 아래 [담기] [상담 신청 →] (2026-11-11)
     return '<li class="ss-card' + (acts ? ' has-acts' : '') + (window.SUB_CART.has(r.model) ? ' in-cart' : '') + '"><a class="ss-card-link" href="' + esc(viewHref(r.model, medium)) + '" data-cta="view" data-model="' + esc(r.model) + '">' +
       /* 카드 머리 띠 (2026-11-17): 초록(일시불보다 저렴)·파랑(+구독료 지원)을 위에서부터 채운다 — 없는 줄은 빈칸 대신 같은 줄 카드들과 높이만 맞춘 연회색 머리 */
-      '<span class="ss-bands">' + (saveOf(r) ? '<span class="ss-save">일시불보다 <b class="ss-save-f">' + fmt(saveOf(r)) + '원</b><b class="ss-save-s">' + saveShort(saveOf(r)) + '</b> <i>더 </i>저렴</span>' : '') +
-      supAmtHtml(r) + '</span>' +
+      /* 2026-11-18: 띠는 사진 칸 아래쪽에 얹는다 — 카드 위 빈칸·줄 맞춤 없이 (사용자: 빈칸 없애) */
       (fam ? '<span class="ss-fam">색상 ' + fam.length + '종</span>' : '') +
-      '<span class="ss-img">' + supHtml(r, medium) + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
+      '<span class="ss-img">' + supHtml(r, medium) +
+      '<span class="ss-bands">' + (saveOf(r) ? '<span class="ss-save">일시불보다 <b class="ss-save-f">' + fmt(saveOf(r)) + '원</b><b class="ss-save-s">' + saveShort(saveOf(r)) + '</b> <i>더 </i>저렴</span>' : '') +
+      supAmtHtml(r) + '</span>' + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
         (r.imgRep ? '<span class="ss-imgnote">대표 이미지</span>' : '') : '<span class="ss-icon" aria-hidden="true">' + (p ? p.icon : '📦') + '</span>') + '</span>' +
       '<span class="ss-meta">' + esc(p ? p.name : IDX.cats[r.cat]) + (r.seg ? ' · ' + esc(segShort(r.seg)) : '') + '</span>' +
       '<strong class="ss-name">' + esc(displayName(r)) + '</strong>' +
