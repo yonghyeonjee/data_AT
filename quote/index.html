@@ -140,6 +140,17 @@ details.more>summary small{font-weight:500;color:var(--mut);font-size:12px}
 .ptbox input#pointSup.auto{color:#1D4ED8;background:#F5F9FF}
 .ptbox .ptsum{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;border-top:1px dashed #E5C76B;padding-top:9px;font-size:14px;font-weight:800} .ptbox .ptsum b{font-size:19px;color:#B45309} .ptbox .ptsum .hint{font-size:12.5px}
 #s_scn:empty{display:none} #s_scn{margin-top:14px} #s_scn table.scn{font-size:14.5px} #s_scn table.scn td,#s_scn table.scn th{padding:9px 10px} #s_scn h2 small{font-weight:600;color:var(--mut);font-size:12.5px}
+#t_scn{border:2px solid #7C3AED;box-shadow:0 2px 10px rgba(124,58,237,.10)}
+#t_scn .scnh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 10px;font-size:19px;font-weight:900;color:#5B21B6} #t_scn .scnh small{font-size:13px;font-weight:600;color:var(--mut)}
+#t_scn table.scn.mini{font-size:15px} #t_scn table.scn th{font-size:14px;padding:9px 10px} #t_scn table.scn td{padding:10px} #t_scn table.scn td.tot b{font-size:16.5px}
+#t_scn table.scn small{font-size:12.5px} #t_scn .scn-bar{font-size:14px} #t_scn .scn-bar select{font-size:14px;padding:6px 8px}
+#t_scn input.pick{width:22px;height:22px;accent-color:#7C3AED;cursor:pointer}
+#t_scn .scnfoot{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.btn.scndone{background:#7C3AED;border-color:#7C3AED;color:#fff;font-weight:800;font-size:15px;padding:9px 16px;min-height:42px} .btn.scndone:disabled{background:#C4B5FD;border-color:#C4B5FD;cursor:default}
+.btn.scnopen{background:#7C3AED;border-color:#7C3AED;color:#fff;font-weight:800;font-size:15px;padding:9px 16px;min-height:42px}
+.bd.low{background:#7C3AED;color:#fff;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:800;margin-left:4px}
+.chip.scngo{background:#7C3AED;border-color:#7C3AED;color:#fff;font-weight:800}
+#s_scn h2{color:#5B21B6}
 .custfind{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 2px} .custfind input{flex:1;min-width:200px} .custfind .lbl{margin:0}
 .cfrows{display:flex;flex-direction:column;gap:6px;margin-top:6px} .cfrow{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--paper)} .cfrow small{color:var(--mut)}
 .showlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 14px} .showlist label{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
@@ -474,7 +485,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     </div>
 
     <div class="card addcard">
-      <h2><span class="stepn">2</span>품목 담기 <small>모델명·제품명으로 찾기 · 구독센터 [담기]에서 가져오기</small><button type="button" class="chip psbtn" onclick="psOpen()" title="모델별 구독료 지원 개월 · 포인트 · 행사 기간 확인">구독료 지원 확인</button></h2>
+      <h2><span class="stepn">2</span>품목 담기 <small>모델명·제품명으로 찾기 · 구독센터 [담기]에서 가져오기</small><button type="button" class="chip psbtn" onclick="psOpen()" title="모델별 구독료 지원 개월 · 포인트 · 행사 기간 확인">구독료 지원 확인</button><button type="button" class="chip psbtn scngo" onclick="scnGo()" title="구독 · 일반 구매 조합별 총 지불 금액 비교 — 가장 싼 조합 찾기">💰 최적 가격 찾기</button></h2>
       <div class="add">
         <input id="q" placeholder="예: WD90H25AHS, AI 콤보, 83형" autocomplete="off">
         <button class="chip" onclick="importBundle()" title="구독센터 다품목 계산기 주소(bundle.html?items=…)를 붙여넣으면 모델·약정·케어·선납·카드까지 가져옵니다">구독센터에서 가져오기</button>
@@ -1343,10 +1354,10 @@ function supShow(){ const el=$('pointSup'); if(!el) return; const man=Q.cond.poi
   if(document.activeElement!==el) el.value=man?(supNow()||''):(SUP.auto||''); el.classList.toggle('auto',!man); $('supAuto').classList.toggle('hidden',!man||!SUP.auto);
   $('supHint').textContent = man? '직접 입력'+(SUP.auto?' · 자동 금액 '+won(SUP.auto):'')+' · 비우면 자동' : SUP.note || (SUP.rows.length? '자동 · '+SUP.rows.map(x=>x.txt+(x.amt?' = '+fmt(x.amt):'')).join(' · ') : '구독료 지원 대상 품목 없음 · 직접 입력 가능');
   $('ptTot').textContent=won(ptTot()); }
-/* 가격 조건 확인 — 상담사가 열어 두면 고객 화면에도 (2026-11-18 · 체크·[이 조합으로] 버튼 없이, 상품권·기타 혜택 뺀 고객 화면 기준 금액) */
-function custScn(){ if(!SCN_ON) return ''; const list=scenarios(); if(!list.length) return ''; const pk=cmpSel();
-  let sel=list.filter(r=>SCN_F===''||(SCN_F==='sel'?pk.indexOf(cmpKey(r))>=0:r.subN===+SCN_F)); if(!(SCN_ALL||SCN_F==='sel')) sel=sel.slice(0,5); if(!sel.length) return '';
-  return `<div class="card"><h2>가격 조건 비교 <small>구독 · 일반 구매 조합별 총 지불 금액 · 낮은 순</small></h2><div class="scn-wrap"><table class="scn mini"><thead><tr><th>구성</th><th>총 구독료 합계</th><th>총 지불 합계</th><th>월 납부 금액</th></tr></thead><tbody>${sel.map(r=>`<tr class="${r.cur?'cur':''}"><td class="l"><b>${esc(r.label)}</b><br><small>구독 ${r.subN}개 · 일반 ${r.lumpN}개${r.cur?' · 지금 견적':''}</small></td><td>${r.subN?won(r.S.total):'—'}</td><td class="tot">${r.noPrice?'—':`<b>${won(r.total)}</b>`}</td><td class="l m">${scnMon(r)}</td></tr>`).join('')}</tbody></table></div></div>`; }
+/* 최적 가격 찾기 → 고객 화면 (2026-11-18) — [선택 완료]로 고른 조합만 · 고른 게 없으면 상담사가 열어 둔 목록 · 체크·버튼 없이, 상품권·기타 혜택 뺀 고객 화면 기준 금액 */
+function custScn(){ const pk=cmpSel(); if(!pk.length&&!SCN_ON) return ''; const list=scenarios(); if(!list.length) return '';
+  let sel; if(pk.length) sel=list.filter(r=>pk.indexOf(cmpKey(r))>=0); else { sel=list.filter(r=>SCN_F===''||SCN_F==='sel'||r.subN===+SCN_F); if(!SCN_ALL) sel=sel.slice(0,5); } if(!sel.length) return '';
+  return `<div class="card"><h2>💰 최적 가격 비교 <small>구독 · 일반 구매 조합별 총 지불 금액 · 낮은 순</small></h2><div class="scn-wrap"><table class="scn mini"><thead><tr><th>구성</th><th>총 구독료 합계</th><th>총 지불 합계</th><th>월 납부 금액</th></tr></thead><tbody>${sel.map(r=>`<tr class="${r.cur?'cur':''}"><td class="l"><b>${esc(r.label)}</b><br><small>구독 ${r.subN}개 · 일반 ${r.lumpN}개${r.cur?' · 지금 견적':''}</small></td><td>${r.subN?won(r.S.total):'—'}</td><td class="tot">${r.noPrice?'—':`<b>${won(r.total)}</b>`}</td><td class="l m">${scnMon(r)}</td></tr>`).join('')}</tbody></table></div></div>`; }
 /* ═══ 구독료 지원 확인 ═══ */
 function psPromos(m){ const k=norm(m); return (POL.promos||[]).filter(p=>p&&p.months>0&&(p.models||[]).some(x=>norm(x)===k)).map(p=>{ const t=String(p.text||''), ym=/(\d)년 약정/.exec(t);
     return { name:t.split('·')[0].trim()||'구독료 지원', months:+p.months, years:ym?+ym[1]:0, from:p.from||'', to:p.to||'', on:!(p.from||p.to)||C.inPeriod(p), text:t, fixed:p.amounts&&p.amounts[k]!=null?+p.amounts[k]:null }; }).sort((a,b)=>a.months-b.months); }
@@ -1438,25 +1449,35 @@ function allLump(){ const base=Q.items.filter(it=>!it.hidden); if(!base.length) 
 /* 가격 조건 확인 (2026-11-17, 전 이름 여러 상황 비교) — 단품도 구독/일반 구매 비교 · 체크한 조합만 따로 보기 · 체크한 조합은 견적서(q.cmp)로 */
 function cmpKey(r){ return r.subMs.slice().sort().join(',')||'-'; }
 function cmpSel(){ return Array.isArray(Q.cond.cmpSel)?Q.cond.cmpSel:[]; }
-function cmpPick(k,on){ const a=cmpSel().filter(x=>x!==k); if(on) a.push(k); Q.cond.cmpSel=a; if(!a.length&&SCN_F==='sel') SCN_F=''; render(); }
+/* 체크는 고르기만 — [선택 완료 (견적서·고객 화면 반영)]를 눌러야 견적서(q.cmp)·고객 화면에 들어간다 (2026-11-18) */
+let SCN_PICK=null;
+function pickNow(){ return SCN_PICK||cmpSel(); }
+function pickDirty(){ if(!SCN_PICK) return false; const a=SCN_PICK.slice().sort().join('|'), b=cmpSel().slice().sort().join('|'); return a!==b; }
+function cmpPick(k,on){ const a=pickNow().filter(x=>x!==k); if(on) a.push(k); SCN_PICK=a; render(); }
+function scnDone(){ if(!SCN_PICK) return; Q.cond.cmpSel=SCN_PICK.slice(); SCN_PICK=null; if(!Q.cond.cmpSel.length&&SCN_F==='sel') SCN_F=''; render(); toast(Q.cond.cmpSel.length?'견적서·고객 화면에 '+Q.cond.cmpSel.length+'개 조합 반영':'견적서·고객 화면에서 비교 표를 뺐습니다'); }
+function scnGo(){ SCN_ON=true; render(); setTimeout(()=>{ try{ $('t_scn').scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} },30); }
 function cmpRow(r){ const t=scnMon(r).replace(/<br>/g,'\n').replace(/<[^>]+>/g,''); return { label:r.label, sub:'구독 '+r.subN+'개 · 일반 '+r.lumpN+'개', cur:!!r.cur, subTotal:r.subN?Math.round(r.S.total):0, total:r.noPrice?null:Math.round(r.total), mon:t }; }
 function cmpRows(){ const ks=cmpSel(); if(!ks.length) return []; return scenarios().filter(r=>ks.indexOf(cmpKey(r))>=0).map(cmpRow); }
 function applyScenario(i){ const r=SCN[i]; if(!r) return; r.items.forEach(x=>{ const it=Q.items.find(y=>y.m===x.m); if(it){ it.mode=x.mode; if(x.mode==='lump'&&!(+it.lump>0)) it.lump=x.lump; } }); render(); toast(r.label+' 조합으로 바꿨습니다'); }
 let SCN=[];
 /* 여러 상황 비교는 상담사가 원할 때만 (2026-11-10) — 기본은 닫힘 · 입력 화면에만 (2026-11-12 고객 화면에서 뺌) · 저장하지 않는다 */
 let SCN_ON=false;
-function toggleScn(){ SCN_ON=!SCN_ON; render(); }
-function scnBtn(){ return `<button type="button" class="btn sm noc" style="margin-top:8px" onclick="toggleScn()">${SCN_ON?'가격 조건 확인 닫기':'가격 조건 확인'}</button>`; }
+function toggleScn(){ SCN_ON=!SCN_ON; if(!SCN_ON) SCN_PICK=null; render(); }
+function scnBtn(){ if(!SCN_ON) return `<button type="button" class="btn scnopen noc" onclick="scnGo()">💰 최적 가격 찾기 열기</button>`;
+  const n=pickNow().length, d=pickDirty();
+  return `<div class="scnfoot noc"><button type="button" class="btn scndone" onclick="scnDone()" ${d?'':'disabled'}>✔ 선택 완료 (견적서·고객 화면 반영)${n?' · '+n+'개':''}</button>`
+    +`<span class="hint">${d?'체크를 바꿨습니다 — [선택 완료]를 눌러야 반영':cmpSel().length?'반영됨 · '+cmpSel().length+'개 조합':'비교할 조합 체크 후 [선택 완료]'}</span>`
+    +`<button type="button" class="btn sm" onclick="toggleScn()">닫기</button></div>`; }
 function scnMon(r){ const {S,L}=r; return r.lm&&r.sm? `1~${r.lm}개월 <b>${won(r.m1)}</b>`+(r.sm>r.lm?`<br>${r.lm+1}~${r.sm}개월 <b>${won(r.m2)}</b>`:'') : r.lm? `1~${r.lm}개월 <b>${won(L.per)}</b>` : r.sm? `1~${r.sm}개월 <b>${won(S.pay)}</b>` : L.now? `계약 시 <b>${won(L.now)}</b>` : '—'; }
 function scnPay(r){ return r.noPrice?`<span class="warn">일시불가 미입력 ${r.noPrice}개<br>입력해야 합계가 나옵니다</span>`:`<b>${won(r.total)}</b>`; }
 /* 표는 앞 5개만 · [자세히 보기] 로 전부 · 위 칸에서 '구독 n개 · 일반 m개' 조합만 골라 보기 (2026-11-12) */
 let SCN_ALL=false, SCN_F='';
-function scnMini(list){ SCN=list; const tot=list[0]?list[0].items.length:0, ks=[...new Set(list.map(r=>r.subN))].sort((a,b)=>a-b), pk=cmpSel(), nPk=list.filter(r=>pk.indexOf(cmpKey(r))>=0).length;
+function scnMini(list){ SCN=list; const tot=list[0]?list[0].items.length:0, ks=[...new Set(list.map(r=>r.subN))].sort((a,b)=>a-b), pk=pickNow(), lowK=(list.find(r=>!r.noPrice)||{}).subMs?cmpKey(list.find(r=>!r.noPrice)):'', nPk=list.filter(r=>pk.indexOf(cmpKey(r))>=0).length;
   if(SCN_F==='sel'&&!nPk) SCN_F=''; if(SCN_F!==''&&SCN_F!=='sel'&&ks.indexOf(+SCN_F)<0) SCN_F='';
   const sel=list.map((r,i)=>[r,i]).filter(x=>SCN_F===''||(SCN_F==='sel'?pk.indexOf(cmpKey(x[0]))>=0:x[0].subN===+SCN_F)), show=SCN_ALL||SCN_F==='sel'?sel:sel.slice(0,5);
   const opt=k=>{ const c=list.filter(r=>r.subN===k).length; return `<option value="${k}"${String(k)===String(SCN_F)?' selected':''}>${k===0?'전부 일반 구매':k===tot?'전부 구독':'구독 '+k+'개 · 일반 '+(tot-k)+'개'} (${c})</option>`; };
-  return `<div class="scn-bar"><label>조합 <select class="in" onchange="SCN_F=this.value; SCN_ALL=false; render()"><option value=""${SCN_F===''?' selected':''}>전체 조합 (${list.length})</option>${nPk?`<option value="sel"${SCN_F==='sel'?' selected':''}>체크한 조합만 (${nPk})</option>`:''}${ks.map(opt).join('')}</select></label><span class="hint">총 지불 합계가 낮은 순 · 체크한 조합은 견적서에 나갑니다</span></div>`
-   +`<div class="scn-wrap"><table class="scn mini"><thead><tr><th title="체크한 조합만 비교 · 견적서에 표로 나갑니다">견적서</th><th>구성</th><th>총 구독료 합계</th><th>총 지불 합계</th><th>월 납부 금액</th></tr></thead><tbody>${show.map(([r,i])=>{ const k=cmpKey(r); return `<tr class="${r.cur?'cur':''}"><td><input type="checkbox" class="noc" aria-label="견적서에 넣기" ${pk.indexOf(k)>=0?'checked':''} onchange="cmpPick('${esc(k)}',this.checked)" style="width:18px;height:18px"></td><td class="l"><b>${esc(r.label)}</b><br><small>구독 ${r.subN}개 · 일반 ${r.lumpN}개${r.cur?' · 지금 선택':''}</small>${r.cur?'':`<button class="chip noc" onclick="applyScenario(${i})">이 조합으로</button>`}</td><td>${r.subN?won(r.S.total):'—'}</td><td class="tot">${scnPay(r)}</td><td class="l m">${scnMon(r)}</td></tr>`; }).join('')}</tbody></table></div>`
+  return `<div class="scn-bar"><label>조합 <select class="in" onchange="SCN_F=this.value; SCN_ALL=false; render()"><option value=""${SCN_F===''?' selected':''}>전체 조합 (${list.length})</option>${nPk?`<option value="sel"${SCN_F==='sel'?' selected':''}>체크한 조합만 (${nPk})</option>`:''}${ks.map(opt).join('')}</select></label><span class="hint">총 지불 합계가 낮은 순 · 체크 후 [선택 완료]를 누르면 견적서·고객 화면에 나갑니다</span></div>`
+   +`<div class="scn-wrap"><table class="scn mini"><thead><tr><th title="체크 후 [선택 완료] — 견적서·고객 화면에 비교 표로 나갑니다">선택</th><th>구성</th><th>총 구독료 합계</th><th>총 지불 합계</th><th>월 납부 금액</th></tr></thead><tbody>${show.map(([r,i])=>{ const k=cmpKey(r); return `<tr class="${r.cur?'cur':''}"><td><input type="checkbox" class="noc pick" aria-label="비교 조합으로 고르기" ${pk.indexOf(k)>=0?'checked':''} onchange="cmpPick('${esc(k)}',this.checked)"></td><td class="l"><b>${esc(r.label)}</b>${k===lowK?'<span class="bd low">최저</span>':''}<br><small>구독 ${r.subN}개 · 일반 ${r.lumpN}개${r.cur?' · 지금 선택':''}</small>${r.cur?'':`<button class="chip noc" onclick="applyScenario(${i})">이 조합으로</button>`}</td><td>${r.subN?won(r.S.total):'—'}</td><td class="tot">${scnPay(r)}</td><td class="l m">${scnMon(r)}</td></tr>`; }).join('')}</tbody></table></div>`
    +(sel.length>5?`<button type="button" class="btn sm noc" style="margin-top:8px" onclick="SCN_ALL=!SCN_ALL; render()">${SCN_ALL?'앞 5개만 보기':'자세히 보기 (전체 '+sel.length+'개)'}</button> `:''); }
 /* ═══ 그리기 ═══ */
 let LAST=null;
@@ -1564,7 +1585,7 @@ function renderEdit({S,L}){
           <div class="mode">${it.noSub?'':`<button class="s ${isS?'on':''}" onclick="setItem(${i},'mode','sub')">구독</button>`}<button class="l ${isS?'':'on'}" onclick="setItem(${i},'mode','lump')">일반</button></div>
           ${isS&&info? `<div class="seg sm">${ys.map(y=>`<button class="${y===it.years?'on':''}" onclick="setItem(${i},'years',${y})">${y}년</button>`).join('')}</div>
                  <select class="care" aria-label="서비스 유형" title="서비스 유형" onchange="setItem(${i},'care',this.value)">${cares.map(k=>`<option value="${esc(k)}"${k===(it.care||r&&r.care)?' selected':''}>${esc(k)}</option>`).join('')}</select>` : ''}
-          ${isS?`<label class="hint" title="같은 제품을 일시불로 살 때의 결제가 — 가격 조건 확인(전부 일시불 등)에 씁니다. 시흥몰 판매가가 있으면 자동으로 채워집니다">일시불가 <input class="amt${+it.lump>0?'':' need'}" type="text" inputmode="numeric" placeholder="입력 필요" value="${+it.lump?fmt(+it.lump):''}" onchange="setItem(${i},'lump',+this.value.replace(/[^0-9]/g,'')||0)" aria-label="일시불가 (비교용)"></label>`
+          ${isS?`<label class="hint" title="같은 제품을 일시불로 살 때의 결제가 — 최적 가격 찾기(전부 일시불 등)에 씁니다. 시흥몰 판매가가 있으면 자동으로 채워집니다">일시불가 <input class="amt${+it.lump>0?'':' need'}" type="text" inputmode="numeric" placeholder="입력 필요" value="${+it.lump?fmt(+it.lump):''}" onchange="setItem(${i},'lump',+this.value.replace(/[^0-9]/g,'')||0)" aria-label="일시불가 (비교용)"></label>`
                :`<label class="hint">결제가 <input class="amt${+it.lump>0?'':' need'}" type="text" inputmode="numeric" placeholder="입력 필요" value="${+it.lump?fmt(+it.lump):''}" onchange="setItem(${i},'lump',+this.value.replace(/[^0-9]/g,'')||0)" aria-label="결제가"></label>`}
           ${isS&&info?ppSel(it,i,''):''}${!isS?lmSel(it,i,''):''}${cardSel(it,i,'')}
           <input class="note" placeholder="비고 (색상·설치 조건)" value="${esc(it.note)}" onchange="Q.items[${i}].note=this.value">
@@ -1635,7 +1656,7 @@ function renderEdit({S,L}){
   const _dk=document.activeElement&&$('t_detail').contains(document.activeElement)?document.activeElement.dataset.k:'';
   $('t_detail').innerHTML = (S.n||L.items.length)? d : '<span class="hint">품목을 담으면 혜택이 여기 나옵니다.</span>';
   if(_dk){ const e=$('t_detail').querySelector('[data-k="'+_dk+'"]'); if(e){ e.focus(); e.select(); } }
-  const sc=SCN_ON?scenarios():[], nCk=cmpSel().length; $('t_scn').innerHTML = Q.items.some(it=>!it.hidden&&INFO[it.m]) ? `<div class="k" style="margin:0 0 6px;font-weight:700">가격 조건 확인 <small class="hint">구독 · 일반 구매 조합별 총 지불 금액 · 단품도 · 열어 두면 고객 화면에도 나갑니다${nCk?' · 견적서에 '+nCk+'개 조합':''}</small></div>`+(SCN_ON?scnMini(sc):'')+scnBtn() : '';
+  const sc=SCN_ON?scenarios():[], nCk=cmpSel().length; $('t_scn').innerHTML = Q.items.some(it=>!it.hidden&&INFO[it.m]) ? `<div class="k scnh">💰 최적 가격 찾기 <small>구독 · 일반 구매 조합별 총 지불 금액 · 단품도${nCk?' · 견적서·고객 화면에 '+nCk+'개 조합 반영됨':''}</small></div>`+(SCN_ON?scnMini(sc):'')+scnBtn() : '';
 }
 /* 고객 화면 = 고객과 보기 + 모니터 2대의 고객 창. 상품권(품목·신세계)과 기타 혜택(매장 자체 혜택)은 빼고 다시 계산해서 보여 준다 */
 function renderShow(){ if(!LAST) return; HIDE=true; try{ LASTC=calcAll(); renderShow0(); } finally{ HIDE=false; } postDisplay(); }
