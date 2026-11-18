@@ -131,6 +131,9 @@ details.more>summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--b
 details.more>summary::-webkit-details-marker{display:none}
 details.more>summary::before{content:'＋';font-weight:900} details.more[open]>summary::before{content:'－'}
 details.more>summary small{font-weight:500;color:var(--mut);font-size:12px}
+.custfind{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 2px} .custfind input{flex:1;min-width:200px} .custfind .lbl{margin:0}
+.cfrows{display:flex;flex-direction:column;gap:6px;margin-top:6px} .cfrow{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--paper)} .cfrow small{color:var(--mut)}
+.showlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 14px} .showlist label{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
 .item .mid{display:contents}
 .item .im{grid-row:1/3} .item .nm{grid-column:2;grid-row:1} .item .md{grid-column:2;grid-row:2} .item .rt{grid-column:3;grid-row:1/3}
 .item .opts,.item .own{grid-column:1/-1} .item .opts{margin-top:0} .item{row-gap:4px}
@@ -444,10 +447,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <div class="fld"><label class="lbl" for="c_name">성명 *</label><input id="c_name" autocomplete="off" placeholder="고객 성명 (예: 홍길동)"></div>
         <div class="fld"><label class="lbl" for="c_tel">연락처 *</label><input id="c_tel" inputmode="tel" autocomplete="off" placeholder="휴대폰 번호 (예: 010-1234-5678)"></div>
       </div>
-      <details class="more" id="custMore"><summary>고객 정보 더 보기 <small>설치 주소 · 증빙 · 유효기한 · 생년월일 · 통신사 · 예식 일자 · 입주 일자 · 재상담 예약 · 세부 상담 내용</small></summary>
+      <div class="custfind"><span class="lbl">🔎 기존 고객 불러오기</span><input id="cf_q" type="search" enterkeyhint="search" autocomplete="off" placeholder="이름 또는 번호 뒷 4자리 (예: 홍길동 · 6000)"><button type="button" class="btn" id="cf_btn" onclick="custFind()">찾기</button></div>
+      <div class="cfrows" id="cf_rows"></div>
+      <details class="more" id="custMore"><summary>고객 정보 더 보기 <small>설치 주소 · 증빙 · 견적 일자 · 유효기간 · 생년월일 · 통신사 · 예식 일자 · 입주 일자 · 재상담 예약 · 세부 상담 내용</small></summary>
       <div class="cust" style="margin-top:10px">
         <div class="fld"><label class="lbl" for="c_addr">설치 주소</label><input id="c_addr" placeholder="설치 주소 (예: 시흥시 ○○로 12, 101동 1001호)"></div>
         <div class="fld"><label class="lbl" for="c_proof">증빙 (혼수·입주)</label><select id="c_proof"><option value="">-</option><option value="recv">접수</option><option value="supp">보완</option><option value="appr">승인</option></select></div>
+        <div class="fld"><label class="lbl" for="c_qdate">견적 일자</label><input id="c_qdate" type="date"></div>
+        <div class="fld"><label class="lbl" for="c_umode">견적 유효기간</label><select id="c_umode"><option value="none">기한 없음</option><option value="3">견적일 + 3일</option><option value="7">견적일 + 7일</option><option value="14">견적일 + 14일</option><option value="30">견적일 + 30일</option><option value="eom">해당 월 말일까지</option><option value="custom">직접 날짜 지정</option></select></div>
         <div class="fld"><label class="lbl" for="c_until">유효기한</label><input id="c_until" type="date"></div>
         <div class="fld"><label class="lbl" for="c_birth">생년월일</label><input id="c_birth" placeholder="1990.01.01"></div>
         <div class="fld"><label class="lbl" for="c_carrier">통신사</label><input id="c_carrier" placeholder="선택 입력"></div>
@@ -509,6 +516,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <div id="extraRows" style="flex:1;min-width:0"></div></div>
       <div class="row"><span class="lbl">네임카드</span>
         <select id="namecard"><option value="">(없음)</option></select></div>
+      </div></details>
+      <details class="more" id="showMore"><summary>👁 견적서 표시 항목 · 내 기본값 <small>숨긴 항목도 계산엔 반영</small></summary><div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+        <div class="showlist" id="showList"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn" onclick="presetSave()">💾 내 기본값 저장</button><span class="hint">표시 항목 · 구독 카드 · 선납 · 유효기간을 새 견적마다 미리 채웁니다 <span id="presetNow"></span></span></div>
       </div></details>
     </div>
     <div class="card" id="t_detail"></div>
@@ -802,7 +813,11 @@ let SHF_READY=false, SHF_SIG='';
 function sheetUrl(){ return location.pathname.replace(/quote\/(test\/)?(index\.html)?$/,'')+'quote/sheet/index.html?embed=1'; }
 function ensureSheetFrame(){ const f=$('sheetFrame'); if(!f||f.dataset.on) return; f.dataset.on='1'; f.src=sheetUrl(); }
 window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; const d=e.data||{}; if(d.t==='qready'&&e.source===($('sheetFrame')||{}).contentWindow){ SHF_READY=true; SHF_SIG=''; postSheet(); }
-  if(d.t==='sheetopt'&&d.d&&e.source===($('sheetFrame')||{}).contentWindow){ const v=JSON.stringify(d.d); if(v!==JSON.stringify(Q.cond.sheet||null)){ Q.cond.sheet=d.d; postSheet(true); try{ draftSave(); }catch(x){} } } });   // 견적서 탭에서 바꾼 설정 → 이 견적에 담음 (2026-11-18)
+  if(d.t==='sheetopt'&&d.d&&e.source===($('sheetFrame')||{}).contentWindow){ const o=(d.d.opt)||{}, c=(d.d.cust)||{}; let ch=false;
+    const so={ show:o.show, qrType:o.qrType, pointMode:o.pointMode, lumpSum:o.lumpSum }; if(JSON.stringify(so)!==JSON.stringify((Q.cond.sheet||{}).opt||null)){ Q.cond.sheet={opt:so}; ch=true; renderShowList(); }
+    if(c.date&&c.date!==qdateNow()){ Q.cond.qdate=c.date; ch=true; } if(c.untilMode&&(c.untilMode!==untilModeNow()||(c.until||'')!==(Q.cust.until||''))){ Q.cust.untilMode=c.untilMode; Q.cust.until=c.untilMode==='none'?'':(c.until||''); ch=true; }
+    if(o.namecardId!=null&&o.namecardId!==(Q.cond.namecardId||'')&&o.namecardId){ Q.cond.namecardId=o.namecardId; try{ $('namecard').value=o.namecardId; }catch(x){} ch=true; }
+    if(ch){ fillUntil(); postSheet(true); try{ draftSave(); }catch(x){} } } });   // 견적서 탭에서 바꾼 설정 → 이 견적에 담음 (2026-11-18)
 function postSheet(quiet){ const f=$('sheetFrame'); if(!f||!SHF_READY||!LAST||!f.contentWindow) return; try{ const {quote}=toQuoteJson(); const nc=(typeof NC!=='undefined'&&NC||[]).find(c=>c.id===Q.cond.namecardId)||null;
     const d={ ok:true, quote, no:Q.no||'', ver:Q.ver||0, name:Q.cust.name||'', counselor:nc?(nc.name||''):(ME||'') }, sig=JSON.stringify(d); if(sig===SHF_SIG) return; SHF_SIG=sig; if(quiet) return;   // quiet: 견적서 탭이 보낸 설정을 담기만 — 되돌려 보내 편집 중인 견적서를 덮지 않음
     f.contentWindow.postMessage({t:'quote', d}, location.origin); }catch(e){ console.warn('견적서 미리보기', e); } }
@@ -901,16 +916,61 @@ function bindInputs(){
   document.body.classList.add('v-edit');   // 처음은 입력 화면 — 좁은 화면의 아래 합계 띠가 이 표시를 본다
   const ct=$('ctype'); ct.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; Q.cust.type=b.dataset.t; syncKind(); render(); };
   $('ckind').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; Q.cust.type=b.dataset.k==='일반'?'일반':(Q.cust.type!=='일반'?Q.cust.type:(KIND_LAST||'혼수')); syncKind(); render(); };
-  ['c_name','c_tel','c_addr','c_memo','c_until','c_proof','c_birth','c_carrier','c_wedding','c_movein','c_revisit'].forEach(id=>$(id).addEventListener('input',()=>{ Q.cust.name=$('c_name').value.trim(); Q.cust.phone=$('c_tel').value.trim(); Q.cust.addr=$('c_addr').value.trim(); Q.cust.memo=$('c_memo').value; Q.cust.until=$('c_until').value; Q.cust.proof=$('c_proof').value;
+  ['c_name','c_tel','c_addr','c_memo','c_proof','c_birth','c_carrier','c_wedding','c_movein','c_revisit'].forEach(id=>$(id).addEventListener('input',()=>{ Q.cust.name=$('c_name').value.trim(); Q.cust.phone=$('c_tel').value.trim(); Q.cust.addr=$('c_addr').value.trim(); Q.cust.memo=$('c_memo').value; Q.cust.proof=$('c_proof').value;
     Q.cust.birth=$('c_birth').value.trim(); Q.cust.carrier=$('c_carrier').value.trim(); Q.cust.wedding=$('c_wedding').value.trim(); Q.cust.movein=$('c_movein').value.trim(); Q.cust.revisit=$('c_revisit').value.trim(); renderShow(); renderSheet(); }));
+  bindUntil(); renderShowList(); presetLbl();
   const q=$('q'); q.addEventListener('input',suggest); q.addEventListener('keydown',e=>{ if(e.key==='ArrowDown'||e.key==='ArrowUp'){ const bs=[...$('sug').querySelectorAll('button')]; if(bs.length&&!$('sug').classList.contains('hidden')){ e.preventDefault(); let k=bs.findIndex(b=>b.classList.contains('on')); k=(k+(e.key==='ArrowDown'?1:-1)+bs.length)%bs.length; bs.forEach((b,j)=>b.classList.toggle('on',j===k)); bs[k].scrollIntoView({block:'nearest'}); } }
     if(e.key==='Enter'){ const b=$('sug').querySelector('button.on')||$('sug').querySelector('button'); if(b) b.click(); } if(e.key==='Escape') $('sug').classList.add('hidden'); });
   document.addEventListener('click',e=>{ if(!e.target.closest('.add')) $('sug').classList.add('hidden'); });
 }
+/* ══ 기존 시흥몰 구독 견적서 기능 (2026-11-18) — 기존 고객 불러오기 · 견적 일자·유효기간 · 견적서 표시 항목 · 내 기본값 저장 ══ */
+const SHOW_ITEMS=[['payband','매달 내시는 금액 밴드 (상단 요약)'],['sub','구독료 할인 내역'],['multi','다품목 구독 할인'],['total','총 구독료 (기본가격)'],['realM','월 체감 구독료 (포인트 반영)'],['sumBox','총비용 비교표 (할인 내역 합계)'],['prepayLine','선납금 → 남은 월 납입 환산 표기']];
+function showDefault(){ return { total:true, sub:true, multi:true, sumBox:true, payband:true, realM:false, prepayLine:!!(LAST&&LAST.S&&LAST.S.preAmt>0) }; }
+function showNow(){ const o=Q.cond.sheet&&Q.cond.sheet.opt; return Object.assign(showDefault(), (o&&o.show)||{}); }
+function renderShowList(){ const b=$('showList'); if(!b) return; const S0=showNow();
+  b.innerHTML=SHOW_ITEMS.map(o=>`<label><input type="checkbox" data-show="${o[0]}"${S0[o[0]]?' checked':''}> ${o[1]}</label>`).join(''); }
+function showSet(k,on){ Q.cond.sheet=Q.cond.sheet||{}; Q.cond.sheet.opt=Q.cond.sheet.opt||{}; const S0=showNow(); S0[k]=!!on; Q.cond.sheet.opt.show=S0; renderSheet(); try{ draftSave(); }catch(e){} }
+/* 유효기간 — 견적서와 같은 규칙 (견적일 + n일 · 해당 월 말일 · 직접) */
+function untilCalc(mode,date){ const d=new Date((date||todayStr())+'T00:00:00'); if(isNaN(d)) return ''; if(mode==='eom') d.setMonth(d.getMonth()+1,0); else if(/^\d+$/.test(mode)) d.setDate(d.getDate()+(+mode)); else return '';
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function qdateNow(){ return Q.cond.qdate||Q.issuedAt&&String(Q.issuedAt).slice(0,10)||todayStr(); }
+function untilModeNow(){ return Q.cust.untilMode||(Q.cust.until?'custom':'none'); }
+function fillUntil(){ if(!$('c_umode')) return; $('c_qdate').value=qdateNow(); $('c_umode').value=untilModeNow(); $('c_until').value=Q.cust.until||''; $('c_until').disabled=untilModeNow()==='none'; }
+function bindUntil(){
+  $('c_qdate').addEventListener('change',()=>{ Q.cond.qdate=$('c_qdate').value||''; const m=untilModeNow(); if(m!=='none'&&m!=='custom') Q.cust.until=untilCalc(m,qdateNow()); fillUntil(); renderShow(); renderSheet(); });
+  $('c_umode').addEventListener('change',()=>{ const m=$('c_umode').value; Q.cust.untilMode=m; Q.cust.until=m==='none'?'':m==='custom'?(Q.cust.until||untilCalc('7',qdateNow())):untilCalc(m,qdateNow()); fillUntil(); renderShow(); renderSheet(); });
+  $('c_until').addEventListener('change',()=>{ Q.cust.until=$('c_until').value||''; Q.cust.untilMode=Q.cust.until?'custom':'none'; fillUntil(); });
+  $('showList').addEventListener('change',e=>{ const c=e.target.closest('[data-show]'); if(c) showSet(c.dataset.show,c.checked); });
+  $('cf_q').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); custFind(); } }); }
+/* 기존 고객 불러오기 — 견적서와 같은 RPC(fn_quote_page_customer) · 고객 칸만 채우고 상품·금액은 그대로 */
+let CF_ROWS=[];
+async function custFind(){ const q=$('cf_q').value.trim(), box=$('cf_rows'); if(q.length<2){ toast('두 글자 이상 넣어 주세요'); return; }
+  box.innerHTML='<div class="hint">찾는 중…</div>';
+  try{ const r=await rpc('fn_quote_page_customer',{p_code:CODE||null, p_q:q, p_limit:8}); if(!r||!r.ok) throw new Error((r&&r.error)||'불러오지 못했습니다'); CF_ROWS=r.rows||[];
+    box.innerHTML=CF_ROWS.length? CF_ROWS.map((x,i)=>{ const lq=x.last_quote||{}; return `<div class="cfrow"><div><b>${esc(x.name||'(이름 없음)')}</b> <small>${esc(x.phone||'')}${x.addr?' · '+esc(x.addr):''}${lq.no?' · 지난 견적 '+esc(lq.no):''}</small></div><button type="button" class="btn" onclick="custPick(${i})">불러오기</button></div>`; }).join('')
+      : `<div class="hint">${esc(r.note||'찾는 고객이 없습니다 — 새 고객으로 바로 적으세요')}</div>`; }
+  catch(e){ box.innerHTML=`<div class="warn">${esc(e.message||String(e))}</div>`; } }
+function custPick(i){ const x=CF_ROWS[i]; if(!x) return; const lq=x.last_quote||{};
+  Q.cust.name=x.name||Q.cust.name; if(x.phone) Q.cust.phone=x.phone; Q.cust.addr=x.addr||lq.addr||Q.cust.addr; Q.cust.birth=x.birth||lq.birth||Q.cust.birth;
+  Q.cust.carrier=lq.carrier||Q.cust.carrier; Q.cust.wedding=lq.wedding||Q.cust.wedding; Q.cust.movein=lq.movein||Q.cust.movein;
+  fillCust(); $('cf_rows').innerHTML=''; $('cf_q').value=''; render(); toast((x.name||'고객')+' 정보를 채웠습니다'+(lq.no?' (지난 견적 '+lq.no+' 기준)':'')+' — 상품·금액은 그대로'); }
+/* 내 기본값 — 담당자별(이 브라우저) · 새 견적을 열 때 표시 항목 · 구독 카드 · 선납 · 유효기간을 미리 채운다 */
+function presetKey(){ return 'dc_quote_preset_'+(ME||'default'); }
+function presetSave(){ const v={ show:showNow(), card:Q.cond.card||'', tier:Q.cond.tier||'', prepay:Q.cond.prepay, untilMode:untilModeNow(), at:Date.now() };
+  try{ localStorage.setItem(presetKey(), JSON.stringify(v)); localStorage.setItem('sh_quote_preset_default', JSON.stringify({ show:v.show, pointMode:'cash' })); }catch(e){}
+  presetLbl(); toast('내 기본값으로 저장했습니다'+(ME?' ('+ME+' 프로)':'')); }
+function presetGet(){ try{ return JSON.parse(localStorage.getItem(presetKey())||'null'); }catch(e){ return null; } }
+function presetLbl(){ const p=presetGet(), el=$('presetNow'); if(el) el.textContent=p?'· 저장됨 '+new Date(p.at).toLocaleDateString('ko-KR'):''; }
+function presetApply(){ const p=presetGet(); if(!p||Q.no) return;   // 새 견적이면(구독센터에서 담아 온 품목이 있어도) 적용
+  if(p.show){ Q.cond.sheet=Q.cond.sheet||{}; Q.cond.sheet.opt=Object.assign({}, Q.cond.sheet.opt||{}, {show:p.show}); }
+  if(p.card&&!Q.cond.card){ Q.cond.card=p.card; Q.cond.tier=p.tier||''; try{ $('subCard').value=Q.cond.card; fillTier(); }catch(e){} }
+  if(p.prepay!=null&&Q.cond.prepay==null){ Q.cond.prepay=p.prepay; try{ [...$('prepay').children].forEach(x=>x.classList.toggle('on',String(x.dataset.v)===String(Q.cond.prepay))); }catch(e){} }
+  if(p.untilMode&&p.untilMode!=='custom'&&!Q.cust.until){ Q.cust.untilMode=p.untilMode; Q.cust.until=p.untilMode==='none'?'':untilCalc(p.untilMode,qdateNow()); }
+  fillUntil(); renderShowList(); try{ render(); }catch(e){} }
 /* 상담 종류 (2026-11-10) — 맨 위에서 일반 / 특수 를 고르고, 특수면 혼수 · 입주 · 이사 중 하나를 고른다. 값은 예전 그대로 Q.cust.type 한 칸 */
 let KIND_LAST='';
 function syncKind(){ const t=Q.cust.type, sp=t!=='일반'; if(sp) KIND_LAST=t; $('ckind').dataset.t=sp?t:''; [...$('ckind').children].forEach(b=>b.classList.toggle('on',(b.dataset.k==='특수')===sp)); $('ctype').classList.toggle('hidden',!sp); [...$('ctype').children].forEach(b=>b.classList.toggle('on',b.dataset.t===t)); }
-function fillCust(){ syncKind(); $('c_name').value=Q.cust.name; $('c_tel').value=Q.cust.phone; $('c_addr').value=Q.cust.addr; $('c_memo').value=Q.cust.memo; $('c_until').value=Q.cust.until; $('c_proof').value=Q.cust.proof; ['birth','carrier','wedding','movein','revisit'].forEach(k=>$('c_'+k).value=Q.cust[k]||'');
+function fillCust(){ syncKind(); $('c_name').value=Q.cust.name; $('c_tel').value=Q.cust.phone; $('c_addr').value=Q.cust.addr; $('c_memo').value=Q.cust.memo; fillUntil(); $('c_proof').value=Q.cust.proof; ['birth','carrier','wedding','movein','revisit'].forEach(k=>$('c_'+k).value=Q.cust[k]||'');
   $('custMore').open=!!(Q.cust.addr||Q.cust.memo||Q.cust.proof||Q.cust.birth||Q.cust.carrier||Q.cust.wedding||Q.cust.movein||Q.cust.revisit); }   // 채워진 칸이 있으면 펼쳐서 보여 준다
 
 /* ═══ 모델 찾기 ═══ */
@@ -1451,6 +1511,7 @@ async function draftRestore(){ if(DRAFT_TRIED) return; DRAFT_TRIED=true;
         fillCust(); try{ $('subCard').value=Q.cond.card||''; fillTier(); [...$('prepay').children].forEach(x=>x.classList.toggle('on',String(x.dataset.v)===String(Q.cond.prepay))); $('pointCommon').value=Q.cond.pointCommon||''; renderExtra(); if($('namecard')) $('namecard').value=Q.cond.namecardId||'';
           if(LUMP) [...$('lumpKind').children].forEach(x=>x.classList.toggle('on',x.dataset.v===Q.cond.lumpKind)); [...$('cb').children].forEach(x=>x.classList.toggle('on',(x.dataset.v==='1')===!!Q.cond.cb)); [...$('arsBill').children].forEach(x=>x.classList.toggle('on',(x.dataset.v==='1')===!!Q.cond.arsBill)); if(typeof syncKind==='function') syncKind(); }catch(e){}
         await Promise.all(Q.items.map(it=>ensureInfo(it.m))); DRAFT_READY=true; render(); toast('새로고침 전 작성 내용 복원'); return; } } }catch(e){}
+  try{ presetApply(); }catch(e){}   // 새 견적이면 내 기본값 (2026-11-18)
   DRAFT_READY=true; }
 function renderEdit({S,L}){
   const box=$('items');
@@ -1650,15 +1711,14 @@ function toQuoteJson(){
   Q.items.filter(it=>it.hidden).forEach(it=>items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:(it.years||6)*12, monthly:0, care:it.care||'', note:it.note||'', hidden:true, auto:{total:true,card:true}, disc:{} }));
   const proof={recv:false,supp:false,appr:false}; if(Q.cust.proof) proof[Q.cust.proof]=true;
   const lump = L.items.length? { items:L.items.map(it=>({model:it.free?'':it.m, name:nameOf(it.m), amount:+it.lump||0, note:it.note||''})), kind:L.kind, kindLabel:((LUMP&&LUMP.cards[L.kind]||{}).label||L.kind)+(L.parts.length===1&&L.months?'':' · '+L.desc), months:L.parts.length===1?L.months:0, parts:L.parts.map(x=>({months:x.inst?x.months:0, amount:x.amount, per:x.per, models:x.items.map(it=>it.m)})), amount:L.amount, perAll:L.per, fee:L.fee, bill:L.bill, sPoint:L.sp, jPoint:L.jp, extras:[['로열등급','royal'],['삼성카드몰 쇼핑몰 쿠폰','coupon'],['신세계 상품권','gift'],['주유 상품권','oil']].map(x=>({label:x[0],amount:+(Q.cond.lx||{})[x[1]]||0})).filter(x=>x.amount>0).concat(L.bn?[{label:bnLabel(L.bnN), amount:L.bn}]:[]).concat(L.moved||[]), options:[['IPTV','iptv'],['구독 30만원 적용시','sub30']].map(x=>({label:x[0],amount:+(Q.cond.lx||{})[x[1]]||0})).filter(x=>x.amount>0), cardBenefit:L.card, netOpt:L.netOpt, typePoint:L.tp, typeLabel:Q.cust.type+' 포인트', cashback:L.cb, member:L.mem, benefit:L.ben, net:L.net, per:L.per } : null;
-  const quote={ cust:{ name:Q.cust.name, phone:Q.cust.phone, addr:Q.cust.addr, type:Q.cust.type, proof, memo:Q.cust.memo, until:Q.cust.until, untilMode:Q.cust.until?'date':'none', date:Q.issuedAt||todayStr(),
+  const quote={ cust:{ name:Q.cust.name, phone:Q.cust.phone, addr:Q.cust.addr, type:Q.cust.type, proof, memo:Q.cust.memo, until:untilModeNow()==='none'?'':(Q.cust.until||''), untilMode:untilModeNow(), date:qdateNow(),
       birth:Q.cust.birth||'', carrier:Q.cust.carrier||'', wedding:Q.cust.wedding||'', movein:Q.cust.movein||'', revisit:Q.cust.revisit||'' },
     items, cmp:cmpRows(), extra:(S.toL?[]:(Q.extra||[])).filter(e=>+e.amount>0||e.label).map(e=>({label:e.label||'기타 혜택', amount:+e.amount||0})).concat(S.bn?[{label:bnLabel(S.bnN), amount:S.bn}]:[]), lump,
     opt:{ card:[...new Set(S.items.map(it=>S.R[it.m].cardName?S.R[it.m].cardName+' '+S.R[it.m].cardTier:'').filter(Boolean))].join(', '), prepayPct:Math.round((Q.cond.prepay||0)*100), pointMode:'cash', rewardOn:!!Q.cond.reward&&!S.toL, pointCommon:(S.pkg||0)+(S.pointCommon||0), namecardId:Q.cond.namecardId||'', lumpSum:0,
       show:{ total:true, sub:true, multi:true, sumBox:true, payband:true, realM:false, prepayLine:S.preAmt>0 }, counselor:ME },
     src:{ ver:1, items:Q.items, cond:Q.cond, extra:Q.extra||[] }, meta:{ page:'dc-quote', policyVer:POL.ver||'', idxVer:IDX.ver||'', consult:Q.consult||null } };
-  { const sh=Q.cond.sheet; if(sh){ const o=sh.opt||{}, c=sh.cust||{};   // [견적서] 탭에서 바꾼 설정 (2026-11-18)
-    if(o.show) quote.opt.show=Object.assign({}, quote.opt.show, o.show); ['qrType','pointMode','lumpSum','namecardId'].forEach(k=>{ if(o[k]!=null&&o[k]!=='') quote.opt[k]=o[k]; });
-    if(c.date) quote.cust.date=c.date; if(c.untilMode){ quote.cust.untilMode=c.untilMode; quote.cust.until=c.until||''; } } }
+  { const sh=Q.cond.sheet; if(sh){ const o=sh.opt||{};   // [견적서] 탭에서 바꾼 설정 (2026-11-18)
+    if(o.show) quote.opt.show=Object.assign({}, quote.opt.show, o.show); ['qrType','pointMode','lumpSum'].forEach(k=>{ if(o[k]!=null&&o[k]!=='') quote.opt[k]=o[k]; }); } }
   const summary={ name:Q.cust.name, phone:Q.cust.phone, counselor:ME, type:Q.cust.type, models:Q.items.map(x=>x.m).join(', '), count:Q.items.length, multiCount:S.multiN,
     total:S.total+L.amount, benefit:S.ben+L.ben, finalP:S.net+L.net, monthly:S.monthly, realM:S.pay, prepayAmt:S.preAmt, card:Q.cond.card||'', memo:Q.cust.memo, date:Q.issuedAt||todayStr(), lump:L.amount, lumpNet:L.net };
   return {quote, summary};
