@@ -801,9 +801,10 @@ function toggleShowQ(on){ SHOWQ=on==null?!SHOWQ:!!on; if(on==null) raiseDisp(); 
 let SHF_READY=false, SHF_SIG='';
 function sheetUrl(){ return location.pathname.replace(/quote\/(test\/)?(index\.html)?$/,'')+'quote/sheet/index.html?embed=1'; }
 function ensureSheetFrame(){ const f=$('sheetFrame'); if(!f||f.dataset.on) return; f.dataset.on='1'; f.src=sheetUrl(); }
-window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; const d=e.data||{}; if(d.t==='qready'&&e.source===($('sheetFrame')||{}).contentWindow){ SHF_READY=true; SHF_SIG=''; postSheet(); } });
-function postSheet(){ const f=$('sheetFrame'); if(!f||!SHF_READY||!LAST||!f.contentWindow) return; try{ const {quote}=toQuoteJson(); const nc=(typeof NC!=='undefined'&&NC||[]).find(c=>c.id===Q.cond.namecardId)||null;
-    const d={ ok:true, quote, no:Q.no||'', ver:Q.ver||0, name:Q.cust.name||'', counselor:nc?(nc.name||''):(ME||'') }, sig=JSON.stringify(d); if(sig===SHF_SIG) return; SHF_SIG=sig;
+window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; const d=e.data||{}; if(d.t==='qready'&&e.source===($('sheetFrame')||{}).contentWindow){ SHF_READY=true; SHF_SIG=''; postSheet(); }
+  if(d.t==='sheetopt'&&d.d&&e.source===($('sheetFrame')||{}).contentWindow){ const v=JSON.stringify(d.d); if(v!==JSON.stringify(Q.cond.sheet||null)){ Q.cond.sheet=d.d; postSheet(true); try{ draftSave(); }catch(x){} } } });   // 견적서 탭에서 바꾼 설정 → 이 견적에 담음 (2026-11-18)
+function postSheet(quiet){ const f=$('sheetFrame'); if(!f||!SHF_READY||!LAST||!f.contentWindow) return; try{ const {quote}=toQuoteJson(); const nc=(typeof NC!=='undefined'&&NC||[]).find(c=>c.id===Q.cond.namecardId)||null;
+    const d={ ok:true, quote, no:Q.no||'', ver:Q.ver||0, name:Q.cust.name||'', counselor:nc?(nc.name||''):(ME||'') }, sig=JSON.stringify(d); if(sig===SHF_SIG) return; SHF_SIG=sig; if(quiet) return;   // quiet: 견적서 탭이 보낸 설정을 담기만 — 되돌려 보내 편집 중인 견적서를 덮지 않음
     f.contentWindow.postMessage({t:'quote', d}, location.origin); }catch(e){ console.warn('견적서 미리보기', e); } }
 function bindBundlePaste(){ const q=$('q'); if(!q||q.dataset.bp) return; q.dataset.bp='1'; q.addEventListener('paste',e=>{ const t=(e.clipboardData||window.clipboardData).getData('text')||''; if(isQuoteRef(t)){ e.preventDefault(); openRef(t); return; } if(/[?&]items=/.test(t)){ e.preventDefault(); applyBundle(parseBundle(t)); } }); }
 function prefillModels(){ bindBundlePaste(); let bm=[]; if(P.get('items')){ const b=parseBundle(location.search); bm=b.items.map(x=>x.m); applyBundle(b, true); }
@@ -1655,6 +1656,9 @@ function toQuoteJson(){
     opt:{ card:[...new Set(S.items.map(it=>S.R[it.m].cardName?S.R[it.m].cardName+' '+S.R[it.m].cardTier:'').filter(Boolean))].join(', '), prepayPct:Math.round((Q.cond.prepay||0)*100), pointMode:'cash', rewardOn:!!Q.cond.reward&&!S.toL, pointCommon:(S.pkg||0)+(S.pointCommon||0), namecardId:Q.cond.namecardId||'', lumpSum:0,
       show:{ total:true, sub:true, multi:true, sumBox:true, payband:true, realM:false, prepayLine:S.preAmt>0 }, counselor:ME },
     src:{ ver:1, items:Q.items, cond:Q.cond, extra:Q.extra||[] }, meta:{ page:'dc-quote', policyVer:POL.ver||'', idxVer:IDX.ver||'', consult:Q.consult||null } };
+  { const sh=Q.cond.sheet; if(sh){ const o=sh.opt||{}, c=sh.cust||{};   // [견적서] 탭에서 바꾼 설정 (2026-11-18)
+    if(o.show) quote.opt.show=Object.assign({}, quote.opt.show, o.show); ['qrType','pointMode','lumpSum','namecardId'].forEach(k=>{ if(o[k]!=null&&o[k]!=='') quote.opt[k]=o[k]; });
+    if(c.date) quote.cust.date=c.date; if(c.untilMode){ quote.cust.untilMode=c.untilMode; quote.cust.until=c.until||''; } } }
   const summary={ name:Q.cust.name, phone:Q.cust.phone, counselor:ME, type:Q.cust.type, models:Q.items.map(x=>x.m).join(', '), count:Q.items.length, multiCount:S.multiN,
     total:S.total+L.amount, benefit:S.ben+L.ben, finalP:S.net+L.net, monthly:S.monthly, realM:S.pay, prepayAmt:S.preAmt, card:Q.cond.card||'', memo:Q.cust.memo, date:Q.issuedAt||todayStr(), lump:L.amount, lumpNet:L.net };
   return {quote, summary};
