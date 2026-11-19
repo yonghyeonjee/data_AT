@@ -62,6 +62,7 @@
 --   core.api_key 'direct_daily' (해시만 · 값은 _secrets.local.md)
 --   public.fn_direct_daily_ingest(p_key, p_rows[{date, handler, sales, refund}], p_from, p_to) — anon 실행 · 키 검사 · 같은 값이면 안 건드림 ·
 --     기간 안에서 시트에 없는 칸은 0 으로 · 받은 줄이 전의 절반 아래면 반영 안 함 · core.direct_pull_log(note 'GAS …') · 바뀌면 f_dash_mark_dirty()
---   시트 프로젝트에 파일은 넣어 둠(키 자리 PASTE_DC_KEY_HERE) — 사용자가 키를 붙여넣고 setupDirectTrigger() 를 한 번 실행해야 매시간 돈다.
+--   키는 스크립트가 스스로 만들어 스크립트 속성 DD_KEY 에만 두고, core.api_key 'direct_daily' 에는 로그의 DD_KEY_HASH 만 등록한다.
+--   2026-11-19 12:30 setupDirectTrigger() 실행(매시간 트리거) · 해시 등록 · syncDirectDaily 첫 전송 40줄 ok.
 --
 -- DPS 판매 속보 › 영업사원 확인(11-19 · 읽기만): 사원별 목표·실적·달성율 · 구독/일반 구분 없음 · 11/1~17 합계 596,669,569 = dps.perf_fetch 와 같음.
