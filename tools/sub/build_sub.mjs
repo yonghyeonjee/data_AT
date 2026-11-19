@@ -107,7 +107,7 @@ export function bestNet(model, rec, cat, policy, CARD, today) {
     const expected = total - auto - Math.round(card * months);
     let promo = 0;
     for (const x of promos) { if (x.maxTerm !== false && y !== my) continue; const a = (x.amounts && +x.amounts[model]) || (+x.amount) || (x.months > 0 ? Math.round(x.months * monthly) : 0); if (a > promo) promo = a; }
-    const mp = pt ? Math.max(0, Math.floor(total * ((+pt.rate || 0) + (+pt.base || 0)) / 100) + (+pt.add || 0)) : 0;
+    const mp = pt ? Math.max(0, Math.floor((plan[4] > 0 ? plan[4] : total) * ((+pt.rate || 0) + (+pt.base || 0)) / 100) + (+pt.add || 0)) : 0;
     const P = promo + mp, valid = Math.min(months, 36);
     best = Math.min(best, expected - Math.min(P, Math.round(Math.min(P, M * valid))));
   }
