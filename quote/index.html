@@ -155,6 +155,8 @@ details.more>summary small{font-weight:500;color:var(--mut);font-size:12px}
 .item .own .ptrow{background:#FFFBEB;border:2px solid #F5B301;border-radius:10px;padding:10px 12px;gap:14px} .item .own .ptrow .lbl{font-size:14px;font-weight:900;color:#92400E;min-width:auto}
 .item .own .ptk{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:#374151;padding:4px 8px;border-radius:8px} .item .own .ptk.cur{background:#fff;box-shadow:0 0 0 2px #F5B301}
 .item .own .ptk input{font-size:17px;font-weight:800;width:150px;text-align:right;padding:7px 10px;border:2px solid #E5C76B;border-radius:8px;background:#fff}
+.item .own .ptk.s{color:var(--sub)} .item .own .ptk.s input{border-color:#9CC3F7;color:var(--sub)} .item .own .ptk.s.cur{background:#EAF2FE;box-shadow:0 0 0 2px var(--sub)}
+.item .own .ptk.l{color:var(--lump)} .item .own .ptk.l input{border-color:#D9BFA0;color:var(--lump)} .item .own .ptk.l.cur{background:var(--lump-soft);box-shadow:0 0 0 2px var(--lump)}
 .ptlock{background:#FEF2F2;border:1px solid #FCA5A5;color:#B91C1C;border-radius:8px;padding:8px 10px;font-weight:700;font-size:13.5px;line-height:1.5}
 .ptbox input#pointCommon:disabled{background:#F3F4F6;color:#6B7280;border-color:#D1D5DB}
 .custfind{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 2px} .custfind input{flex:1;min-width:200px} .custfind .lbl{margin:0}
@@ -1070,7 +1072,7 @@ function ownHtml(it,i){
   const seg=(k,list,cur)=>`<div class="seg sm">${list.map(o=>`<button class="${String(o.v)===String(cur)?'on':''}" onclick="setItem(${i},'${k}',${o.v===null?'null':JSON.stringify(o.v)})">${o.l}</button>`).join('')}</div>`;
   const canSub=!!INFO[it.m]&&!it.noSub, isS=it.mode==='sub'&&canSub;
   return `<div class="own">
-    <div class="orow ptrow"><span class="lbl">⭐ 제품별 포인트</span>${canSub?`<label class="ptk${isS?' cur':''}">구독일 때 ${ptIn(it,i,'ptSub')}</label>`:''}<label class="ptk${isS?'':' cur'}">일반일 때 ${ptIn(it,i,'ptLump')}</label><span class="hint">넣으면 견적 공통 포인트 합계에 자동 · 구독/일반 바꾸면 그 값으로 · 비우면 0</span></div>
+    <div class="orow ptrow"><span class="lbl">⭐ 제품별 포인트</span>${canSub?`<label class="ptk s${isS?' cur':''}">구독일 때 ${ptIn(it,i,'ptSub')}</label>`:''}<label class="ptk l${isS?'':' cur'}">일반일 때 ${ptIn(it,i,'ptLump')}</label><span class="hint">넣으면 견적 공통 포인트 합계에 자동 · 구독/일반 바꾸면 그 값으로 · 비우면 0</span></div>
     ${Q.cond.ptEach&&isS?`<div class="orow"><span class="lbl">멤버십 포인트 수기</span><input class="amt" type="number" step="1000" placeholder="자동" value="${it.pointManual==null?'':it.pointManual}" onchange="setItem(${i},'pointManual',this.value===''?null:+this.value)"><span class="hint">비우면 행사·멤버십 자동 계산</span></div>`:''}
     <div class="orow"><span class="lbl">견적서에서</span>${seg('hidden',[{v:false,l:'보임'},{v:true,l:'숨김 (계산 제외)'}],!!it.hidden)}</div>
   </div>`; }
