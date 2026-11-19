@@ -1,0 +1,53 @@
+-- mvp_300 · 2026-11-19 · 대시보드 원장 기준 개편 (DB 에 적용됨 · v341)
+-- "데이터 센터의 대시보드 — 매출 대시보드, 경영 지표 모두 원장 기준으로 변경하고, 샵링커를 기준으로 온라인별로 나타내고,
+--  제품별 판매량은 샵링커에서 가져온 데이터 중 모델번호로 해서 보여줄 때도 모델번호로 · 직판 매출은 구글 시트에서 ·
+--  매장 매출은 그대로 보이고 클릭하면 일반, 구독 · 전체 매장의 일반/구독 비율 · 구독 매출이 대표님 숫자와 다른 이유 · 해지/진행중 상태값"
+--
+-- 원본 백업: core.fn_src_backup (tag 'before mvp_300') 에 f_dash_payload · f_exec_sales · f_exec_series · fn_exec_kpi(5인자) 원문.
+--   되돌리기 = 그 src 로 create or replace (인자는 args 열).
+--
+-- ① 새 객체
+--   core.f_num_safe(text)                      숫자만 남겨 numeric (아니면 null)
+--   core.f_model_extract(text)                 글에서 모델번호 모양(XX-1234… / XX1234…) 하나 · 7자 이상
+--   core.f_model_no(key, code, opt, name, alias) 모델번호 — 모델 칸이 모델 모양이면 그대로(_SSG 뗌) ·
+--                                              숫자 상품코드면 alias(같은 샵링커 상품코드의 다른 주문에 적힌 모델) → 옵션 글 → 상품명 → '(모델 미확인) 상품명'
+--   core.model_alias(product_code pk, model_no, n)  · core.f_model_alias_refresh()  샵링커 상품코드별 가장 많이 적힌 모델 (첫 실행 1,568개)
+--     10/1 이후 온라인 3,964줄: 원래 모델 2,930 · 되살림 1,027(2.0억) · 미확인 7줄(타사 제품)
+--   core.direct_sheet(year pk, file_id, gid)   직판 시트 위치 — 파일 ID 는 DB 에만 (공개 저장소에 적지 않는다) · 2026 = '온라인 매출_2026년' 탭
+--   core.direct_daily(biz_date, handler pk, sales, refund)   시트의 'OO프로-직판' 줄 (프로별 · 날짜별)
+--   core.direct_pull_log(at, ok, year, rows, changed, note)
+--   core.v_direct_daily                         직판 = 시트 ∪ 일 마감 직판(core.store_daily · 시트에 없는 담당만 · 매출 + 확정 전)
+--   core.f_direct_pull()                        DB 가 시트 TSV 를 직접 읽어 direct_daily 를 맞춘다 (같은 값이면 안 건드림 · 시트에서 지운 칸은 0 으로 ·
+--                                              읽은 줄이 전의 절반 아래면 반영 안 하고 기록만) · 바뀌면 core.f_dash_mark_dirty()
+--   core.f_dash_feeds()                         = f_direct_pull + f_model_alias_refresh (예약 실행용)
+--   core.f_dash_subc(from, to)                  구독 계약 현황(dps.sub_contract · 올인원) → rows [일, 0 실계약일|1 신청일, 상태(0 접수·1 구독·2 해지완료), 건, 총구독료, 제품구독료, 월요금] ·
+--                                              chg [일, 0 구독 확정|1 해지, 건](dps.sub_contract_change) · fetched · full_from · chg_from · direct_at
+--   core.fn_src_backup(fn, args, tag, src)
+--
+--   첫 수집(11-19 10:26): 66칸 — 8월 1.32억 · 9월 1.32억(환불 0.11억) · 10월 0.89억 · 11월(17일까지) 0.68억 · 시트 월 합계와 원 단위까지 같음.
+--   ※ 1시간 예약(cron 'dash-feeds' · select core.f_dash_feeds())은 아직 등록하지 않았다 — 사용자 확인 대기.
+--     등록: select cron.schedule('dash-feeds', '20 * * * *', $c$select core.f_dash_feeds()$c$);
+--     그때까지는 select core.f_dash_feeds(); 를 직접 돌려야 시트 변경이 들어온다.
+--   ※ 내년에는 core.direct_sheet 에 (2027, 파일 ID, 새 탭 gid) 한 줄을 넣는다.
+--
+-- ② core.f_dash_payload 부분 치환 9곳 (지점마다 1개인지 세고 replace)
+--   1~4  직판: store_daily 직판 → core.v_direct_daily (채널 존재 · 셀 · subs 이름 · subs 줄) · handler 'test' 제외
+--   5~8  상품(원장 기준일 때만): 온라인 주문(source shoplinker·godo·godo_hist·smartstore)만 · 묶음 키 = core.f_model_no(…) · 이름은 '' (화면이 모델번호만 보인다)
+--        수기입력·DPS 기준은 그대로
+--   9    'subc' = core.f_dash_subc(p_from, p_to) (세 기준 모두)
+--   빌드 시간(2024-10-01~오늘): 원장 10.9초 · DPS 6.1초 · 수기 7.5초 — 전과 같음 · 원장 payload 1.5MB → 1.0MB
+--
+-- ③ 경영 지표
+--   core.f_exec_sales   + ch(몰·채널 이름 — 대시보드와 같은 규칙) · 'channels'[{ch, net, orders}] · 직판(dr)을 net·gross·refund 와 groups('직판') 에 더함 · 'direct_net'
+--   core.f_exec_series  기간별 순매출에 직판 더함
+--   public.fn_exec_kpi(5인자)  coalesce(p_basis,'dps') → coalesce(p_basis,'ledger')
+--
+-- ④ 화면 (v341): dash/index.html · dash/test — 기본 기준 원장 · 상품 이름표 모델번호 · [매장(시흥) 일반 · 구독] 카드에 '구독 계약 기준' 상자
+--                admin.html · admin/test — 매출 대시보드·경영 지표 기본 원장 · 경영 지표 '몰 · 채널별' 표 · 홈 타일 원장 큰 숫자(DPS 작은 줄) · DASH_V 341
+--
+-- 구독 매출이 대표님 숫자와 다른 이유 (조사 결과)
+--   DPS 는 구독에 판매 전표를 자동으로 만들지 않는다. 대시보드가 더하던 '구독 전표' 금액은 임시 전표(AA2P 1,000원 · A4용지 0원)이거나
+--   구독과 함께 산 일시불 품목 금액이다. 10월 신청 36건: 계약 총구독료 2.67억 ↔ 전표 0.84억.
+--   대표님은 DPS '판매 속보 › 사원별' 을 보신다 — 수집기가 읽는 화면은 '경영정보 › 목표관리 › 사원별목표/실적'(dps.perf_line)이라 그 숫자는 데이터센터에 없다.
+--   그래서 매출 합계(전표 기준)는 건드리지 않고, 계약 금액(실계약일 · 상태 구독 · 총구독료)과 상태별 건수·금액을 카드에 따로 보인다.
+--   판매 속보 화면 캡처를 받으면 어느 정의와 맞는지 대조해 기준을 맞춘다.

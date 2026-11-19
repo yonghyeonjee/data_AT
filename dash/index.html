@@ -229,6 +229,17 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .kdrows .shr{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
 .kdrows .dchip{margin-left:0;justify-self:end}
 .kdsum{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule-soft);font-size:13px;color:var(--ink-2);line-height:1.7}
+/* 구독 계약 기준 (mvp_300) */
+.kdc{margin-top:14px;padding:12px 14px;border:1px solid var(--rule);border-radius:10px;background:#F6F8FC;font-size:13px;line-height:1.65;color:var(--ink-2)}
+.kdc-h{font-weight:700;color:var(--ink);font-size:14px}.kdc-h small{font-weight:500;color:var(--muted);margin-left:8px;font-size:12px}
+.kdc-big{margin:4px 0 10px}.kdc-big b{font-family:var(--mono);font-size:22px;color:var(--navy);margin-right:4px}.kdc-big small{display:block;color:var(--muted);font-size:12px}
+.kdc .kdbar{margin:2px 0 8px;height:24px}.kdc-line b,.kdc-sub b{font-family:var(--mono);color:var(--ink)}
+.kdc-sub{margin-top:8px;font-size:12.5px}
+.kdc-st{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.kdc-st span{display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;background:#fff;border:1px solid var(--rule);white-space:nowrap}
+.kdc-st span b{font-family:var(--mono)}.kdc-st span i{width:8px;height:8px;border-radius:50%;background:#8A93A0;flex-shrink:0}
+.kdc-st .s0 i{background:#B7791F}.kdc-st .s1 i{background:#0F7B6C}.kdc-st .s2 i{background:#B3261E}
+.kdc-note{margin:10px 0 0;font-size:12px;color:var(--muted);line-height:1.6}
 .kdsum b{font-family:var(--mono);color:var(--ink)}
 .kdsum .big{font-family:var(--mono);font-size:24px;font-weight:800;letter-spacing:-.03em;color:var(--navy);margin-right:7px;vertical-align:-2px}
 .kdsum .lbl{font-weight:650;color:var(--ink)}
@@ -545,8 +556,8 @@ body{background:
       <button id="s-gas" aria-pressed="false">대시보드 v4 (기존 app)</button>
     </div>
     <div class="seg" role="group" aria-label="집계 기준" id="basisseg" title="수기입력 = 담당자가 채널별로 적어 넣은 일매출 · 원장 = 주문 원천(샵링커 등)에서 집계한 값">
-      <button id="m-dps" aria-pressed="true" title="DPS 사원별목표/실적 기준 (실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계)">DPS</button>
-      <button id="m-ledger" aria-pressed="false">원장</button>
+      <button id="m-ledger" aria-pressed="true" title="원장 = 주문 원천 (온라인 = 샵링커 몰별 · 매장 = 판매 입력·DPS 매장 전표 · VMS · 렌탈 · 직판 = 시트)">원장</button>
+      <button id="m-dps" aria-pressed="false" title="DPS 사원별목표/실적 기준 (실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계)">DPS</button>
       <button id="m-manual" aria-pressed="false">수기입력</button>
     </div>
     <button class="ghost" id="b-refresh" title="원본을 다시 읽어 대시보드를 새로 만듭니다">데이터 갱신</button>
@@ -782,7 +793,7 @@ const SHARE_URL = '__PASTE_ANYONE_DEPLOY_EXEC_URL__';
 const DC_URL = 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/fn_dash_payload_pub';
 const DC_ANON = 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW';
 const DC_FROM = '2024-10-01';   // 자체 모드 시작일 = DPS 수집 시작 (2026-11-11 · "dps 수집해왔으니 2024년부터" — 전엔 최근 24개월 · 워머 f_dash_warm 에 같은 키 · f_dash_payload 상한 1500일)
-function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='manual'?'manual':v==='ledger'?'ledger':'dps'; }   /* 기본 = DPS 사원별 실적 (2026-11-06 · 전엔 원장). 원장은 ?mode=ledger · 수기입력은 대사표를 올렸을 때만 (2026-09-17) */
+function dashBasis(){ let v=''; try{ v=new URLSearchParams(location.search).get('mode')||sessionStorage.getItem('dash_basis')||''; }catch(e){} return v==='manual'?'manual':v==='dps'?'dps':'ledger'; }   /* 기본 = 원장 (2026-11-19 · mvp_300 · "매출 대시보드, 경영 지표 모두 원장 기준으로" — 11-06 부터는 DPS 였다). DPS 는 버튼 또는 ?mode=dps · 수기입력은 대사표를 올렸을 때만 (2026-09-17) */
 const GAS_READY = SHARE_URL.indexOf('http')===0;   // 기존 app(GAS) 공유 주소가 실제로 설정돼 있는가
 function dashSrc(){ if(!GAS_READY){ try{ if(sessionStorage.getItem('dash_src')==='gas') sessionStorage.removeItem('dash_src'); }catch(e){} return 'dc'; }
   let v=''; try{ v=new URLSearchParams(location.search).get('src')||sessionStorage.getItem('dash_src')||''; }catch(e){} return v==='gas'?'gas':'dc'; }
@@ -823,6 +834,8 @@ storeMerge(DATA);
 const $=s=>document.querySelector(s);
 const DAYS=DATA.days, CH=DATA.channels, CELLS=DATA.cells, ND=DAYS.length, NC=CH.length;
 const PR=DATA.products||[], PC=DATA.pcells||[], NP=PR.length, PM=DATA.pmonths||[];
+const prLbl=i=>PR[i][1]?PR[i][0]+'  '+PR[i][1]:PR[i][0];   /* 상품 이름표 — 원장 기준은 모델번호만 (mvp_300 · 서버가 이름을 비워 보냄) */
+const PMODEL=DATA.mode==='ledger'&&PR.length>0&&PR.every(p=>!p[1]);
 const RT=DATA.rental||null, EV=DATA.events||[], SB=DATA.subs||null, OC=DATA.ocells||[];
 const KD=CH.findIndex(c=>!!c.kinds);   /* 일반·구독을 안에 가른 채널 = 매장(시흥) (storeMerge 가 표시) · 없으면 -1 */
 const KD_NM=['일반','구독'];
@@ -838,6 +851,7 @@ const ST=(DATA.staff&&DATA.staff.names&&DATA.staff.names.length)?DATA.staff:null
 let stBasis='staff'; try{ if(sessionStorage.getItem('dash_stb')==='ch') stBasis='ch'; }catch(e){}   /* 매장 칸: staff = 매장 사원 실적(DPS 사원별목표/실적과 같은 합) · ch = 판매번호의 DPS 채널 */
 if(!ST){const se=document.querySelector('#st-sec'); if(se) se.remove();}
 if(KD<0&&!ST){const ke=document.querySelector('#kd-sec'); if(ke) ke.remove();}   /* 구독 전표도 사원 실적도 없는 payload(옛 캐시·수기)면 비교 카드 없음 (v287) */
+const SUBC=(DATA.subc&&Array.isArray(DATA.subc.rows))?DATA.subc:null;   /* 구독 계약 현황(올인원) [일, 0 실계약일|1 신청일, 상태(0 접수·1 구독·2 해지완료), 건, 총구독료, 제품구독료, 월요금] (mvp_300) */
 const CC=DATA.ccells||[];   /* 고객 셀 [일, 채널, 구매 고객(고객×일), 그중 첫 구매] (2026-09-19) */
 let pMall=-1, pCat=null, pQ='', pLimit=30, pTab='p', wfTab='ch';
 let pSort='n'; try{ if(sessionStorage.getItem('dash_psort')==='q') pSort='q'; }catch(e){}   /* 상품 목록 정렬: n 금액 · q 수량 */
@@ -1363,12 +1377,41 @@ function drawKind(){
   h+='<div class="kdrows">'+[c1.a0,c1.a1].map((v,j)=>'<span class="nm"><i'+(j?' class="sub"':'')+'></i>'+KD_NM[j]+'</span><span class="amt">'+wonS(v)+'</span><span class="shr">'+pct(v,t).toFixed(1)+'%</span>'+chip(v,c0?(j?c0.a1:c0.a0):null)).join('')+'</div>';
   let dp=''; if(q1!==null){ const d=p1-q1; dp=' · 전기 '+q1.toFixed(1)+'% <span class="dchip '+(Math.abs(d)<0.05?'flat':d>0?'up':'down')+'">'+(d>=0?'+':'')+d.toFixed(1)+'%p</span>'; }
   h+='<div class="kdsum"><span class="big">'+p1.toFixed(1)+'%</span><span class="lbl">구독 비중</span>'+dp+'<br>매장 합계 <b>'+wonS(t)+'</b>'+(c0?' · 전기 <b>'+wonS(c0.t)+'</b> '+chip(t,c0.t):(cmp===null?' · 비교 기간 없음':''))+'</div>';
+  h+=subcHtml(c1);
   el.innerHTML=h;
   nt.textContent=(useStaff()?'매장 사원 실적 기준 (사원별목표/실적) · 일반 = 구독 아닌 판매번호':'판매번호의 DPS 채널 기준 · 일반 = 매장(시흥) · 구독 = 매장구독(시흥)')+' · '+mname()+(ST?' · 기준은 핵심 지표 [사원|채널]':'');
   const kb=kdBuckets(), n=kb.rows.length;
   tr.innerHTML=n?barChart(kb.rows,'#1428A0',true,{label:r=>r.v>0?Math.round(pct(r.v1,r.v))+'%':''}):'<div class="empty">자료 없음</div>';
   tn.innerHTML=({d:'일별',w:'주별',m:'월별'})[kb.mode]+' · '+n+'구간 · <i class="kdl"></i>일반 <i class="kdl sub"></i>구독 · 막대 위 숫자 = 그 기간의 구독 비중';
 }
+
+/* ===== 구독 계약 기준 (mvp_300 · 2026-11-19) — DPS 구독 계약 현황(올인원)
+   구독은 판매 전표가 자동으로 생기지 않아 전표 금액(임시 전표 · 함께 산 일시불 품목)이 계약 금액과 다르다.
+   계약 금액 = 실계약일이 기간 안이고 상태가 '구독' 인 계약의 총구독료 · 상태 = 신청일이 기간 안인 계약의 지금 상태 */
+function scAgg(lo,hi){ if(!SUBC)return null; const o={n:0,tot:0,prod:0,st:[0,1,2,3].map(()=>({n:0,tot:0})),chg:[0,0,0]};
+  for(const r of SUBC.rows){ if(r[0]<lo||r[0]>hi)continue;
+    if(r[1]===0){ if(r[2]===1){o.n+=r[3];o.tot+=r[4];o.prod+=r[5];} }
+    else{ const x=o.st[r[2]]||o.st[3]; x.n+=r[3]; x.tot+=r[4]; } }
+  for(const r of (SUBC.chg||[])){ if(r[0]<lo||r[0]>hi)continue; o.chg[r[1]]=(o.chg[r[1]]||0)+r[2]; }
+  return o; }
+function subcHtml(c1){ const A=scAgg(a,b); if(!A)return '';
+  const P=cmp?scAgg(cmp.lo,cmp.hi):null, gen=Math.max(0,c1?c1.a0:0), t=gen+A.tot;
+  const dl=(P&&P.tot>0)?(A.tot-P.tot)/P.tot*100:null;
+  const chip=dl===null?'':' <span class="dchip '+(Math.abs(dl)<0.5?'flat':dl>0?'up':'down')+'" title="전기 '+wonS(P.tot)+' · '+P.n+'건">'+(dl>=0?'+':'')+dl.toFixed(1)+'%</span>';
+  const ym=x=>x?String(x).slice(0,7).replace('-','.'):'';
+  let h='<div class="kdc"><div class="kdc-h">구독 계약 기준<small>DPS 구독 계약 현황 · 올인원'+(SUBC.fetched?' · '+esc(SUBC.fetched)+' 수집':'')+'</small></div>';
+  h+='<div class="kdc-big"><b>'+wonS(A.tot)+'</b> 계약 총구독료 · '+A.n.toLocaleString()+'건'+chip+'<small>실계약일이 이 기간 · 상태 구독 · 제품구독료 '+wonS(A.prod)+'</small></div>';
+  if(t>0){ const w0=gen/t*100, w1=A.tot/t*100;
+    h+='<div class="kdbar"><i style="width:'+w0+'%" title="일반 (전표) '+wonS(gen)+'">'+(w0>=16?'일반 '+w0.toFixed(0)+'%':'')+'</i><i class="sub" style="width:'+w1+'%" title="구독 (계약) '+wonS(A.tot)+'">'+(w1>=16?'구독 '+w1.toFixed(0)+'%':'')+'</i></div>';
+    h+='<div class="kdc-line">일반 <b>'+wonS(gen)+'</b> (전표) : 구독 <b>'+wonS(A.tot)+'</b> (계약) · 계약 기준 구독 비중 <b>'+w1.toFixed(1)+'%</b></div>'; }
+  const S=A.st, nm=['접수','구독 (진행 중)','해지완료','기타'], any=S.some(x=>x.n>0);
+  h+='<div class="kdc-sub">신청일이 이 기간인 계약의 지금 상태</div>';
+  h+=any?'<div class="kdc-st">'+S.map((x,i)=>x.n>0?'<span class="s'+i+'"><i></i>'+nm[i]+' <b>'+x.n.toLocaleString()+'건</b> '+wonS(x.tot)+'</span>':'').join('')+'</div>'
+        :'<div class="kdc-sub" style="color:var(--muted)">이 기간에 신청된 계약이 없습니다</div>';
+  if(A.chg[0]||A.chg[1]) h+='<div class="kdc-sub">기간 안 상태 변경 · 구독 확정 <b>'+(A.chg[0]||0)+'</b>건 · 해지 <b>'+(A.chg[1]||0)+'</b>건'+(SUBC.chg_from?' <span style="color:var(--muted)">('+ym(SUBC.chg_from)+' 부터 기록)</span>':'')+'</div>';
+  h+='<p class="kdc-note">위쪽 구독(전표 기준)은 DPS 판매 전표 금액입니다. 구독은 판매 전표가 자동으로 생기지 않아 임시 전표(1,000원 등)나 함께 산 일시불 품목 금액이 들어가므로 계약 금액과 다릅니다. 매출 합계는 전표 기준 그대로이고, 계약 금액은 여기에만 보입니다.'
+    +(SUBC.full_from?' 계약 현황은 신청일 '+ym(SUBC.full_from)+' 이후분이 온전합니다.':'')+' 스마트 구독은 총액이 없어 빠져 있습니다.</p></div>';
+  return h; }
 
 /* ===== 워터폴 (채널 / 상품) ===== */
 function wfSteps(prodMode){   /* 증감 분해 데이터 — prodMode 면 상품별(focus 채널 안), 아니면 채널별 */
@@ -1647,7 +1690,7 @@ function catSubHtml(pa, cat, key){
   const items=Object.keys(pa.byP).map(id=>({id:+id,o:pa.byP[id]})).filter(x=>PR[x.id][2]===cat&&x.o[key]>0).sort((x,y)=>y.o[key]-x.o[key]);
   const tot=items.reduce((s,x)=>s+x.o[key],0)||1, top=items.slice(0,10);
   if(!top.length) return '<div class="rk-sub"><div class="empty">상품 없음</div></div>';
-  return '<div class="rk-sub" data-cat="'+esc(cat)+'">'+hbars(top.map(x=>({l:PR[x.id][0]+'  '+PR[x.id][1],v:x.o[key],q:x.o.q.toLocaleString()+'개',
+  return '<div class="rk-sub" data-cat="'+esc(cat)+'">'+hbars(top.map(x=>({l:prLbl(x.id),v:x.o[key],q:x.o.q.toLocaleString()+'개',
     note:'카테고리 내 '+pct(x.o[key],tot).toFixed(1)+'%',id:x.id})), i=>i<3?'#1428A0':'#3E5BC9')
     +(items.length>10?'<div class="note" style="padding:4px 9px">외 '+(items.length-10)+'종 — 상세의 상품 목록에서 카테고리 칩으로 전부 봅니다</div>':'')+'</div>';}
 function drawTopPr(){
@@ -1674,10 +1717,10 @@ function drawTopPr(){
       el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();openPr(+el.dataset.id);}};});
     $('#tp-note').textContent=cats.length+'개 카테고리 · '+scopeName()+' · 누르면 상위 상품 10종';
     return;}
-  $('#pv-title').textContent='상위 상품';
+  $('#pv-title').textContent='상위 상품'+(PMODEL?' · 모델번호 (온라인 주문)':'');
   const items=Object.keys(pa.byP).map(id=>({id:+id,o:pa.byP[id]})).filter(x=>x.o[key]>0).sort((x,y)=>y.o[key]-x.o[key]).slice(0,10);
   const tot=Object.keys(pa.byP).reduce((s,id)=>s+Math.max(0,pa.byP[id][key]),0)||1;
-  $('#toppr').innerHTML=hbars(items.map(x=>({l:PR[x.id][0]+'  '+PR[x.id][1],sub:PR[x.id][2],v:x.o[key],
+  $('#toppr').innerHTML=hbars(items.map(x=>({l:prLbl(x.id),sub:PR[x.id][2],v:x.o[key],
     q:x.o.q.toLocaleString()+'개',note:'비중 '+pct(x.o[key],tot).toFixed(1)+'%',id:x.id})),i=>i<3?'#1428A0':'#3E5BC9');
   $('#toppr').querySelectorAll('.rk').forEach(el=>{
     el.onclick=()=>openPr(+el.dataset.id);
@@ -1791,7 +1834,7 @@ function openCh(ci){
     for(const c of PC){if(c[1]!==ci||!mset.has(c[0]))continue;byP[c[2]]=(byP[c[2]]||0)+pval(c);byQ[c[2]]=(byQ[c[2]]||0)+(c[3]||0);}
     const it=Object.keys(byP).map(id=>({id:+id,v:byP[id],q:byQ[id]||0})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v).slice(0,8);
     h+='<div class="dw-s">이 채널 상위 상품</div>';
-    h+=it.length?hbars(it.map(x=>({l:PR[x.id][0]+'  '+PR[x.id][1],sub:PR[x.id][2],v:x.v,q:x.q.toLocaleString()+'개',id:x.id})),'#3E5BC9')
+    h+=it.length?hbars(it.map(x=>({l:prLbl(x.id),sub:PR[x.id][2],v:x.v,q:x.q.toLocaleString()+'개',id:x.id})),'#3E5BC9')
       :'<div class="empty">샵링커 상품 데이터가 없는 채널입니다</div>';}
   const sbHtml=subBlocks(ci);
   if(sbHtml)h+='<div class="grid"><div class="card sp12"><div class="card-h"><h2>담당자별</h2>'
@@ -2222,7 +2265,7 @@ function renderCV(){
     const it=Object.keys(byP).map(id=>({id:+id,v:byP[id],q:byQ[id]||0})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
     const ptot=it.reduce((s,x)=>s+x.v,0)||1, qtot=it.reduce((s,x)=>s+x.q,0);
     /* 금액은 그 상품 전체 판매액(개수 포함) · 왼쪽 N개 · 오른쪽 비중 (2026-09-17) */
-    pbox.innerHTML=it.length?hbars(it.slice(0,12).map(x=>({l:PR[x.id][0]+'  '+PR[x.id][1],sub:PR[x.id][2],
+    pbox.innerHTML=it.length?hbars(it.slice(0,12).map(x=>({l:prLbl(x.id),sub:PR[x.id][2],
       v:x.v,q:x.q.toLocaleString()+'개',note:'비중 '+pct(x.v,ptot).toFixed(1)+'%',id:x.id})),i=>i<3?'#1428A0':'#3E5BC9')
       :'<div class="empty">샵링커 상품 데이터가 없는 채널입니다</div>';
     pbox.querySelectorAll('.rk').forEach(el=>el.onclick=()=>openPr(+el.dataset.id));
