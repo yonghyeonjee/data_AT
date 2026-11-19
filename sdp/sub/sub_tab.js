@@ -765,7 +765,7 @@ function main() {
     h += row('결제 예상액' + (r.pointsAll && cash ? ' <small>실제 결제</small>' : ''), fmt(r.expected) + '원', r.pointsAll && !cash ? '' : 'is-total');
     if (r.pointsAll && cash) h += row('월 납부액 <small>실제 결제</small>', '월 ' + fmt(r.finalMonthly) + '원', 'is-strong');
     if (r.points) h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', sg + fmt(r.points) + (cash ? 'P' : '원'), 'is-blue is-point');
-    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + '</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
+    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + ' (실제 계산은 예상보다 적거나 많을 수 있습니다.)</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
     if (r.pointsAll && !cash) {
       h += row('포인트 구독료로 사용한 실제 구독료', fmt(r.netTotal) + '원', 'is-total');
       h += ptRows(r);
