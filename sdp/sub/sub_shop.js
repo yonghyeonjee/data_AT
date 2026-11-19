@@ -379,6 +379,23 @@ window.SUB_SHOP_READY = true;
     return '<span class="ss-price"><small>월</small> ' + fmt(r.min) + '<small>원~</small></span>' +
       (CARD1 && net < r.min ? '<span class="ss-net">' + esc(CARD1.name) + ' 할인 시 <b>월 ' + fmt(net) + '원~</b></span>' : '') + perksHtml(r, net);
   }
+  /* 매장 진열 (2026-11-18 시안) — sub_store.js 의 모델 목록 · 색상 묶음은 하나라도 있으면 */
+  function storeSet() {
+    var S = window.SUB_STORE; if (!S || !S.m) return null;
+    if (!S.set) { S.set = {}; S.m.forEach(function (x) { S.set[x] = 1; }); }
+    return S.set;
+  }
+  function inStore(r) { var set = storeSet(); return !!set && (r.variants || [r]).some(function (v) { return set[v.model]; }); }
+  /* 키워드 찾기 (2026-11-18 시안) — 띄어쓰기로 나눈 낱말이 상품명·모델명·세부유형에 모두 들어 있으면 · 대소문자·띄어쓰기 무시 */
+  function normQ(x) { return String(x || '').toLowerCase().replace(/\s+/g, ''); }
+  function hayOf(r) {
+    if (r.hay == null) r.hay = normQ([displayName(r), r.name, r.seg, segShort(r.seg)].concat((r.variants || [r]).map(function (v) { return v.model + ' ' + (v.name || ''); })).join(' '));
+    return r.hay;
+  }
+  function matchQ(r, q) {
+    var ws = String(q || '').toLowerCase().split(/\s+/).filter(Boolean); if (!ws.length) return true;
+    var h = hayOf(r); return ws.every(function (w) { return h.indexOf(w) >= 0; });
+  }
   function card(r, medium) {
     var p = pageOf(r), fam = r.variants && r.variants.length > 1 ? r.variants : null;
     var acts = medium === 'event';   // 이벤트 화면: 카드 아래 [담기] [상담 신청 →] (2026-11-11)
@@ -386,7 +403,7 @@ window.SUB_SHOP_READY = true;
       /* 카드 머리 띠 (2026-11-17): 초록(일시불보다 저렴)·파랑(+구독료 지원)을 위에서부터 채운다 — 없는 줄은 빈칸 대신 같은 줄 카드들과 높이만 맞춘 연회색 머리 */
       /* 2026-11-18: 띠는 사진 칸 아래쪽에 얹는다 — 카드 위 빈칸·줄 맞춤 없이 (사용자: 빈칸 없애) */
       (fam ? '<span class="ss-fam">색상 ' + fam.length + '종</span>' : '') +
-      '<span class="ss-img">' + supHtml(r, medium) +
+      '<span class="ss-img">' + (inStore(r) ? '<span class="ss-store" title="삼성스토어 시흥 매장에서 직접 보실 수 있습니다"><i aria-hidden="true"></i>매장 진열</span>' : '') + supHtml(r, medium) +
       '<span class="ss-bands">' + (saveOf(r) ? '<span class="ss-save">일시불보다 <b class="ss-save-f">' + fmt(saveOf(r)) + '원</b><b class="ss-save-s">' + saveShort(saveOf(r)) + '</b> <i>더 </i>저렴</span>' : '') +
       supAmtHtml(r) + '</span>' + (r.img ? '<img src="' + esc(r.img) + '" alt="' + esc(displayName(r)) + '" loading="lazy">' +
         (r.imgRep ? '<span class="ss-imgnote">대표 이미지</span>' : '') : '<span class="ss-icon" aria-hidden="true">' + (p ? p.icon : '📦') + '</span>') + '</span>' +
@@ -583,6 +600,40 @@ window.SUB_SHOP_READY = true;
   }
   /* 메뉴 (2026-11-18 고급 디자인) — PC: 구독 홈 | 구독 상품 ▾(품목 바둑판) | 이벤트 | 다품목 계산기 | 혜택·안내 ▾ | 상품 찾기
      휴대폰: 드롭다운 대신 예전처럼 메뉴를 가로로 밀기 (.ss-m-only) + 아래 품목 줄 */
+  /* 메뉴 검색 (2026-11-18 시안) — 칠 때마다 바로 보기 6개 (요금 자료를 받은 페이지만) · Enter·돋보기 = 상품 찾기 페이지로 */
+  function navSearch(f) {
+    if (!f) return;
+    var inp = f.q, sug = f.querySelector('.ss-nav-sug'), t = 0;
+    function narrow() { return (window.innerWidth || 1024) <= 760; }
+    function close() { f.classList.remove('has-sug'); sug.innerHTML = ''; }
+    function go(q) { track('ss_search', { ss_q: q, ss_by: 'nav' }); location.href = withQ(LINK.find, q ? 'q=' + encodeURIComponent(q) : ''); }
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var q = inp.value.replace(/^\s+|\s+$/g, '');
+      if (!q && narrow() && !f.classList.contains('is-open')) { f.classList.add('is-open'); inp.focus(); return; }   // 휴대폰: 돋보기 먼저 누르면 칸 열기
+      if (!q) { inp.focus(); return; }
+      go(q);
+    });
+    inp.addEventListener('input', function () {
+      clearTimeout(t); t = setTimeout(function () {
+        var q = inp.value.replace(/^\s+|\s+$/g, '');
+        if (!q || !rows || !rows.length) return close();
+        var hit = groupColors(rows.filter(function (r) { return matchQ(r, q); }));
+        var nq = normQ(q), near = function (r) { return normQ(displayName(r)).indexOf(nq) >= 0 || r.model.toLowerCase().indexOf(nq) === 0 ? 0 : 1; };   // 붙여 쓴 그대로 이름에 있거나 모델명이 그 글자로 시작하면 먼저
+        hit.sort(function (a, b) { return near(a) - near(b) || popRank(a) - popRank(b) || score(b) - score(a) || a.min - b.min; });
+        sug.innerHTML = (hit.length ? hit.slice(0, 6).map(function (r) {
+          var p = pageOf(r);
+          return '<a role="option" href="' + esc(viewHref(r.model, 'nav_q')) + '" data-cta="nav_sug" data-model="' + esc(r.model) + '">' +
+            (r.img ? '<img src="' + esc(r.img) + '" alt="" loading="lazy">' : '<span class="ss-nav-sug-ic">' + (p ? p.icon : '📦') + '</span>') +
+            '<span><b>' + esc(displayName(r)) + '</b><small>' + esc(r.model) + (inStore(r) ? ' · 매장 진열' : '') + '</small></span><em>월 ' + fmt(r.min) + '원~</em></a>';
+        }).join('') : '<p class="ss-nav-sug-none">바로 보기에 맞는 모델이 없습니다</p>') +
+          '<button type="submit" class="ss-nav-sug-all">「' + esc(q) + '」 전체 결과 보기' + (hit.length ? ' <small>' + fmt(hit.length) + '개</small>' : '') + ' →</button>';
+        f.classList.add('has-sug');
+      }, 120);
+    });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Escape') { close(); inp.blur(); f.classList.remove('is-open'); } });
+    document.addEventListener('click', function (e) { if (!f.contains(e.target)) { close(); if (!inp.value) f.classList.remove('is-open'); } });
+  }
   function drawNav(el) {
     var cur = CFG.page === 'cat' || CFG.page === 'view' ? CFG.key : CFG.page;
     var hasTip = cur !== 'event' && (livePromos().length || liveMulti());
@@ -607,12 +658,22 @@ window.SUB_SHOP_READY = true;
       '<a class="ss-brand" href="' + esc(LINK.home) + '"><span class="ss-brand-mk" aria-hidden="true"></span><span class="ss-brand-t"><span>삼성 <b>구독센터</b></span><small>삼성스토어 시흥</small></span></a>' +
       '<div class="ss-nav-links">' + link(['home', '구독 홈', LINK.home]) + mega + link(['event', '이벤트', LINK.event]) + link(['bundle', '다품목 계산기', LINK.bundle, true]) + drop +
       info.map(function (t) { return link(t, 'ss-m-only'); }).join('') + link(['find', '상품 찾기', LINK.find]) + '</div>' +
+      '<form class="ss-nav-q" role="search" action="#"><input type="search" name="q" placeholder="모델명·제품 검색" aria-label="구독 상품 검색" autocomplete="off">' +
+      '<button type="submit" aria-label="검색"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button><div class="ss-nav-sug" role="listbox"></div></form>' +
       '<a class="ss-nav-cta" href="' + esc(consultHref(null, 'nav')) + '" data-cta="consult">구독 상담 신청</a></div>' +
-      '<div class="ss-nav-cats">' + PAGES.map(function (p) {
-        return '<a href="' + esc(catHref(p.key)) + '"' + (cur === p.key ? ' aria-current="page"' : '') + (p.hot ? ' class="is-hot"' : '') + '>' + esc(p.name) + '</a>';
-      }).join('') + '</div></nav>';
+      /* 품목 줄 (2026-11-19) — A: 아이콘 + 두 줄 · B: 한 줄 + 좌우 화살표 + [전체 ▾] 펼치기 — 기본 B (A 비교: 주소 ?cats=a) */
+      (function () {
+        var mode = /[?&]cats=a(&|$)/.test(location.search) ? 'a' : 'b';
+        var chips = PAGES.map(function (p) {
+          return '<a href="' + esc(catHref(p.key)) + '"' + (cur === p.key ? ' aria-current="page"' : '') + (p.hot ? ' class="is-hot"' : '') + '><span class="ss-nc-ic" aria-hidden="true">' + p.icon + '</span>' + esc(p.name) + '</a>';
+        }).join('');
+        return mode === 'b'
+          ? '<div class="ss-nav-cats-wrap is-b"><button type="button" class="ss-nc-arr is-l" aria-label="품목 왼쪽으로">‹</button><div class="ss-nav-cats">' + chips + '</div><button type="button" class="ss-nc-arr is-r" aria-label="품목 오른쪽으로">›</button><button type="button" class="ss-nc-all" aria-expanded="false">전체<i aria-hidden="true"></i></button></div>'
+          : '<div class="ss-nav-cats-wrap is-a"><div class="ss-nav-cats">' + chips + '</div></div>';
+      })() + '</nav>';
     el.innerHTML = h;
     watchNavStuck(el);
+    navSearch(el.querySelector('.ss-nav-q'));
     // 드롭다운 — 마우스는 올리면 열림(CSS :hover) · 누르거나 키보드면 열고 닫기 · 밖을 누르거나 Esc 면 닫기
     [].forEach.call(el.querySelectorAll('.ss-dd'), function (dd) {
       var btn = dd.querySelector('.ss-dd-btn');
@@ -624,6 +685,16 @@ window.SUB_SHOP_READY = true;
     if (!drawNav.doc) { drawNav.doc = 1; document.addEventListener('click', function () { [].forEach.call(document.querySelectorAll('.ss-dd.is-open'), function (o) { o.classList.remove('is-open'); var b = o.querySelector('.ss-dd-btn'); if (b) b.setAttribute('aria-expanded', 'false'); }); }); }
     var on = el.querySelector('.ss-nav-cats [aria-current]');
     if (on && on.scrollIntoView && on.parentNode.scrollWidth > on.parentNode.clientWidth) on.parentNode.scrollLeft = on.offsetLeft - 16;
+    // B 시안: 좌우 화살표 · 끝에 닿으면 숨김 · [전체] 누르면 여러 줄로 펼침
+    var wb = el.querySelector('.ss-nav-cats-wrap.is-b');
+    if (wb) {
+      var row = wb.querySelector('.ss-nav-cats'), all = wb.querySelector('.ss-nc-all');
+      var edge = function () { wb.classList.toggle('at-l', row.scrollLeft < 4); wb.classList.toggle('at-r', row.scrollLeft + row.clientWidth > row.scrollWidth - 4); };
+      wb.querySelector('.is-l').addEventListener('click', function () { row.scrollBy({ left: -row.clientWidth * 0.7, behavior: 'smooth' }); });
+      wb.querySelector('.is-r').addEventListener('click', function () { row.scrollBy({ left: row.clientWidth * 0.7, behavior: 'smooth' }); });
+      all.addEventListener('click', function () { var o = !wb.classList.contains('is-open'); wb.classList.toggle('is-open', o); all.setAttribute('aria-expanded', o ? 'true' : 'false'); edge(); });
+      row.addEventListener('scroll', edge, { passive: true }); window.addEventListener('resize', edge); edge();
+    }
   }
   function drawSearch(el) {
     el.innerHTML = '<form class="ss-search" role="search" action="#">' +
@@ -888,8 +959,8 @@ window.SUB_SHOP_READY = true;
 
   /* 품목 페이지 목록 — 세부유형 · 금액대 · 정렬 */
   var BANDS = [['', '전체'], ['30000', '월 3만원 이하', 0, 30000], ['50000', '월 5만원 이하', 0, 50000], ['100000', '월 10만원 이하', 0, 100000], ['over', '월 10만원 초과', 100001, 1e12]];
-  var LIST = { seg: '', band: '', sort: 'rec', group: true };   // group: 색상만 다른 모델은 하나로 (2026-10-30)
-  function drawList(el) {
+  var LIST = { seg: '', band: '', sort: 'rec', group: true, q: '', store: false };   // group: 색상만 다른 모델은 하나로 (2026-10-30) · q 키워드 · store 매장 진열만 (2026-11-18 시안)
+  function drawList(el, onlyRes) {
     var p = PAGE_BY[CFG.key];
     if (!p) { el.innerHTML = '<p class="ss-empty">품목 설정(CFG.key)이 없습니다.</p>'; return; }
     var all = rowsOf(p);
@@ -897,15 +968,31 @@ window.SUB_SHOP_READY = true;
     var segs = {};
     all.forEach(function (r) { var s = segShort(r.seg); if (s) segs[s] = (segs[s] || 0) + 1; });
     var segKeys = Object.keys(segs).sort();
-    var list = (LIST.group ? groupColors(all) : all).filter(function (r) {
+    var grouped = LIST.group ? groupColors(all) : all, storeN = grouped.filter(inStore).length;
+    var list = grouped.filter(function (r) {
       if (LIST.seg && segShort(r.seg) !== LIST.seg) return false;
+      if (LIST.store && !inStore(r)) return false;
+      if (LIST.q && !matchQ(r, LIST.q)) return false;
       var b = BANDS.filter(function (x) { return x[0] === LIST.band; })[0];
       return !b || !b[0] || (r.min >= b[2] && r.min <= b[3]);
     }).sort(function (a, b) {
       if (LIST.sort === 'rec') return score(b) - score(a) || a.min - b.min;
       return LIST.sort === 'high' ? b.min - a.min : LIST.sort === 'model' ? (a.model < b.model ? -1 : 1) : a.min - b.min;
     });
-    el.innerHTML = '<p class="ss-summary"><b>' + esc(p.name) + '</b> 구독 모델 <b>' + fmt(all.length) + '</b>개 · 월 <b>' + fmt(minOf(all)) + '원</b>부터' +
+    var res = (LIST.q || LIST.store ? '<p class="ss-lq-sum">' + (LIST.q ? '「<b>' + esc(LIST.q) + '</b>」 ' : '') + (LIST.store ? '매장 진열 ' : '') + '<b>' + fmt(list.length) + '</b>개' +
+        ' <button type="button" class="ss-lq-reset" data-lqreset>조건 지우기</button></p>' : '') +
+      (list.length ? '<ul class="ss-grid">' + list.map(function (r) { return card(r, 'list'); }).join('') + '</ul>' + saveNote(list)
+        : '<p class="ss-empty">' + (LIST.q ? '「' + esc(LIST.q) + '」에 맞는 모델이 없습니다. 다른 낱말로 찾아보시거나 <a href="' + esc(withQ(LINK.find, 'q=' + encodeURIComponent(LIST.q))) + '">전체 품목에서 찾기</a>' : '조건에 맞는 모델이 없습니다.') + '</p>');
+    var box = onlyRes && el.querySelector('.ss-lres');
+    if (box) { box.innerHTML = res; return; }
+    var kw = ['비스포크', 'AI', '4도어', '키친핏', '양문형', '1도어', '정수기'].filter(function (w) { return all.some(function (r) { return matchQ(r, w); }); }).slice(0, 5);
+    el.innerHTML = '<div class="ss-lq">' +
+      '<label class="ss-lq-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>' +
+      '<input type="search" data-lq value="' + esc(LIST.q) + '" placeholder="' + esc(p.name) + ' 안에서 찾기 (예: ' + esc(kw.slice(0, 3).join(', ') || '모델명') + ')" aria-label="' + esc(p.name) + ' 키워드 검색" autocomplete="off"></label>' +
+      (kw.length ? '<span class="ss-lq-kw">' + kw.map(function (w) { return '<button type="button" data-lqkw="' + esc(w) + '"' + (LIST.q === w ? ' aria-pressed="true"' : '') + '>#' + esc(w) + '</button>'; }).join('') + '</span>' : '') +
+      (storeN ? '<label class="ss-lq-store"><input type="checkbox" data-store' + (LIST.store ? ' checked' : '') + '><i aria-hidden="true"></i>매장 진열만 <small>' + storeN + '</small></label>' : '') +
+      '</div>' +
+      '<p class="ss-summary"><b>' + esc(p.name) + '</b> 구독 모델 <b>' + fmt(all.length) + '</b>개 · 월 <b>' + fmt(minOf(all)) + '원</b>부터' +
       (CARD1 ? ' · ' + esc(CARD1.name) + ' 할인 시 월 <b>' + fmt(Math.min.apply(null, all.map(cardNet))) + '원</b>부터' : '') + '</p>' +
       (segKeys.length > 1 ? '<div class="ss-filter" role="group" aria-label="세부유형"><button type="button" data-seg=""' + (LIST.seg ? '' : ' aria-pressed="true"') + '>전체 <small>' + all.length + '</small></button>' +
         segKeys.map(function (s) { return '<button type="button" data-seg="' + esc(s) + '"' + (LIST.seg === s ? ' aria-pressed="true"' : '') + '>' + esc(s) + ' <small>' + segs[s] + '</small></button>'; }).join('') + '</div>' : '') +
@@ -914,8 +1001,7 @@ window.SUB_SHOP_READY = true;
       }).join('') +
       '<label class="ss-group"><input type="checkbox" data-group' + (LIST.group ? ' checked' : '') + '> 색상만 다른 모델은 하나로</label>' +
       '<select data-sort aria-label="정렬"><option value="rec"' + (LIST.sort === 'rec' ? ' selected' : '') + '>추천순</option><option value="low"' + (LIST.sort === 'low' ? ' selected' : '') + '>월 구독료 낮은순</option><option value="high"' + (LIST.sort === 'high' ? ' selected' : '') + '>월 구독료 높은순</option><option value="model"' + (LIST.sort === 'model' ? ' selected' : '') + '>모델명순</option></select></div>' +
-      (list.length ? '<ul class="ss-grid">' + list.map(function (r) { return card(r, 'list'); }).join('') + '</ul>' + saveNote(list)
-        : '<p class="ss-empty">조건에 맞는 모델이 없습니다.</p>');
+      '<div class="ss-lres">' + res + '</div>';
   }
 
   /* ---------- 검색엔진용 구조화 데이터 ---------- */
@@ -981,6 +1067,8 @@ window.SUB_SHOP_READY = true;
     if (t.hasAttribute('data-add')) { ev.preventDefault(); var m = t.getAttribute('data-add'); if (window.SUB_CART.has(m)) { window.SUB_CART.remove(m); toast('묶음 계산기에서 뺐습니다'); } else addToCart(m); }
     else if (t.hasAttribute('data-seg')) { LIST.seg = t.getAttribute('data-seg'); draw(['list']); track('ss_seg', { ss_seg: LIST.seg }); }
     else if (t.hasAttribute('data-band')) { LIST.band = t.getAttribute('data-band'); draw(['list']); }
+    else if (t.hasAttribute('data-lqkw')) { var w = t.getAttribute('data-lqkw'); LIST.q = LIST.q === w ? '' : w; draw(['list']); track('ss_lq', { ss_q: LIST.q, ss_by: 'kw' }); }
+    else if (t.hasAttribute('data-lqreset')) { LIST.q = ''; LIST.store = false; draw(['list']); }
     else if (t.hasAttribute('data-qz-p')) { QZ.p = QZ.p === t.getAttribute('data-qz-p') ? '' : t.getAttribute('data-qz-p'); draw(['quiz']); track('ss_quiz', { ss_step: 'p', ss_v: QZ.p }); }
     else if (t.hasAttribute('data-qz-b')) { QZ.b = t.getAttribute('data-qz-b'); draw(['quiz']); track('ss_quiz', { ss_step: 'b', ss_v: QZ.b }); }
     else if (t.hasAttribute('data-qz-s')) { QZ.s = t.getAttribute('data-qz-s'); draw(['quiz']); track('ss_quiz', { ss_step: 's', ss_v: QZ.s }); }
@@ -1126,6 +1214,20 @@ window.SUB_SHOP_READY = true;
     root.addEventListener('change', function (ev) {
       if (ev.target.hasAttribute && ev.target.hasAttribute('data-sort')) { LIST.sort = ev.target.value; draw(['list']); }
       else if (ev.target.hasAttribute && ev.target.hasAttribute('data-group')) { LIST.group = ev.target.checked; draw(['list']); track('ss_group', { ss_on: LIST.group }); }
+      else if (ev.target.hasAttribute && ev.target.hasAttribute('data-store')) { LIST.store = ev.target.checked; draw(['list']); track('ss_store', { ss_on: LIST.store }); }
+    });
+    // 키워드 — 글자를 칠 때마다 결과만 다시 (입력 칸은 다시 그리지 않음) · 추천 낱말 눌림 표시도 맞춤
+    var lqT = 0;
+    root.addEventListener('input', function (ev) {
+      var t = ev.target; if (!t.hasAttribute || !t.hasAttribute('data-lq')) return;
+      clearTimeout(lqT); lqT = setTimeout(function () {
+        LIST.q = t.value.replace(/^\s+|\s+$/g, '');
+        $all('[data-ss="list"]').forEach(function (el) {
+          drawList(el, true);
+          [].forEach.call(el.querySelectorAll('[data-lqkw]'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-lqkw') === LIST.q ? 'true' : 'false'); });
+        });
+        if (LIST.q) track('ss_lq', { ss_q: LIST.q, ss_by: 'type' });
+      }, 150);
     });
     document.addEventListener('ss-cart', function () {   // 담기 상태가 바뀌면 버튼 글자·메뉴 숫자만 갱신
       $all('.ss-add').forEach(function (b) { var on = window.SUB_CART.has(b.getAttribute('data-add')); b.textContent = on ? '담김 ✓' : '+ 담기'; var li = b.closest ? b.closest('.ss-card') : b.parentNode; (li || b.parentNode).classList.toggle('in-cart', on); });
@@ -1151,6 +1253,7 @@ window.SUB_SHOP_READY = true;
     if (!window.SUB_CARDS) need.push('sub_cards.js');
     if (!window.SUB_POLICY) need.push('sub_policy.js');
     if (!window.SUB_PROMO_AMT) need.push('sub_promo_amt.js');   // 구독료 최대 n원 지원 (없으면 띠만 안 나온다)
+    if (!window.SUB_STORE) need.push('sub_store.js');   // 매장 진열 목록 (2026-11-18 시안 · 없으면 「매장 진열」 표시만 안 나온다)
     var left = need.length;
     if (!left) return done();
     need.forEach(function (f) {
