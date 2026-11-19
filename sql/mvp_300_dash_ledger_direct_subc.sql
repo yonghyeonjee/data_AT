@@ -57,3 +57,11 @@
 --   구운 캐시도 사라진다(11-18 밤 9번 연속 실패 · 이번 배포 직후 10:30·10:45 두 번 실패).
 --   · 안쪽 루프 맨 앞: exit when clock_timestamp() - t0 > interval '80 seconds'  (못 구운 키는 다음 회차가 이어서)
 --   · f_sl_pending 은 회차가 40초 안일 때만 (if v_ttl < interval '20 minutes' and clock_timestamp() - t0 < interval '40 seconds')
+--
+-- ⑥ 직판 자동 수집 = 시트의 Apps Script (tools/gas/direct_daily_sync.gs)
+--   core.api_key 'direct_daily' (해시만 · 값은 _secrets.local.md)
+--   public.fn_direct_daily_ingest(p_key, p_rows[{date, handler, sales, refund}], p_from, p_to) — anon 실행 · 키 검사 · 같은 값이면 안 건드림 ·
+--     기간 안에서 시트에 없는 칸은 0 으로 · 받은 줄이 전의 절반 아래면 반영 안 함 · core.direct_pull_log(note 'GAS …') · 바뀌면 f_dash_mark_dirty()
+--   시트 프로젝트에 파일은 넣어 둠(키 자리 PASTE_DC_KEY_HERE) — 사용자가 키를 붙여넣고 setupDirectTrigger() 를 한 번 실행해야 매시간 돈다.
+--
+-- DPS 판매 속보 › 영업사원 확인(11-19 · 읽기만): 사원별 목표·실적·달성율 · 구독/일반 구분 없음 · 11/1~17 합계 596,669,569 = dps.perf_fetch 와 같음.
