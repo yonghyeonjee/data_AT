@@ -230,6 +230,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px so
 .kdrows .dchip{margin-left:0;justify-self:end}
 .kdsum{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule-soft);font-size:13px;color:var(--ink-2);line-height:1.7}
 /* 구독 계약 기준 (mvp_300) */
+.kdrows+.kdc{margin-top:16px}
 .kdc{margin-top:14px;padding:12px 14px;border:1px solid var(--rule);border-radius:10px;background:#F6F8FC;font-size:13px;line-height:1.65;color:var(--ink-2)}
 .kdc-h{font-weight:700;color:var(--ink);font-size:14px}.kdc-h small{font-weight:500;color:var(--muted);margin-left:8px;font-size:12px}
 .kdc-big{margin:4px 0 10px}.kdc-big b{font-family:var(--mono);font-size:22px;color:var(--navy);margin-right:4px}.kdc-big small{display:block;color:var(--muted);font-size:12px}
@@ -852,6 +853,7 @@ let stBasis='staff'; try{ if(sessionStorage.getItem('dash_stb')==='ch') stBasis=
 if(!ST){const se=document.querySelector('#st-sec'); if(se) se.remove();}
 if(KD<0&&!ST){const ke=document.querySelector('#kd-sec'); if(ke) ke.remove();}   /* 구독 전표도 사원 실적도 없는 payload(옛 캐시·수기)면 비교 카드 없음 (v287) */
 const SUBC=(DATA.subc&&Array.isArray(DATA.subc.rows))?DATA.subc:null;   /* 구독 계약 현황(올인원) [일, 0 실계약일|1 신청일, 상태(0 접수·1 구독·2 해지완료), 건, 총구독료, 제품구독료, 월요금] (mvp_300) */
+const LSUB=DATA.mode==='ledger'&&!!SUBC;   /* 원장 기준(mvp_301): 매장 = 매장 사원의 DPS 실적 전부(일반) · 구독 = 구독 계약(신청일 기준) — 전표로 가르지 않는다 */
 const CC=DATA.ccells||[];   /* 고객 셀 [일, 채널, 구매 고객(고객×일), 그중 첫 구매] (2026-09-19) */
 let pMall=-1, pCat=null, pQ='', pLimit=30, pTab='p', wfTab='ch';
 let pSort='n'; try{ if(sessionStorage.getItem('dash_psort')==='q') pSort='q'; }catch(e){}   /* 상품 목록 정렬: n 금액 · q 수량 */
@@ -951,9 +953,10 @@ function kdBuckets(){ const bk=buckets(),key=mkey(),rows=bk.keys.map(k=>({k:k,l:
   const pos={}; bk.keys.forEach((k,i)=>bk.map.get(k).idx.forEach(d=>pos[d]=i));
   if(useStaff()){ for(const c of ST.rows){ const i=pos[c[0]]; if(i===undefined||!ST.store[c[1]])continue; const v=key==='g'?c[3]:key==='r'?c[4]:c[3]-c[4]; rows[i].v+=v; if(c[2]===1)rows[i].v1+=v; } }
   else{ for(const c of CELLS){ if(c[1]!==STORE_CH)continue; const i=pos[c[0]]; if(i===undefined)continue; const v=val(c); rows[i].v+=v; if(c.sub)rows[i].v1+=v; } }
+  if(LSUB){ for(const r of SUBC.rows){ if(r[1]!==1||r[2]===2)continue; const i=pos[r[0]]; if(i===undefined)continue; rows[i].v+=r[4]; rows[i].v1+=r[4]; } }   /* 구독 = 신청일 기준 계약(해지 제외) */
   return {mode:bk.mode,rows:rows}; }
-function kdPill(a1,t){ return t>0?'<em class="kdp">구독 '+pct(a1,t).toFixed(0)+'%</em>':''; }
-function kdShareTxt(a1,t,p1,pt){ if(!(t>0))return ''; const sh=pct(a1,t); let x='구독 비중 '+sh.toFixed(1)+'%';
+function kdPill(a1,t){ return (t>0&&a1>0)?'<em class="kdp">구독 '+pct(a1,t).toFixed(0)+'%</em>':''; }
+function kdShareTxt(a1,t,p1,pt){ if(!(t>0)||(!(a1>0)&&!(p1>0)))return ''; const sh=pct(a1,t); let x='구독 비중 '+sh.toFixed(1)+'%';
   if(pt>0){ const q=pct(p1,pt),d=sh-q; x+=' (전기 '+q.toFixed(1)+'% · '+(d>=0?'▲ +':'▼ ')+Math.abs(d).toFixed(1)+'%p)'; } return x+' · '; }
 /* 순위 막대 두 조각 (진한 = 일반 · 연한 = 구독) */
 function kdSegs(key,mx,col){ return kdVals(cur,key).map((v,j)=>'<i class="sg'+(j?' sub':'')+'" style="width:'+Math.max(0,Math.min(100,v/mx*100))+'%;background:'+col+'" title="'+KD_NM[j]+' '+wonS(v)+'"></i>').join(''); }
@@ -972,7 +975,7 @@ function stStore(S,key){if(!S)return null;let t=0,a0=0,a1=0,a2=0,m=0;
   S.forEach((s,i)=>{if(!ST.store[i])return;if(s.g||s.r)m++;t+=s[key];a0+=s.k[0][key]+s.k[2][key];a1+=s.k[1][key];a2+=s.k[2][key];});
   return {t:t,a0:a0,a1:a1,a2:a2,m:m};}
 const useStaff=()=>!!ST&&stBasis==='staff';
-function stbHtml(){return ST?'<span class="stb" role="group" aria-label="매장 집계 기준"><button data-stb="staff" aria-pressed="'+(stBasis==='staff')+'" title="DPS 사원별목표/실적처럼 매장 사원 실적으로">사원</button><button data-stb="ch" aria-pressed="'+(stBasis==='ch')+'" title="판매번호의 DPS 채널(일반 = 매장(시흥) · 구독 = 매장구독(시흥))로">채널</button></span>':'';}
+function stbHtml(){return (ST&&!LSUB)?'<span class="stb" role="group" aria-label="매장 집계 기준"><button data-stb="staff" aria-pressed="'+(stBasis==='staff')+'" title="DPS 사원별목표/실적처럼 매장 사원 실적으로">사원</button><button data-stb="ch" aria-pressed="'+(stBasis==='ch')+'" title="판매번호의 DPS 채널(일반 = 매장(시흥) · 구독 = 매장구독(시흥))로">채널</button></span>':'';}
 function setStBasis(v){stBasis=v;try{sessionStorage.setItem('dash_stb',v);}catch(e){}drawKpis();drawOO();drawKind();}
 let cur=null,prv=null,cmp=null;
 
@@ -1263,7 +1266,9 @@ function drawKpis(){
     /* 사원 기준 (mvp_248): 매장 사원 실적 합 = DPS 사원별목표/실적의 매장 사원 줄 합. 구독 = 매장구독(시흥) 판매번호, 나머지는 일반 */
     const c1=stStore(cur.st,key), c0=prv?stStore(prv.st,key):null;
     d=dOf(c1.t,c0?c0.t:null);
-    K.push({k:'매장 (일반 · 구독)'+stbHtml(),v:won(c1.t)+'<span class="v2">'+wonS(c1.a0)+' · '+wonS(c1.a1)+kdPill(c1.a1,c1.t)+'</span>',cls:'',d:d[0],dc:d[1],
+    if(LSUB) K.push({k:'매장 · 일반 (DPS 실적)',v:won(c1.t),cls:'',d:d[0],dc:d[1],
+      sub:'매장 사원 '+c1.m+'명 · DPS 사원별목표/실적(판매 속보)과 같은 금액'+(c0?' · 전기 '+wonS(c0.t):'')+' · 구독은 계약 기준 (아래 카드)'});
+    else K.push({k:'매장 (일반 · 구독)'+stbHtml(),v:won(c1.t)+'<span class="v2">'+wonS(c1.a0)+' · '+wonS(c1.a1)+kdPill(c1.a1,c1.t)+'</span>',cls:'',d:d[0],dc:d[1],
       sub:kdShareTxt(c1.a1,c1.t,c0?c0.a1:0,c0?c0.t:0)+'매장 사원 '+c1.m+'명 기준 · 일반 '+wonS(c1.a0)+(c0?' (전기 '+wonS(c0.a0)+')':'')+' · 구독 '+wonS(c1.a1)+(c0?' (전기 '+wonS(c0.a1)+')':'')
         +(c1.a2?' · 일반 중 다른 채널 판매번호 '+(c1.a2<0?'−'+wonS(-c1.a2):wonS(c1.a2)):'')});
   }else if(stv+sv>0){
@@ -1356,7 +1361,7 @@ function drawOO(){
     +'<span class="nums">'
     +'<span>온라인<b>'+wonS(on)+'</b>'+dd(on,onP)+'</span>'
     +'<span>오프라인<b>'+wonS(off)+'</b>'+dd(off,offP)+'</span>'
-    +(st>0?'<span title="'+stTitle+'">매장<b>'+wonS(st)+'</b><em>일반 '+wonS(st1)+' · 구독 '+wonS(st2)+((useStaff()||KD>=0)?' · 구독 '+pct(st2,st).toFixed(0)+'%':'')+'</em></span>':'')
+    +(st>0?'<span title="'+stTitle+'">매장<b>'+wonS(st)+'</b>'+(LSUB?'<em>DPS 실적</em>':'<em>일반 '+wonS(st1)+' · 구독 '+wonS(st2)+((useStaff()||KD>=0)?' · 구독 '+pct(st2,st).toFixed(0)+'%':'')+'</em>')+'</span>':'')
     +(rv>0?'<span>렌탈<b>'+wonS(rv)+'</b></span>':'')
     +(vv>0?'<span>VMS<b>'+wonS(vv)+'</b></span>':'')
     +'</span>';
@@ -1369,6 +1374,12 @@ function drawKind(){
   if(!kdHas()||!inScope(STORE_CH)){ el.innerHTML='<div class="empty">'+(STORE_CH<0||!inScope(STORE_CH)?'범위에 매장(시흥)이 없습니다':'구독을 가를 자료가 없습니다')+'</div>'; tr.innerHTML=''; nt.textContent=''; tn.textContent=''; return; }
   const c1=kdNow(cur), c0=prv?kdNow(prv):null, t=c1?c1.t:0;
   if(!c1||t<=0){ el.innerHTML='<div class="empty">이 기간에 매장 매출이 없습니다</div>'; tr.innerHTML=''; nt.textContent=''; tn.textContent=''; return; }
+  if(LSUB){ el.innerHTML=subcHtml(c1,c0);
+    nt.textContent='일반 = 매장 사원 DPS 실적 (사원별목표/실적 · 판매 속보와 같은 금액) · 구독 = 구독계약조회(올인원) 신청일 기준';
+    const kb=kdBuckets(), n=kb.rows.length;
+    tr.innerHTML=n?barChart(kb.rows,'#1428A0',true,{label:r=>r.v>0?Math.round(pct(r.v1,r.v))+'%':''}):'<div class="empty">자료 없음</div>';
+    tn.innerHTML=({d:'일별',w:'주별',m:'월별'})[kb.mode]+' · '+n+'구간 · <i class="kdl"></i>일반 (DPS 실적) <i class="kdl sub"></i>구독 (계약 · 해지 제외) · 막대 위 숫자 = 구독 비중';
+    return; }
   const p1=pct(c1.a1,t), q1=(c0&&c0.t>0)?pct(c0.a1,c0.t):null;
   const chip=(v,p)=>{ if(!c0||p===null||p===undefined)return '<span class="dchip flat">–</span>'; if(p===0)return v>0?'<span class="dchip up">신규</span>':'<span class="dchip flat">–</span>';
     const x=(v-p)/Math.abs(p)*100; return '<span class="dchip '+(Math.abs(x)<0.5?'flat':x>0?'up':'down')+'" title="전기 '+wonS(p)+'">'+(x>=0?'+':'')+x.toFixed(1)+'%</span>'; };
@@ -1377,7 +1388,7 @@ function drawKind(){
   h+='<div class="kdrows">'+[c1.a0,c1.a1].map((v,j)=>'<span class="nm"><i'+(j?' class="sub"':'')+'></i>'+KD_NM[j]+'</span><span class="amt">'+wonS(v)+'</span><span class="shr">'+pct(v,t).toFixed(1)+'%</span>'+chip(v,c0?(j?c0.a1:c0.a0):null)).join('')+'</div>';
   let dp=''; if(q1!==null){ const d=p1-q1; dp=' · 전기 '+q1.toFixed(1)+'% <span class="dchip '+(Math.abs(d)<0.05?'flat':d>0?'up':'down')+'">'+(d>=0?'+':'')+d.toFixed(1)+'%p</span>'; }
   h+='<div class="kdsum"><span class="big">'+p1.toFixed(1)+'%</span><span class="lbl">구독 비중</span>'+dp+'<br>매장 합계 <b>'+wonS(t)+'</b>'+(c0?' · 전기 <b>'+wonS(c0.t)+'</b> '+chip(t,c0.t):(cmp===null?' · 비교 기간 없음':''))+'</div>';
-  h+=subcHtml(c1);
+  h+=subcHtml(c1,c0);
   el.innerHTML=h;
   nt.textContent=(useStaff()?'매장 사원 실적 기준 (사원별목표/실적) · 일반 = 구독 아닌 판매번호':'판매번호의 DPS 채널 기준 · 일반 = 매장(시흥) · 구독 = 매장구독(시흥)')+' · '+mname()+(ST?' · 기준은 핵심 지표 [사원|채널]':'');
   const kb=kdBuckets(), n=kb.rows.length;
@@ -1385,32 +1396,39 @@ function drawKind(){
   tn.innerHTML=({d:'일별',w:'주별',m:'월별'})[kb.mode]+' · '+n+'구간 · <i class="kdl"></i>일반 <i class="kdl sub"></i>구독 · 막대 위 숫자 = 그 기간의 구독 비중';
 }
 
-/* ===== 구독 계약 기준 (mvp_300 · 2026-11-19) — DPS 구독 계약 현황(올인원)
-   구독은 판매 전표가 자동으로 생기지 않아 전표 금액(임시 전표 · 함께 산 일시불 품목)이 계약 금액과 다르다.
-   계약 금액 = 실계약일이 기간 안이고 상태가 '구독' 인 계약의 총구독료 · 상태 = 신청일이 기간 안인 계약의 지금 상태 */
-function scAgg(lo,hi){ if(!SUBC)return null; const o={n:0,tot:0,prod:0,st:[0,1,2,3].map(()=>({n:0,tot:0})),chg:[0,0,0]};
+/* ===== 구독 계약 (mvp_300 · mvp_301 · 2026-11-19) — DPS 구독계약조회(올인원)와 같은 셈
+   신청일이 기간 안인 계약 전체 + 상태별(접수 · 구독 · 해지완료). 구독은 판매 전표가 자동으로 생기지 않아 실적(전표) 금액으로는 알 수 없다
+   → 매출 합계에는 넣지 않고 이 카드에만 보인다. 일반:구독 비율의 구독 = 해지완료를 뺀 계약 총구독료 */
+function scAgg(lo,hi){ if(!SUBC)return null; const o={n:0,tot:0,prod:0,cn:0,ctot:0,st:[0,1,2,3].map(()=>({n:0,tot:0})),chg:[0,0,0]};
   for(const r of SUBC.rows){ if(r[0]<lo||r[0]>hi)continue;
-    if(r[1]===0){ if(r[2]===1){o.n+=r[3];o.tot+=r[4];o.prod+=r[5];} }
-    else{ const x=o.st[r[2]]||o.st[3]; x.n+=r[3]; x.tot+=r[4]; } }
+    if(r[1]===0){ if(r[2]===1){o.cn+=r[3];o.ctot+=r[4];} }
+    else{ const x=o.st[r[2]]||o.st[3]; x.n+=r[3]; x.tot+=r[4]; o.n+=r[3]; o.tot+=r[4]; o.prod+=r[5]; } }
+  o.live=o.tot-o.st[2].tot; o.liven=o.n-o.st[2].n;
   for(const r of (SUBC.chg||[])){ if(r[0]<lo||r[0]>hi)continue; o.chg[r[1]]=(o.chg[r[1]]||0)+r[2]; }
   return o; }
-function subcHtml(c1){ const A=scAgg(a,b); if(!A)return '';
-  const P=cmp?scAgg(cmp.lo,cmp.hi):null, gen=Math.max(0,c1?c1.a0:0), t=gen+A.tot;
-  const dl=(P&&P.tot>0)?(A.tot-P.tot)/P.tot*100:null;
-  const chip=dl===null?'':' <span class="dchip '+(Math.abs(dl)<0.5?'flat':dl>0?'up':'down')+'" title="전기 '+wonS(P.tot)+' · '+P.n+'건">'+(dl>=0?'+':'')+dl.toFixed(1)+'%</span>';
+function subcHtml(c1,c0){ const A=scAgg(a,b); if(!A)return '';
+  const P=cmp?scAgg(cmp.lo,cmp.hi):null;
+  const gen=Math.max(0,c1?(LSUB?c1.t:c1.a0):0), genP=c0?(LSUB?c0.t:c0.a0):null, t=gen+A.live;
+  const chip=(v,p)=>{ if(p===null||p===undefined||!(p>0))return '<span class="dchip flat">–</span>'; const x=(v-p)/p*100;
+    return '<span class="dchip '+(Math.abs(x)<0.5?'flat':x>0?'up':'down')+'" title="전기 '+wonS(p)+'">'+(x>=0?'+':'')+x.toFixed(1)+'%</span>'; };
   const ym=x=>x?String(x).slice(0,7).replace('-','.'):'';
-  let h='<div class="kdc"><div class="kdc-h">구독 계약 기준<small>DPS 구독 계약 현황 · 올인원'+(SUBC.fetched?' · '+esc(SUBC.fetched)+' 수집':'')+'</small></div>';
-  h+='<div class="kdc-big"><b>'+wonS(A.tot)+'</b> 계약 총구독료 · '+A.n.toLocaleString()+'건'+chip+'<small>실계약일이 이 기간 · 상태 구독 · 제품구독료 '+wonS(A.prod)+'</small></div>';
-  if(t>0){ const w0=gen/t*100, w1=A.tot/t*100;
-    h+='<div class="kdbar"><i style="width:'+w0+'%" title="일반 (전표) '+wonS(gen)+'">'+(w0>=16?'일반 '+w0.toFixed(0)+'%':'')+'</i><i class="sub" style="width:'+w1+'%" title="구독 (계약) '+wonS(A.tot)+'">'+(w1>=16?'구독 '+w1.toFixed(0)+'%':'')+'</i></div>';
-    h+='<div class="kdc-line">일반 <b>'+wonS(gen)+'</b> (전표) : 구독 <b>'+wonS(A.tot)+'</b> (계약) · 계약 기준 구독 비중 <b>'+w1.toFixed(1)+'%</b></div>'; }
-  const S=A.st, nm=['접수','구독 (진행 중)','해지완료','기타'], any=S.some(x=>x.n>0);
-  h+='<div class="kdc-sub">신청일이 이 기간인 계약의 지금 상태</div>';
-  h+=any?'<div class="kdc-st">'+S.map((x,i)=>x.n>0?'<span class="s'+i+'"><i></i>'+nm[i]+' <b>'+x.n.toLocaleString()+'건</b> '+wonS(x.tot)+'</span>':'').join('')+'</div>'
+  const gl=LSUB?'일반 (DPS 실적)':'일반 (전표)';
+  let h='';
+  if(t>0){ const w0=gen/t*100, w1=A.live/t*100;
+    h+='<div class="kdbar"><i style="width:'+w0+'%" title="'+gl+' '+wonS(gen)+'">'+(w0>=16?'일반 '+w0.toFixed(0)+'%':'')+'</i><i class="sub" style="width:'+w1+'%" title="구독 계약 '+wonS(A.live)+'">'+(w1>=16?'구독 '+w1.toFixed(0)+'%':'')+'</i></div>';
+    h+='<div class="kdrows"><span class="nm"><i></i>'+gl+'</span><span class="amt">'+wonS(gen)+'</span><span class="shr">'+w0.toFixed(1)+'%</span>'+chip(gen,genP)
+      +'<span class="nm"><i class="sub"></i>구독 (계약 · 해지 제외)</span><span class="amt">'+wonS(A.live)+'</span><span class="shr">'+w1.toFixed(1)+'%</span>'+chip(A.live,P?P.live:null)+'</div>'; }
+  h+='<div class="kdc"><div class="kdc-h">구독 계약<small>DPS 구독계약조회(올인원) · 신청일 기준'+(SUBC.fetched?' · '+esc(SUBC.fetched)+' 수집':'')+'</small></div>';
+  h+='<div class="kdc-big"><b>'+wonS(A.tot)+'</b> 전체 '+A.n.toLocaleString()+'건 · 총구독료 '+chip(A.tot,P?P.tot:null)+'<small>신청일이 이 기간인 계약 전부 · 제품구독료 '+wonS(A.prod)+'</small></div>';
+  const S=A.st, nm=['접수','구독','해지완료','기타'], any=S.some(x=>x.n>0);
+  h+=any?'<div class="kdc-st">'+S.map((x,i)=>x.n>0?'<span class="s'+i+'" title="'+nm[i]+' '+wonS(x.tot)+' · 전체의 '+pct(x.tot,A.tot).toFixed(1)+'%"><i></i>'+nm[i]+' <b>'+x.n.toLocaleString()+'건</b> '+wonS(x.tot)+'</span>':'').join('')+'</div>'
         :'<div class="kdc-sub" style="color:var(--muted)">이 기간에 신청된 계약이 없습니다</div>';
-  if(A.chg[0]||A.chg[1]) h+='<div class="kdc-sub">기간 안 상태 변경 · 구독 확정 <b>'+(A.chg[0]||0)+'</b>건 · 해지 <b>'+(A.chg[1]||0)+'</b>건'+(SUBC.chg_from?' <span style="color:var(--muted)">('+ym(SUBC.chg_from)+' 부터 기록)</span>':'')+'</div>';
-  h+='<p class="kdc-note">위쪽 구독(전표 기준)은 DPS 판매 전표 금액입니다. 구독은 판매 전표가 자동으로 생기지 않아 임시 전표(1,000원 등)나 함께 산 일시불 품목 금액이 들어가므로 계약 금액과 다릅니다. 매출 합계는 전표 기준 그대로이고, 계약 금액은 여기에만 보입니다.'
-    +(SUBC.full_from?' 계약 현황은 신청일 '+ym(SUBC.full_from)+' 이후분이 온전합니다.':'')+' 스마트 구독은 총액이 없어 빠져 있습니다.</p></div>';
+  h+='<div class="kdc-sub">이 기간에 실계약된 계약 <b>'+A.cn.toLocaleString()+'</b>건 · <b>'+wonS(A.ctot)+'</b>'
+    +((A.chg[0]||A.chg[1])?' · 상태 변경: 구독 확정 <b>'+(A.chg[0]||0)+'</b>건 · 해지 <b>'+(A.chg[1]||0)+'</b>건'+(SUBC.chg_from?' <span style="color:var(--muted)">('+ym(SUBC.chg_from)+' 부터 기록)</span>':''):'')+'</div>';
+  h+='<p class="kdc-note">'+(LSUB
+      ?'일반은 매장 사원의 DPS 실적(사원별목표/실적 · 판매 속보와 같은 금액)입니다. 구독은 판매 전표가 자동으로 생기지 않아 실적에 계약 금액이 들어가지 않으므로, 구독계약조회의 총구독료를 따로 보입니다(매출 합계에는 더하지 않습니다).'
+      :'위쪽 구독(전표 기준)은 DPS 판매 전표 금액입니다. 구독은 판매 전표가 자동으로 생기지 않아 임시 전표(1,000원 등)나 함께 산 일시불 품목 금액이 들어가므로 계약 금액과 다릅니다.')
+    +(SUBC.full_from?' 계약 현황은 신청일 '+ym(SUBC.full_from)+' 이후분입니다.':'')+' 스마트 구독은 총액이 없어 빠져 있습니다.</p></div>';
   return h; }
 
 /* ===== 워터폴 (채널 / 상품) ===== */
