@@ -1063,7 +1063,7 @@ function cbAuto(kind){ if(LUMP&&(LUMP.cards[kind]||{}).cashback&&!Q.cond.cb){ Q.
 function setItem(i,k,v){ const it=Q.items[i]; it[k]=v; if(k==='lk') cbAuto(v); if(k==='lm'&&+v) cbAuto(lumpKindOf(it)); if(k==='years'){ it.care=''; } if(k==='prepay'){ it.preManual=0; it.preMode=false; } if(k==='preManual'&&!(+v>0)) it.preMode=false;
   if(k==='years'||k==='care'||k==='prepay'||k==='preManual'||k==='monthlyManual') it.payManual=0;   // 조건이 바뀌면 수기로 넣은 혜택가는 지운다
   if(k==='card'){ Q.cond.cardPreset=''; it.tier=v?(C.defaultTier(v)||''):''; } render(); }
-/* 품목별 더보기 (2026-11-19): 제품별 포인트(구독일 때 · 일반일 때 — 한 번에 둘 다) · 상품권 · 숨김
+/* 품목별 더보기 (2026-11-19): 제품별 포인트(구독일 때 · 일반일 때 — 한 번에 둘 다) · 숨김 (상품권 칸 뺌)
    기본 구독 할인 · 월 구독료 수기 · 소모품 칸은 뺌(사용자 요청) · 제품별 포인트를 넣으면 견적 공통 포인트 합계는 자동(잠김) */
 function ptIn(it,i,k){ const v=it[k]; return `<input type="text" inputmode="numeric" placeholder="DPS 포인트" aria-label="${k==='ptSub'?'구독일 때':'일반일 때'} 포인트" value="${v==null?'':fmt(+v)}" onchange="const t=this.value.replace(/[^0-9]/g,''); setItem(${i},'${k}',t===''?null:+t)">`; }
 function ownHtml(it,i){
@@ -1072,7 +1072,6 @@ function ownHtml(it,i){
   return `<div class="own">
     <div class="orow ptrow"><span class="lbl">⭐ 제품별 포인트</span>${canSub?`<label class="ptk${isS?' cur':''}">구독일 때 ${ptIn(it,i,'ptSub')}</label>`:''}<label class="ptk${isS?'':' cur'}">일반일 때 ${ptIn(it,i,'ptLump')}</label><span class="hint">넣으면 견적 공통 포인트 합계에 자동 · 구독/일반 바꾸면 그 값으로 · 비우면 0</span></div>
     ${Q.cond.ptEach&&isS?`<div class="orow"><span class="lbl">멤버십 포인트 수기</span><input class="amt" type="number" step="1000" placeholder="자동" value="${it.pointManual==null?'':it.pointManual}" onchange="setItem(${i},'pointManual',this.value===''?null:+this.value)"><span class="hint">비우면 행사·멤버십 자동 계산</span></div>`:''}
-    ${isS?`<div class="orow"><span class="lbl">상품권 <span class="hidetag">고객 화면에 안 보임</span></span><input class="amt" type="number" step="10000" value="${+it.giftcard||''}" onchange="setItem(${i},'giftcard',+this.value||0)"></div>`:''}
     <div class="orow"><span class="lbl">견적서에서</span>${seg('hidden',[{v:false,l:'보임'},{v:true,l:'숨김 (계산 제외)'}],!!it.hidden)}</div>
   </div>`; }
 /* ═══ 표로 입력 (엑셀 견적서처럼) ═══
@@ -1126,7 +1125,7 @@ function tableHtml(S,L){
       net:simple&&!isS&&!it.hidden?(pv?`<td class="r num hl alt">${fmt(pv.after)}<small>구독 선택 시</small></td>`:`<td class="r num hl"><span class="na">—</span></td>`)
         :`<td class="r num hl">${it.hidden?'<span class="na">—</span>':isS?(r?fmtP(r.after):'…'):fmtP(L.netBy.get(it)||0)}</td>`,
       note:`<td><input data-k="${i}:4" class="note" aria-label="비고" value="${esc(it.note)}" onchange="Q.items[${i}].note=this.value"></td>`,
-      act:`<td class="c act">${!it.free?`<button class="mini${it.own?' on':''}" title="더보기 — 제품별 포인트(구독일 때 · 일반일 때) · 상품권 · 숨김" onclick="setItem(${i},'own',${it.own?'false':'true'})">${it.own?'접기':'더보기'}</button>`:''}<button class="mini" aria-label="${esc(it.m)} 빼기" title="빼기" onclick="delItem(${i})">✕</button></td>` };
+      act:`<td class="c act">${!it.free?`<button class="mini${it.own?' on':''}" title="더보기 — 제품별 포인트(구독일 때 · 일반일 때) · 숨김" onclick="setItem(${i},'own',${it.own?'false':'true'})">${it.own?'접기':'더보기'}</button>`:''}<button class="mini" aria-label="${esc(it.m)} 빼기" title="빼기" onclick="delItem(${i})">✕</button></td>` };
     return `<tr class="${it.mode}${it.hidden?' hid':''}${SEL.has(it.m)?' sel':''}">${V.map(k=>C[k]).join('')}</tr>`
       +(!it.free&&it.own?`<tr class="ownrow"><td colspan="${V.length}"><div class="item">${ownHtml(it,i)}</div></td></tr>`:''); }).join('');
   const W={ck:simple?46:40,md:simple?0:132,nm:0,mode:simple?124:98,y:58,care:96,pp:simple?112:92,card:128,mon:70,pay:simple?150:92,lump:simple?150:96,net:simple?150:96,note:52,act:simple?96:78};   // 전체 칸 구성도 가로 스크롤 없이 한 화면에 (2026-11-16)
@@ -1286,7 +1285,7 @@ function calcAll0(items){
     { const pi=r.pointsInfo; r.promoOn=!!pi; r.promoM=(pi&&pi.months)||0; r.promoText=(pi&&pi.text)||''; r.promoName=pi?(String(pi.text||'').split('·')[0].trim()||'구독료 지원'):''; }   // 포인트를 가리거나 수기로 넣어도 행사 해당 여부는 보인다
     if(it.pointManual!=null&&it.pointManual!==''){ r.pointsAll=Math.max(0,+it.pointManual||0); r.points=r.pointsAll; r.mpoints=0; r.pointsInfo=null; r.pointsManual=true; r.expectedNet=r.expected-r.pointsAll; }
     if(!Q.cond.ptEach){ r.pointsAll=0; r.points=0; r.mpoints=0; r.pointsInfo=null; r.pointsManual=false; r.expectedNet=r.expected; }   // 품목별 포인트는 기본 가림 — DPS 포인트 합계만 쓴다
-    r.cons=+it.consumable||0; r.gift=HIDE?0:(+it.giftcard||0); r.pkgOn=false;
+    r.cons=0; r.gift=0;   // 품목별 소모품·상품권 칸은 뺌 (2026-11-19) — 예전에 넣어 둔 값도 계산에 안 씀 r.pkgOn=false;
     R[it.m]=r; });
   SUP=supCalc(subs,R);   // 추가 포인트(구독료 지원) 자동 금액 (2026-11-18)
   /* 다품목 구독 할인 (sub.policy multi · mvp_273) — sub_bundle.js applyMulti 와 같은 식 */
