@@ -494,6 +494,7 @@ var NAMECARDS = [];
     + '.q-page.xs .q-tier .q-tbl th,.q-page.xs .q-tier .q-tbl td{padding:2.5px 6px;}'
     + '.q-page.xs .q-tier .q-tbl td.amt{font-size:12px;}'
     + '.q-sum{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-top:8px;break-inside:avoid;page-break-inside:avoid;}'
+    + 'tr.q-pt th,tr.q-pt td{font-size:15.5px !important;font-weight:900 !important;color:#B45309 !important;background:#FFFBEB !important;} .ln.q-pt{font-size:15px;font-weight:900;color:#B45309;}'   /* ⭐ 삼성전자 멤버십 포인트 크게 (2026-11-19) */
     + '.q-box{border:1px solid #D6DBE4;border-radius:8px;padding:7px 10px;}'
     + '.q-box h3{font-size:11px;font-weight:800;color:#1A4FA0;margin:0 0 6px;}'
     + '.q-box .q-tbl th{width:52%;background:#fff;font-weight:600;white-space:normal;word-break:keep-all;line-height:1.3;vertical-align:middle;}'
@@ -1173,13 +1174,13 @@ var NAMECARDS = [];
     /* 다품목 — 해당/미해당을 항상 표기 */
     if(S.multi || EDIT || (mOk && c.multi > 0)){
       h += '<tr><th>다품목 구독 할인</th><td class="num wrap' + (mOk && c.multi > 0 ? '' : ' mut') + '">'
-        + (mOk ? (EDIT ? cell(p + 'disc.multi', c.multiRaw) : (c.multi > 0 ? '-' + won(c.multi) : '해당 (할인액 0원)'))
+        + (mOk ? (EDIT ? cell(p + 'disc.multi', c.multiRaw) : (c.multi > 0 ? '-' + won(c.multi) : '해당 (월 구독료에 반영)'))
                : ('미해당' + (c.multiRaw > 0 ? ' <span class="q-fxnote">(' + won(c.multiRaw) + ' 제외)</span>' : '')))
         + '</td></tr>';
     }
     h += discRow('선납 할인' + (c.preAmt > 0 && QUOTE.opt.prepayPct ? ' (선납 ' + QUOTE.opt.prepayPct + '%)' : ''), p + 'disc.prepay', c.pre, '', 'freq');
-    if(pm === 'replace') h += discRow('⭐ 삼성전자 멤버십 포인트' + pmChip(), p + 'disc.point', c.point, EDIT ? '' : null, 'freq');
-    else h += '<tr><th>⭐ 삼성전자 멤버십 포인트' + pmChip() + '</th><td class="num">' + (EDIT ? cell(p + 'disc.point', c.point, 'freq') : (c.point > 0 ? '-' + won(c.point) + ' <span style="font-weight:500;color:#666">(P 별도 적립)</span>' : '-')) + '</td></tr>';
+    if(pm === 'replace') h += discRow('⭐ 삼성전자 멤버십 포인트' + pmChip(), p + 'disc.point', c.point, EDIT ? '' : null, 'freq').replace('<tr>', '<tr class="q-pt">');
+    else h += '<tr class="q-pt"><th>⭐ 삼성전자 멤버십 포인트' + pmChip() + '</th><td class="num">' + (EDIT ? cell(p + 'disc.point', c.point, 'freq') : (c.point > 0 ? '-' + won(c.point) + ' <span style="font-weight:500;color:#666">(P 별도 적립)</span>' : '-')) + '</td></tr>';
     /* 제휴카드 = 월 청구할인 × 기간 (엑셀 E10) */
     if(EDIT || c.card > 0){
       var cardSel = '';
@@ -1216,7 +1217,7 @@ var NAMECARDS = [];
       if(c.cardMonthly > 0) h += '<div class="ln"><span>· 할인 후 월 결제액 ' + won(c.payM) + ' − 카드 청구할인 ' + won(c.cardMonthly) + '</span><b>' + won(c.afterCardM) + '</b></div>';
       if(c.preAmt > 0 && S.prepayLine) h += '<div class="ln"><span>· 선납금 ' + won(c.preAmt) + ' 선결제 → 남은 월 납입</span><b>' + won(c.remainM) + '</b></div>';
       else if(c.preAmt > 0) h += '<div class="ln"><span>· 선납금 (선결제 · 최종 혜택가에 포함)</span><b>' + won(c.preAmt) + '</b></div>';
-      if(c.point > 0 && pm === 'cash') h += '<div class="ln"><span>· ⭐ 삼성전자 멤버십 포인트 ' + fmt(c.point) + 'P</span><b>별도 적립</b></div>';
+      if(c.point > 0 && pm === 'cash') h += '<div class="ln q-pt"><span>· ⭐ 삼성전자 멤버십 포인트 ' + fmt(c.point) + 'P</span><b>별도 적립</b></div>';
       if(pm === 'replace' && (S.realM || EDIT)){
         h += '<div class="ln"><span>· 월 체감 구독료 (⭐포인트 차감 반영)</span><b>' + won(c.realM) + '</b></div>';
         if(c.point > 0 && c.freeMonths > 0) h += '<div class="ln"><span>· 포인트 ' + fmt(c.point) + 'P로 월 결제 대체 시</span><b>약 ' + c.freeMonths + '개월 실지불 없음</b></div>';
@@ -1585,8 +1586,8 @@ var NAMECARDS = [];
       sumBox += '<tr><th>다품목 구독 할인 <span style="font-weight:500;color:#666">(대상 ' + T.multiCount + '/' + T.count + '개)</span></th><td class="num' + (T.multi > 0 ? '' : ' mut') + '">' + (T.multi > 0 ? '-' + won(T.multi) : '미해당') + '</td></tr>';
       sumBox += srow('선납 할인', T.pre);
       var pmSumTag = pm === 'replace' ? '' : ' · 별도 적립';
-      if(T.pointItems > 0) sumBox += '<tr><th>⭐ 삼성전자 멤버십 포인트 <span style="font-weight:500;color:#666">(상품별' + pmSumTag + ')</span></th><td class="num">-' + won(T.pointItems) + '</td></tr>';
-      if(EDIT || T.pointCommon > 0) sumBox += '<tr><th>⭐ 멤버십 포인트 공통 <span style="font-weight:500;color:#666">(전체 합산 입력' + pmSumTag + ')</span>' + pmChip() + '</th><td class="num">' + (EDIT ? cell('opt.pointCommon', T.pointCommon, 'imp') : '-' + won(T.pointCommon)) + '</td></tr>';
+      if(T.pointItems > 0) sumBox += '<tr class="q-pt"><th>⭐ 삼성전자 멤버십 포인트 <span style="font-weight:500;color:#666">(상품별' + pmSumTag + ')</span></th><td class="num">-' + won(T.pointItems) + '</td></tr>';
+      if(EDIT || T.pointCommon > 0) sumBox += '<tr class="q-pt"><th>⭐ 멤버십 포인트 공통 <span style="font-weight:500;color:#666">(전체 합산 입력' + pmSumTag + ')</span>' + pmChip() + '</th><td class="num">' + (EDIT ? cell('opt.pointCommon', T.pointCommon, 'imp') : '-' + won(T.pointCommon)) + '</td></tr>';
       sumBox += srow('제휴카드 청구할인' + (q.opt.card ? ' <span style="font-weight:500;color:#666">(' + esc(q.opt.card) + ')</span>' : ''), T.card);
       sumBox += srow('소모품', T.cons) + srow('상품권', T.gift);
       if(T.reward > 0) sumBox += '<tr><th>💵 이벤트 리워드 (1%)</th><td class="num">-' + won(T.reward) + '</td></tr>';

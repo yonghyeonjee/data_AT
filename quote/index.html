@@ -295,6 +295,15 @@ body.iv-table .sum>.tot{display:none} body.iv-table .sum{grid-template-columns:m
 .hero .fx .tg.s{background:rgba(120,176,255,.22);color:#A9CDFF} .hero .fx .tg.l{background:rgba(245,190,130,.22);color:#F7CFA0}
 .hero .fx .r.sum b{color:#DDE4FF} .hero .fx .r.sum.fin b{color:#fff} .hero .fx .r.sum.fin .k{color:#FFD9C7}
 .hero .fx .r.mon .tg{display:none}
+.hero .fx .sst{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;padding:10px 0;border-top:1px solid rgba(255,255,255,.16)} .hero .fx .r.mon+.sst{border-top:0}
+.hero .fx .sbox{border:2px solid rgba(169,205,255,.55);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.06)}
+.hero .fx .sbox .sh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:rgba(120,176,255,.22);font-size:14.5px;font-weight:800;color:#DCEBFF} .hero .fx .sbox .sh small{font-weight:700;opacity:.85}
+.hero .fx .sbox .sg{display:flex} .hero .fx .sbox .sg .c{flex:1 1 0}
+.hero .fx .sbox .c{padding:10px 12px;border-left:1px solid rgba(255,255,255,.14);display:flex;flex-direction:column;gap:3px;min-width:0} .hero .fx .sbox .c:first-child{border-left:0}
+.hero .fx .sbox .c span{font-size:12.5px;opacity:.8;word-break:keep-all} .hero .fx .sbox .c b{font-size:clamp(14px,1.7vw,21px);font-weight:900;white-space:nowrap} .hero .fx .sbox .c small{font-size:11.5px;opacity:.7;word-break:keep-all}
+.hero .fx .sbox .c.m b{color:#7EE2B8} .hero .fx .sbox .c.hl{background:rgba(255,224,138,.12)} .hero .fx .sbox .c.hl b{color:#FFE08A;font-size:clamp(16px,2vw,25px)}
+@media(max-width:560px){.hero .fx .sbox .sg{flex-wrap:wrap} .hero .fx .sbox .sg .c{flex:1 1 45%;border-top:1px solid rgba(255,255,255,.12)}} .hero .fx .sbox .c.tt b{color:#fff}
+.hero .fx .sbox .sn{padding:6px 12px;font-size:11.5px;opacity:.7;border-top:1px solid rgba(255,255,255,.12)}
 .hero .fx .r.mon{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:14px 16px;margin-bottom:8px}
 .hero .fx .r.mon+.r{border-top:0} .hero .fx .r.mon .k{font-weight:800;font-size:20px} .hero .fx .r.mon b{font-size:38px;font-weight:900;color:#FFE08A}
 .sec{display:inline-block;font-weight:800;font-size:13px;border-radius:8px;padding:2px 10px;color:#fff} .sec.s{background:var(--sub)} .sec.l{background:var(--lump)}
@@ -1546,10 +1555,17 @@ function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'
   const bnL=Math.min(L.bn||0,T.dL), bnS=Math.min(S.bn||0,T.dS), bnRow=(n,v)=>sub('B&amp;케어 '+n+'구좌 할인',won(v),'1구좌 '+won(BN.amt)+' 지원'+(bnPromoOn()?' ('+bnPromoTxt(1)+')':'')+' · 납입 월 '+won(n*BN.pay)+' 별도 · 중도 해지 시 지급 종료');
   if(T.dL-bnL>0) sub('일반 구매 할인',won(T.dL-bnL),'청구할인 등');
   if(bnL>0) bnRow(L.bnN,bnL);
-  if(S.n&&T.pre) add('구독 · 선납금',won(T.pre),'계약 시 일시 결제');
-  if(S.n) add('구독 · 총 구독료',won(T.sub),'월 구독료 혜택가 '+won(S.mpay)+' × 계약 개월수');
-  if(bnS>0) bnRow(S.bnN,bnS);
-  if(T.dS-bnS>0) sub('구독 할인',won(T.dS-bnS),cardsOf(S).map(c=>esc(c.name)+' '+esc(c.tier)+' 월 '+fmt(Math.round(c.m))+'원').join(' + ')||'카드 청구할인 등');
+  /* 구독 = 원래 견적서「고객님이 매달 내시는 금액」처럼 한 줄 여러 칸 (2026-11-19) — 월 구독료 합계 · 제휴카드 청구할인 · 월 구독료 혜택가(월 비용) · 총 구독료 · 할인 금액 · 구독 총액 */
+  if(S.n){ const cs=cardsOf(S), cm=cs.reduce((a,c)=>a+c.m,0), cell=(k,v,d,c)=>`<div class="c${c?' '+c:''}"><span>${k}</span><b class="num">${v}</b>${d?`<small>${d}</small>`:''}</div>`;
+    out.push(`<div class="sst"><span class="op">${first?'':'+'}</span><div class="sbox"><div class="sh"><span><i class="tg s">구독</i>고객님이 매달 내시는 금액</span><small>${S.maxM||''}${S.maxM?'개월':''}</small></div><div class="sg">`
+      +cell('월 구독료 합계',won(S.mpay))
+      +(cm>0?cell('제휴카드 청구할인','−'+won(Math.round(cm)),cs.map(c=>esc(c.name)+' '+esc(c.tier)).join(' + '),'m'):'')
+      +cell('월 구독료 혜택가',won(S.pay),'통장에서 나가는 금액','hl')
+      +(T.pre?cell('선납금',won(T.pre),'계약 시 일시 결제'):'')
+      +cell('총 구독료',won(T.sub),'월 구독료 혜택가 × 계약 개월수')
+      +(T.dS>0?cell('할인 금액','−'+won(T.dS),[cm>0?'카드 청구할인':'', bnS>0?'B&amp;케어 '+S.bnN+'구좌':''].filter(Boolean).join(' · '),'m'):'')
+      +cell('구독 총액',won(T.subNet),(T.pre?'선납금 + ':'')+'총 구독료 − 할인','tt')
+      +`</div><div class="sn">※ 월 구독료 혜택가는 제휴카드 청구할인까지 반영해 실제로 통장에서 빠져나가는 금액</div></div></div>`); first=false; }
   const parts=[L.items.length?'일반 '+won(T.lumpNet):'', S.n&&T.pre?'선납 '+won(T.pre):'', S.n?'할인 후 총 구독료 '+won(T.subNet-T.pre):''].filter(Boolean);
   return out.join('')
     +row('=','총 금액',won(T.pay)+a,(parts.length>1?parts.join(' + '):'')+(S.preOut?(parts.length>1?' · ':'')+'선납금 '+won(S.preOut)+' 별도':''),'sum')
@@ -1780,9 +1796,10 @@ function setView(v){ document.body.classList.toggle('v-edit',v==='edit'); if(v==
 function bnLabel(k){ return `B&케어팩 지원금 ${k}구좌 (${bnPromoOn()?'삼성라이온즈 우승 기념 1구좌 +'+fmt(BNP.add)+'원 '+BNP.from.slice(5).replace('-','/')+'~'+BNP.to.slice(5).replace('-','/')+' · ':''}납입 월 ${won(k*BN.pay)} 별도 · 중도 해지 시 지급 종료)`; }
 function toQuoteJson(){
   const {S,L}=LAST, items=[];
-  S.items.forEach(it=>{ const r=S.R[it.m]; items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:r.months, monthly:r.monthly, total:r.total, care:r.care, careType:C.splitCare(r.care)[0], cycle:C.splitCare(r.care)[1]?C.splitCare(r.care)[1]+'개월':'', note:it.note||'',
+  /* 견적서는 원래 시흥몰 견적서와 같은 항목으로 (2026-11-19) — 월 구독료 = DPS 할인반영 값(기본 구독 할인·다품목 할인 포함), 구독료 할인·다품목 할인 줄은 0 → 「구독료 할인 (월 환산)」 칸이 안 생긴다 */
+  S.items.forEach(it=>{ const r=S.R[it.m], fold=Math.max(0,(+r.autoDisc||0)+(+r.multiOff||0)), tot=Math.round(r.total-fold), mon=r.months?Math.round(tot/r.months):r.monthly; items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:r.months, monthly:mon, total:tot, care:r.care, careType:C.splitCare(r.care)[0], cycle:C.splitCare(r.care)[1]?C.splitCare(r.care)[1]+'개월':'', note:it.note||'',
     cardName:r.cardName||'', cardTier:r.cardTier||'', cardMonthly:r.cardMonthly, prepayAmt:r.prepayAmt, preIncl:true, lumpPrice:+it.lump||0, multiOk:!!r.multiOff||!!r.pkgOn, consumable:S.toL?0:(r.cons||0), giftcard:S.toL?0:(r.gift||0), hidden:false, isMain:false,
-    auto:{total:!r.manual,card:Math.abs(Math.round(r.cardMonthly*r.months)-Math.round(r.cardTotal))<1}, disc:{ sub:r.autoDisc, multi:r.multiOff, prepay:r.prepayDisc, point:S.toL?0:(r.pointsAll||0), card:r.cardTotal } }); });
+    auto:{total:!r.manual&&mon*r.months===tot,card:Math.abs(Math.round(r.cardMonthly*r.months)-Math.round(r.cardTotal))<1}, disc:{ sub:0, multi:0, prepay:r.prepayDisc, point:S.toL?0:(r.pointsAll||0), card:r.cardTotal } }); });
   Q.items.filter(it=>it.hidden).forEach(it=>items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:(it.years||6)*12, monthly:0, care:it.care||'', note:it.note||'', hidden:true, auto:{total:true,card:true}, disc:{} }));
   const proof={recv:false,supp:false,appr:false}; if(Q.cust.proof) proof[Q.cust.proof]=true;
   const lump = L.items.length? { items:L.items.map(it=>({model:it.free?'':it.m, name:nameOf(it.m), amount:+it.lump||0, note:it.note||''})), kind:L.kind, kindLabel:((LUMP&&LUMP.cards[L.kind]||{}).label||L.kind)+(L.parts.length===1&&L.months?'':' · '+L.desc), months:L.parts.length===1?L.months:0, parts:L.parts.map(x=>({months:x.inst?x.months:0, amount:x.amount, per:x.per, models:x.items.map(it=>it.m)})), amount:L.amount, perAll:L.per, fee:L.fee, bill:L.bill, sPoint:L.sp, jPoint:L.jp, extras:[['로열등급','royal'],['삼성카드몰 쇼핑몰 쿠폰','coupon'],['신세계 상품권','gift'],['주유 상품권','oil']].map(x=>({label:x[0],amount:+(Q.cond.lx||{})[x[1]]||0})).filter(x=>x.amount>0).concat(L.bn?[{label:bnLabel(L.bnN), amount:L.bn}]:[]).concat(L.moved||[]), options:[['IPTV','iptv'],['구독 30만원 적용시','sub30']].map(x=>({label:x[0],amount:+(Q.cond.lx||{})[x[1]]||0})).filter(x=>x.amount>0), cardBenefit:L.card, netOpt:L.netOpt, typePoint:L.tp, typeLabel:Q.cust.type+' 포인트', cashback:L.cb, member:L.mem, benefit:L.ben, net:L.net, per:L.per } : null;
