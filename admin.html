@@ -3608,8 +3608,12 @@ function renderPool(){
   const st=(POOL.state||[]).find(x=>x.scope===sc);
   const isItem=sc.indexOf('item:')===0;
   const sv=(POOL.saved||[]).find(x=>x.scope===sc), nx=(POOL.next||{})[sc];
-  $('poolState').textContent = on.length
-    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'} · 다음 ${nx||'(전원 휴가)'}${sv?` · 순서 저장 ${sv.at}${sv.by&&sv.by.indexOf('(')<0?` ${sv.by.split('@')[0]}`:''}`:''}`
+  /* 단순 순번 모드(mvp_302 · core.f_assign_simple) — 기본 순번표만 순서대로. 휴가·품목·접수 종류 규칙은 꺼져 있다 */
+  const simple=!!POOL.simple;
+  $('poolState').textContent = (simple && sc!=='default')
+    ? '지금은 단순 순번 모드라 이 규칙은 쓰지 않습니다 — 기본 순번(1번부터 차례로)만 돕니다'
+    : on.length
+    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'} · 다음 ${nx||'(전원 휴가)'}${sv?` · 순서 저장 ${sv.at}${sv.by&&sv.by.indexOf('(')<0?` ${sv.by.split('@')[0]}`:''}`:''}${simple?' · 단순 순번 모드(휴가자도 순서대로 · 품목·접수 종류 규칙 꺼짐)':''}`
     : (sc==='default' ? '기본 순번이 비어 있습니다 — 아무도 배정되지 않습니다'
        : isItem ? '이 품목 규칙 없음 → 접수 종류나 기본 순번을 씁니다'
                 : '이 종류 규칙 없음 → 기본 순번을 씁니다');
