@@ -151,6 +151,7 @@ details.more>summary small{font-weight:500;color:var(--mut);font-size:12px}
 .bd.low{background:#7C3AED;color:#fff;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:800;margin-left:4px}
 .chip.scngo{background:#7C3AED;border-color:#7C3AED;color:#fff;font-weight:800}
 #s_scn h2{color:#5B21B6}
+.bnp{color:#1D4ED8;font-weight:800} li.bnp{list-style:none;margin-left:-1em;background:#EFF6FF;border-radius:6px;padding:3px 8px}
 .custfind{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 2px} .custfind input{flex:1;min-width:200px} .custfind .lbl{margin:0}
 .cfrows{display:flex;flex-direction:column;gap:6px;margin-top:6px} .cfrow{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--paper)} .cfrow small{color:var(--mut)}
 .showlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 14px} .showlist label{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
@@ -446,10 +447,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <button data-v="show" onclick="setView('show')">고객과 보기</button>
     <button data-v="sheet" onclick="setView('sheet')">견적서</button>
   </div>
-  <button class="tb" onclick="openList()">내역</button>
-  <button class="tb" id="btnSave" onclick="saveQuote()">저장 · 발행</button>
   <button class="tb" id="btnDisp" onclick="openDisplay()" title="모니터가 2개일 때 — 새 창을 고객 쪽 모니터로 옮겨 전체 화면으로 띄웁니다. 고객 창에는 상품권·기타 혜택이 나오지 않습니다">고객 화면 띄우기 ⧉</button>
   <button class="tb hidden" id="btnShowQ" onclick="toggleShowQ()" title="고객 화면 창은 처음에 매장 안내만 보여 줍니다 — 견적이 준비되면 눌러서 보여 주세요">고객 화면에 견적 보여주기 ▶</button>
+  <button class="tb" onclick="openList()">내역</button>
+  <button class="tb" id="btnSave" onclick="saveQuote()">저장 · 발행</button>
   <button class="tb" id="btnCs" onclick="csOpen()" title="담은 제품으로 상담 기록을 남깁니다 — 문의 채널만 고르면 됩니다">상담 저장</button>
   <button class="tb" id="btnGive" onclick="giveSheet()" title="지금 견적을 저장하고 시흥몰 구독 견적서 화면으로 엽니다 — 금액 수정 · 발행 · 인쇄 · PDF · 고객에게 보내기를 거기서 그대로 씁니다">구독 견적서로 주기 ↗</button>
   <button class="tb pri" id="btnShare" onclick="shareQuote()">고객에게 보내기</button>
@@ -1232,12 +1233,17 @@ function planOf(it, info){ const ys=[...new Set(info.p.map(p=>p[0]))].sort((a,b)
   return inY.find(p=>p[1]===it.care); }
 /* B&케어팩 (보람상조 · 삼성스토어 안내장 2026-11): 1구좌 지원금 145만원 · 최대 2구좌 · 월 6만원 1~99회 납입 · 160회 만기 익월 납입금 100% 환급 594만원.
    견적 하나에 한 번만 — 구독 품목이 있으면 구독 합계에서, 없으면 일반 구매 합계에서 뺀다. */
-const BN={ amt:1450000, max:2, pay:60000, paid:99, refund:5940000, term:160 };
+/* 삼성라이온즈 우승 기념 게릴라 프로모션 (보람상조 2026-11) — 11/18~11/30 웹 접수·계약분 1구좌당 1.2만원 추가 (출금 12/31까지 · 정상 계약만 · 판매직원 기준 행사기간 3구좌 이상)
+   견적 일자(qdateNow) 기준으로 기간 안이면 1구좌 금액에 더한다 — 기간 끝나면 BNP 만 지우면 됨 */
+const BNP={ add:12000, from:'2026-11-18', to:'2026-11-30', name:'삼성라이온즈 우승 기념' };
+function bnPromoOn(){ const d=(typeof Q!=='undefined'&&Q)?qdateNow():todayStr(); return !!BNP&&d>=BNP.from&&d<=BNP.to; }
+function bnPromoTxt(short){ if(!bnPromoOn()) return ''; const p=BNP.from.slice(5).replace('-','/')+'~'+BNP.to.slice(5).replace('-','/'); return short? '🏆 우승 기념 +'+fmt(BNP.add)+'원 ('+p+')' : '🏆 '+BNP.name+' 1구좌 +'+fmt(BNP.add)+'원 ('+p+' 계약)'; }
+const BN={ get amt(){ return 1450000+(bnPromoOn()?BNP.add:0); }, max:2, pay:60000, paid:99, refund:5940000, term:160 };
 function bnN(){ return Math.min(BN.max,Math.max(0,+Q.cond.bn||0)); }
 function setBn(d){ Q.cond.bn=Math.min(BN.max,Math.max(0,bnN()+d)); render(); }
-function bnHtml(){ const k=bnN(); return `<span class="bnstep"><span class="bnl">B&amp;케어</span><button type="button" aria-label="B&amp;케어 1구좌 빼기" onclick="setBn(-1)"${k<=0?' disabled':''}>−</button><b class="bnn num" aria-live="polite">${k}</b><button type="button" aria-label="B&amp;케어 1구좌 더하기" onclick="setBn(1)"${k>=BN.max?' disabled':''}>+</button></span><span class="hint">1구좌 ${won(BN.amt)} 지원 · 최대 ${BN.max}구좌${k?` · 지금 <b>−${won(k*BN.amt)}</b> 반영 · 납입 월 ${won(k*BN.pay)}`:''}</span>`; }
-function bnCardHtml(k){ return `<div class="bh"><span>B&amp;케어팩 ${k}구좌 · 가전 구매비용 지원</span><span class="num">−${won(k*BN.amt)}</span></div>
-  <ul><li>총 지원금 <b>${won(k*BN.amt)}</b> — 등록한 본인 계좌로 회차에 나누어 입금 (36 · 48 · 60 · 72회 중 선택)</li>
+function bnHtml(){ const k=bnN(); return `<span class="bnstep"><span class="bnl">B&amp;케어</span><button type="button" aria-label="B&amp;케어 1구좌 빼기" onclick="setBn(-1)"${k<=0?' disabled':''}>−</button><b class="bnn num" aria-live="polite">${k}</b><button type="button" aria-label="B&amp;케어 1구좌 더하기" onclick="setBn(1)"${k>=BN.max?' disabled':''}>+</button></span><span class="hint">1구좌 ${won(BN.amt)} 지원${bnPromoOn()?' <b class="bnp">'+bnPromoTxt(1)+'</b>':''} · 최대 ${BN.max}구좌${k?` · 지금 <b>−${won(k*BN.amt)}</b> 반영 · 납입 월 ${won(k*BN.pay)}`:''}</span>`; }
+function bnCardHtml(k){ return `<div class="bh"><span>B&amp;케어팩 ${k}구좌 · 가전 구매비용 지원${bnPromoOn()?' <small class="bnp">'+bnPromoTxt(1)+'</small>':''}</span><span class="num">−${won(k*BN.amt)}</span></div>
+  <ul>${bnPromoOn()?`<li class="bnp">${bnPromoTxt()} — 1구좌 ${won(BN.amt)}</li>`:''}<li>총 지원금 <b>${won(k*BN.amt)}</b> — 등록한 본인 계좌로 회차에 나누어 입금 (36 · 48 · 60 · 72회 중 선택)</li>
   <li>납입금 <b>월 ${won(k*BN.pay)}</b> (1~${BN.paid}회) · 100~${BN.term}회는 월 0원 · 구독료와 별도로 납입</li>
   <li>${BN.term}회 만기 익월 납입금 <b>100% 환급 ${won(k*BN.refund)}</b> (상조 서비스를 쓰지 않은 경우, 신청 시)</li></ul>
   <p class="bf">상조 · B&amp;포인트 구매 · B&amp;Alliance 멤버십 3개 계약이 결합된 상품으로, 상조 보험 · 적금 등 금융 상품이 아닙니다. 계약 기간 안에 해지하면 지원금 지급은 즉시 끝나며, 중도 해약 환급금은 납입금보다 적거나 없을 수 있습니다.</p>`; }
@@ -1529,7 +1535,7 @@ function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'
   if(L.items.length) add(L.months?'일반 구매':'일반 구매 · 일시불가',won(L.amount)+a);
   if(L.fee) add('일반 구매 · 이용료',won(L.fee),'플러스페이 할부 이용료 · '+feeTxt(L));
   /* B&케어 구좌 할인은 따로 한 줄 (2026-11-16) — 고객 화면에서도 구좌 수와 할인 금액이 보이게 */
-  const bnL=Math.min(L.bn||0,T.dL), bnS=Math.min(S.bn||0,T.dS), bnRow=(n,v)=>sub('B&amp;케어 '+n+'구좌 할인',won(v),'1구좌 '+won(BN.amt)+' 지원 · 납입 월 '+won(n*BN.pay)+' 별도 · 중도 해지 시 지급 종료');
+  const bnL=Math.min(L.bn||0,T.dL), bnS=Math.min(S.bn||0,T.dS), bnRow=(n,v)=>sub('B&amp;케어 '+n+'구좌 할인',won(v),'1구좌 '+won(BN.amt)+' 지원'+(bnPromoOn()?' ('+bnPromoTxt(1)+')':'')+' · 납입 월 '+won(n*BN.pay)+' 별도 · 중도 해지 시 지급 종료');
   if(T.dL-bnL>0) sub('일반 구매 할인',won(T.dL-bnL),'청구할인 등');
   if(bnL>0) bnRow(L.bnN,bnL);
   if(S.n&&T.pre) add('구독 · 선납금',won(T.pre),'계약 시 일시 결제');
@@ -1631,7 +1637,7 @@ function renderEdit({S,L}){
     ${S.gift?`<div class="kv minus"><span>상품권</span><span class="num">−${won(S.gift)}</span></div>`:''}
     ${(S.extra?(Q.extra||[]):[]).filter(e=>+e.amount>0).map(e=>`<div class="kv minus"><span>${esc(e.label||'기타 혜택')}</span><span class="num">−${won(+e.amount)}</span></div>`).join('')}
     ${S.reward?`<div class="kv minus"><span>💵 이벤트 리워드 (1%)</span><span class="num">−${won(S.reward)}</span></div>`:''}
-    ${S.bn?`<div class="kv minus"><span>B&amp;케어팩 지원금 ${S.bnN}구좌${why('1구좌 '+won(BN.amt)+' · 납입금 월 '+won(S.bnN*BN.pay)+'은 별도')}</span><span class="num">−${won(S.bn)}</span></div>`:''}
+    ${S.bn?`<div class="kv minus"><span>B&amp;케어팩 지원금 ${S.bnN}구좌${why('1구좌 '+won(BN.amt)+(bnPromoOn()?' ('+bnPromoTxt(1)+')':'')+' · 납입금 월 '+won(S.bnN*BN.pay)+'은 별도')}</span><span class="num">−${won(S.bn)}</span></div>`:''}
     <div class="kv total"><span>총 금액${why((S.preAmt&&!S.preOut?'선납금 + ':'')+'총 구독료 − 할인')}</span><span class="num">${won(S.net+S.points+S.pointCommon+(S.pkg?pkgInPt(S,L):0))}</span></div>
     ${S.points?`<div class="kv minus"><span>멤버십 포인트 <span class="hint">(캐시백)</span>${why('행사모델 N개월 구독료 상당 포인트 + 멤버십 적립')}</span><span class="num">−${won(S.points)}</span></div>`:''}
     ${S.pointCommon||(S.pkg&&pkgInPt(S,L))?`<div class="kv minus"><span>⭐ 삼성전자 포인트 합계 <span class="hint">(캐시백)</span>${why('DPS 포인트시뮬 입력값 그대로'+(supNow()?' · 구독료 지원 '+fmt(supNow())+' 포함':'')+(S.pkg&&pkgInPt(S,L)?' · 스마트 패키지 '+pkgName(S)+' '+fmt(S.pkg)+' 포함':''))}</span><span class="num">−${won(S.pointCommon+(S.pkg?pkgInPt(S,L):0))}</span></div>`:''}
@@ -1651,7 +1657,7 @@ function renderEdit({S,L}){
     <div class="kv minus"><span>조건부 캐시백${why(!L.months?'할부 품목이 있을 때만':cdL.cashback?(Q.cond.cb?'제휴할부 6/12 결제 다음 달(한 달간) 제휴카드 70만 원 이상 추가 이용 시 · 1회 (11월 삼성스토어 카드정책) — 결제 조건에서 사용/미사용':'결제 조건에서 [미사용] 으로 둠'):'제휴(베네핏) 카드만 해당')}</span><span class="num">−${won(L.cb)}</span></div>
     ${inp('gift','신세계 상품권 <span class="hidetag">고객 화면에 안 보임</span>','차차월 이후 택배 발송')}
     ${inp('oil','주유 상품권 <span class="hidetag">고객 화면에 안 보임</span>','차차월 이후 택배 발송')}
-    ${L.bn?`<div class="kv minus"><span>B&amp;케어팩 지원금 ${L.bnN}구좌${why('1구좌 '+won(BN.amt)+' · 납입금 월 '+won(L.bnN*BN.pay)+'은 별도')}</span><span class="num">−${won(L.bn)}</span></div>`:''}
+    ${L.bn?`<div class="kv minus"><span>B&amp;케어팩 지원금 ${L.bnN}구좌${why('1구좌 '+won(BN.amt)+(bnPromoOn()?' ('+bnPromoTxt(1)+')':'')+' · 납입금 월 '+won(L.bnN*BN.pay)+'은 별도')}</span><span class="num">−${won(L.bn)}</span></div>`:''}
     ${(L.moved||[]).map(x=>`<div class="kv minus"><span>${esc(x.label)}${why('일반 구매가 있으면 구독 쪽 정액 혜택도 일반 구매에서 뺍니다')}</span><span class="num">−${won(x.amount)}</span></div>`).join('')}
     <div class="kv total fin cs"><span>일반 최종가 <small>(최종체감가)</small>${why('혜택가 − 로열등급 − 쿠폰 − 조건부 캐시백 − 신세계 상품권 − 주유 상품권'+(L.bn?' − B&케어팩 지원금':''))}</span><span class="num">${won(L.net)}</span></div>
     ${inp('iptv','IPTV <span class="hint">(선택)</span>','SKB 500M↑ + IPTV 가입 조건')}
@@ -1763,7 +1769,7 @@ function renderSheet(){ if(!LAST) return; if(!$('v-sheet').classList.contains('h
 function setView(v){ document.body.classList.toggle('v-edit',v==='edit'); if(v==='sheet'){ ensureSheetFrame(); postSheet(); } ['edit','show','sheet'].forEach(k=>$('v-'+k).classList.toggle('hidden',k!==v)); document.querySelectorAll('.views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo({top:0}); }
 
 /* ═══ 저장 · 내역 · 보내기 (fn_quote_page_* · mvp_138 · 세션 통과 mvp_276) ═══ */
-function bnLabel(k){ return `B&케어팩 지원금 ${k}구좌 (납입 월 ${won(k*BN.pay)} 별도 · 중도 해지 시 지급 종료)`; }
+function bnLabel(k){ return `B&케어팩 지원금 ${k}구좌 (${bnPromoOn()?'삼성라이온즈 우승 기념 1구좌 +'+fmt(BNP.add)+'원 '+BNP.from.slice(5).replace('-','/')+'~'+BNP.to.slice(5).replace('-','/')+' · ':''}납입 월 ${won(k*BN.pay)} 별도 · 중도 해지 시 지급 종료)`; }
 function toQuoteJson(){
   const {S,L}=LAST, items=[];
   S.items.forEach(it=>{ const r=S.R[it.m]; items.push({ model:it.m, name:nameOf(it.m), tab:catOf(it.m), months:r.months, monthly:r.monthly, total:r.total, care:r.care, careType:C.splitCare(r.care)[0], cycle:C.splitCare(r.care)[1]?C.splitCare(r.care)[1]+'개월':'', note:it.note||'',
