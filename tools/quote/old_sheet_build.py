@@ -213,6 +213,12 @@ rep("""      lb += '<tr class="ben"><th>혜택 합계</th><td class="num">-' + w
 rep("""+ '</th><td class="num">' + won(L.net) + '</td></tr>';""",
     """+ (EDIT ? ' <span class="q-fxnote">결제가 − 혜택 합계 · 직접 수정 가능</span>' : '') + '</th><td class="num">' + (EDIT ? cell('lump.netM', L.net) : won(L.net)) + '</td></tr>';""")
 
+# 16. (2026-11-23) 혜택 합계 · 일반 최종가를 직접 넣었으면(통합 혜택가) 견적서에는 혜택 줄(청구할인 · 캐시백 · 포인트 · 조건부 캐시백 · 추가혜택)을 내지 않는다 — 편집 화면에서는 그대로 보이고, 고치면 다시 자동 합계
+rep("    L.manual = (L.benM != null || L.netM != null);\n", "    L.manual = (L.benM != null || L.netM != null); LUMP_MAN = L.manual;\n")
+rep("  function lumpRow(l, path, v, cls){ if(!EDIT && !(num(v) > 0)) return '';\n", "  var LUMP_MAN = false;\n  function lumpRow(l, path, v, cls){ if(!EDIT && (LUMP_MAN || !(num(v) > 0))) return '';\n")
+rep("      } else if(L.ptD != null){", "      } else if(L.manual && !EDIT){\n      } else if(L.ptD != null){")
+rep("' + (L.manual ? '직접 입력' : '자동 · 직접 수정 가능') + '", "' + (L.manual ? '직접 입력 · 견적서에는 위 혜택 줄 없이 합계만' : '자동 · 직접 수정 가능') + '")
+
 def save(p, t):
     if CR: t = t.replace('\n', '\r\n')
     io.open(p, 'w', encoding='utf-8', newline='').write(t)
