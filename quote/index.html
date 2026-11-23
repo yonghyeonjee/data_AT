@@ -134,7 +134,7 @@ h1,h2,h3{margin:0}
 .cond .row{display:flex;flex-direction:column;gap:5px}
 .cond select{border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--paper);width:100%}
 .sum{position:sticky;top:58px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 68px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding-bottom:4px}
-.sum>*{flex:none}
+.sum>*,.sum>.duo>*{flex:none} .duo{display:contents}   /* .duo = 견적 공통 + 계산 풀이 묶음 — 표 입력 화면에서 두 칸의 sticky 가 이 묶음 안에서 끝나게 (아래 최적 가격 찾기를 덮지 않게 · 2026-11-23) */
 @media (max-width:900px){.sum{position:static;max-height:none;overflow:visible}}
 details.more{border-top:1px dashed var(--line);margin-top:10px;padding-top:6px}
 .cond details.more{margin-top:0}
@@ -175,14 +175,18 @@ details.more>summary small{font-weight:500;color:var(--mut);font-size:12px}
 .item .own .suprow .suph{font-size:13px;font-weight:700;color:#374151}
 .item .own .supc{display:inline-flex;align-items:baseline;gap:6px;font-size:13.5px;font-weight:700;color:#6B7280;background:#fff;border:1px solid #D1D5DB;border-radius:999px;padding:4px 12px} .item .own .supc b{font-size:16px;color:#6B7280}
 .item .own .supc.on{border:2px solid #16A34A;color:#166534} .item .own .supc.on b{color:#15803D} .item .own .supc.off{opacity:.55}
-@media (min-width:761px){ body.iv-table .sum>.card.cond, body.iv-table .sum>#t_detail{position:sticky;top:calc(var(--toph,58px) + 8px);max-height:calc(100vh - var(--toph,58px) - var(--bbh,0px) - 20px);overflow-y:auto;overscroll-behavior:contain} }
+/* 견적 공통 · 계산 풀이 (2026-11-23 고침) — 안쪽 스크롤 없이 페이지 스크롤 하나 · 짧은 쪽은 따라오고(sticky), 화면보다 긴 쪽은 끝까지 다 보인 뒤에 멈춘다(top 은 setBars 가 높이에 맞춰 넣음) */
+@media (min-width:761px){ body.iv-table .sum>.duo{grid-column:1/-1;display:grid;grid-template-columns:minmax(300px,2fr) minmax(320px,3fr);gap:10px;align-items:start}
+  body.iv-table .duo>.card.cond, body.iv-table .duo>#t_detail{position:sticky;top:calc(var(--toph,58px) + 8px);align-self:start} }
 body.shfull #sheetFrame{position:fixed;inset:0;width:100vw !important;height:100vh !important;min-height:0 !important;z-index:1000;border-radius:0 !important}
 #shExit{display:none} body.shfull #shExit{display:inline-flex;position:fixed;right:18px;bottom:18px;z-index:1001;background:#0F1E3D;color:#fff;border-color:#0F1E3D;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 body.shfull{overflow:hidden}
 .showbar{display:flex;justify-content:flex-end;margin:0 0 8px}
 @media print{ body.pshow .top, body.pshow .bbar, body.pshow .showbar, body.pshow .noc, body.pshow #v-edit, body.pshow #v-sheet, body.pshow .testbar, body.pshow #toast{display:none !important}
   body.pshow, body.pshow *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  body.pshow .hero, body.pshow .card{break-inside:avoid} @page{margin:10mm} }
+  body.pshow .hero, body.pshow .card{break-inside:avoid} @page{size:A4;margin:10mm}
+  body.disp #fsBtn, body.disp #dpBtn{display:none !important} body.disp, body.disp *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.disp .hero, body.disp .card{break-inside:avoid} body.disp .wrap{max-width:none;padding:0} }   /* 고객 화면 창 인쇄 — A4 (2026-11-23) */
 .custfind{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 2px} .custfind input{flex:1;min-width:200px} .custfind .lbl{margin:0}
 .cfrows{display:flex;flex-direction:column;gap:6px;margin-top:6px} .cfrow{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--paper)} .cfrow small{color:var(--mut)}
 .showlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 14px} .showlist label{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
@@ -251,6 +255,7 @@ body.disp .greet .g1{font-size:24px} body.disp .greet .g2,body.disp .greet .g3{f
 .guide .gme{margin-top:calc(var(--u)*1.6);font-size:calc(var(--u)*2.3);color:#333} .guide .gme b{color:#1428A0}
 body.disp.guiding .wrap{max-width:none;padding:0} body.disp.guiding #fsBtn{opacity:.25}
 #fsBtn{position:fixed;right:14px;bottom:14px;z-index:20;border:0;border-radius:10px;background:var(--navy);color:#fff;font-weight:800;padding:10px 16px;opacity:.85} #fsBtn.hidden{display:none}
+#dpBtn{position:fixed;right:124px;bottom:14px;z-index:20;border:0;border-radius:10px;background:#fff;color:var(--navy);font-weight:800;padding:10px 16px;opacity:.9;box-shadow:0 2px 8px rgba(0,0,0,.2)} body.disp.guiding #dpBtn{display:none}
 .hidetag{display:inline-block;font-size:10.5px;font-weight:700;color:#9A3412;background:#FFEDD5;border-radius:5px;padding:0 5px;margin-left:4px;vertical-align:1px}
 .ck{display:inline-flex;align-items:center;gap:5px;cursor:pointer;margin-right:6px;vertical-align:middle} .ck input{width:18px;height:18px;margin:0;accent-color:var(--blue);cursor:pointer}
 table.xl input[type=checkbox]{width:18px;height:18px;padding:0;margin:0} table.xl td.c .ck{margin-right:2px} table.xl td.c .no{font-size:11px}
@@ -487,8 +492,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <button data-v="sheet" onclick="setView('sheet')">견적서</button>
   </div>
   <button class="tb" onclick="openList()">내역</button>
-  <button class="tb c-q" id="btnSave" onclick="saveQuote()" title="견적서를 저장·발행합니다 — 담당자 화면(store) [견적서] 메뉴 › 내 견적서에서 확인">견적서 저장</button>
-  <button class="tb c-cs" id="btnCs" onclick="csOpen()" title="담은 제품으로 상담 기록을 남깁니다 — 담당자 화면(store) [상담] 메뉴 › 상담 목록에서 확인">상담 저장</button>
+  <button class="tb c-q" id="btnSave" onclick="saveAll()" title="견적서 저장 + 상담 기록을 한 번에 — 담당자 화면(store) [견적서] › 내 견적서 · [상담] › 상담 목록에서 확인">상담내용 저장</button>
   <button class="tb c-cu" id="btnShare" onclick="shareQuote()">고객에게 보내기</button>
 </div></div>
 
@@ -542,6 +546,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <div class="tot s"><div class="k">월 구독료 <small>(할인 전 → 할인 후 · 통장에서 나가는 금액)</small></div><div class="v num" id="t_sub_m">—</div><div class="d" id="t_sub_d"></div></div>
     <div class="tot l"><div class="k">일반 구매 총액 <small>(모든 할인 반영)</small></div><div class="v num" id="t_lump">—</div><div class="d" id="t_lump_d"></div></div>
     <div class="tot n"><div class="k">합계 <small>(총 구독료 + 일반 구매 총액)</small></div><div class="v num" id="t_all">—</div><div class="d" id="t_all_d"></div></div>
+    <div class="duo">
     <div class="card cond">
       <h2><span class="stepn">3</span>견적 공통 <small>한 견적에 한 번만 들어가는 것 · 카드·실적·선납·할부는 품목마다 2번에서 정합니다</small></h2>
       <div class="hidden" aria-hidden="true">
@@ -586,6 +591,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
       </div></details>
     </div>
     <div class="card" id="t_detail"></div>
+    </div>
     <div class="card" id="t_scn"></div>
     <p class="note" id="noticeTxt"></p>
   </aside>
@@ -707,7 +713,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <p class="hint" id="psNote"></p>
 </div></div>
 <div class="dlg hidden" id="csDlg"><div class="box share">
-  <h2>상담 저장 <button class="x" onclick="closeDlg('csDlg')" aria-label="닫기">×</button></h2>
+  <h2>상담내용 저장 <button class="x" onclick="closeDlg('csDlg')" aria-label="닫기">×</button></h2>
   <div id="csBody"></div>
 </div></div>
 <div class="dlg hidden" id="shareDlg"><div class="box share">
@@ -715,7 +721,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <div id="shareBody"></div>
 </div></div>
 
-<div class="bbar" id="bbar"><div class="b s"><span>월 구독료</span><b class="num" id="bb_s">—</b></div><div class="b t"><span>총 구독료 <small id="bb_p"></small></span><b class="num" id="bb_t">—</b></div><div class="b l op" data-op="+"><span>일반 구매 총액</span><b class="num" id="bb_l">—</b></div><div class="b n op" data-op="="><span>합계</span><b class="num" id="bb_n">—</b></div><button onclick="setView('show')">고객과 보기</button></div>
+<div class="bbar" id="bbar"><div class="b s"><span>월 구독료</span><b class="num" id="bb_s">—</b></div><div class="b t"><span>총 구독료 <small id="bb_p"></small></span><b class="num" id="bb_t">—</b></div><div class="b l op" data-op="+"><span>일반 구매 총액</span><b class="num" id="bb_l">—</b></div><div class="b n op" data-op="="><span>합계</span><b class="num" id="bb_n">—</b></div><button onclick="setView('show'); custOpen()">고객과 보기</button></div>
 <div id="toast" class="hidden"></div>
 <div class="calc hidden" id="calc" tabindex="-1" role="dialog" aria-label="계산기">
   <div class="cbar" id="calcBar"><span>계산기</span><span class="sp"></span><button onclick="calcCopy()" title="지금 값을 복사합니다 — 금액 칸에 붙여넣을 수 있습니다">값 복사</button><button onclick="toggleCalc(false)" aria-label="계산기 닫기">✕</button></div>
@@ -844,6 +850,7 @@ function initDisplay(){ document.body.classList.add('disp'); $('boot').classList
   document.body.classList.add('guiding'); v.innerHTML=guideHtml('','');
   const fs=document.createElement('button'); fs.id='fsBtn'; fs.textContent='전체 화면'; fs.onclick=()=>{ (document.documentElement.requestFullscreen||function(){}).call(document.documentElement); }; document.body.appendChild(fs);
   document.addEventListener('fullscreenchange',()=>fs.classList.toggle('hidden',!!document.fullscreenElement));
+  const pb=document.createElement('button'); pb.id='dpBtn'; pb.textContent='🖨 인쇄 · PDF'; pb.title='견적 화면을 A4 로 인쇄 · PDF 저장'; pb.onclick=()=>window.print(); document.body.appendChild(pb);   // 견적 화면일 때만 보임 (2026-11-23)
   document.title='고객 화면 · '+STORE.name;
   if(!BC){ v.innerHTML='<div class="greet wait"><p class="g2">이 브라우저는 고객 화면 연결을 지원하지 않습니다. 크롬이나 엣지로 열어 주세요.</p></div>'; return; }
   BC.onmessage=e=>{ const d=e.data||{}; if(d.t==='show'){ const was=document.body.classList.contains('guiding'); document.body.classList.remove('guiding'); const y=was?0:scrollY; v.innerHTML=d.html; scrollTo(0,y); }
@@ -1629,7 +1636,10 @@ function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'
     +row('=','총 금액',won(T.pay)+a,(parts.length>1?parts.join(' + '):'')+(S.preOut?(parts.length>1?' · ':'')+'선납금 '+won(S.preOut)+' 별도':''),'sum')
     +(T.cash>0?row('−','캐시백 포인트',won(T.cash),'구매 후 환급 금액','minus')+row('=','최종 혜택가',won(T.fin)+a,'총 금액 − 캐시백','sum fin'):''); }
 /* 견적 공통 · 계산 풀이 따로 스크롤 — 위 머리띠·아래 합계 띠 높이만큼 비운다 (2026-11-23) */
-function setBars(){ try{ const t=document.querySelector('.top'), b=$('bbar'), st=document.documentElement.style; st.setProperty('--toph',(t?t.offsetHeight:58)+'px'); st.setProperty('--bbh',(b&&b.offsetParent!==null&&getComputedStyle(b).position==='fixed'?b.offsetHeight:0)+'px'); }catch(e){} }
+function setBars(){ try{ const t=document.querySelector('.top'), b=$('bbar'), st=document.documentElement.style; st.setProperty('--toph',(t?t.offsetHeight:58)+'px'); let bh=0; if(b&&b.offsetHeight){ const r=b.getBoundingClientRect(), ps=getComputedStyle(b).position; if((ps==='fixed'||ps==='sticky')&&r.top<innerHeight) bh=b.offsetHeight; }   /* 아래 합계 막대는 sticky — 전에는 fixed 만 봐서 0 이었다 (칸 아래가 막대에 가림) */
+    const th=(t?t.offsetHeight:58); st.setProperty('--bbh',bh+'px');
+    [document.querySelector('.sum .card.cond'), $('t_detail')].forEach(el=>{ if(!el) return; if(getComputedStyle(el).position!=='sticky'){ el.style.top=''; return; }
+      el.style.top=Math.min(th+8, innerHeight-bh-12-el.offsetHeight)+'px'; if(window.ResizeObserver&&!el._ro){ el._ro=new ResizeObserver(()=>setBars()); el._ro.observe(el); } }); }catch(e){} }
 window.addEventListener('resize',setBars);
 function render(){ seedItems(); setBars(); LAST=calcAll(); if(applyCardPreset()) LAST=calcAll(); renderEdit(LAST); $('bnEdit').innerHTML=bnHtml(); condNow(LAST); renderShow(); renderSheet(); draftSave(); }
 /* 견적 공통의 조건이 지금 견적에 얼마로 반영됐는지 (2026-11-17) — 적용 금액, 아니면 왜 0 인지 */
@@ -1904,10 +1914,21 @@ let CS_DONE=false, CS_LEAVE=false, CS_CH='', INQC=null;
 function csItems(){ return Q.items.filter(it=>!it.hidden); }
 function csCats(){ return [...new Set(csItems().map(it=>(INFO[it.m]&&INFO[it.m].cat)||catOf(it.m)||'').filter(Boolean))]; }
 function csSpecial(){ return ['혼수','입주','이사'].includes(Q.cust.type); }
+/* [상담내용 저장] (2026-11-23) — 견적서 저장과 상담 기록을 한 번에 (전 [견적서 저장]·[상담 저장] 두 버튼) · 부족한 것은 알림 창으로 */
+function saveLack(){ const a=[], its=Q.items.filter(it=>!it.hidden);
+  if(!its.length) a.push('품목 — 담은 제품 없음');
+  if(!String(Q.cust.name||'').trim()) a.push('고객 성명');
+  if(!String(Q.cust.phone||'').trim()) a.push('고객 연락처');
+  const np=its.filter(it=>it.mode!=='sub'&&!it.free&&!(+it.lump||priceOf(it.m))).map(it=>it.m); if(np.length) a.push('일반 구매 금액 없는 품목 — '+np.join(', '));
+  return a; }
+async function saveAll(){ if(!LAST) return; const a=saveLack();
+  if(a.length){ alert('상담내용 저장 전 확인 필요\n\n'+a.map(x=>'· '+x).join('\n')); if(a.some(x=>/^고객/.test(x))){ setView('edit'); try{ $(String(Q.cust.name||'').trim()?'c_tel':'c_name').focus(); }catch(e){} } return; }
+  await saveQuote(); if(!Q.no||SAVED_SIG!==quoteSig()){ alert('견적서 저장 실패 — 상담 기록도 저장되지 않았습니다. 로그인 상태 확인 후 다시 눌러 주세요.'); return; }
+  csOpen(); }
 async function csOpen(){ if(!csItems().length){ toast('품목을 담아 주세요'); return; }
   $('csDlg').classList.remove('hidden'); csStep1(); }
 function csStep1(){ const its=csItems(), cats=csCats();
-  $('csBody').innerHTML=`<p style="margin:0 0 8px"><b>${esc(Q.cust.name||'고객')}</b> 님 상담을 저장할까요?</p>
+  $('csBody').innerHTML=`${Q.no&&SAVED_SIG===quoteSig()?`<p class="hint" style="margin:0 0 8px">✔ 견적서 저장 완료 · ${esc(Q.no)} ${Q.ver}차</p>`:''}<p style="margin:0 0 8px"><b>${esc(Q.cust.name||'고객')}</b> 님 상담 기록 저장</p>
     <div class="url" style="white-space:normal">관심 품목 <b>${esc(cats.join(', ')||'알 수 없음')}</b><br>관심 모델 ${its.map(it=>esc(it.m)).join(', ')}</div>
     <p class="hint">담았던 제품 ${its.length}개로 저장합니다. 다른 제품으로 남기려면 [아니요] — 상담 입력 화면으로 넘어갑니다.</p>
     <div class="btns"><button class="btn blue" onclick="csStep2()">예 · 담은 제품으로</button><button class="btn" onclick="csToStore()">아니요 · 상담 입력으로</button><button class="btn" onclick="CS_DONE=true; closeDlg('csDlg')">저장 안 함</button></div>`; }
@@ -1991,7 +2012,7 @@ async function openList(){ $('listDlg').classList.remove('hidden'); $('listBody'
 function renderList(){ const q=$('l_q').value.trim().toLowerCase(); const rows=LIST.filter(x=>!q||[x.name,x.phone,x.no,x.models].join(' ').toLowerCase().includes(q)).slice(0,60);
   $('listBody').innerHTML = rows.length? rows.map(x=>`<div class="row"><div class="t"><b>${esc(x.name||'(미상)')} · ${esc(x.no)} ${x.version>1?x.version+'차':''}</b><span>${esc(x.issuedAt)} · ${esc(x.counselor||'')} · ${esc((x.models||'').slice(0,60))}</span></div><button class="btn sm" onclick="closeDlg('listDlg');loadQuote('${esc(x.no)}')">열기</button></div>`).join('') : '<div class="hint">견적이 없습니다.</div>'; }
 async function shareQuote(){
-  if(!Q.no){ toast('먼저 [견적서 저장]을 누르세요'); return; }
+  if(!Q.no){ toast('먼저 [상담내용 저장]을 누르세요'); return; }
   $('shareDlg').classList.remove('hidden'); $('shareBody').innerHTML='<div class="hint">링크 만드는 중…</div>';
   try{ const r=await rpc('fn_quote_page_share',{p_code:CODE||null, p_no:Q.no, p_by:ME||null}); if(!r||!r.ok) throw new Error((r&&r.reason)||'실패');
     const txt=`[삼성스토어 시흥점] ${Q.cust.name} 님 견적서입니다.\n${r.url}\n(${r.expires_at} 까지 보실 수 있습니다)`;
