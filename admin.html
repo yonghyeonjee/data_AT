@@ -1282,7 +1282,16 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
 .subtabs.sw button:hover{color:var(--ink);background:var(--surface-2)}
 .subtabs.sw button.on{color:var(--navy);border-bottom-color:var(--navy);font-weight:700}
 .subtabs.sw button:focus-visible{outline:2px solid var(--navy);outline-offset:-2px}
-@media(max-width:999px){ .subtabs.sw{padding:0 6px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)} .subtabs.sw button{min-height:44px;padding:10px 12px} }   /* 폰: 오른쪽 끝을 흐려 '더 있다'는 걸 보인다(옆으로 넘김) */
+@media(max-width:999px){ .subtabs.sw{padding:0 6px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)} .subtabs.sw button{min-height:44px;padding:10px 12px} }
+/* ── v361 설정 한 곳 — 설정 탭 줄(위 묶음 · 아래 항목) · 사이드바 맨 아래 [설정] 앞 구분선 ── */
+.subtabs.sw.hub{flex-direction:column;align-items:stretch;overflow:visible}
+.subtabs.hub .hubg,.subtabs.hub .hubi{display:flex;align-items:center;overflow-x:auto;scrollbar-width:none}
+.subtabs.hub .hubt{font-size:calc(12px * var(--font-scale));font-weight:700;color:var(--muted);padding:0 12px 0 2px;white-space:nowrap}
+.subtabs.hub .hubi{border-top:1px solid var(--line);background:var(--surface-2,#F6F8FC);margin:0 calc(-1 * max(28px,calc((100% - var(--maxw))/2)));padding:0 max(28px,calc((100% - var(--maxw))/2))}
+.subtabs.hub .hubi button{font-size:calc(12.5px * var(--font-scale));font-weight:500;min-height:38px;padding:8px 12px}
+.subtabs.hub .hubi button.on{font-weight:700}
+#navBox .navsep{height:1px;margin:10px 14px;background:rgba(255,255,255,.14)}
+@media(max-width:999px){ .subtabs.hub .hubi{margin:0 -6px;padding:0 6px} .subtabs.hub .hubi button{min-height:44px} .subtabs.hub .hubt{display:none} }   /* 폰: 오른쪽 끝을 흐려 '더 있다'는 걸 보인다(옆으로 넘김) */
 /* ═══ 행운 이벤트 (mvp_290) ═══ */
 .lka-tbl td{vertical-align:top}
 .lka-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:7px;padding:2px 7px;margin:0 4px 4px 0;font-size:calc(12px * var(--font-scale));background:#fff;white-space:nowrap}
@@ -5639,7 +5648,7 @@ const NAV_FALLBACK=[
   {group:'sales',group_label:'주문·매출',items:[{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'},{code:'wiz',label:'주문 변환',state:'on'},{code:'oq',label:'이카운트 주문서',state:'on'}]},
   {group:'inv',group_label:'상품',items:[{code:'items',label:'품목·구독 요금',state:'on'}]},
   {group:'data',group_label:'데이터 수집',items:[{code:'upload',label:'데이터 가져오기',state:'on'},{code:'log',label:'서비스 로그',state:'on'}]},
-  {group:'ops',group_label:'설정',items:[{code:'settings',label:'담당자·배정',state:'on'},{code:'option',label:'옵션·권한',state:'on'},{code:'notify',label:'잔디 알림',state:'on'}]}];
+  {group:'ops',group_label:'설정',items:[{code:'settings',label:'설정',state:'on'},{code:'option',label:'옵션·권한',state:'on'},{code:'notify',label:'잔디 알림',state:'on'}]}];
 const NAV_BADGE={inbox:'badgeInbox', oq:'badgeOq'};   // 뱃지를 다는 메뉴 (없어도 화면이 죽지 않게 쓰는 쪽에서 null 확인)
 if(DC_ENV==='test'){ document.title='[TEST] '+document.title; document.querySelectorAll('.envtag').forEach(x=>x.classList.remove('hidden'));
   const dl=document.getElementById('dashShareLink'); if(dl){ dl.href=DASH_DIR; dl.textContent='외부 공유 화면(테스트) ↗'; } }
@@ -5655,8 +5664,8 @@ async function loadMenu(pre){
    지금 화면이 든 묶음은 잠시 펼쳐 보이고(기억 안 함) 다른 화면으로 가면 다시 접힌다 · 접힌 묶음 안에 뱃지(새 문의 등)가 있으면 머리에 빨간 점 */
 const NAV_GICON={dashboard:'exec',crm:'customers',mkt:'sms',sales:'orders',inv:'items',data:'upload',ops:'settings'};
 /* 메뉴 찾기 별명 (mvp_308 · 2026-11-23 메뉴 재배치) — 예전 이름·자주 부르는 말로 적어도 찾게 */
-const NAV_ALIAS={inbox:'문의함 접수함 방문', consults:'상담 견적서 처리현황', customers:'고객 목록 렌탈', crm:'발송 대상 추출 수동 결제 안 한 고객 미입금 렌탈 고객', followup:'자동 발송 대상 구독 만료 재구매', sms:'메시지 발송 관리 센드온 템플릿 수신거부 080 발송 결과', utm:'발송 링크 관리 단축 링크 캠페인 클릭', lucky:'이벤트 룰렛 행운권', oq:'주문서 전송 이카운트 판매 요청', wiz:'샵링커', items:'품목 세트 구독 상품 요금 혜택 정책', upload:'파일 업로드 이력 되돌리기 DPS 고도몰', log:'로그', settings:'설정 담당자 문의 자동 배정 순번 계정', option:'옵션 권한 잠금 사은품 이카운트 연동 자주 가는 곳 주문서 코드표', notify:'알림 관리 잔디 웹훅', exec:'경영 지표 KPI', dash:'매출 대시보드 DPS', cdash:'상담 대시보드'};
-const NAV_GALIAS={crm:'CRM 고객', mkt:'CRM 메시지 문자 발송 마케팅', sales:'매출 주문 오픈마켓 이카운트', inv:'재고 품목 오픈마켓 이카운트', data:'데이터', ops:'운영 옵션 설정'};
+const NAV_ALIAS={inbox:'문의함 접수함 방문', consults:'상담 견적서 처리현황', customers:'고객 목록 렌탈', crm:'발송 대상 추출 수동 결제 안 한 고객 미입금 렌탈 고객', followup:'자동 발송 대상 구독 만료 재구매', sms:'메시지 발송 관리 센드온 템플릿 수신거부 080 발송 결과', utm:'발송 링크 관리 단축 링크 캠페인 클릭', lucky:'이벤트 룰렛 행운권', oq:'주문서 전송 이카운트 판매 요청', wiz:'샵링커', items:'품목 세트 구독 상품 요금 혜택 정책', upload:'파일 업로드 이력 되돌리기 DPS 고도몰', log:'로그', settings:'설정 운영 옵션 환경설정 메뉴 노출', option:'옵션 권한 잠금 사은품 이카운트 연동 자주 가는 곳 주문서 코드표', notify:'알림 관리 잔디 웹훅', exec:'경영 지표 KPI', dash:'매출 대시보드 DPS', cdash:'상담 대시보드'};
+const NAV_GALIAS={crm:'CRM 고객', mkt:'CRM 메시지 문자 발송 마케팅', sales:'매출 주문', inv:'재고 품목', data:'데이터', ops:'운영 옵션 설정'};
 let NAV_OPEN={}; try{ NAV_OPEN=JSON.parse(localStorage.getItem('dc_nav_open')||'{}')||{}; }catch(e){ NAV_OPEN={}; }
 function navGroupSet(g, open){ g.classList.toggle('open', open); const b=g.querySelector('.ngh'); if(b) b.setAttribute('aria-expanded', String(open));
   NAV_OPEN[g.dataset.g]=open; try{ localStorage.setItem('dc_nav_open', JSON.stringify(NAV_OPEN)); }catch(e){} navBadgeSync(); }
@@ -5689,6 +5698,35 @@ const NAV_SUB={sms:[
   option:[{k:'perm',label:'담당자 권한',ids:['nsc-option-0']},{k:'lock',label:'코드 오입력 · 잠금',ids:['nsc-option-1']},{k:'fav',label:'자주 가는 곳',ids:['nsc-option-2']},
     {k:'gift',label:'사은품 링크',ids:['nsc-option-3']},{k:'ec',label:'이카운트 연동',ids:['nsc-option-4']},{k:'code',label:'주문서 코드표',ids:['ecCodeCard']}],
   notify:[{k:'chan',label:'보내는 곳',ids:['nsc-notify-0']},{k:'rule',label:'보낼 일',ids:['nsc-notify-1']},{k:'log',label:'최근 발송',ids:['nsc-notify-2']}]};
+/* 설정 한 곳 (v361 · mvp_309) — 사이드바는 맨 아래 [설정] 한 줄. 설정 성격의 카드(설정·옵션·알림 화면 전부 + 문자 발송의 설정·계정 · 캠페인의 단축 링크 주소)는
+   화면·카드는 그대로 두고 헤더 아래 '설정 탭'(묶음 줄 + 항목 줄)으로 묶는다. 항목을 누르면 그 화면·하위 메뉴로 간다(show·navSubGo 그대로 · 불러오기 함수도 그대로).
+   계정에서 숨긴 화면(menu_access)의 항목은 빠진다. 문자 발송·캠페인 탭 줄의 설정 항목도 누르면 이 설정 탭으로 바뀐다. */
+const SET_HUB=[
+  {g:'acct',label:'담당자·계정',items:[{v:'settings',k:'staff',label:'담당자 · 로그인'},{v:'settings',k:'acct',label:'관리자 계정 · 권한'},{v:'option',k:'perm',label:'담당자 권한'},{v:'option',k:'lock',label:'코드 오입력 · 잠금'}]},
+  {g:'pool',label:'문의 자동 배정',items:[{v:'settings',k:'pool',label:'문의 자동 배정'}]},
+  {g:'jandi',label:'잔디 알림',items:[{v:'notify',k:'chan',label:'보내는 곳'},{v:'notify',k:'rule',label:'보낼 일'},{v:'notify',k:'log',label:'최근 알림'}]},
+  {g:'link',label:'외부 연동',items:[{v:'option',k:'ec',label:'이카운트 연동'},{v:'option',k:'code',label:'주문서 코드표'},{v:'sms',k:'acct',label:'센드온 계정 · 잔액'},{v:'sms',k:'conf',label:'문자 설정'},{v:'utm',k:'base',label:'단축 링크 주소'}]},
+  {g:'store',label:'담당자 화면',items:[{v:'option',k:'fav',label:'자주 가는 곳'},{v:'option',k:'gift',label:'사은품 링크'}]}];
+const SET_VIEWS=new Set(['settings','option','notify']);   /* 화면 전체가 설정 — 사이드바엔 [설정] 한 줄만 */
+function hubVisible(){ const ok=d=>!MENU_STATE||!Object.keys(MENU_STATE).length||(MENU_STATE[d.v]&&MENU_STATE[d.v].state!=='off');
+  return SET_HUB.map(g=>({...g, items:g.items.filter(ok)})).filter(g=>g.items.length); }
+function hubFind(v,k){ for(const g of hubVisible()){ const d=g.items.find(d=>d.v===v&&d.k===k); if(d) return {g,d}; } return null; }
+function hubNow(v){ const c=subCur(v); return c?hubFind(v,c.k):null; }
+let HUB_LAST={}; try{ HUB_LAST=JSON.parse(localStorage.getItem('dc_hub_last')||'{}')||{}; }catch(e){ HUB_LAST={}; }
+function hubGo(v,k){ const h=hubFind(v,k); if(h){ HUB_LAST[h.g.g]=v+':'+k; HUB_LAST._=v+':'+k; try{ localStorage.setItem('dc_hub_last', JSON.stringify(HUB_LAST)); }catch(e){} }
+  navSubGo(v,k); }
+function hubGroup(g){ const G=hubVisible().find(x=>x.g===g); if(!G) return; const p=(HUB_LAST[g]||'').split(':'); const d=G.items.find(d=>d.v===p[0]&&d.k===p[1])||G.items[0]; hubGo(d.v,d.k); }
+function hubOpen(){ const p=(HUB_LAST._||'').split(':'); const h=p[0]?hubFind(p[0],p[1]):null; const d=h?h.d:((hubVisible()[0]||{items:[]}).items[0]); if(d) hubGo(d.v,d.k); }
+/* 설정 탭 줄 — 위: 묶음 · 아래: 그 묶음의 항목(하나뿐이면 없음) */
+function hubBar(bar,h){ const G=hubVisible(); bar.className='subtabs sw hub'; bar.setAttribute('role','navigation'); bar.setAttribute('aria-label','설정');
+  const btn=(on,txt,fn)=>`<button type="button" role="tab" class="${on?'on':''}" aria-selected="${on}" onclick="${fn}">${esc(txt)}</button>`;
+  bar.innerHTML=`<div class="hubg" role="tablist" aria-label="설정 묶음"><span class="hubt" aria-hidden="true">설정</span>${G.map(g=>btn(g.g===h.g.g, g.label, `hubGroup('${g.g}')`)).join('')}</div>`
+    +(h.g.items.length>1?`<div class="hubi" role="tablist" aria-label="${esc(h.g.label)}">${h.g.items.map(d=>btn(d.v===h.d.v&&d.k===h.d.k, d.label, `hubGo('${d.v}','${d.k}')`)).join('')}</div>`:'');
+  bar.querySelectorAll('button.on').forEach(b=>{ try{ b.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(e){} }); }
+/* 설정 항목을 보는 동안은 사이드바 [설정] 줄을 켠다 (문자 발송 화면의 설정 카드라도) */
+function hubMark(v){ if(VIEW!==v) return; const row=document.querySelector('#navBox .nav[data-hub]'); if(!row) return; const h=hubNow(v);
+  if(h){ document.querySelectorAll('#navBox .nav[data-v]').forEach(x=>x.classList.toggle('active', x===row)); navReveal(row.dataset.v); }
+  else row.classList.toggle('active', row.dataset.v===v); }
 let SUB_CUR={}; try{ SUB_CUR=JSON.parse(localStorage.getItem('dc_sub_cur')||'{}')||{}; }catch(e){ SUB_CUR={}; }
 function subCur(v){ const L=NAV_SUB[v]; if(!L) return null; return L.find(d=>d.k===SUB_CUR[v])||L[0]; }
 function navSubSet(v, open){ /* v285 — 사이드바 하위 메뉴 접기/펼치기는 없어졌다(탭 줄로) · 부르는 곳이 남아 있어 빈 함수로 둔다 */ }
@@ -5700,7 +5738,7 @@ function subApply(v){ document.querySelectorAll('#navBox .nav.nsub.on').forEach(
   const cb=$('cbar'); if(cb && $('v-'+v) && $('v-'+v).contains(cb)){ let n=cb.nextElementSibling; while(n && !n.classList.contains('card')) n=n.nextElementSibling;
     const hide=!!(n && n.classList.contains('subhide')); cb.classList.toggle('subhide', hide); const qa=$('qstatAuto'); if(qa) qa.classList.toggle('subhide', hide); }
   document.querySelectorAll(`#navBox .nav.nsub[data-sv="${v}"]`).forEach(x=>{ const on=x.dataset.sub===cur.k && VIEW===v; x.classList.toggle('on', on); if(on) x.setAttribute('aria-current','page'); else x.removeAttribute('aria-current'); });
-  if(VIEW===v) $('title').textContent=TITLES[v]+' · '+cur.label; }
+  if(VIEW===v){ const h=hubNow(v); $('title').textContent=h?'설정 · '+h.d.label:TITLES[v]+' · '+cur.label; } hubMark(v); }
 function subSet(v, k){ SUB_CUR[v]=k; try{ localStorage.setItem('dc_sub_cur', JSON.stringify(SUB_CUR)); }catch(e){} }
 function navSubGo(v, k){ SUB_CUR[v]=k; try{ localStorage.setItem('dc_sub_cur', JSON.stringify(SUB_CUR)); }catch(e){}
   if(VIEW!==v){ show(v); return; }
@@ -5714,24 +5752,27 @@ function goSec(v, elId, block){
   if(VIEW!==v) show(v); setTimeout(()=>{ if(!pick()) setTimeout(pick, 700); }, 400); }
 function renderNav(){
   const h=[];
-  const item=i=>{ const dev=i.state==='dev', bid=NAV_BADGE[i.code], sub=!dev&&NAV_SUB[i.code];
-    const row=`<div class="nav${dev?' dev':''}" data-v="${i.code}"${dev?' title="개발 중입니다"':''}>`
-      +`<span class="ic">${NAV_ICON[i.code]||NAV_ICON.settings}</span>${esc(i.label||TITLES[i.code])}`
+  const item=(i,hub)=>{ const dev=i.state==='dev', bid=NAV_BADGE[i.code], sub=!dev&&(hub?hubVisible().flatMap(g=>g.items.map(d=>({...d, label:g.items.length>1?g.label+' › '+d.label:d.label}))):NAV_SUB[i.code]);
+    const row=`<div class="nav${dev?' dev':''}" data-v="${i.code}"${hub?' data-hub="1"':''}${dev?' title="개발 중입니다"':''}>`
+      +`<span class="ic">${NAV_ICON[hub?'settings':i.code]||NAV_ICON.settings}</span>${esc(hub?'설정':(i.label||TITLES[i.code]))}`
       +(dev?'<span class="devtag">개발중</span>':(bid?`<span class="badge hidden" id="${bid}"></span>`:''))
       +`</div>`;
     if(!sub) return row;
     /* v285 — 하위 메뉴 줄은 사이드바에 안 보인다(헤더 아래 떠 있는 탭 줄 #subTabs.sw 로) · 메뉴 찾기 결과에서만 나타난다 */
     return `<div class="nsg" data-sv="${i.code}">${row}<div class="nsb" id="nsb_${i.code}">`
-      +sub.map(d=>`<div class="nav nsub" role="link" tabindex="0" data-sv="${i.code}" data-sub="${d.k}">${esc(d.label)}</div>`).join('')+`</div></div>`; };
+      +sub.map(d=>`<div class="nav nsub" role="link" tabindex="0" data-sv="${d.v||i.code}" data-sub="${d.k}">${esc(d.label)}</div>`).join('')+`</div></div>`; };
   MENU.forEach(g=>{
     const items=(g.items||[]).filter(i=>i.state!=='off' && TITLES[i.code]);
     if(!items.length) return;
     if(g.group==='_top' || !g.group_label){ items.forEach(i=>h.push(item(i))); return; }
+    /* v361 — 설정·옵션·알림은 [설정] 한 줄(처음 보이는 것) · 그 묶음에 그것만 남으면 묶음 머리 없이 맨 아래 한 줄 */
+    const hubI=items.findIndex(i=>SET_VIEWS.has(i.code)), hubCode=hubI>=0?items[hubI].code:null, its=hubCode?items.filter((i,n)=>!SET_VIEWS.has(i.code)||n===hubI):items;
+    if(hubCode && its.length===1){ h.push('<div class="navsep" aria-hidden="true"></div>'+item(its[0],true)); return; }
     const open=NAV_OPEN[g.group]===true, gid='ngb_'+g.group;   /* v284 — 기본 접힘 (직접 펼친 묶음만 기억) */
     h.push(`<div class="navg${open?' open':''}" data-g="${esc(g.group)}"><button type="button" class="ngh" aria-expanded="${open}" aria-controls="${gid}">`
       +`<span class="ic">${NAV_ICON[NAV_GICON[g.group]]||NAV_ICON.settings}</span><span>${esc(g.group_label)}</span><span class="gdot" aria-hidden="true"></span>`
       +`<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></span></button>`
-      +`<div class="ngb" id="${gid}">${items.map(item).join('')}</div></div>`);
+      +`<div class="ngb" id="${gid}">${its.map(i=>item(i,i.code===hubCode)).join('')}</div></div>`);
   });
   $('navBox').innerHTML=h.join('');
   try{ if(VIEW){ navReveal(VIEW); subApply(VIEW); } }catch(e){}
@@ -5776,7 +5817,7 @@ function renderUnderConstruction(v){
       <div class="uc-tape"></div>
     </div>`;
 }
-const TITLES={home:'홈',exec:'경영 지표',stock:'재고 현황',moves:'입출고',items:'품목·구독 요금',oq:'이카운트 주문서',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담·가망고객',customers:'고객 통합',crm:'보낼 고객 찾기',upload:'데이터 가져오기',log:'서비스 로그',settings:'담당자·배정',option:'옵션·권한',notify:'잔디 알림',utm:'캠페인·단축 링크',cdash:'상담 대시보드',followup:'자동 발송',sms:'문자 발송',lucky:'행운 이벤트'};
+const TITLES={home:'홈',exec:'경영 지표',stock:'재고 현황',moves:'입출고',items:'품목·구독 요금',oq:'이카운트 주문서',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담·가망고객',customers:'고객 통합',crm:'보낼 고객 찾기',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정',option:'옵션·권한',notify:'잔디 알림',utm:'캠페인·단축 링크',cdash:'상담 대시보드',followup:'자동 발송',sms:'문자 발송',lucky:'행운 이벤트'};
 let VIEW='home';
 function toggleNav(force){ const on = force===undefined ? !document.body.classList.contains('nav-open') : !!force; document.body.classList.toggle('nav-open', on); }
 /* 뒤로가기 = 이전 화면. 화면을 바꿀 때마다 히스토리에 한 칸 쌓고, popstate 로 되돌아온다.
@@ -6014,6 +6055,8 @@ function placePeriodBar(v){
 $('navBox').addEventListener('click',e=>{ const hd=e.target.closest('.ngh'); if(hd){ const g=hd.closest('.navg'); navGroupSet(g, !g.classList.contains('open')); return; }
   const sb=e.target.closest('.nav.nsub'); if(sb){ navSubGo(sb.dataset.sv, sb.dataset.sub); return; }
   const n=e.target.closest('.nav[data-v]'); if(!n) return; const v=n.dataset.v;
+  if(n.dataset.hub){ hubOpen(); return; }   /* v361 설정 한 곳 */
+  { const c=subCur(v); if(c && hubFind(v,c.k)){ const L=(NAV_SUB[v]||[]).filter(d=>!hubFind(v,d.k)); if(L[0]) subSet(v,L[0].k); } }
   /* 하위 메뉴가 있는 메뉴 : 이 화면에 있을 때 다시 누르면 하위 메뉴만 접고 편다 */
   show(v); });
 $('navBox').addEventListener('keydown',e=>{ const sb=e.target.closest&&e.target.closest('.nav.nsub'); if(sb && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); navSubGo(sb.dataset.sv, sb.dataset.sub); } });
@@ -6173,6 +6216,7 @@ function subTabTitle(c){ const h=c.querySelector(':scope > h3'); if(!h) return '
 function buildSubTabs(v){
   const bar=$('subTabs'); const view=$('v-'+v); if(!bar) return;
   const L=NAV_SUB[v]; const isDev=(MENU_STATE[v]&&MENU_STATE[v].state==='dev')&&!(typeof ME!=='undefined'&&ME&&ME.is_dev);
+  { const h=!isDev&&hubNow(v); if(h){ hubBar(bar,h); return; } }   /* v361 설정 한 곳 */
   if(L && L.length>1 && !isDev){   /* v285 — 하위 메뉴가 있는 화면: 헤더 아래 떠 있는 탭 줄(스크롤해도 그 자리) · 누르면 그 카드만 */
     const cur=subCur(v); bar.className='subtabs sw'; bar.setAttribute('role','tablist'); bar.setAttribute('aria-label','하위 메뉴');
     bar.innerHTML=L.map(d=>`<button type="button" role="tab" class="${d.k===cur.k?'on':''}" aria-selected="${d.k===cur.k}" data-sub="${esc(d.k)}" onclick="navSubGo('${v}','${d.k}')">${esc(d.label)}</button>`).join('');
