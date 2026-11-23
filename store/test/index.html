@@ -1425,6 +1425,10 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 .skfind .csearchbox{flex:1 1 0;min-width:0}
 .skfind .btn{width:auto;flex:none;white-space:nowrap}
 @media(max-width:719px){ .skfind{flex-wrap:wrap} .skfind .csearchbox{flex-basis:100%} .skfind .btn{min-height:40px} }
+/* ── 새 문의 줄 : 고객 이름 = 상담 입력 (v366) ── */
+.jqname{appearance:none;background:none;border:0;padding:4px 2px;margin:0;font:inherit;font-weight:800;color:var(--ink);cursor:pointer;text-decoration:underline;text-decoration-color:var(--navy);text-underline-offset:3px}
+.jqname:hover,.jqname:focus-visible{color:var(--navy)}
+@media(max-width:719px){ .jqname{padding:9px 4px} }
 </style>
 </head>
 <body>
@@ -6037,11 +6041,13 @@ function renderJq(){ const d=JQ.d; if(!d) return; const c=d.counts||{};
   const emp={todo:'새 문의가 없습니다', ing:'진행 중인 문의가 없습니다', done:'완료한 문의가 없습니다', all:'문의가 없습니다'}[JQ.flt];
   const a=s=>esc(String(s||'')).replace(/'/g,'&#39;');
   $('jqList').innerHTML = P.rows.length ? P.rows.map(x=>{ const [sl,sc]=JQ_ST[x.st]||['',''];
+    /* v366 — 고객 이름을 눌러도 상담 입력(끝난 문의는 상세) */
+    const nmGo=x.st==='done' ? `cdOpen(${x.fin_id})` : `ocToConsult(${x.fin_id},'','${a(x.name)}','${a(x.tel)}','${a(x.interest)}')`;
     const go=x.st==='done'
       ? `<button class="mini" onclick="cdOpen(${x.fin_id})">상세</button>`
       : `<button class="mini ok" onclick="ocToConsult(${x.fin_id},'','${a(x.name)}','${a(x.tel)}','${a(x.interest)}')">상담 입력</button><button class="mini" onclick="cdOpen(${x.fin_id})">상세</button>`;
     return `<div class="item oc jq ${x.st}">
-      <div><div class="p"><small class="jqat">${esc(x.at||'')}</small><span class="tag ${sc}">${sl}</span>${x.st!=='todo'&&x.result?`<span class="tag via">${esc(x.result)}</span>`:''}<b>${esc(x.name||'(이름 없음)')}</b> ${x.phone?`<small>${esc(x.phone)}</small>`:''}</div>
+      <div><div class="p"><small class="jqat">${esc(x.at||'')}</small><span class="tag ${sc}">${sl}</span>${x.st!=='todo'&&x.result?`<span class="tag via">${esc(x.result)}</span>`:''}<button type="button" class="jqname" onclick="${nmGo}" title="${x.st==='done'?'상세 보기':'이 문의로 상담 입력'}">${esc(x.name||'(이름 없음)')}</button> ${x.phone?`<small>${esc(x.phone)}</small>`:''}</div>
         <div class="m"><span class="tag src">${esc(x.src||'')}</span>${x.interest?`<span class="tag itm">${esc(x.interest)}</span>`:''}${(JQ.all||!x.mine)?`<span class="tag hd">${esc(x.handler||'미배정')}</span>`:''}${x.done_at?` 완료 ${esc(x.done_at)}`:''}${x.content?` · ${esc(x.content)}`:''}</div></div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${esc(x.tel)}" aria-label="전화">📞</a>`:''}${go}</div></div>`; }).join('')
     : `<div class="empty">${emp}</div>`;

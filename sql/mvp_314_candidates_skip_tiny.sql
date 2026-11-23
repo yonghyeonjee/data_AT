@@ -1,0 +1,6 @@
+-- mvp_314 · 2026-11-23 · 판매 고르기 후보에서 소액 전표 빼기 (적용 기록)
+-- "구독 100원~1000원은 빼기로 했잖아" — 구독 임시 전표(100원·1,000원 등)가 후보 목록을 채웠다.
+-- public.fn_store_sale_candidates : 찾기 글(p_q)이 없을 때는 합계 5,000원 이하 전표를 후보에서 뺀다.
+--   전표번호·이름 등으로 찾을 때는 소액 전표도 나온다(꼭 이어야 할 때를 위해). 자동 잇기(core.f_consult_link_sales)는 그대로 — 구독은 임시 전표가 유일한 DPS 흔적이다.
+--   치환: 'from (select * from m where v_q is null or …' → 'where (v_q is not null or coalesce(m.amount,0) > 5000) and (v_q is null or …)'
+-- 화면(v366): 담당자 [새 문의] 줄의 고객 이름을 눌러도 상담 입력(끝난 문의는 상세) — renderJq · .jqname
