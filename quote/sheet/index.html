@@ -1308,8 +1308,23 @@ var NAMECARDS = [];
     return '<div class="c' + (cls === 'big' ? ' big' : '') + '"><div class="k">' + k + '</div>'
       + '<div class="v' + (cls === 'minus' ? ' minus' : '') + '">' + v + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
   }
+  /* 일반 구매 금액 다시 맞추기 (2026-11-23) — 견적서에서 고친 칸만큼 혜택 합계 · 일반 최종가 · 할부 월 금액을 바꾼다 */
+  var LUMP_BEN = ['bill', 'ptRest', 'ptD', 'ptS', 'sPoint', 'jPoint', 'typePoint', 'member', 'cashback'];
+  function lumpRecalc(L){
+    if(!L || !L.items) return;
+    if(!L._b){ L._b = { amount: num(L.amount), fee: num(L.fee), benefit: num(L.benefit), net: num(L.net), per: num(L.per), r: {}, x: (L.extras || []).map(function(e){ return num(e.amount); }) };
+      LUMP_BEN.forEach(function(k){ L._b.r[k] = num(L[k]); }); }
+    var b = L._b, amt = L.items.reduce(function(a, x){ return a + num(x.amount); }, 0), dB = 0;
+    LUMP_BEN.forEach(function(k){ dB += num(L[k]) - b.r[k]; });
+    (L.extras || []).forEach(function(e, i){ dB += num(e.amount) - (b.x[i] || 0); });
+    var dA = amt - b.amount, dF = num(L.fee) - b.fee;
+    L.amount = amt; L.benefit = Math.max(0, b.benefit + dB); L.net = L.amount + num(L.fee) - L.benefit;
+    if(num(L.months) > 0) L.per = Math.max(0, Math.round(b.per + (dA + dF - (num(L.bill) - b.r.bill)) / num(L.months)));
+  }
+  function lumpRow(l, path, v, cls){ if(!EDIT && !(num(v) > 0)) return '';
+    return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th>' + l + '</th><td class="num">' + (EDIT ? cell(path, v) : '-' + won(v)) + '</td></tr>'; }
   function lumpBandHtml(q){
-    var L = q.lump; if(!L || !L.items || !L.items.length) return '';
+    var L = q.lump; if(!L || !L.items || !L.items.length) return ''; lumpRecalc(L);
     var ins = num(L.months) > 0 && num(L.per) > 0, cells = '', n = 0;
     cells += bandCell('결제가', won(L.amount)); n++;
     if(num(L.fee) > 0){ cells += bandCell('이용료', '+' + won(L.fee)); n++; }
@@ -1681,12 +1696,15 @@ var NAMECARDS = [];
     blocks.push(h);
     /* 일반 구매 (상담 견적 화면 /quote/ 가 넣는 q.lump) — 구독 아래에 같은 표 양식으로 (2026-11-16) */
     if(q.lump && q.lump.items && q.lump.items.length){
-      var L = q.lump, lb = '<div class="q-box"><h3>💳 일반 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + (num(L.months) ? ' · ' + num(L.months) + '개월' : '') + ')</span>' : '') + '</h3><table class="q-tbl">';
-      L.items.forEach(function(x, i){ lb += '<tr><th>' + (i + 1) + '. ' + esc(x.name || x.model || '') + (x.model && x.name ? ' <span style="font-weight:500;color:#666">' + esc(x.model) + '</span>' : '') + (x.note ? ' <span style="font-weight:500;color:#666">· ' + esc(x.note) + '</span>' : '') + '</th><td class="num">' + won(x.amount) + '</td></tr>'; });
+      var L = q.lump; lumpRecalc(L); var lb = '<div class="q-box"><h3>💳 일반 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + (num(L.months) ? ' · ' + num(L.months) + '개월' : '') + ')</span>' : '') + '</h3><table class="q-tbl">';
+      L.items.forEach(function(x, i){ lb += '<tr><th>' + (i + 1) + '. ' + esc(x.name || x.model || '') + (x.model && x.name ? ' <span style="font-weight:500;color:#666">' + esc(x.model) + '</span>' : '') + (x.note ? ' <span style="font-weight:500;color:#666">· ' + esc(x.note) + '</span>' : '') + '</th><td class="num">' + (EDIT ? cell('lump.items.' + i + '.amount', x.amount) : won(x.amount)) + '</td></tr>'; });
+      if(EDIT) lb += '<tr class="no-print"><td colspan="2" class="q-fxnote" style="text-align:left">✏️ 일반 구매 금액을 고치면 혜택 합계 · 일반 최종가가 다시 계산됩니다 (입력 화면에는 돌아가지 않음)</td></tr>';
       lb += '<tr class="tot"><th>결제가</th><td class="num">' + won(L.amount) + '</td></tr>';
-      if(num(L.fee) > 0) lb += '<tr><th>이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
-      if(num(L.bill) > 0) lb += '<tr><th>청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
-      if(L.ptD != null){   // 입력 화면 계산 풀이와 같은 이름·같은 값 (2026-11-23)
+      if(EDIT || num(L.fee) > 0) lb += '<tr><th>이용료</th><td class="num">' + (EDIT ? cell('lump.fee', L.fee) : '+' + won(L.fee)) + '</td></tr>';
+      lb += lumpRow('청구할인', 'lump.bill', L.bill);
+      if(L.ptD != null && EDIT){
+        lb += lumpRow('캐시백(송금)', 'lump.ptRest', L.ptRest) + lumpRow('⭐ 삼성전자 포인트 합계', 'lump.ptD', L.ptD, 'q-pt') + lumpRow('⭐ 추가 포인트 (구독료 지원)', 'lump.ptS', L.ptS, 'q-pt');
+      } else if(L.ptD != null){   // 입력 화면 계산 풀이와 같은 이름·같은 값 (2026-11-23)
         if(num(L.ptRest) > 0) lb += '<tr><th>캐시백(송금)</th><td class="num">-' + won(L.ptRest) + '</td></tr>';
         if(num(L.ptD) > 0) lb += '<tr class="q-pt"><th>⭐ 삼성전자 포인트 합계</th><td class="num">-' + won(L.ptD) + '</td></tr>';
         if(num(L.ptS) > 0) lb += '<tr class="q-pt"><th>⭐ 추가 포인트 (구독료 지원)</th><td class="num">-' + won(L.ptS) + '</td></tr>';
@@ -1696,8 +1714,8 @@ var NAMECARDS = [];
       if(num(L.typePoint) > 0) lb += '<tr><th>' + esc(L.typeLabel || '포인트') + '</th><td class="num">-' + won(L.typePoint) + '</td></tr>';
       if(num(L.member) > 0) lb += '<tr><th>기본멤버십P 0.1%</th><td class="num">-' + won(L.member) + '</td></tr>';
       }
-      if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
-      (L.extras || []).forEach(function(x){ if(num(x.amount) > 0) lb += '<tr><th>' + esc(x.label || '추가혜택') + '</th><td class="num">-' + won(x.amount) + '</td></tr>'; });
+      lb += lumpRow('조건부 캐시백', 'lump.cashback', L.cashback);
+      (L.extras || []).forEach(function(x, i){ lb += lumpRow(esc(x.label || '추가혜택'), 'lump.extras.' + i + '.amount', x.amount); });
       lb += '<tr class="ben"><th>혜택 합계</th><td class="num">-' + won(L.benefit) + '</td></tr>';
       lb += '<tr class="tot"><th>일반 최종가 (최종체감가)' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
       var T0 = calcTotals(q);

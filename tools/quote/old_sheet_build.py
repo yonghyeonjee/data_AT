@@ -157,6 +157,45 @@ rep("  var SH_EMBED = /[?&]embed=1/.test(location.search);\n  if(SH_EMBED){\n",
     "    window.addEventListener('message', function(e){ if(e.origin !== location.origin) return; var m = e.data || {}; if(m.t !== 'panel') return;   // /quote/ [크게 보기] — 옵션 패널 접기·펴기 (2026-11-23)\n"
     "      var md = document.getElementById('quoteModal'); if(md){ md.classList.toggle('panel-off', !!m.off); setTimeout(fitScale, 0); } });\n")
 
+# 14. (2026-11-23) [편집하기] 때 일반 구매 금액도 고치기 — 품목 결제가 · 이용료 · 청구할인 · 캐시백(송금) · 포인트 · 조건부 캐시백 · 추가혜택
+#     고친 만큼만 혜택 합계 · 일반 최종가 · 할부 월 금액에 더하고 뺀다 (처음 받은 값 L._b 기준 — /quote/ 계산과 어긋나지 않게)
+rep("  function lumpBandHtml(q){\n    var L = q.lump; if(!L || !L.items || !L.items.length) return '';\n",
+    "  /* 일반 구매 금액 다시 맞추기 (2026-11-23) — 견적서에서 고친 칸만큼 혜택 합계 · 일반 최종가 · 할부 월 금액을 바꾼다 */\n"
+    "  var LUMP_BEN = ['bill', 'ptRest', 'ptD', 'ptS', 'sPoint', 'jPoint', 'typePoint', 'member', 'cashback'];\n"
+    "  function lumpRecalc(L){\n"
+    "    if(!L || !L.items) return;\n"
+    "    if(!L._b){ L._b = { amount: num(L.amount), fee: num(L.fee), benefit: num(L.benefit), net: num(L.net), per: num(L.per), r: {}, x: (L.extras || []).map(function(e){ return num(e.amount); }) };\n"
+    "      LUMP_BEN.forEach(function(k){ L._b.r[k] = num(L[k]); }); }\n"
+    "    var b = L._b, amt = L.items.reduce(function(a, x){ return a + num(x.amount); }, 0), dB = 0;\n"
+    "    LUMP_BEN.forEach(function(k){ dB += num(L[k]) - b.r[k]; });\n"
+    "    (L.extras || []).forEach(function(e, i){ dB += num(e.amount) - (b.x[i] || 0); });\n"
+    "    var dA = amt - b.amount, dF = num(L.fee) - b.fee;\n"
+    "    L.amount = amt; L.benefit = Math.max(0, b.benefit + dB); L.net = L.amount + num(L.fee) - L.benefit;\n"
+    "    if(num(L.months) > 0) L.per = Math.max(0, Math.round(b.per + (dA + dF - (num(L.bill) - b.r.bill)) / num(L.months)));\n"
+    "  }\n"
+    "  function lumpRow(l, path, v, cls){ if(!EDIT && !(num(v) > 0)) return '';\n"
+    "    return '<tr' + (cls ? ' class=\"' + cls + '\"' : '') + '><th>' + l + '</th><td class=\"num\">' + (EDIT ? cell(path, v) : '-' + won(v)) + '</td></tr>'; }\n"
+    "  function lumpBandHtml(q){\n    var L = q.lump; if(!L || !L.items || !L.items.length) return ''; lumpRecalc(L);\n")
+rep("""      var L = q.lump, lb = '<div class="q-box"><h3>💳 일반 구매'""",
+    """      var L = q.lump; lumpRecalc(L); var lb = '<div class="q-box"><h3>💳 일반 구매'""")
+rep("""'</th><td class="num">' + won(x.amount) + '</td></tr>'; });
+      lb += '<tr class="tot"><th>결제가</th>""",
+    """'</th><td class="num">' + (EDIT ? cell('lump.items.' + i + '.amount', x.amount) : won(x.amount)) + '</td></tr>'; });
+      if(EDIT) lb += '<tr class="no-print"><td colspan="2" class="q-fxnote" style="text-align:left">✏️ 일반 구매 금액을 고치면 혜택 합계 · 일반 최종가가 다시 계산됩니다 (입력 화면에는 돌아가지 않음)</td></tr>';
+      lb += '<tr class="tot"><th>결제가</th>""")
+rep("""      if(num(L.fee) > 0) lb += '<tr><th>이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
+      if(num(L.bill) > 0) lb += '<tr><th>청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
+      if(L.ptD != null){""",
+    """      if(EDIT || num(L.fee) > 0) lb += '<tr><th>이용료</th><td class="num">' + (EDIT ? cell('lump.fee', L.fee) : '+' + won(L.fee)) + '</td></tr>';
+      lb += lumpRow('청구할인', 'lump.bill', L.bill);
+      if(L.ptD != null && EDIT){
+        lb += lumpRow('캐시백(송금)', 'lump.ptRest', L.ptRest) + lumpRow('⭐ 삼성전자 포인트 합계', 'lump.ptD', L.ptD, 'q-pt') + lumpRow('⭐ 추가 포인트 (구독료 지원)', 'lump.ptS', L.ptS, 'q-pt');
+      } else if(L.ptD != null){""")
+rep("""      if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
+      (L.extras || []).forEach(function(x){ if(num(x.amount) > 0) lb += '<tr><th>' + esc(x.label || '추가혜택') + '</th><td class="num">-' + won(x.amount) + '</td></tr>'; });""",
+    """      lb += lumpRow('조건부 캐시백', 'lump.cashback', L.cashback);
+      (L.extras || []).forEach(function(x, i){ lb += lumpRow(esc(x.label || '추가혜택'), 'lump.extras.' + i + '.amount', x.amount); });""")
+
 def save(p, t):
     if CR: t = t.replace('\n', '\r\n')
     io.open(p, 'w', encoding='utf-8', newline='').write(t)
