@@ -5634,11 +5634,12 @@ let MENU=[], MENU_STATE={};
 const NAV_FALLBACK=[
   {group:'_top',group_label:'',items:[{code:'home',label:'홈',state:'on'}]},
   {group:'dashboard',group_label:'대시보드',items:[{code:'exec',label:'경영 지표',state:'on'},{code:'dash',label:'매출 대시보드',state:'on'},{code:'cdash',label:'상담 대시보드',state:'on'}]},
-  {group:'sales',group_label:'매출',items:[{code:'flow',label:'주문 · 판매 · 매출',state:'on'},{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'}]},
-  {group:'crm',group_label:'CRM',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'},{code:'crm',label:'발송 대상 추출 · 수동',state:'on'},{code:'followup',label:'자동 발송 대상',state:'on'},{code:'sms',label:'메시지 발송 관리',state:'on'},{code:'lucky',label:'행운 이벤트',state:'on'}]},
-  {group:'inv',group_label:'재고',items:[{code:'stock',label:'재고 현황',state:'on'},{code:'moves',label:'입출고',state:'on'},{code:'items',label:'품목',state:'on'},{code:'oq',label:'주문서 · 전송',state:'on'},{code:'wiz',label:'주문 변환',state:'on'}]},
-  {group:'data',group_label:'데이터',items:[{code:'upload',label:'데이터 가져오기',state:'on'},{code:'log',label:'서비스 로그',state:'on'},{code:'settings',label:'설정 · 담당자',state:'on'}]},
-  {group:'ops',group_label:'운영',items:[{code:'option',label:'옵션 · 권한',state:'on'},{code:'notify',label:'알림 관리',state:'on'}]}];
+  {group:'crm',group_label:'고객·상담',items:[{code:'inbox',label:'문의 관리',state:'on'},{code:'consults',label:'상담·가망고객',state:'on'},{code:'customers',label:'고객 통합',state:'on'}]},
+  {group:'mkt',group_label:'문자·마케팅',items:[{code:'sms',label:'문자 발송',state:'on'},{code:'crm',label:'보낼 고객 찾기',state:'on'},{code:'followup',label:'자동 발송',state:'on'},{code:'utm',label:'캠페인·단축 링크',state:'on'},{code:'lucky',label:'행운 이벤트',state:'on'}]},
+  {group:'sales',group_label:'주문·매출',items:[{code:'orders',label:'통합 원장',state:'on'},{code:'online',label:'온라인 채널',state:'on'},{code:'daily',label:'매장 일마감',state:'on'},{code:'wiz',label:'주문 변환',state:'on'},{code:'oq',label:'이카운트 주문서',state:'on'}]},
+  {group:'inv',group_label:'상품',items:[{code:'items',label:'품목·구독 요금',state:'on'}]},
+  {group:'data',group_label:'데이터 수집',items:[{code:'upload',label:'데이터 가져오기',state:'on'},{code:'log',label:'서비스 로그',state:'on'}]},
+  {group:'ops',group_label:'설정',items:[{code:'settings',label:'담당자·배정',state:'on'},{code:'option',label:'옵션·권한',state:'on'},{code:'notify',label:'잔디 알림',state:'on'}]}];
 const NAV_BADGE={inbox:'badgeInbox', oq:'badgeOq'};   // 뱃지를 다는 메뉴 (없어도 화면이 죽지 않게 쓰는 쪽에서 null 확인)
 if(DC_ENV==='test'){ document.title='[TEST] '+document.title; document.querySelectorAll('.envtag').forEach(x=>x.classList.remove('hidden'));
   const dl=document.getElementById('dashShareLink'); if(dl){ dl.href=DASH_DIR; dl.textContent='외부 공유 화면(테스트) ↗'; } }
@@ -5652,7 +5653,10 @@ async function loadMenu(pre){
 }
 /* 메뉴 묶음은 아코디언 (v223) — 묶음 머리를 누르면 접고 펼친다. v284 부터 처음엔 다 접힘 · 직접 펼친 묶음만 브라우저에 기억 ·
    지금 화면이 든 묶음은 잠시 펼쳐 보이고(기억 안 함) 다른 화면으로 가면 다시 접힌다 · 접힌 묶음 안에 뱃지(새 문의 등)가 있으면 머리에 빨간 점 */
-const NAV_GICON={dashboard:'exec',sales:'orders',crm:'customers',inv:'stock',data:'upload',ops:'option'};
+const NAV_GICON={dashboard:'exec',crm:'customers',mkt:'sms',sales:'orders',inv:'items',data:'upload',ops:'settings'};
+/* 메뉴 찾기 별명 (mvp_308 · 2026-11-23 메뉴 재배치) — 예전 이름·자주 부르는 말로 적어도 찾게 */
+const NAV_ALIAS={inbox:'문의함 접수함 방문', consults:'상담 견적서 처리현황', customers:'고객 목록 렌탈', crm:'발송 대상 추출 수동 결제 안 한 고객 미입금 렌탈 고객', followup:'자동 발송 대상 구독 만료 재구매', sms:'메시지 발송 관리 센드온 템플릿 수신거부 080 발송 결과', utm:'발송 링크 관리 단축 링크 캠페인 클릭', lucky:'이벤트 룰렛 행운권', oq:'주문서 전송 이카운트 판매 요청', wiz:'샵링커', items:'품목 세트 구독 상품 요금 혜택 정책', upload:'파일 업로드 이력 되돌리기 DPS 고도몰', log:'로그', settings:'설정 담당자 문의 자동 배정 순번 계정', option:'옵션 권한 잠금 사은품 이카운트 연동 자주 가는 곳 주문서 코드표', notify:'알림 관리 잔디 웹훅', exec:'경영 지표 KPI', dash:'매출 대시보드 DPS', cdash:'상담 대시보드'};
+const NAV_GALIAS={crm:'CRM 고객', mkt:'CRM 메시지 문자 발송 마케팅', sales:'매출 주문 오픈마켓 이카운트', inv:'재고 품목 오픈마켓 이카운트', data:'데이터', ops:'운영 옵션 설정'};
 let NAV_OPEN={}; try{ NAV_OPEN=JSON.parse(localStorage.getItem('dc_nav_open')||'{}')||{}; }catch(e){ NAV_OPEN={}; }
 function navGroupSet(g, open){ g.classList.toggle('open', open); const b=g.querySelector('.ngh'); if(b) b.setAttribute('aria-expanded', String(open));
   NAV_OPEN[g.dataset.g]=open; try{ localStorage.setItem('dc_nav_open', JSON.stringify(NAV_OPEN)); }catch(e){} navBadgeSync(); }
@@ -5743,8 +5747,8 @@ function navQ(q){ const box=$('navBox'), w=$('navSearch'), cnt=$('navQCnt'); if(
   if(!q){ if(cnt) cnt.textContent=''; return; }
   const txt=el=>[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('');
   const hit=el=>el.classList.add('qhit');
-  box.querySelectorAll('.navg').forEach(g=>{ const nm=g.querySelector('.ngh span:nth-of-type(2)'); if(nm && navNorm(nm.textContent).includes(q)) g.querySelectorAll('.nav').forEach(hit); });
-  box.querySelectorAll('.nav').forEach(el=>{ if(navNorm(txt(el)).includes(q)) hit(el); });
+  box.querySelectorAll('.navg').forEach(g=>{ const nm=g.querySelector('.ngh span:nth-of-type(2)'); if((nm && navNorm(nm.textContent).includes(q)) || navNorm(NAV_GALIAS[g.dataset.g]).includes(q)) g.querySelectorAll('.nav').forEach(hit); });
+  box.querySelectorAll('.nav').forEach(el=>{ if(navNorm(txt(el)).includes(q) || (el.dataset.v && navNorm(NAV_ALIAS[el.dataset.v]).includes(q))) hit(el); });
   box.querySelectorAll('.nsg').forEach(sg=>{ const par=sg.querySelector(':scope > .nav'), subs=[...sg.querySelectorAll(':scope > .nsb > .nav')]; if(!par) return;
     const ph=par.classList.contains('qhit'), sh=subs.some(x=>x.classList.contains('qhit'));
     if(ph) subs.forEach(hit); else if(sh) hit(par); if(ph||sh) sg.classList.add('qhas'); });
@@ -5772,7 +5776,7 @@ function renderUnderConstruction(v){
       <div class="uc-tape"></div>
     </div>`;
 }
-const TITLES={home:'홈',exec:'경영 지표',stock:'재고 현황',moves:'입출고',items:'품목',oq:'주문서 · 전송',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담 · 가망고객',customers:'고객 통합',crm:'발송 대상 추출 · 수동',upload:'데이터 가져오기',log:'서비스 로그',settings:'설정 · 담당자',option:'옵션 · 권한',notify:'알림 관리',utm:'발송 링크 관리',cdash:'상담 대시보드',followup:'자동 발송 대상',sms:'메시지 발송 관리',lucky:'행운 이벤트'};
+const TITLES={home:'홈',exec:'경영 지표',stock:'재고 현황',moves:'입출고',items:'품목·구독 요금',oq:'이카운트 주문서',wiz:'주문 변환',dash:'매출 대시보드',flow:'주문 · 판매 · 매출',orders:'통합 원장',online:'온라인 채널',daily:'매장 일마감',inbox:'문의 관리',consults:'상담·가망고객',customers:'고객 통합',crm:'보낼 고객 찾기',upload:'데이터 가져오기',log:'서비스 로그',settings:'담당자·배정',option:'옵션·권한',notify:'잔디 알림',utm:'캠페인·단축 링크',cdash:'상담 대시보드',followup:'자동 발송',sms:'문자 발송',lucky:'행운 이벤트'};
 let VIEW='home';
 function toggleNav(force){ const on = force===undefined ? !document.body.classList.contains('nav-open') : !!force; document.body.classList.toggle('nav-open', on); }
 /* 뒤로가기 = 이전 화면. 화면을 바꿀 때마다 히스토리에 한 칸 쌓고, popstate 로 되돌아온다.
