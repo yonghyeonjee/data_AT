@@ -481,7 +481,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <button class="tb" onclick="openList()">내역</button>
   <button class="tb" id="btnSave" onclick="saveQuote()" title="견적서를 저장·발행합니다 — 담당자 화면(store) [견적서] 메뉴 › 내 견적서에서 확인">견적서 저장</button>
   <button class="tb" id="btnCs" onclick="csOpen()" title="담은 제품으로 상담 기록을 남깁니다 — 담당자 화면(store) [상담] 메뉴 › 상담 목록에서 확인">상담 저장</button>
-  <button class="tb" id="btnGive" onclick="giveSheet()" title="지금 견적을 저장하고 시흥몰 구독 견적서 화면으로 엽니다 — 금액 수정 · 발행 · 인쇄 · PDF · 고객에게 보내기를 거기서 그대로 씁니다">구독 견적서로 주기 ↗</button>
   <button class="tb pri" id="btnShare" onclick="shareQuote()">고객에게 보내기</button>
 </div></div>
 
@@ -1871,7 +1870,7 @@ function toQuoteJson(){
     total:S.total+L.amount, benefit:S.ben+L.ben, finalP:S.net+L.net, monthly:S.monthly, realM:S.pay, prepayAmt:S.preAmt, card:Q.cond.card||'', memo:Q.cust.memo, date:Q.issuedAt||todayStr(), lump:L.amount, lumpNet:L.net };
   return {quote, summary};
 }
-/* 저장한 뒤 바뀐 것이 있는지 — [구독 견적서로 주기] 가 다시 저장할지 정한다 */
+/* 저장한 뒤 바뀐 것이 있는지 — [새 창으로 열기] 가 다시 저장할지 정한다 · 위 막대 [구독 견적서로 주기]는 견적서 탭과 겹쳐 뺐다 (2026-11-23) */
 let SAVED_SIG='';
 function quoteSig(){ try{ return JSON.stringify([Q.no,Q.items,Q.cond,Q.cust,Q.extra||[]]); }catch(e){ return ''; } }
 /* 상담 입력으로 넘기기 (2026-11-13) — 견적을 저장하면 고객·모델·금액을 이 브라우저에 30분 동안 남긴다(dc_quote_handoff).
