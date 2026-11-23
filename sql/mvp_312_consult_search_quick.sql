@@ -1,0 +1,18 @@
+-- mvp_312 · 2026-11-23 · 내 상담 조건 검색 · 상담 빠른 입력 (적용 기록)
+-- "상담 입력, 상담 조회도 굉장히 불편해 · 전체 검색도 되고 조건 검색도 되게" → "둘다"
+--
+-- DB: public.fn_store_consults_my 에 p_cond jsonb(기본 null) 추가 — {interests:[관심 품목…], callback:true}
+--   · interests = 관심 품목(쉼표로 나눈 조각 · 괄호 설명 뗀 것 포함)이 하나라도 같은 상담 — '냉장고' 가 '김치냉장고' 에 걸리지 않게 조각 단위로 비교
+--   · callback = 콜백 약속이 잡혀 있고 아직 안 끝난 상담
+--   · 상태 칩 숫자(counts)도 이 조건 안에서 센다 (bf0 → bf)
+--   · 인자가 늘어 새 함수가 되므로 옛 판은 fn_store_consults_my_old311 로 이름만 비키고 권한을 뺐다(SQL 편집기에서 지울 것 · _old241 도 그대로 있다)
+--   · 원문 백업 core.fn_src_backup tag 'before mvp_312'
+-- 화면(store.html · store/test):
+--   · 내 상담 — 찾기 칸은 늘 보임(전체 검색) · [조건 검색] 패널(기간 · 어떤 문의 · 관심 품목 여러 개 · 콜백 약속) · 건 조건 칩(✕ · 조건 초기화)
+--   · 상담 입력 — 빠른 입력(고객 · 관심 품목 · 상담 상태 · 상담 내용 · 콜백)이 기본, 나머지는 [더 입력] · 숨은 칸 값은 위 한 줄 요약 ·
+--     숨은 칸에서 막히면 저절로 펼침 · 고른 모드 기억(dc_c_adv) · 유입경로 '필수' 표시 뺌(서버는 원래 비워도 받았다)
+
+-- (적용한 치환 요지 — 본문은 서버 원본을 읽어 부분만 바꿨다)
+--   'p_kind text DEFAULT NULL::text)'  →  '…, p_cond jsonb DEFAULT NULL::jsonb)'
+--   '), bf as ('                       →  '), bf0 as ('
+--   '), cnt as ('                      →  '), bf as (select * from bf0 b where p_cond is null or (…interests… and …callback…)), cnt as ('
