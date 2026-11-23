@@ -30,19 +30,25 @@ LUMP = r"""    /* 일반 구매 (상담 견적 화면 /quote/ 가 넣는 q.lump)
     if(q.lump && q.lump.items && q.lump.items.length){
       var L = q.lump, lb = '<div class="q-box"><h3>💳 일반 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + (num(L.months) ? ' · ' + num(L.months) + '개월' : '') + ')</span>' : '') + '</h3><table class="q-tbl">';
       L.items.forEach(function(x, i){ lb += '<tr><th>' + (i + 1) + '. ' + esc(x.name || x.model || '') + (x.model && x.name ? ' <span style="font-weight:500;color:#666">' + esc(x.model) + '</span>' : '') + (x.note ? ' <span style="font-weight:500;color:#666">· ' + esc(x.note) + '</span>' : '') + '</th><td class="num">' + won(x.amount) + '</td></tr>'; });
-      lb += '<tr class="tot"><th>① 결제가</th><td class="num">' + won(L.amount) + '</td></tr>';
+      lb += '<tr class="tot"><th>결제가</th><td class="num">' + won(L.amount) + '</td></tr>';
       if(num(L.fee) > 0) lb += '<tr><th>이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
       if(num(L.bill) > 0) lb += '<tr><th>청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
+      if(L.ptD != null){   // 입력 화면 계산 풀이와 같은 이름·같은 값 (2026-11-23)
+        if(num(L.ptRest) > 0) lb += '<tr><th>캐시백(송금)</th><td class="num">-' + won(L.ptRest) + '</td></tr>';
+        if(num(L.ptD) > 0) lb += '<tr class="q-pt"><th>⭐ 삼성전자 포인트 합계</th><td class="num">-' + won(L.ptD) + '</td></tr>';
+        if(num(L.ptS) > 0) lb += '<tr class="q-pt"><th>⭐ 추가 포인트 (구독료 지원)</th><td class="num">-' + won(L.ptS) + '</td></tr>';
+      } else {
       if(num(L.sPoint) > 0) lb += '<tr><th>금액별 S포인트</th><td class="num">-' + won(L.sPoint) + '</td></tr>';
       if(num(L.jPoint) > 0) lb += '<tr><th>DPS 포인트 (패키지·제휴할부 제외)</th><td class="num">-' + won(L.jPoint) + '</td></tr>';
       if(num(L.typePoint) > 0) lb += '<tr><th>' + esc(L.typeLabel || '포인트') + '</th><td class="num">-' + won(L.typePoint) + '</td></tr>';
-      if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
       if(num(L.member) > 0) lb += '<tr><th>기본멤버십P 0.1%</th><td class="num">-' + won(L.member) + '</td></tr>';
+      }
+      if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
       (L.extras || []).forEach(function(x){ if(num(x.amount) > 0) lb += '<tr><th>' + esc(x.label || '추가혜택') + '</th><td class="num">-' + won(x.amount) + '</td></tr>'; });
       lb += '<tr class="ben"><th>혜택 합계</th><td class="num">-' + won(L.benefit) + '</td></tr>';
-      lb += '<tr class="tot"><th>최종체감가' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
+      lb += '<tr class="tot"><th>일반 최종가 (최종체감가)' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
       var T0 = calcTotals(q);
-      lb += '<tr class="fin"><th>전체 최종가 <span style="font-weight:600;font-size:.85em">(구독 최종 혜택가 ' + won(T0.finalP) + ' + 일반 최종체감가)</span></th><td class="num">' + won(T0.finalP + num(L.net)) + '</td></tr>';
+      lb += '<tr class="fin"><th>전체 최종가 <span style="font-weight:600;font-size:.85em">(구독 최종가 ' + won(T0.finalP) + ' + 일반 최종가)</span></th><td class="num">' + won(T0.finalP + num(L.net)) + '</td></tr>';
       lb += '</table></div>';
       blocks.push('<div class="q-sum solo">' + lb + '</div>');
     }
@@ -93,8 +99,63 @@ rep('  whenAuthed(function initQuoteEntry(){\n    if(openFromUrl()) return;', " 
 rep("      renderAll();\n    });\n    try { window.parent.postMessage({ t: 'qready' }, location.origin); } catch(e){}", "      renderAll();\n    });\n    /* 견적서에서 바꾼 설정을 /quote/ 로 돌려보냄 — /quote/ 가 견적에 담아 저장한다 (2026-11-18) */\n    var SH_BACK = '', SH_RENDER = renderSheet;\n    renderSheet = function(){ SH_RENDER(); try{\n      var o = QUOTE.opt || {}, c = QUOTE.cust || {};\n      var d = { opt: { show: o.show, qrType: o.qrType, pointMode: o.pointMode, lumpSum: o.lumpSum, namecardId: o.namecardId, rewardOn: o.rewardOn },\n                cust: { date: c.date || '', until: c.until || '', untilMode: c.untilMode || '' } };\n      var sig = JSON.stringify(d); if(sig === SH_BACK) return; SH_BACK = sig;\n      window.parent.postMessage({ t: 'sheetopt', d: d }, location.origin); }catch(e){} };\n    try { window.parent.postMessage({ t: 'qready' }, location.origin); } catch(e){}")
 
 # 12. ⭐ 삼성전자 멤버십 포인트 크게 · 다품목 해당 0원 = 월 구독료에 반영 (2026-11-19 — /quote/ 는 월 구독료에 할인 포함해서 넘김)
-for a, b in [("    + '.q-sum{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-top:8px;break-inside:avoid;page-break-inside:avoid;}'", "    + '.q-sum{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-top:8px;break-inside:avoid;page-break-inside:avoid;}'\n    + 'tr.q-pt th,tr.q-pt td{font-size:15.5px !important;font-weight:900 !important;color:#B45309 !important;background:#FFFBEB !important;} .ln.q-pt{font-size:15px;font-weight:900;color:#B45309;}'   /* ⭐ 삼성전자 멤버십 포인트 크게 (2026-11-19) */"), ("    if(pm === 'replace') h += discRow('⭐ 삼성전자 멤버십 포인트' + pmChip(), p + 'disc.point', c.point, EDIT ? '' : null, 'freq');\n    else h += '<tr><th>⭐ 삼성전자 멤버십 포인트'", '    if(pm === \'replace\') h += discRow(\'⭐ 삼성전자 멤버십 포인트\' + pmChip(), p + \'disc.point\', c.point, EDIT ? \'\' : null, \'freq\').replace(\'<tr>\', \'<tr class="q-pt">\');\n    else h += \'<tr class="q-pt"><th>⭐ 삼성전자 멤버십 포인트\''), ('if(c.point > 0 && pm === \'cash\') h += \'<div class="ln"><span>· ⭐ 삼성전자 멤버십 포인트', 'if(c.point > 0 && pm === \'cash\') h += \'<div class="ln q-pt"><span>· ⭐ 삼성전자 멤버십 포인트'), ("if(T.pointItems > 0) sumBox += '<tr><th>⭐ 삼성전자 멤버십 포인트", 'if(T.pointItems > 0) sumBox += \'<tr class="q-pt"><th>⭐ 삼성전자 멤버십 포인트'), ("if(EDIT || T.pointCommon > 0) sumBox += '<tr><th>⭐ 멤버십 포인트 공통", 'if(EDIT || T.pointCommon > 0) sumBox += \'<tr class="q-pt"><th>⭐ 멤버십 포인트 공통'), ("(c.multi > 0 ? '-' + won(c.multi) : '해당 (할인액 0원)')", "(c.multi > 0 ? '-' + won(c.multi) : '해당 (월 구독료에 반영)')")]:
+for a, b in [("    + '.q-sum{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-top:8px;break-inside:avoid;page-break-inside:avoid;}'", "    + '.q-sum{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-top:8px;break-inside:avoid;page-break-inside:avoid;}'\n    + 'tr.q-pt td{color:#B45309 !important;font-weight:800 !important;} .ln.q-pt > *:last-child{color:#B45309;font-weight:800;}'   /* ⭐ 포인트 = 금액 색만 (2026-11-23 · 11-19 크게 강조는 뺌) */"), ("    if(pm === 'replace') h += discRow('⭐ 삼성전자 멤버십 포인트' + pmChip(), p + 'disc.point', c.point, EDIT ? '' : null, 'freq');\n    else h += '<tr><th>⭐ 삼성전자 멤버십 포인트'", '    if(pm === \'replace\') h += discRow(\'⭐ 삼성전자 멤버십 포인트\' + pmChip(), p + \'disc.point\', c.point, EDIT ? \'\' : null, \'freq\').replace(\'<tr>\', \'<tr class="q-pt">\');\n    else h += \'<tr class="q-pt"><th>⭐ 삼성전자 멤버십 포인트\''), ('if(c.point > 0 && pm === \'cash\') h += \'<div class="ln"><span>· ⭐ 삼성전자 멤버십 포인트', 'if(c.point > 0 && pm === \'cash\') h += \'<div class="ln q-pt"><span>· ⭐ 삼성전자 멤버십 포인트'), ("if(T.pointItems > 0) sumBox += '<tr><th>⭐ 삼성전자 멤버십 포인트", 'if(T.pointItems > 0) sumBox += \'<tr class="q-pt"><th>⭐ 삼성전자 멤버십 포인트'), ("if(EDIT || T.pointCommon > 0) sumBox += '<tr><th>⭐ 멤버십 포인트 공통", 'if(EDIT || T.pointCommon > 0) sumBox += \'<tr class="q-pt"><th>⭐ 멤버십 포인트 공통'), ("(c.multi > 0 ? '-' + won(c.multi) : '해당 (할인액 0원)')", "(c.multi > 0 ? '-' + won(c.multi) : '해당 (월 구독료에 반영)')")]:
     rep(a, b)
+
+# 13. (2026-11-23) 금액 모두 오른쪽 정렬 · 매달 내시는 금액: 구독료 할인 칸 → 월 구독료 (할인 후) · 일반 구매로 내시는 금액 · 전체 비용 한눈에
+#     · 공통 포인트를 입력 화면 이름 그대로(q.opt.pointParts) · /quote/ 견적서 탭(?embed=1): 쪽을 위아래로 · 크게 보기 때 옵션 패널 접기
+rep("    + '.q-pay-grid .c.big .sub{font-size:9px;color:#5A6B85;margin-top:1px;white-space:nowrap;}'",
+    "    + '.q-pay-grid .c.big .sub{font-size:9px;color:#5A6B85;margin-top:1px;white-space:nowrap;}'\n"
+    "    + '.q-pay-grid .c{text-align:right;} .q-tbl:not(.q-cust) td:not(:first-child){text-align:right !important;}'   /* 금액 모두 오른쪽 정렬 (2026-11-23) */\n"
+    "    + '.q-pay.l{border-color:#7A4B1E;} .q-pay.l .q-pay-h{background:#7A4B1E;} .q-pay.l .q-pay-grid{background:#E5D5C3;} .q-pay.l .q-pay-grid .c.big{background:#F6EEE4;} .q-pay.l .q-pay-grid .c.big .k,.q-pay.l .q-pay-grid .c.big .v{color:#7A4B1E;}'\n"
+    "    + '.q-pay.all{border-color:#0F1E3D;} .q-pay.all .q-pay-h{background:#0F1E3D;} .q-pay.all .q-pay-grid .c.big{background:#EEF1F7;} .q-pay.all .q-pay-grid .c.big .k,.q-pay.all .q-pay-grid .c.big .v{color:#0F1E3D;} .q-pay.all .v.plus{color:#1E7A4C;}'")
+rep("    + '.q-pages .q-page{margin:0;flex:0 0 auto;}'",
+    "    + '.q-pages .q-page{margin:0;flex:0 0 auto;}'\n    + 'html.sh-embed .q-pages{flex-direction:column;}'   /* 견적서 탭 안: 2쪽이 옆으로 숨지 않게 위아래로 (2026-11-23) */")
+rep("    if(discM > 0){ cells += c('구독료 할인 (월 환산)', '-' + won(discM), 'minus'); n++; }",
+    "    if(discM > 0){ cells += c('월 구독료 (할인 후)', won(monthly - discM)); n++; }   // 할인 금액 대신 할인 후 월 구독료 — 입력 화면 용어 (2026-11-23)")
+BANDS = r"""  /* 일반 구매로 내시는 금액 · 전체 비용 한눈에 (2026-11-23) — 매달 내시는 금액 밴드 아래 */
+  function bandCell(k, v, cls, sub){
+    return '<div class="c' + (cls === 'big' ? ' big' : '') + '"><div class="k">' + k + '</div>'
+      + '<div class="v' + (cls === 'minus' ? ' minus' : '') + '">' + v + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+  }
+  function lumpBandHtml(q){
+    var L = q.lump; if(!L || !L.items || !L.items.length) return '';
+    var ins = num(L.months) > 0 && num(L.per) > 0, cells = '', n = 0;
+    cells += bandCell('결제가', won(L.amount)); n++;
+    if(num(L.fee) > 0){ cells += bandCell('이용료', '+' + won(L.fee)); n++; }
+    if(num(L.benefit) > 0){ cells += bandCell('혜택 합계', '-' + won(L.benefit), 'minus'); n++; }
+    if(ins){ cells += bandCell('할부 개월수별 납부금액', won(L.per) + ' × ' + num(L.months)); n++; }
+    cells += bandCell('일반 최종가 (최종체감가)', won(L.net), 'big', ins ? num(L.months) + '개월 할부' : '일시불 · 할부 합계'); n++;
+    return '<div class="q-pay l"><div class="q-pay-h">🛒 고객님이 일반 구매(일시불 · 할부)로 내시는 금액'
+      + '<span class="r">' + esc(L.kindLabel || '') + ' · 상품 ' + L.items.length + '개</span></div>'
+      + '<div class="q-pay-grid" style="grid-template-columns:repeat(' + (n - 1) + ',1fr) 1.3fr">' + cells + '</div>'
+      + '<div class="q-pay-note">※ 일반 최종가는 청구할인 · 캐시백 · 포인트까지 반영한 금액입니다.</div></div>';
+  }
+  function allBandHtml(q, T){
+    var L = q.lump; if(!L || !L.items || !L.items.length || !T.count) return '';
+    var P = periodSegments(q), netM = P.segs.length ? Math.round(P.segs[0].net) : 0;
+    var benS = num(T.benefit) + num(T.pointCommon), ben = benS + num(L.benefit), all = num(T.finalP) + num(L.net);
+    var cells = bandCell('구독 월 비용', won(netM) + ' / 월', '', T.maxM + '개월 · 구독 최종가 ' + won(T.finalP))
+      + bandCell('일반 구매', won(L.net), '', '일반 최종가')
+      + bandCell('받은 혜택', '-' + won(ben), 'minus', '구독 ' + won(benS) + ' · 일반 ' + won(L.benefit))
+      + bandCell('전체 비용', won(all), 'big', '구독 최종가 + 일반 최종가');
+    return '<div class="q-pay all"><div class="q-pay-h">🧾 전체 비용 한눈에<span class="r">구독 ' + T.count + '개 · 일반 ' + L.items.length + '개</span></div>'
+      + '<div class="q-pay-grid" style="grid-template-columns:repeat(3,1fr) 1.3fr">' + cells + '</div>'
+      + '<div class="q-pay-note">※ 받은 혜택 = 구독 할인 · 제휴카드 청구할인 · 포인트 + 일반 구매 청구할인 · 캐시백 · 포인트</div></div>';
+  }
+"""
+rep("  function payBandHtml(q, T){", BANDS + "  function payBandHtml(q, T){")
+rep("    blocks.push(payBand);          // ★ 매달 내시는 금액 (한눈에 보기)",
+    "    blocks.push(payBand);          // ★ 매달 내시는 금액 (한눈에 보기)\n    if(S.payband !== false){ blocks.push(lumpBandHtml(q)); blocks.push(allBandHtml(q, T)); }   // 일반 구매로 내시는 금액 · 전체 비용 (2026-11-23)")
+rep("      if(EDIT || T.pointCommon > 0) sumBox += '<tr class=\"q-pt\"><th>⭐ 멤버십 포인트 공통",
+    "      var PP = q.opt.pointParts || [], PPsum = PP.reduce(function(a, x){ return a + num(x.amount); }, 0);   // 입력 화면 [견적 공통 - 포인트] 이름 그대로 (2026-11-23)\n"
+    "      if(!EDIT && T.pointCommon > 0 && PP.length && PPsum === T.pointCommon) PP.forEach(function(x){ if(num(x.amount) > 0) sumBox += '<tr class=\"q-pt\"><th>' + esc(x.label) + ' <span style=\"font-weight:500;color:#666\">(' + (pm === 'replace' ? '차감' : '별도 적립') + ')</span></th><td class=\"num\">-' + won(x.amount) + '</td></tr>'; });\n"
+    "      else if(EDIT || T.pointCommon > 0) sumBox += '<tr class=\"q-pt\"><th>⭐ 멤버십 포인트 공통")
+rep("  var SH_EMBED = /[?&]embed=1/.test(location.search);\n  if(SH_EMBED){\n",
+    "  var SH_EMBED = /[?&]embed=1/.test(location.search);\n  if(SH_EMBED){\n"
+    "    document.documentElement.classList.add('sh-embed');\n"
+    "    window.addEventListener('message', function(e){ if(e.origin !== location.origin) return; var m = e.data || {}; if(m.t !== 'panel') return;   // /quote/ [크게 보기] — 옵션 패널 접기·펴기 (2026-11-23)\n"
+    "      var md = document.getElementById('quoteModal'); if(md){ md.classList.toggle('panel-off', !!m.off); setTimeout(fitScale, 0); } });\n")
 
 def save(p, t):
     if CR: t = t.replace('\n', '\r\n')
