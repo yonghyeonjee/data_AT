@@ -1,0 +1,7 @@
+-- mvp_316 · 2026-11-23 · 견적 유효기한 — summary 에 없으면 견적 본문(cust.until)에서 (적용 기록)
+-- 상담 견적(/quote/)은 summary 에 until 을 넣지 않아, 기한을 고른 견적도 담당자 화면 마감 표시·홈 '마감 임박' 에서 빠졌다.
+-- fn_store_quotes · fn_store_consults_my · fn_store_consult_detail 세 함수에서 (서버 원본 부분 치환 · 원문 core.fn_src_backup tag 'before mvp_316')
+--   q.summary->>'until'
+--   → coalesce(nullif(q.summary->>'until',''), nullif(q.quote->'cust'->>'until',''))
+-- 화면은 'YYYY.MM.DD'·'YYYY-MM-DD' 둘 다 읽는다(qUntil · dqRows).
+-- 남은 것: 상담 견적의 유효기간 기본값이 '기한 없음'(기존 페이지는 견적일 + 7일) — quote/index.html 쪽.
