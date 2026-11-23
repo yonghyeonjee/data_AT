@@ -1381,7 +1381,7 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
   .btn.lvsch{min-height:40px}
 }
   @media (max-width:999px){ .vs{grid-template-columns:66px minmax(0,1fr) auto} .vs .mini,.vs-sec h3 .mini{min-height:40px} .tp-b{min-height:40px} .tp-date{min-height:40px} .tp-r{flex-direction:column;gap:4px} .tp-l{padding-top:0} #dp_src{flex-wrap:wrap} #dp_src button{min-height:40px} .dp-add-r input[type=time]{flex:1 1 120px} .dprow{grid-template-columns:minmax(0,1fr)} .dpa{flex-wrap:wrap} .dpa .mini{min-height:40px} .dp-bar .btn{min-height:40px;min-width:40px} .dp-add .btn{min-height:44px} }
-/* ── 상담 상태 색 (v362 · mvp_310) — 새 상담 파랑 · 상담중 청록 · 상담보류 노랑 · 상담완료 회색 · 상담거절 빨강 · 판매완료 초록 ── */
+/* ── 상담 상태 색 (v362 · mvp_310) — 새 문의 파랑 · 상담중 청록 · 상담보류 노랑 · 상담완료 회색 · 상담거절 빨강 · 판매완료 초록 ── */
 .tag.pre{background:#E6F0FF;color:#1D4ED8}
 .tag.open{background:#DDF3F0;color:#0F766E}
 .tag.hold{background:#FBF1DC;color:#8A5A00}
@@ -1525,7 +1525,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <h3 id="cSaveTitle">저장 전 확인 · <span id="cSaveName"></span></h3>
     <div class="csv-sum" id="cSaveSum"></div>
     <div class="csv-l">상담 상태 <span class="hint">지금 상태가 맞는지 한 번 더 골라 주세요</span></div>
-    <div class="seg sm cres" id="cSaveRes" role="radiogroup" aria-label="상담 상태" onclick="const b=event.target.closest('button'); if(b) cSavePick(b.dataset.v)"><button type="button" data-v="진행전">새 상담</button><button type="button" data-v="진행중" class="on">상담중</button><button type="button" data-v="보류">상담보류</button><button type="button" data-v="상담완료">상담완료</button><button type="button" data-v="거절" class="rej">상담거절</button><button type="button" data-v="구매완료">판매 완료</button></div>
+    <div class="seg sm cres" id="cSaveRes" role="radiogroup" aria-label="상담 상태" onclick="const b=event.target.closest('button'); if(b) cSavePick(b.dataset.v)"><button type="button" data-v="진행전">새 문의</button><button type="button" data-v="진행중" class="on">상담중</button><button type="button" data-v="보류">상담보류</button><button type="button" data-v="상담완료">상담완료</button><button type="button" data-v="거절" class="rej">상담거절</button><button type="button" data-v="구매완료">판매 완료</button></div>
     <p class="csv-hint" id="cSaveHint"></p>
     <div class="hidden" id="cSaveKindBox"><div class="csv-l">판매 구분</div><div class="seg" id="cSaveKind" role="radiogroup" aria-label="판매 구분" onclick="const b=event.target.closest('button'); if(b) segPick('cSaveKind',b.dataset.v)"><button type="button" data-v="일시불" class="on">일시불</button><button type="button" data-v="구독">구독</button><button type="button" data-v="직판">직판</button></div></div>
     <div class="btns" style="display:flex;gap:8px;margin-top:16px"><button type="button" class="btn ghost" style="width:auto;min-width:112px" onclick="cSaveClose()">돌아가기</button><button type="button" class="btn" id="cSaveBtn" style="width:auto;min-width:112px;margin-left:auto" onclick="cSaveOk()">이 상태로 저장</button></div>
@@ -1717,8 +1717,8 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       <div class="mcact hidden" id="mcAct"></div>
       <div class="seg sm cflt" id="mc_flt">
         <button type="button" data-v="all" class="on" title="모든 상태 · 최근 날짜부터">전체 <i>0</i></button>
-        <button type="button" data-v="open" title="새 상담 + 상담중">할 일 <i>0</i></button>
-        <button type="button" data-v="pre">새 상담 <i>0</i></button>
+        <button type="button" data-v="open" title="새 문의 + 상담중">할 일 <i>0</i></button>
+        <button type="button" data-v="pre">새 문의 <i>0</i></button>
         <button type="button" data-v="ing">상담중 <i>0</i></button>
         <button type="button" data-v="hold">상담보류 <i>0</i></button>
         <button type="button" data-v="done" title="상담이 끝난 건 — 판매완료 포함">상담완료 <i>0</i></button>
@@ -1726,7 +1726,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
         <button type="button" data-v="sold" title="DPS 판매 전표가 이어진 상담(상담완료에 포함)">판매완료 <i>0</i></button>
         <button type="button" data-v="trash" title="삭제한 상담 — 7일 안에는 되살릴 수 있습니다">휴지통 <i>0</i></button>
       </div>
-      <div class="legend"><b>전체</b> 모든 상태를 최근 날짜부터 · <b>새 상담</b> 아직 통화 전 · <b>상담중</b> 통화하고 진행 중 · <b>상담보류</b> 고객 사정으로 멈춤 · <b>상담완료</b> 상담이 끝남 · <b>상담거절</b> 고객이 거절 · <b>판매완료</b> DPS 판매 전표가 이어진 상담(상담완료에 포함 · 저절로 바뀜) · <b>할 일</b> = 새 상담 + 상담중<span id="mcDevNote" class="hidden"> · <b>개발 계정</b>이라 테스트 건도 보입니다 (통계·다른 담당자에게는 안 보임)</span></div>
+      <div class="legend"><b>전체</b> 모든 상태를 최근 날짜부터 · <b>새 문의</b> 아직 통화 전 · <b>상담중</b> 통화하고 진행 중 · <b>상담보류</b> 고객 사정으로 멈춤 · <b>상담완료</b> 상담이 끝남 · <b>상담거절</b> 고객이 거절 · <b>판매완료</b> DPS 판매 전표가 이어진 상담(상담완료에 포함 · 저절로 바뀜) · <b>할 일</b> = 새 문의 + 상담중<span id="mcDevNote" class="hidden"> · <b>개발 계정</b>이라 테스트 건도 보입니다 (통계·다른 담당자에게는 안 보임)</span></div>
       <div class="bulkbar">
         <label class="allck"><input type="checkbox" id="mc_all" onchange="mcToggleAll(this.checked)"> 전체선택</label>
         <b id="mc_selN">고른 건 없음</b>
@@ -2460,9 +2460,9 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       </div>
       <div class="fgrp a"><div class="fgrp-t">어디까지 갔나</div>
       <div class="grid3">
-        <div class="f wide-m"><label>상담 상태 <span class="hint">새 상담 → 상담중 → 상담보류 → 상담완료 / 상담거절 · 판매완료는 DPS 전표가 들어오면 저절로</span></label>
+        <div class="f wide-m"><label>상담 상태 <span class="hint">새 문의 → 상담중 → 상담보류 → 상담완료 / 상담거절 · 판매완료는 DPS 전표가 들어오면 저절로</span></label>
           <div class="seg sm cres" id="c_res_seg">
-            <button type="button" data-v="진행전">새 상담</button>
+            <button type="button" data-v="진행전">새 문의</button>
             <button type="button" data-v="진행중" class="on">상담중</button>
             <button type="button" data-v="보류">상담보류</button>
             <button type="button" data-v="상담완료" title="상담이 끝남 — DPS 판매 전표가 들어오면 판매완료로 바뀝니다">상담완료</button>
@@ -2470,7 +2470,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
             <button type="button" data-v="구매완료">판매 완료</button>
           </div>
           <select class="in hidden" id="c_result" onchange="cResultChanged()">
-            <option value="진행전">새 상담 (아직 통화 안 함)</option>
+            <option value="진행전">새 문의 (아직 통화 안 함)</option>
             <option value="진행중" selected>상담중</option>
             <option value="보류">상담보류</option>
             <option value="상담완료">상담완료</option>
@@ -5464,7 +5464,7 @@ const CJ_K={seen:['처음 확인','#555E6C','#EEF1F5'],inq:['문의','#1D4FB8','
   consent:['동의','#5B3FB5','#F0ECFB'],optout:['수신거부','#B3261E','#FDECEC']};
 const CJ_G={all:null,talk:['inq','consult'],quote:['quote'],buy:['buy','dps','cancel'],send:['send'],etc:['seen','consent','optout']};
 const CJ_GN={all:'전체',talk:'문의·상담',quote:'견적',buy:'구매',send:'문자',etc:'기타'};
-const CJ_RES={진행전:'새 상담',진행중:'상담중',보류:'상담보류',상담완료:'상담완료',구매완료:'판매완료',거절:'상담거절',확인완료:'상담완료',종료:'상담완료'};
+const CJ_RES={진행전:'새 문의',진행중:'상담중',보류:'상담보류',상담완료:'상담완료',구매완료:'판매완료',거절:'상담거절',확인완료:'상담완료',종료:'상담완료'};
 const cjN=v=>Math.round(Number(v)||0).toLocaleString('ko-KR');
 const cjWon=v=>{ v=Number(v)||0; const a=Math.abs(v); return a>=1e8?(v/1e8).toFixed(2).replace(/\.?0+$/,'')+'억':a>=1e4?Math.round(v/1e4).toLocaleString('ko-KR')+'만':Math.round(v).toLocaleString('ko-KR'); };
 const cjDate=s=> s?String(s).slice(0,10).replace(/-/g,'.'):'';
@@ -5777,7 +5777,7 @@ function mcOpenAll(){ MC_ALLOPEN=!MC_ALLOPEN;
   const b=$('mc_openall'); if(b) b.textContent = MC_ALLOPEN ? '모두 접기' : '모두 펼치기'; }
 const MC_PAGE = () => pgSize('mc');
 const RES_UI = {
-  '진행전'  : ['pre',   '새 상담'],
+  '진행전'  : ['pre',   '새 문의'],
   '진행중'  : ['open',  '상담중'],
   '보류'    : ['hold',  '상담보류'],
   '상담완료': ['done',  '상담완료'],
@@ -5959,7 +5959,7 @@ function mcSelSync(){
 /* ═══ 상태 바 : 시스템이 가진 상태 그대로 한 줄에 — 지금 상태가 켜져 있고, 다른 걸 누르면 그 상태로 바뀐다 ═══ */
 const STATE_STEPS=[
   /* 상담 상태(새 문의 → 상담중 → 보류/종료/거절)와 판매는 다른 축이다 — 판매는 [판매 완료] 버튼(구분만 고름)으로만 된다. '종료' 는 구매 없이 끝낸 것 (v200 · mvp_259) */
-  {v:'진행전',  l:'새 상담', act:'pre',    msg:'새 상담으로 되돌림', hint:'아직 고객과 통화하지 않은 상담입니다. 통화했으면 [상담중]을 누르세요. 여기로 되돌리면 잡아 둔 콜백 약속도 지워집니다.'},
+  {v:'진행전',  l:'새 문의', act:'pre',    msg:'새 문의로 되돌림', hint:'아직 고객과 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요. 여기로 되돌리면 잡아 둔 콜백 약속도 지워집니다.'},
   {v:'진행중',  l:'상담중',  act:'resume', hint:'고객과 상담이 진행 중인 건입니다. 다음 통화 약속은 [콜백]으로 잡고, 팔았으면 [판매 완료]를 누르세요.'},
   {v:'보류',    l:'상담보류', act:'hold',  msg:'상담보류', hint:'고객 사정으로 잠시 멈춘 건입니다. 목록에는 남고, 다시 시작하면 [상담중]을 누르세요.'},
   {v:'상담완료',l:'상담완료', act:'done',  msg:'상담완료', hint:'상담이 끝난 건입니다. 이 고객의 DPS 판매 전표가 들어오면 저절로 판매완료로 바뀝니다.'},
@@ -6107,6 +6107,9 @@ async function csLoadFromConsult(id){
       C_EV={}; (d.events||[]).forEach(e=>{ if(e.date) C_EV[e.code]=e.date; }); if(d.delivery_at) C_EV.deliv=d.delivery_at; if(d.proof_at) C_EV.proof_at=d.proof_at;
       C_PROOF=d.proof_status||''; renderInqChips();
       if(tyDated().length||tyProof()) toast('문의 유형·날짜를 이전 문의에서 가져왔습니다 — 확인해 주세요','ok'); }
+    /* 아직 열려 있는 문의(새 문의·상담중·상담보류)를 이어 적는 것이면 문의 채널도 그 문의 것 (v373) — 끝난 상담에서 [＋ 새 상담] 은 매장 직접 방문부터 */
+    if(INQ && d.channel && ['진행전','진행중','보류'].includes(d.result)){ const ch=(INQ.channels||[]).find(c=>c.label===d.channel);
+      if(ch){ C_CHS=[ch.code]; cChSync(); if(ch.etc && d.ch_etc) $('c_ch_etc').value=d.ch_etc; renderInqChips(); } }
     const list=[{id:d.id,ref:d.ref,at:d.at,result:d.result,done_at:d.done_at,handler:d.handler,channel:d.channel,interest:d.interest,model:d.model,content:d.content,bought:d.bought,callback_at:d.callback_at}].concat(d.others||[])
       .sort((a,b)=>String(b.at).localeCompare(String(a.at)));
     /* 고객 명부의 번호·과거 구매도 같이 (상담에 번호가 없던 건 · DPS 고객) (v292) */
@@ -6546,7 +6549,7 @@ async function consultSend(x){
 }
 /* 저장 전 확인 (v370) — [저장]을 누르면 상담 상태를 한 번 더 고르게 한다. 고른 값으로 저장하고 폼의 상태 칸도 맞춘다 */
 let C_SAVE=null;
-const C_SAVE_HINT={'진행전':'아직 통화·상담 전인 문의입니다 — 홈 [새 문의]와 상담 목록 [새 상담]에 뜹니다.','진행중':'상담이 진행 중입니다 — 상담 목록 [상담중]에 뜨고, 콜백을 잡았으면 홈 [콜백 약속]에도 뜹니다.',
+const C_SAVE_HINT={'진행전':'아직 통화·상담 전인 문의입니다 — 홈 [새 문의]와 상담 목록 [새 문의]에 뜹니다.','진행중':'상담이 진행 중입니다 — 상담 목록 [상담중]에 뜨고, 콜백을 잡았으면 홈 [콜백 약속]에도 뜹니다.',
   '보류':'고객 사정으로 잠시 멈춘 건입니다 — 상담 목록 [상담보류]에 남습니다.','상담완료':'상담이 끝났습니다 — 이 고객의 DPS 판매 전표가 들어오면 저절로 판매완료로 바뀝니다.',
   '거절':'고객이 거절해 구매 없이 끝난 건입니다.','구매완료':'판매완료는 DPS 전표가 들어오면 저절로 됩니다. 전표가 안 이어질 때(다른 명의 등록 · 구독 · DPS 밖 판매)만 직접 고르고, 구분을 골라 주세요.'};
 function cSavePick(v){ segPick('cSaveRes',v); $('cSaveHint').textContent=C_SAVE_HINT[v]||''; $('cSaveKindBox').classList.toggle('hidden', v!=='구매완료'); }
@@ -6721,7 +6724,7 @@ const CATS=['TV','사운드바','벽걸이','후드','냉동고','냉장고','�
 const catLabel=c=> c==='기타' ? '기타 (직접 입력)' : c;
 const catChipsHtml=()=>CATS.map(c=>`<span class="chip" data-v="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
 if($('c_cat')) $('c_cat').innerHTML=catChipsHtml();
-const GRES=[['진행전','새 상담'],['진행중','상담중'],['보류','상담보류'],['상담완료','상담완료'],['거절','상담거절'],['구매완료','판매완료']];
+const GRES=[['진행전','새 문의'],['진행중','상담중'],['보류','상담보류'],['상담완료','상담완료'],['거절','상담거절'],['구매완료','판매완료']];
 function gridOpts(key,row){
   if(key==='CH') return [['','채널']].concat(((INQ&&INQ.channels)||[]).map(c=>[c.code,c.label]));
   if(key==='TY') return ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]).length ? ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]) : [['product','상품 문의']];
