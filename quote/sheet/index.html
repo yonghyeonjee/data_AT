@@ -1320,6 +1320,14 @@ var NAMECARDS = [];
     var dA = amt - b.amount, dF = num(L.fee) - b.fee;
     L.amount = amt; L.benefit = Math.max(0, b.benefit + dB); L.net = L.amount + num(L.fee) - L.benefit;
     if(num(L.months) > 0) L.per = Math.max(0, Math.round(b.per + (dA + dF - (num(L.bill) - b.r.bill)) / num(L.months)));
+    var sig = amt + '|' + num(L.fee) + '|' + dB;
+    if(b.sig != null && b.sig !== sig){ delete L.benM; delete L.netM; }   // 위 줄을 고쳤다 — 직접 넣은 합계는 풀고 다시 자동
+    else if(L.benM != null && L.benM !== b.pb) delete L.netM;             // 방금 혜택 합계를 넣었다
+    else if(L.netM != null && L.netM !== b.pn) delete L.benM;             // 방금 일반 최종가를 넣었다
+    b.sig = sig; b.pb = L.benM; b.pn = L.netM;
+    if(L.benM != null){ L.benefit = Math.max(0, num(L.benM)); L.net = L.amount + num(L.fee) - L.benefit; }
+    else if(L.netM != null){ L.net = Math.max(0, num(L.netM)); L.benefit = Math.max(0, L.amount + num(L.fee) - L.net); }
+    L.manual = (L.benM != null || L.netM != null);
   }
   function lumpRow(l, path, v, cls){ if(!EDIT && !(num(v) > 0)) return '';
     return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th>' + l + '</th><td class="num">' + (EDIT ? cell(path, v) : '-' + won(v)) + '</td></tr>'; }
@@ -1716,8 +1724,8 @@ var NAMECARDS = [];
       }
       lb += lumpRow('조건부 캐시백', 'lump.cashback', L.cashback);
       (L.extras || []).forEach(function(x, i){ lb += lumpRow(esc(x.label || '추가혜택'), 'lump.extras.' + i + '.amount', x.amount); });
-      lb += '<tr class="ben"><th>혜택 합계</th><td class="num">-' + won(L.benefit) + '</td></tr>';
-      lb += '<tr class="tot"><th>일반 최종가 (최종체감가)' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
+      lb += '<tr class="ben"><th>혜택 합계' + (EDIT ? ' <span class="q-fxnote">' + (L.manual ? '직접 입력' : '자동 · 직접 수정 가능') + '</span>' : '') + '</th><td class="num">' + (EDIT ? cell('lump.benM', L.benefit) : '-' + won(L.benefit)) + '</td></tr>';
+      lb += '<tr class="tot"><th>일반 최종가 (최종체감가)' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + (EDIT ? ' <span class="q-fxnote">결제가 − 혜택 합계 · 직접 수정 가능</span>' : '') + '</th><td class="num">' + (EDIT ? cell('lump.netM', L.net) : won(L.net)) + '</td></tr>';
       var T0 = calcTotals(q);
       lb += '<tr class="fin"><th>전체 최종가 <span style="font-weight:600;font-size:.85em">(구독 최종가 ' + won(T0.finalP) + ' + 일반 최종가)</span></th><td class="num">' + won(T0.finalP + num(L.net)) + '</td></tr>';
       lb += '</table></div>';

@@ -196,6 +196,23 @@ rep("""      if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td 
     """      lb += lumpRow('조건부 캐시백', 'lump.cashback', L.cashback);
       (L.extras || []).forEach(function(x, i){ lb += lumpRow(esc(x.label || '추가혜택'), 'lump.extras.' + i + '.amount', x.amount); });""")
 
+# 15. (2026-11-23) [편집하기] 때 일반 구매 혜택 합계 · 일반 최종가도 직접 수정 — 결제가(원래 가격) − 혜택 합계 = 일반 최종가
+#     혜택 합계를 넣으면 최종가가, 최종가를 넣으면 혜택 합계가 맞춰진다 · 그 뒤 위 줄(품목 금액 · 혜택 줄)을 고치면 직접 넣은 값은 풀리고 다시 자동 합계
+rep("    if(num(L.months) > 0) L.per = Math.max(0, Math.round(b.per + (dA + dF - (num(L.bill) - b.r.bill)) / num(L.months)));\n",
+    "    if(num(L.months) > 0) L.per = Math.max(0, Math.round(b.per + (dA + dF - (num(L.bill) - b.r.bill)) / num(L.months)));\n"
+    "    var sig = amt + '|' + num(L.fee) + '|' + dB;\n"
+    "    if(b.sig != null && b.sig !== sig){ delete L.benM; delete L.netM; }   // 위 줄을 고쳤다 — 직접 넣은 합계는 풀고 다시 자동\n"
+    "    else if(L.benM != null && L.benM !== b.pb) delete L.netM;             // 방금 혜택 합계를 넣었다\n"
+    "    else if(L.netM != null && L.netM !== b.pn) delete L.benM;             // 방금 일반 최종가를 넣었다\n"
+    "    b.sig = sig; b.pb = L.benM; b.pn = L.netM;\n"
+    "    if(L.benM != null){ L.benefit = Math.max(0, num(L.benM)); L.net = L.amount + num(L.fee) - L.benefit; }\n"
+    "    else if(L.netM != null){ L.net = Math.max(0, num(L.netM)); L.benefit = Math.max(0, L.amount + num(L.fee) - L.net); }\n"
+    "    L.manual = (L.benM != null || L.netM != null);\n")
+rep("""      lb += '<tr class="ben"><th>혜택 합계</th><td class="num">-' + won(L.benefit) + '</td></tr>';""",
+    """      lb += '<tr class="ben"><th>혜택 합계' + (EDIT ? ' <span class="q-fxnote">' + (L.manual ? '직접 입력' : '자동 · 직접 수정 가능') + '</span>' : '') + '</th><td class="num">' + (EDIT ? cell('lump.benM', L.benefit) : '-' + won(L.benefit)) + '</td></tr>';""")
+rep("""+ '</th><td class="num">' + won(L.net) + '</td></tr>';""",
+    """+ (EDIT ? ' <span class="q-fxnote">결제가 − 혜택 합계 · 직접 수정 가능</span>' : '') + '</th><td class="num">' + (EDIT ? cell('lump.netM', L.net) : won(L.net)) + '</td></tr>';""")
+
 def save(p, t):
     if CR: t = t.replace('\n', '\r\n')
     io.open(p, 'w', encoding='utf-8', newline='').write(t)
