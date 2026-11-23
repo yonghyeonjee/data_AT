@@ -349,7 +349,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     var S = (q.opt.show || {});
     var cells = '', n = 0;
     cells += c('월 구독료 합계', won(monthly)); n++;
-    if(discM > 0){ cells += c('구독료 할인 (월 환산)', '-' + won(discM), 'minus'); n++; }
+    if(discM > 0){ cells += c('월 구독료 (할인 후)', won(monthly - discM)); n++; }   // 할인 금액 대신 할인 후 월 구독료 — 입력 화면 · 견적서 탭 용어 (2026-11-23)
     if(cardM > 0){ cells += c('제휴카드 청구할인', '-' + won(cardM), 'minus'); n++; }
     if(hasPre && S.prepayLine){ cells += c('선납 후 월 납입', won(afterPreM)); n++; }
     if(S.realM){ cells += c('월 체감 구독료' + (pointOn ? ' (⭐반영)' : ''), won(realM)); n++; }
@@ -623,7 +623,9 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       sumBox += srow('선납 할인', T.pre);
       var pmSumTag = pm === 'replace' ? '' : ' · 별도 적립';
       if(T.pointItems > 0) sumBox += '<tr><th>⭐ 삼성전자 멤버십 포인트 <span style="font-weight:500;color:#666">(상품별' + pmSumTag + ')</span></th><td class="num">-' + won(T.pointItems) + '</td></tr>';
-      if(EDIT || T.pointCommon > 0) sumBox += '<tr><th>⭐ 멤버십 포인트 공통 <span style="font-weight:500;color:#666">(전체 합산 입력' + pmSumTag + ')</span>' + pmChip() + '</th><td class="num">' + (EDIT ? cell('opt.pointCommon', T.pointCommon, 'imp') : '-' + won(T.pointCommon)) + '</td></tr>';
+      var PP = (q.opt.pointParts || []), PPsum = PP.reduce(function(a, x){ return a + num(x.amount); }, 0);
+      if(!EDIT && T.pointCommon > 0 && PP.length && PPsum === T.pointCommon) PP.forEach(function(x){ if(num(x.amount) > 0) sumBox += '<tr><th>' + esc(x.label) + ' <span style="font-weight:500;color:#666">(' + (pm === 'replace' ? '차감' : '별도 적립') + ')</span></th><td class="num">-' + won(x.amount) + '</td></tr>'; });   // 입력 화면 이름 그대로 (2026-11-23)
+      else if(EDIT || T.pointCommon > 0) sumBox += '<tr><th>⭐ 멤버십 포인트 공통 <span style="font-weight:500;color:#666">(전체 합산 입력' + pmSumTag + ')</span>' + pmChip() + '</th><td class="num">' + (EDIT ? cell('opt.pointCommon', T.pointCommon, 'imp') : '-' + won(T.pointCommon)) + '</td></tr>';
       sumBox += srow('제휴카드 청구할인' + (q.opt.card ? ' <span style="font-weight:500;color:#666">(' + esc(q.opt.card) + ')</span>' : ''), T.card);
       sumBox += srow('소모품', T.cons) + srow('상품권', T.gift);
       if(T.reward > 0) sumBox += '<tr><th>💵 이벤트 리워드 (1%)</th><td class="num">-' + won(T.reward) + '</td></tr>';
@@ -682,17 +684,27 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     if(q.lump && q.lump.items && q.lump.items.length){
       var L = q.lump, lb = '<div class="q-box"><h3>💳 일반 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + (num(L.months) ? ' · ' + num(L.months) + '개월' : '') + ')</span>' : '') + '</h3><table class="q-tbl">';
       L.items.forEach(function(x, i){ lb += '<tr><th>' + (i + 1) + '. ' + esc(x.name || x.model || '') + (x.model && x.name ? ' <span style="font-weight:500;color:#666">' + esc(x.model) + '</span>' : '') + (x.note ? ' <span style="font-weight:500;color:#666">· ' + esc(x.note) + '</span>' : '') + '</th><td class="num">' + won(x.amount) + '</td></tr>'; });
-      lb += '<tr class="tot"><th>① 결제가</th><td class="num">' + won(L.amount) + '</td></tr>';
+      lb += '<tr class="tot"><th>결제가</th><td class="num">' + won(L.amount) + '</td></tr>';
       if(num(L.fee) > 0) lb += '<tr><th>이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
+      var LM = (L.benM != null || L.netM != null);   // 견적서에서 혜택 합계 · 일반 최종가를 직접 넣은 견적 — 혜택 줄 없이 합계만 (2026-11-23)
+      if(LM){
+      } else if(L.ptD != null){   // 입력 화면 계산 풀이 · 견적서 탭과 같은 이름 (2026-11-23)
+        if(num(L.bill) > 0) lb += '<tr><th>청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
+        if(num(L.ptRest) > 0) lb += '<tr><th>캐시백(송금)</th><td class="num">-' + won(L.ptRest) + '</td></tr>';
+        if(num(L.ptD) > 0) lb += '<tr><th>⭐ 삼성전자 포인트 합계</th><td class="num">-' + won(L.ptD) + '</td></tr>';
+        if(num(L.ptS) > 0) lb += '<tr><th>⭐ 추가 포인트 (구독료 지원)</th><td class="num">-' + won(L.ptS) + '</td></tr>';
+        if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
+        (L.extras || []).forEach(function(x){ if(num(x.amount) > 0) lb += '<tr><th>' + esc(x.label || '추가혜택') + '</th><td class="num">-' + won(x.amount) + '</td></tr>'; });
+      } else {
       if(num(L.bill) > 0) lb += '<tr><th>청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
-      if(num(L.sPoint) > 0) lb += '<tr><th>금액별 S포인트</th><td class="num">-' + won(L.sPoint) + '</td></tr>';
-      if(num(L.jPoint) > 0) lb += '<tr><th>DPS 포인트 (패키지·제휴할부 제외)</th><td class="num">-' + won(L.jPoint) + '</td></tr>';
-      if(num(L.typePoint) > 0) lb += '<tr><th>' + esc(L.typeLabel || '포인트') + '</th><td class="num">-' + won(L.typePoint) + '</td></tr>';
+      /* 예전에 저장한 견적(포인트 2가지로 나누기 전) — 금액별 S포인트 · DPS 포인트 · 유형 포인트 · 기본멤버십P 를 입력 화면 이름 [캐시백(송금)] 한 줄로 (2026-11-23) */
+      var LC = num(L.sPoint) + num(L.jPoint) + num(L.typePoint) + num(L.member);
+      if(LC > 0) lb += '<tr><th>캐시백(송금)</th><td class="num">-' + won(LC) + '</td></tr>';
       if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
-      if(num(L.member) > 0) lb += '<tr><th>기본멤버십P 0.1%</th><td class="num">-' + won(L.member) + '</td></tr>';
       (L.extras || []).forEach(function(x){ if(num(x.amount) > 0) lb += '<tr><th>' + esc(x.label || '추가혜택') + '</th><td class="num">-' + won(x.amount) + '</td></tr>'; });
+      }
       lb += '<tr class="ben"><th>혜택 합계</th><td class="num">-' + won(L.benefit) + '</td></tr>';
-      lb += '<tr class="tot"><th>최종체감가' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
+      lb += '<tr class="tot"><th>일반 최종가 (최종체감가)' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
       lb += '</table></div>';
       blocks.push('<div class="q-sum solo">' + lb + '</div>');
     }
