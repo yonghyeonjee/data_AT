@@ -1176,6 +1176,16 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .lk-badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
 .lk-badges button{min-height:40px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-weight:700;padding:0 10px;cursor:pointer;font-size:calc(12.5px * var(--font-scale))}
 .lk-badges button.ghost{background:#fff;color:var(--ink-2);border-color:var(--line-2)}
+/* 상담 목록 ↔ 상담 입력 전환 · 잔디 문의 카드 (2026-11-18) */
+.iswitch{margin-bottom:12px;max-width:420px}
+.iswitch button{font-weight:700}
+.jqbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.jqbar #jq_flt{flex:1 1 360px;max-width:560px}
+.item.jq.todo{border-left:4px solid #B3261E}
+.item.jq.ing{border-left:4px solid #C08A1E}
+.item.jq .act{display:flex;flex-direction:row;align-items:center;gap:6px}
+.item.jq .jqat{color:var(--muted);font-weight:600;margin-right:8px}
+.tag.done{background:#E8EEF0;color:#3E4A52}
 /* ═══ 모바일 보정 — 스타일시트 맨 끝: 앞의 규칙과 특이도가 같아도 여기가 이긴다 ═══ */
 @media (max-width:640px){
   .lk-stats{grid-template-columns:repeat(2,minmax(0,1fr))} .lk-hd small{margin-left:0;width:100%}   /* 행운 이벤트 (mvp_290) */
@@ -1186,6 +1196,7 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
   .pill.btnp.pri{padding:0 12px} .gtop .gtb{min-height:40px}
   /* 폰 헤더: 이름이 한 글자씩 세로로 서던 것 — 단어 단위로만 꺾고, 오른쪽 버튼 묶음은 자리가 없으면 다음 줄로 (v201) */
   .topbar .row{flex-wrap:wrap;row-gap:6px} .topbar .row>div:first-child{flex:1 1 auto} .topbar .row>div:last-child{margin-left:auto}
+  .topbar .row>div:last-child{flex-wrap:wrap;justify-content:flex-end;row-gap:6px;max-width:100%}   /* 머리 버튼(견적서 발행·new_견적서·오늘·남은 시간·로그아웃)이 390px 에서 37px 넘치던 것 (v305) */
   .topbar h1{overflow-wrap:normal;word-break:keep-all}
   .lvdlg.wide{width:100%;max-height:94vh;padding:14px 12px 12px}
   .dv .kv{grid-template-columns:78px 1fr}
@@ -1264,7 +1275,7 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 .rep-ctl .row2>*{min-width:0}
 @media (max-width:999px){
   .seg.cres{flex-wrap:wrap} .seg.cres button{flex:1 1 30%}
-  /* 2026-10-03: 세그 버튼 글자는 버튼 안에서 접지 않는다 — 안 들어가면 버튼째로 다음 줄 (360px·글자 1.3 에서 '연락 전' 이 두 줄로 섰다). 44px 하한(.seg.sm)보다 뒤에 둬야 이긴다 */
+  /* 2026-10-03: 세그 버튼 글자는 버튼 안에서 접지 않는다 — 안 들어가면 버튼째로 다음 줄 (360px·글자 1.3 에서 '새 문의' 이 두 줄로 섰다). 44px 하한(.seg.sm)보다 뒤에 둬야 이긴다 */
   .seg button{white-space:nowrap}   /* 폭은 44px 하한 그대로 — flex-basis auto 라 글자 폭(max-content)으로 줄을 잡아 줄어들지 않는다 */
   .seg.cres button{min-width:max-content}   /* 상태 세그만 basis 30% 라 글자보다 좁아질 수 있어 글자 폭을 하한으로 */
   .gtbl{padding:4px 8px;overflow-x:hidden} .gtbl .gh{display:none} .gview .hint{display:none}
@@ -1519,7 +1530,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     </div>
     <!-- 마감 임박 견적서 (v199 · test 먼저) — 유효기한 D-3 ~ D+7 · 없으면 안 보인다 -->
     <div class="card" id="dqCard">
-      <h2>마감 임박 견적서 <span id="dqSub"></span></h2>
+      <h2>마감 임박 견적서 <span id="dqSub"></span><button type="button" class="mini" style="margin-left:auto" onclick="goTab('quote')">보낸 견적서 전체 →</button></h2>
       <p class="note-in" style="margin-top:0">유효기한이 <b>3일 안</b>이거나 <b>지난 지 7일 안</b>인 견적서입니다. 고객이 결정하기 전에 한 통 보내세요 — [💬 문자]는 견적 링크·기한이 채워진 내 폰 문자앱으로, [보내기]는 링크 복사·카카오까지 고르는 창으로 열립니다.</p>
       <div class="list" id="dqList"></div>
     </div>
@@ -1561,6 +1572,22 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <div class="intro"><b>내 상담을 처리하는 화면</b>입니다. 찾고, 상태를 바꾸고, 견적서를 열고, 구매로 넘기는 일이 전부 여기서 됩니다.
       <details><summary>사용 방법</summary><ol><li><i>1</i><span><b>콜백 약속</b>: 상담에서 콜백 예정을 잡으면 여기에 시간순으로 뜹니다. 전화 버튼으로 바로 걸고, 끝나면 완료를 누르세요. 지난 약속은 빨간색입니다.</span></li><li><i>2</i><span><b>내 상담</b>: 상태(미완료·보류·완료·거절)로 골라 보고, 이름·번호·모델로 찾습니다. 처음 열면 <b>미완료</b>만 보입니다.</span></li><li><i>3</i><span><b>여러 건 한 번에</b>: 체크박스를 클릭하거나 <b>전체선택</b>을 누른 뒤 위의 버튼을 누르면 고른 건 전부에 같은 처리가 됩니다.</span></li><li><i>4</i><span><b>상담 완료가 곧 판매는 아닙니다</b>. 팔았으면 <b>판매 완료</b>(구분만 고름 · 판매 내역은 DPS 가 이어 줌), 안 샀으면 <b>종료</b>를 누르세요.</span></li></ol></details>
     </div>
+    <div class="seg cmode iswitch" role="tablist" aria-label="상담 화면"><button type="button" role="tab" data-v="inbox" class="on" aria-selected="true" onclick="goTab('inbox')">상담 목록</button><button type="button" role="tab" data-v="consult" aria-selected="false" onclick="goTab('consult')">＋ 상담 입력</button></div>
+    <div class="card" id="jqCard">
+      <h2>새 문의 <span id="jqHead"></span></h2>
+      <p class="note-in" style="margin-top:0"><b>새 문의</b> = 나에게 배정됐는데 아직 통화하지 않은 문의 전부(구독·홈페이지·VMS 폼 · [문의 접수 · 넘기기] · 직접 입력 · 잔디 카드 링크로 온 것). 홈 흐름 띠 <b>새 문의</b>와 내 상담 <b>[새 문의]</b> 숫자가 같습니다. <b>진행 중</b> = 상담중·보류 · <b>완료</b> = 상담을 끝냄(최근 30일 폼 문의 · 이어서 넣은 상담의 상태로 봅니다). [상담 입력]을 누르면 그 문의로 바로 상담 입력이 열립니다.</p>
+      <div class="jqbar">
+        <div class="seg sm cflt" id="jq_flt">
+          <button type="button" data-v="todo" class="on" onclick="jqFlt('todo')">새 문의 <i>0</i></button>
+          <button type="button" data-v="ing" onclick="jqFlt('ing')">진행 중 <i>0</i></button>
+          <button type="button" data-v="done" onclick="jqFlt('done')">완료 <i>0</i></button>
+          <button type="button" data-v="all" onclick="jqFlt('all')">전체 <i>0</i></button>
+        </div>
+        <div class="seg sm hidden" id="jq_scope"><button type="button" data-v="me" class="on" onclick="jqScope('me')">내 문의</button><button type="button" data-v="all" onclick="jqScope('all')">전체 담당</button></div>
+      </div>
+      <div class="list" id="jqList"><div class="empty">불러오는 중…</div></div>
+      <div id="jq_pg"></div>
+    </div>
     <div class="card" id="mcCard">
       <h2>내 상담 <span id="mcHead"></span></h2>
       <button type="button" class="tools-toggle" id="mcToolsBtn" onclick="toolsToggle('mcTools')" aria-expanded="false">⌕ 찾기 · 기간 · 어떤 문의 <i>펼치기</i></button>
@@ -1575,8 +1602,8 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       <div class="prow mckind"><label for="mc_kind">어떤 문의</label><select class="in" id="mc_kind" onchange="mcKind()"><option value="">모든 문의</option></select></div>
       </div>
       <div class="seg sm cflt" id="mc_flt">
-        <button type="button" data-v="open" class="on" title="연락 전 + 상담중">할 일 <i>0</i></button>
-        <button type="button" data-v="pre">연락 전 <i>0</i></button>
+        <button type="button" data-v="open" class="on" title="새 문의 + 상담중">할 일 <i>0</i></button>
+        <button type="button" data-v="pre">새 문의 <i>0</i></button>
         <button type="button" data-v="ing">상담중 <i>0</i></button>
         <button type="button" data-v="hold">보류 <i>0</i></button>
         <button type="button" data-v="done">완료 <i>0</i></button>
@@ -1584,7 +1611,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
         <button type="button" data-v="all">전체 <i>0</i></button>
         <button type="button" data-v="trash" title="삭제한 상담 — 7일 안에는 되살릴 수 있습니다">휴지통 <i>0</i></button>
       </div>
-      <div class="legend"><b>할 일</b> = 연락 전 + 상담중 · <b>연락 전</b> 아직 통화 안 한 문의 · <b>상담중</b> 통화한 뒤 진행 중 · <b>보류</b> 고객 사정으로 멈춤 · <b>종료</b> 구매 없이 상담만 끝냄 · <b>판매 완료</b> 팔았음 — 판매 내역은 DPS 가 이어 줌 (상담 상태와 판매는 다른 축) · 거절은 [전체]에서<span id="mcDevNote" class="hidden"> · <b>개발 계정</b>이라 테스트 건도 보입니다 (통계·다른 담당자에게는 안 보임)</span></div>
+      <div class="legend"><b>할 일</b> = 새 문의 + 상담중 · <b>새 문의</b> 아직 통화 안 한 문의 · <b>상담중</b> 통화한 뒤 진행 중 · <b>보류</b> 고객 사정으로 멈춤 · <b>종료</b> 구매 없이 상담만 끝냄 · <b>판매 완료</b> 팔았음 — 판매 내역은 DPS 가 이어 줌 (상담 상태와 판매는 다른 축) · 거절은 [전체]에서<span id="mcDevNote" class="hidden"> · <b>개발 계정</b>이라 테스트 건도 보입니다 (통계·다른 담당자에게는 안 보임)</span></div>
       <div class="bulkbar">
         <label class="allck"><input type="checkbox" id="mc_all" onchange="mcToggleAll(this.checked)"> 전체선택</label>
         <b id="mc_selN">고른 건 없음</b>
@@ -2206,6 +2233,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
 
   <!-- ── 상담 입력 ── -->
   <section class="panel hidden" id="tab-consult">
+    <div class="seg cmode iswitch" role="tablist" aria-label="상담 화면"><button type="button" role="tab" data-v="inbox" aria-selected="false" onclick="goTab('inbox')">상담 목록</button><button type="button" role="tab" data-v="consult" class="on" aria-selected="true" onclick="goTab('consult')">＋ 상담 입력</button></div>
     <div class="intro"><b>상담 한 건을 남기는 화면</b>입니다. 사려다 만 고객이 곧 가망고객이라, 여기 쌓인 상담이 다음 매출의 재료가 됩니다.
       <details><summary>사용 방법</summary><ol><li><i>1</i><span>관심품목·유입경로는 꼭 적어 주세요. 유입경로별 실매출 계산의 키입니다. 품목을 모르면 <b>알 수 없음</b>을 고르고, 고객이 한 말은 <b>상세 관심 품목</b>에 그대로 적으세요.</span></li><li><i>2</i><span><b>상담 상태</b>는 여섯 가지입니다. 상담 완료가 곧 판매는 아닙니다 — 팔았으면 <b>판매 완료</b>를 켜고 <b>구분</b>(일시불·구독·직판)만 고르세요. 판매 날짜·제품·금액은 <b>DPS 에서 고객명·전화번호로 찾아 저절로 이어집니다</b> — 판매 입력은 따로 안 합니다.</span></li><li><i>3</i><span>수신동의는 고객이 구두·서면으로 동의한 경우에만 켭니다. 기본은 꺼짐입니다.</span></li><li><i>4</i><span><b>콜백 예정</b>을 잡아두면 '상담' 탭 맨 위에 시간순으로 뜹니다. 기억하거나 캘린더에 옮겨 적을 필요가 없습니다.</span></li></ol></details>
     </div>
@@ -2220,7 +2248,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
         <div class="f"><label>상담일 <span class="req">*</span></label><input class="in" type="date" id="cg_date"></div>
         <div class="f"><label>상담사</label><select class="in" id="cg_handler"></select></div>
       </div>
-      <p class="note-in" style="margin:0 0 8px">한 건씩 넣을 때의 칸이 전부 있고 <b class="reqtxt">빨간 테두리 칸은 필수</b>(고객명 · 채널 · 유형 · 관심 품목)입니다. 상태를 <b>연락 전</b>으로 두면 홈 새 문의에 들어가고, <b>판매 완료</b>면 <b>판매 구분</b>만 고르세요 — 판매 내역은 DPS 가 이어 줍니다. Tab 으로 칸을 옮기고 마지막 칸에서 Enter 를 누르면 줄이 늘어납니다.</p>
+      <p class="note-in" style="margin:0 0 8px">한 건씩 넣을 때의 칸이 전부 있고 <b class="reqtxt">빨간 테두리 칸은 필수</b>(고객명 · 채널 · 유형 · 관심 품목)입니다. 상태를 <b>새 문의</b>으로 두면 홈 새 문의에 들어가고, <b>판매 완료</b>면 <b>판매 구분</b>만 고르세요 — 판매 내역은 DPS 가 이어 줍니다. Tab 으로 칸을 옮기고 마지막 칸에서 Enter 를 누르면 줄이 늘어납니다.</p>
       <div class="gview"><div class="seg sm" id="c_gview"><button type="button" data-v="all" class="on" onclick="gridView('c','all')">모든 칸</button><button type="button" data-v="core" onclick="gridView('c','core')">주요 칸만</button></div><span class="hint">표는 옆으로 밀어서 봅니다</span></div>
       <div class="gtbl c" id="c_grid">
         <div class="gh" id="c_gridHead"></div>
@@ -2230,7 +2258,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     </div>
     <div class="card hidden" id="hoCard">
       <h2 style="justify-content:flex-start;align-items:center">받은 문의 접수 <span>전화·네이버톡·카톡으로 받은 문의를 담당자에게 넘깁니다</span></h2>
-      <p class="note-in" style="margin:0 0 12px">받는 담당자의 홈 <b>새 문의</b>와 상담 <b>[연락 전]</b>에 바로 들어가고, <b>잔디로 알림</b>이 갑니다(어느 채널의 문의가 누구에게 배정됐는지 · 본인 접수도). 상담 내용은 받는 담당자가 통화한 뒤 채웁니다.</p>
+      <p class="note-in" style="margin:0 0 12px">받는 담당자의 홈 <b>새 문의</b>와 상담 <b>[새 문의]</b>에 바로 들어가고, <b>잔디로 알림</b>이 갑니다(어느 채널의 문의가 누구에게 배정됐는지 · 본인 접수도). 상담 내용은 받는 담당자가 통화한 뒤 채웁니다.</p>
       <div class="f"><label>누구에게 <span class="req">*</span><span class="hint">받을 담당자</span></label>
         <div class="seg sm" id="ho_scope" style="margin-bottom:6px"></div>
         <div class="chips" id="ho_to"><span class="hint">담당자를 불러오는 중…</span></div></div>
@@ -2249,7 +2277,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
         <input class="in" id="ho_detail" placeholder="예: 김치냉장고 키친핏 4도어, 25평 무풍 스탠드" autocomplete="off"></div>
       <div class="f"><label>관심 모델 <span class="hint">여러 개면 Enter 나 쉼표로 추가</span></label>
         <input class="in" id="ho_model" placeholder="AF60F17D11GRT" style="text-transform:uppercase" autocomplete="off"><div class="chips tagchips" id="ho_models"></div></div>
-      <button class="btn" id="ho_btn" onclick="hoSubmit()">연락 전으로 접수 · 넘기기</button>
+      <button class="btn" id="ho_btn" onclick="hoSubmit()">새 문의으로 접수 · 넘기기</button>
       <div class="note-in hidden" id="ho_ref" style="margin-top:10px"></div>
     </div>
     <div class="card" id="cLogCard">
@@ -2314,16 +2342,16 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       </div>
       <div class="fgrp a"><div class="fgrp-t">어디까지 갔나</div>
       <div class="grid3">
-        <div class="f wide-m"><label>상담 상태 <span class="hint">연락 전 = 아직 통화 안 함 · 종료 = 안 삼 · 판매 완료 = 팔았음</span></label>
+        <div class="f wide-m"><label>상담 상태 <span class="hint">새 문의 = 아직 통화 안 함 · 종료 = 안 삼 · 판매 완료 = 팔았음</span></label>
           <div class="seg sm cres" id="c_res_seg">
-            <button type="button" data-v="진행전">연락 전</button>
+            <button type="button" data-v="진행전">새 문의</button>
             <button type="button" data-v="진행중" class="on">상담중</button>
             <button type="button" data-v="보류">보류</button>
             <button type="button" data-v="상담완료" title="구매 없이 상담만 끝냄 — 팔았으면 [판매 완료]">종료</button>
             <button type="button" data-v="구매완료">판매 완료</button>
           </div>
           <select class="in hidden" id="c_result" onchange="cResultChanged()">
-            <option value="진행전">연락 전 (아직 통화 안 함)</option>
+            <option value="진행전">새 문의 (아직 통화 안 함)</option>
             <option value="진행중" selected>상담중</option>
             <option value="보류">보류</option>
             <option value="상담완료">상담 완료 (구매 없음)</option>
@@ -2885,6 +2913,7 @@ async function start(){
   periodBar('mc',()=>loadMyConsults(0)); periodBar('ps',()=>loadPastSales()); psThisMonth(); periodBar('all',()=>loadAllConsults()); periodBar('qt',()=>quoteFilter()); periodBar('st',()=>loadStats()); periodBar('cu',()=>loadMyCustomers());
   render();
   if(!MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
+  if(DEEP_C) setTimeout(()=>deepOpen(DEEP_C),0);
   REQ_SEEN=null; loadRequests(); reqPoll(); loadGifts(); askNotify(); skLoadBadge(); loadSched(); if(!window.SCHED_T) window.SCHED_T=setInterval(()=>{ if(!document.hidden) loadSched(); }, 600000);
 }
 /* 판매 입력 — 오늘 판매·확정 대기 목록. 거르개(내 건·단계/구분) + 쪽 나누기. 자료는 fn_store_status (today_sales · open_sales 최근 60일 60건) */
@@ -4099,7 +4128,8 @@ NAV_ICON.assign  ='<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path
 NAV_ICON.alerts  ='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
 /* 배정은 미배정·일괄 넘기기 같은 예외 처리 자리라 '현황' 맨 아래로 (v201 · 상담 탭 [넘기기]가 평소 쓰는 길) */
 /* 메뉴(서랍·하단 탭바)에서 가린 탭 — 2026-10-29 판매 입력·일 마감. 탭 자체는 살아 있어 [구매 확정]·흐름 띠 링크로는 열린다 */
-const NAV_HIDE=new Set(['sale','daily']);
+/* 2026-11-18: 상담 입력은 [상담] 화면 위 전환 버튼으로 (메뉴 하나로) · 견적서는 머리 [견적서 발행]·홈 마감 임박 카드에서 */
+const NAV_HIDE=new Set(['sale','daily','consult','quote']);
 const NAV_GROUPS=[['상담',['home','inbox','salechk','consult','quote','sub','customer','alerts']],['매장',['display','lucky','stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
 const NAV_LABEL={home:'홈', inbox:'상담', salechk:'판매 확인 필요', consult:'상담 입력', quote:'견적서', sub:'구독 관리', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'일정(휴가)', lucky:'행운 이벤트'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
@@ -4134,7 +4164,8 @@ function openQuote(o,isNew){ o=o||{};
 }
 function openCalc(){ window.open(CALC_URL,'sat_calc','noopener'); }
 function tabInfo(t){ const b=document.querySelector(`.tab[data-tab="${t}"]`); if(!b) return null;
-  const n=b.querySelector('.n'); return {t, label:NAV_LABEL[t]||b.firstChild.textContent.trim(), hidden:b.classList.contains('hidden'), active:b.classList.contains('active'),
+  const n=b.querySelector('.n'); const ca=t==='inbox'&&!!document.querySelector('.tab.active[data-tab="consult"]');
+  return {t, label:NAV_LABEL[t]||b.firstChild.textContent.trim(), hidden:b.classList.contains('hidden'), active:b.classList.contains('active')||ca,
     badge:n?n.textContent:'', alarm:!!(n&&n.classList.contains('alarm'))}; }
 function syncNav(){
   const side=$('sideNav'), bn=$('bnav'); if(!side||!bn) return;
@@ -4142,13 +4173,12 @@ function syncNav(){
     return `<div class="grp">${g}</div>`+items.map(x=>`<button class="it${x.active?' active':''}" onclick="goTab('${x.t}');sideClose()">${NAV_ICON[x.t]||''}<span>${esc(x.label)}</span>${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join(''); }).join('');
   /* 하단 탭바 : 앞 4개 + 더보기(서랍) */
   /* 하단 4칸은 매장에서 손이 가장 많이 가는 순서 — 판매 입력이 [더보기] 안에 숨지 않게 */
-  const vis=['home','inbox','consult','sale','assign','stock','order','daily','report','online','quote','sub','customer','alerts','stats','salechk'].filter(t=>!NAV_HIDE.has(t)).map(tabInfo).filter(x=>x&&!x.hidden);
+  const vis=['home','inbox','customer','alerts','consult','sale','assign','stock','order','daily','report','online','quote','sub','customer','alerts','stats','salechk'].filter(t=>!NAV_HIDE.has(t)).map(tabInfo).filter(x=>x&&!x.hidden);
   const first=vis.slice(0,4), rest=vis.slice(4);
   const restBadge=rest.reduce((a,x)=>a+(Number(x.badge)||0),0), restActive=rest.some(x=>x.active);
   bn.innerHTML=first.map(x=>`<button class="${x.active?'active':''}" onclick="goTab('${x.t}')">${NAV_ICON[x.t]||''}${esc(x.label)}${x.badge?`<span class="n${x.alarm?'':' soft'}">${esc(x.badge)}</span>`:''}</button>`).join('')
     +`<button class="${restActive?'active':''}" onclick="sideOpen()">${NAV_ICON.more}더보기${restBadge?`<span class="n">${restBadge}</span>`:''}</button>`;
-  side.innerHTML += `<div class="grp">견적서</div>`
-    + `<a class="lk" href="javascript:void 0" onclick="openQuote();sideClose()">${LINK_ICON.quote}<span>견적서 발행</span><small>새 창</small></a>`
+  side.innerHTML += `<div class="grp">바로가기</div>`
     + `<a class="lk" href="javascript:void 0" onclick="openQuote({},true);sideClose()">${LINK_ICON.quote}<span>new_견적서</span><small>새 창</small></a>`
     + `<a class="lk" href="javascript:void 0" onclick="openCalc();sideClose()">${LINK_ICON.calc}<span>구독료 계산기</span><small>새 창</small></a>`
     + (QUICK_LINKS.length ? `<div class="grp">자주 가는 곳</div>` + QUICK_LINKS.map(l=>`<a class="lk" href="${esc(l.url)}" target="_blank" rel="noopener" onclick="sideClose()">${LINK_ICON.link||''}<span>${esc(l.name)}</span><small>${esc(l.note||'새 창')}</small></a>`).join('') : '');
@@ -4174,6 +4204,7 @@ function goTab(name, fromHistory){
   if(name==='consult') tpRender('c_vsPick');
   if(name==='stats' && !ST_LOADED){ ST_LOADED=true; stPick(todayStr().slice(0,8)+'01', todayStr()); }   /* 처음 열면 이 달 · 일별 (v233) */
   if(name==='inbox' && !MC_LOADED){ MC_LOADED=true; loadMyConsults(0); }
+  if(name==='inbox') loadJq();   /* 잔디로 들어온 문의 처리 상태 (mvp_299) — 상담 입력에서 돌아오면 바로 반영 */
   if(name==='sale' && !PS_LOADED){ PS_LOADED=true; loadPastSales(); }
   if(name==='report' && !REPORT_LOADED) loadReport();
   if(name==='salechk'){ if(!SK_LOADED){ SK_LOADED=true; skInit(); } loadSaleChk(SK_OFF); }
@@ -4378,7 +4409,7 @@ $('c_cat').addEventListener('click', e=>{ const c=e.target.closest('.chip'); if(
   box.classList.toggle('hidden', !show); if(show) box.focus(); else box.value='';
 });
 /* 상태가 '판매 완료' 일 때만 구분 칸을 연다 — 상담 완료가 곧 판매는 아니다 */
-/* 상태 버튼 4개 ↔ 숨은 select (저장 코드는 select 값을 읽는다). 값이 네 개 밖(연락 전·거절)이면 그 값의 버튼을 임시로 보여준다 */
+/* 상태 버튼 4개 ↔ 숨은 select (저장 코드는 select 값을 읽는다). 값이 네 개 밖(새 문의·거절)이면 그 값의 버튼을 임시로 보여준다 */
 function cResSync(){ const seg=$('c_res_seg'); if(!seg) return; const v=$('c_result').value;
   seg.querySelectorAll('button.tmp').forEach(b=>b.remove());
   if(!seg.querySelector(`button[data-v="${v}"]`)){ const b=document.createElement('button'); b.type='button'; b.dataset.v=v; b.className='tmp'; b.textContent=(RES_UI[v]||[0,v])[1]; seg.appendChild(b); }
@@ -4560,7 +4591,7 @@ async function loadStats(){
   const fmtP=x=> grain==='day'? x.slice(5).replace('-','/') : grain==='month'? x.slice(2).replace('-','.') : x;
   const nonbuy=(Number(t.hold)||0)+(Number(t.done)||0)+(Number(t.reject)||0);
   const kpi=`<div class="home-kpi" style="margin:0 0 12px"><button><div class="v">${t.total||0}</div><div class="k">문의</div></button><button class="ok"><div class="v">${t.bought||0}</div><div class="k">구매 (계약)</div></button><button class="${Number(t.rate)>=30?'ok':''}"><div class="v">${t.rate||0}%</div><div class="k">구매 성공률</div></button><button class="${Number(t.open)>0?'warn':''}"><div class="v">${t.open||0}</div><div class="k">진행 중</div></button></div>
-    <div class="st-fail">비계약 <b>${nonbuy}</b>건 = 보류 <b>${t.hold||0}</b> · 완료(구매 없음) <b>${t.done||0}</b> · 거절 <b>${t.reject||0}</b><span style="margin-left:auto">진행 중 <b>${t.open||0}</b> = 아직 연락 전이거나 상담 중</span></div>`;
+    <div class="st-fail">비계약 <b>${nonbuy}</b>건 = 보류 <b>${t.hold||0}</b> · 완료(구매 없음) <b>${t.done||0}</b> · 거절 <b>${t.reject||0}</b><span style="margin-left:auto">진행 중 <b>${t.open||0}</b> = 아직 새 문의이거나 상담 중</span></div>`;
   const graphs=`<div class="stg"><div class="g"><div class="gt">${pl(grain)}별 문의 → 구매<span class="lg"><span><i style="background:#B7DDD8"></i>문의</span><span><i style="background:#0F766E"></i>구매</span></span></div>${stBars(P,fmtP)}</div><div class="g"><div class="gt">채널별</div>${stHBars(C)}</div></div>`;
   const th='<th>구분</th><th class="num">문의</th><th class="num">진행중</th><th class="num">보류</th><th class="num">완료</th><th class="num">거절</th><th class="num">구매</th><th class="num">성공률</th>';
   const row=(k,x)=>`<tr><td>${esc(k)}</td><td class="num">${x.total}</td><td class="num">${x.open}</td><td class="num">${x.hold}</td><td class="num">${x.done}</td><td class="num">${x.reject}</td><td class="num"><b>${x.bought}</b></td><td class="num">${x.rate!=null?x.rate+'%':(x.total?Math.round(100*x.bought/x.total)+'%':'-')}</td></tr>`;
@@ -5159,8 +5190,8 @@ function renderFlow(s){
   const cbs=s.callbacks||[], due=cbs.filter(x=>x.overdue||x.today).length, late=cbs.filter(x=>x.overdue).length;
   const oc=s.my_open_consults||[], pre=oc.filter(x=>x.result==='진행전').length, hold=oc.filter(x=>x.result==='보류').length;
   const steps=[
-    /* 단계는 '내 일'의 상태로 나눈다 — 새 문의(연락 전) → 내 상담(상담중·보류) → 콜백 → 견적서 → 구매 확정. 날짜로 자르지 않는다 (어제 새벽에 온 것도 새 문의) */
-    {k:'새 문의', v:pre,                              sub:'연락 전', go:"mcJump('pre')", warn:pre>0, tip:`나에게 배정됐는데 아직 통화하지 않은 문의${Number(s.today_mine||0)>0?` · 오늘 ${s.today_mine}건 들어옴`:''}. 온라인 폼 · 홈페이지 · 방문 접수 · 직접 입력 모두 포함`},
+    /* 단계는 '내 일'의 상태로 나눈다 — 새 문의(새 문의) → 내 상담(상담중·보류) → 콜백 → 견적서 → 구매 확정. 날짜로 자르지 않는다 (어제 새벽에 온 것도 새 문의) */
+    {k:'새 문의', v:pre,                              sub:'아직 통화 전', go:"mcJump('pre')", warn:pre>0, tip:`나에게 배정됐는데 아직 통화하지 않은 문의${Number(s.today_mine||0)>0?` · 오늘 ${s.today_mine}건 들어옴`:''}. 온라인 폼 · 홈페이지 · 방문 접수 · 직접 입력 모두 포함`},
     s.is_mgr ? {k:'배정', v:s.unassigned_n||0,      sub:'미배정',    go:"goTab('assign')", alarm:Number(s.unassigned_n||0)>0} : null,
     {k:'내 상담', v:oc.length-pre-hold,               sub:hold?`상담중 · 보류 ${hold}`:'상담중', go:"mcJump('ing')", tip:`통화한 뒤 진행 중인 상담${hold?` · 보류 ${hold}건은 상담 탭 [보류]`:''}`},
     {k:'콜백',   v:due,                              sub:late?'지난 약속 '+late:'오늘', go:"document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})", alarm:late>0, warn:due>0&&!late},
@@ -5229,7 +5260,7 @@ function renderAlerts(){
   box.innerHTML = (P.page?'':sample) + (P.rows.length ? P.rows.map(x=>{
     const badge = x.kind==='quote' ? (x.viewed?'<span class="mine">고객이 열어봄</span>':'<span class="res pre">아직 안 열어봄</span>')
                 : x.kind==='callback' ? (x.done?'<span class="res done">완료</span>':x.overdue?'<span class="res alarm" style="background:#FEE2E2;color:#B91C1C">지남</span>':'<span class="res open">예정</span>')
-                : x.kind==='inquiry' && x.result==='진행전' ? '<span class="res pre">연락 전</span>' : '';
+                : x.kind==='inquiry' && x.result==='진행전' ? '<span class="res pre">새 문의</span>' : '';
     const who=(x.title||'').split(' 님')[0];
     const act = (x.kind==='quote' ? `<button class="mini" onclick="alOpenQuote('${esc(x.quote_no||'')}')">견적서</button>`
               : `<button class="mini" onclick="alOpenConsult('${esc(who)}')">상담 열기</button>`)
@@ -5278,7 +5309,7 @@ const CJ_K={seen:['처음 확인','#555E6C','#EEF1F5'],inq:['문의','#1D4FB8','
   consent:['동의','#5B3FB5','#F0ECFB'],optout:['수신거부','#B3261E','#FDECEC']};
 const CJ_G={all:null,talk:['inq','consult'],quote:['quote'],buy:['buy','dps','cancel'],send:['send'],etc:['seen','consent','optout']};
 const CJ_GN={all:'전체',talk:'문의·상담',quote:'견적',buy:'구매',send:'문자',etc:'기타'};
-const CJ_RES={진행전:'연락 전',진행중:'상담중',보류:'보류',상담완료:'종료',구매완료:'구매',거절:'거절',확인완료:'확인완료',종료:'종료'};
+const CJ_RES={진행전:'새 문의',진행중:'상담중',보류:'보류',상담완료:'종료',구매완료:'구매',거절:'거절',확인완료:'확인완료',종료:'종료'};
 const cjN=v=>Math.round(Number(v)||0).toLocaleString('ko-KR');
 const cjWon=v=>{ v=Number(v)||0; const a=Math.abs(v); return a>=1e8?(v/1e8).toFixed(2).replace(/\.?0+$/,'')+'억':a>=1e4?Math.round(v/1e4).toLocaleString('ko-KR')+'만':Math.round(v).toLocaleString('ko-KR'); };
 const cjDate=s=> s?String(s).slice(0,10).replace(/-/g,'.'):'';
@@ -5571,7 +5602,7 @@ function mcOpenAll(){ MC_ALLOPEN=!MC_ALLOPEN;
   const b=$('mc_openall'); if(b) b.textContent = MC_ALLOPEN ? '모두 접기' : '모두 펼치기'; }
 const MC_PAGE = () => pgSize('mc');
 const RES_UI = {
-  '진행전'  : ['pre',   '연락 전'],
+  '진행전'  : ['pre',   '새 문의'],
   '진행중'  : ['open',  '상담중'],
   '보류'    : ['hold',  '보류'],
   '상담완료': ['done',  '상담완료'],
@@ -5719,8 +5750,8 @@ function mcSelSync(){
 }
 /* ═══ 상태 바 : 시스템이 가진 상태 그대로 한 줄에 — 지금 상태가 켜져 있고, 다른 걸 누르면 그 상태로 바뀐다 ═══ */
 const STATE_STEPS=[
-  /* 상담 상태(연락 전 → 상담중 → 보류/종료/거절)와 판매는 다른 축이다 — 판매는 [판매 완료] 버튼(구분만 고름)으로만 된다. '종료' 는 구매 없이 끝낸 것 (v200 · mvp_259) */
-  {v:'진행전',  l:'연락 전', act:'pre',    msg:'연락 전으로 되돌림', hint:'아직 고객과 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요. 여기로 되돌리면 잡아 둔 콜백 약속도 지워집니다.'},
+  /* 상담 상태(새 문의 → 상담중 → 보류/종료/거절)와 판매는 다른 축이다 — 판매는 [판매 완료] 버튼(구분만 고름)으로만 된다. '종료' 는 구매 없이 끝낸 것 (v200 · mvp_259) */
+  {v:'진행전',  l:'새 문의', act:'pre',    msg:'새 문의으로 되돌림', hint:'아직 고객과 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요. 여기로 되돌리면 잡아 둔 콜백 약속도 지워집니다.'},
   {v:'진행중',  l:'상담중',  act:'resume', hint:'고객과 상담이 진행 중인 건입니다. 다음 통화 약속은 [콜백]으로 잡고, 팔았으면 [판매 완료]를 누르세요.'},
   {v:'보류',    l:'보류',    act:'hold',   hint:'고객 사정으로 잠시 멈춘 건입니다. 목록에는 남고, 다시 시작하면 [상담중]을 누르세요.'},
   {v:'상담완료',l:'종료',    act:'done',   hint:'구매 없이 상담만 끝낸 건입니다 — 판매가 아닙니다. 팔았으면 이 버튼 대신 위 [판매 완료]를 누르세요.'},
@@ -5875,6 +5906,45 @@ async function csLoadFromConsult(id){
     if(ph&&!$('c_phone').value){ $('c_phone').value=String(ph).replace(/\D/g,''); hyphen($('c_phone')); }
     csShow({name:d.name||$('c_name').value, phone:ph, list, orders: od?(od.orders||[]):undefined, cust:cu});
   }catch(e){ csShow({name:$('c_name').value, phone:$('c_phone').value, list:[], err:e.message}); }
+}
+/* ── 잔디로 들어온 문의 : 처리 전 / 진행 중 / 완료 (mvp_299 · fn_store_inquiries) ── */
+let JQ={flt:'todo', all:false, pg:0, d:null};
+async function loadJq(){ const el=$('jqList'); if(!el) return;
+  try{ JQ.d=await rpc('fn_store_inquiries',{p_code:CODE,p_days:30,p_all:JQ.all}); }
+  catch(e){ el.innerHTML=`<div class="empty">불러오지 못했습니다 · ${esc(e.message||'')}</div>`; return; }
+  const sc=$('jq_scope'); if(sc) sc.classList.toggle('hidden', !JQ.d.mgr);
+  renderJq(); }
+function jqFlt(v){ JQ.flt=segPick('jq_flt',v); JQ.pg=0; renderJq(); }
+function jqScope(v){ segPick('jq_scope',v); JQ.all=v==='all'; JQ.pg=0; loadJq(); }
+function jqGo(p){ JQ.pg=p; renderJq(); }
+const JQ_ST={todo:['새 문의','new'], ing:['진행 중','hold'], done:['완료','done']};
+function renderJq(){ const d=JQ.d; if(!d) return; const c=d.counts||{};
+  segCount('jq_flt',{todo:c.todo||0, ing:c.ing||0, done:c.done||0, all:c.all||0});
+  const rows=(d.rows||[]).filter(x=>JQ.flt==='all'||x.st===JQ.flt);
+  const P=pgCut('jq',JQ.pg,rows,'jqGo'); JQ.pg=P.page; $('jq_pg').innerHTML=P.bar;
+  $('jqHead').textContent=`${JQ.all?'전체 담당':'내 문의'}${c.todo?` · 새 문의 ${c.todo}건`:''}${P.range?' · '+P.range:''}`;
+  const emp={todo:'새 문의가 없습니다', ing:'진행 중인 문의가 없습니다', done:'완료한 문의가 없습니다', all:'문의가 없습니다'}[JQ.flt];
+  const a=s=>esc(String(s||'')).replace(/'/g,'&#39;');
+  $('jqList').innerHTML = P.rows.length ? P.rows.map(x=>{ const [sl,sc]=JQ_ST[x.st]||['',''];
+    const go=x.st==='done'
+      ? `<button class="mini" onclick="cdOpen(${x.fin_id})">상세</button>`
+      : `<button class="mini ok" onclick="ocToConsult(${x.fin_id},'','${a(x.name)}','${a(x.tel)}','${a(x.interest)}')">상담 입력</button><button class="mini" onclick="cdOpen(${x.fin_id})">상세</button>`;
+    return `<div class="item oc jq ${x.st}">
+      <div><div class="p"><small class="jqat">${esc(x.at||'')}</small><span class="tag ${sc}">${sl}</span>${x.st!=='todo'&&x.result?`<span class="tag via">${esc(x.result)}</span>`:''}<b>${esc(x.name||'(이름 없음)')}</b> ${x.phone?`<small>${esc(x.phone)}</small>`:''}</div>
+        <div class="m"><span class="tag src">${esc(x.src||'')}</span>${x.interest?`<span class="tag itm">${esc(x.interest)}</span>`:''}${(JQ.all||!x.mine)?`<span class="tag hd">${esc(x.handler||'미배정')}</span>`:''}${x.done_at?` 완료 ${esc(x.done_at)}`:''}${x.content?` · ${esc(x.content)}`:''}</div></div>
+      <div class="act">${x.tel?`<a class="mini" href="tel:${esc(x.tel)}" aria-label="전화">📞</a>`:''}${go}</div></div>`; }).join('')
+    : `<div class="empty">${emp}</div>`;
+}
+/* 잔디 카드 링크 ?c=상담번호 → 그 문의로 바로 상담 입력 (이미 끝난 문의면 상세). 로그인 화면을 거쳐도 잃지 않게 sessionStorage 에 둔다 */
+const DEEP_C=(()=>{ try{ const q=new URLSearchParams(location.search).get('c'); if(q&&/^\d+$/.test(q)){ sessionStorage.setItem('dc_deep_c',q); return q; } return sessionStorage.getItem('dc_deep_c'); }catch(e){ return null; } })();
+async function deepOpen(id){ try{ sessionStorage.removeItem('dc_deep_c'); history.replaceState({tab:'consult'},'',location.pathname+'#consult'); }catch(e){}
+  id=Number(id);
+  try{ let d=await rpc('fn_store_consult_detail',{p_code:CODE,p_id:id});
+    for(let i=0;i<6&&d&&d.superseded_by;i++) d=await rpc('fn_store_consult_detail',{p_code:CODE,p_id:d.superseded_by});
+    if(!['진행전','진행중','보류'].includes(d.result||'')){ goTab('inbox'); cdOpen(d.id); toast('이미 처리한 문의입니다 ('+(d.result||'')+') — 상세를 엽니다','ok'); return; }
+    ocToConsult(d.id, d.ref||'', d.name||'', d.tel||'', d.interest||'');
+    toast('잔디 문의 #'+id+' — 상담 입력을 열었습니다','ok');
+  }catch(e){ goTab('inbox'); toast('문의 #'+id+' 를 열 수 없습니다 · '+(e.message||''),'bad'); }
 }
 /* 내 고객 탭·고객 검색 결과에서 [＋ 상담 입력] — 고객 키로 연결하고 이력을 헤더에 */
 async function pickMine(key,name,tel){ goTab('consult'); cMode('log'); custClear('c'); LINK.c=key; $('c_name').value=name||'';
@@ -6265,8 +6335,8 @@ async function submitConsult(){
 }
 
 /* ═══ 받은 문의 접수 · 담당자 넘기기 (수기 상담 배정) ═══
-   전화·네이버톡·카톡으로 받은 문의를 [연락 전] 상태로 다른 담당자에게 준다. fn_store_consult_handoff 가
-   상담 저장 + 배정 기록 + 잔디 카드(본인이면 안 보냄). 받는 사람 홈 '새 문의' · 상담 [연락 전] 에 바로 보인다. */
+   전화·네이버톡·카톡으로 받은 문의를 [새 문의] 상태로 다른 담당자에게 준다. fn_store_consult_handoff 가
+   상담 저장 + 배정 기록 + 잔디 카드(본인이면 안 보냄). 받는 사람 홈 '새 문의' · 상담 [새 문의] 에 바로 보인다. */
 let HO_TO='', HO_CH='', HO_TEAM='', HO_INIT=false;
 function cMode(m){
   const seg=$('c_mode'); if(!seg) return;
@@ -6318,7 +6388,7 @@ function hoRenderTo(){
   $('ho_to').innerHTML=list.map(h=>`<span class="chip${HO_TO===h.name?' on':''}" data-n="${esc(h.name)}">${esc(h.name)}${h.name===ME?' (나)':''}</span>`).join('')
     ||`<span class="chip on" data-n="${esc(ME)}">${esc(ME)} (나)</span>`;
   $('ho_to').querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ HO_TO=el.dataset.n; hoRenderTo(); });
-  const btn=$('ho_btn'); if(btn && !btn.disabled) btn.textContent = HO_TO && HO_TO!==ME ? `연락 전으로 접수 · ${HO_TO} 프로님에게 넘기기` : '연락 전으로 접수 (내가 연락)';
+  const btn=$('ho_btn'); if(btn && !btn.disabled) btn.textContent = HO_TO && HO_TO!==ME ? `새 문의으로 접수 · ${HO_TO} 프로님에게 넘기기` : '새 문의으로 접수 (내가 연락)';
 }
 async function hoSubmit(){
   const name=$('ho_name').value.trim(), phone=$('ho_phone').value.trim();
@@ -6336,11 +6406,11 @@ async function hoSubmit(){
   try{
     const r=await rpc('fn_store_consult_handoff',{p_code:CODE,p_data:p});
     const mine = r.to===ME;
-    toast(mine?`접수됨 · 내 [연락 전]에 들어갔습니다`:`${r.to} 프로님에게 넘겼습니다${r.notified?' · 잔디 알림 보냄':''}`,'ok');
+    toast(mine?`접수됨 · 내 [새 문의]에 들어갔습니다`:`${r.to} 프로님에게 넘겼습니다${r.notified?' · 잔디 알림 보냄':''}`,'ok');
     $('ho_ref').classList.remove('hidden');
     $('ho_ref').innerHTML=`상담번호 <b style="color:var(--ink)">${esc(r.ref)}</b> · ${esc(name)}${phone?' · '+esc(phone):''} → <b>${esc(r.to)}</b>${mine?' (나)':''}<br>`
-      + (mine?`홈 <b>새 문의</b>와 상담 <b>[연락 전]</b>에 있습니다. 통화한 뒤 [연락함 → 상담중]으로 바꾸세요.`
-             :`${esc(r.to)} 프로님 화면의 홈 <b>새 문의</b>와 상담 <b>[연락 전]</b>에 보입니다${r.notified?', 잔디 카드도 갔습니다':''}. 나는 홈 [찾기]에서 이 건을 다시 볼 수 있습니다.`);
+      + (mine?`홈 <b>새 문의</b>와 상담 <b>[새 문의]</b>에 있습니다. 통화한 뒤 [연락함 → 상담중]으로 바꾸세요.`
+             :`${esc(r.to)} 프로님 화면의 홈 <b>새 문의</b>와 상담 <b>[새 문의]</b>에 보입니다${r.notified?', 잔디 카드도 갔습니다':''}. 나는 홈 [찾기]에서 이 건을 다시 볼 수 있습니다.`);
     ['ho_name','ho_phone','ho_content','ho_detail','ho_ch_etc','ho_cat_etc','ho_model'].forEach(id=>$(id).value=''); hoClearInterest();
     await loadStatus(); render(); if(MC_LOADED) loadMyConsults(0);
   }catch(e){ toast(e.message,'bad'); }
@@ -6377,7 +6447,7 @@ const CATS=['TV','사운드바','벽걸이','후드','냉동고','냉장고','�
 const catLabel=c=> c==='기타' ? '기타 (직접 입력)' : c;
 const catChipsHtml=()=>CATS.map(c=>`<span class="chip" data-v="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
 if($('c_cat')) $('c_cat').innerHTML=catChipsHtml();
-const GRES=[['진행전','연락 전'],['진행중','상담중'],['보류','보류'],['상담완료','종료'],['구매완료','판매 완료']];
+const GRES=[['진행전','새 문의'],['진행중','상담중'],['보류','보류'],['상담완료','종료'],['구매완료','판매 완료']];
 function gridOpts(key,row){
   if(key==='CH') return [['','채널']].concat(((INQ&&INQ.channels)||[]).map(c=>[c.code,c.label]));
   if(key==='TY') return ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]).length ? ((INQ&&INQ.types)||[]).map(t=>[t.code,t.label]) : [['product','상품 문의']];
@@ -6851,7 +6921,7 @@ function renderAllConsults(){
   el.innerHTML=(ALL_ROWS.length?rows.map(x=>`
     <div class="item oc"><div>
       <div class="p">${x.name?`<a href="javascript:void 0" onclick="cdOpen(${x.id})" title="이 상담의 상세 내용 보기" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--line-2)">${esc(x.name)}</a>`:'<span style="color:var(--muted)">이름 없음</span>'} ${x.interest?`<span class="tag itm" title="관심 품목">${esc(x.interest)}</span>`:''}${x.src?`<span class="tag src" title="${esc(x.route||'')}">${esc(x.src)}${x.ch_etc?` (${esc(x.ch_etc)})`:''}</span>`:''}${x.src2?`<span class="tag ty" title="문의 유형">${esc(x.src2)}</span>`:''}${x.via?`<span class="tag via" title="유입경로">유입 ${esc(x.via)}</span>`:''}
-        <span class="tag hd${x.handler?'':' none'}" title="담당자">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='진행전'?'<span class="tag new">연락 전</span>':x.result==='보류'?'<span class="tag hold">보류</span>':''}${x.method?`<span class="tag mth-t" title="상담 방법">${esc(x.method)}</span>`:''}${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담 ${x.prior}건">${Number(x.prior)+1}회째</span>`:''}${Number(x.quote_n)>0?`<span class="tag qt" title="견적서 ${x.quote_n}건">견적 ${x.quote_n}</span>`:''}</div>
+        <span class="tag hd${x.handler?'':' none'}" title="담당자">${x.handler?esc(x.handler):'미배정'}</span>${x.result==='진행전'?'<span class="tag new">새 문의</span>':x.result==='보류'?'<span class="tag hold">보류</span>':''}${x.method?`<span class="tag mth-t" title="상담 방법">${esc(x.method)}</span>`:''}${Number(x.prior)>0?`<span class="tag re" title="이 고객의 다른 상담 ${x.prior}건">${Number(x.prior)+1}회째</span>`:''}${Number(x.quote_n)>0?`<span class="tag qt" title="견적서 ${x.quote_n}건">견적 ${x.quote_n}</span>`:''}</div>
       <div class="m">${esc(fmtAt(x.at))} · ${esc(x.route||'')}${x.phone?' · '+esc(x.phone):''}${x.expected?` · 예상 ${won(x.expected)}`:''}${x.content?' · '+esc(x.content):''}</div>
       ${x.last_move?`<div class="mv">${esc(x.last_move.from||'미배정')} → ${esc(x.last_move.to)} · ${esc(x.last_move.by)} 배정 · ${esc(x.last_move.at)}</div>`:''}</div>
       <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}
