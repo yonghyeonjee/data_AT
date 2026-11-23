@@ -59,13 +59,7 @@ h1,h2,h3{margin:0}
 .tb.c-q{background:#2563EB;border-color:#2563EB;font-weight:800} .tb.c-q:hover{background:#1D4ED8}
 .tb.c-cs{background:#D97706;border-color:#D97706;font-weight:800} .tb.c-cs:hover{background:#B45309}
 .tb.c-cu{background:#0E9F6E;border-color:#0E9F6E;font-weight:800} .tb.c-cu:hover{background:#057A55}
-.csw{display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 4px;cursor:pointer;color:#fff;font-size:12.5px;font-weight:700;white-space:nowrap;user-select:none}
-.csw input{position:absolute;opacity:0;width:1px;height:1px}
-.csw .tr{position:relative;width:38px;height:22px;border-radius:999px;background:rgba(255,255,255,.28);transition:background .15s;flex:none}
-.csw .tr::after{content:'';position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
-.csw input:checked+.tr{background:#0E9F6E} .csw input:checked+.tr::after{transform:translateX(16px)}
-.csw input:focus-visible+.tr{outline:2px solid #fff;outline-offset:2px}
-.csw .tx{opacity:.8;min-width:52px} .csw input:checked~.tx{opacity:1}   /* 고객 화면 스위치 — 켜짐(견적 화면) 초록 (2026-11-23) */
+.tb.on2{background:#fff;color:#1B2A5B;border-color:#fff;font-weight:800}   /* 고객 화면 = 견적 화면 중 (2026-11-23) */
 .tb:disabled{opacity:.5;cursor:default}
 /* 본문 */
 .wrap{padding:14px max(16px,env(safe-area-inset-right,0px)) 56px max(16px,env(safe-area-inset-left,0px));max-width:1280px;margin:0 auto}
@@ -488,9 +482,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <button class="tb" onclick="toggleCalc()" title="계산기" aria-label="계산기">🧮</button>
   <div class="views" role="tablist">
     <button class="on" data-v="edit" onclick="setView('edit')">입력</button>
-    <button data-v="show" onclick="setView('show'); custOpen()" title="고객 화면을 새 창으로 엽니다 — 고객 쪽 모니터로 옮겨 전체 화면 · 처음에는 안내 화면">고객과 보기 ⧉</button><label class="csw" id="custSw" title="고객 화면(새 창)에 보이는 내용 — 끄면 안내 화면 · 켜면 견적 화면 (상품권·기타 혜택 제외)"><input type="checkbox" role="switch" aria-label="고객 화면에 견적 표시" onchange="custSet(this.checked)"><span class="tr" aria-hidden="true"></span><span class="tx" id="custTx">안내 화면</span></label>
+    <button data-v="show" onclick="setView('show')" title="고객에게 보일 견적 화면을 이 창에서 미리 확인">고객화면 미리보기</button>
     <button data-v="sheet" onclick="setView('sheet')">견적서</button>
   </div>
+  <button class="tb" id="btnCust" onclick="custStep()" title="고객 화면을 새 창으로 엽니다 — 고객 쪽 모니터로 옮겨 전체 화면 · 처음에는 안내 화면">안내 화면 띄우기 ⧉</button>
   <button class="tb" onclick="openList()">내역</button>
   <button class="tb c-q" id="btnSave" onclick="saveAll()" title="견적서 저장 + 상담 기록을 한 번에 — 담당자 화면(store) [견적서] › 내 견적서 · [상담] › 상담 목록에서 확인">상담내용 저장</button>
   <button class="tb c-cu" id="btnShare" onclick="shareQuote()">고객에게 보내기</button>
@@ -599,7 +594,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 <!-- ═══ 고객과 보기 ═══ -->
 <section id="v-show" class="show hidden">
-  <div class="showbar noc"><button type="button" class="chip" onclick="printShow()" title="고객과 보기 화면을 인쇄 · PDF 로 저장">🖨 인쇄 · PDF</button></div>
+  <div class="showbar noc"><button type="button" class="chip" onclick="printShow()" title="고객화면 미리보기를 인쇄 · PDF 로 저장">🖨 인쇄 · PDF</button></div>
   <div class="greet" id="greet"></div>
   <div class="hero">
     <div class="t"><b id="s_title"></b><span id="s_sub"></span></div>
@@ -651,7 +646,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <!-- ═══ 견적서 (양식) ═══ -->
 <section id="v-sheet" class="hidden">
   <div class="sheetbar"><span class="hint">시흥몰 구독 견적서 화면·기능 그대로 (금액 수정 · 표시 항목 · 발행 · 인쇄 · PDF · 보내기) · 입력 화면에서 바꾼 값이 반영됩니다 · 여기서 고친 금액은 입력 화면으로 돌아가지 않습니다</span><span class="sp"></span><button class="chip" title="견적서를 화면 가득 크게 · Esc 로 닫기" onclick="shFull(true)">⛶ 크게 보기</button><button class="chip" title="지금 견적을 저장하고 구독 견적서를 새 창으로 엽니다" onclick="giveSheet()">새 창으로 열기 ↗</button></div>
-  <button type="button" class="btn" id="shExit" onclick="shFull(false)" title="작게 보기 — 위 메뉴(입력 · 고객과 보기)가 다시 보입니다">✕ 작게 보기 (Esc)</button>
+  <button type="button" class="btn" id="shExit" onclick="shFull(false)" title="작게 보기 — 위 메뉴(입력 · 고객화면 미리보기)가 다시 보입니다">✕ 작게 보기 (Esc)</button>
   <iframe id="sheetFrame" title="견적서" style="display:block;width:100%;border:0;height:calc(100vh - 120px);min-height:640px;background:#eef1f5;border-radius:12px"></iframe>
   <div class="hidden" id="oldSheet">
   <div class="sheet">
@@ -721,7 +716,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <div id="shareBody"></div>
 </div></div>
 
-<div class="bbar" id="bbar"><div class="b s"><span>월 구독료</span><b class="num" id="bb_s">—</b></div><div class="b t"><span>총 구독료 <small id="bb_p"></small></span><b class="num" id="bb_t">—</b></div><div class="b l op" data-op="+"><span>일반 구매 총액</span><b class="num" id="bb_l">—</b></div><div class="b n op" data-op="="><span>합계</span><b class="num" id="bb_n">—</b></div><button onclick="setView('show'); custOpen()">고객과 보기</button></div>
+<div class="bbar" id="bbar"><div class="b s"><span>월 구독료</span><b class="num" id="bb_s">—</b></div><div class="b t"><span>총 구독료 <small id="bb_p"></small></span><b class="num" id="bb_t">—</b></div><div class="b l op" data-op="+"><span>일반 구매 총액</span><b class="num" id="bb_l">—</b></div><div class="b n op" data-op="="><span>합계</span><b class="num" id="bb_n">—</b></div><button onclick="setView('show')">고객화면 미리보기</button></div>
 <div id="toast" class="hidden"></div>
 <div class="calc hidden" id="calc" tabindex="-1" role="dialog" aria-label="계산기">
   <div class="cbar" id="calcBar"><span>계산기</span><span class="sp"></span><button onclick="calcCopy()" title="지금 값을 복사합니다 — 금액 칸에 붙여넣을 수 있습니다">값 복사</button><button onclick="toggleCalc(false)" aria-label="계산기 닫기">✕</button></div>
@@ -865,7 +860,7 @@ function showHtmlForCust(){ const c=$('v-show').cloneNode(true); c.querySelector
    focus() 만으로는 크롬이 다른 창을 안 올려서, 같은 이름 창에 #만 바꾼 주소로 window.open → 다시 읽지 않고 창만 앞으로 */
 function raiseDisp(){ try{ let w=DWIN&&!DWIN.closed?DWIN:null;
   if(!w){ const f=window.open('','quote_cust'); if(!f) return; let blank=false; try{ blank=String(f.location.href)==='about:blank'; }catch(e){}
-    if(blank){ f.close(); toast('고객 화면이 닫혀 있습니다 — [고객과 보기]를 눌러 주세요'); return; } w=DWIN=f; }
+    if(blank){ f.close(); toast('고객 화면이 닫혀 있습니다 — [안내 화면 띄우기]를 눌러 주세요'); return; } w=DWIN=f; }
   const g=window.open(location.pathname+'?display=1#f'+Date.now(),'quote_cust'); if(g&&g!==w){ try{ g.close(); }catch(e){} }
   try{ w.focus(); }catch(e){} }catch(e){} }
 /* 고객 화면 = 새 창 하나 (2026-11-23) — [고객과 보기]를 누르면 열리고(이미 떠 있으면 그대로), [안내 화면 | 견적 화면] 토글 하나로 바꾼다 */
@@ -877,7 +872,12 @@ function custOpen(){ if(custAlive()) return true; let f=null; try{ f=window.open
   return true; }
 function custSet(on){ const had=custAlive(); if(!custOpen()){ custSeg(); return; } SHOWQ=!!on; custSeg(); if(had) raiseDisp(); postDisplay(); setTimeout(postDisplay,900);
   toast(SHOWQ?'고객 화면 = 견적 화면 (상품권·기타 혜택 제외)':'고객 화면 = 안내 화면'); }
-function custSeg(){ const c=document.querySelector('#custSw input'), t=$('custTx'); if(c) c.checked=!!SHOWQ; if(t) t.textContent=SHOWQ?'견적 화면':'안내 화면'; }
+/* 고객 화면 버튼 하나 (2026-11-23) — 창 없음: [안내 화면 띄우기] → 안내 화면 중: [견적 고객 공유] → 견적 화면 중: [안내 화면으로] · 고객 창이 닫히면 처음으로 */
+function custSeg(){ const b=$('btnCust'); if(!b) return; const alive=custAlive(), st=!alive?0:(SHOWQ?2:1);
+  b.textContent=['안내 화면 띄우기 ⧉','견적 고객 공유 ▶','안내 화면으로 ↩'][st]; b.classList.toggle('c-cu',st===1); b.classList.toggle('on2',st===2);
+  b.title=['고객 화면을 새 창으로 엽니다 — 고객 쪽 모니터로 옮겨 전체 화면 · 처음에는 안내 화면','고객 화면(새 창) = 안내 화면 — 누르면 견적 화면 표시 (상품권·기타 혜택 제외)','고객 화면(새 창) = 견적 화면 — 누르면 안내 화면으로'][st]; }
+function custStep(){ if(!custAlive()){ SHOWQ=false; if(custOpen()) custSeg(); return; } custSet(!SHOWQ); }
+setInterval(()=>{ try{ if(DWIN&&DWIN.closed){ DWIN=null; SHOWQ=false; custSeg(); } }catch(e){} },1500);
 function toggleShowQ(on){ SHOWQ=on==null?!SHOWQ:!!on; custSeg(); postDisplay(); }
 /* [견적서] 탭: 구독 견적서(/quote/sheet/ — 시흥몰 구독 견적서와 같은 화면·기능)를 ?embed=1 로 띄우고, 저장하지 않은 지금 견적을 postMessage 로 넘긴다 (2026-11-17 · 전에는 q/ 미리보기)
    견적이 바뀌었을 때만 다시 보낸다 — 견적서 화면에서 고친 금액이 입력 화면 그리기마다 덮이지 않게 */
