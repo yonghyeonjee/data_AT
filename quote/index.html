@@ -1044,16 +1044,20 @@ function custPick(i){ const x=CF_ROWS[i]; if(!x) return; const lq=x.last_quote||
   fillCust(); $('cf_rows').innerHTML=''; $('cf_q').value=''; render(); toast((x.name||'고객')+' 정보를 채웠습니다'+(lq.no?' (지난 견적 '+lq.no+' 기준)':'')+' — 상품·금액은 그대로'); }
 /* 내 기본값 — 담당자별(이 브라우저) · 새 견적을 열 때 표시 항목 · 구독 카드 · 선납 · 유효기간을 미리 채운다 */
 function presetKey(){ return 'dc_quote_preset_'+(ME||'default'); }
-function presetSave(){ const v={ show:showNow(), card:Q.cond.card||'', tier:Q.cond.tier||'', prepay:Q.cond.prepay, untilMode:untilModeNow(), at:Date.now() };
+function presetSave(){ const v={ show:showNow(), card:Q.cond.card||'', tier:Q.cond.tier||'', prepay:Q.cond.prepay, untilMode:untilModeNow(), uv:2, at:Date.now() };
   try{ localStorage.setItem(presetKey(), JSON.stringify(v)); localStorage.setItem('sh_quote_preset_default', JSON.stringify({ show:v.show, pointMode:'cash' })); }catch(e){}
   presetLbl(); toast('내 기본값으로 저장했습니다'+(ME?' ('+ME+' 프로)':'')); }
 function presetGet(){ try{ return JSON.parse(localStorage.getItem(presetKey())||'null'); }catch(e){ return null; } }
 function presetLbl(){ const p=presetGet(), el=$('presetNow'); if(el) el.textContent=p?'· 저장됨 '+new Date(p.at).toLocaleDateString('ko-KR'):''; }
-function presetApply(){ const p=presetGet(); if(!p||Q.no) return;   // 새 견적이면(구독센터에서 담아 온 품목이 있어도) 적용
+function presetApply(){ const p=presetGet(); if(Q.no) return;   // 새 견적이면(구독센터에서 담아 온 품목이 있어도) 적용
+  /* 유효기간 기본값 = 견적일 + 7일 (2026-11-23 · 기존 견적서 페이지와 같게 — '기한 없음' 이 기본이라 담당자 화면 [마감 임박 견적서]에 안 떴다).
+     내 기본값에 저장된 유효기간은 그대로 따르되, '기한 없음' 은 이 날 뒤에 저장한 것(uv 2)만 — 그 전의 none 은 옛 기본값이 따라 들어간 것이다 */
+  if(!Q.cust.until && !Q.cust.untilMode){ const m = p&&p.untilMode&&p.untilMode!=='custom'&&(p.untilMode!=='none'||p.uv>=2) ? p.untilMode : '7';
+    Q.cust.untilMode=m; Q.cust.until = m==='none' ? '' : untilCalc(m,qdateNow()); }
+  if(!p){ try{ fillUntil(); render(); }catch(e){} return; }
   if(p.show){ Q.cond.sheet=Q.cond.sheet||{}; Q.cond.sheet.opt=Object.assign({}, Q.cond.sheet.opt||{}, {show:p.show}); }
   if(p.card&&!Q.cond.card){ Q.cond.card=p.card; Q.cond.tier=p.tier||''; try{ $('subCard').value=Q.cond.card; fillTier(); }catch(e){} }
   if(p.prepay!=null&&Q.cond.prepay==null){ Q.cond.prepay=p.prepay; try{ [...$('prepay').children].forEach(x=>x.classList.toggle('on',String(x.dataset.v)===String(Q.cond.prepay))); }catch(e){} }
-  if(p.untilMode&&p.untilMode!=='custom'&&!Q.cust.until){ Q.cust.untilMode=p.untilMode; Q.cust.until=p.untilMode==='none'?'':untilCalc(p.untilMode,qdateNow()); }
   fillUntil(); renderShowList(); try{ render(); }catch(e){} }
 /* 상담 종류 (2026-11-10) — 맨 위에서 일반 / 특수 를 고르고, 특수면 혼수 · 입주 · 이사 중 하나를 고른다. 값은 예전 그대로 Q.cust.type 한 칸 */
 let KIND_LAST='';
