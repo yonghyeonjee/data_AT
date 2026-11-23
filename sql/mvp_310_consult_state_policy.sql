@@ -1,0 +1,26 @@
+-- mvp_310 · 2026-11-23 · 상담 상태 정책 — 새 상담 → 상담중 → 상담보류 → 상담완료 / 상담거절 · 판매완료는 DPS 전표가 이어질 때 (적용 기록)
+-- "직접 입력은 상담중 - 보류 - 상담완료 · dps에서 해당 전표를 찾았을 경우 판매완료로, 상담도 동시에 상담완료 · 11월 이전 상담은 상담완료로 ·
+--  최지영 프로는 기타사항에 직판으로 기록된 걸 구분 · 내 상담은 전체를 날짜 순으로"
+-- DB 값은 그대로(진행전·진행중·보류·상담완료·거절·구매완료) — 화면 이름만 새 상담·상담중·상담보류·상담완료·상담거절·판매완료. 구매완료 = 상담완료 + 판매완료.
+--
+-- 되돌리기: 상태·연결은 crm.consult_state_bak_20261123(바꾸기 전 result·sale_kind·linked_order_id·callback_done_at·notes) 에서,
+--           함수 원문은 core.fn_src_backup tag 'before mvp_310' (f_consult_link_sales · f_dps_ledger_sync · fn_store_consults_my).
+
+-- ① 11월 이전(상담일 < 2026-11-01 KST) 열린 상담 → 상담완료 : 진행중 59 · 진행전 39 · 보류 35 · 확인완료 35 (콜백 약속은 끝낸 것으로 · 메모에 전 상태)
+-- ② 판매 잇기 core.f_consult_link_sales — 전엔 '구매완료'로 저장한 상담만 이었다. 이제 새 상담·상담중·상담보류·상담완료도
+--    같은 사람(고객키 또는 휴대폰 뒤 8자리)의 DPS 판매가 [상담일 하루 전 ~ 45일 뒤] 에 있고 판매사원 = 상담 담당이면 잇고 판매완료(구매완료)로 바꾼다.
+--    (판매 구분은 전표의 일시불·구독·직판 · 콜백 끝냄 · 메모 '판매완료로 바뀜(전 상태 …)' · 상담거절과 '매장 구매 후' 다음 관심 상담은 안 건드림)
+--    구매완료로 직접 저장한 상담은 전처럼 담당 무관 · 7일 전 ~ 45일 뒤. 첫 실행 19건(상담완료 14 · 상담중 3 · 확인완료였던 2).
+-- ③ 판매 전표를 못 찾은 11월 이전 '구매완료' 14건 → 상담완료 (판매 구분은 남김 · 전표가 들어오면 ②가 다시 판매완료로)
+-- ④ core.f_dps_ledger_sync — DPS 기타사항에 '직판' 이 적힌 2026-11-01 이후 전표는 매장 사원이 아니어도 그 판매사원의 판매로 원장(core.orders dps)에
+--    (channel_type·channel_name '직판' · sale_kind '직판'). 최지영 프로 전표는 전부 채널 '시흥몰'(매장 아님)이라 원장에 안 들어와 상담이 '판매 확인 필요'에 남았다.
+--    확인(되돌림 실험): 3142068260 기타사항에 직판 → 원장 2줄(최지영 · 직판) → 상담 #1062 판매완료 · 내 고객에 구매.
+--    대시보드 금액은 dps.sale·실적 기준이라 바뀌지 않는다(원장 기준은 store·dps 줄 금액을 안 쓴다 — mvp_301).
+-- ⑤ fn_store_consults_my — [전체] 는 상태로 묶지 않고 날짜 순(최근부터). 화면 기본 칩도 [전체].
+
+-- (본문은 서버 원본을 부분 치환해 적용 — 치환 문장은 이 세션 기록 · 요지만 남긴다)
+-- f_consult_link_sales: k 에 c.result·c.handler · result in ('구매완료','진행전','진행중','보류','상담완료') and inflow_route <> '매장 구매 후'
+--   · o 에 o.handler·o.sale_kind · 창 case when k.result='구매완료' then 7일 else 1일 · (k.result='구매완료' or (o.source='dps' and o.handler=k.handler))
+--   · update set result='구매완료', sale_kind=coalesce(...), callback_done_at
+-- f_dps_ledger_sync: where (s.is_store or (etc_note like '%직판%' and sale_date >= '2026-11-01')) (2곳) · channel_type/name · sale_kind
+-- fn_store_consults_my: 정렬의 case when v_f='all' then bucket 순서 (2곳) 제거
