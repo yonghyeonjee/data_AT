@@ -1450,6 +1450,9 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 .csv-state{margin:0 0 14px;font-size:calc(14px * var(--font-scale));color:var(--muted)}
 .csv-where{margin:0;padding:0 0 0 18px;font-size:calc(13.5px * var(--font-scale));line-height:1.6;color:var(--muted)} .csv-where li{margin:0 0 6px} .csv-where b{color:var(--ink)}
 @media(max-width:719px){ #cSaveDlg .btns .btn,#cDoneDlg .btns .btn{min-height:44px;flex:1 1 0;min-width:0 !important;padding:0 10px} .pill.btnp.blue{padding:0 12px} }
+/* ── v371 : 견적 구분 태그 (상담 견적 = 파랑 · 기존 = 청록 — 머리 버튼 색과 같게) ── */
+.tag.qk.new{background:#E6EEFF;color:#1D4ED8} .tag.qk.old{background:#E3F3F1;color:#0B5A55}
+.seg.qtkind{margin-top:8px}
 </style>
 </head>
 <body>
@@ -1775,7 +1778,8 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <div class="cbar" style="margin-bottom:8px"><div class="csearchbox"><input class="in" id="qt_q" placeholder="고객명 · 번호 뒷자리 · 견적번호 · 모델로 찾기" autocomplete="off" oninput="quoteFilter()"><button type="button" class="go" onclick="quoteFilter()" aria-label="찾기">⌕</button></div></div>
     <div class="prow" id="qt_period"></div>
       <div class="seg sm cflt" id="qt_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="qtFlt('all')">전체 <i>0</i></button><button type="button" data-v="live" onclick="qtFlt('live')" title="마감일이 아직 안 지난 견적서">유효 <i>0</i></button><button type="button" data-v="over" onclick="qtFlt('over')" title="유효기한이 지난 견적서 — 다시 발행하거나 고객에게 연락">마감 지남 <i>0</i></button><button type="button" data-v="none" onclick="qtFlt('none')">마감 없음 <i>0</i></button></div>
-      <div class="list" id="qtList" style="margin-top:12px"><div class="empty">홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
+      <div class="seg sm cflt qtkind" id="qt_kind" role="group" aria-label="견적 구분"><button type="button" data-v="all" class="on" onclick="qtKind('all')">기존 + 상담 견적 <i>0</i></button><button type="button" data-v="new" onclick="qtKind('new')" title="상담 견적 화면으로 만든 견적서">상담 견적 <i>0</i></button><button type="button" data-v="old" onclick="qtKind('old')" title="기존 견적서 페이지로 만든 견적서">기존 <i>0</i></button></div>
+      <div class="list" id="qtList" style="margin-top:12px"><div class="empty">상담 견적 · 기존 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.</div></div>
       <div id="qt_pg"></div>
     </div>
   </section>
@@ -5358,9 +5362,9 @@ function dqRows(){ const all=(STATUS&&STATUS.quotes)||[]; const today=todayStr()
   return all.map(x=>({x,d:String(x.until||'').replace(/\./g,'-').slice(0,10)})).filter(o=>/^\d{4}-\d\d-\d\d$/.test(o.d)).map(o=>({x:o.x,d:o.d,n:diff(o.d)})).filter(o=>o.n>=-7&&o.n<=3).sort((a,b)=>a.n-b.n||String(a.x.at).localeCompare(String(b.x.at))); }
 function renderDueQuotes(){ const card=$('dqCard'); if(!card) return; const rows=dqRows(); if(!rows.length){ $('dqSub').textContent=''; $('dqList').innerHTML='<div class="empty">3일 안에 마감되거나 막 지난 견적서가 없습니다.</div>'; return rows; }
   $('dqSub').textContent=`${rows.length}건 · 지남 ${rows.filter(o=>o.n<0).length} · 오늘 ${rows.filter(o=>o.n===0).length} · 3일 안 ${rows.filter(o=>o.n>0).length}`;
-  $('dqList').innerHTML=rows.map(({x,n:dn})=>`<div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qUntil(x.until)} <small style="color:${dn<0?'#B3261E':dn===0?'#8A5A00':'var(--muted)'};font-weight:700">${dn<0?`${-dn}일 지남`:dn===0?'오늘 마감':`D-${dn}`}</small></div>
+  $('dqList').innerHTML=rows.map(({x,n:dn})=>`<div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qKind(x)}${qUntil(x.until)} <small style="color:${dn<0?'#B3261E':dn===0?'#8A5A00':'var(--muted)'};font-weight:700">${dn<0?`${-dn}일 지남`:dn===0?'오늘 마감':`D-${dn}`}</small></div>
       <div class="m">${String(x.at||'').slice(5,10).replace('-','/')} 발행 · ${esc(x.models||'')}${x.monthly?` · 월 ${won(x.monthly)}`:x.final?` · ${won(x.final)}`:''}</div></div>
-      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="dqSms('${esc(x.no)}','${esc(x.name||'')}')" title="견적 링크·기한이 채워진 문자 — 내 폰 문자앱">💬 문자</button><button class="mini" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button></div></div>`).join('');
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="dqSms('${esc(x.no)}','${esc(x.name||'')}')" title="견적 링크·기한이 채워진 문자 — 내 폰 문자앱">💬 문자</button><button class="mini" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" title="${qIsNew(x)?'상담 견적 화면으로 엽니다':'기존 견적서 페이지로 엽니다'}" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'},${qIsNew(x)})">열기 ↗</button></div></div>`).join('');
   return rows; }
 async function dqSms(no,name){ let d; try{ d=await rpc('fn_quote_share',{p_code:CODE,p_no:no}); }catch(e){ return toast(e.message,'bad'); }
   smsCompose({name:d.name||name||'', phone:(d.phone||'').replace(/\D/g,''), quote_no:d.no, kind:'quote', template:'quote_link',
@@ -5644,10 +5648,14 @@ const periodOf=pfx=>({ from:($(pfx+'_from')||{}).value||null, to:($(pfx+'_to')||
 /* 견적서 마감일(유효기한, summary.until 'YYYY.MM.DD') — 지났으면 빨간 태그 */
 function qUntil(u, small){ if(!u) return ''; const d=String(u).replace(/\./g,'-').slice(0,10); const over=d<todayStr(); const md=d.slice(5).replace('-','/');
   return `<span class="tag${over?'':''}" style="${over?'background:#FDECEC;color:#B3261E':'background:#FBF1DC;color:#8A5A00'}${small?';font-size:calc(10.5px * var(--font-scale));padding:1px 6px':''}" title="견적 유효기한 ${d}">${over?'마감 지남':'마감'} ${md}</span>`; }
+/* 견적 구분 (v371 · mvp_315) — 서버 kind : new = 상담 견적(/quote/)으로 만든 견적서 · old = 기존 견적서 페이지. [열기]는 만든 화면으로 연다 */
+const qIsNew=x=>!!x&&x.kind==='new';
+function qKind(x, small){ if(!x||!x.kind) return ''; const n=x.kind==='new';
+  return `<span class="tag qk ${n?'new':'old'}"${small?' style="font-size:calc(10.5px * var(--font-scale));padding:1px 6px"':''} title="${n?'상담 견적 화면으로 만든 견적서 — [열기]도 상담 견적으로 열립니다':'기존 견적서 페이지로 만든 견적서 — [열기]는 기존 페이지로 열립니다'}">${n?'상담 견적':'기존'}</span>`; }
 function quoteRow(x){ return `
-    <div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qUntil(x.until)}</div>
+    <div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qKind(x)}${qUntil(x.until)}</div>
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.models||'')}${x.final?` · 최종 ${won(x.final)}`:''}${x.monthly?` · 월 ${won(x.monthly)}`:''}${x.memo?' · '+esc(x.memo):''}</div></div>
-      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button>${/개발|온라인/.test((STATUS&&STATUS.dept)||'')?`<button class="mini" style="opacity:.8" onclick="qtTest('${esc(x.no)}','${esc(x.name||'')}')" title="테스트로 만든 견적 — 목록·알림에서 뺍니다">테스트로</button>`:''}${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}','${esc(x.tel||'')}')">상담 입력</button>`:''}</div></div>`; }
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" title="${qIsNew(x)?'상담 견적 화면으로 엽니다':'기존 견적서 페이지로 엽니다'}" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'},${qIsNew(x)})">열기 ↗</button>${/개발|온라인/.test((STATUS&&STATUS.dept)||'')?`<button class="mini" style="opacity:.8" onclick="qtTest('${esc(x.no)}','${esc(x.name||'')}')" title="테스트로 만든 견적 — 목록·알림에서 뺍니다">테스트로</button>`:''}${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}','${esc(x.tel||'')}')">상담 입력</button>`:''}</div></div>`; }
 async function qtTest(no, name){
   if(!confirm(`${name||no} 견적서를 테스트로 표시합니다.\n견적서 탭·홈 찾기·알림에서 빠집니다. 되살리려면 관리자 문의 관리 [견적] › [삭제됨]에서 복구하세요.`)) return;
   try{ await rpc('fn_store_quote_flag',{p_code:CODE,p_quote_no:no}); toast('테스트로 표시했습니다','ok');
@@ -5658,17 +5666,22 @@ function quoteMatch(x,q){ q=String(q||'').trim().toLowerCase(); if(!q) return tr
   return [x.name,x.no,x.models,x.memo].some(v=>String(v||'').toLowerCase().includes(q)) || (d.length>=3 && String(x.tel||'').includes(d)); }
 let QT_FLT='all', QT_PG=0, QT_SIG='';
 function qtFlt(v){ QT_FLT=segPick('qt_flt',v); QT_PG=0; quoteFilter(); }
+let QT_KIND='all';   /* 견적 구분 거르개 — all · new(상담 견적) · old(기존) (v371) */
+function qtKind(v){ QT_KIND=segPick('qt_kind',v); QT_PG=0; quoteFilter(); }
 function qtGo(p){ QT_PG=p; quoteFilter(); }
 const qtOver=x=>{ const u=String(x.until||'').replace(/\./g,'-').slice(0,10); return u ? (u<todayStr() ? 'over' : 'live') : 'none'; };
 function quoteFilter(){
   const q=($('qt_q')||{}).value||''; const all=(STATUS&&STATUS.quotes)||[]; const pr=periodOf('qt');
-  const base=all.filter(x=>quoteMatch(x,q)).filter(x=>{ const d=String(x.at||'').slice(0,10); return (!pr.from||d>=pr.from)&&(!pr.to||d<=pr.to); });
+  const base0=all.filter(x=>quoteMatch(x,q)).filter(x=>{ const d=String(x.at||'').slice(0,10); return (!pr.from||d>=pr.from)&&(!pr.to||d<=pr.to); });
+  const kd=x=>x.kind==='new'?'new':'old';
+  segCount('qt_kind',{all:base0.length, new:base0.filter(x=>kd(x)==='new').length, old:base0.filter(x=>kd(x)==='old').length});
+  const base = QT_KIND==='all' ? base0 : base0.filter(x=>kd(x)===QT_KIND);   /* 마감 칩 숫자는 고른 구분 안에서 센다 */
   segCount('qt_flt',{all:base.length, live:base.filter(x=>qtOver(x)==='live').length, over:base.filter(x=>qtOver(x)==='over').length, none:base.filter(x=>qtOver(x)==='none').length});
   const list = QT_FLT==='all' ? base : base.filter(x=>qtOver(x)===QT_FLT);
   const sig=q+'|'+pr.from+'|'+pr.to; if(sig!==QT_SIG){ QT_SIG=sig; QT_PG=0; }   /* 검색어·기간이 바뀌면 1쪽부터 */
   const P=pgCut('qt',QT_PG,list,'qtGo'); QT_PG=P.page;
-  $('qtSub').textContent=(q?`${list.length}건 찾음 / `:QT_FLT!=='all'?`${list.length}건 / `:'')+(P.range ? `최근 90일 · ${P.range}` : (all.length?`${all.length}건 · 최근 90일`:'최근 90일'));
-  $('qtList').innerHTML=P.rows.length?P.rows.map(quoteRow).join(''):`<div class="empty">${(q||QT_FLT!=='all'||pr.from||pr.to)?'맞는 견적서가 없습니다':'홈페이지 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.'}</div>`;
+  $('qtSub').textContent=(q?`${list.length}건 찾음 / `:(QT_FLT!=='all'||QT_KIND!=='all')?`${list.length}건 / `:'')+(P.range ? `최근 90일 · ${P.range}` : (all.length?`${all.length}건 · 최근 90일`:'최근 90일'));
+  $('qtList').innerHTML=P.rows.length?P.rows.map(quoteRow).join(''):`<div class="empty">${(q||QT_FLT!=='all'||QT_KIND!=='all'||pr.from||pr.to)?'맞는 견적서가 없습니다':'상담 견적 · 기존 견적서 페이지에서 내 이름으로 발행한 견적이 여기 뜹니다.'}</div>`;
   const pg=$('qt_pg'); if(pg) pg.innerHTML=P.bar;
 }
 /* ═══ 홈 찾기 — 상담과 견적서를 한 번에. 상담은 서버(내 것 / 점장님은 전체), 견적서는 이미 받아 둔 90일치에서 ═══ */
@@ -5874,7 +5887,7 @@ function renderMyConsults(){
     if(x.tel) A.push(`<button class="mini" onclick="smsCompose({name:'${nm}',phone:'${esc(x.tel)}',consult_id:${x.id},key:'${esc(x.ref||'')}'})" title="내 폰 문자앱으로 문자 보내기 (내 번호로 나갑니다)">💬 문자</button>`);
     A.push(`<button class="mini" onclick="cdOpen(${x.id})" title="이 상담의 모든 내용 · 기록 · 같은 고객의 다른 상담">상세 보기</button>`);
     if(x.result!=='구매완료') A.push(`<button class="mini" onclick="ocPick(${x.id})" title="다음에 연락할 날짜·시간을 잡습니다 — 홈 [콜백 약속]에 뜹니다">📅 콜백</button>`);
-    A.push(`<button class="mini" onclick="openQuote(${qArg})">견적서 ${x.quote?'열기':'만들기'} ↗</button>`);
+    A.push(`<button class="mini" onclick="openQuote(${qArg}${qIsNew(x.quote)?',true':''})">${x.quote?(qIsNew(x.quote)?'상담 견적 열기':'견적서 열기'):'견적서 만들기'} ↗</button>`);
     if(x.result!=='구매완료') A.push(`<button class="mini ok" onclick="soldOpen(${x.id},'${nm}')" title="팔았으면 — 구분만 고르면 판매 내역은 DPS 가 이어 줍니다">판매 완료</button>`);
     A2.push(`<button class="mini" onclick="ocToConsult(${x.id},'${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 건은 그대로 두고, 같은 고객으로 새 상담을 하나 더 적습니다">＋ 새 상담</button>`);
     A2.push(`<button class="mini" onclick="asgOpen([${x.id}],'${nm}')" title="다른 담당자에게 넘기기">넘기기</button>`);
@@ -5885,7 +5898,7 @@ function renderMyConsults(){
     /* 상담 방법 : 대면 · 전화 · 메시지 — 누르면 바로 바뀐다 */
     const mth = trash ? '' : `<span class="mth" title="상담 방법">${['대면','전화','메시지'].map(m=>`<button type="button" class="${x.method===m?'on':''}" onclick="mcMethod(${x.id},'${m}')">${m}</button>`).join('')}</span>`;
     const qn = (x.quotes||[]).length;
-    const qlist = qn ? `<div class="meta qlist"><b>견적서 ${qn}건</b> ${x.quotes.map(q=>`<span class="qlrow"><button type="button" class="ql" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(x.tel||'')}'})" title="${esc(q.models||'')}${q.counselor?' · '+esc(q.counselor):''}">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>${qUntil(q.until,true)}<button type="button" class="ql send" title="고객에게 보내기" onclick="qsOpen('${esc(q.no)}','${nm}')">보내기</button></span>`).join('')}</div>` : '';
+    const qlist = qn ? `<div class="meta qlist"><b>견적서 ${qn}건</b> ${x.quotes.map(q=>`<span class="qlrow"><button type="button" class="ql" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(x.tel||'')}'},${qIsNew(q)})" title="${qIsNew(q)?'상담 견적':'기존 견적서'} · ${esc(q.models||'')}${q.counselor?' · '+esc(q.counselor):''}">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>${qKind(q,true)}${qUntil(q.until,true)}<button type="button" class="ql send" title="고객에게 보내기" onclick="qsOpen('${esc(q.no)}','${nm}')">보내기</button></span>`).join('')}</div>` : '';
     const delInfo = trash ? `<div class="meta" style="color:var(--bad,#B3261E)">삭제 ${String(x.deleted_at||'').slice(5,16).replace('T',' ')}${x.delete_reason?' · '+esc(x.delete_reason):''}</div>` : '';
     const isOpen = MC_OPEN.has(x.id);
     /* 접힌 줄에 남길 한 가지 — 관심 품목이 있으면 그것, 없으면 모델, 그것도 없으면 유입 */
@@ -6240,7 +6253,7 @@ function cdHTML(d){
   const what=kv([['관심 품목',esc(d.interest||'')],['모델',esc(d.model||'')],['상세',esc(d.detail||'')],['예상 금액',d.expected?won(d.expected):''],['구매 예정',d.expect_date?csDt(d.expect_date):''],['멤버십',esc(d.membership||'')],['수신 동의',d.consent?'동의':''],['사은품',d.gift?esc(d.gift)+(d.gift_amount?` (${won(d.gift_amount)})`:''):'']]);
   const next=(d.next_cat||d.next_model||d.next_date||d.next_note)?kv([['다음 관심',esc([d.next_cat,d.next_model].filter(Boolean).join(' '))],['예정',d.next_date?csDt(d.next_date):''],['메모',esc(d.next_note||'')]]):'';
   const buy=(d.bought||d.order)?kv([['구매 품목',esc(d.bought||(d.order&&d.order.product)||'')],['주문',d.order?`${esc(d.order.no||'')} · ${csDt(d.order.at)} · ${won(d.order.amount)}${d.order.status?' · '+esc(d.order.status):''}`:'']]):'';
-  const quotes=(d.quotes||[]).length?`<div class="acts">${d.quotes.map(q=>`<button type="button" class="mini" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(d.tel||'')}'})">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>${qUntil(q.until,true)}`).join('')}</div>`:'';
+  const quotes=(d.quotes||[]).length?`<div class="acts">${d.quotes.map(q=>`<button type="button" class="mini" onclick="openQuote({no:'${esc(q.no)}',ver:${q.ver||1},name:'${nm}',tel:'${esc(d.tel||'')}'},${qIsNew(q)})">${esc(q.no)}${q.ver>1?' v'+q.ver:''}${q.final?` · ${won(q.final)}`:''}${q.monthly?` · 월 ${won(q.monthly)}`:''} ↗</button>${qKind(q,true)}${qUntil(q.until,true)}`).join('')}</div>`:'';
   const moves=(d.moves||[]).length?`<ul class="jl">${d.moves.map(m=>`<li>${esc(m.from||'미배정')} → <b>${esc(m.to||'')}</b> · ${esc(m.by||'')} · ${at(m.at)}${m.note?' · '+esc(m.note):''}</li>`).join('')}</ul>`:'';
   const journal=(d.journal||[]).length?`<ul class="jl">${d.journal.map(j=>`<li>${esc(j)}</li>`).join('')}</ul>`:'';
   const others=(d.others||[]);
