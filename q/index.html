@@ -50,7 +50,9 @@ body{background:var(--c-bg);font-family:Pretendard,-apple-system,BlinkMacSystemF
 body.preview .cbrand{display:none} body.preview .cwrap{padding:8px 8px 16px}
 .staff-edit{position:fixed;right:14px;bottom:14px;z-index:50;background:#1f3a8a;color:#fff;font-weight:600;font-size:13px;line-height:1.2;padding:10px 14px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.25);text-decoration:none}
 @media print{.staff-edit{display:none}}
-@media screen{.q-pages{flex-direction:column}}   /* 2쪽이 오른쪽으로 숨지 않게 위아래로 (2026-11-23 · 인쇄는 그대로) */
+@media screen{.q-pages{flex-direction:column}}
+.q-pay.l{border-color:#7A4B1E;} .q-pay.l .q-pay-h{background:#7A4B1E;} .q-pay.l .q-pay-grid{background:#E5D5C3;} .q-pay.l .q-pay-grid .c.big{background:#F6EEE4;} .q-pay.l .q-pay-grid .c.big .k,.q-pay.l .q-pay-grid .c.big .v{color:#7A4B1E;}
+.q-pay.all{border-color:#0F1E3D;} .q-pay.all .q-pay-h{background:#0F1E3D;} .q-pay.all .q-pay-grid .c.big{background:#EEF1F7;} .q-pay.all .q-pay-grid .c.big .k,.q-pay.all .q-pay-grid .c.big .v{color:#0F1E3D;}   /* 2쪽이 오른쪽으로 숨지 않게 위아래로 (2026-11-23 · 인쇄는 그대로) */
 /* 고객 견적서 인쇄 (2026-11-23) — A4 한 장에 한 쪽 · 오른쪽 잘림 · 쪽 넘침 고침 (전에는 견적서 원본의 body.quote-print 규칙만 있어 이 화면에서는 안 먹었다) */
 @media print{
   @page{size:A4;margin:0}
@@ -330,6 +332,36 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       + '<button type="button" data-qopt="pointMode" data-v="replace" class="' + (pm === 'replace' ? 'on' : '') + '">월 납입 차감</button></span>';
   }
 
+  /* 일반 구매로 내시는 금액 · 전체 비용 한눈에 (2026-11-23) — 견적서 탭(/quote/sheet/)과 같은 띠 */
+  function bandCell(k, v, cls, sub){
+    return '<div class="c' + (cls === 'big' ? ' big' : '') + '"><div class="k">' + k + '</div>'
+      + '<div class="v' + (cls === 'minus' ? ' minus' : '') + '">' + v + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+  }
+  function lumpBandHtml(q){
+    var L = q.lump; if(!L || !L.items || !L.items.length) return '';
+    var ins = num(L.months) > 0 && num(L.per) > 0, cells = '', n = 0;
+    cells += bandCell('결제가', won(L.amount)); n++;
+    if(num(L.fee) > 0){ cells += bandCell('이용료', '+' + won(L.fee)); n++; }
+    if(num(L.benefit) > 0){ cells += bandCell('혜택 합계', '-' + won(L.benefit), 'minus'); n++; }
+    if(ins){ cells += bandCell('할부 개월수별 납부금액', won(L.per) + ' × ' + num(L.months)); n++; }
+    cells += bandCell('일반 최종가 (최종체감가)', won(L.net), 'big', ins ? num(L.months) + '개월 할부' : '일시불 · 할부 합계'); n++;
+    return '<div class="q-pay l"><div class="q-pay-h">🛒 고객님이 일반 구매(일시불 · 할부)로 내시는 금액'
+      + '<span class="r">' + esc(L.kindLabel || '') + ' · 상품 ' + L.items.length + '개</span></div>'
+      + '<div class="q-pay-grid" style="grid-template-columns:repeat(' + (n - 1) + ',1fr) 1.3fr">' + cells + '</div>'
+      + '<div class="q-pay-note">※ 일반 최종가는 청구할인 · 캐시백 · 포인트까지 반영한 금액입니다.</div></div>';
+  }
+  function allBandHtml(q, T){
+    var L = q.lump; if(!L || !L.items || !L.items.length || !T.count || !(T.maxM > 0)) return '';
+    var netM = Math.round(T.monthly) - Math.max(0, Math.round((T.sub + T.multi + T.pre) / T.maxM)) - Math.round(T.cardM);   // 매달 내시는 금액 띠의 월 구독료 혜택가와 같은 값
+    var benS = num(T.benefit), ben = benS + num(L.benefit), all = num(T.finalP) + num(L.net);
+    var cells = bandCell('구독 월 비용', won(netM) + ' / 월', '', T.maxM + '개월 · 구독 최종가 ' + won(T.finalP))
+      + bandCell('일반 구매', won(L.net), '', '일반 최종가')
+      + bandCell('받은 혜택', '-' + won(ben), 'minus', '구독 ' + won(benS) + ' · 일반 ' + won(L.benefit))
+      + bandCell('전체 비용', won(all), 'big', '구독 최종가 + 일반 최종가');
+    return '<div class="q-pay all"><div class="q-pay-h">🧾 전체 비용 한눈에<span class="r">구독 ' + T.count + '개 · 일반 ' + L.items.length + '개</span></div>'
+      + '<div class="q-pay-grid" style="grid-template-columns:repeat(3,1fr) 1.3fr">' + cells + '</div>'
+      + '<div class="q-pay-note">※ 받은 혜택 = 구독 할인 · 제휴카드 청구할인 · 포인트 + 일반 구매 청구할인 · 캐시백 · 포인트</div></div>';
+  }
   function payBandHtml(q, T){
     var m = T.maxM;
     if(!(m > 0)) return '';
@@ -600,6 +632,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       + '</table>');
     var payBand = (S.payband !== false) ? payBandHtml(q, T) : '';
     blocks.push(payBand);          // ★ 매달 내시는 금액 (한눈에 보기)
+    if(S.payband !== false){ blocks.push(lumpBandHtml(q)); blocks.push(allBandHtml(q, T)); }   // 일반 구매로 내시는 금액 · 전체 비용 (2026-11-23)
     /* 상품 카드: 1개(비편집)=전폭 2단, 여러 개=한 줄에 2개씩(홀수 마지막은 전폭), ✏️ 수정 모드=1개씩 전체폭 */
     var list = [];
     q.items.forEach(function(it, i){ if(it.hidden && !EDIT) return; list.push({ it: it, i: i }); });
