@@ -59,7 +59,13 @@ h1,h2,h3{margin:0}
 .tb.c-q{background:#2563EB;border-color:#2563EB;font-weight:800} .tb.c-q:hover{background:#1D4ED8}
 .tb.c-cs{background:#D97706;border-color:#D97706;font-weight:800} .tb.c-cs:hover{background:#B45309}
 .tb.c-cu{background:#0E9F6E;border-color:#0E9F6E;font-weight:800} .tb.c-cu:hover{background:#057A55}
-.custseg{align-items:center} .custseg .lb{color:#fff;opacity:.8;font-size:12px;font-weight:700;padding:0 6px 0 8px;white-space:nowrap} .custseg button.on[data-c="1"]{background:#0E9F6E;color:#fff}   /* 고객 화면 토글 — 견적 화면일 때 초록 (2026-11-23) */
+.csw{display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 4px;cursor:pointer;color:#fff;font-size:12.5px;font-weight:700;white-space:nowrap;user-select:none}
+.csw input{position:absolute;opacity:0;width:1px;height:1px}
+.csw .tr{position:relative;width:38px;height:22px;border-radius:999px;background:rgba(255,255,255,.28);transition:background .15s;flex:none}
+.csw .tr::after{content:'';position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.csw input:checked+.tr{background:#0E9F6E} .csw input:checked+.tr::after{transform:translateX(16px)}
+.csw input:focus-visible+.tr{outline:2px solid #fff;outline-offset:2px}
+.csw .tx{opacity:.8;min-width:52px} .csw input:checked~.tx{opacity:1}   /* 고객 화면 스위치 — 켜짐(견적 화면) 초록 (2026-11-23) */
 .tb:disabled{opacity:.5;cursor:default}
 /* 본문 */
 .wrap{padding:14px max(16px,env(safe-area-inset-right,0px)) 56px max(16px,env(safe-area-inset-left,0px));max-width:1280px;margin:0 auto}
@@ -477,10 +483,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <button class="tb" onclick="toggleCalc()" title="계산기" aria-label="계산기">🧮</button>
   <div class="views" role="tablist">
     <button class="on" data-v="edit" onclick="setView('edit')">입력</button>
-    <button data-v="show" onclick="setView('show'); custOpen()" title="고객 화면을 새 창으로 엽니다 — 고객 쪽 모니터로 옮겨 전체 화면 · 처음에는 안내 화면">고객과 보기 ⧉</button>
+    <button data-v="show" onclick="setView('show'); custOpen()" title="고객 화면을 새 창으로 엽니다 — 고객 쪽 모니터로 옮겨 전체 화면 · 처음에는 안내 화면">고객과 보기 ⧉</button><label class="csw" id="custSw" title="고객 화면(새 창)에 보이는 내용 — 끄면 안내 화면 · 켜면 견적 화면 (상품권·기타 혜택 제외)"><input type="checkbox" role="switch" aria-label="고객 화면에 견적 표시" onchange="custSet(this.checked)"><span class="tr" aria-hidden="true"></span><span class="tx" id="custTx">안내 화면</span></label>
     <button data-v="sheet" onclick="setView('sheet')">견적서</button>
   </div>
-  <div class="kinds custseg" id="custSeg" role="group" aria-label="고객 화면" title="고객 화면(새 창)에 보이는 내용 — 안내 화면 ↔ 견적 화면 · 견적 화면에는 상품권·기타 혜택이 나오지 않습니다"><span class="lb">고객 화면</span><button type="button" data-c="0" class="on" onclick="custSet(false)">안내 화면</button><button type="button" data-c="1" onclick="custSet(true)">견적 화면</button></div>
   <button class="tb" onclick="openList()">내역</button>
   <button class="tb c-q" id="btnSave" onclick="saveQuote()" title="견적서를 저장·발행합니다 — 담당자 화면(store) [견적서] 메뉴 › 내 견적서에서 확인">견적서 저장</button>
   <button class="tb c-cs" id="btnCs" onclick="csOpen()" title="담은 제품으로 상담 기록을 남깁니다 — 담당자 화면(store) [상담] 메뉴 › 상담 목록에서 확인">상담 저장</button>
@@ -863,9 +868,9 @@ function custOpen(){ if(custAlive()) return true; let f=null; try{ f=window.open
   let blank=false; try{ blank=String(f.location.href)==='about:blank'; }catch(e){}
   DWIN=f; if(blank){ f.location.replace(location.pathname+'?display=1'); toggleShowQ(false); setTimeout(postDisplay,700); setTimeout(postDisplay,2000); toast('고객 화면을 열었습니다 — 고객 쪽 모니터로 끌어다 놓고 [전체 화면]을 눌러 주세요'); } else postDisplay();
   return true; }
-function custSet(on){ const had=custAlive(); if(!custOpen()) return; SHOWQ=!!on; custSeg(); if(had) raiseDisp(); postDisplay(); setTimeout(postDisplay,900);
+function custSet(on){ const had=custAlive(); if(!custOpen()){ custSeg(); return; } SHOWQ=!!on; custSeg(); if(had) raiseDisp(); postDisplay(); setTimeout(postDisplay,900);
   toast(SHOWQ?'고객 화면 = 견적 화면 (상품권·기타 혜택 제외)':'고객 화면 = 안내 화면'); }
-function custSeg(){ document.querySelectorAll('#custSeg button').forEach(b=>b.classList.toggle('on',(b.dataset.c==='1')===!!SHOWQ)); }
+function custSeg(){ const c=document.querySelector('#custSw input'), t=$('custTx'); if(c) c.checked=!!SHOWQ; if(t) t.textContent=SHOWQ?'견적 화면':'안내 화면'; }
 function toggleShowQ(on){ SHOWQ=on==null?!SHOWQ:!!on; custSeg(); postDisplay(); }
 /* [견적서] 탭: 구독 견적서(/quote/sheet/ — 시흥몰 구독 견적서와 같은 화면·기능)를 ?embed=1 로 띄우고, 저장하지 않은 지금 견적을 postMessage 로 넘긴다 (2026-11-17 · 전에는 q/ 미리보기)
    견적이 바뀌었을 때만 다시 보낸다 — 견적서 화면에서 고친 금액이 입력 화면 그리기마다 덮이지 않게 */
