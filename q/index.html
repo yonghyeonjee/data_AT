@@ -50,6 +50,7 @@ body{background:var(--c-bg);font-family:Pretendard,-apple-system,BlinkMacSystemF
 body.preview .cbrand{display:none} body.preview .cwrap{padding:8px 8px 16px}
 .staff-edit{position:fixed;right:14px;bottom:14px;z-index:50;background:#1f3a8a;color:#fff;font-weight:600;font-size:13px;line-height:1.2;padding:10px 14px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.25);text-decoration:none}
 @media print{.staff-edit{display:none}}
+@media screen{.q-pages{flex-direction:column}}   /* 2쪽이 오른쪽으로 숨지 않게 위아래로 (2026-11-23 · 인쇄는 그대로) */
 </style>
 </head>
 <body>
@@ -716,11 +717,13 @@ function esc2(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;
 function contactBox(d){
   d=d||{}; const tel=d.tel||d.store_tel||'031-8042-3166';
   const st=d.store_tel&&d.store_tel!==tel?d.store_tel:'';
+  /* 연락 안내 번호 — 담당자 개인번호(d.tel)가 있으면 무조건 그 번호 (2026-11-23 · 서버 문구 d.note 에는 매장 번호가 들어 있다) */
+  let note=d.note||('기존 견적 금액 조회 및 추가 상담은 '+tel+' 으로 연락해 주세요.'); if(st) note=note.split(st).join(tel);
   return `<div class="cbox cpro">
       ${d.counselor?`<div class="n">${esc2(d.counselor)} ${esc2(d.counselor_role||'프로')}</div>
         ${d.counselor_title?`<div class="d">${esc2(d.counselor_title)}</div>`:''}`
       :`<div class="n">${esc2(d.store_name||'삼성스토어 시흥점')}</div>`}
-      <p class="note" style="margin-top:8px">${esc2(d.note||'기존 견적 금액 조회 및 추가 상담은 '+tel+' 으로 연락해 주세요.')}</p>
+      <p class="note" style="margin-top:8px">${esc2(note)}</p>
       <a class="cbtn" href="tel:${esc2(tel.replace(/[^0-9+]/g,''))}">📞 ${esc2(tel)} 전화하기</a>
       ${st?`<a class="cbtn ghost" href="tel:${esc2(st.replace(/[^0-9+]/g,''))}">매장 ${esc2(st)}</a>`:''}
       ${d.no?`<p class="note" style="margin-top:10px">문의하실 때 견적번호 <b>${esc2(d.no)}</b> 를 말씀해 주세요.</p>`:''}
