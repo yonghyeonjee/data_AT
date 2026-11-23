@@ -1044,6 +1044,7 @@ html.fs-big .card h2{flex-direction:column;align-items:flex-start;gap:4px}
 .cstick .who .nth{background:var(--accent-soft);color:var(--navy-ink);border-radius:999px;padding:2px 9px;font-size:calc(11.5px * var(--font-scale));font-weight:800}
 .cstick .who .x{margin-left:auto;border:0;background:transparent;color:var(--muted);font:inherit;font-size:calc(12.5px * var(--font-scale));font-weight:700;cursor:pointer;min-height:32px;padding:0 6px}
 .cstick .note{margin-top:4px;font-size:calc(12px * var(--font-scale));color:var(--muted)}
+.cstick .kkgo{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 0 8px;min-height:40px;padding:6px 12px;border-radius:10px;background:#FEE500;border:1px solid #E5CF00;color:#191600;font-size:calc(13.5px * var(--font-scale));font-weight:800;text-decoration:none} .cstick .kkgo small{font-weight:600;font-size:calc(11.5px * var(--font-scale));opacity:.85} .kv a.kkmini{display:inline-flex;align-items:center;min-height:40px;margin-left:6px;padding:0 10px;border-radius:8px;background:#FEE500;border:1px solid #E5CF00;color:#191600;font-weight:800;font-size:calc(12px * var(--font-scale));text-decoration:none}   /* 카카오 채널로 온 문의 → 채널 채팅 관리자 (v358) */
 .cstick .fold{display:inline-flex;align-items:center;gap:6px;margin-top:6px;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#F7F8FB;color:var(--navy);font:inherit;font-size:calc(12.5px * var(--font-scale));font-weight:700;cursor:pointer}
 .cstick .hlist{display:none;margin-top:8px;max-height:40vh;overflow:auto;border-top:1px dashed var(--line)}
 .cstick .hlist.open{display:block}
@@ -2289,6 +2290,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
         <button class="btn sm ghost" onclick="openCalc()">구독료 계산기 ↗</button>
       </div>
       <div class="cstick hidden" id="c_stick" aria-live="polite">
+        <a class="kkgo hidden" id="cs_kakao" target="_blank" rel="noopener" href="https://business.kakao.com/space/10215965/channel/_NcxjaC/chats?t_src=business_partnercenter&amp;t_ch=lnb&amp;t_obj=%EB%82%B4%EC%B1%84%ED%8C%85_%ED%81%B4%EB%A6%AD" title="카카오톡 채널 관리자센터의 채팅 목록을 새 창으로 엽니다 (카카오 비즈니스 로그인 필요)">💬 카카오 채널로 이동 <small>채팅 관리자 ↗</small></a>
         <div class="who"><b id="cs_name"></b><span class="ph" id="cs_phone"></span><span class="nth" id="cs_nth"></span><button type="button" class="x" onclick="custClear('c')" title="이 고객 연결을 풀고 빈 폼으로">다른 고객 ×</button></div>
         <div class="note" id="cs_note">이 고객으로 <b>새 상담 한 건이 추가</b>됩니다. 이전 상담은 지워지지 않고 그대로 남습니다.</div>
         <button type="button" class="fold" id="cs_foldBtn" aria-expanded="false" onclick="csFold()"><span class="t">이전 상담 <span id="cs_cnt">0</span>건</span> <i id="cs_foldI">보기 ▾</i></button>
@@ -5910,6 +5912,7 @@ function ocToConsult(id,ref,name,tel,interest){ goTab('consult'); cMode('log'); 
 async function csLoadFromConsult(id){
   try{ const d=await rpc('fn_store_consult_detail',{p_code:CODE,p_id:id});
     if(d.key) LINK.c=d.key;
+    kkShow(isKakaoCh(d));   /* 카카오 채널로 온 문의면 맨 위에 채널 관리자 버튼 (v358) */
     /* 문의 유형·날짜·증빙은 고객이 폼에서 고른 것(또는 이전 상담)을 그대로 이어받는다 (mvp_179) */
     if(INQ && Array.isArray(d.type_codes) && d.type_codes.length){
       C_TYS=d.type_codes.filter(c=>(INQ.types||[]).some(t=>t.code===c)); if(!C_TYS.length) C_TYS=['product'];
@@ -5953,6 +5956,10 @@ function renderJq(){ const d=JQ.d; if(!d) return; const c=d.counts||{};
       <div class="act">${x.tel?`<a class="mini" href="tel:${esc(x.tel)}" aria-label="전화">📞</a>`:''}${go}</div></div>`; }).join('')
     : `<div class="empty">${emp}</div>`;
 }
+/* 카카오 채널로 온 문의(채널 = 카카오채널 · 구독 폼 번호 안내 창의 카카오 버튼 요청 포함) → 상담 입력 맨 위 [카카오 채널로 이동] = 채널 채팅 관리자 화면 (v358) */
+var KAKAO_ADMIN_URL='https://business.kakao.com/space/10215965/channel/_NcxjaC/chats?t_src=business_partnercenter&t_ch=lnb&t_obj=%EB%82%B4%EC%B1%84%ED%8C%85_%ED%81%B4%EB%A6%AD';
+function isKakaoCh(d){ return !!d && (d.channel==='카카오채널' || /^카카오 채널 요청/.test(d.route||'')); }
+function kkShow(on){ const a=$('cs_kakao'); if(a) a.classList.toggle('hidden', !on); }
 /* 잔디 카드 링크 ?c=상담번호 → 그 문의로 바로 상담 입력 (이미 끝난 문의면 상세). 로그인 화면을 거쳐도 잃지 않게 sessionStorage 에 둔다 */
 const DEEP_C=(()=>{ try{ const q=new URLSearchParams(location.search).get('c'); if(q&&/^\d+$/.test(q)){ sessionStorage.setItem('dc_deep_c',q); return q; } return sessionStorage.getItem('dc_deep_c'); }catch(e){ return null; } })();
 async function deepOpen(id){ try{ sessionStorage.removeItem('dc_deep_c'); history.replaceState({tab:'consult'},'',location.pathname+'#consult'); }catch(e){}
@@ -6049,7 +6056,7 @@ function cdHTML(d){
     ['완료일',d.done_at?at(d.done_at):(d.bucket==='open'||d.bucket==='hold'?'<span style="color:var(--muted)">아직 진행 중</span>':''),d.done_at?'done':''],
     ['콜백',d.callback_at?at(d.callback_at)+(d.callback_done_at?' (완료)':' (예정)'):''],['담당',d.handler?esc(d.handler)+(d.mine?' (나)':''):'미배정'],
     ['이어진 상담',d.superseded_by?`<button type="button" class="mini" onclick="cdOpen(${d.superseded_by})">${esc(d.superseded_ref||'다음 상담')} 으로 이어짐 ↗</button> <small style="color:var(--muted)">통계에서는 한 건으로 셉니다</small>`:'']]);
-  const how=kv([['채널',d.channel?esc(d.channel)+(d.ch_etc?` (${esc(d.ch_etc)})`:''):''],['유입경로',esc(d.route||'')],['문의 유형',esc(d.type||'')],
+  const how=kv([['채널',d.channel?esc(d.channel)+(d.ch_etc?` (${esc(d.ch_etc)})`:'')+(isKakaoCh(d)?` <a class="kkmini" href="${esc(KAKAO_ADMIN_URL)}" target="_blank" rel="noopener">카카오 채널로 이동 ↗</a>`:''):''],['유입경로',esc(d.route||'')],['문의 유형',esc(d.type||'')],
     ...(d.events||[]).map(e=>[esc(e.date_label||e.label||''), e.date?csDt(e.date):'']),
     ['희망 배송일',d.delivery_at?csDt(d.delivery_at):''],['증빙',esc(proofText(d.proof_status,d.proof_at))],
     ['상담 방법',esc(d.method||'')],['출처 번호',esc(d.ref||'')]]);
@@ -6187,7 +6194,7 @@ function custPick(pfx,i){ const x=$(pfx+'_cres')._rows[i]; LINK[pfx]=x.key;
   $(pfx+'_linked').classList.remove('hidden'); $(pfx+'_cres').classList.add('hidden'); $(pfx+'_csq').value='';
   const hh=histHTML(x); $(pfx+'_hist').innerHTML=hh; $(pfx+'_hist').classList.toggle('hidden',!hh);
   if(pfx==='s' && x.last_consult && x.last_consult.ref && x.last_consult.result==='진행중' && !$('s_consult').value){ $('s_consult').value=x.last_consult.ref; toast('진행중 상담 '+x.last_consult.ref+' 자동 연결','ok'); } }
-function custClear(pfx){ LINK[pfx]=null; $(pfx+'_linked').classList.add('hidden'); if(pfx==='c'){ const st=$('c_stick'); if(st) st.classList.add('hidden'); } $(pfx+'_phone').placeholder='010-0000-0000'; $(pfx+'_cres').classList.add('hidden'); $(pfx+'_hist').classList.add('hidden'); }
+function custClear(pfx){ LINK[pfx]=null; $(pfx+'_linked').classList.add('hidden'); if(pfx==='c'){ const st=$('c_stick'); if(st) st.classList.add('hidden'); kkShow(false); } $(pfx+'_phone').placeholder='010-0000-0000'; $(pfx+'_cres').classList.add('hidden'); $(pfx+'_hist').classList.add('hidden'); }
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ═══ 판매현황 ═══ */
