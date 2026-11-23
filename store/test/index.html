@@ -1420,6 +1420,11 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 #tab-consult .cq-only{display:none} #tab-consult.cq .cq-only{display:inline} #tab-consult.cq .cq-not{display:none}
 #tab-consult:not(.cq) .cquick .cq-sum b{display:none}
 @media(max-width:719px){ #mcToolsBtn.mccondbtn{width:100%;min-height:44px} #mcToolsBtn.mccondbtn i{margin-left:auto} .mcc-row{flex-direction:column;gap:4px} .mcc-row .mcc-l{flex:none;padding-top:0} .mccond .chips .chip,.mcact-c,.mcact-x{min-height:40px} .cquick .btn{min-height:40px} }
+/* ── 판매 고르기 후보 검색 (v365 · mvp_313) ── */
+.skfind{display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.skfind .csearchbox{flex:1 1 0;min-width:0}
+.skfind .btn{width:auto;flex:none;white-space:nowrap}
+@media(max-width:719px){ .skfind{flex-wrap:wrap} .skfind .csearchbox{flex-basis:100%} .skfind .btn{min-height:40px} }
 </style>
 </head>
 <body>
@@ -4759,20 +4764,27 @@ function skRowHtml(x,o){ o=o||{};
     </div></div>`;
 }
 /* 이을 만한 판매 후보 — 같은 담당 · 상담일 14일 전 ~ 60일 뒤 · 아직 어느 상담에도 안 이어진 DPS·매장 판매 */
+/* 후보 검색 (v365 · mvp_313) — 전표번호 · 이름 · 번호 뒷자리 · 모델. 찾을 때는 기간을 넓힌다(상담일 60일 전 ~ 120일 뒤 · 서버) */
+let SK_Q='';
+function skCandFind(id){ const el=$('skq_'+id); SK_Q=el?el.value.trim():''; skCand(id, SK_ANY, true); }
+function skCandClear(id){ SK_Q=''; skCand(id, SK_ANY, true); }
 async function skCand(id, any, keep){
   const box=$('skcand_'+id); if(!box) return;
   if(!keep && SK_OPEN===id && !box.classList.contains('hidden') && !!any===SK_ANY){ box.classList.add('hidden'); SK_OPEN=null; return; }
+  if(SK_OPEN!==id) SK_Q='';   /* 다른 상담의 후보를 열면 검색어는 비운다 */
   document.querySelectorAll('.skcand').forEach(b=>{ if(b!==box) b.classList.add('hidden'); });
   SK_OPEN=id; SK_ANY=!!any; box.classList.remove('hidden'); box.innerHTML='<div class="empty">DPS 판매 찾는 중…</div>';
-  let d; try{ d=await rpc('fn_store_sale_candidates',{p_code:CODE,p_id:id,p_any:!!any}); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  let d; try{ d=await rpc('fn_store_sale_candidates',{p_code:CODE,p_id:id,p_any:!!any,p_q:SK_Q||null}); }catch(e){ box.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const R=d.rows||[];
-  box.innerHTML=`<div class="skt">${any?'모든 담당':'<b>'+esc(d.handler||'')+'</b>'}의 ${d.out?'DPS·이카운트':'DPS'} 판매 · 상담일 14일 전 ~ 60일 뒤 · 아직 상담에 안 이어진 것 <small>${R.length}건</small></div>`
+  const skq=SK_Q;
+  box.innerHTML=`<div class="skfind"><div class="csearchbox"><input class="in" id="skq_${id}" value="${esc(skq)}" placeholder="전표번호 · 이름 · 번호 뒷자리 · 모델로 찾기" autocomplete="off" aria-label="판매 찾기" onkeydown="if(event.key==='Enter'){event.preventDefault();skCandFind(${id})}"><button type="button" class="go" onclick="skCandFind(${id})" aria-label="찾기">⌕</button></div>${skq?`<button type="button" class="btn sm ghost" onclick="skCandClear(${id})">검색 지우기</button>`:''}</div>`
+    + `<div class="skt">${any?'모든 담당':'<b>'+esc(d.handler||'')+'</b>'}의 ${d.out?'DPS·이카운트':'DPS'} 판매 · ${skq?`<b>"${esc(skq)}"</b> 로 찾은 것 · 상담일 60일 전 ~ 120일 뒤`:'상담일 14일 전 ~ 60일 뒤'} · 아직 상담에 안 이어진 것 <small>${R.length}건${R.length>=30?' (30건까지 — 더 좁혀 찾으세요)':''}</small></div>`
     + (R.length ? R.map(c=>`<div class="skc${c.same_phone?' hit':''}">
         <div class="ct"><b>${skDt(c.at)}</b> ${c.days?`<small>(상담 ${c.days>0?c.days+'일 뒤':(-c.days)+'일 전'})</small>`:'<small>(상담일)</small>'} · ${esc(c.name||'-')}${c.tail?` <small>…${esc(c.tail)}</small>`:''}
           ${c.same_phone?'<span class="tag buy">전화번호 같음</span>':''}${c.same_name&&!c.same_phone?'<span class="tag">이름 같음</span>':''}${c.kind?` <span class="tag">${esc(c.kind)}</span>`:''}${any&&c.handler?` <span class="tag hd">${esc(c.handler)}</span>`:''}</div>
         <div class="cm">${esc(String(c.product||'-').slice(0,80))} · <b>${won(c.amount)}</b> <small>${skSrcNm(c.src)} #${esc(c.no||'')}</small></div>
         <button class="mini ok" onclick="skLink(${id},${c.id})">이 판매로 잇기</button></div>`).join('')
-      : `<div class="empty">맞는 판매가 없습니다 — DPS 등록이 아직이면 기다리고, 판매가 아니었으면 [판매 아님]을 누르세요</div>`)
+      : `<div class="empty">${skq?`"${esc(skq)}" 로 찾은 판매가 없습니다 — 전표번호 전체나 구매자 이름, 번호 뒷자리 4자리로 다시 찾거나 [다른 담당 판매도 보기]를 눌러 보세요`:'맞는 판매가 없습니다 — DPS 등록이 아직이면 기다리고, 판매가 아니었으면 [판매 아님]을 누르세요'}</div>`)
     + (any?'':`<button class="mini" style="margin-top:8px" onclick="skCand(${id},true,true)" title="다른 담당 이름으로 DPS 에 들어갔을 때">다른 담당 판매도 보기</button>`);
 }
 async function skLink(id, oid){
