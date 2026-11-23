@@ -230,7 +230,7 @@ textarea.in{min-height:72px;resize:vertical;font-size:calc(15px * var(--font-sca
 .tag.hold{background:#FBF1DC;color:#8A5A00}
 .tag.buy{background:#E3F4E6;color:#1E6B2A}                                   /* 판매 완료 · DPS 연결됨 */
 .tag.sub{background:#E7EFFC;color:#1A4FA0} .tag.direct{background:#F3EAFB;color:#5C3D9E}   /* 판매 구분 구독 · 직판 */
-/* 판매 확인 필요 (mvp_259) — 줄 · 판매 후보 */
+/* 전표 미확인 (mvp_259) — 줄 · 판매 후보 */
 .skrow .ttl{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
 .skrow .sksale{color:#1E6B2A}
 .skcand{margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#F7FAF9}
@@ -1367,7 +1367,7 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
   .se-it .se-n{grid-column:1 / span 2} .se-it .se-m{grid-column:1 / span 2} .se-it .mini.x{grid-column:3;grid-row:1}
   .se-it .se-q{grid-column:1} .se-it .se-a{grid-column:2} .sheet.se .grid2{grid-template-columns:1fr} }
 @media (max-width:640px){
-  /* 판매 확인 필요 — 후보 줄 버튼은 글 아래 한 줄 · 40px (mvp_259) */
+  /* 전표 미확인 — 후보 줄 버튼은 글 아래 한 줄 · 40px (mvp_259) */
   .skc{grid-template-columns:1fr} .skc .mini{grid-column:1;grid-row:auto;justify-self:start;min-height:40px}
   .skrow .acts .mini,.skcand .mini{min-height:40px} .skrow .acts a.mini{display:inline-flex;align-items:center} #sold_kind button{min-height:44px}
 }
@@ -1427,6 +1427,13 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 .jqname{appearance:none;background:none;border:0;padding:4px 2px;margin:0;font:inherit;font-weight:800;color:var(--ink);cursor:pointer;text-decoration:underline;text-decoration-color:var(--navy);text-underline-offset:3px}
 .jqname:hover,.jqname:focus-visible{color:var(--navy)}
 @media(max-width:719px){ .jqname{padding:9px 4px} }
+/* ── 내 고객 [＋ 관심 품목] (v367 · mvp_315) ── */
+.cuitem .head .cu-ni{min-height:36px;padding:0 12px;border:1.5px dashed var(--navy);border-radius:9px;background:#fff;color:var(--navy);font-weight:700;margin-right:100px}
+#niDlg .lvdlg{max-height:calc(100dvh - 32px);overflow-y:auto}
+#niDlg .chips .chip{background:#fff;border:1.5px solid var(--line-2,#D5DAE3);color:var(--ink-2);padding:6px 12px;min-height:36px;display:inline-flex;align-items:center}
+#niDlg .chips .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+#niDlg .grid2 > *{min-width:0}
+@media(max-width:719px){ .cuitem .head .cu-ni{min-height:40px;margin-right:0} #niDlg .chips .chip{min-height:40px} #niDlg .grid2{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -1479,6 +1486,20 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
   </div>
 </div>
 
+<!-- 관심 품목 추가 (v367) — 구매 고객 = 가망고객. 다음에 살 만한 품목만 고르면 '상담보류 · 매장 구매 후' 기록으로 남는다 -->
+<div class="lvmask hidden" id="niDlg" onclick="if(event.target===this)niClose()">
+  <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="niTitle">
+    <button type="button" class="lvx" onclick="niClose()" aria-label="닫기">✕</button>
+    <h3 id="niTitle">관심 품목 · <span id="niName"></span></h3>
+    <p class="sub" style="margin:0 0 12px">이 고객이 <b>다음에 살 만한 품목</b>만 고르세요. 상담 양식을 다 채우지 않아도 가망고객으로 남습니다.</p>
+    <div class="chips" id="ni_cats"></div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="f"><label for="ni_date">예상 시기 <span class="hint">선택</span></label><input class="in" type="date" id="ni_date"></div>
+      <div class="f"><label for="ni_note">메모 <span class="hint">선택</span></label><input class="in" id="ni_note" placeholder="예: 이사 후 냉장고, 아이 방 에어컨" maxlength="120" autocomplete="off"></div>
+    </div>
+    <div class="btns" style="display:flex;gap:8px;margin-top:16px"><button type="button" class="btn ghost" style="width:auto;min-width:112px" onclick="niClose()">취소</button><button type="button" class="btn" id="niBtn" style="width:auto;min-width:112px;margin-left:auto" onclick="niOk()">저장</button></div>
+  </div>
+</div>
 <div class="lvmask hidden" id="soldDlg" onclick="if(event.target===this)soldClose()">
   <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="soldTitle">
     <button type="button" class="lvx" onclick="soldClose()" aria-label="닫기">✕</button>
@@ -1535,7 +1556,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <div class="tabs">
       <button class="tab active" data-tab="home">홈</button>
       <button class="tab" data-tab="inbox">상담</button>
-      <button class="tab" data-tab="salechk">판매 확인 필요</button>
+      <button class="tab" data-tab="salechk">전표 미확인</button>
       <button class="tab" data-tab="consult" data-perm="consult">＋ 상담 입력</button>
       <button class="tab" data-tab="quote">견적서</button>
       <button class="tab" data-tab="sub">구독 관리</button>
@@ -1683,11 +1704,11 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
   </section>
 
   <!-- ── 견적서 ── -->
-  <!-- ── 판매 확인 필요 (mvp_259) : 상담에서 [판매 완료] 만 누르면 DPS 판매가 고객명·전화번호로 이어진다. 안 이어진 것만 여기서 판매를 고른다 — 판매 입력은 따로 안 한다 ── -->
+  <!-- ── 전표 미확인 (mvp_259) : 상담에서 [판매 완료] 만 누르면 DPS 판매가 고객명·전화번호로 이어진다. 안 이어진 것만 여기서 판매를 고른다 — 판매 입력은 따로 안 한다 ── -->
   <section class="panel hidden" id="tab-salechk">
-    <div class="intro"><b>판매 입력은 따로 하지 않습니다.</b> 상담에서 <b>판매 완료</b>를 누르고 구분(일시불·구독·직판)만 고르면, 판매 날짜·제품·금액은 <b>DPS 판매가 고객명·전화번호로 찾아 저절로 이어집니다</b>.
-      여기에는 <b>DPS 와 안 맞은 것만</b> 뜹니다 — 줄을 펼쳐 같은 담당의 DPS 판매 중에서 맞는 것을 고르면 끝납니다.
-      <details><summary>사용 방법</summary><ol><li><i>1</i><span><b>판매 확인 필요</b> = 판매 완료로 저장한 지 이틀이 지났는데 DPS 판매가 안 이어진 상담입니다. DPS 에 고객 이름·전화번호가 다르게 들어갔거나, DPS 등록이 늦은 경우입니다.</span></li><li><i>2</i><span><b>[판매 고르기]</b>를 누르면 같은 담당의 DPS 판매(상담일 14일 전 ~ 60일 뒤 · 아직 어느 상담에도 안 이어진 것)가 뜹니다. 전화번호가 같은 것이 맨 위에 옵니다. 맞는 판매의 <b>[이 판매로 잇기]</b>를 누르세요.</span></li><li><i>3</i><span><b>DPS 수집 전</b> = 오늘·어제·그제 판매 완료로 저장한 것입니다. DPS 는 아침에 전날까지 들어오니 기다리면 저절로 이어집니다.</span></li><li><i>4</i><span>판매가 아니었으면 줄을 펼쳐 상태를 <b>상담중</b>·<b>종료</b>로 바꾸세요 — 판매 완료와 이어진 판매가 함께 풀립니다.</span></li></ol></details>
+    <div class="intro"><b>판매완료는 DPS 전표가 들어오면 저절로 됩니다.</b> 전표를 못 가져오는 경우(다른 명의 등록 · 구독 · DPS 밖 판매)에만 상담에서 직접 <b>판매 완료</b>를 누릅니다.
+      여기에는 <b>직접 판매완료로 표시했는데 전표가 아직 안 이어진 상담</b>만 모입니다 — 꼭 처리할 일은 아니고, 맞는 전표를 알면 [판매 고르기]에서 찾아 이으면 됩니다.
+      <details><summary>사용 방법</summary><ol><li><i>1</i><span><b>전표 미확인</b> = 판매 완료로 저장한 지 이틀이 지났는데 DPS 판매가 안 이어진 상담입니다. DPS 에 고객 이름·전화번호가 다르게 들어갔거나, DPS 등록이 늦은 경우입니다.</span></li><li><i>2</i><span><b>[판매 고르기]</b>를 누르면 같은 담당의 DPS 판매(상담일 14일 전 ~ 60일 뒤 · 아직 어느 상담에도 안 이어진 것)가 뜹니다. 전화번호가 같은 것이 맨 위에 옵니다. 맞는 판매의 <b>[이 판매로 잇기]</b>를 누르세요.</span></li><li><i>3</i><span><b>DPS 수집 전</b> = 오늘·어제·그제 판매 완료로 저장한 것입니다. DPS 는 아침에 전날까지 들어오니 기다리면 저절로 이어집니다.</span></li><li><i>4</i><span>판매가 아니었으면 줄을 펼쳐 상태를 <b>상담중</b>·<b>종료</b>로 바꾸세요 — 판매 완료와 이어진 판매가 함께 풀립니다.</span></li></ol></details>
     </div>
     <div class="card" id="skCard">
       <h2>판매 완료 상담 <span id="skHead"></span></h2>
@@ -1698,7 +1719,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       <div class="prow" id="sk_period"></div>
       <div class="prow skwho hidden" id="sk_whoRow"><label for="sk_who">담당</label><select class="in" id="sk_who" onchange="loadSaleChk(0)"><option value="">나</option><option value="*">전체 담당</option></select></div>
       <div class="seg sm cflt" id="sk_flt" role="group" aria-label="거르개">
-        <button type="button" data-v="need" class="on" title="판매 완료로 저장한 지 이틀이 지났는데 DPS 판매가 안 이어진 것">판매 확인 필요 <i>0</i></button>
+        <button type="button" data-v="need" class="on" title="판매 완료로 저장한 지 이틀이 지났는데 DPS 판매가 안 이어진 것">전표 미확인 <i>0</i></button>
         <button type="button" data-v="wait" title="오늘·어제·그제 저장 — DPS 가 아침에 들어오면 저절로 이어집니다">DPS 수집 전 <i>0</i></button>
         <button type="button" data-v="linked" title="DPS 판매가 이어진 것">DPS 연결됨 <i>0</i></button>
         <button type="button" data-v="sold">판매 완료 전체 <i>0</i></button>
@@ -1967,7 +1988,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
         <label for="cu_ch" class="lbl" style="font-size:calc(12.5px * var(--font-scale));color:var(--muted);font-weight:600">문의 채널</label>
         <select class="in" id="cu_ch" style="flex:1;min-width:160px" onchange="loadMyCustomers()"><option value="">전체 채널</option></select>
       </div>
-      <div class="seg sm cflt" id="cu_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="cuFlt('all')">전체 <i>0</i></button><button type="button" data-v="cb" onclick="cuFlt('cb')" title="콜백 약속이 잡혀 있고 아직 완료하지 않은 고객">콜백 대기 <i>0</i></button><button type="button" data-v="stale" onclick="cuFlt('stale')" title="상담한 지 30일이 넘도록 연락이 없는 고객">30일↑ 미접촉 <i>0</i></button><button type="button" data-v="consent" onclick="cuFlt('consent')" title="마케팅 수신에 동의한 고객">수신동의 <i>0</i></button><button type="button" data-v="buy" onclick="cuFlt('buy')" title="상담 기록 없이 구매만 한 고객">구매만 <i>0</i></button></div>
+      <div class="seg sm cflt" id="cu_flt" role="group" aria-label="거르개"><button type="button" data-v="all" class="on" onclick="cuFlt('all')">전체 <i>0</i></button><button type="button" data-v="cb" onclick="cuFlt('cb')" title="콜백 약속이 잡혀 있고 아직 완료하지 않은 고객">콜백 대기 <i>0</i></button><button type="button" data-v="stale" onclick="cuFlt('stale')" title="상담한 지 30일이 넘도록 연락이 없는 고객">30일↑ 미접촉 <i>0</i></button><button type="button" data-v="consent" onclick="cuFlt('consent')" title="마케팅 수신에 동의한 고객">수신동의 <i>0</i></button><button type="button" data-v="buy" onclick="cuFlt('buy')" title="구매는 했는데 상담·관심 품목 기록이 없는 고객 — [＋ 관심 품목]으로 다음에 살 만한 것을 남기세요 (5,000원 이하 구매뿐인 고객 · 본인 구매는 뺌)">관심 품목 없음 <i>0</i></button></div>
       <div class="list" id="mcuList" style="margin-top:12px"><div class="empty">불러오는 중…</div></div>
       <div id="cu_pg"></div>
     </div>
@@ -2418,14 +2439,14 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
         <div class="f adv"><label>구매 예정일</label><input class="in" type="date" id="c_expect"></div>
       </div>
       <!-- v251 (mvp_259): [판매 완료] 스위치(= 상태 판매 완료) + 구분만. 판매 날짜·제품·금액은 DPS 판매가 고객명·전화번호로 이 상담에 이어 준다 — 판매 입력을 따로 하지 않는다.
-           안 이어지면 [판매 확인 필요] 메뉴에서 고른다 -->
+           안 이어지면 [전표 미확인] 메뉴에서 고른다 -->
       <div class="toggle buytg adv" id="c_buytg" role="switch" aria-checked="false" tabindex="0" onclick="cBuyToggle()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cBuyToggle()}">
         <div><b>✅ 판매 완료</b><small>팔았으면 켜고 구분만 고르세요 — 판매 날짜·제품·금액은 DPS 에서 고객명·전화번호로 찾아 이 상담에 이어집니다 (판매 입력은 따로 안 합니다)</small></div><div class="sw"></div>
       </div>
       <div class="nextbox salebox hidden" id="c_buybox">
         <div class="f" style="margin:0"><label>구분 <span class="req">*</span></label>
           <div class="seg" id="c_kind" role="radiogroup" aria-label="판매 구분"><button type="button" data-v="일시불" class="on" role="radio" aria-checked="true">일시불</button><button type="button" data-v="구독" role="radio" aria-checked="false">구독</button><button type="button" data-v="직판" role="radio" aria-checked="false">직판</button></div></div>
-        <div class="nb-hint" style="margin:8px 0 0">DPS 판매가 이 고객 이름·전화번호로 들어오면 저절로 이어집니다. 다음 날 아침까지 안 이어지면 <b>판매 확인 필요</b> 메뉴에 뜹니다.</div>
+        <div class="nb-hint" style="margin:8px 0 0">DPS 판매가 이 고객 이름·전화번호로 들어오면 저절로 이어집니다. 다음 날 아침까지 안 이어지면 <b>전표 미확인</b> 메뉴에 뜹니다.</div>
       </div>
       </div>
       <div class="fgrp b adv"><div class="fgrp-t">다음에 살 것</div>
@@ -2667,9 +2688,9 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <!-- 판매 완료 상담 (mvp_259) — 상담에서 [판매 완료] 를 누른 건과 이어진 DPS 판매. 아래 기간·담당을 그대로 따른다 -->
     <div class="card" id="rsCard">
       <h2>판매 완료 상담 <span id="rsSub"></span></h2>
-      <div class="note-in" style="margin:0 0 8px">상담에서 <b>판매 완료</b>를 누른 건입니다. 판매 날짜·제품·금액은 DPS 판매에서 이어집니다 — 안 이어진 건은 <a href="javascript:void 0" onclick="goTab('salechk')">판매 확인 필요</a>에서 고르세요.</div>
+      <div class="note-in" style="margin:0 0 8px">상담에서 <b>판매 완료</b>를 누른 건입니다. 판매 날짜·제품·금액은 DPS 판매에서 이어집니다 — 안 이어진 건은 <a href="javascript:void 0" onclick="goTab('salechk')">전표 미확인</a>에서 고르세요.</div>
       <div class="kpi3" id="rs_kpi"></div>
-      <div class="seg sm cflt" id="rs_flt" role="group" aria-label="거르개"><button type="button" data-v="sold" class="on">전체 <i>0</i></button><button type="button" data-v="linked">DPS 연결됨 <i>0</i></button><button type="button" data-v="need">판매 확인 필요 <i>0</i></button><button type="button" data-v="wait">DPS 수집 전 <i>0</i></button></div>
+      <div class="seg sm cflt" id="rs_flt" role="group" aria-label="거르개"><button type="button" data-v="sold" class="on">전체 <i>0</i></button><button type="button" data-v="linked">DPS 연결됨 <i>0</i></button><button type="button" data-v="need">전표 미확인 <i>0</i></button><button type="button" data-v="wait">DPS 수집 전 <i>0</i></button></div>
       <div class="list" id="rsList" style="margin-top:10px"><div class="empty">불러오는 중…</div></div>
       <div id="rs_pg"></div>
     </div>
@@ -4186,8 +4207,8 @@ NAV_ICON.alerts  ='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 
 /* 메뉴(서랍·하단 탭바)에서 가린 탭 — 2026-10-29 판매 입력·일 마감. 탭 자체는 살아 있어 [구매 확정]·흐름 띠 링크로는 열린다 */
 /* 2026-11-18: 상담 입력은 [상담] 화면 위 전환 버튼으로 (메뉴 하나로) · 견적서는 머리 [견적서 발행]·홈 마감 임박 카드에서 */
 const NAV_HIDE=new Set(['sale','daily','consult','quote']);
-const NAV_GROUPS=[['상담',['home','inbox','salechk','consult','quote','sub','customer','alerts']],['매장',['display','lucky','stock','order','daily','sale']],['현황',['stats','leave','report','online','assign']]];
-const NAV_LABEL={home:'홈', inbox:'상담', salechk:'판매 확인 필요', consult:'상담 입력', quote:'견적서', sub:'구독 관리', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'일정(휴가)', lucky:'행운 이벤트'};
+const NAV_GROUPS=[['상담',['home','inbox','consult','quote','sub','customer','alerts']],['매장',['display','lucky','stock','order','daily','sale']],['현황',['stats','leave','report','online','assign','salechk']]];
+const NAV_LABEL={home:'홈', inbox:'상담', salechk:'전표 미확인', consult:'상담 입력', quote:'견적서', sub:'구독 관리', customer:'내 고객', alerts:'CRM', assign:'배정', stats:'상담 현황', leave:'일정(휴가)', lucky:'행운 이벤트'};
 /* 사이드바 바로가기 — 홈페이지 견적서·계산기를 새 창으로 */
 /* 견적서·구독료 계산기 = 시흥몰 기존 페이지 (2026-11-09 되돌림) */
 const QUOTE_URL='https://www.samsungsh.co.kr/main/html.php?htmid=service/quote_subscribe.html';
@@ -4678,7 +4699,7 @@ async function loadStats(){
     h:tbl('<th>상담 방법</th><th class="num">문의</th><th class="num">구매</th><th class="num">성공률</th>', M.map(x=>`<tr><td>${esc(x.m)}</td><td class="num">${x.total}</td><td class="num"><b>${x.bought}</b></td><td class="num">${rate(x)}</td></tr>`).join(''))});
   /* 입력 내역 — 이 기간·범위에 들어온 상담 한 줄씩 (담당자들이 '입력한 거 어디서 보냐' — mvp_259). 탭을 열 때 불러온다 */
   ST_EN={who, scope, off:0, flt:ST_EN.flt||'all'};
-  panes.push({k:'entries', l:'입력 내역', n:t.total||0, h:`<div class="seg sm cflt" id="ste_flt" role="group" aria-label="거르개" style="margin:0 0 8px"><button type="button" data-v="all" class="on">전체 <i>0</i></button><button type="button" data-v="sold">판매 완료 <i>0</i></button><button type="button" data-v="need">판매 확인 필요 <i>0</i></button></div><div class="list" id="steList"><div class="empty">불러오는 중…</div></div><div id="ste_pg"></div>`});
+  panes.push({k:'entries', l:'입력 내역', n:t.total||0, h:`<div class="seg sm cflt" id="ste_flt" role="group" aria-label="거르개" style="margin:0 0 8px"><button type="button" data-v="all" class="on">전체 <i>0</i></button><button type="button" data-v="sold">판매 완료 <i>0</i></button><button type="button" data-v="need">전표 미확인 <i>0</i></button></div><div class="list" id="steList"><div class="empty">불러오는 중…</div></div><div id="ste_pg"></div>`});
   ST_PANES=panes; if(!panes.some(x=>x.k===ST_TAB)) ST_TAB=panes[0].k;
   box.innerHTML=kpi+graphs+`<div class="st-dt">자세히 보기 <small>탭을 누르면 표가 바뀝니다</small></div><div class="sttabs" id="stTabs" role="tablist" aria-label="상담 현황 표"></div><div id="stPane" role="tabpanel"></div>`;
   stTabPaint();
@@ -4703,15 +4724,15 @@ async function stEntries(off){
 }
 function stEnGo(p){ stEntries(p*pgSize('ste')); }
 function stTab(k){ ST_TAB=k; stTabPaint(); }
-/* ═══ 판매 완료 · 판매 확인 필요 (mvp_259) ═══
+/* ═══ 판매 완료 · 전표 미확인 (mvp_259) ═══
    상담에서 [판매 완료] + 구분만 고르면 판매 날짜·제품·금액은 DPS 판매가 고객명·전화번호로 이어 준다(core.f_consult_link_sales).
-   안 이어진 것(저장 이틀 뒤)만 '판매 확인 필요' — 같은 담당의 DPS 판매 후보에서 골라 잇는다. 판매 입력은 따로 하지 않는다.
-   목록 한 줄(skRowHtml)은 판매 확인 필요 · 상담 현황 [입력 내역] · 판매현황 [판매 완료 상담] 이 같이 쓴다. */
+   안 이어진 것(저장 이틀 뒤)만 '전표 미확인' — 같은 담당의 DPS 판매 후보에서 골라 잇는다. 판매 입력은 따로 하지 않는다.
+   목록 한 줄(skRowHtml)은 전표 미확인 · 상담 현황 [입력 내역] · 판매현황 [판매 완료 상담] 이 같이 쓴다. */
 var SK_NEED=0, SK_LOADED=false, SK_FLT='need', SK_OFF=0, SK_ROWS=[], SK_OPEN=null, SK_ANY=false;
-const SK_ST={need:['bad','판매 확인 필요'], wait:['warn','DPS 수집 전'], linked:['ok','DPS 연결됨']};
+const SK_ST={need:['bad','전표 미확인'], wait:['warn','DPS 수집 전'], linked:['ok','DPS 연결됨']};
 async function skLoadBadge(){
   try{ const d=await rpc('fn_store_sale_consults',{p_code:CODE,p_state:'need',p_handler:ME,p_limit:1}); SK_NEED=Number((d.counts||{}).need)||0; }catch(e){ return; }
-  setTabBadge('salechk', SK_NEED, SK_NEED>0); syncNav(); if(STATUS) renderFlow(STATUS);
+  setTabBadge('salechk', 0, false); syncNav(); if(STATUS) renderFlow(STATUS);   /* v367 — 메뉴 배지 없음(전표 미확인은 할 일이 아니다) */
 }
 function skInit(){
   periodBar('sk',()=>loadSaleChk(0));
@@ -4743,12 +4764,12 @@ function skRowHtml(x,o){ o=o||{};
   const res = st ? `<span class="tag ${st[0]==='bad'?'new':st[0]==='warn'?'hold':'buy'}">${st[1]}</span>` : `<span class="tag">${esc((RES_UI[x.result]||[0,x.result])[1])}</span>`;
   const od = x.order;
   const sale = od ? `<div class="meta sksale">✅ ${skSrcNm(od.src)} <b>${skDt(od.at)}</b>${od.product?` · ${esc(String(od.product).slice(0,60))}`:''}${od.amount!=null?` · <b>${won(od.amount)}</b>`:''}${od.no?` <small>#${esc(od.no)}</small>`:''}</div>`
-    : x.st==='need' ? `<div class="meta" style="color:var(--bad,#B3261E)">판매 내역(DPS·이카운트)에서 이 고객 이름·전화번호의 판매를 못 찾았습니다 — ${o.acts?'[판매 고르기]로':'<a href="javascript:void 0" onclick="goTab(\'salechk\')">판매 확인 필요</a>에서'} 맞는 판매를 고르고, 판매가 아니었으면 [판매 아님]</div>`
+    : x.st==='need' ? `<div class="meta" style="color:var(--bad,#B3261E)">판매 내역(DPS·이카운트)에서 이 고객 이름·전화번호의 판매를 못 찾았습니다 — ${o.acts?'[판매 고르기]로':'<a href="javascript:void 0" onclick="goTab(\'salechk\')">전표 미확인</a>에서'} 맞는 판매를 고르고, 판매가 아니었으면 [판매 아님]</div>`
     : x.st==='wait' ? `<div class="meta" style="color:var(--warn,#8A5D00)">DPS 는 아침에 전날까지 들어옵니다 — 기다리면 저절로 이어집니다</div>` : '';
   const A=[];
   if(o.acts){
     if(x.st==='need'||x.st==='wait'){ A.push(`<button class="mini ok" onclick="skCand(${x.id})" aria-expanded="${SK_OPEN===x.id}">판매 고르기</button>`);
-      A.push(`<button class="mini warn" onclick="skNotSale(${x.id},'${esc(x.name)}')" title="상담만 하고 판매는 없었으면 — 종료로 바꾸고 판매 확인 필요에서 뺍니다">판매 아님</button>`); }
+      A.push(`<button class="mini warn" onclick="skNotSale(${x.id},'${esc(x.name)}')" title="상담만 하고 판매는 없었으면 — 종료로 바꾸고 전표 미확인에서 뺍니다">판매 아님</button>`); }
     if(x.st==='linked' && SK_FLT==='linked') A.push(`<button class="mini" onclick="skUnlink(${x.id},'${esc(x.name)}')" title="잘못 이어졌으면 떼고 다시 고릅니다">이어진 판매 떼기</button>`);
   }
   A.push(`<button class="mini" onclick="cdOpen(${x.id})">상세 보기</button>`);
@@ -4796,9 +4817,9 @@ async function skLink(id, oid){
 }
 /* 판매 아님 — 상담만 끝낸 건. 종료(상담완료)로 바꾸면 서버가 판매 구분·이어진 판매를 비운다 */
 async function skNotSale(id, nm){
-  if(!confirm(`${nm||''} 님 — 판매가 아니었나요?\n상담만 끝낸 것(종료)으로 바꾸고 판매 확인 필요에서 뺍니다.`)) return;
+  if(!confirm(`${nm||''} 님 — 판매가 아니었나요?\n상담만 끝낸 것(종료)으로 바꾸고 전표 미확인에서 뺍니다.`)) return;
   try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:id,p_action:'done'}); }catch(e){ return toast(e.message,'bad'); }
-  toast('종료로 바꿨습니다 — 판매 확인 필요에서 빠집니다','ok'); SK_OPEN=null; REPORT_LOADED=false; loadSaleChk(SK_OFF); skLoadBadge(); if(typeof MC_LOADED!=='undefined'&&MC_LOADED) loadMyConsults(MC_OFF,true);
+  toast('종료로 바꿨습니다 — 전표 미확인에서 빠집니다','ok'); SK_OPEN=null; REPORT_LOADED=false; loadSaleChk(SK_OFF); skLoadBadge(); if(typeof MC_LOADED!=='undefined'&&MC_LOADED) loadMyConsults(MC_OFF,true);
 }
 function skSrcNm(s){ return s==='dps'?'DPS 판매':s==='ecount'?'이카운트 판매':s==='store'?'판매 입력':'온라인 주문'; }   /* mvp_311 온라인 주문(샵링커 등)도 이어진다 */
 async function skUnlink(id, nm){
@@ -4812,15 +4833,37 @@ async function skRelink(){
   await loadSaleChk(SK_OFF); skLoadBadge(); const n=Number((r||{}).consult_linked)||0;
   toast(n?`판매 ${n}건을 이었습니다`:'새로 이어진 판매가 없습니다','ok');
 }
-/* 내 상담 줄 — 판매 완료면 구분 · 이어진 DPS 판매 (없으면 판매 확인 필요로) */
+/* 내 상담 줄 — 판매 완료면 구분 · 이어진 DPS 판매 (없으면 전표 미확인로) */
 function soldMeta(x){
   const k = x.sale_kind ? `<b>${esc(x.sale_kind)}</b>` : '';
   if(x.order_id) return `<div class="meta" style="color:var(--sub)">판매 완료 ${k}${x.order_at?` · ${skSrcNm(x.order_src)} ${skDt(x.order_at)}`:''}${x.bought?` · ${esc(x.bought)}`:''}${x.buy_amount?` · ${won(x.buy_amount)}`:''}</div>`;
-  const recent = (Date.now()-new Date(x.at).getTime()) < 3*864e5;
-  return `<div class="meta" style="color:${recent?'var(--warn,#8A5D00)':'var(--bad,#B3261E)'}">판매 완료 ${k} · ${recent?'DPS 판매를 기다리는 중 (아침에 전날까지 들어옵니다)':`DPS 판매 아직 안 이어짐 — <a href="javascript:void 0" onclick="goTab('salechk')">판매 확인 필요</a>에서 고르세요`}</div>`;
+  /* v367 — 직접 누른 판매완료는 '수동 · 전표 미확인'. DPS 전표가 들어오면 저절로 확정되고 이 표시는 사라진다 (할 일로 올리지 않는다) */
+  return `<div class="meta" style="color:var(--sub)">판매완료 ${k} <span class="tag hold">수동 · 전표 미확인</span> DPS 전표가 들어오면 저절로 확정됩니다 · <a href="javascript:void 0" onclick="goTab('salechk')">전표 직접 고르기</a></div>`;
 }
 /* [판매 완료] — 구분만 고른다. 판매 날짜·제품·금액은 DPS 가 이어 준다 */
 let SOLD_ID=null;
+/* ═══ 관심 품목 추가 (v367 · mvp_315) — 내 고객 줄에서 품목만 골라 가망 기록을 남긴다.
+   상담 한 줄(상태 상담보류 · 유입경로 '매장 구매 후' · 채널 매장 직접 방문)로 저장 — '매장 구매 후' 상담은 DPS 전표가 와도 판매완료로 안 바뀐다(다음 구매의 가망) ═══ */
+let NI=null;
+function niOpen(key, name){ NI={key, name}; $('niName').textContent=name||'';
+  const h=$('ni_cats'); h.innerHTML=CATS.filter(c=>c!=='기타'&&c!=='알 수 없음').map(c=>`<span class="chip" data-v="${esc(c)}" role="checkbox" aria-checked="false" tabindex="0">${esc(c)}</span>`).join('');
+  $('ni_date').value=''; $('ni_note').value=''; $('niDlg').classList.remove('hidden'); setTimeout(()=>{ const c=h.querySelector('.chip'); if(c) c.focus(); },50); }
+function niClose(){ $('niDlg').classList.add('hidden'); NI=null; }
+(function(){ const h=$('ni_cats'); if(!h) return; const tog=c=>{ const on=!c.classList.contains('on'); c.classList.toggle('on',on); c.setAttribute('aria-checked',String(on)); };
+  h.addEventListener('click',e=>{ const c=e.target.closest('.chip'); if(c) tog(c); });
+  h.addEventListener('keydown',e=>{ const c=e.target.closest('.chip'); if(c&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); tog(c); } }); })();
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && NI) niClose(); });
+async function niOk(){ if(!NI) return; const cats=[...$('ni_cats').querySelectorAll('.chip.on')].map(x=>x.dataset.v);
+  if(!cats.length) return toast('관심 품목을 하나 이상 고르세요','bad');
+  const note=$('ni_note').value.trim(), b=$('niBtn'), key=NI.key; b.disabled=true;
+  try{ await rpc('fn_store_consult_submit',{p_code:CODE,p_data:{ consult_at:todayStr(), handler:ME, buyer_key:key, customer_name:NI.name||'', customer_phone:'',
+        interest_category:cats.join(', '), interest_detail:null, interest_model_code:'', inflow_route:'매장 구매 후', result:'보류',
+        channel_code:'store_visit', channel_etc:null, type_code:'product', type_codes:['product'], event_dates:{}, method:null,
+        expected_purchase_date:$('ni_date').value||null, content:note||'구매 고객 · 다음 관심 품목', consent_marketing:false }});
+    niClose(); toast('관심 품목을 남겼습니다 — 상담보류(가망)로 저장','ok');
+    CU_SIG=''; try{ delete CU_DETAIL[key]; delete CU_JOUR[key]; }catch(e){} loadMyCustomers(); try{ await loadStatus(); render(); }catch(e){}
+  }catch(e){ toast(e.message,'bad'); }
+  b.disabled=false; }
 function soldOpen(id, nm){ SOLD_ID=id; $('soldName').textContent=nm||''; segPick('sold_kind','일시불'); $('soldDlg').classList.remove('hidden'); setTimeout(()=>{ const b=$('sold_kind').querySelector('button.on'); if(b) b.focus(); },50); }
 function soldClose(){ $('soldDlg').classList.add('hidden'); SOLD_ID=null; }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && SOLD_ID) soldClose(); });
@@ -5266,7 +5309,7 @@ function renderFlow(s){
     {k:'내 상담', v:oc.length-pre-hold,               sub:hold?`상담중 · 보류 ${hold}`:'상담중', go:"mcJump('ing')", tip:`통화한 뒤 진행 중인 상담${hold?` · 보류 ${hold}건은 상담 탭 [보류]`:''}`},
     {k:'콜백',   v:due,                              sub:late?'지난 약속 '+late:'오늘', go:"document.getElementById('cbCard').scrollIntoView({behavior:'smooth',block:'start'})", alarm:late>0, warn:due>0&&!late},
     {k:'견적서', v:(s.quotes||[]).length,            sub:'최근 90일', go:"goTab('quote')"},
-    /* 판매는 상담에서 [판매 완료] 만 누르고 DPS 가 잇는다 — 안 이어진 것만 판매 확인 필요 (mvp_259) */
+    /* 판매는 상담에서 [판매 완료] 만 누르고 DPS 가 잇는다 — 안 이어진 것만 전표 미확인 (mvp_259) */
     {k:'판매 확인', v:SK_NEED,                        sub:'DPS 미연결', go:"goTab('salechk')", warn:SK_NEED>0, tip:'판매 완료로 저장했는데 DPS 판매가 아직 안 이어진 상담 — 눌러서 판매를 고르세요'},
   ].filter(Boolean);
   el.innerHTML=steps.map((st,i)=>`<button type="button" class="step${st.alarm?' alarm':st.warn?' warn':''}" onclick="${st.go}"${st.tip?` title="${esc(st.tip)}"`:''}><i>${i+1}</i><b>${st.k}</b><span class="v">${st.v}</span><small>${st.sub}</small></button>`).join('<span class="arr" aria-hidden="true">›</span>');
@@ -5466,7 +5509,7 @@ const cuAgo=d=> d==null?'':(d<=0?'오늘':d===1?'어제':`${d}일 전`);
 let CU_FLT='all', CU_PG=0;
 function cuFlt(v){ CU_FLT=segPick('cu_flt',v); CU_PG=0; renderMyCustomers(); }
 function cuGo(p){ CU_PG=p; renderMyCustomers(); }
-const cuMatch=(x,f)=> f==='all' ? true : f==='cb' ? !!x.open_callback : f==='stale' ? (x.consult_n>0 && Number(x.days)>=30) : f==='consent' ? !!x.consent : f==='buy' ? !x.last_result : true;
+const cuMatch=(x,f)=> f==='all' ? true : f==='cb' ? !!x.open_callback : f==='stale' ? (x.consult_n>0 && Number(x.days)>=30) : f==='consent' ? !!x.consent : f==='buy' ? (!x.last_result && Number(x.spent)>5000 && x.name!==ME) : true;
 function renderMyCustomers(){
   const box=$('mcuList'); const all=CU_ROWS, rows=all.filter(x=>cuMatch(x,CU_FLT)); const filtered=!!($('cu_q').value.trim()||periodOf('cu').from||periodOf('cu').to||$('cu_ch').value);
   segCount('cu_flt',{all:all.length, cb:all.filter(x=>cuMatch(x,'cb')).length, stale:all.filter(x=>cuMatch(x,'stale')).length, consent:all.filter(x=>cuMatch(x,'consent')).length, buy:all.filter(x=>cuMatch(x,'buy')).length});
@@ -5480,6 +5523,7 @@ function renderMyCustomers(){
       <div class="head" role="button" tabindex="0" aria-expanded="false" onclick="cuToggle('${esc(x.key)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cuToggle('${esc(x.key)}')}">
         <div class="who"><b>${esc(x.name||'—')}</b><span class="ph">${x.phone||'번호 없음'}</span>${x.consent?'<span class="mine">수신동의</span>':''}${x.open_callback?'<span class="mine cb">콜백 대기</span>':''}</div>
         <div class="meta">${ru?`<span class="res ${ru[0]}">${esc(ru[1])}</span>`:'<span class="res pre">구매만</span>'}<span>상담 ${x.consult_n||0}회</span><span class="${stale?'stale':''}">${cuAgo(d)}</span>${x.last_channel?`<span class="ch">${esc(x.last_channel)}</span>`:''}${x.last_interest?`<span class="it">${esc(x.last_interest)}</span>`:''}${x.orders?`<span>구매 ${x.orders}건${x.orders_sub?` <i class="kds">구독 ${x.orders_sub}</i>`:''} ${won(x.spent)}</span>`:''}</div>
+        ${x.last_interest?'':`<button type="button" class="mini cu-ni" onclick="event.stopPropagation();niOpen('${esc(x.key)}','${esc(x.name||'')}')" onkeydown="event.stopPropagation()">＋ 관심 품목</button>`}
         <span class="chev" aria-hidden="true">펼치기 ▾</span>
       </div>
       <div class="body hidden" id="cub_${esc(x.key)}"></div>
@@ -5492,7 +5536,7 @@ async function cuToggle(key){
   it.querySelector('.head').setAttribute('aria-expanded', open?'true':'false'); const ch=it.querySelector('.chev'); if(ch) ch.textContent = open?'접기 ▴':'펼치기 ▾';
   if(!open) return;
   const x=CU_ROWS.find(r=>r.key===key)||{};
-  const acts=`<div class="acts"><button class="mini pri" onclick="pickMine('${esc(key)}','${esc(x.name||'')}','${esc(x.tel||'')}')">＋ 상담 입력</button>${x.tel?`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`:''}</div>`;
+  const acts=`<div class="acts"><button class="mini pri" onclick="pickMine('${esc(key)}','${esc(x.name||'')}','${esc(x.tel||'')}')">＋ 상담 입력</button><button class="mini" onclick="niOpen('${esc(key)}','${esc(x.name||'')}')">＋ 관심 품목</button>${x.tel?`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`:''}</div>`;
   /* 고객 흐름(mvp_198) — 문의·상담·견적·문자·구매(원장·DPS)를 한 줄로. 아래 '상담·구매 자세히' 는 전과 같은 목록 */
   if(!CU_DETAIL[key] || !(key in CU_JOUR)){
     body.innerHTML=acts+'<div class="empty">이력을 불러오는 중…</div>';
@@ -5859,7 +5903,7 @@ const STATE_STEPS=[
   {v:'보류',    l:'상담보류', act:'hold',  msg:'상담보류', hint:'고객 사정으로 잠시 멈춘 건입니다. 목록에는 남고, 다시 시작하면 [상담중]을 누르세요.'},
   {v:'상담완료',l:'상담완료', act:'done',  msg:'상담완료', hint:'상담이 끝난 건입니다. 이 고객의 DPS 판매 전표가 들어오면 저절로 판매완료로 바뀝니다.'},
   {v:'거절',    l:'상담거절', act:'reject', msg:'상담거절', hint:'고객이 거절한 건입니다. 구매 없이 끝납니다.'},
-  {v:'구매완료',l:'판매완료',act:null,     hint:'상담완료 + 판매까지 된 건입니다. 판매 날짜·제품·금액은 DPS 에서 들어오면 이 상담에 저절로 이어집니다 — 안 이어지면 [판매 확인 필요]에서 고르세요.'},
+  {v:'구매완료',l:'판매완료',act:null,     hint:'상담완료 + 판매까지 된 건입니다. 판매 날짜·제품·금액은 DPS 에서 들어오면 이 상담에 저절로 이어집니다 — 안 이어지면 [전표 미확인]에서 고르세요.'},
 ];
 function stateBar(x){
   const cur = x.result==='종료' ? '상담완료' : x.result==='확인완료' ? '상담완료' : x.result;
@@ -6303,7 +6347,7 @@ async function loadRepSold(){
   $('rsSub').textContent=`${String(d.from).slice(5).replace('-','/')} ~ ${String(d.to).slice(5).replace('-','/')} · ${mgr?(h||'전체 프로'):ME}`;
   $('rs_kpi').innerHTML=`<div><div class="k">판매 완료</div><div class="v">${c.sold||0}<small>건</small></div></div>
     <div><div class="k">DPS 연결됨</div><div class="v" style="color:#1E6B2A">${c.linked||0}<small>건</small></div></div>
-    <div><div class="k">판매 확인 필요</div><div class="v" style="color:${c.need?'var(--bad,#B3261E)':'inherit'}">${c.need||0}<small>건</small></div></div>`;
+    <div><div class="k">전표 미확인</div><div class="v" style="color:${c.need?'var(--bad,#B3261E)':'inherit'}">${c.need||0}<small>건</small></div></div>`;
   box.innerHTML=(d.rows||[]).length ? d.rows.map(x=>skRowHtml(x)).join('') : '<div class="empty">이 기간에 판매 완료로 저장한 상담이 없습니다</div>';
   $('rs_pg').innerHTML = Number(d.total) > pgSize('rs') ? `<div class="pager">${pgBar('rs', Math.floor(RS.off/pgSize('rs')), Number(d.total), 'rsGo')}</div>` : '';
 }
@@ -6453,7 +6497,7 @@ async function submitConsult(){
     $('c_ref').classList.remove('hidden');
     $('c_ref').innerHTML = `상담번호 <b style="color:var(--ink);font-size:calc(15px * var(--font-scale))">${r.ref}</b>`
       + (sold ? (r.linked_order?'<br>이미 들어온 <b>DPS 판매</b>에 이 상담을 이었습니다 — <b>판매현황</b>에서 볼 수 있습니다'
-                              :'<br>판매 날짜·제품·금액은 <b>DPS 에서 들어오면 이 상담에 저절로 이어집니다</b>. 다음 날 아침까지 안 이어지면 <b>판매 확인 필요</b>에 뜹니다')
+                              :'<br>판매 날짜·제품·금액은 <b>DPS 에서 들어오면 이 상담에 저절로 이어집니다</b>. 다음 날 아침까지 안 이어지면 <b>전표 미확인</b>에 뜹니다')
              :`<br>나중에 팔리면 '상담' 탭에서 <b>판매 완료</b>를 누르면 됩니다`)
       + (r.callback_at?`<br>콜백 <b>${fmtWhen(r.callback_at).join(' ')}</b> — '상담' 탭에서 알려드립니다`:'')
       + (r.visit_at?`<br>방문 예약 <b>${fmtWhen(r.visit_at).join(' ')}</b> — 그날 매장 화면에 고객님 이름이 뜹니다 (<b>디스플레이 관리</b>에서 고치기)`:'')
