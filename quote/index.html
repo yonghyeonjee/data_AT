@@ -2017,7 +2017,7 @@ async function shareQuote(){
   try{ const r=await rpc('fn_quote_page_share',{p_code:CODE||null, p_no:Q.no, p_by:ME||null}); if(!r||!r.ok) throw new Error((r&&r.reason)||'실패');
     const txt=`[삼성스토어 시흥점] ${Q.cust.name} 님 견적서입니다.\n${r.url}\n(${r.expires_at} 까지 보실 수 있습니다)`;
     $('shareBody').innerHTML=`<div class="url" id="shareUrl">${esc(r.url)}</div><p class="hint">${esc(r.expires_at)} 까지 열립니다 · 열람 ${r.views||0}회</p>
-      <div class="btns"><button class="btn blue" onclick="copyTxt(${JSON.stringify(txt).replace(/"/g,'&quot;')})">링크 복사</button>
+      <div class="btns"><button class="btn blue" onclick="copyTxt(${JSON.stringify(r.url).replace(/"/g,'&quot;')})" title="주소만 복사 — 안내 문구는 [문자]·[공유]에만">링크 복사</button>
       <a class="btn" href="sms:${esc(String(Q.cust.phone).replace(/\D/g,''))}?body=${encodeURIComponent(txt)}">💬 문자</a>
       ${navigator.share?`<button class="btn" onclick="navigator.share({title:'${esc(Q.cust.name)} 님 견적서',text:${JSON.stringify(txt).replace(/"/g,'&quot;')},url:'${esc(r.url)}').catch(()=>{})">↗ 공유</button>`:''}
       <a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">고객 화면 미리보기</a></div>`; }
