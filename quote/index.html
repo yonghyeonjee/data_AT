@@ -638,7 +638,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <!-- ═══ 견적서 (양식) ═══ -->
 <section id="v-sheet" class="hidden">
   <div class="sheetbar"><span class="hint">시흥몰 구독 견적서 화면·기능 그대로 (금액 수정 · 표시 항목 · 발행 · 인쇄 · PDF · 보내기) · 입력 화면에서 바꾼 값이 반영됩니다 · 여기서 고친 금액은 입력 화면으로 돌아가지 않습니다</span><span class="sp"></span><button class="chip" title="견적서를 화면 가득 크게 · Esc 로 닫기" onclick="shFull(true)">⛶ 크게 보기</button><button class="chip" title="지금 견적을 저장하고 구독 견적서를 새 창으로 엽니다" onclick="giveSheet()">새 창으로 열기 ↗</button></div>
-  <button type="button" class="btn" id="shExit" onclick="shFull(false)">✕ 크게 보기 닫기 (Esc)</button>
+  <button type="button" class="btn" id="shExit" onclick="shFull(false)" title="작게 보기 — 위 메뉴(입력 · 고객과 보기)가 다시 보입니다">✕ 작게 보기 (Esc)</button>
   <iframe id="sheetFrame" title="견적서" style="display:block;width:100%;border:0;height:calc(100vh - 120px);min-height:640px;background:#eef1f5;border-radius:12px"></iframe>
   <div class="hidden" id="oldSheet">
   <div class="sheet">
@@ -868,7 +868,7 @@ function shFull(on){ document.body.classList.toggle('shfull',!!on); const f=$('s
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.body.classList.contains('shfull')) shFull(false); });
 function sheetUrl(){ return location.pathname.replace(/quote\/(test\/)?(index\.html)?$/,'')+'quote/sheet/index.html?embed=1'; }
 function ensureSheetFrame(){ const f=$('sheetFrame'); if(!f||f.dataset.on) return; f.dataset.on='1'; f.src=sheetUrl(); }
-window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; const d=e.data||{}; if(d.t==='qready'&&e.source===($('sheetFrame')||{}).contentWindow){ SHF_READY=true; SHF_SIG=''; postSheet(); }
+window.addEventListener('message',e=>{ if(e.origin!==location.origin) return; const d=e.data||{}; if(d.t==='qready'&&e.source===($('sheetFrame')||{}).contentWindow){ SHF_READY=true; SHF_SIG=''; postSheet(); if(document.body.classList.contains('shfull')) shFull(true); }
   if(d.t==='sheetopt'&&d.d&&e.source===($('sheetFrame')||{}).contentWindow){ const o=(d.d.opt)||{}, c=(d.d.cust)||{}; let ch=false;
     const so={ show:o.show, qrType:o.qrType, pointMode:o.pointMode, lumpSum:o.lumpSum }; if(JSON.stringify(so)!==JSON.stringify((Q.cond.sheet||{}).opt||null)){ Q.cond.sheet={opt:so}; ch=true; renderShowList(); }
     if(c.date&&c.date!==qdateNow()){ Q.cond.qdate=c.date; ch=true; } if(c.untilMode&&(c.untilMode!==untilModeNow()||(c.until||'')!==(Q.cust.until||''))){ Q.cust.untilMode=c.untilMode; Q.cust.until=c.untilMode==='none'?'':(c.until||''); ch=true; }
@@ -1843,7 +1843,7 @@ function renderSheet(){ if(!LAST) return; if(!$('v-sheet').classList.contains('h
   const notes=[].concat((LUMP&&LUMP.notes)||[]); if(POL.texts&&POL.texts.notice) notes.push(POL.texts.notice.replace(/^\*\s*/,''));
   $('x_foot').innerHTML = notes.map((t,i)=>(i+1)+'. '+esc(t)).join(' ')+`<br>${esc(STORE.name)} · ${esc(STORE.addr)} · T ${esc(STORE.tel)} · 요금표 ${esc(IDX.ver||'')}`;
 }
-function setView(v){ if(v!=='sheet'&&document.body.classList.contains('shfull')) shFull(false); document.body.classList.toggle('v-edit',v==='edit'); if(v==='sheet'){ ensureSheetFrame(); postSheet(); } ['edit','show','sheet'].forEach(k=>$('v-'+k).classList.toggle('hidden',k!==v)); document.querySelectorAll('.views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo({top:0}); }
+function setView(v){ if(v!=='sheet'&&document.body.classList.contains('shfull')) shFull(false); document.body.classList.toggle('v-edit',v==='edit'); if(v==='sheet'){ ensureSheetFrame(); postSheet(); shFull(true); /* 견적서 탭은 크게 보기가 기본 (2026-11-23) */ } ['edit','show','sheet'].forEach(k=>$('v-'+k).classList.toggle('hidden',k!==v)); document.querySelectorAll('.views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo({top:0}); }
 
 /* ═══ 저장 · 내역 · 보내기 (fn_quote_page_* · mvp_138 · 세션 통과 mvp_276) ═══ */
 function bnLabel(k){ return `B&케어팩 지원금 ${k}구좌 (${bnPromoOn()?'삼성라이온즈 우승 기념 1구좌 +'+fmt(BNP.add)+'원 '+BNP.from.slice(5).replace('-','/')+'~'+BNP.to.slice(5).replace('-','/')+' · ':''}납입 월 ${won(k*BN.pay)} 별도 · 중도 해지 시 지급 종료)`; }
