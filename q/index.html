@@ -48,6 +48,8 @@ body{background:var(--c-bg);font-family:Pretendard,-apple-system,BlinkMacSystemF
   #qScale{transform:none!important;width:auto!important}
 }
 body.preview .cbrand{display:none} body.preview .cwrap{padding:8px 8px 16px}
+.staff-edit{position:fixed;right:14px;bottom:14px;z-index:50;background:#1f3a8a;color:#fff;font-weight:600;font-size:13px;line-height:1.2;padding:10px 14px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.25);text-decoration:none}
+@media print{.staff-edit{display:none}}
 </style>
 </head>
 <body>
@@ -80,7 +82,8 @@ function fitScale(){ try{
     const w=$('sheetWrap'), s=$('qScale'), pg=document.querySelector('.q-page');
     if(!w||!s||!pg) return;
     const need=pg.getBoundingClientRect().width/(s.style.transform?parseFloat((s.style.transform.match(/[\d.]+/)||[1])[0]):1);
-    const avail=w.clientWidth, k=Math.min(1, avail/(need||1));
+    const avail=w.clientWidth; if(!(avail>0)) return;   // 숨어 있을 때(폭 0)는 건너뜀 — scale(0) 로 빈 화면이 되던 것 (2026-11-17)
+    const k=Math.min(1, avail/(need||1));
     s.style.transform = k<1 ? 'scale('+k+')' : 'none';
     s.style.width = k<1 ? (100/k)+'%' : 'auto';
     w.style.height = k<1 ? (document.querySelector('.q-pages').getBoundingClientRect().height)+'px' : 'auto';
@@ -91,7 +94,7 @@ function lsGet(){ return null; } function lsSet(){}
   function ymd(d){ return d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()); }
 
   function esc(s){ return escHtml(s == null ? '' : s); }
-  function won(v){ return fmt(v) + '원'; }
+  function won(v){ return (v < 0 ? '+' + fmt(-v) : fmt(v)) + '원'; }   // 0원 아래 = 고객이 받는 금액 → + (카드 청구할인이 구독료보다 큰 경우 등, 2026-11-17)
 
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 /* ── 제휴카드 청구할인 표 (data_cards.js 0724 내장 — 개정 시 이 블록만 교체) ── */
@@ -102,7 +105,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
   function num(v){ if(typeof v === 'number') return isFinite(v) ? v : 0; var s = String(v == null ? '' : v).replace(/[^0-9.\-]/g, ''); var n = parseFloat(s); return isNaN(n) ? 0 : n; }
   function esc(s){ return escHtml(s == null ? '' : s); }
 
-  function won(v){ return fmt(v) + '원'; }
+  function won(v){ return (v < 0 ? '+' + fmt(-v) : fmt(v)) + '원'; }   // 0원 아래 = 고객이 받는 금액 → + (카드 청구할인이 구독료보다 큰 경우 등, 2026-11-17)
   function lsGet(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
 
   function displayYmd(v){ var s = String(v || ''); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s.replace(/-/g, '.') : s; }
@@ -247,12 +250,12 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     //    선납금은 DPS 월 구독료에 선납 할인이 이미 반영되어 있으므로 총 지불액에 "가산"
     var benefit = sub + multi + pre + card + point + cons + gift;
     var preAdd = it.preIncl ? 0 : preAmt;   // /quote/ 는 총 구독료에 선납금이 이미 들어 있다 (DPS 총구독료)
-    var finalP = Math.max(0, total - benefit) + preAdd;
+    var finalP = total - benefit + preAdd;
     // ⑤ 월 단위 지표
     var payM = m > 0 ? Math.round((total - sub - multi - pre - (it.preIncl ? preAmt : 0)) / m) : 0;                 // 할인 후 월 청구액(카드 전)
-    var afterCardM = Math.max(0, payM - cardMonthly);                                    // 체감 구독료 = 월구독료 − 월카드할인
-    var remainM = m > 0 ? Math.max(0, Math.round((total - sub - multi - pre - card - preAmt) / m)) : 0;
-    var realM = m > 0 ? Math.max(0, Math.round((finalP - preAmt) / m)) : 0;
+    var afterCardM = payM - cardMonthly;                                    // 체감 구독료 = 월구독료 − 월카드할인
+    var remainM = m > 0 ? Math.round((total - sub - multi - pre - card - preAmt) / m) : 0;
+    var realM = m > 0 ? Math.round((finalP - preAmt) / m) : 0;
     var freeMonths = (point > 0 && remainM > 0) ? Math.floor(point / remainM) : 0;
     return { m: m, monthly: monthly, total: total, sub: sub, multi: multi, multiRaw: multiRaw, pre: pre, point: point,
              card: card, cardMonthly: cardMonthly, cons: cons, gift: gift, preAmt: preAmt, preAdd: preAdd,
@@ -273,17 +276,17 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       if(c.m > T.maxM) T.maxM = c.m;
     });
     (q.extra || []).forEach(function(e){ T.extra += num(e.amount); });
-    T.finalP = Math.max(0, T.finalP - T.extra);
+    T.finalP = T.finalP - T.extra;
     /* 💵 이벤트 리워드 1% — 최종가에 실제 차감 반영 (기준: 리워드 반영 전 혜택가 · 천원 올림) */
     T.reward = 0;
     if(q.opt.rewardOn){
       T.reward = Math.ceil(Math.max(0, T.finalP) * 0.01 / 1000) * 1000;
-      T.finalP = Math.max(0, T.finalP - T.reward);
+      T.finalP = T.finalP - T.reward;
     }
     /* 공통 멤버십 포인트 (DPS 전체 합산 입력) — 합계에서만 차감, 상품별 칸과 병행 */
     T.pointItems = T.point;
     T.pointCommon = num(q.opt.pointCommon);
-    if(T.pointCommon > 0){ T.point += T.pointCommon; T.finalP = Math.max(0, T.finalP - T.pointCommon); }
+    if(T.pointCommon > 0){ T.point += T.pointCommon; T.finalP = T.finalP - T.pointCommon; }
     T.benefit = T.sub + T.multi + T.pre + T.card + T.point + T.cons + T.gift + T.extra + T.reward;
     T.pct = T.total > 0 ? (T.benefit / T.total * 100) : 0;
     return T;
@@ -320,8 +323,8 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     var monthly = Math.round(T.monthly);                       // ① 월 구독료 합계
     var cardM   = Math.round(T.cardM);                         // ② 카드 청구할인 합계
     var discM   = Math.max(0, Math.round((T.sub + T.multi + T.pre) / m));   // 선할인(구독료·다품목·선납) 월 환산
-    var netM    = Math.max(0, monthly - discM - cardM);        // ③ 월 구독료 혜택가 (상품 카드의 출금액과 동일 기준)
-    var realM   = Math.max(0, Math.round(T.realM - (num(q.opt.pointCommon) || 0) / m)); // ④ 월 체감 구독료 (공통 포인트까지 반영 · 선납금 제외)
+    var netM    = monthly - discM - cardM;        // ③ 월 구독료 혜택가 (상품 카드의 출금액과 동일 기준)
+    var realM   = Math.round(T.realM - (num(q.opt.pointCommon) || 0) / m); // ④ 월 체감 구독료 (공통 포인트까지 반영 · 선납금 제외)
     var hasPre  = T.preAmt > 0;
     var afterPreM = Math.round(T.remainM);                     // 선납 후 남은 월 납입 (상품별 합)
     var pointOn = (q.opt.pointMode === 'replace') && T.point > 0;
@@ -376,6 +379,8 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
             : cell(p + 'total', c.total))
         + '</td></tr>';
     }
+    /* 일시불가 — 같은 제품을 일반 구매로 살 때 가격 (2026-11-16 · /quote/ 가 품목마다 넘긴다 · 고칠 수 있다) */
+    if(num(it.lumpPrice) > 0 || EDIT) h += '<tr><th>일시불가 <span style="font-weight:500;color:#666">(일반 구매 시)</span></th><td class="num">' + (EDIT ? cell(p + 'lumpPrice', num(it.lumpPrice)) : won(num(it.lumpPrice))) + '</td></tr>';
     if(it.careType || EDIT) h += '<tr><th>서비스 유형</th><td>' + (EDIT ? tcell(p + 'careType', it.careType) : esc(it.careType)) + '</td></tr>';
     if(it.cycle || EDIT) h += '<tr><th>방문 주기</th><td>' + (EDIT ? tcell(p + 'cycle', it.cycle) : esc(it.cycle)) + '</td></tr>';
     if(it.note || EDIT) h += '<tr><th>비고</th><td>' + (EDIT ? tcell(p + 'note', it.note, 'w', '색상, 설치 조건 등') : esc(it.note)) + '</td></tr>';
@@ -530,6 +535,18 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     return pages.length;
   }
 
+  /* 가격 조건 확인 (2026-11-17) — /quote/ 에서 상담사가 체크한 조합만 q.cmp 로 넘어온다. 총 지불 금액 비교만 짧게 */
+  function cmpHtml(q){ var c = q && q.cmp; if(!c || !c.length) return '';
+    var h = '<div class="q-box q-cmp" style="margin-top:10px"><h3>📊 가격 조건 확인 <span style="font-weight:600;color:#666">(같은 제품 · 구독/일반 구매 조합별)</span></h3><table class="q-tbl" style="table-layout:fixed;width:100%"><colgroup><col style="width:34%"><col style="width:20%"><col style="width:20%"><col style="width:26%"></colgroup>'
+      + '<tr><th style="text-align:left;width:auto">구성</th><th style="width:auto;text-align:right">총 구독료</th><th style="width:auto;text-align:right">총 지불 금액</th><th style="width:auto;text-align:left">월 납부 금액</th></tr>';
+    c.forEach(function(r){
+      h += '<tr' + (r.cur ? ' style="background:#FFF8E1"' : '') + '><td style="text-align:left"><b>' + esc(r.label) + '</b>' + (r.cur ? ' <span style="color:#B45309;font-weight:700">· 이 견적</span>' : '')
+        + '<br><span style="font-size:.85em;color:#666">' + esc(r.sub || '') + '</span></td>'
+        + '<td class="num">' + (r.subTotal > 0 ? won(r.subTotal) : '—') + '</td>'
+        + '<td class="num"><b>' + (r.total == null ? '일시불가 미입력' : won(r.total)) + '</b></td>'
+        + '<td style="text-align:left;white-space:nowrap">' + esc(r.mon || '—').replace(/\n/g, '<br>') + '</td></tr>';
+    });
+    return h + '</table></div>'; }
   function renderSheet(){
     var q = QUOTE; if(!q) return;
     var sheet = document.getElementById('qSheet');
@@ -608,7 +625,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       sumBox += '<tr class="ben"><th>총 혜택 합계</th><td class="num">-' + won(T.benefit) + '</td></tr>';
       if(T.preAdd > 0){
         /* 소계: 여기까지가 할인 적용가 → 선납금 가산 → 총 지불액 (검산 가능하게) */
-        sumBox += '<tr><th style="font-weight:700">혜택 적용가 <span style="font-weight:500;color:#666">(총 구독료 − 총 혜택)</span></th><td class="num" style="font-weight:700">' + won(Math.max(0, T.finalP - T.preAmt)) + '</td></tr>';
+        sumBox += '<tr><th style="font-weight:700">혜택 적용가 <span style="font-weight:500;color:#666">(총 구독료 − 총 혜택)</span></th><td class="num" style="font-weight:700">' + won(T.finalP - T.preAmt) + '</td></tr>';
         sumBox += '<tr><th>선납금 <span style="font-weight:500;color:#666">(계약 시 선결제 · 지불액 가산)</span></th><td class="num" style="color:#1A4FA0;font-weight:700">+' + won(T.preAmt) + '</td></tr>';
       }
       sumBox += '<tr class="tot"><th>최종 혜택가 <span style="font-weight:600;font-size:.9em">(총 지불액)</span></th><td class="num">' + won(T.finalP) + '</td></tr>';
@@ -633,7 +650,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     if(!payBand){   // 매달 내시는 금액 밴드가 없을 때만 (같은 숫자 중복 방지)
       h += '<div class="q-mini">'
         + '<div><div class="k">월 구독료 합계</div><div class="v">' + won(T.monthly) + '</div></div>'
-        + '<div><div class="k">월 구독료 혜택가</div><div class="v" style="color:#1A4FA0">' + won(Math.max(0, Math.round(T.afterCardM))) + '</div></div>'
+        + '<div><div class="k">월 구독료 혜택가</div><div class="v" style="color:#1A4FA0">' + won(Math.round(T.afterCardM)) + '</div></div>'
         + (mo > 0 ? '<div><div class="k">계약 기간' + (T.count > 1 ? ' (최장)' : '') + '</div><div class="v">' + mo + '개월</div></div>' : '')
         + (S.realM && mo > 0 ? '<div><div class="k">월 체감 구독료</div><div class="v">' + won(Math.round(T.finalP / mo)) + '</div></div>' : '')
         + '</div>';
@@ -666,6 +683,7 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       lb += '</table></div>';
       blocks.push('<div class="q-sum solo">' + lb + '</div>');
     }
+    blocks.push(cmpHtml(q));   // 가격 조건 확인 (2026-11-17) — 블록은 한 요소씩 (paginate 가 첫 요소만 씀)
     blocks.push('<div class="q-memo"><div class="t">세부 상담 내용</div>'
       + (EDIT ? '<textarea class="q-memo-in" data-q="cust.memo" placeholder="희망 설치일, 색상, 특이사항, 안내한 조건 등">' + esc(q.cust.memo) + '</textarea>'
               : (q.cust.memo ? esc(q.cust.memo) : '<span style="color:#bbb">-</span>')) + '</div>');
@@ -769,7 +787,15 @@ function draw(d){
     + `<div class="cfoot">${esc2(d.store_name||'삼성스토어 시흥점')} · 삼성전자 공식 판매점<br>
         이 견적은 ${esc2(d.expires_at)} 까지 보실 수 있습니다</div>`;
   document.title = `${d.name||''} 님 견적서 · ${d.no}`;
+  staffEdit(d);
 }
+/* 담당자 브라우저에서 열었을 때만 [이 견적 수정] (2026-11-12 · mvp_296) — 담당자 화면과 같은 로그인(localStorage dc_session)이 살아 있을 때만 보인다. 고객 폰에는 안 뜬다 */
+async function staffEdit(d){ let ses=''; try{ ses=localStorage.getItem('dc_session')||''; }catch(e){} if(!ses||!tok) return;
+  try{ const r=await fetch(SB_URL+'/rest/v1/rpc/fn_quote_page_me',{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json','x-dc-session':ses},body:'{}'});
+    const j=r.ok?await r.json():null; if(!j||!j.ok||j.by!=='session') return;
+    const a=document.createElement('a'); a.className='staff-edit noprint'; a.href='/quote/?t='+encodeURIComponent(tok); a.target='_blank'; a.rel='noopener';
+    a.textContent='✏️ 이 견적 수정 (담당자에게만 보임)'; a.title=(d.no||'')+' — 상담 견적 화면에서 고친 뒤 저장하면 다음 차수로 남고, 이 링크는 새 차수를 보여 줍니다';
+    document.body.appendChild(a); }catch(e){} }
 /* 화면에서는 마지막 장의 남는 아래 여백을 접는다 — 인쇄할 때는 A4 그대로 */
 function trimLastPage(){ try{
     const pgs=document.querySelectorAll('.q-page');

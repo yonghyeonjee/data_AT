@@ -1,0 +1,2851 @@
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼성스토어 시흥 구독 견적서</title>
+<link rel="icon" href="https://gdadmin-samsungsh70.godomall.com/data/Basic/favicon.ico">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+<style>
+    #secure-lock-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: #121212; z-index: 999999;
+        display: flex; justify-content: center; align-items: center;
+        font-family: 'Malgun Gothic', sans-serif; color: #ffffff;
+    }
+    .secure-box {
+        background: #1e1e1e; padding: 40px; border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); text-align: center;
+        max-width: 360px; width: 90%; border: 1px solid #333;
+    }
+    .secure-box i { font-size: 48px; color: #00adb5; margin-bottom: 20px; }
+    .secure-box h2 { font-size: 20px; margin-bottom: 10px; font-weight: 600; letter-spacing: -0.5px; }
+    .secure-box p { font-size: 13px; color: #888; margin-bottom: 25px; line-height: 1.4; }
+    .secure-input-group { position: relative; margin-bottom: 20px; }
+    .secure-input-group input {
+        width: 100%; padding: 12px 16px; background: #2d2d2d;
+        border: 1px solid #444; border-radius: 8px; color: #fff; font-size: 16px;
+        box-sizing: border-box; text-align: center; letter-spacing: 4px; transition: 0.3s;
+    }
+    .secure-input-group input:focus { border-color: #00adb5; outline: none; box-shadow: 0 0 8px rgba(0, 173, 181, 0.4); }
+    .secure-btn {
+        width: 100%; padding: 12px; background: #00adb5; border: none;
+        border-radius: 8px; color: white; font-size: 15px; font-weight: bold;
+        cursor: pointer; transition: 0.3s;
+    }
+    .secure-btn:hover { background: #008c92; }
+/* ═══ [레이아웃] 좌/우 독립 스크롤 + 계산 버튼 좌측 하단 고정 (데스크톱) ═══
+   ⚠ 기준점은 모바일 레이아웃(max-width:880px)과 반드시 맞물려야 함.
+   641px 기준이던 시절 641~880px 구간에서 body{overflow:hidden}(여기)과
+   모바일 전체 페이지 스크롤(.left height:auto)이 동시에 적용되어
+   아무것도 스크롤되지 않는 사각지대가 있었음 → 881px로 정렬 */
+@media (min-width:881px){
+  /* overflow:auto — 평소엔 좌/우 패널이 내부 스크롤을 담당하지만,
+     내장(PHP 삽입)·특수 화면 크기 등으로 높이 계산이 어긋나 내용이 넘칠 경우
+     body가 대신 스크롤됨. 어떤 화면 크기에서도 스크롤 불가 상태가 없도록 하는 안전장치 */
+  body{height:100vh;height:100dvh;overflow:auto;}
+  .layout{height:100%;min-height:0;overflow:hidden;}
+  .left{height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-bottom:6px;}
+  .right{height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+  /* 계산하기 버튼: 좌측 패널 맨 아래에 항상 붙어 있도록 */
+  .left .calc-btn{position:sticky;bottom:0;margin-top:auto;z-index:30;
+    box-shadow:0 -10px 16px -6px var(--white),0 6px 18px rgba(26,79,160,.28);}
+}
+</style>
+</head>
+<body>
+<!-- 담당자 로그인 확인 (우리 시스템 판) — 담당자 화면과 같은 로그인(dc_session)이 있어야 열린다. 서버가 호출마다 다시 확인한다 -->
+<div id="secure-lock-overlay">
+  <div class="secure-box">
+    <i class="fa-solid fa-lock"></i>
+    <h2>담당자 로그인 필요</h2>
+    <p>내부 상담 전용 페이지입니다.<br>담당자 화면 로그인 후 이용</p>
+    <a class="secure-btn" href="/store.html" style="display:inline-block;text-decoration:none;line-height:2.6">담당자 화면으로</a>
+  </div>
+</div>
+<script type="text/javascript">
+    window.SH_CODE = '';
+    (function(){ var ses = ''; try { ses = localStorage.getItem('dc_session') || ''; } catch(e){}
+      if(ses){ var o = document.getElementById('secure-lock-overlay'); if(o) o.remove(); } })();
+</script>
+<style>
+:root {
+  --blue:#1A4FA0;--blue-mid:#3A6BC9;--blue-lt:#E8EFF9;
+  --green:#0F7A55;--green-lt:#E6F5F0;
+  --orange:#D95C1A;--orange-lt:#FDF0E8;
+  --purple:#5C3D9E;--purple-lt:#EEE8F8;
+  --gray-0:#F7F8FA;--gray-1:#ECEEF2;--gray-2:#D0D4DC;
+  --gray-3:#8A909E;--gray-4:#4A4F5C;--black:#1A1D24;--white:#fff;
+  --radius:10px;--shadow:0 2px 14px rgba(26,79,160,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;background:#eef1f5;color:var(--black);}
+.hidden{display:none;}
+.no-print{}
+</style>
+<script>
+/* ── 공통 유틸 (계산기와 동일) ── */
+function fmt(n){return Math.round(n).toLocaleString('ko-KR');}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* ── 제휴카드 청구할인 표 (data_cards.js 0724 내장 — 개정 시 이 블록만 교체) ── */
+/* ===== SDP 구독 계산기 데이터 — 카드사 청구할인 혜택 | 버전 0724 | excel_to_js.py 자동생성 | 변수: CARD ===== */
+var CARD = {
+  "삼성카드": {
+    "m": 72,
+    "t": {
+      "30만↑": 16000,
+      "70만↑": 26000,
+      "120만↑": 30000,
+      "250만↑": 35000,
+      "350만↑": 40000,
+      "500만↑": 50000
+    },
+    "base": {
+      "30만↑": 13000,
+      "70만↑": 17000,
+      "120만↑": 23000,
+      "250만↑": 23000,
+      "350만↑": 23000,
+      "500만↑": 23000
+    },
+    "minMonthly": {
+      "70만↑": 70000,
+      "120만↑": 70000,
+      "250만↑": 70000,
+      "350만↑": 70000,
+      "500만↑": 70000
+    }
+  },
+  "우리카드": {
+    "m": 60,
+    "t": {
+      "30만↑": 18000,
+      "70만↑": 21000,
+      "150만↑": 26000
+    }
+  },
+  "KB국민카드": {
+    "m": 36,
+    "t": {
+      "30만↑": 18000,
+      "70만↑": 22000,
+      "100만↑": 27000
+    }
+  },
+  "롯데카드": {
+    "m": 72,
+    "t": {
+      "50만↑": 22000,
+      "100만↑": 26000,
+      "200만↑": 30000
+    }
+  },
+  "하나카드": {
+    "m": 60,
+    "t": {
+      "30만↑": 13000,
+      "80만↑": 18000,
+      "150만↑": 25000
+    }
+  },
+  "광주은행BC": {
+    "m": 36,
+    "t": {
+      "30만↑": 16000,
+      "70만↑": 18000,
+      "100만↑": 20000
+    }
+  }
+};
+/* ═══════════════════════════════════════════════════════════════════
+   📄 삼성스토어 시흥 구독 견적서 — 독립 페이지 (0902 분리)
+   ▸ 입구 3개: ① 계산기 [견적서 발행] 핸드오프  ② 수기 신규(심플·DPS 조회값)  ③ 발행 내역 불러오기
+   ▸ 발행/네임카드는 기존 code.gs 그대로 사용 (재배포 불필요)
+   ▸ 0917: 계약 기간 선택(12/24/36/48/60/72개월) + 상품별 기간이 다를 때 "기간별 월 납입 안내" 표기
+   ═══════════════════════════════════════════════════════════════════ */
+var QUOTE_CFG = {
+  gasUrl: 'https://script.google.com/macros/s/AKfycbxDC5ezLMOHxoZd0C3JBogcj_h0uj7wILL1pBMhgSO4k0ijkxd8_lTArpfUpg0ARGf9RA/exec',
+  sheetUrl: 'https://docs.google.com/spreadsheets/d/1ABSlo4Sr2vVkzo18uLQfTgzWxO3dO3JLQ9HGXjxidaI/edit',
+  title: '삼성스토어 시흥 구독 견적서',
+  validDays: 7,
+  // ★ 견적서 계약 기간 선택지 (개월) — 바꾸려면 이 배열만 수정
+  monthOptions: [12, 24, 36, 48, 60, 72],
+  // ★ 견적서 상단/하단 로고 이미지 (배경 투명 PNG · 로드 실패 시 텍스트로 자동 대체)
+  //    ※ 원본 파일명에 공백이 있어 %20으로 인코딩해 둡니다 (인코딩 안 하면 일부 환경에서 404)
+  logo: 'https://gdadmin-samsungsh70.godomall.com/data/Samsung_wordmark.svg',
+  store: {
+    name: '삼성스토어 시흥',
+    addr: '경기도 시흥시 서해안로1685번길 12 (대야동)', tel: '031-8042-3166',
+    center: '삼성서비스센터 대표전화 1588-3366', home: 'https://www.samsungsh.co.kr/'
+  }
+};
+var QUOTE = null;
+var NAMECARDS = [];
+(function registerQuoteModule(){
+  var EDIT = false;
+  var LS_NC = 'sh_quote_namecards', LS_NC_SEL = 'sh_quote_namecard_sel', LS_Q = 'sh_quote_local', LS_QR = 'sh_quote_qrtype';
+
+  /* ── 유틸 ── */
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  function ymd(d){ return d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()); }
+  function isoYmd(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function displayYmd(v){ var s = String(v || ''); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s.replace(/-/g, '.') : s; }
+  function parseQuoteDate(v){ var m = String(v || '').match(/^(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})/); return m ? new Date(+m[1], +m[2]-1, +m[3]) : new Date(); }
+  function calcUntilDate(mode, base){
+    if(mode === 'none') return '';
+    var d = parseQuoteDate(base);
+    if(mode === 'eom'){ d = new Date(d.getFullYear(), d.getMonth()+1, 0); return isoYmd(d); }
+    var days = parseInt(mode, 10);
+    if(!isNaN(days)){ d.setDate(d.getDate() + days); return isoYmd(d); }
+    return '';
+  }
+  function normalizeUntilState(q){
+    if(!q || !q.cust) return;
+    if(q.cust.until && /^\d{4}\.\d{2}\.\d{2}$/.test(q.cust.until)) q.cust.until = q.cust.until.replace(/\./g, '-');
+    if(!q.cust.untilMode) q.cust.untilMode = q.cust.until ? 'custom' : 'none';
+    if(q.cust.untilMode === 'none') q.cust.until = '';
+  }
+  function nowStr(){ var d = new Date(); return ymd(d) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function num(v){ if(typeof v === 'number') return isFinite(v) ? v : 0; var s = String(v == null ? '' : v).replace(/[^0-9.\-]/g, ''); var n = parseFloat(s); return isNaN(n) ? 0 : n; }
+  function esc(s){ return escHtml(s == null ? '' : s); }
+  function won(v){ return (v < 0 ? '+' + fmt(-v) : fmt(v)) + '원'; }   // 0원 아래 = 고객이 받는 금액 → + (카드 청구할인이 구독료보다 큰 경우 등, 2026-11-17)
+  function lsGet(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
+  function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  function getPath(o, p){ return p.split('.').reduce(function(a, k){ return a == null ? undefined : a[k]; }, o); }
+  function setPath(o, p, v){ var ks = p.split('.'), t = o; for(var i = 0; i < ks.length - 1; i++){ if(t[ks[i]] == null) t[ks[i]] = {}; t = t[ks[i]]; } t[ks[ks.length - 1]] = v; }
+  function careInfo(care){
+    if(!care || care === '-') return { type: '-', cycle: '-' };
+    if(care === '무상수리') return { type: '무상수리', cycle: '-' };
+    var m = care.match(/\((\d+)개월/);
+    var cyc = m ? (m[1] + '개월') : (care.indexOf('방문') >= 0 ? '12개월' : '-');
+    return { type: care.indexOf('방문') >= 0 ? '방문케어' : '셀프케어', cycle: cyc };
+  }
+  function phoneFmt(raw){
+    var d = String(raw || '').replace(/[^0-9]/g, '').slice(0, 11);
+    if(d.length < 4) return d;
+    if(d.length < 8) return d.slice(0, 3) + '-' + d.slice(3);
+    if(d.length < 11) return d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6);
+    return d.slice(0, 3) + '-' + d.slice(3, 7) + '-' + d.slice(7, 11);
+  }
+  /* 자체 레이어 팝업 — 브라우저 alert/confirm 대신 사용 (Promise<boolean>) */
+  function qDialog(msg, opts){
+    opts = opts || {};
+    return new Promise(function(res){
+      var d = document.createElement('div');
+      d.className = 'q-dlg-ov no-print';
+      d.innerHTML = '<div class="q-dlg" role="dialog" aria-modal="true">'
+        + '<div class="q-dlg-msg">' + String(msg).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div>'
+        + '<div class="q-dlg-btns">'
+        + (opts.cancel === false ? '' : '<button type="button" class="q-dlg-b" data-v="0">' + (opts.cancelText || '취소') + '</button>')
+        + '<button type="button" class="q-dlg-b pri" data-v="1">' + (opts.okText || '확인') + '</button>'
+        + '</div></div>';
+      function fin(v){ if(d.parentNode) d.remove(); document.removeEventListener('keydown', onKey, true); res(v); }
+      function onKey(e){
+        if(e.key === 'Escape'){ e.stopPropagation(); fin(false); }
+        else if(e.key === 'Enter'){ e.stopPropagation(); fin(true); }
+      }
+      d.addEventListener('click', function(e){
+        var b = e.target.closest('.q-dlg-b');
+        if(b){ fin(b.getAttribute('data-v') === '1'); return; }
+        if(e.target === d && opts.cancel !== false) fin(false);
+      });
+      document.addEventListener('keydown', onKey, true);
+      document.body.appendChild(d);
+      var pb = d.querySelector('.q-dlg-b.pri'); if(pb) pb.focus();
+    });
+  }
+  function qAlert(msg, okText){ return qDialog(msg, { cancel: false, okText: okText }); }
+  function qConfirm(msg, okText, cancelText){ return qDialog(msg, { okText: okText, cancelText: cancelText }); }
+  function toast(msg, isErr){
+    var t = document.getElementById('qToast');
+    if(!t) return;
+    t.textContent = msg;
+    t.className = 'q-toast show' + (isErr ? ' err' : '');
+    clearTimeout(t._tm);
+    t._tm = setTimeout(function(){ t.className = 'q-toast'; }, 2800);
+  }
+  function logoHtml(cls, fallback){
+    if(!QUOTE_CFG.logo) return esc(fallback);
+    return '<img class="' + cls + '" src="' + esc(QUOTE_CFG.logo) + '" alt="' + esc(QUOTE_CFG.store.name) + '" '
+      + 'onerror="this.parentNode.innerHTML=' + "'" + esc(fallback) + "'" + '">';
+  }
+
+  /* ── 스타일 ── */
+  var st = document.createElement('style');
+  st.textContent = ''
+    + '#quoteModal{position:static;height:100vh;height:100dvh;overflow:hidden;background:#eef1f5;display:none;font-family:\'Apple SD Gothic Neo\',\'Noto Sans KR\',\'Malgun Gothic\',sans-serif;}'
+    + '#quoteModal.open{display:flex;flex-direction:column;}'
+    + '.q-toolbar{background:#0f172a;color:#fff;display:flex;align-items:center;gap:6px;padding:9px 14px;flex-wrap:wrap;flex:0 0 auto;}'
+    + '.q-toolbar .q-title{font-weight:800;font-size:14.5px;margin-right:auto;display:flex;align-items:center;gap:8px;}'
+    + '.q-toolbar .q-no{font-size:11px;font-weight:600;background:rgba(255,255,255,.14);border-radius:99px;padding:2px 9px;}'
+    + '.q-tb{padding:7px 11px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}'
+    + '.q-tb:hover{background:rgba(255,255,255,.18);}'
+    + '.q-tb.pri{background:var(--blue);border-color:var(--blue);}'
+    + '.q-tb.ok{background:var(--green);border-color:var(--green);}'
+    + '.q-tb.warn{background:#D95C1A;border-color:#D95C1A;}'
+    + '.q-body{flex:1;min-height:0;display:grid;grid-template-columns:350px minmax(0,1fr);}'
+    + '.q-panel{background:#fff;overflow-y:auto;padding:12px 14px 40px;display:flex;flex-direction:column;gap:10px;border-right:1px solid var(--gray-1);}'
+    + '.q-preview{overflow:auto;padding:16px;background:#e5e7eb;}'
+    + '.q-sec-h{font-size:12px;font-weight:800;letter-spacing:.05em;color:var(--blue);border-bottom:1px solid var(--gray-1);padding-bottom:4px;margin-top:6px;display:flex;align-items:center;gap:6px;}'
+    /* 📤 공유 캡처(폴백 모드) 시 글자 벌어짐 방지 */
+    + '#qSheet.sharecap *{letter-spacing:normal!important;font-variant-numeric:normal!important;}'
+    /* 접이식 패널 섹션 */
+    + '.q-acc{border:1px solid var(--gray-1);border-radius:11px;background:#fff;flex-shrink:0;}'
+    + '.q-acc summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:var(--blue);padding:11px 13px;user-select:none;}'
+    + '.q-acc summary::-webkit-details-marker{display:none;}'
+    + '.q-acc summary::before{content:"\u25B8";font-size:11px;color:var(--gray-3);transition:transform .15s;flex-shrink:0;}'
+    + '.q-acc[open] summary::before{transform:rotate(90deg);}'
+    + '.q-acc summary .r{margin-left:auto;font-weight:600;font-size:11.5px;color:var(--gray-3);letter-spacing:0;text-align:right;}'
+    + '.q-acc-b{padding:2px 13px 13px;display:flex;flex-direction:column;gap:10px;}'
+    + '.q-sec-h .r{margin-left:auto;font-weight:600;font-size:10.5px;color:var(--gray-3);letter-spacing:0;}'
+    + '.q-f{display:flex;flex-direction:column;gap:3px;}'
+    + '.q-f label{font-size:12.5px;font-weight:700;color:var(--gray-4);}'
+    + '.q-f input,.q-f select,.q-f textarea{width:100%;font-size:14px;padding:8px 10px;border:1.5px solid var(--gray-2);border-radius:7px;background:#fff;color:var(--black);font-family:inherit;outline:none;}'
+    + '.q-f input{background-image:none;}'
+    + '.q-f input:focus,.q-f select:focus,.q-f textarea:focus{border-color:var(--blue-mid);}'
+    + '.q-f textarea{min-height:64px;resize:vertical;line-height:1.5;}'
+    + '.q-grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px;}'
+    + '.q-chk{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--gray-4);}'
+    + '.q-chk label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;}'
+    + '.q-radio{display:flex;gap:5px;}'
+    + '.q-radio button{flex:1;padding:7px 4px;border:1.5px solid var(--gray-2);border-radius:7px;background:#fff;font-size:12px;color:var(--gray-4);cursor:pointer;}'
+    + '.q-radio button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700;}'
+    + '.q-btn{padding:7px 12px;border:1.5px solid var(--gray-2);border-radius:7px;background:#fff;font-size:12px;font-weight:600;color:var(--gray-4);cursor:pointer;}'
+    + '.q-btn:hover{border-color:var(--blue-mid);color:var(--blue);}'
+    + '.q-btn.pri{background:var(--blue);border-color:var(--blue);color:#fff;}'
+    + '.q-btn.danger{color:#c0392b;}'
+    + '.q-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}'
+    + '.q-hint{font-size:12px;color:var(--gray-3);line-height:1.55;}'
+    + '.q-status{font-size:12px;padding:8px 10px;border-radius:7px;background:var(--gray-0);color:var(--gray-4);line-height:1.55;}'
+    + '.q-status.ok{background:var(--green-lt);color:var(--green);}'
+    + '.q-status.warn{background:#FDF0E8;color:#D95C1A;}'
+    + '.q-nc-form{border:1.5px dashed var(--blue-mid);border-radius:9px;padding:10px;display:flex;flex-direction:column;gap:7px;background:#F7FAFF;}'
+    + '.q-until-box{border:1px solid var(--gray-1);border-radius:9px;padding:8px 9px;background:#FAFBFD;}'
+    + '.q-until-row{display:grid;grid-template-columns:1.15fr 1fr;gap:6px;align-items:end;}'
+    + '.q-until-note{font-size:10.5px;color:var(--gray-3);line-height:1.45;margin-top:5px;}'
+    + '.q-hist-section{scroll-margin-top:10px;}'
+    + '.q-hist-tools{display:flex;gap:5px;margin:5px 0 6px;}'
+    + '.q-hist-tools input{flex:1;min-width:0;padding:7px 9px;border:1.5px solid var(--gray-2);border-radius:7px;background:#fff;background-image:none;font-size:12px;}'
+    + '.q-hist{display:flex;flex-direction:column;gap:5px;max-height:360px;overflow-y:auto;}'
+    + '.q-hist-item{border:1px solid var(--gray-1);border-radius:8px;padding:8px 9px;font-size:11.5px;cursor:pointer;background:#fff;display:flex;gap:8px;align-items:center;}'
+    + '.q-hist-item .q-hi-main{min-width:0;flex:1;}'
+    + '.q-hist-item .q-hi-load{flex:0 0 auto;padding:5px 8px;font-size:10.5px;}'
+    + '.q-hist-item:hover{border-color:var(--blue-mid);background:var(--blue-lt);}'
+    + '.q-hist-item b{color:var(--blue);}'
+    + '.q-hist-item.hit{border-color:var(--blue-mid);background:var(--blue-lt);}'
+    + '.q-hi-l4{font-weight:800;color:var(--blue);background:#FFF3CD;border-radius:3px;padding:0 3px;}'
+    + '.q-hist-item .s{color:var(--gray-3);font-size:10.5px;display:block;margin-top:2px;}'
+    /* 자체 레이어 팝업 (브라우저 alert/confirm 대체) */
+    + '.q-dlg-ov{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;}'
+    + '.q-dlg{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:430px;width:100%;padding:22px 20px 16px;animation:qDlgIn .15s ease;}'
+    + '@keyframes qDlgIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}'
+    + '.q-dlg-msg{font-size:14px;line-height:1.65;color:#1A1D24;word-break:keep-all;}'
+    + '.q-dlg-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}'
+    + '.q-dlg-b{padding:9px 20px;border-radius:9px;border:1.5px solid var(--gray-2);background:#fff;font-size:13.5px;font-weight:700;color:var(--gray-4);cursor:pointer;}'
+    + '.q-dlg-b.pri{background:var(--blue);border-color:var(--blue);color:#fff;}'
+    + '.q-dlg-b:hover{filter:brightness(.96);}'
+    /* 임시 저장 목록 */
+    + '.q-draft-item{display:flex;align-items:center;gap:6px;background:var(--gray-0);border:1px solid var(--gray-1);border-radius:9px;padding:8px 10px;}'
+    + '.q-draft-item .inf{flex:1;min-width:0;}'
+    + '.q-draft-item .inf b{display:block;font-size:12.5px;color:var(--black);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
+    + '.q-draft-item .inf span{font-size:11px;color:var(--gray-3);}'
+    + '.q-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:all .25s;z-index:6000;pointer-events:none;white-space:nowrap;}'
+    + '.q-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}'
+    + '.q-toast.err{background:#c0392b;}'
+    + '.q-sendmask{position:fixed;inset:0;background:rgba(16,20,32,.55);z-index:100060;display:flex;align-items:flex-end;justify-content:center;}'
+    + '.q-sendbox{background:#fff;width:100%;max-width:460px;border-radius:18px 18px 0 0;padding:18px 16px 16px;max-height:88vh;overflow:auto;font-family:inherit;box-shadow:0 -8px 32px rgba(16,20,32,.25);}'
+    + '.q-sendttl{font-weight:800;font-size:16px;letter-spacing:-.02em;}'
+    + '.q-sendttl span{font-weight:600;font-size:12.5px;color:#6B7280;margin-left:6px;}'
+    + '.q-sendsub{font-size:13px;color:#39414F;margin-top:4px;}'
+    + '.q-sendurl{font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all;background:#F7F8FA;border:1px solid #E6E9EF;border-radius:10px;padding:9px 11px;margin:10px 0 12px;color:#39414F;}'
+    + '.q-sendbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}'
+    + '.q-sendbtns button,.q-sendbtns a{min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid #D5DAE3;background:#fff;color:#39414F;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;font-family:inherit;}'
+    + '.q-sendbtns button:active{transform:translateY(1px);}'
+    + '.q-sendnote{font-size:12px;color:#6B7280;line-height:1.65;margin-top:12px;}'
+    + '.q-sendclose{width:100%;min-height:44px;margin-top:12px;border:1.5px solid #D5DAE3;background:#fff;color:#6B7280;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;}'
+    + '@media (max-width:420px){.q-sendbtns{grid-template-columns:1fr;}}'
+    /* 패널 접기 */
+    + '#quoteModal.panel-off .q-panel{display:none;}'
+    + '#quoteModal.panel-off .q-body{grid-template-columns:1fr;}'
+    /* ── 심플 수기 입력 패널 (0902 분리) ── */
+    + '.q-item-card{border:1.5px solid var(--gray-1);border-radius:10px;padding:10px 11px;background:#FBFCFE;display:flex;flex-direction:column;gap:8px;}'
+    + '.q-item-card.off{opacity:.55;border-style:dashed;}'
+    + '.q-item-head{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--black);}'
+    + '.q-item-head b{color:var(--blue);}'
+    + '.q-item-off{font-size:10.5px;color:#D95C1A;font-weight:700;}'
+    + '.q-more{border:1px dashed var(--gray-2);border-radius:8px;padding:7px 9px;}'
+    + '.q-more summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--gray-4);list-style:none;user-select:none;}'
+    + '.q-more summary::-webkit-details-marker{display:none;}'
+    + '.q-more summary:before{content:"\25B8  ";color:var(--blue);}'
+    + '.q-more[open] summary:before{content:"\25BE  ";}'
+    + '.q-showlist{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--gray-4);}'
+    + '.q-showlist label{display:flex;align-items:center;gap:7px;cursor:pointer;border:1px solid var(--gray-1);border-radius:8px;padding:7px 10px;}'
+    + '.q-inline-chk{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--gray-4);cursor:pointer;}'
+    + '.q-hint-inline{font-weight:500;color:var(--gray-3);font-size:11px;}'
+    + '.q-f input[type="checkbox"],.q-showlist input[type="checkbox"],.q-inline-chk input[type="checkbox"]{width:16px !important;height:16px !important;min-height:0 !important;padding:0 !important;appearance:auto;-webkit-appearance:checkbox;accent-color:var(--blue);flex:0 0 auto;}'
+    + '.q-sum.solo{grid-template-columns:1fr;}'
+    /* 다품목 선택 리스트 (좌측 패널) */
+    + '.q-multi-list{display:flex;flex-direction:column;gap:4px;}'
+    + '.q-multi-list label{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--gray-4);border:1.5px solid var(--gray-1);border-radius:8px;padding:7px 9px;cursor:pointer;line-height:1.35;}'
+    + '.q-multi-list label.on{border-color:var(--blue-mid);background:var(--blue-lt);color:var(--blue);font-weight:600;}'
+    + '.q-multi-list label input{width:16px;height:16px;flex:0 0 auto;margin:0;padding:0;border:none;background:none;background-image:none;appearance:auto;-webkit-appearance:checkbox;accent-color:var(--blue);}'
+    + '.q-multi-list .mm{min-width:0;flex:1;}'
+    + '.q-multi-list .mm b{font-weight:700;}'
+    + '.q-multi-list .mm span{display:block;font-size:10.5px;color:var(--gray-3);font-weight:500;}'
+    /* ── 견적서(A4) — 페이지 단위 고정 레이아웃 (0902 개편) ── */
+    + '.q-scale{margin:0 auto;width:-webkit-max-content;width:max-content;max-width:none;}'
+    /* 여러 장은 아래가 아니라 오른쪽으로 나란히 (화면 전용 — 인쇄는 세로 그대로) */
+    + '.q-pages{display:flex;align-items:flex-start;gap:16px;}'
+    + '.q-pages .q-page{margin:0;flex:0 0 auto;}'
+    /* 줌 컨트롤 — 미리보기 오른쪽 위에 고정 */
+    + '.q-zoomctl{position:sticky;top:6px;z-index:60;margin-left:auto;margin-bottom:-34px;width:-webkit-max-content;width:max-content;display:flex;align-items:center;gap:2px;background:#0f172a;color:#fff;border-radius:99px;padding:4px 7px;box-shadow:0 3px 10px rgba(0,0,0,.25);}'
+    + '.q-zoomctl button{border:0;background:transparent;color:#fff;font-size:15px;font-weight:800;width:28px;height:26px;border-radius:99px;cursor:pointer;line-height:1;}'
+    + '.q-zoomctl button:hover{background:rgba(255,255,255,.16);}'
+    + '.q-zoomctl button.fit{width:auto;font-size:11.5px;padding:0 10px;}'
+    + '.q-zoomctl button.fit.on{background:#1A4FA0;}'
+    + '.q-zoomctl .pct{font-size:11.5px;font-weight:700;min-width:38px;text-align:center;font-variant-numeric:tabular-nums;}'
+    + '.q-scale.zoom{overflow:hidden;}'
+    + '.q-pages{width:-webkit-max-content;width:max-content;transform-origin:top left;}'
+    + '.q-page{background:#fff;width:210mm;height:297mm;padding:8.5mm 11mm 4.5mm;margin:0 auto 14px;box-shadow:0 8px 30px rgba(0,0,0,.18);font-size:11px;color:#111;line-height:1.45;position:relative;display:flex;flex-direction:column;overflow:hidden;}'
+    + '.q-page:last-child{margin-bottom:0;}'
+    + '.q-page *{box-sizing:border-box;}'
+    + '.q-pg-body{flex:0 0 auto;}'
+    + '.q-pg-end{margin-top:auto;}'
+    + '.q-pg-run{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;font-size:8.6px;color:#8a8f98;border-top:1px solid #D6DBE4;padding-top:4px;margin-top:7px;letter-spacing:.01em;white-space:nowrap;}'
+    + '.q-pg-run .pn{font-weight:700;color:#555;}'
+    /* 헤더: 로고(1.5배) + 제목 가로 배치 */
+    + '.qh{display:flex;align-items:center;gap:13px;border-bottom:3px solid #1A4FA0;padding-bottom:7px;margin-bottom:9px;position:relative;}'
+    + '.qh:after{content:"";position:absolute;left:0;right:0;bottom:-6px;border-bottom:1px solid #1A4FA0;}'
+    + '.qh .brand{flex-shrink:0;display:flex;align-items:center;font-family:\'Arial Black\',Arial,sans-serif;font-weight:900;color:#0a3594;font-size:16px;letter-spacing:-.3px;line-height:1.15;max-width:64mm;}'
+    + '.qh .brand img.q-logo{height:44px;width:auto;max-width:64mm;display:block;object-fit:contain;object-position:left center;}'
+    + '.qh .ttl{border-left:1.5px solid #C9D2E3;padding-left:13px;min-height:44px;display:flex;flex-direction:column;justify-content:center;min-width:0;}'
+    + '.qh .ttl h1{font-family:\'SamsungOne\',\'SamsungOneKorean\',\'Samsung Sharp Sans\',\'samsungsharpsans\',\'Samsung Gothic\',\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;font-size:19.5px;font-weight:800;letter-spacing:-.6px;color:#1A4FA0;margin:0;line-height:1.16;white-space:normal;word-break:keep-all;}'
+    + '.qh .ttl .sub{font-size:9.8px;color:#666;margin-top:5px;white-space:normal;word-break:keep-all;line-height:1.35;}'
+    + '.qh .ttl .sub b{color:#333;}'
+    + '.qh .meta{margin-left:auto;border:1px solid #C9D2E3;border-radius:5px;font-size:9.8px;color:#555;flex-shrink:0;min-width:54mm;overflow:hidden;text-align:left;}'
+    + '.qh .meta>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:2.5px 9px;border-bottom:1px solid #E6EAF1;}'
+    + '.qh .meta>div:last-child{border-bottom:0;}'
+    + '.qh .meta b{color:#111;font-size:10.8px;font-variant-numeric:tabular-nums;}'
+    + '.qh .meta .no{background:#F1F4F9;}'
+    + '.qh .meta .no b{color:#1A4FA0;font-size:11.5px;font-weight:900;letter-spacing:.02em;}'
+    + '.qh .meta .no b.none{color:#aaa;font-weight:600;}'
+    /* 이어지는 장(2p~) 헤더 */
+    + '.qh-cont{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #1A4FA0;padding-bottom:5px;margin-bottom:9px;font-size:10px;color:#555;}'
+    + '.qh-cont .wm{font-family:\'Arial Black\',Arial,sans-serif;font-weight:900;color:#0a3594;font-size:13px;margin-right:8px;letter-spacing:-.3px;}'
+    + '.qh-cont b{color:#1A4FA0;}'
+    + '.q-tbl{width:100%;border-collapse:collapse;font-size:10.5px;}'
+    + '.q-tbl th{background:#F1F4F9;color:#333;font-weight:700;text-align:left;padding:4px 7px;border:1px solid #D6DBE4;white-space:nowrap;}'
+    + '.q-tbl td{padding:4px 7px;border:1px solid #D6DBE4;color:#111;}'
+    + '.q-tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}'
+    + '.q-tbl td.mut{color:#888;}'
+    + '.q-cust th{width:12%;}'
+    + '.q-cust td{width:21%;}'
+    /* ★ 매달 내시는 금액 — 고객이 한눈에 보는 밴드 (엑셀 E18~E21 구조) */
+    + '.q-pay{margin-top:8px;border:2px solid #1A4FA0;border-radius:9px;overflow:hidden;break-inside:avoid;page-break-inside:avoid;}'
+    + '.q-pay-h{background:#1A4FA0;color:#fff;padding:4px 10px;font-size:11.5px;font-weight:800;display:flex;align-items:center;gap:6px;}'
+    + '.q-pay-h .r{margin-left:auto;font-size:9.5px;font-weight:600;opacity:.92;white-space:nowrap;}'
+    + '.q-pay-grid{display:grid;background:#C9D4E6;gap:1px;}'
+    + '.q-pay-grid .c{background:#fff;padding:5px 10px;min-width:0;}'
+    + '.q-pay-grid .c.big{background:#E8EFF9;}'
+    + '.q-pay-grid .k{font-size:9.5px;color:#555;margin-bottom:2px;line-height:1.3;word-break:keep-all;}'
+    + '.q-pay-grid .v{font-size:15px;font-weight:800;color:#1A1D24;font-variant-numeric:tabular-nums;letter-spacing:-.3px;white-space:nowrap;}'
+    + '.q-pay-grid .v.minus{color:#D95C1A;}'
+    + '.q-pay-grid .c.big .k{color:#1A4FA0;font-weight:800;}'
+    + '.q-pay-grid .c.big .v{font-size:21px;color:#1A4FA0;}'
+    + '.q-pay-grid .c.big .sub{font-size:9px;color:#5A6B85;margin-top:1px;white-space:nowrap;}'
+    + '.q-pay-note{background:#F7F8FA;padding:4px 10px;font-size:9.3px;color:#666;line-height:1.5;word-break:keep-all;}'
+    + '.q-prods{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:8px;}'
+    + '.q-prods.one{grid-template-columns:1fr;max-width:none;}'
+    + '.q-prods.one .q-prod{width:100%;display:grid;grid-template-columns:1fr 1fr;}'
+    + '.q-prods.one .q-prod-h,.q-prods.one .q-prod .nm,.q-prods.one .q-prod .q-month{grid-column:1/-1;}'
+    + '.q-prods.one .q-prod>.q-tbl{align-self:start;}'
+    + '.q-prods.one .q-prod>.q-tbl th{width:44%;}'
+    + '.q-prod{border:1.5px solid #1A4FA0;border-radius:8px;overflow:hidden;break-inside:avoid;page-break-inside:avoid;background:#fff;}'
+    + '.q-prod.off{opacity:.45;border-style:dashed;}'
+    + '.q-prod-h{background:#1A4FA0;color:#fff;padding:6px 9px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}'
+    + '.q-prod-h .n{background:#fff;color:#1A4FA0;font-weight:900;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}'
+    + '.q-prod-h .m{font-weight:800;font-size:12.5px;letter-spacing:.01em;}'
+    + '.q-prod-h .c{margin-left:auto;font-size:9.5px;opacity:.92;white-space:nowrap;text-align:right;}'
+    + '.q-prod .nm{font-size:9.5px;color:#555;padding:5px 9px 3px;line-height:1.35;}'
+    + '.q-prod .q-tbl{font-size:10px;table-layout:fixed;}'
+    + '.q-prod .q-tbl th{white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:middle;}'
+    + '.q-prod .q-tbl th{width:46%;}'
+    + '.q-tbl td.wrap{white-space:normal;}'
+    + '.q-prod .q-tbl tr.fin th,.q-prod .q-tbl tr.fin td{background:#E8EFF9;color:#1A4FA0;font-weight:800;font-size:10.5px;}'
+    + '.q-month{margin:5px 8px 7px;background:#F7F8FA;border-radius:6px;padding:5px 9px;font-size:9.5px;color:#333;line-height:1.5;}'
+    + '.q-month .big{font-size:15px;font-weight:900;color:#1A4FA0;letter-spacing:-.3px;}'
+    + '.q-month .ln{display:flex;justify-content:space-between;gap:6px;}'
+    /* ★ 기간별 월 납입 안내 (상품별 계약 기간이 다를 때만) */
+    + '.q-tier{margin-top:8px;border:1.5px solid #1A4FA0;border-radius:9px;overflow:hidden;break-inside:avoid;page-break-inside:avoid;background:#fff;}'
+    + '.q-tier-h{background:#E8EFF9;color:#1A4FA0;padding:5px 10px;font-size:11.5px;font-weight:800;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}'
+    + '.q-tier-h .r{margin-left:auto;font-size:9.5px;font-weight:600;color:#5A6B85;}'
+    + '.q-tier .q-tbl{font-size:10.5px;table-layout:fixed;}'
+    + '.q-tier .q-tbl tr:first-child th,.q-tier .q-tbl tr:first-child td{border-top:0;}'
+    + '.q-tier .q-tbl th{background:#F7F9FC;text-align:center;font-size:9.8px;white-space:normal;word-break:keep-all;}'
+    + '.q-tier .q-tbl td.per{font-weight:800;white-space:nowrap;text-align:center;}'
+    + '.q-tier .q-tbl td.amt{font-size:13.5px;font-weight:900;color:#1A4FA0;letter-spacing:-.3px;}'
+    + '.q-tier .q-tbl td.amt small{font-size:9px;font-weight:700;color:#5A6B85;margin-right:3px;}'
+    + '.q-tier .q-tbl td.its{font-size:9.5px;color:#444;word-break:keep-all;line-height:1.35;}'
+    + '.q-tier .q-tbl td.its .end{display:block;color:#D95C1A;font-weight:700;font-size:9px;}'
+    + '.q-tier .q-tbl tr.tot td{background:#E8EFF9;font-weight:800;color:#1A4FA0;}'
+    + '.q-tier-say{padding:5px 10px;font-size:10.5px;color:#1A1D24;background:#F7F8FA;border-top:1px solid #D6DBE4;line-height:1.6;word-break:keep-all;}'
+    + '.q-tier-say b{color:#1A4FA0;}'
+    + '.q-tier-say .n{display:block;font-size:9px;color:#777;margin-top:1px;}'
+    + '.q-page.xs .q-tier .q-tbl th,.q-page.xs .q-tier .q-tbl td{padding:2.5px 6px;}'
+    + '.q-page.xs .q-tier .q-tbl td.amt{font-size:12px;}'
+    + '.q-sum{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-top:8px;break-inside:avoid;page-break-inside:avoid;}'
+    + 'tr.q-pt th,tr.q-pt td{font-size:15.5px !important;font-weight:900 !important;color:#B45309 !important;background:#FFFBEB !important;} .ln.q-pt{font-size:15px;font-weight:900;color:#B45309;}'   /* ⭐ 삼성전자 멤버십 포인트 크게 (2026-11-19) */
+    + '.q-box{border:1px solid #D6DBE4;border-radius:8px;padding:7px 10px;}'
+    + '.q-box h3{font-size:11px;font-weight:800;color:#1A4FA0;margin:0 0 6px;}'
+    + '.q-box .q-tbl th{width:52%;background:#fff;font-weight:600;white-space:normal;word-break:keep-all;line-height:1.3;vertical-align:middle;}'
+    + '.q-box .q-tbl tr.tot th,.q-box .q-tbl tr.tot td{background:#E8EFF9;font-weight:800;color:#1A4FA0;}'
+    + '.q-box .q-tbl tr.ben th,.q-box .q-tbl tr.ben td{background:#E6F5F0;font-weight:700;color:#0F7A55;}'
+    + '.q-hero{background:#1A4FA0;color:#fff;border-radius:8px;padding:10px 12px;}'
+    + '.q-hero .lbl{font-size:10px;opacity:.85;}'
+    + '.q-hero .val{font-size:22px;font-weight:900;letter-spacing:-.5px;line-height:1.15;}'
+    + '.q-hero .sub{font-size:10px;opacity:.9;margin-top:3px;line-height:1.5;}'
+    + '.q-mini{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px;}'
+    + '.q-mini div{background:#F7F8FA;border-radius:6px;padding:6px 8px;}'
+    + '.q-mini .k{font-size:9px;color:#666;}'
+    + '.q-mini .v{font-size:12.5px;font-weight:800;color:#1A1D24;}'
+    + '.q-bars .bar{display:flex;align-items:center;gap:6px;font-size:9.5px;margin-top:5px;}'
+    + '.q-bars .bar .l{width:58px;color:#555;flex-shrink:0;}'
+    + '.q-bars .track{flex:1;height:11px;background:#ECEEF2;border-radius:3px;overflow:hidden;}'
+    + '.q-bars .fill{height:100%;background:#3A6BC9;}'
+    + '.q-bars .fill.f{background:#1A4FA0;}'
+    + '.q-bars .a{width:66px;text-align:right;font-weight:700;flex-shrink:0;}'
+    + '.q-memo{margin-top:7px;border:1px solid #D6DBE4;border-radius:8px;padding:5px 10px;min-height:30px;font-size:10.5px;white-space:pre-wrap;break-inside:avoid;}'
+    + '.q-memo .t{font-size:9.5px;font-weight:800;color:#1A4FA0;margin-bottom:3px;}'
+    + '.q-note{font-size:8.8px;color:#777;margin-top:5px;line-height:1.45;}'
+    + '.q-foot{margin-top:8px;border-top:2px solid #1A4FA0;padding-top:7px;display:flex;justify-content:space-between;gap:12px;align-items:center;break-inside:avoid;page-break-inside:avoid;}'
+    + '.q-foot .store{font-size:10px;color:#333;line-height:1.55;}'
+    + '.q-foot .store .logo{font-family:\'Arial Black\',Arial,sans-serif;font-weight:900;color:#0a3594;font-size:15px;letter-spacing:-.5px;margin-bottom:3px;}'
+    + '.q-foot .store .logo img.q-logo-f{height:28px;width:auto;max-width:210px;display:block;object-fit:contain;object-position:left center;margin-bottom:2px;}'
+    + '.q-foot .store b{font-size:11.5px;}'
+    + '.q-card{display:flex;gap:10px;align-items:center;border:1px solid #D6DBE4;border-radius:8px;padding:7px 10px;min-width:250px;}'
+    + '.q-card .who{font-size:13.5px;font-weight:900;letter-spacing:-.2px;}'
+    + '.q-card .who small{font-size:9.5px;font-weight:600;color:#555;margin-left:5px;}'
+    + '.q-card .ln{font-size:9.8px;color:#333;line-height:1.5;}'
+    + '.q-card .ln b{display:inline-block;width:14px;color:#1A4FA0;}'
+    + '.q-card .none{font-size:10px;color:#999;}'
+    + '.q-qr{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;}'
+    + '.q-qr img{width:54px;height:54px;display:block;}'
+    + '.q-qr .cap{font-size:8px;color:#666;font-weight:700;white-space:nowrap;}'
+    + '.q-in{width:100%!important;min-width:0!important;max-width:none!important;padding:5px 8px!important;border:1.5px solid #C9D5EA!important;border-radius:7px!important;font-size:1.06em!important;background:#fff!important;background-image:none!important;text-align:right;font-family:inherit;color:#111;font-weight:600;transition:background .12s,border-color .12s,box-shadow .12s;box-sizing:border-box;box-shadow:none;}'
+    + '.q-in:hover{border-color:#8FB0E0!important;}'
+    + '.q-in:focus{border-color:#1A4FA0!important;box-shadow:0 0 0 2.5px rgba(26,79,160,.13)!important;outline:none!important;}'
+    + '.q-in::placeholder{color:#AEB6C4;font-weight:500;}'
+    /* 하늘색 = 매 견적마다 자주 쓰는 칸 (구독료 할인·선납금·포인트·카드) */
+    + '.q-in.freq{background:#EEF5FF!important;border-color:#AECBF0!important;}'
+    + '.q-in.freq:focus{background:#fff!important;}'
+    + '.q-in.freq::placeholder{color:#7E9CC9;}'
+    /* 노랑 = 매 견적 거의 항상 쓰는 칸 (구독료 할인 · 선납금 · 공통 포인트) */
+    + '.q-in.imp{background:#FFF9CC!important;border-color:#E3B60C!important;}'
+    + '.q-in.imp:focus{background:#fff!important;}'
+    + '.q-in.imp::placeholder{color:#B08E0A;}'
+    + '.q-in.txt{text-align:left;}'
+    + '.q-in.w{}'
+    + '.q-in.sm{width:66px!important;display:inline-block;text-align:center;}'
+    + '.q-in.mid{width:112px!important;display:inline-block;}'
+    /* 계약 기간 선택 (12~72개월) */
+    + 'select.q-in.mon{width:98px!important;display:inline-block;text-align:left;cursor:pointer;-webkit-appearance:menulist!important;appearance:auto!important;padding:4px 6px!important;}'
+    + '.q-cardcalc{display:flex;align-items:center;justify-content:flex-end;gap:4px;flex-wrap:wrap;margin-top:3px;}'
+    + '.q-cardcalc .x{white-space:nowrap;font-weight:600;color:#444;}'
+    + '.q-cardcalc + .q-auto{margin-top:2px;}'
+    + '.q-mon-note{display:block;font-size:8.5px;color:#8A909E;font-weight:500;margin-top:2px;white-space:nowrap;}'
+    /* 필수 입력 강조 (값이 비어 있을 때만) */
+    + '.q-in.req{background:#FFF9CC!important;border-color:#E3B60C!important;}'
+    + '.q-in.req::placeholder{color:#9C7E08;font-weight:700;}'
+    /* 상품 헤더 모델명 입력 */
+    + '.q-in.mhead{color:#fff!important;background:rgba(255,255,255,.14)!important;border:1px solid rgba(255,255,255,.45)!important;border-radius:6px!important;font-weight:800;width:190px!important;text-align:left;padding:2px 8px!important;}'
+    + '.q-in.mhead::placeholder{color:rgba(255,255,255,.78);}'
+    + '.q-in.mhead.req{background:#FFF9CC!important;color:#1A4FA0!important;border-color:#E3B60C!important;}'
+    + '.q-in.mhead.req::placeholder{color:#9C7E08;}'
+    /* 증빙 확인 클릭 토글 */
+    + '.q-proof{cursor:pointer;user-select:none;border-radius:4px;padding:1px 3px;color:#999;}'
+    + '.q-proof.on{color:#1A4FA0;font-weight:800;}'
+    + '.q-proof:hover{background:#EDF3FF;}'
+    /* 시트 내 카드사 선택 · 상담 내용 · 상품 추가 */
+    + '.q-cardsel{display:flex;gap:4px;margin-bottom:3px;}'
+    + '.q-cardsel select{flex:1;min-width:0;font-size:10.5px;padding:5px 6px;border:1.5px solid #AECBF0;border-radius:7px;background:#EEF5FF;color:#333;font-weight:600;}'
+    + '.q-cardsel select:focus{border-color:#1A4FA0;outline:none;}'
+    /* 적립 ↔ 차감 세그먼트 토글 (시트 내) */
+    + '.q-pmseg{display:inline-flex;margin-left:6px;border:1px solid #C9D5EA;border-radius:20px;overflow:hidden;vertical-align:middle;background:#fff;}'
+    + '.q-pmseg button{border:0;background:#fff;color:#98A2B3;font-size:9px;font-weight:700;padding:3px 8px;cursor:pointer;line-height:1;white-space:nowrap;}'
+    + '.q-pmseg button.on{background:#1A4FA0;color:#fff;}'
+    /* 입력값 검증 경고 스트립 */
+    + '.q-warnstrip{display:none;margin:0 0 10px;padding:9px 13px;background:#FFF6E8;border:1.5px solid #F0C070;border-radius:9px;font-size:12px;color:#7A4E00;line-height:1.65;}'
+    + '.q-warnstrip.show{display:block;}'
+    + '.q-warnstrip b{color:#B25E00;}'
+    + '.q-memo-in{width:100%;min-height:44px;border:1px dashed #C9D4E6;border-radius:6px;background:#FFFDF5;font:inherit;padding:4px 7px;resize:vertical;box-sizing:border-box;}'
+    + '.q-memo-in:focus{border-color:#E8890C;outline:none;background:#FFF6E5;}'
+    + '.q-addrow{margin-top:8px;text-align:center;}'
+    + '.q-addbtn{border:1.5px dashed var(--blue-mid);color:var(--blue);background:#F4F8FF;border-radius:9px;padding:8px 22px;font-size:12.5px;font-weight:700;cursor:pointer;}'
+    + '.q-addbtn:hover{background:#E8F0FF;}'
+    /* 상품 1개(n1): 큰 글씨 — 한 장 보장 */
+    + '.q-page.n1{font-size:12px;}'
+    + '.q-page.n1 .q-tbl{font-size:11.2px;}'
+    + '.q-page.n1 .q-tbl th,.q-page.n1 .q-tbl td{padding:3px 8px;}'
+    + '.q-page.n1 .q-prod .q-tbl{font-size:11px;}'
+    + '.q-page.n1 .q-prod .q-tbl tr.fin th,.q-page.n1 .q-prod .q-tbl tr.fin td{font-size:11.5px;}'
+    + '.q-page.n1 .q-prod-h .m{font-size:14px;}'
+    + '.q-page.n1 .q-prod-h .c{font-size:10.8px;}'
+    + '.q-page.n1 .q-prod .nm{font-size:10.8px;}'
+    + '.q-page.n1 .q-month{font-size:10.8px;padding:6px 11px;}'
+    + '.q-page.n1 .q-month .big{font-size:16.5px;}'
+    + '.q-page.n1 .q-pay-h{font-size:12.5px;}'
+    + '.q-page.n1 .q-pay-grid .k{font-size:10.5px;}'
+    + '.q-page.n1 .q-pay-grid .v{font-size:15.5px;}'
+    + '.q-page.n1 .q-pay-grid .c.big .v{font-size:21px;}'
+    + '.q-page.n1 .q-pay-note{font-size:10px;}'
+    + '.q-page.n1 .q-box h3{font-size:11.8px;}.q-page.n1 .q-box .q-tbl th,.q-page.n1 .q-box .q-tbl td{padding:2.5px 7px;}'
+    + '.q-page.n1 .q-hero .lbl{font-size:11.5px;}'
+    + '.q-page.n1 .q-hero .val{font-size:23px;}'
+    + '.q-page.n1 .q-hero .sub{font-size:11px;}'
+    + '.q-page.n1 .q-mini .k{font-size:10.3px;}'
+    + '.q-page.n1 .q-mini .v{font-size:14px;}'
+    + '.q-page.n1 .q-bars .bar{font-size:10.8px;}'
+    + '.q-page.n1 .q-bars .a{width:80px;}'
+    + '.q-page.n1 .q-memo{font-size:11.4px;min-height:31px;}'
+    + '.q-page.n1 .q-note{font-size:9px;}'
+    /* 자동 축소(xs): 1~2개 상품이 한 장에 안 들어갈 때만 자동 적용 */
+    + '.q-page.xs .q-tbl{font-size:9.8px;}'
+    + '.q-page.xs .q-tbl th,.q-page.xs .q-tbl td{padding:2.5px 6px;}'
+    + '.q-page.xs .q-prod .q-tbl{font-size:9.3px;}'
+    + '.q-page.xs .q-prod .nm{font-size:9px;padding:3px 8px 2px;}'
+    + '.q-page.xs .q-month{font-size:9px;padding:4px 8px;margin:5px 7px 6px;}'
+    + '.q-page.xs .q-month .big{font-size:13.5px;}'
+    + '.q-page.xs .qh{margin-bottom:8px;padding-bottom:6px;}'
+    + '.q-page.xs .qh .brand img.q-logo{height:36px;}'
+    + '.q-page.xs .qh .ttl{min-height:36px;}'
+    + '.q-page.xs .qh .ttl h1{font-size:21px;}'
+    + '.q-page.xs .q-pay-grid .c{padding:4px 7px;}'
+    + '.q-page.xs .q-pay-h{padding:4px 9px;}'
+    + '.q-page.xs .q-box .q-tbl th,.q-page.xs .q-box .q-tbl td{padding:2px 6px;}'
+    + '.q-page.xs .q-card{padding:5px 9px;}'
+    + '.q-page.xs .q-foot .store{line-height:1.45;}'
+    + '.q-page.xs .q-pay-grid .v{font-size:13.5px;}'
+    + '.q-page.xs .q-pay-grid .c.big .v{font-size:18px;}'
+    + '.q-page.xs .q-pay-note{font-size:8.6px;padding:4px 8px;}'
+    + '.q-page.xs .q-hero{padding:7px 10px;}'
+    + '.q-page.xs .q-hero .val{font-size:19px;}'
+    + '.q-page.xs .q-mini div{padding:4px 7px;}'
+    + '.q-page.xs .q-memo{min-height:28px;padding:5px 9px;}'
+    + '.q-page.xs .q-note{font-size:8.3px;margin-top:6px;}'
+    + '.q-page.xs .q-foot{margin-top:7px;padding-top:6px;}'
+    + '.q-page.xs .q-qr img{width:46px;height:46px;}'
+    + '.q-page.xs .q-prods{margin-top:8px;gap:7px;}'
+    + '.q-page.xs .q-sum{margin-top:8px;}'
+    + '.q-page.xs .q-pay{margin-top:7px;}'
+    /* 수식 연동 표시 */
+    + '.q-fx{display:inline-block;font-size:8.5px;font-weight:800;border-radius:99px;padding:1px 6px;margin-right:5px;cursor:pointer;border:1px solid #C9D4E6;background:#F1F4F9;color:#5A6B85;user-select:none;vertical-align:1px;white-space:nowrap;}'
+    + '.q-fx.on{border-color:#1A4FA0;background:#E8EFF9;color:#1A4FA0;}'
+    + '.q-fx:hover{filter:brightness(.95);}'
+    + '.q-auto{font-weight:800;color:#1A4FA0;}'
+    + '.q-fxnote{font-size:8.5px;color:#8A909E;font-weight:500;margin-left:4px;white-space:nowrap;}'
+    /* 다품목 배지 */
+    + '.q-mflag{font-size:9px;font-weight:800;border-radius:99px;padding:1px 7px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.45);white-space:nowrap;letter-spacing:-.2px;}'
+    + '.q-mflag.on{background:#fff;color:#1A4FA0;border-color:#fff;}'
+    + '.q-mflag.click{cursor:pointer;}'
+    + '.q-edit-tip{background:#F4F8FF;border:1px dashed var(--blue-mid);color:#2A4E86;font-size:12px;padding:6px 10px;border-radius:6px;margin-bottom:8px;line-height:1.6;}'
+    + '.q-edit-tip .req-chip{background:#FFF9CC;border:1px dashed #E3B60C;border-radius:4px;padding:0 5px;color:#9C7E08;font-weight:800;}'
+    + '.q-edit-tip b{color:#B8460F;}'
+    + '.q-x{font-size:9.5px;border:1px solid #D95C1A;color:#D95C1A;background:#fff;border-radius:99px;padding:1px 7px;cursor:pointer;margin-left:6px;}'
+    + '.q-ed-only{display:none;}'
+    + '.q-pages.editing .q-ed-only{display:inline;}'
+    /* ★ ✏️ 금액 수정 모드 전용 레이아웃 — 입력칸 잘림·눌림 방지
+       · 상품 블록을 항상 1열 전체폭으로 (2열로 눌려 금액이 잘리는 문제)
+       · 표를 고정 폭으로 잡고, 입력칸은 셀을 꽉 채우게 (넘침 원천 차단)  */
+    + '.q-pages.editing .q-tbl{table-layout:fixed;}'
+    + '.q-pages.editing .q-tbl th,.q-pages.editing .q-tbl td{white-space:normal;word-break:keep-all;vertical-align:middle;}'
+    + '.q-pages.editing .q-tbl td.num{white-space:normal;}'
+    + '.q-pages.editing .q-prod-h{row-gap:4px;}'
+    + '.q-pages.editing .q-month .ln{flex-wrap:wrap;row-gap:2px;}'
+    + '.q-pages.editing .q-month .ln > span:first-child{flex:1 1 auto;min-width:0;}'
+    + '@media (max-width:880px){'
+    +   '.q-pages.editing .q-in{font-size:16px !important;padding:6px 8px !important;}'   /* iOS 자동확대 방지 */
+    +   '.q-pages.editing .q-in.sm{width:76px !important;}'
+    +   '.q-pages.editing select.q-in.mon{width:110px !important;}'
+    +   '.q-pages.editing .q-in.mid{width:128px !important;}'
+    +   '.q-pages.editing .q-tbl{font-size:11px;}'
+    +   '.q-pages.editing .q-prod .q-tbl th{width:42%;}'
+    +   '.q-pages.editing .q-cust th{width:26%;}'
+    +   '.q-pages.editing .q-cust td{width:auto;}'
+    + '}'
+    + '@media (max-width:880px){'
+    +   '.q-body{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);overflow:auto;display:flex;flex-direction:column;}'
+    +   '.q-panel{max-height:46vh;border-right:none;border-bottom:1px solid var(--gray-1);flex:0 0 auto;}'
+    +   '.q-preview{padding:8px;flex:1 1 auto;}'
+    +   '.q-pages.editing .q-page{width:100%;height:auto;min-height:0;padding:12px;overflow:visible;margin-bottom:10px;}'
+    +   '.q-pages.editing .q-prods{grid-template-columns:1fr;}'
+    +   '.q-pages.editing .q-prods.one .q-prod{display:block;}'
+    +   '.q-pages.editing .q-sum{grid-template-columns:1fr;}'
+    +   '.q-pages.editing .q-foot{flex-direction:column;align-items:flex-start;}'
+    +   '.q-toolbar .q-tb{padding:6px 8px;font-size:11px;}'
+    +   '.q-pages.editing .q-pay-grid{grid-template-columns:1fr 1fr !important;}'
+    /* 기간별 안내표: 좁은 화면에서 "납부 중인 상품" 칸은 줄 아래로 */
+    +   '.q-pages.editing .q-tier .q-tbl col.c-its{width:0;}'
+    +   '.q-pages.editing .q-tier .q-tbl .its{display:none;}'
+    /* 고객정보 표: 좁은 화면에서 6칸이 눌려 글자가 겹치므로 "항목 / 값" 2열로 재배치 */
+    +   '.q-pages.editing .q-cust,.q-pages.editing .q-cust tbody{display:block;}'
+    +   '.q-pages.editing .q-cust tr{display:grid;grid-template-columns:32% 1fr;}'
+    +   '.q-pages.editing .q-cust th,.q-pages.editing .q-cust td{width:auto !important;white-space:normal;'
+    +     'word-break:break-all;display:flex;align-items:center;min-height:24px;}'
+    /* 모바일: 여러 장을 옆이 아니라 아래로 쌓고, 시트를 화면 폭에 맞춤 */
+    +   '.q-pages{flex-direction:column;gap:10px;width:100%;}'
+    +   '.q-pages.editing{width:100%;}'
+    +   '.q-scale{width:100%;max-width:100%;}'
+    +   '.q-zoomctl{padding:3px 5px;top:4px;}'
+    +   '.q-zoomctl button{width:24px;height:22px;font-size:13px;}'
+    +   '.q-zoomctl button.fit{padding:0 8px;font-size:10.5px;}'
+    +   '.q-hist-tools{flex-wrap:wrap;}'
+    +   '.q-hist-tools input{flex:1 1 100%;font-size:16px;}'   /* iOS 자동확대 방지 */
+    + '}'
+    /* ── 폰 레이아웃 (≤880px): 기본은 견적서만. 패널은 바텀 시트, 아래에 탭바 ──
+       계산기 화면과 같은 모양 — [설정·메뉴] / [견적서] / [발행] / [보내기].
+       데스크톱(≥881px)에는 아무 영향 없음. */
+    + '.q-toolbar #qBtnMore,.q-more,.q-sheetmask,.q-sheethd,.q-mtab{display:none;}'
+    + '@media (max-width:880px){'
+    +   '.q-toolbar{flex-wrap:nowrap;padding:8px 10px;gap:6px;}'
+    +   '.q-toolbar .q-title{font-size:13.5px;min-width:0;overflow:hidden;white-space:nowrap;}'
+    +   '.q-toolbar .q-title .q-tt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
+    +   '.q-toolbar .q-title .q-no{flex:0 0 auto;}'
+    /* 편집 모드는 화면 폭 100% 라 줌이 필요 없다 — 제목을 가리지 않게 숨김 */
+    +   '.q-preview:has(.q-pages.editing) .q-zoomctl{display:none;}'
+    +   '.q-toolbar #qBtnPanel,.q-toolbar #qBtnNew,.q-toolbar #qBtnHist,.q-toolbar #qBtnIssue,.q-toolbar #qBtnSend,.q-toolbar #qBtnShare,.q-toolbar #qBtnPrint{display:none;}'
+    +   '.q-toolbar #qBtnEdit,.q-toolbar #qBtnMore{display:inline-block;min-height:40px;padding:0 10px;font-size:12px;flex:0 0 auto;}'
+    +   '.q-toolbar #qBtnMore{width:40px;padding:0;font-size:18px;line-height:1;}'
+    /* 더보기 메뉴 (새 견적 · 발행 내역 · PDF · 인쇄) */
+    +   '.q-more.show{display:block;position:fixed;right:8px;top:52px;z-index:8040;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.28);padding:6px;min-width:190px;}'
+    +   '.q-more button{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;border:0;background:none;text-align:left;font:inherit;font-size:13.5px;font-weight:600;color:var(--black);padding:0 12px;border-radius:8px;cursor:pointer;}'
+    +   '.q-more button:active{background:var(--gray-1);}'
+    +   '.q-more button.danger{color:#B33;}'
+    /* 본문: 견적서가 전체를 차지. 패널은 흐름에서 뺀다 */
+    +   '.q-body{display:flex;flex-direction:column;overflow:hidden;}'
+    +   '.q-preview{flex:1 1 auto;min-height:0;overflow:auto;padding:8px 8px calc(84px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch;}'
+    /* 패널 = 바텀 시트 (panel-off 는 폰에서 무시) */
+    +   '#quoteModal.panel-off .q-panel,#quoteModal .q-panel{display:flex;position:fixed;left:0;right:0;bottom:0;top:auto;max-height:none;height:min(86vh,calc(100dvh - 60px));'
+    +     'z-index:8010;border:0;border-radius:18px 18px 0 0;box-shadow:0 -8px 32px rgba(16,20,32,.28);padding:0 14px calc(86px + env(safe-area-inset-bottom));'
+    +     'transform:translateY(105%);transition:transform .22s ease;overscroll-behavior:contain;}'
+    +   '#quoteModal.sheet-open .q-panel{transform:none;}'
+    +   '.q-panel .q-panel-intro{display:none;}'
+    +   '.q-sheethd{display:flex;align-items:center;gap:10px;position:-webkit-sticky;position:sticky;top:0;z-index:3;background:#fff;margin:0 -14px 4px;padding:8px 14px 8px;border-bottom:1px solid var(--gray-1);flex:0 0 auto;}'
+    +   '.q-sheethd::before{content:"";position:absolute;left:50%;top:5px;width:40px;height:4px;margin-left:-20px;border-radius:99px;background:var(--gray-2);}'
+    +   '.q-sheethd b{font-size:14px;font-weight:800;color:var(--black);padding-top:8px;}'
+    +   '.q-sheethd .s{font-size:11.5px;color:var(--gray-3);font-weight:500;padding-top:8px;}'
+    +   '.q-sheethd button{margin-left:auto;width:40px;height:40px;border:0;border-radius:99px;background:var(--gray-0);color:var(--gray-4);font-size:16px;font-weight:800;cursor:pointer;margin-top:6px;}'
+    +   '.q-sheetmask{position:fixed;inset:0;background:rgba(16,20,32,.45);z-index:8000;}'
+    +   '#quoteModal.sheet-open .q-sheetmask{display:block;}'
+    /* 하단 탭바 */
+    +   '.q-mtab{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;position:fixed;left:0;right:0;bottom:0;z-index:8020;background:#fff;border-top:1px solid var(--gray-1);padding:6px 6px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(15,23,42,.08);}'
+    +   '.q-mtab button{min-height:54px;border:0;border-radius:12px;background:none;font:inherit;font-size:11.5px;font-weight:700;color:var(--gray-4);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;}'
+    +   '.q-mtab button i{font-style:normal;font-size:19px;line-height:1;}'
+    +   '.q-mtab button.on{background:var(--blue-lt);color:var(--blue);}'
+    +   '.q-mtab button.ok{color:var(--green);}'
+    +   '.q-mtab button.ok.on{background:var(--green-lt);}'
+    +   '.q-mtab button:active{background:var(--gray-1);}'
+    +   '.q-toast{bottom:calc(92px + env(safe-area-inset-bottom));z-index:8030;max-width:calc(100vw - 24px);white-space:normal;text-align:center;}'
+    /* 편집 모드 견적서: 폰에서는 A4 가 아니라 화면 폭 카드. 머리(로고·제목·번호표)를 세로로 쌓아 넘침을 없앤다 */
+    +   '.q-edit-tip{font-size:11.5px;padding:6px 9px;}'
+    +   '.q-pages.editing .q-page{border-radius:12px;box-shadow:0 2px 12px rgba(15,23,42,.10);}'
+    +   '.q-pages.editing .qh{flex-wrap:wrap;gap:6px 10px;align-items:center;}'
+    +   '.q-pages.editing .qh .brand{max-width:none;font-size:13px;flex:1 1 auto;}'
+    +   '.q-pages.editing .qh .brand img.q-logo{height:30px;}'
+    +   '.q-pages.editing .qh .ttl{order:2;flex:1 1 100%;border-left:0;padding-left:0;min-height:0;}'
+    +   '.q-pages.editing .qh .ttl h1{font-size:17px;}'
+    +   '.q-pages.editing .qh .ttl .sub{margin-top:3px;}'
+    +   '.q-pages.editing .qh .meta{order:3;flex:1 1 100%;margin-left:0;min-width:0;font-size:11px;}'
+    +   '.q-pages.editing .qh .meta>div{padding:4px 10px;}'
+    +   '.q-pages.editing .qh .meta b{font-size:11.5px;}'
+    +   '.q-pages.editing .q-tbl th,.q-pages.editing .q-tbl td{font-size:11.5px;}'
+    + '}'
+    + '@media print{'
+    +   'html,body{margin:0!important;padding:0!important;}'
+    +   'body.quote-print{height:auto!important;overflow:visible!important;padding:0!important;background:#fff!important;display:block!important;}'
+    +   'body.quote-print header,body.quote-print .top-tabs,body.quote-print .layout,body.quote-print .mobile-tabbar,body.quote-print #amtEmphRow,body.quote-print #secure-lock-overlay{display:none!important;}'
+    +   'body.quote-print #quoteModal{position:static;display:block;background:none;height:auto!important;overflow:visible!important;}'
+    +   'body.quote-print .q-body{height:auto!important;overflow:visible!important;}'
+    +   'body.quote-print .q-toolbar,body.quote-print .q-panel,body.quote-print .q-edit-tip,body.quote-print .q-toast{display:none!important;}'
+    +   'body.quote-print .q-body{display:block;}'
+    +   'body.quote-print .q-preview{padding:0;background:none;overflow:visible;}'
+    +   'body.quote-print .q-scale{width:210mm!important;height:auto!important;overflow:visible!important;margin:0;max-width:210mm!important;}'
+    +   'body.quote-print .q-zoomctl{display:none!important;}'
+    +   'body.quote-print .q-pages{transform:none!important;width:210mm;margin:0;display:block;}'
+    +   'body.quote-print .q-page,body.quote-print .q-page *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
+    +   'body.quote-print .q-page{box-shadow:none;margin:0;break-after:page;page-break-after:always;}'
+    +   'body.quote-print .q-page:last-child{break-after:auto;page-break-after:auto;}'
+    +   'body.quote-print .q-in{border:none!important;background:none!important;padding:0!important;}'
+    +   'body.quote-print .no-print{display:none!important;}'
+    +   'body.quote-print .q-x,body.quote-print .q-ed-only,body.quote-print .q-fx,body.quote-print .q-cardsel,body.quote-print .q-addrow{display:none!important;}'
+    +   'body.quote-print .q-prod.off{display:none!important;}'
+    +   '@page{size:A4;margin:0;}'
+    + '}';
+  document.head.appendChild(st);
+
+  /* ── 모달 DOM ── */
+  var modal = document.createElement('div');
+  modal.id = 'quoteModal';
+  modal.innerHTML = ''
+    + '<div class="q-toolbar no-print">'
+    +   '<button type="button" class="q-tb" id="qBtnPanel" title="입력 도우미 패널 접기/펼치기">☰</button>'
+    +   '<div class="q-title"><span class="q-tt">📄 ' + esc(QUOTE_CFG.title) + '</span> <span class="q-no" id="qNoBadge">미발행</span></div>'
+    +   '<button type="button" class="q-tb" id="qBtnNew" title="빈 견적으로 새로 시작합니다">＋ 새 견적</button>'
+    +   '<button type="button" class="q-tb" id="qBtnEdit">✏️ 금액 수정</button>'
+    +   '<button type="button" class="q-tb" id="qBtnMore" title="더보기" aria-label="더보기">⋯</button>'
+    +   '<button type="button" class="q-tb" id="qBtnHist">📚 발행 내역</button>'
+    +   '<button type="button" class="q-tb ok" id="qBtnIssue">💾 발행</button>'
+    +   '<button type="button" class="q-tb ok" id="qBtnSend" title="고객이 휴대폰으로 바로 여는 주소를 만들어 문자·카카오로 보냅니다 (보내기 전 자동 발행)">📨 고객에게 보내기</button>'
+    +   '<button type="button" class="q-tb" id="qBtnShare" title="PDF 파일로 만들어 공유합니다 — 느리므로 필요할 때만">📤 PDF</button>'
+    +   '<button type="button" class="q-tb pri" id="qBtnPrint" title="인쇄 전에 자동으로 발행됩니다">🖨️ 인쇄 / PDF</button>'
+    + '</div>'
+    + '<div class="q-body">'
+    +   '<div class="q-panel no-print" id="qPanel"></div>'
+    +   '<div class="q-preview"><div id="qTip" class="no-print"></div><div class="q-zoomctl no-print"><button type="button" id="qZoomOut" title="축소">−</button><span class="pct" id="qZoomPct">100%</span><button type="button" id="qZoomIn" title="확대">＋</button><button type="button" id="qZoomFit" class="fit on" title="화면 폭에 맞춤 (자동)">맞춤</button></div><div class="q-warnstrip no-print" id="qWarn"></div><div class="q-scale" id="qScale"><div class="q-pages" id="qSheet"></div></div></div>'
+    + '</div>'
+    + '<div class="q-sheetmask no-print" id="qSheetMask"></div>'
+    + '<div class="q-more no-print" id="qMore">'
+    +   '<button type="button" data-go="qBtnNew">＋ 새 견적</button>'
+    +   '<button type="button" data-go="qBtnHist">📚 발행 내역</button>'
+    +   '<button type="button" data-go="qBtnShare">📤 PDF 공유</button>'
+    +   '<button type="button" data-go="qBtnPrint">🖨️ 인쇄 / PDF</button>'
+    + '</div>'
+    + '<div class="q-mtab no-print" id="qMtab">'
+    +   '<button type="button" data-mt="menu"><i>⚙️</i>설정·메뉴</button>'
+    +   '<button type="button" data-mt="sheet" class="on"><i>📄</i>견적서</button>'
+    +   '<button type="button" data-mt="issue" class="ok"><i>💾</i>발행</button>'
+    +   '<button type="button" data-mt="send" class="ok"><i>📨</i>보내기</button>'
+    + '</div>'
+    + '<div class="q-toast" id="qToast"></div>';
+  document.body.appendChild(modal);
+
+  /* ── 폰 전용: 패널을 바텀 시트로 여닫기 (데스크톱은 그대로 ☰ 토글) ── */
+  function isPhone(){ try { return window.matchMedia('(max-width:880px)').matches; } catch(e){ return false; } }
+  function sheetOpen(on){
+    modal.classList.toggle('sheet-open', !!on);
+    var mt = document.getElementById('qMtab');
+    if(mt) mt.querySelectorAll('button').forEach(function(b){
+      var k = b.getAttribute('data-mt');
+      if(k === 'menu') b.classList.toggle('on', !!on);
+      else if(k === 'sheet') b.classList.toggle('on', !on);
+    });
+    if(on){ var p = document.getElementById('qPanel'); if(p) p.scrollTop = 0; }
+    moreHide();
+  }
+  function moreHide(){ var m = document.getElementById('qMore'); if(m) m.classList.remove('show'); }
+  document.getElementById('qSheetMask').addEventListener('click', function(){ sheetOpen(false); });
+  document.getElementById('qMtab').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-mt]'); if(!b) return;
+    var k = b.getAttribute('data-mt');
+    if(k === 'menu') sheetOpen(!modal.classList.contains('sheet-open'));
+    else if(k === 'sheet') sheetOpen(false);
+    else if(k === 'issue'){ sheetOpen(false); document.getElementById('qBtnIssue').click(); }
+    else if(k === 'send'){ sheetOpen(false); document.getElementById('qBtnSend').click(); }
+  });
+  document.getElementById('qBtnMore').addEventListener('click', function(e){
+    e.stopPropagation();
+    document.getElementById('qMore').classList.toggle('show');
+  });
+  document.getElementById('qMore').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-go]'); if(!b) return;
+    moreHide();
+    var t = document.getElementById(b.getAttribute('data-go')); if(t) t.click();
+  });
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('#qMore') && !e.target.closest('#qBtnMore')) moreHide();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && modal.classList.contains('sheet-open')) sheetOpen(false);
+  });
+
+  /* 옛 버전(v1) 견적 데이터 호환 처리 */
+  function normalizeQuote(q){
+    if(!q) return;
+    normalizeUntilState(q);
+    if(!q.extra) q.extra = [];
+    if(!q.meta) q.meta = { no: '', version: 0, issuedAt: '' };
+    if(!q.opt) q.opt = {};
+    if(q.opt.pointCommon == null) q.opt.pointCommon = 0;
+    if(q.cust && q.cust.revisit == null) q.cust.revisit = '';
+    if(!q.opt.qrType) q.opt.qrType = (q.opt.showQR === false) ? 'none' : 'tel';
+    if(q.opt.qrType === 'mobile') q.opt.qrType = 'vcard';   // v2 초기(MECARD) 값 호환
+    q.opt.showQR = q.opt.qrType !== 'none';
+    if(!q.opt.show) q.opt.show = defaultShow();
+    if(q.opt.lumpSum == null) q.opt.lumpSum = 0;
+    if(typeof q.opt.rewardOn !== 'boolean') q.opt.rewardOn = false;
+    (q.items || []).forEach(function(it){
+      if(!it.disc) it.disc = {};
+      if(!it.auto) it.auto = { total: false, card: false };   // v1 데이터는 직접입력 값으로 보존
+      if(typeof it.auto.total !== 'boolean') it.auto.total = false;
+      if(typeof it.auto.card !== 'boolean') it.auto.card = false;
+      if(typeof it.cardMonthly !== 'number'){
+        var m = num(it.months);
+        it.cardMonthly = m > 0 ? Math.round(num(it.disc.card) / m) : 0;
+      }
+      if(typeof it.multiOk !== 'boolean') it.multiOk = num(it.disc.multi) > 0;
+      if(typeof it.cardName !== 'string') it.cardName = '';
+      if(typeof it.cardTier !== 'string') it.cardTier = '';
+    });
+  }
+
+  /* ═══════════ 2) 견적 계산 — 엑셀 견적서 수식 그대로 ═══════════
+     E9  금액        = 단가(월구독료) × 기간
+     E10 카드할인    = 단가(월청구할인) × 기간
+     E16 구독 혜택가 = E9 − E10 − E11(포인트) − … − E15(상품권)
+     G9  체감 구독료 = C9 − C10
+     E24~E32 합계    = 각 상품 SUM
+     ═══════════════════════════════════════════════════════════ */
+  function calcItem(it, pm){
+    if(!it.auto) it.auto = { total: true, card: true };
+    if(!it.disc) it.disc = {};
+    var m = Math.max(0, Math.round(num(it.months)));
+    var monthly = num(it.monthly);
+    // ① 총 구독료 = 월 구독료 × 기간
+    var total = (it.auto.total !== false) ? monthly * m : num(it.total);
+    it.total = total;
+    // ② 제휴카드 청구할인 = 월 청구할인 × 기간
+    var cardMonthly = num(it.cardMonthly);
+    var card;
+    if(it.auto.card !== false){ card = cardMonthly * m; }
+    else { card = num(it.disc.card); cardMonthly = m > 0 ? Math.round(card / m) : 0; it.cardMonthly = cardMonthly; }
+    it.disc.card = card;
+    var d = it.disc;
+    var sub = num(d.sub), multiRaw = num(d.multi), pre = num(d.prepay), point = num(d.point);
+    // ③ 다품목 미해당 상품은 다품목 할인 제외 (원본 값은 보존)
+    var multi = (it.multiOk === false) ? 0 : multiRaw;
+    var cons = num(it.consumable), gift = num(it.giftcard), preAmt = num(it.prepayAmt);
+    // ④ 총 혜택 · 최종 혜택가 — 포인트는 표기 방식과 무관하게 항상 차감,
+    //    선납금은 DPS 월 구독료에 선납 할인이 이미 반영되어 있으므로 총 지불액에 "가산"
+    var benefit = sub + multi + pre + card + point + cons + gift;
+    var preAdd = it.preIncl ? 0 : preAmt;   // /quote/ 는 총 구독료에 선납금이 이미 들어 있다 (DPS 총구독료)
+    var finalP = total - benefit + preAdd;
+    // ⑤ 월 단위 지표
+    var payM = m > 0 ? Math.round((total - sub - multi - pre - (it.preIncl ? preAmt : 0)) / m) : 0;                 // 할인 후 월 청구액(카드 전)
+    var afterCardM = payM - cardMonthly;                                    // 체감 구독료 = 월구독료 − 월카드할인
+    var remainM = m > 0 ? Math.round((total - sub - multi - pre - card - preAmt) / m) : 0;
+    var realM = m > 0 ? Math.round((finalP - preAmt) / m) : 0;
+    var freeMonths = (point > 0 && remainM > 0) ? Math.floor(point / remainM) : 0;
+    return { m: m, monthly: monthly, total: total, sub: sub, multi: multi, multiRaw: multiRaw, pre: pre, point: point,
+             card: card, cardMonthly: cardMonthly, cons: cons, gift: gift, preAmt: preAmt, preAdd: preAdd,
+             benefit: benefit, finalP: finalP, payM: payM, afterCardM: afterCardM,
+             remainM: remainM, realM: realM, freeMonths: freeMonths };
+  }
+  function calcTotals(q){
+    var pm = q.opt.pointMode, T = { total: 0, sub: 0, multi: 0, pre: 0, point: 0, card: 0, cardM: 0, cons: 0, gift: 0, extra: 0, benefit: 0, finalP: 0,
+      monthly: 0, afterCardM: 0, realM: 0, remainM: 0, preAmt: 0, maxM: 0, count: 0, multiCount: 0 };
+    q.items.forEach(function(it){
+      if(it.hidden) return;
+      var c = calcItem(it, pm);
+      T.count++; T.total += c.total; T.sub += c.sub; T.multi += c.multi; T.pre += c.pre; T.point += c.point;
+      T.card += c.card; T.cardM += c.cardMonthly; T.cons += c.cons; T.gift += c.gift; T.preAmt += c.preAmt; T.preAdd = (T.preAdd || 0) + c.preAdd; T.finalP += c.finalP;
+      T.monthly += c.monthly; T.afterCardM += c.afterCardM; T.realM += c.realM; T.remainM += c.remainM;
+      if(it.multiOk) T.multiCount++;
+      if(c.m > T.maxM) T.maxM = c.m;
+    });
+    (q.extra || []).forEach(function(e){ T.extra += num(e.amount); });
+    T.finalP = T.finalP - T.extra;
+    /* 💵 이벤트 리워드 1% — 최종가에 실제 차감 반영 (기준: 리워드 반영 전 혜택가 · 천원 올림) */
+    T.reward = 0;
+    if(q.opt.rewardOn){
+      T.reward = Math.ceil(Math.max(0, T.finalP) * 0.01 / 1000) * 1000;
+      T.finalP = T.finalP - T.reward;
+    }
+    /* 공통 멤버십 포인트 (DPS 전체 합산 입력) — 합계에서만 차감, 상품별 칸과 병행 */
+    T.pointItems = T.point;
+    T.pointCommon = num(q.opt.pointCommon);
+    if(T.pointCommon > 0){ T.point += T.pointCommon; T.finalP = T.finalP - T.pointCommon; }
+    T.benefit = T.sub + T.multi + T.pre + T.card + T.point + T.cons + T.gift + T.extra + T.reward;
+    T.pct = T.total > 0 ? (T.benefit / T.total * 100) : 0;
+    return T;
+  }
+  /* ★ 기간별 월 납입 — 상품마다 계약 기간이 다르면 기간 구간별로 매달 나가는 금액이 달라진다.
+     예) 36개월 + 60개월 + 72개월 → [1~36] 세 상품 합 / [37~60] 두 상품 합 / [61~72] 한 상품
+     금액 기준은 상품 카드의 "월 구독료 혜택가(통장 출금)" = 할인 후 월 결제액 − 카드 청구할인 */
+  function periodSegments(q){
+    var pm = q.opt.pointMode, arr = [];
+    q.items.forEach(function(it){
+      if(it.hidden) return;
+      var c = calcItem(it, pm);
+      if(c.m > 0) arr.push({ m: c.m, monthly: c.monthly, card: c.cardMonthly, net: c.afterCardM, label: String(it.model || it.tab || '상품').trim() || '상품' });
+    });
+    var bounds = [];
+    arr.forEach(function(a){ if(bounds.indexOf(a.m) < 0) bounds.push(a.m); });
+    bounds.sort(function(a, b){ return a - b; });
+    var segs = [], prev = 0;
+    bounds.forEach(function(b){
+      var s = { from: prev + 1, to: b, len: b - prev, monthly: 0, card: 0, net: 0, labels: [], ends: [] };
+      arr.forEach(function(a){
+        if(a.m > prev){ s.monthly += a.monthly; s.card += a.card; s.net += a.net; s.labels.push(a.label); }
+        if(a.m === b) s.ends.push(a.label);
+      });
+      segs.push(s);
+      prev = b;
+    });
+    return { items: arr, segs: segs, mixed: bounds.length > 1 };
+  }
+
+  /* ═══════════ 3) 렌더 — 좌측 입력 패널 ═══════════ */
+  function inp(path, val, ph, type){
+    return '<input type="' + (type || 'text') + '" data-q="' + path + '" value="' + esc(val) + '" placeholder="' + esc(ph || '') + '">';
+  }
+  function ninp(path, val, ph){
+    var v = num(val);
+    return '<input type="number" inputmode="numeric" data-q="' + path + '" value="' + (v > 0 ? v : '') + '" placeholder="' + esc(ph || '0') + '">';
+  }
+  var ACC_KEY = 'sh_quote_acc';
+  function accState(){ return lsGet(ACC_KEY) || { opt: true, show: false, nc: false, hist: false, draft: false }; }
+  function accOpen(id, title, right, domId){
+    var st = accState();
+    return '<details class="q-acc"' + (domId ? ' id="' + domId + '"' : '') + ' data-acc="' + id + '"' + ((st[id] || (id === 'nc' && !selectedNc())) ? ' open' : '') + '>'
+      + '<summary>' + title + (right ? '<span class="r">' + right + '</span>' : '') + '</summary><div class="q-acc-b">';
+  }
+  function renderPanel(){
+    var q = QUOTE; if(!q) return;
+    var p = document.getElementById('qPanel');
+    var gasOk = !!QUOTE_CFG.gasUrl;
+    var S = q.opt.show || {};
+    var h = '';
+    h += '<div class="q-sheethd no-print"><b>설정 · 메뉴</b><span class="s">고객 · 옵션 · 발행 내역</span><button type="button" id="qSheetClose" aria-label="닫기">✕</button></div>';
+    h += '<div class="q-status q-panel-intro" style="background:#EDF3FF;color:#1A4FA0">📄 입력은 오른쪽 <b>견적서에서 직접</b> — 이 패널은 옵션·발행 관리용입니다. [☰]로 접으면 견적서가 크게 보입니다.</div>';
+    h += custSearchHtml();
+
+    /* ── 견적 옵션 ── */
+    h += accOpen('opt', '⚙️ 견적 옵션', '');
+    h += '<div class="q-grid2">'
+      + '<div class="q-f"><label>상담 종류</label><select data-q="cust.type">' + ['구독','구독+일시불','혼수','입주·이사','교체','기타'].map(function(o){ return '<option' + (q.cust.type === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select></div>'
+      + '<div class="q-f"><label>견적 일자</label>' + inp('cust.date', q.cust.date, '2026.09.03') + '</div>'
+      + '</div>';
+    h += '<div class="q-f q-until-box"><label>견적 유효기간</label><div class="q-until-row">'
+      + '<select id="qUntilMode">'
+      +   [['none','기한 없음'],['3','견적일 + 3일'],['7','견적일 + 7일'],['14','견적일 + 14일'],['30','견적일 + 30일'],['eom','해당 월 말일까지'],['custom','직접 날짜 지정']].map(function(o){ return '<option value="' + o[0] + '"' + (q.cust.untilMode === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')
+      + '</select>'
+      + '<input type="date" id="qUntilDate" data-q="cust.until" value="' + esc(q.cust.until || '') + '"' + (q.cust.untilMode === 'none' ? ' disabled' : '') + '>'
+      + '</div></div>';
+    h += '<div class="q-f"><label>⭐ 멤버십 포인트 표기</label><div class="q-radio">'
+      + '<button type="button" data-qopt="pointMode" data-v="cash" class="' + (q.opt.pointMode === 'cash' ? 'on' : '') + '">별도 적립 (기본)</button>'
+      + '<button type="button" data-qopt="pointMode" data-v="replace" class="' + (q.opt.pointMode === 'replace' ? 'on' : '') + '">월 비용에 반영(차감)</button>'
+      + '</div>'
+      + (q.opt.pointMode === 'replace' ? '<div class="q-status warn" style="margin-top:5px">⚠️ 포인트로 월 결제를 대체하면 카드 월 실적 조건이 미달되어 청구할인이 빠질 수 있습니다.</div>' : '')
+      + '<div class="q-row" style="margin-top:7px;align-items:center;gap:8px"><span style="font-size:11px;font-weight:700;color:var(--gray-4);white-space:nowrap">공통 포인트<br><span style="font-weight:500">(DPS 전체 합산)</span></span>' + '<input type="number" inputmode="numeric" data-q="opt.pointCommon" value="' + (num(q.opt.pointCommon) > 0 ? num(q.opt.pointCommon) : '') + '" placeholder="전체 합산으로 받았을 때만" style="background:#FFF9CC;border-color:#E3B60C">' + '</div>'
+      + '</div>';
+    h += '<div class="q-grid2">'
+      + '<div class="q-f"><label>일시불가 (비교용 · 선택)</label>' + ninp('opt.lumpSum', q.opt.lumpSum, '입력 시 총 구독가와 비교') + '</div>'
+      + '<div class="q-f"><label>💵 이벤트 리워드</label><label class="q-inline-chk" style="margin-top:8px"><input type="checkbox" data-q="opt.rewardOn"' + (q.opt.rewardOn ? ' checked' : '') + '> 리워드 1% 반영 (최종가 차감)</label></div>'
+      + '</div>';
+    var qrNc = NAMECARDS.filter(function(cd){ return cd.id === q.opt.namecardId; })[0];
+    var qrPrev = qrData(q, qrNc);
+    h += '<div class="q-f"><label>🔳 네임카드 QR 코드</label><select id="qQrSel" data-qopt="qrType">'
+      + [['tel','📞 상담사 휴대폰 — 전화 걸기 (기본)'],['home','🏠 홈페이지 (samsungsh.co.kr)'],['vcard','🪪 상담사 연락처 저장 (vCard)'],['email','✉️ 상담사 이메일 쓰기'],['none','표시 안 함']]
+          .map(function(o){ return '<option value="' + o[0] + '"' + (q.opt.qrType === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')
+      + '</select><div class="q-until-note">' + (qrPrev ? '현재 QR: <b>' + esc(qrPrev.guide) + '</b>' : 'QR을 표시하지 않습니다.') + '</div></div>';
+
+    /* ── 표시 항목 (간소화 기본 + 담당자 프리셋) ── */
+    h += '</div></details>' + accOpen('show', '👁 견적서 표시 항목', '숨긴 항목도 계산엔 반영');
+    h += '<button type="button" class="q-btn" id="qShowSave" style="align-self:flex-start;padding:6px 12px;font-size:12px">💾 내 기본값 저장</button>';
+    h += '<div class="q-showlist">'
+      + [['payband', '매달 내시는 금액 밴드 (상단 요약)'],
+         ['sub', '구독료 할인 내역'],
+         ['multi', '다품목 구독 할인'],
+         ['total', '총 구독료 (기본가격)'],
+         ['realM', '월 체감 구독료 (포인트 반영)'],
+         ['sumBox', '총비용 비교표 (할인 내역 합계)'],
+         ['prepayLine', '선납금 → 남은 월 납입 환산 표기']]
+        .map(function(o){ return '<label><input type="checkbox" data-qshow="' + o[0] + '"' + (S[o[0]] ? ' checked' : '') + '> ' + o[1] + '</label>'; }).join('')
+      + '</div>';
+    h += '<div class="q-hint">기본은 간소화 — <b>월 구독료 · 제휴카드 청구할인 · 월 구독료 혜택가(통장 출금)</b>만 표시됩니다. 끈 항목도 금액 계산에는 반영되고 내역만 가려집니다. 상품별 계약 기간이 다르면 <b>기간별 월 납입 안내</b>가 자동으로 붙습니다. 편집 중에는 확인을 위해 모든 항목이 보이고, <b>[👁 인쇄 미리보기]</b>를 누르면 실제 출력 모습이 됩니다. [💾]는 선택된 네임카드 기준으로 저장됩니다.</div>';
+
+    /* ── 네임카드 ── */
+    h += '</div></details>' + accOpen('nc', '🪪 상담사 네임카드', (qrNc ? esc(qrNc.name) + (qrNc.position ? ' ' + esc(qrNc.position) : '') + ' · ' : '') + '데이터센터');
+    h += '<div class="q-row"><select id="qNcSel" style="flex:1;font-size:13px;padding:7px 9px;border:1.5px solid var(--gray-2);border-radius:7px;background:#fff;">'
+      + '<option value="">— 네임카드 선택 —</option>'
+      + NAMECARDS.map(function(cd){ return '<option value="' + esc(cd.id) + '"' + (q.opt.namecardId === cd.id ? ' selected' : '') + '>' + esc(cd.name) + (cd.position ? ' ' + esc(cd.position) : '') + (cd.mobile ? ' · ' + esc(cd.mobile) : '') + '</option>'; }).join('')
+      + '</select>'
+      + '<button type="button" class="q-btn" id="qNcEdit" title="선택한 네임카드 수정">✏️</button>'
+      + '<button type="button" class="q-btn" id="qNcNew">＋ 새로</button>'
+      + '<button type="button" class="q-btn" id="qNcRefresh" title="다시 불러오기">↻</button></div>';
+    if(!qrNc) h += '<div class="q-status warn">⚠️ <b>담당자를 선택하세요</b> — 선택해야 발행·보내기가 됩니다.</div>';
+    h += '<div id="qNcForm" class="q-nc-form" style="display:none"></div>';
+    h += '<div id="qNcStatus" class="q-status">' + (NAMECARDS.length ? NAMECARDS.length + '개 네임카드 · 모든 페이지 하단에 상담사가 표기됩니다' : '저장된 네임카드가 없습니다. [＋ 새로]로 만들어 두면 다음부터 불러올 수 있어요.') + '</div>';
+
+    /* ── 발행 내역 ── */
+    h += '</div></details>' + accOpen('hist', '📚 발행 내역', '<span id="qHistCnt"></span>', 'qHistSection');
+    h += '<div class="q-hist-tools"><input type="search" id="qHistSearch" placeholder="예) 최유정 3976 · 이름/뒷4자리/견적번호" enterkeyhint="search"><button type="button" class="q-btn" id="qHistBtnSearch" style="background:var(--blue);color:#fff;border-color:var(--blue)">🔎 검색</button><button type="button" class="q-btn" id="qHistRefresh" title="다시 불러오기">↻</button></div>';
+    h += '<div id="qHist" class="q-hist"><div class="q-hint">상단 [📚 발행 내역]을 누르거나 새로고침하면 최근 발행 견적을 불러옵니다.</div></div><div class="q-hint" style="margin-top:4px">🔎 <b>이름 + 연락처 뒷 4자리</b>를 함께 넣으면 바로 찾습니다 (예: <code>최유정 3976</code>).</div>';
+    h += '</div></details>';
+    var drafts = lsGet(LS_DRAFTS) || [];
+    h += accOpen('draft', '🕒 임시 저장', drafts.length ? drafts.length + '건' : '');
+    if(drafts.length){
+      h += drafts.map(function(d, i){
+        var dt = new Date(d.t || 0);
+        var when = (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + ('0' + dt.getHours()).slice(-2) + ':' + ('0' + dt.getMinutes()).slice(-2);
+        return '<div class="q-draft-item"><div class="inf"><b>' + esc(d.label || '임시 견적') + '</b><span>' + when + (d.why ? ' · ' + esc(d.why) : '') + '</span></div>'
+          + '<button type="button" class="q-btn" data-qdraft="' + i + '">불러오기</button>'
+          + '<button type="button" class="q-btn" data-qdraftdel="' + i + '" title="삭제">✕</button></div>';
+      }).join('');
+      h += '<div class="q-hint">화면을 비울 때(새 견적·불러오기) 작성 중이던 견적이 자동 보관됩니다 — 이 브라우저, 최근 10건.</div>';
+    } else {
+      h += '<div class="q-hint">작성 중이던 견적이 자동 보관되는 곳입니다. [＋ 새 견적]이나 다른 견적을 불러와 화면을 비우면 여기 최근 10건까지 저장되고, 새로고침해도 현재 작성본은 그대로 복원됩니다.</div>';
+    }
+    h += '</div></details>';
+    h += '<div class="q-status ok" style="margin-top:6px">✅ 데이터센터 연동 — 발행하면 바로 저장되고 담당자 화면 [견적서]·[고객에게 보내기]에 바로 쓰입니다.'
+      + '<br>🖨️ <b>인쇄를 누르면 자동으로 발행된 뒤 인쇄</b>됩니다. 🧮 계산기 [견적서 발행]으로도 결과가 이 페이지로 넘어옵니다.</div>';
+    p.innerHTML = h;
+    p.querySelectorAll('details.q-acc').forEach(function(d){
+      d.addEventListener('toggle', function(){
+        var st = accState(); st[d.getAttribute('data-acc')] = d.open; lsSet(ACC_KEY, st);
+      });
+    });
+  }
+
+  /* ═══════════ 4) 렌더 — 견적서(A4) ═══════════ */
+  function cell(path, val, cls, req){
+    if(!EDIT) return won(val);
+    var v = num(val);
+    return '<input class="q-in' + (cls ? ' ' + cls : '') + ((req && !(v > 0)) ? ' req' : '') + '" data-q="' + path + '" value="' + (v > 0 ? fmt(v) : '') + '" placeholder="0" inputmode="numeric">';
+  }
+  function tcell(path, val, cls, ph, req){
+    if(!EDIT) return esc(val);
+    return '<input class="q-in txt' + (cls ? ' ' + cls : '') + ((req && !val) ? ' req' : '') + '" data-q="' + path + '" value="' + esc(val) + '" placeholder="' + esc(ph || '') + '">';
+  }
+  /* 계약 기간 선택 — 12/24/36/48/60/72개월 (계산기에서 넘어온 다른 값은 목록에 추가해 그대로 보존) */
+  function monthSel(path, m){
+    var opts = (QUOTE_CFG.monthOptions || [12, 24, 36, 48, 60, 72]).slice();
+    if(m > 0 && opts.indexOf(m) < 0){ opts.push(m); opts.sort(function(a, b){ return a - b; }); }
+    var h = '<select class="q-in mon freq" data-q="' + path + '" title="계약 기간을 고르면 총 구독료·카드 할인이 자동 재계산됩니다">';
+    if(!(m > 0)) h += '<option value="0" selected>기간 선택</option>';
+    h += opts.map(function(o){ return '<option value="' + o + '"' + (o === m ? ' selected' : '') + '>' + o + '개월</option>'; }).join('');
+    return h + '</select>';
+  }
+  /* 수식 연동 토글 뱃지 */
+  function fxBadge(i, key, isAuto){
+    if(!EDIT) return '';
+    return '<span class="q-fx' + (isAuto ? ' on' : '') + '" data-qfx="' + i + '|' + key + '" title="클릭하면 자동계산 ↔ 직접입력이 전환됩니다">' + (isAuto ? '🔗 수식' : '✏️ 직접') + '</span>';
+  }
+  function discRow(label, path, val, zeroLabel, cls){
+    var v = num(val);
+    if(!EDIT && v <= 0 && !zeroLabel) return '';
+    return '<tr><th>' + label + '</th><td class="num' + (v <= 0 ? ' mut' : '') + '">' + (EDIT ? cell(path, v, cls) : (v > 0 ? '-' + won(v) : (zeroLabel || '-'))) + '</td></tr>';
+  }
+  /* 포인트 표기 방식 토글 — 시트 안에서 바로 클릭 (패널 라디오와 동기화) */
+  function pmChip(){
+    if(!EDIT) return '';
+    var pm = QUOTE.opt.pointMode;
+    return '<span class="q-pmseg no-print" title="포인트를 월 납입액에서 차감할지, 별도 적립으로만 표기할지 선택합니다">'
+      + '<button type="button" data-qopt="pointMode" data-v="cash" class="' + (pm === 'cash' ? 'on' : '') + '">별도 적립</button>'
+      + '<button type="button" data-qopt="pointMode" data-v="replace" class="' + (pm === 'replace' ? 'on' : '') + '">월 납입 차감</button></span>';
+  }
+  function prodHtml(it, i, pm){
+    var c = calcItem(it, pm);
+    var noSub = !(c.m > 0);
+    var p = 'items.' + i + '.';
+    var mOk = it.multiOk !== false;
+    var S = (QUOTE.opt.show || {});
+    var h = '<div class="q-prod' + (it.hidden ? ' off' : '') + '">';
+    h += '<div class="q-prod-h"><span class="n">' + (i + 1) + '</span><span class="m">'
+      + (EDIT ? '<input class="q-in txt mhead' + (it.model ? '' : ' req') + '" data-q="' + p + 'model" value="' + esc(it.model) + '" placeholder="모델명 입력 *">' : esc(it.model)) + '</span>'
+      + ((S.multi || EDIT || mOk) ? '<span class="q-mflag' + (mOk ? ' on' : '') + (EDIT ? ' click' : '') + '"' + (EDIT ? ' data-qmulti="' + i + '" title="클릭하면 다품목 해당/미해당이 전환됩니다"' : '') + '>다품목 ' + (mOk ? '해당' : '미해당') + '</span>' : '')
+      + '<span class="c">' + esc(it.tab) + (noSub ? '' : (it.tab ? ' · ' : '') + c.m + '개월') + (it.care ? ' · ' + esc(it.care) : '') + '</span>'
+      + (EDIT ? '<button type="button" class="q-x" data-qhide="' + i + '">' + (it.hidden ? '↩ 포함' : '✕ 제외') + '</button>' : '')
+      + (EDIT && it.hidden && QUOTE.items.length > 1 ? '<button type="button" class="q-x" data-qremove="' + i + '">🗑 삭제</button>' : '') + '</div>';
+    if(it.name || EDIT) h += '<div class="nm">' + (EDIT ? tcell(p + 'name', it.name, 'w', '제품명(선택)') : esc(it.name)) + '</div>';
+
+    h += '<table class="q-tbl">';
+    /* 단가 · 기간 (엑셀 C9 / D9) */
+    h += '<tr><th>월 구독료' + (EDIT ? ' <span class="q-fxnote">DPS 조회값 *</span>' : '') + '</th><td class="num">' + cell(p + 'monthly', it.monthly, '', true) + '</td></tr>';
+    h += '<tr><th>계약 기간 · 무상 A/S</th><td class="num">'
+      + (EDIT ? monthSel(p + 'months', c.m) + '<span class="q-mon-note">계약기간 내 무상 A/S</span>'
+              : (noSub ? '-' : c.m + '개월 (계약기간 내 무상 A/S)')) + '</td></tr>';
+    /* 총 구독료 = 단가 × 기간 (엑셀 E9) */
+    if(S.total || EDIT){
+      h += '<tr><th>총 구독료</th><td class="num">' + fxBadge(i, 'total', it.auto.total !== false)
+        + (it.auto.total !== false
+            ? '<span class="q-auto">' + won(c.total) + '</span>' + (EDIT ? '<span class="q-fxnote">= ' + fmt(c.monthly) + ' × ' + c.m + '</span>' : '')
+            : cell(p + 'total', c.total))
+        + '</td></tr>';
+    }
+    /* 일시불가 — 같은 제품을 일반 구매로 살 때 가격 (2026-11-16 · /quote/ 가 품목마다 넘긴다 · 고칠 수 있다) */
+    if(num(it.lumpPrice) > 0 || EDIT) h += '<tr><th>일시불가 <span style="font-weight:500;color:#666">(일반 구매 시)</span></th><td class="num">' + (EDIT ? cell(p + 'lumpPrice', num(it.lumpPrice)) : won(num(it.lumpPrice))) + '</td></tr>';
+    if(it.careType || EDIT) h += '<tr><th>서비스 유형</th><td>' + (EDIT ? tcell(p + 'careType', it.careType) : esc(it.careType)) + '</td></tr>';
+    if(it.cycle || EDIT) h += '<tr><th>방문 주기</th><td>' + (EDIT ? tcell(p + 'cycle', it.cycle) : esc(it.cycle)) + '</td></tr>';
+    if(it.note || EDIT) h += '<tr><th>비고</th><td>' + (EDIT ? tcell(p + 'note', it.note, 'w', '색상, 설치 조건 등') : esc(it.note)) + '</td></tr>';
+    h += '</table>';
+
+    h += '<table class="q-tbl" style="border-top:0">';
+    if(S.sub || EDIT) h += discRow('구독료 할인', p + 'disc.sub', c.sub, '', 'imp');
+    /* 다품목 — 해당/미해당을 항상 표기 */
+    if(S.multi || EDIT || (mOk && c.multi > 0)){
+      h += '<tr><th>다품목 구독 할인</th><td class="num wrap' + (mOk && c.multi > 0 ? '' : ' mut') + '">'
+        + (mOk ? (EDIT ? cell(p + 'disc.multi', c.multiRaw) : (c.multi > 0 ? '-' + won(c.multi) : '해당 (월 구독료에 반영)'))
+               : ('미해당' + (c.multiRaw > 0 ? ' <span class="q-fxnote">(' + won(c.multiRaw) + ' 제외)</span>' : '')))
+        + '</td></tr>';
+    }
+    h += discRow('선납 할인' + (c.preAmt > 0 && QUOTE.opt.prepayPct ? ' (선납 ' + QUOTE.opt.prepayPct + '%)' : ''), p + 'disc.prepay', c.pre, '', 'freq');
+    if(pm === 'replace') h += discRow('⭐ 삼성전자 멤버십 포인트' + pmChip(), p + 'disc.point', c.point, EDIT ? '' : null, 'freq').replace('<tr>', '<tr class="q-pt">');
+    else h += '<tr class="q-pt"><th>⭐ 삼성전자 멤버십 포인트' + pmChip() + '</th><td class="num">' + (EDIT ? cell(p + 'disc.point', c.point, 'freq') : (c.point > 0 ? '-' + won(c.point) + ' <span style="font-weight:500;color:#666">(P 별도 적립)</span>' : '-')) + '</td></tr>';
+    /* 제휴카드 = 월 청구할인 × 기간 (엑셀 E10) */
+    if(EDIT || c.card > 0){
+      var cardSel = '';
+      if(EDIT){
+        var cardNames = Object.keys(CARD);
+        var cardTiers = (it.cardName && CARD[it.cardName]) ? Object.keys(CARD[it.cardName].t) : [];
+        cardSel = '<div class="q-cardsel no-print"><select data-qcn="' + i + '"><option value="">카드 없음</option>'
+          + cardNames.map(function(nm){ return '<option value="' + esc(nm) + '"' + (it.cardName === nm ? ' selected' : '') + '>' + esc(nm) + '</option>'; }).join('')
+          + '<option value="직접입력"' + (it.cardName === '직접입력' ? ' selected' : '') + '>직접 입력</option></select>'
+          + (cardTiers.length ? '<select data-qct="' + i + '">' + cardTiers.map(function(t){ return '<option value="' + esc(t) + '"' + (it.cardTier === t ? ' selected' : '') + '>월 사용 ' + esc(t) + '</option>'; }).join('') + '</select>' : '')
+          + '</div>';
+      }
+      h += '<tr><th>제휴카드 청구할인' + (c.cardMonthly > 0 && !EDIT ? ' <span style="font-weight:500;color:#666">(월 ' + fmt(c.cardMonthly) + '원)</span>' : '') + '</th><td class="num">'
+        + cardSel
+        + fxBadge(i, 'card', it.auto.card !== false)
+        + (it.auto.card !== false
+            ? (EDIT ? '<div class="q-cardcalc">월 <input class="q-in sm freq" data-q="' + p + 'cardMonthly" value="' + (c.cardMonthly || '') + '" placeholder="0"><span class="x">× ' + c.m + '개월</span></div><div class="q-auto">= ' + won(c.card) + '</div>'
+                    : '-' + won(c.card))
+            : cell(p + 'disc.card', c.card))
+        + '</td></tr>';
+    }
+    h += discRow('소모품', p + 'consumable', c.cons);
+    h += discRow('상품권', p + 'giftcard', c.gift);
+    /* 선납금 — 할인이 아니라 계약 시 선결제하는 지불액 (최종 혜택가에 가산) */
+    if(EDIT || c.preAmt > 0) h += '<tr><th>선납금 <span style="font-weight:500;color:#666">(계약 시 선결제)</span></th><td class="num">'
+      + (EDIT ? cell(p + 'prepayAmt', c.preAmt, 'imp') : '<span style="color:#1A4FA0;font-weight:700">' + (c.preAdd > 0 ? '+' : '') + won(c.preAmt) + '</span>') + '</td></tr>';
+    /* 구독 혜택가 (엑셀 E16) */
+    h += '<tr class="fin"><th>최종 혜택가' + (c.preAmt > 0 ? ' <span style="font-weight:600;font-size:.85em">(선납금 포함)</span>' : '') + '</th><td class="num">' + won(c.finalP) + (EDIT ? '<span class="q-fxnote">자동</span>' : '') + '</td></tr>';
+    h += '</table>';
+
+    if(!noSub){
+      h += '<div class="q-month">';
+      h += '<div class="ln"><span>월 구독료 혜택가 <span style="color:#666">(통장에서 나가는 금액 · ' + c.m + '개월간)</span></span><span class="big">' + won(c.afterCardM) + '</span></div>';
+      if(c.cardMonthly > 0) h += '<div class="ln"><span>· 할인 후 월 결제액 ' + won(c.payM) + ' − 카드 청구할인 ' + won(c.cardMonthly) + '</span><b>' + won(c.afterCardM) + '</b></div>';
+      if(c.preAmt > 0 && S.prepayLine) h += '<div class="ln"><span>· 선납금 ' + won(c.preAmt) + ' 선결제 → 남은 월 납입</span><b>' + won(c.remainM) + '</b></div>';
+      else if(c.preAmt > 0) h += '<div class="ln"><span>· 선납금 (선결제 · 최종 혜택가에 포함)</span><b>' + won(c.preAmt) + '</b></div>';
+      if(c.point > 0 && pm === 'cash') h += '<div class="ln q-pt"><span>· ⭐ 삼성전자 멤버십 포인트 ' + fmt(c.point) + 'P</span><b>별도 적립</b></div>';
+      if(pm === 'replace' && (S.realM || EDIT)){
+        h += '<div class="ln"><span>· 월 체감 구독료 (⭐포인트 차감 반영)</span><b>' + won(c.realM) + '</b></div>';
+        if(c.point > 0 && c.freeMonths > 0) h += '<div class="ln"><span>· 포인트 ' + fmt(c.point) + 'P로 월 결제 대체 시</span><b>약 ' + c.freeMonths + '개월 실지불 없음</b></div>';
+      }
+      h += '</div>';
+    } else {
+      h += '<div class="q-month">구독형 혜택 계산 대상이 아닌 품목입니다.</div>';
+    }
+    h += '</div>';
+    return h;
+  }
+  /* ★ QR 생성 — 홈페이지 / 전화걸기(tel:) / 연락처 저장(vCard) / 이메일(mailto:)
+     ※ MECARD는 쓰지 않습니다 — 일본 피처폰 규격이라 한글이 깨지는 리더가 있고,
+        URL의 콜론(:)처럼 예약문자를 escape하지 않으면 필드가 깨져 읽힙니다.
+        연락처 저장은 UTF-8을 정식 지원하는 vCard 3.0으로 생성합니다. */
+  function vcardEsc(s){ return String(s == null ? '' : s).replace(/([\\;,])/g, '\\$1').replace(/\r?\n/g, '\\n'); }
+  function telDigits(s){ return String(s || '').replace(/[^0-9+]/g, ''); }
+  function qrData(q, nc){
+    var t = q.opt.qrType || 'tel';
+    if(t === 'none') return null;
+    var home = QUOTE_CFG.store.home;
+    if(t === 'tel'){
+      var tel = telDigits(nc && nc.mobile);
+      if(!tel) return { data: home, cap: '홈페이지', guide: 'QR 스캔 시 홈페이지로 연결됩니다' };
+      return { data: 'tel:' + tel, cap: '전화 걸기', guide: 'QR 스캔 시 상담사에게 전화가 연결됩니다' };
+    }
+    if(t === 'email'){
+      var em = (nc && nc.email) ? String(nc.email).trim() : '';
+      if(!em) return { data: home, cap: '홈페이지', guide: 'QR 스캔 시 홈페이지로 연결됩니다' };
+      return { data: 'mailto:' + em, cap: '이메일 쓰기', guide: 'QR 스캔 시 상담사에게 메일 쓰기로 연결됩니다' };
+    }
+    if(t === 'vcard'){
+      if(!nc || (!nc.mobile && !nc.tel)) return { data: home, cap: '홈페이지', guide: 'QR 스캔 시 홈페이지로 연결됩니다' };
+      var L = ['BEGIN:VCARD', 'VERSION:3.0'];
+      L.push('N:' + vcardEsc(nc.name) + ';;;;');
+      L.push('FN:' + vcardEsc(nc.name));
+      L.push('ORG:' + vcardEsc(QUOTE_CFG.store.name));
+      if(nc.position || nc.dept) L.push('TITLE:' + vcardEsc([nc.position, nc.dept].filter(Boolean).join(' ')));
+      if(nc.mobile) L.push('TEL;TYPE=CELL:' + telDigits(nc.mobile));
+      if(nc.tel) L.push('TEL;TYPE=WORK:' + telDigits(nc.tel));
+      if(nc.email) L.push('EMAIL;TYPE=INTERNET:' + vcardEsc(nc.email));
+      L.push('URL:' + home);                       // vCard는 URL 콜론을 escape하지 않음 (정상)
+      L.push('END:VCARD');
+      return { data: L.join('\r\n'), cap: '연락처 저장', guide: 'QR 스캔 시 상담사 연락처를 저장할 수 있습니다' };
+    }
+    return { data: home, cap: '홈페이지', guide: 'QR 스캔 시 삼성스토어 시흥 홈페이지로 연결됩니다' };
+  }
+  // 인쇄 품질 확보: 요청 해상도 240px + 오류정정 M (실제 표시 크기는 CSS가 축소)
+  function qrImgSrc(data){
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&ecc=M&data=' + encodeURIComponent(data);
+  }
+  function namecardHtml(q){
+    var nc = NAMECARDS.filter(function(c){ return c.id === q.opt.namecardId; })[0];
+    var s = QUOTE_CFG.store;
+    var h = '<div class="q-foot">';
+    h += '<div class="store"><div class="logo">' + logoHtml('q-logo-f', 'SAMSUNG STORE') + '</div><b>' + esc(s.name) + '</b><br>A: ' + esc(s.addr) + '<br>T: ' + esc(s.tel) + ' · ' + esc(s.center) + '</div>';
+    h += '<div class="q-card">';
+    if(nc){
+      var qr = qrData(q, nc);
+      if(qr) h += '<div class="q-qr"><img src="' + esc(qrImgSrc(qr.data)) + '" alt="QR" onerror="this.style.display=\'none\'"><span class="cap">' + esc(qr.cap) + '</span></div>';
+      h += '<div><div class="who">' + esc(nc.name) + (nc.position ? '<small>' + esc(nc.position) + '</small>' : '') + '</div>'
+        + (nc.dept ? '<div class="ln" style="color:#1A4FA0;font-weight:700">' + esc(nc.dept) + '</div>' : '')
+        + (nc.mobile ? '<div class="ln"><b>M</b>' + esc(nc.mobile) + '</div>' : '')
+        + (nc.tel ? '<div class="ln"><b>T</b>' + esc(nc.tel) + '</div>' : '')
+        + (nc.email ? '<div class="ln"><b>E</b>' + esc(nc.email) + '</div>' : '')
+        + '</div>';
+    } else {
+      h += EDIT ? '<div class="none no-print" data-qpicknc="1" style="color:#c0392b;font-weight:800;cursor:pointer">⚠️ 담당자 미선택 — 눌러서 선택<br><span style="font-size:9px;font-weight:600">선택해야 발행됩니다</span></div>' : '';
+    }
+    h += '</div></div>';
+    return h;
+  }
+  /* ★ 매달 내시는 금액 — 고객이 한눈에 보는 요약 밴드
+     엑셀 견적서 구조 그대로:
+       E18 월 구독료 합계      = Σ 월 구독료
+       E19 카드 할인 합계금액  = Σ 월 청구할인
+       E20 월 구독료 혜택가    = E18 − E19        (통장에서 실제로 나가는 금액)
+       E21 월 체감 구독료      = 구독 혜택가 합계 ÷ 계약개월  (포인트까지 반영)
+     선납금이 있으면 "선납 후 월 납입" 칸이 하나 더 붙습니다.
+     상품별 계약 기간이 다르면 "첫 구간(모든 상품 납부 중)" 기준으로 표기하고,
+     기간별 금액은 아래 [기간별 월 납입 안내]에 나눠 보여줍니다. */
+  function payBandHtml(q, T){
+    var P = periodSegments(q);
+    if(!P.segs.length) return '';
+    var m = T.maxM;
+    var first = P.segs[0];
+    var monthly = Math.round(first.monthly);                  // ① 월 구독료 합계 (첫 구간)
+    var cardM   = Math.round(first.card);                     // ② 카드 청구할인 합계
+    var netM    = Math.round(first.net);                      // ③ 월 구독료 혜택가 (상품 카드 출금액의 합)
+    var discM   = Math.max(0, monthly - cardM - netM);        // 선할인(구독료·다품목·선납) 월 환산
+    var realM   = Math.round(T.realM - (num(q.opt.pointCommon) || 0) / m); // ④ 월 체감 구독료 (공통 포인트까지 반영 · 선납금 제외)
+    var hasPre  = T.preAmt > 0;
+    var afterPreM = Math.round(T.remainM);                     // 선납 후 남은 월 납입 (상품별 합)
+    var pointOn = (q.opt.pointMode === 'replace') && T.point > 0;
+    function c(k, v, cls, sub){
+      return '<div class="c' + (cls === 'big' ? ' big' : '') + '"><div class="k">' + k + '</div>'
+        + '<div class="v' + (cls === 'minus' ? ' minus' : '') + '">' + v + '</div>'
+        + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+    }
+    var S = (q.opt.show || {});
+    var cells = '', n = 0;
+    cells += c('월 구독료 합계', won(monthly)); n++;
+    if(discM > 0){ cells += c('구독료 할인 (월 환산)', '-' + won(discM), 'minus'); n++; }
+    if(cardM > 0){ cells += c('제휴카드 청구할인', '-' + won(cardM), 'minus'); n++; }
+    if(hasPre && S.prepayLine){ cells += c('선납 후 월 납입', won(afterPreM)); n++; }
+    if(S.realM){ cells += c('월 체감 구독료' + (pointOn ? ' (⭐반영)' : ''), won(realM)); n++; }
+    cells += c('월 구독료 혜택가' + (P.mixed ? ' (1~' + first.to + '개월)' : ''), won(netM), 'big',
+      P.mixed ? '이후 기간별 금액은 아래 안내 참고' : m + '개월 · 통장에서 나가는 금액'); n++;
+    var note = '※ 월 구독료 혜택가는 ' + (discM > 0 ? '구독료 할인과 ' : '') + '제휴카드 청구할인까지 반영해 실제로 통장에서 빠져나가는 금액입니다.'
+      + (P.mixed ? ' 상품별 계약 기간이 달라 ' + first.to + '개월 이후에는 월 납입액이 줄어듭니다.' : '')
+      + (S.realM ? ' 월 체감 구독료는 ' + (pointOn ? '멤버십 포인트까지 ' : '') + '모든 혜택을 계약 개월로 나눈 실질 부담액입니다.' : '')
+      + (hasPre ? ' 선납금 ' + won(T.preAmt) + '은 계약 시 미리 결제하시는 금액입니다.' : '');
+    var right = P.mixed
+      ? '계약 ' + P.segs.map(function(s){ return s.to; }).join(' / ') + '개월 혼합'
+      : m + '개월';
+    return '<div class="q-pay"><div class="q-pay-h">💳 고객님이 매달 내시는 금액'
+      + '<span class="r">' + right + (T.count > 1 ? ' · 상품 ' + T.count + '개 합계' : '') + '</span></div>'
+      + '<div class="q-pay-grid" style="grid-template-columns:repeat(' + (n - 1) + ',1fr) 1.3fr">' + cells + '</div>'
+      + '<div class="q-pay-note">' + note + '</div></div>';
+  }
+  /* ★ 기간별 월 납입 안내 — 상품별 계약 기간이 다를 때만 표시
+     "36개월까지는 매달 n원, 37~60개월은 매달 m원, 61~72개월은 매달 p원" */
+  function tierHtml(q){
+    var P = periodSegments(q);
+    if(!P.mixed) return '';
+    var total = 0;
+    var rows = P.segs.map(function(s, i){
+      var sum = s.net * s.len;
+      total += sum;
+      var endTxt = (i < P.segs.length - 1 && s.ends.length) ? '<span class="end">' + s.to + '개월 종료: ' + esc(s.ends.join(', ')) + '</span>' : '';
+      return '<tr>'
+        + '<td class="per">' + (i === 0 ? '1' : s.from) + ' ~ ' + s.to + '개월</td>'
+        + '<td class="num">' + s.len + '개월</td>'
+        + '<td class="num amt"><small>매달</small>' + won(s.net) + '</td>'
+        + '<td class="num">' + won(sum) + '</td>'
+        + '<td class="its">' + esc(s.labels.join(', ')) + ' (' + s.labels.length + '개)' + endTxt + '</td>'
+        + '</tr>';
+    }).join('');
+    var last = P.segs[P.segs.length - 1].to;
+    var say = P.segs.map(function(s, i){
+      return (i === 0 ? '<b>' + s.to + '개월까지</b>는' : '<b>' + s.from + '~' + s.to + '개월</b>은') + ' 매달 <b>' + won(s.net) + '</b>';
+    }).join(', ') + '을 내시고, ' + last + '개월 후 모든 구독이 끝납니다.';
+    return '<div class="q-tier"><div class="q-tier-h">📅 기간별 월 납입 안내'
+      + '<span class="r">상품마다 계약 기간이 달라 기간에 따라 매달 내시는 금액이 바뀝니다</span></div>'
+      + '<table class="q-tbl"><colgroup><col style="width:18%"><col style="width:11%"><col style="width:22%"><col style="width:19%"><col class="c-its" style="width:30%"></colgroup>'
+      + '<tr><th>기간</th><th>개월 수</th><th>매달 내시는 금액</th><th>기간 합계</th><th class="its">납부 중인 상품</th></tr>'
+      + rows
+      + '<tr class="tot"><td class="per" colspan="3">총 ' + last + '개월 통장 출금 합계</td><td class="num">' + won(total) + '</td><td class="its"></td></tr>'
+      + '</table>'
+      + '<div class="q-tier-say">' + say
+      + '<span class="n">※ 금액은 구독료 할인·제휴카드 청구할인을 반영한 통장 출금액 기준이며, 선납금·멤버십 포인트는 포함하지 않습니다.</span></div>'
+      + '</div>';
+  }
+  function homeShort(){ return String(QUOTE_CFG.store.home || '').replace(/^https?:\/\//, '').replace(/\/$/, ''); }
+  function headerHtml(q){
+    var untilLabel = (q.cust.untilMode === 'none' || !q.cust.until) ? '별도 없음' : displayYmd(q.cust.until);
+    return '<div class="qh">'
+      + '<div class="brand">' + logoHtml('q-logo', 'SAMSUNG STORE SIHEUNG') + '</div>'
+      + '<div class="ttl"><h1>삼성스토어 시흥 구독 견적서</h1><div class="sub">상담 종류 <b>' + esc(q.cust.type) + '</b></div></div>'
+      + '<div class="meta">'
+      + '<div class="no"><span>견적번호</span>' + (q.meta.no ? '<b>' + esc(q.meta.no) + (q.meta.version > 1 ? ' (v' + q.meta.version + ')' : '') + '</b>' : '<b class="none">미발행</b>') + '</div>'
+      + '<div><span>견적 일시</span><b>' + esc(q.cust.date) + '</b></div>'
+      + '<div><span>견적 유효기한</span><b>' + esc(untilLabel) + '</b></div>'
+      + '</div></div>';
+  }
+  function contHeaderHtml(q){
+    return '<div class="qh-cont"><span><span class="wm">SAMSUNG STORE</span>삼성스토어 시흥 구독 견적서 (계속)</span>'
+      + '<span>' + (q.meta.no ? 'No. <b>' + esc(q.meta.no) + '</b> · ' : '') + esc(q.cust.name || '고객') + ' 고객님 · 견적 일시 ' + esc(q.cust.date) + '</span></div>';
+  }
+  function runFootHtml(q){
+    var s = QUOTE_CFG.store;
+    var nc = q ? NAMECARDS.filter(function(cd){ return cd.id === q.opt.namecardId; })[0] : null;
+    var who = nc ? '<b style="color:#1A4FA0">담당 ' + esc(nc.name) + (nc.position ? ' ' + esc(nc.position) : '') + '</b>' + (nc.mobile ? ' M ' + esc(nc.mobile) : '') + ' · ' : '';
+    return '<div class="q-pg-run"><span>' + who + esc(s.name) + ' T ' + esc(s.tel) + ' · ' + esc(homeShort()) + '</span><span class="pn"></span></div>';
+  }
+  /* 블록들을 A4 페이지 단위로 배분 — 넘치는 블록은 다음 장으로, 하단(매장·명함)은 마지막 장 맨 아래 고정.
+     페이지 번호는 2장 이상일 때만 표기, 2장째부터는 얇은 이어지는 장 헤더. */
+  function paginate(container, blocks, footHtml, q, pageCls){
+    var pages = [];
+    function newPage(){
+      var p = document.createElement('div');
+      p.className = 'q-page' + pageCls;
+      p.innerHTML = '<div class="q-pg-body">' + (pages.length ? contHeaderHtml(q) : '') + '</div><div class="q-pg-end"></div>' + runFootHtml(q);
+      container.appendChild(p); pages.push(p); return p;
+    }
+    function over(p){ return p.scrollHeight > p.clientHeight + 1; }
+    function minKids(){ return pages.length > 1 ? 1 : 0; }
+    var p = newPage(), body = p.firstChild;
+    blocks.forEach(function(html){
+      if(!html) return;
+      var tmp = document.createElement('div'); tmp.innerHTML = html;
+      var el = tmp.firstChild; if(!el) return;
+      body.appendChild(el);
+      if(over(p) && body.children.length > minKids() + 1){
+        body.removeChild(el);
+        p = newPage(); body = p.firstChild; body.appendChild(el);
+      }
+    });
+    var end = p.querySelector('.q-pg-end');
+    end.innerHTML = footHtml;
+    if(pages.length === 1){ var run1 = p.querySelector('.q-pg-run'); if(run1) run1.remove(); }   // 1장 후보: 러닝 푸터 없이 판정 (하단 매장 정보와 중복)
+    if(over(p)){
+      if(pages.length === 1 && !p.querySelector('.q-pg-run')) p.insertAdjacentHTML('beforeend', runFootHtml(q));
+      end.innerHTML = '';
+      var carry = [];
+      while(body.lastChild && body.children.length > minKids() + 1 && /q-note|q-memo/.test(body.lastChild.className || '')){
+        carry.unshift(body.lastChild); body.removeChild(body.lastChild);
+      }
+      p = newPage(); body = p.firstChild;
+      carry.forEach(function(c){ body.appendChild(c); });
+      p.querySelector('.q-pg-end').innerHTML = footHtml;
+    }
+    if(pages.length > 1){
+      if(!pages[0].querySelector('.q-pg-run')) pages[0].insertAdjacentHTML('beforeend', runFootHtml(q));
+      pages.forEach(function(pg, i){ pg.querySelector('.pn').textContent = (i + 1) + ' / ' + pages.length; });
+    }
+    return pages.length;
+  }
+  /* 미리보기 영역이 A4 폭(210mm)보다 좁으면 축소해서 통째로 표시 (모바일·좁은 창 — 인쇄와 동일한 모양).
+     ✏️ 수정 모드에서는 축소하지 않고 입력 가능한 원래 크기 유지 */
+  var ZOOM_KEY = 'sh_quote_zoom';
+  var USER_ZOOM = (function(){ var v = parseFloat(lsGet(ZOOM_KEY)); return (v >= 0.4 && v <= 2) ? v : 0; })(); /* 0 = 자동 맞춤 */
+  var CUR_ZOOM = 1;
+  function fitScale(){
+    var c = document.getElementById('qSheet'), sc = document.getElementById('qScale'); if(!c || !sc) return;
+    var pv = sc.parentNode; if(!pv || !pv.clientWidth) return;
+    var cs = getComputedStyle(pv);
+    var avail = pv.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var w = c.scrollWidth || 794;                       /* 여러 장이면 가로 전체 폭 */
+    var pageW = (c.querySelector('.q-page') || {}).offsetWidth || 794;
+    var k;
+    if(USER_ZOOM > 0){ k = USER_ZOOM; }
+    else {
+      var cap = avail < 900 ? 1 : 1.15;                 /* 모바일에선 확대 없이 화면 맞춤만 */
+      k = Math.min(cap, avail / w);                     /* 전체(가로 나란히)가 들어가게 */
+      if(k < 0.62 && w > pageW) k = Math.min(cap, avail / (pageW + 16));   /* 너무 작아지면 1장 기준 + 좌우 스크롤 */
+    }
+    CUR_ZOOM = k;
+    if(Math.abs(k - 1) > 0.005){
+      c.style.transform = 'scale(' + k.toFixed(4) + ')';
+      sc.className = 'q-scale zoom';
+      sc.style.width = Math.ceil(w * k) + 'px';
+      sc.style.height = Math.ceil(c.scrollHeight * k) + 'px';
+    } else {
+      c.style.transform = '';
+      sc.className = 'q-scale'; sc.style.width = ''; sc.style.height = '';
+    }
+    var pct = document.getElementById('qZoomPct');
+    if(pct) pct.textContent = Math.round(k * 100) + '%';
+    var fitB = document.getElementById('qZoomFit');
+    if(fitB) fitB.classList.toggle('on', USER_ZOOM === 0);
+  }
+  function setZoom(v){
+    USER_ZOOM = v;
+    if(v > 0) lsSet(ZOOM_KEY, v); else lsSet(ZOOM_KEY, '');
+    fitScale();
+  }
+  window.addEventListener('resize', function(){ if(document.getElementById('quoteModal').classList.contains('open')) fitScale(); });
+  /* 입력값 검증 — 경고만 표시하고 발행은 막지 않음 */
+  function validateQuote(q){
+    var w = [], pm = q.opt.pointMode;
+    q.items.forEach(function(it, i){
+      if(it.hidden) return;
+      var c = calcItem(it, pm);
+      var nm = '상품 ' + (i + 1) + (it.model ? ' (' + esc(it.model) + ')' : '');
+      var anyIn = c.sub + c.pre + c.point + c.card + c.preAmt + c.cons + c.gift + num(it.disc && it.disc.multi);
+      if(c.total <= 0 && anyIn > 0) w.push(nm + ': 월 구독료가 없는데 할인·선납금이 입력되어 있습니다.');
+      if(c.total > 0 && (c.sub + c.multi + c.pre + c.card + c.point + c.cons + c.gift) > c.total) w.push(nm + ': 혜택 합계가 총 구독료(' + won(c.total) + ')를 초과합니다 — 입력값을 확인하세요.');
+      if(c.cardMonthly > 0 && c.monthly > 0 && c.cardMonthly > c.monthly) w.push(nm + ': 카드 월 청구할인(' + won(c.cardMonthly) + ')이 월 구독료(' + won(c.monthly) + ')보다 큽니다.');
+      if(c.total > 0 && c.preAmt >= c.total) w.push(nm + ': 선납금(' + won(c.preAmt) + ')이 총 구독료 이상입니다.');
+      if(c.pre > 0 && c.preAmt > 0 && !it.preIncl) w.push(nm + ': 선납 할인과 선납금이 함께 입력되어 있습니다 — DPS 월 구독료에 선납 할인이 이미 반영돼 있다면 중복 차감입니다.');
+      if(c.m > 0 && (c.m < 12 || c.m > 120)) w.push(nm + ': 계약 기간 ' + c.m + '개월이 일반 범위(12~120)를 벗어납니다.');
+      if(c.m > 0 && it.cardName && CARD[it.cardName] && CARD[it.cardName].m && c.cardMonthly > 0 && c.m > CARD[it.cardName].m)
+        w.push(nm + ': ' + esc(it.cardName) + ' 청구할인은 최대 ' + CARD[it.cardName].m + '개월 — 계약 기간(' + c.m + '개월) 전체에 곱해져 있으니 카드 할인 총액을 확인하세요.');
+    });
+    var pc = num(q.opt.pointCommon), pi = 0;
+    q.items.forEach(function(it){ if(!it.hidden) pi += num(it.disc && it.disc.point); });
+    if(pc > 0 && pi > 0) w.push('공통 포인트와 상품별 포인트가 함께 입력되어 있습니다 — 같은 포인트를 두 번 차감한 게 아닌지 확인하세요.');
+    var ph = String(q.cust.phone || '').replace(/\D/g, '');
+    if(ph && (ph.length < 10 || ph.length > 11)) w.push('연락처가 ' + ph.length + '자리입니다 — 휴대폰 번호(10~11자리)를 확인하세요.');
+    var lump = num(q.opt.lumpSum);
+    if(lump > 0){ var T2 = calcTotals(q); if(T2.finalP > lump * 3) w.push('최종 혜택가가 일시불가의 3배를 넘습니다 — 일시불가 입력을 확인하세요.'); }
+    if(!selectedNc(q)) w.unshift('<b style="color:#c0392b">담당자(네임카드)가 선택되지 않았습니다</b> — 선택해야 발행·보내기가 됩니다.');
+    return w;
+  }
+  function renderWarnings(q){
+    var el = document.getElementById('qWarn');
+    if(!el) return;
+    var ws = EDIT ? validateQuote(q) : [];
+    el.className = 'q-warnstrip no-print' + (ws.length ? ' show' : '');
+    el.innerHTML = ws.length ? '<b>⚠️ 확인이 필요한 입력 ' + ws.length + '건</b> <span style="color:#A97B2E">(담당자 선택만 필수 · 나머지는 참고용)</span><br>' + ws.map(function(x){ return '· ' + x; }).join('<br>') : '';
+  }
+  /* 가격 조건 확인 (2026-11-17) — /quote/ 에서 상담사가 체크한 조합만 q.cmp 로 넘어온다. 총 지불 금액 비교만 짧게 */
+  function cmpHtml(q){ var c = q && q.cmp; if(!c || !c.length) return '';
+    var h = '<div class="q-box q-cmp" style="margin-top:10px"><h3>📊 가격 조건 확인 <span style="font-weight:600;color:#666">(같은 제품 · 구독/일반 구매 조합별)</span></h3><table class="q-tbl" style="table-layout:fixed;width:100%"><colgroup><col style="width:34%"><col style="width:20%"><col style="width:20%"><col style="width:26%"></colgroup>'
+      + '<tr><th style="text-align:left;width:auto">구성</th><th style="width:auto;text-align:right">총 구독료</th><th style="width:auto;text-align:right">총 지불 금액</th><th style="width:auto;text-align:left">월 납부 금액</th></tr>';
+    c.forEach(function(r){
+      h += '<tr' + (r.cur ? ' style="background:#FFF8E1"' : '') + '><td style="text-align:left"><b>' + esc(r.label) + '</b>' + (r.cur ? ' <span style="color:#B45309;font-weight:700">· 이 견적</span>' : '')
+        + '<br><span style="font-size:.85em;color:#666">' + esc(r.sub || '') + '</span></td>'
+        + '<td class="num">' + (r.subTotal > 0 ? won(r.subTotal) : '—') + '</td>'
+        + '<td class="num"><b>' + (r.total == null ? '일시불가 미입력' : won(r.total)) + '</b></td>'
+        + '<td style="text-align:left;white-space:nowrap">' + esc(r.mon || '—').replace(/\n/g, '<br>') + '</td></tr>';
+    });
+    return h + '</table></div>'; }
+  function renderSheet(){
+    var q = QUOTE; if(!q) return;
+    var sheet = document.getElementById('qSheet');
+    /* 재렌더 동안 내용 높이가 잠깐 0이 되어 스크롤이 튕기지 않도록 위치를 기억했다가 복원 */
+    var pvEl = sheet.closest ? sheet.closest('.q-preview') : null;
+    var pvTop = pvEl ? pvEl.scrollTop : 0, pvLeft = pvEl ? pvEl.scrollLeft : 0;
+    var pm = q.opt.pointMode;
+    var T = calcTotals(q);
+    var visible = q.items.filter(function(it){ return !it.hidden; });
+    var S = q.opt.show || {};
+    var blocks = [];
+    sheet.innerHTML = '';
+    /* 안내문은 시트 밖 최상단 고정 자리(#qTip)에 — 페이지 가로 배치에 섞이지 않게 */
+    var tipEl = document.getElementById('qTip');
+    if(tipEl) tipEl.innerHTML = EDIT
+      ? '<div class="q-edit-tip no-print" style="margin-bottom:10px">✏️ <b>견적서에 바로 입력하세요.</b> <span class="req-chip">노란 칸</span>은 필수 — 모델명 · 월 구독료 · 고객명 · 연락처. '
+        + '계약 기간은 상품마다 <b>12~72개월</b>에서 고르고, 기간이 서로 다르면 상품 아래에 <b>기간별 월 납입 안내</b>가 자동으로 붙습니다. '
+        + '금액을 고치면 합계·혜택가는 자동 재계산되고([🔗 수식]=자동 ↔ ✏️직접 전환), 입력칸 테두리는 인쇄에 나오지 않습니다. 완성되면 상단 <b>[👁 인쇄 미리보기]</b>로 확인하세요.</div>'
+      : '';
+    blocks.push(headerHtml(q));
+    var proofHtml = EDIT
+      ? ['recv', 'supp', 'appr'].map(function(k, ix){
+          var lb = ['접수', '보완', '승인'][ix];
+          return '<span class="q-proof' + (q.cust.proof[k] ? ' on' : '') + '" data-qproof="' + k + '" title="클릭하여 전환">' + lb + '(' + (q.cust.proof[k] ? 'V' : '&nbsp;&nbsp;') + ')</span>';
+        }).join(' ')
+      : '접수(' + (q.cust.proof.recv ? 'V' : '&nbsp;&nbsp;') + ') 보완(' + (q.cust.proof.supp ? 'V' : '&nbsp;&nbsp;') + ') 승인(' + (q.cust.proof.appr ? 'V' : '&nbsp;&nbsp;') + ')';
+    blocks.push('<table class="q-tbl q-cust">'
+      + '<tr><th>고객명</th><td>' + (EDIT ? tcell('cust.name', q.cust.name, '', '고객명 *', true) : esc(q.cust.name))
+      + '</td><th>연락처</th><td>' + (EDIT ? tcell('cust.phone', q.cust.phone, '', '010-0000-0000 *', true) : esc(q.cust.phone))
+      + '</td><th>생년월일</th><td>' + (EDIT ? tcell('cust.birth', q.cust.birth, '', '1990.01.01') : esc(q.cust.birth)) + '</td></tr>'
+      + '<tr><th>주소</th><td colspan="3">' + (EDIT ? tcell('cust.addr', q.cust.addr, 'w', '설치지 주소') : esc(q.cust.addr))
+      + '</td><th>통신사</th><td>' + (EDIT ? tcell('cust.carrier', q.cust.carrier, '', '선택 입력') : esc(q.cust.carrier)) + '</td></tr>'
+      + '<tr><th>예식 일자</th><td>' + (EDIT ? tcell('cust.wedding', q.cust.wedding, '', '2026.10.10') : esc(q.cust.wedding))
+      + '</td><th>입주 일자</th><td>' + (EDIT ? tcell('cust.movein', q.cust.movein, '', '2026.11.01') : esc(q.cust.movein))
+      + '</td><th>증빙 확인</th><td>' + proofHtml + '</td></tr>'
+      + ((EDIT || String(q.cust.revisit || '').trim())
+          ? '<tr><th>재상담 예약</th><td colspan="5">' + (EDIT ? tcell('cust.revisit', q.cust.revisit, 'w', '재방문·재상담 예약 일시 (예: 2026.09.10 오후 2시 매장 방문)') : esc(q.cust.revisit)) + '</td></tr>'
+          : '')
+      + '</table>');
+    var payBand = (S.payband !== false) ? payBandHtml(q, T) : '';
+    blocks.push(payBand);          // ★ 매달 내시는 금액 (한눈에 보기)
+    /* 상품 카드: 1개(비편집)=전폭 2단, 여러 개=한 줄에 2개씩(홀수 마지막은 전폭), ✏️ 수정 모드=1개씩 전체폭 */
+    var list = [];
+    q.items.forEach(function(it, i){ if(it.hidden && !EDIT) return; list.push({ it: it, i: i }); });
+    var one = visible.length === 1;                 // 편집 중에도 미리보기와 같은 레이아웃
+    if(one){
+      list.forEach(function(x){ blocks.push('<div class="q-prods one">' + prodHtml(x.it, x.i, pm) + '</div>'); });
+    } else {
+      for(var r = 0; r < list.length; r += 2){
+        if(list[r + 1]) blocks.push('<div class="q-prods">' + prodHtml(list[r].it, list[r].i, pm) + prodHtml(list[r + 1].it, list[r + 1].i, pm) + '</div>');
+        else blocks.push('<div class="q-prods one">' + prodHtml(list[r].it, list[r].i, pm) + '</div>');   // 홀수 마지막 카드는 전폭(2단)
+      }
+    }
+    if(EDIT) blocks.push('<div class="q-addrow no-print"><button type="button" class="q-addbtn" data-qadditem="1">＋ 상품 추가</button></div>');
+    blocks.push(tierHtml(q));      // ★ 기간별 월 납입 안내 (계약 기간이 서로 다를 때만)
+    var mo = T.maxM;
+    var sumBox = '';
+    if(S.sumBox || EDIT){
+      sumBox = '<div class="q-box"><h3>💰 총비용 비교 시뮬레이터' + (T.count > 1 ? ' <span style="font-weight:600;color:#666">(' + T.count + '개 상품 합계)</span>' : '') + '</h3><table class="q-tbl">';
+      sumBox += '<tr class="tot"><th>총 구독료 합계</th><td class="num">' + won(T.total) + '</td></tr>';
+      sumBox += srow('구독료 할인', T.sub);
+      sumBox += '<tr><th>다품목 구독 할인 <span style="font-weight:500;color:#666">(대상 ' + T.multiCount + '/' + T.count + '개)</span></th><td class="num' + (T.multi > 0 ? '' : ' mut') + '">' + (T.multi > 0 ? '-' + won(T.multi) : '미해당') + '</td></tr>';
+      sumBox += srow('선납 할인', T.pre);
+      var pmSumTag = pm === 'replace' ? '' : ' · 별도 적립';
+      if(T.pointItems > 0) sumBox += '<tr class="q-pt"><th>⭐ 삼성전자 멤버십 포인트 <span style="font-weight:500;color:#666">(상품별' + pmSumTag + ')</span></th><td class="num">-' + won(T.pointItems) + '</td></tr>';
+      if(EDIT || T.pointCommon > 0) sumBox += '<tr class="q-pt"><th>⭐ 멤버십 포인트 공통 <span style="font-weight:500;color:#666">(전체 합산 입력' + pmSumTag + ')</span>' + pmChip() + '</th><td class="num">' + (EDIT ? cell('opt.pointCommon', T.pointCommon, 'imp') : '-' + won(T.pointCommon)) + '</td></tr>';
+      sumBox += srow('제휴카드 청구할인' + (q.opt.card ? ' <span style="font-weight:500;color:#666">(' + esc(q.opt.card) + ')</span>' : ''), T.card);
+      sumBox += srow('소모품', T.cons) + srow('상품권', T.gift);
+      if(T.reward > 0) sumBox += '<tr><th>💵 이벤트 리워드 (1%)</th><td class="num">-' + won(T.reward) + '</td></tr>';
+      var extraShown = 0;
+      (q.extra || []).forEach(function(e, i){
+        var v = num(e.amount);
+        if(v <= 0 && !(EDIT && e._open)) return;        // 작성하지 않은 기타 혜택은 표시하지 않음
+        extraShown++;
+        sumBox += '<tr><th>' + (EDIT ? tcell('extra.' + i + '.label', e.label) : esc(e.label)) + '</th><td class="num">' + (EDIT ? cell('extra.' + i + '.amount', v) : '-' + won(v)) + '</td></tr>';
+      });
+      if(EDIT && !extraShown) sumBox += '<tr class="no-print"><th colspan="2" style="text-align:center;background:#fff"><button type="button" class="q-x" data-qextra="1" style="margin-left:0">＋ 기타 혜택 행 추가</button></th></tr>';
+      sumBox += '<tr class="ben"><th>총 혜택 합계</th><td class="num">-' + won(T.benefit) + '</td></tr>';
+      if(T.preAdd > 0){
+        /* 소계: 여기까지가 할인 적용가 → 선납금 가산 → 총 지불액 (검산 가능하게) */
+        sumBox += '<tr><th style="font-weight:700">혜택 적용가 <span style="font-weight:500;color:#666">(총 구독료 − 총 혜택)</span></th><td class="num" style="font-weight:700">' + won(T.finalP - T.preAmt) + '</td></tr>';
+        sumBox += '<tr><th>선납금 <span style="font-weight:500;color:#666">(계약 시 선결제 · 지불액 가산)</span></th><td class="num" style="color:#1A4FA0;font-weight:700">+' + won(T.preAmt) + '</td></tr>';
+      }
+      sumBox += '<tr class="tot"><th>최종 혜택가 <span style="font-weight:600;font-size:.9em">(총 지불액)</span></th><td class="num">' + won(T.finalP) + '</td></tr>';
+      sumBox += '</table></div>';
+    }
+    var lump = num(q.opt.lumpSum);
+    var hero;
+    var heroTail = (T.reward > 0 ? '<br>💵 이벤트 리워드 1% ' + won(T.reward) + ' 차감 반영' : '')
+      + (T.pointCommon > 0 ? '<br>⭐ 멤버십 포인트 ' + fmt(T.pointCommon) + 'P 차감 반영' + (pm === 'replace' ? '' : ' (별도 적립)') : '')
+      + (T.preAmt > 0 ? '<br>선납금 합계 ' + won(T.preAmt) + ' 선결제 · 최종 혜택가에 포함' : '');
+    if(lump > 0){
+      var diff = lump - T.finalP;
+      hero = '<div class="q-hero"><div class="lbl">최종 혜택가 vs 일시불가</div><div class="val">' + won(T.finalP) + '</div>'
+        + '<div class="sub">일시불가 <b>' + won(lump) + '</b> 대비 ' + (diff >= 0 ? '<b>' + won(diff) + ' (' + (diff / lump * 100).toFixed(1) + '%) 저렴</b>' : '<b>' + won(-diff) + ' 부담</b>') + ' · 총 혜택 ' + won(T.benefit)
+        + heroTail + '</div></div>';
+    } else {
+      hero = '<div class="q-hero"><div class="lbl">혜택 모두 반영 시 최종 혜택가</div><div class="val">' + won(T.finalP) + '</div>'
+        + '<div class="sub">총 혜택 <b>' + won(T.benefit) + '</b> 반영'
+        + heroTail + '</div></div>';
+    }
+    var h = '<div class="q-sum' + (sumBox ? '' : ' solo') + '">' + sumBox + '<div>' + hero;
+    if(!payBand){   // 매달 내시는 금액 밴드가 없을 때만 (같은 숫자 중복 방지)
+      h += '<div class="q-mini">'
+        + '<div><div class="k">월 구독료 합계</div><div class="v">' + won(T.monthly) + '</div></div>'
+        + '<div><div class="k">월 구독료 혜택가</div><div class="v" style="color:#1A4FA0">' + won(Math.round(T.afterCardM)) + '</div></div>'
+        + (mo > 0 ? '<div><div class="k">계약 기간' + (T.count > 1 ? ' (최장)' : '') + '</div><div class="v">' + mo + '개월</div></div>' : '')
+        + (S.realM && mo > 0 ? '<div><div class="k">월 체감 구독료</div><div class="v">' + won(Math.round(T.finalP / mo)) + '</div></div>' : '')
+        + '</div>';
+    }
+    if(lump > 0){
+      var bMax = Math.max(T.finalP, lump, 1);
+      h += '<div class="q-bars">'
+        + '<div class="bar"><span class="l">최종 혜택가</span><div class="track"><div class="fill f" style="width:' + Math.max(4, Math.round(T.finalP / bMax * 100)) + '%"></div></div><span class="a" style="color:#1A4FA0">' + won(T.finalP) + '</span></div>'
+        + '<div class="bar"><span class="l">일시불가</span><div class="track"><div class="fill" style="width:' + Math.max(4, Math.round(lump / bMax * 100)) + '%;background:#8A909E"></div></div><span class="a">' + won(lump) + '</span></div>'
+        + '</div>';
+    }
+    h += '</div></div>';
+    function srow(l, v){ if(v <= 0) return ''; return '<tr><th>' + l + '</th><td class="num">-' + won(v) + '</td></tr>'; }
+    blocks.push(h);
+    /* 일반 구매 (상담 견적 화면 /quote/ 가 넣는 q.lump) — 구독 아래에 같은 표 양식으로 (2026-11-16) */
+    if(q.lump && q.lump.items && q.lump.items.length){
+      var L = q.lump, lb = '<div class="q-box"><h3>💳 일반 구매' + (L.kindLabel ? ' <span style="font-weight:600;color:#666">(' + esc(L.kindLabel) + (num(L.months) ? ' · ' + num(L.months) + '개월' : '') + ')</span>' : '') + '</h3><table class="q-tbl">';
+      L.items.forEach(function(x, i){ lb += '<tr><th>' + (i + 1) + '. ' + esc(x.name || x.model || '') + (x.model && x.name ? ' <span style="font-weight:500;color:#666">' + esc(x.model) + '</span>' : '') + (x.note ? ' <span style="font-weight:500;color:#666">· ' + esc(x.note) + '</span>' : '') + '</th><td class="num">' + won(x.amount) + '</td></tr>'; });
+      lb += '<tr class="tot"><th>① 결제가</th><td class="num">' + won(L.amount) + '</td></tr>';
+      if(num(L.fee) > 0) lb += '<tr><th>이용료</th><td class="num">+' + won(L.fee) + '</td></tr>';
+      if(num(L.bill) > 0) lb += '<tr><th>청구할인</th><td class="num">-' + won(L.bill) + '</td></tr>';
+      if(num(L.sPoint) > 0) lb += '<tr><th>금액별 S포인트</th><td class="num">-' + won(L.sPoint) + '</td></tr>';
+      if(num(L.jPoint) > 0) lb += '<tr><th>DPS 포인트 (패키지·제휴할부 제외)</th><td class="num">-' + won(L.jPoint) + '</td></tr>';
+      if(num(L.typePoint) > 0) lb += '<tr><th>' + esc(L.typeLabel || '포인트') + '</th><td class="num">-' + won(L.typePoint) + '</td></tr>';
+      if(num(L.cashback) > 0) lb += '<tr><th>조건부 캐시백</th><td class="num">-' + won(L.cashback) + '</td></tr>';
+      if(num(L.member) > 0) lb += '<tr><th>기본멤버십P 0.1%</th><td class="num">-' + won(L.member) + '</td></tr>';
+      (L.extras || []).forEach(function(x){ if(num(x.amount) > 0) lb += '<tr><th>' + esc(x.label || '추가혜택') + '</th><td class="num">-' + won(x.amount) + '</td></tr>'; });
+      lb += '<tr class="ben"><th>혜택 합계</th><td class="num">-' + won(L.benefit) + '</td></tr>';
+      lb += '<tr class="tot"><th>최종체감가' + (num(L.per) > 0 ? ' <span style="font-weight:600;font-size:.9em">(월 ' + won(L.per) + ' × ' + num(L.months) + ')</span>' : '') + '</th><td class="num">' + won(L.net) + '</td></tr>';
+      var T0 = calcTotals(q);
+      lb += '<tr class="fin"><th>전체 최종가 <span style="font-weight:600;font-size:.85em">(구독 최종 혜택가 ' + won(T0.finalP) + ' + 일반 최종체감가)</span></th><td class="num">' + won(T0.finalP + num(L.net)) + '</td></tr>';
+      lb += '</table></div>';
+      blocks.push('<div class="q-sum solo">' + lb + '</div>');
+    }
+    blocks.push(cmpHtml(q));   // 가격 조건 확인 (2026-11-17) — 블록은 한 요소씩 (paginate 가 첫 요소만 씀)
+    blocks.push('<div class="q-memo"><div class="t">세부 상담 내용</div>'
+      + (EDIT ? '<textarea class="q-memo-in" data-q="cust.memo" placeholder="희망 설치일, 색상, 특이사항, 안내한 조건 등">' + esc(q.cust.memo) + '</textarea>'
+              : (q.cust.memo ? esc(q.cust.memo) : '<span style="color:#bbb">-</span>')) + '</div>');
+    blocks.push('<div class="q-note">' + ((q.cust.untilMode === 'none' || !q.cust.until)
+      ? '※ 본 견적은 별도 유효기한이 설정되지 않은 안내 견적이며, 실제 지불 금액은 본사 지침·프로모션 변경 및 전월 카드 실적에 따라 다소 차이가 있을 수 있습니다. '
+      : '※ 본 견적은 ' + esc(displayYmd(q.cust.until)) + '까지 유효하며, 실제 지불 금액은 본사 지침·프로모션 변경 및 전월 카드 실적에 따라 다소 차이가 있을 수 있습니다. ')
+      + '제휴카드 혜택은 카드 청구 시점에 적용되는 청구할인이며, 삼성전자 멤버십 포인트는 계약 후 지급됩니다.'
+      + (T.preAmt > 0 ? ' 선납금은 계약 시 별도 선결제되며 총 지불액에 포함됩니다.' : '')
+      + ' 다품목 할인은 신규 고객이 2개 이상 동시 구독 시 적용되며, 본 견적서에서 <b>“다품목 해당”</b>으로 표기된 '
+      + T.multiCount + '개 제품에 반영되었습니다.</div>');
+    sheet.classList.toggle('editing', EDIT);
+    /* 글자 크기 단계: 1개 → 큰 글씨(n1) → 기본 → 소폭 축소(xs). 2개 → 기본 → xs. 3개 이상 → 기본(여러 장 허용) */
+    var tiers = one ? [' n1', '', ' xs'] : (visible.length <= 2 ? ['', ' xs'] : ['']);
+    if(EDIT) tiers = [''];
+    var tip = sheet.innerHTML, foot = namecardHtml(q);
+    for(var t = 0; t < tiers.length; t++){
+      sheet.innerHTML = tip;
+      if(paginate(sheet, blocks, foot, q, tiers[t]) === 1) break;
+    }
+    fitScale();
+    renderWarnings(q);
+    autosaveDraft();
+    if(pvEl){ pvEl.scrollTop = pvTop; pvEl.scrollLeft = pvLeft; }
+    var badge = document.getElementById('qNoBadge');
+    if(badge) badge.textContent = q.meta.no ? (q.meta.no + (q.meta.version > 1 ? ' v' + q.meta.version : '') + ' 발행됨') : '미발행';
+  }
+  /* 패널 재렌더 없이 파생 표시(상품 제목 · 카드 합계)만 갱신 — 입력 중 포커스 보존 */
+  function refreshPanelDerived(){
+    var q = QUOTE; if(!q) return;
+    q.items.forEach(function(it, i){
+      var t = document.getElementById('qItemTitle_' + i);
+      if(t) t.textContent = (i + 1) + '. ' + (it.model || '새 상품');
+      var cc = document.getElementById('qCardCalc_' + i);
+      if(cc){ var c = calcItem(it, q.opt.pointMode); cc.innerHTML = ' 원 × ' + c.m + '개월 = <b style="color:var(--blue)">' + won(c.card) + '</b>'; }
+    });
+  }
+  function syncOptCard(){
+    var f = QUOTE.items.filter(function(it){ return !it.hidden && it.cardName && it.cardName !== '직접입력'; })[0];
+    QUOTE.opt.card = f ? (f.cardName + (f.cardTier ? ' ' + f.cardTier : '')) : (QUOTE.opt.card && !f ? '' : QUOTE.opt.card);
+  }
+  function renderAll(){ renderPanel(); renderSheet(); }
+
+  /* ═══════════ 5) 이벤트 ═══════════ */
+  function applyInput(el){
+    var path = el.getAttribute('data-q');
+    if(!path) return false;
+    var val;
+    if(el.type === 'checkbox') val = !!el.checked;
+    else if(el.classList.contains('q-in') && !el.classList.contains('txt')) val = num(el.value);
+    else val = el.value;
+    if(path === 'cust.phone'){ val = phoneFmt(val); el.value = val; }
+    if(path.match(/\.months$/)) val = Math.max(0, Math.round(num(val)));
+    setPath(QUOTE, path, val);
+    return true;
+  }
+  modal.addEventListener('input', function(e){
+    var el = e.target;
+    if(!el.getAttribute || !el.getAttribute('data-q')) return;
+    if(el.closest('#qSheet')) return;
+    if(applyInput(el)){
+      if(el.getAttribute('data-q') === 'cust.date' && QUOTE.cust.untilMode && ['none','custom'].indexOf(QUOTE.cust.untilMode) < 0){
+        QUOTE.cust.until = calcUntilDate(QUOTE.cust.untilMode, QUOTE.cust.date);
+        var ud = document.getElementById('qUntilDate'); if(ud) ud.value = QUOTE.cust.until;
+      }
+      renderSheet();
+    }
+  });
+  modal.addEventListener('change', function(e){
+    var el = e.target;
+    if(!el.getAttribute || !el.getAttribute('data-q')) return;
+    if(!el.closest('#qSheet')){
+      var full = (el.type === 'checkbox' || el.tagName === 'SELECT');
+      applyInput(el);
+      /* 재렌더를 다음 틱으로 미뤄, 입력 후 곧바로 누른 버튼 클릭이 씹히지 않게 */
+      setTimeout(function(){ if(full) renderAll(); else renderSheet(); }, 0);
+      return;
+    }
+    if(applyInput(el)){
+      /* 재렌더 전에 다음 칸으로 이동한 포커스를 기억했다가 복원 — 탭/클릭 이동이 끊기지 않게 */
+      setTimeout(function(){
+        var ae = document.activeElement;
+        var key = ae && ae.getAttribute ? ae.getAttribute('data-q') : null;
+        var inSheet = ae && ae.closest && ae.closest('#qSheet');
+        renderSheet();
+        if(key && inSheet){
+          var re2 = document.querySelector('#qSheet [data-q="' + key + '"]');
+          if(re2){
+            try { re2.focus({ preventScroll: true }); } catch(err){ re2.focus(); }
+            if(re2.select && re2.tagName === 'INPUT') re2.select();
+          }
+        }
+      }, 0);
+    }
+  });
+  modal.addEventListener('click', function(e){
+    if(e.target.closest('[data-qpicknc]')){ openNcPicker(); return; }
+    /* 수식 연동 토글 */
+    var fx = e.target.closest('.q-fx');
+    if(fx && fx.getAttribute('data-qfx')){
+      var pr = fx.getAttribute('data-qfx').split('|');
+      var it = QUOTE.items[parseInt(pr[0], 10)], key = pr[1];
+      if(it){ if(!it.auto) it.auto = {}; it.auto[key] = (it.auto[key] === false); renderSheet(); }
+      return;
+    }
+    /* 다품목 배지 토글 (견적서) */
+    var mf = e.target.closest('.q-mflag');
+    if(mf && mf.getAttribute('data-qmulti')){
+      var mi = parseInt(mf.getAttribute('data-qmulti'), 10);
+      if(QUOTE.items[mi]){ QUOTE.items[mi].multiOk = !(QUOTE.items[mi].multiOk !== false); renderAll(); }
+      return;
+    }
+    var pf = e.target.closest('.q-proof');
+    if(pf && pf.getAttribute('data-qproof')){
+      var pk = pf.getAttribute('data-qproof');
+      QUOTE.cust.proof[pk] = !QUOTE.cust.proof[pk];
+      renderSheet(); return;
+    }
+    var b = e.target.closest('button');
+    if(!b) return;
+    if(b.getAttribute('data-qadditem')){ QUOTE.items.push(blankItem()); renderAll(); return; }
+    if(b.getAttribute('data-qextra')){
+      if(!QUOTE.extra) QUOTE.extra = [];
+      var eopen = QUOTE.extra.filter(function(e){ return num(e.amount) <= 0; })[0];
+      if(eopen) eopen._open = true;
+      else QUOTE.extra.push({ label: '기타 혜택', amount: 0, _open: true });
+      renderSheet(); return;
+    }
+    if(b.getAttribute('data-qremove') != null){
+      var ri = parseInt(b.getAttribute('data-qremove'), 10);
+      if(QUOTE.items.length > 1) qConfirm('상품 ' + (ri + 1) + '번을 완전히 삭제할까요?', '삭제').then(function(okd){ if(okd){ QUOTE.items.splice(ri, 1); renderAll(); } });
+      return;
+    }
+    if(b.getAttribute('data-qopt')){
+      var ok = b.getAttribute('data-qopt'), ov = b.getAttribute('data-v');
+      if(ok === 'pointMode' && ov === 'replace' && QUOTE.opt.pointMode !== 'replace'){
+        qConfirm('⚠️ 포인트로 월 결제를 대체하면 카드 월 실적 조건(예: 월 30만원)이 미달되어\n제휴카드 청구할인이 적용되지 않을 수 있습니다.\n\n"월 비용에 반영(차감)" 표기로 계속할까요?', '계속')
+          .then(function(okp){ if(okp){ QUOTE.opt[ok] = ov; renderAll(); } });
+        return;
+      }
+      QUOTE.opt[ok] = ov;
+      renderAll(); return;
+    }
+    if(b.getAttribute('data-qhide') != null){
+      var i = parseInt(b.getAttribute('data-qhide'), 10);
+      QUOTE.items[i].hidden = !QUOTE.items[i].hidden;
+      renderAll(); return;
+    }
+  });
+  modal.addEventListener('change', function(e){
+    var el = e.target;
+    /* 표시 항목 토글 */
+    if(el.getAttribute && el.getAttribute('data-qshow') && el.type === 'checkbox'){
+      if(!QUOTE.opt.show) QUOTE.opt.show = defaultShow();
+      QUOTE.opt.show[el.getAttribute('data-qshow')] = !!el.checked;
+      renderSheet(); return;
+    }
+    /* 제휴카드 자동계산 — 카드사 선택 */
+    if(el.getAttribute && el.getAttribute('data-qcn') != null){
+      var ci = parseInt(el.getAttribute('data-qcn'), 10), cit = QUOTE.items[ci];
+      if(cit){
+        cit.cardName = el.value;
+        if(cit.cardName && CARD[cit.cardName]){
+          var ts = Object.keys(CARD[cit.cardName].t);
+          if(ts.indexOf(cit.cardTier) < 0) cit.cardTier = ts[0];
+          cit.cardMonthly = CARD[cit.cardName].t[cit.cardTier] || 0;
+        } else if(!cit.cardName){ cit.cardTier = ''; cit.cardMonthly = 0; }
+        cit.auto.card = true;
+        syncOptCard(); renderAll();
+      }
+      return;
+    }
+    /* 제휴카드 자동계산 — 사용 구간 선택 */
+    if(el.getAttribute && el.getAttribute('data-qct') != null){
+      var ti = parseInt(el.getAttribute('data-qct'), 10), tit = QUOTE.items[ti];
+      if(tit){
+        tit.cardTier = el.value;
+        if(tit.cardName && CARD[tit.cardName]) tit.cardMonthly = CARD[tit.cardName].t[tit.cardTier] || tit.cardMonthly;
+        syncOptCard(); renderAll();
+      }
+      return;
+    }
+    /* 다품목 체크박스 (좌측 패널) */
+    if(el.getAttribute && el.getAttribute('data-qmulti') != null && el.type === 'checkbox'){
+      var mi = parseInt(el.getAttribute('data-qmulti'), 10);
+      if(QUOTE.items[mi]){ QUOTE.items[mi].multiOk = !!el.checked; renderAll(); }
+      return;
+    }
+    /* 옵션 select (QR 등) */
+    if(el.getAttribute && el.getAttribute('data-qopt') && el.tagName === 'SELECT'){
+      var k = el.getAttribute('data-qopt');
+      QUOTE.opt[k] = el.value;
+      if(k === 'qrType'){ QUOTE.opt.showQR = el.value !== 'none'; lsSet(LS_QR, el.value); }
+      renderSheet(); return;
+    }
+    if(el.id === 'qNcSel'){ QUOTE.opt.namecardId = el.value; lsSet(LS_NC_SEL, el.value); renderSheet(); }
+    if(el.id === 'qUntilMode'){
+      QUOTE.cust.untilMode = el.value;
+      var dateEl = document.getElementById('qUntilDate');
+      if(el.value === 'none'){ QUOTE.cust.until = ''; if(dateEl){ dateEl.value = ''; dateEl.disabled = true; } }
+      else {
+        if(dateEl) dateEl.disabled = false;
+        if(el.value !== 'custom'){ QUOTE.cust.until = calcUntilDate(el.value, QUOTE.cust.date); if(dateEl) dateEl.value = QUOTE.cust.until; }
+        else if(!QUOTE.cust.until){ QUOTE.cust.until = calcUntilDate('7', QUOTE.cust.date); if(dateEl) dateEl.value = QUOTE.cust.until; }
+      }
+      renderSheet();
+    }
+    if(el.id === 'qUntilDate'){
+      QUOTE.cust.until = el.value || ''; QUOTE.cust.untilMode = el.value ? 'custom' : 'none';
+      var modeEl = document.getElementById('qUntilMode'); if(modeEl) modeEl.value = QUOTE.cust.untilMode;
+      el.disabled = QUOTE.cust.untilMode === 'none'; renderSheet();
+    }
+  });
+  document.getElementById('qBtnNew').addEventListener('click', function(){
+    qConfirm('새 견적을 시작합니다.\n현재 작성 중인 내용은 [🕒 임시 저장]에 보관됩니다.', '새 견적').then(function(okn){
+      if(!okn) return;
+      snapshotDraft('새 견적 시작');
+      try { localStorage.removeItem(LS_DRAFT); } catch(e){}
+      startBlank();
+    });
+  });
+  function syncEditBtn(){
+    var b = document.getElementById('qBtnEdit');
+    b.textContent = EDIT ? '👁 인쇄 미리보기' : '✏️ 편집하기';
+    b.className = 'q-tb' + (EDIT ? '' : ' warn');
+  }
+  document.getElementById('qBtnEdit').addEventListener('click', function(){ EDIT = !EDIT; syncEditBtn(); renderSheet(); });
+  document.getElementById('qBtnPanel').addEventListener('click', function(){
+    if(isPhone()){ sheetOpen(!modal.classList.contains('sheet-open')); return; }
+    modal.classList.toggle('panel-off');
+    lsSet('sh_quote_panel_off', modal.classList.contains('panel-off'));
+    fitScale();
+  });
+  document.getElementById('qBtnPrint').addEventListener('click', printQuote);
+  document.getElementById('qBtnShare').addEventListener('click', shareQuote);
+  document.getElementById('qBtnSend').addEventListener('click', sendQuoteLink);
+  document.getElementById('qZoomIn').addEventListener('click', function(){ setZoom(Math.min(2, Math.round((CUR_ZOOM + 0.1) * 10) / 10)); });
+  document.getElementById('qZoomOut').addEventListener('click', function(){ setZoom(Math.max(0.4, Math.round((CUR_ZOOM - 0.1) * 10) / 10)); });
+  document.getElementById('qZoomFit').addEventListener('click', function(){ setZoom(0); });
+  document.getElementById('qBtnIssue').addEventListener('click', function(){
+    if(QUOTE && QUOTE.meta && QUOTE.meta.no){
+      qConfirm('이미 발행된 견적(' + QUOTE.meta.no + ')입니다.\n같은 번호로 재발행(v' + ((QUOTE.meta.version || 1) + 1) + ')하여 저장할까요?', '재발행').then(function(okr){
+        if(okr) issueQuote().catch(function(){});
+      });
+      return;
+    }
+    issueQuote().catch(function(){});
+  });
+  document.getElementById('qBtnHist').addEventListener('click', openHistoryPanel);
+  document.getElementById('qPanel').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    if(b.id === 'qItemAdd'){ QUOTE.items.push(blankItem()); renderAll(); return; }
+    if(b.getAttribute('data-qdel') != null){
+      var di = parseInt(b.getAttribute('data-qdel'), 10);
+      if(QUOTE.items.length > 1) qConfirm('상품 ' + (di + 1) + '번을 삭제할까요?', '삭제').then(function(okd){ if(okd){ QUOTE.items.splice(di, 1); renderAll(); } });
+      return;
+    }
+    if(b.id === 'qShowSave'){
+      lsSet('sh_quote_preset_' + (QUOTE.opt.namecardId || 'default'), { show: QUOTE.opt.show, pointMode: QUOTE.opt.pointMode });
+      toast('💾 내 기본값으로 저장했습니다' + (QUOTE.opt.namecardId ? ' (선택된 네임카드 기준)' : ''));
+      return;
+    }
+    if(b.id === 'qNcNew') showNcForm(null);
+    else if(b.id === 'qNcEdit'){ var id = document.getElementById('qNcSel').value; var c = NAMECARDS.filter(function(x){ return x.id === id; })[0]; if(!c){ toast('수정할 네임카드를 먼저 선택하세요', true); return; } showNcForm(c); }
+    else if(b.id === 'qNcRefresh') loadNamecards(true);
+    else if(b.id === 'qNcSave') saveNamecard();
+    else if(b.id === 'qNcCancel') hideNcForm();
+    else if(b.id === 'qNcDelete') deleteNamecard();
+    else if(b.id === 'qHistBtnSearch') searchHistory();
+    else if(b.id === 'qHistRefresh') loadHistory();
+    else if(b.id === 'qSheetClose') sheetOpen(false);
+    else if(b.getAttribute('data-qdraft') != null){ restoreDraft(parseInt(b.getAttribute('data-qdraft'), 10)); if(isPhone()) sheetOpen(false); }
+    else if(b.getAttribute('data-qdraftdel') != null) deleteDraft(parseInt(b.getAttribute('data-qdraftdel'), 10));
+    else if(b.getAttribute('data-qload')){ loadQuoteFromHistory(b.getAttribute('data-qload')); if(isPhone()) sheetOpen(false); }
+  });
+  document.getElementById('qPanel').addEventListener('click', function(e){
+    var it = e.target.closest('.q-hist-item'); if(!it || e.target.closest('button')) return;
+    if(!it.getAttribute('data-qload')) return;
+    loadQuoteFromHistory(it.getAttribute('data-qload'));
+    if(isPhone()) sheetOpen(false);
+  });
+  document.getElementById('qPanel').addEventListener('input', function(e){
+    if(e.target && e.target.id === 'qHistSearch' && HIST.length) filterHistory(e.target.value);
+  });
+  document.getElementById('qPanel').addEventListener('keydown', function(e){
+    if(e.target && e.target.id === 'qHistSearch' && e.key === 'Enter'){ e.preventDefault(); searchHistory(); }
+  });
+
+  /* ═══════════ 6) 네임카드 ═══════════ */
+  /* ── 네임카드는 데이터센터(Supabase)에 둔다 (2026-09-14) — 시트·GAS 를 거치지 않아 "시트 연결 실패" 가 없다.
+        공개키(anon)만 쓰고, 서버는 페이지 보안 코드(SH_CODE)의 해시로 확인한다. ── */
+  var DC = { url: 'https://wdahskrcpjooqhwwxjiu.supabase.co/rest/v1/rpc/', anon: 'sb_publishable_O74WxjCsacx4G7Dtemgvlw_M9_6VtlW' };
+  function dcRpc(fn, args){
+    var ses = ''; try { ses = localStorage.getItem('dc_session') || ''; } catch(e){}
+    var body = Object.assign({ p_code: window.SH_CODE || (ses ? null : '') }, args || {});
+    var hd = { apikey: DC.anon, Authorization: 'Bearer ' + DC.anon, 'Content-Type': 'application/json' }; if(ses) hd['x-dc-session'] = ses;
+    return fetch(DC.url + fn, { method: 'POST', headers: hd, body: JSON.stringify(body) })
+      .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error((j && (j.message || j.hint)) || ('HTTP ' + r.status)); return j; }); });
+  }
+  function gasGet(params){
+    var q = Object.assign({}, params || {});
+    if(window.SH_CODE) q.code = window.SH_CODE;          // 서버에서 한 번 더 확인 (GAS CODE_ENFORCE)
+    var qs = Object.keys(q).map(function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(q[k]); }).join('&');
+    return fetch(QUOTE_CFG.gasUrl + (QUOTE_CFG.gasUrl.indexOf('?') >= 0 ? '&' : '?') + qs, { method: 'GET' }).then(function(r){ return r.json(); });
+  }
+  function gasPost(body){
+    return fetch(QUOTE_CFG.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); });
+  }
+  function loadNamecards(force){
+    var local = lsGet(LS_NC) || [];
+    NAMECARDS = local;
+    if(!force && NAMECARDS.length) renderPanel();
+    return dcRpc('fn_quote_nc_list', {}).then(function(r){
+      if(!(r && r.ok && Array.isArray(r.cards))) throw new Error('bad response');
+      /* 한 번만: 이 브라우저에만 있던 카드(옛 시트 판 캐시)를 데이터센터로 옮긴다 */
+      var have = {}; r.cards.forEach(function(c){ have[c.id] = true; });
+      var missing = local.filter(function(c){ return c && c.id && c.name && !have[c.id]; });
+      if(missing.length){
+        return Promise.all(missing.map(function(c){ return dcRpc('fn_quote_nc_save', { p_card: c }).catch(function(){ return null; }); }))
+          .then(function(){ return dcRpc('fn_quote_nc_list', {}); })
+          .then(function(r2){ NAMECARDS = (r2 && r2.cards) || r.cards; lsSet(LS_NC, NAMECARDS); renderPanel(); renderSheet(); toast('네임카드 ' + missing.length + '개를 데이터센터로 옮겼습니다'); });
+      }
+      NAMECARDS = r.cards; lsSet(LS_NC, NAMECARDS);
+      renderPanel(); renderSheet();
+      if(force) toast('네임카드 ' + NAMECARDS.length + '개 불러옴');
+    }).catch(function(err){ renderPanel(); toast('데이터센터 연결 실패 — 로컬 네임카드를 표시합니다 (' + (err && err.message || err) + ')', true); });
+  }
+  function showNcForm(c){
+    var f = document.getElementById('qNcForm');
+    var s = QUOTE_CFG.store;
+    c = c || { id: '', name: '', position: '프로', dept: '혼수/입주/구독 전문상담사', store: s.name, mobile: '', tel: s.tel, email: '', addr: s.addr };
+    function fi(k, l, ph){ return '<div class="q-f"><label>' + l + '</label><input type="text" data-nc="' + k + '" value="' + esc(c[k] || '') + '" placeholder="' + esc(ph || '') + '"></div>'; }
+    f.innerHTML = '<div style="font-size:12px;font-weight:800;color:var(--blue)">' + (c.id ? '✏️ 네임카드 수정' : '＋ 새 네임카드') + '</div>'
+      + '<input type="hidden" data-nc="id" value="' + esc(c.id) + '">'
+      + '<div class="q-grid2">' + fi('name', '이름 *', '홍길동') + fi('position', '직급', '프로') + '</div>'
+      + fi('dept', '타이틀 / 부서', '혼수/입주/구독 전문상담사')
+      + '<div class="q-grid2">' + fi('mobile', '휴대폰 (M) · QR 연락처', '010-0000-0000') + fi('tel', '매장 전화 (T)', s.tel) + '</div>'
+      + fi('email', '이메일 (E)', 'name@gmail.com')
+      + '<div class="q-row"><button type="button" class="q-btn pri" id="qNcSave">💾 저장</button><button type="button" class="q-btn" id="qNcCancel">취소</button>'
+      + (c.id ? '<button type="button" class="q-btn danger" id="qNcDelete" style="margin-left:auto">🗑 삭제</button>' : '') + '</div>';
+    f.style.display = '';
+    var first = f.querySelector('input[data-nc="name"]'); if(first) first.focus();
+  }
+  function hideNcForm(){ var f = document.getElementById('qNcForm'); f.style.display = 'none'; f.innerHTML = ''; }
+  function readNcForm(){
+    var o = {};
+    document.querySelectorAll('#qNcForm [data-nc]').forEach(function(el){ o[el.getAttribute('data-nc')] = (el.value || '').trim(); });
+    o.store = QUOTE_CFG.store.name; o.addr = QUOTE_CFG.store.addr;
+    return o;
+  }
+  function saveNamecard(){
+    var c = readNcForm();
+    if(!c.name){ toast('이름을 입력하세요', true); return; }
+    if(c.mobile) c.mobile = phoneFmt(c.mobile);
+    if(!c.id) c.id = 'NC' + Date.now();
+    function commit(card){
+      var found = false;
+      NAMECARDS = NAMECARDS.map(function(x){ if(x.id === card.id){ found = true; return card; } return x; });
+      if(!found) NAMECARDS.push(card);
+      lsSet(LS_NC, NAMECARDS);
+      QUOTE.opt.namecardId = card.id; lsSet(LS_NC_SEL, card.id);
+      hideNcForm(); renderAll();
+    }
+    var btn = document.getElementById('qNcSave'); if(btn){ btn.disabled = true; btn.textContent = '저장 중…'; }
+    dcRpc('fn_quote_nc_save', { p_card: c }).then(function(r){
+      if(!(r && r.ok)) throw new Error(r && r.error || 'save failed');
+      commit(r.card || c); toast('네임카드가 저장되었습니다');
+    }).catch(function(err){
+      commit(c); toast('데이터센터 저장 실패 — 이 브라우저에만 저장됨 (' + (err && err.message || err) + ')', true);
+    });
+  }
+  function deleteNamecard(){
+    var c = readNcForm();
+    if(!c.id) return;
+    qConfirm('이 네임카드를 삭제할까요?', '삭제').then(function(okn){
+      if(!okn) return;
+      deleteNamecardGo(c);
+    });
+  }
+  function deleteNamecardGo(c){
+    NAMECARDS = NAMECARDS.filter(function(x){ return x.id !== c.id; });
+    lsSet(LS_NC, NAMECARDS);
+    if(QUOTE.opt.namecardId === c.id) QUOTE.opt.namecardId = '';
+    hideNcForm(); renderAll();
+    dcRpc('fn_quote_nc_delete', { p_id: c.id }).then(function(){ toast('삭제되었습니다'); }).catch(function(){ toast('데이터센터 삭제 실패(로컬만 삭제됨)', true); });
+  }
+
+  /* ═══════════ 7) 발행(저장) · 발행 내역 ═══════════ */
+  function selectedNc(q){ q = q || QUOTE; if(!q || !q.opt) return null; return NAMECARDS.filter(function(c){ return c.id === q.opt.namecardId; })[0] || null; }
+  function openNcPicker(){
+    if(isPhone()) sheetOpen(true);
+    else { modal.classList.remove('panel-off'); lsSet('sh_quote_panel_off', false); setTimeout(fitScale, 0); }
+    var st = accState(); st.nc = true; lsSet(ACC_KEY, st);
+    var d = document.querySelector('#qPanel details[data-acc="nc"]');
+    if(d){ d.open = true; setTimeout(function(){ try { d.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e){} var s = document.getElementById('qNcSel'); if(s) s.focus(); }, 60); }
+  }
+  function summaryOf(q){
+    var T = calcTotals(q);
+    var vis = q.items.filter(function(i){ return !i.hidden; });
+    var models = vis.map(function(i){ return (i.tab ? i.tab + ' ' : '') + i.model + (i.months ? '(' + i.months + '개월' + (i.care ? ' ' + i.care : '') + ')' : '') + (i.multiOk ? '[다품목]' : ''); });
+    var multiModels = vis.filter(function(i){ return i.multiOk; }).map(function(i){ return i.model; });
+    var multiFlags = vis.map(function(i){ return i.model + ':' + (i.multiOk ? 'Y' : 'N'); });
+    var nc = NAMECARDS.filter(function(c){ return c.id === q.opt.namecardId; })[0];
+    var proof = ['recv', 'supp', 'appr'].filter(function(k){ return q.cust.proof[k]; }).map(function(k){ return { recv: '접수', supp: '보완', appr: '승인' }[k]; }).join('/');
+    /* 기간별 월 납입 (계약 기간이 섞여 있을 때만) — 예) "1~36개월 60,230 / 37~60개월 29,590 / 61~72개월 16,000" */
+    var PS = periodSegments(q);
+    var periodPay = PS.mixed ? PS.segs.map(function(s){ return s.from + '~' + s.to + '개월 ' + fmt(s.net); }).join(' / ') : '';
+    return {
+      type: q.cust.type, date: q.cust.date, until: (q.cust.untilMode === 'none' ? '' : displayYmd(q.cust.until)), name: q.cust.name, phone: q.cust.phone, birth: q.cust.birth, addr: q.cust.addr,
+      carrier: q.cust.carrier, wedding: q.cust.wedding, movein: q.cust.movein, proof: proof,
+      counselor: nc ? nc.name : '', count: T.count, models: models.join(', '),
+      // ★ 다품목 정보 (시트 저장용)
+      multiCount: T.multiCount, multiModels: multiModels.join(', '), multiFlags: multiFlags.join(' / '), multiDisc: T.multi,
+      total: T.total, benefit: T.benefit, finalP: T.finalP, monthly: T.monthly, realM: T.realM,
+      prepayPct: q.opt.prepayPct || 0, prepayAmt: T.preAmt, card: q.opt.card || '', cardMonthly: T.cardM,
+      pointMode: q.opt.pointMode === 'replace' ? '월 비용 반영' : '별도 적립', qrType: q.opt.qrType || 'tel',
+      maxMonths: T.maxM, periodPay: periodPay,
+      memo: q.cust.memo || ''
+    };
+  }
+  function localNo(){ var d = new Date(); return 'SH' + String(d.getFullYear()).slice(2) + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()); }
+  /* 발행(시트 저장)
+     opts.silent = true  → 재발행 확인창·실패 alert 없이 조용히 진행 (인쇄 경로에서 사용)
+     반환값은 Promise — 저장이 끝난 뒤에 인쇄해야 견적번호가 찍힌 상태로 출력됩니다. */
+  function issueQuote(opts){
+    opts = opts || {};
+    var q = QUOTE;
+    return new Promise(function(resolve, reject){
+      function fail(code){ var e = new Error(code); e.code = code; reject(e); }
+      if(!q){ fail('noquote'); return; }
+      if(!q.cust.name.trim()){
+        toast('고객명을 입력하세요', true);
+        if(!opts.silent){ var n1 = document.querySelector('#qSheet [data-q="cust.name"]'); if(n1) n1.focus(); }
+        fail('required'); return;
+      }
+      if(!q.cust.phone.trim()){
+        toast('연락처를 입력하세요', true);
+        if(!opts.silent){ var n2 = document.querySelector('#qSheet [data-q="cust.phone"]'); if(n2) n2.focus(); }
+        fail('required'); return;
+      }
+      var v0 = q.items.filter(function(i){ return !i.hidden; })[0];
+      if(!v0 || !String(v0.model).trim() || !(num(v0.monthly) > 0)){
+        toast('상품의 모델명과 월 구독료를 입력하세요', true);
+        if(!opts.silent){ var n3 = document.querySelector('#qSheet .q-in.req'); if(n3) n3.focus(); }
+        fail('required'); return;
+      }
+      if(!selectedNc(q)){
+        toast('담당자(네임카드)를 선택해야 발행됩니다', true);
+        openNcPicker();
+        fail('namecard'); return;
+      }
+      var reissue = !!q.meta.no;
+      var btn = document.getElementById('qBtnIssue');
+      if(btn){ btn.disabled = true; btn.textContent = '저장 중…'; }
+      var sum = summaryOf(q);
+      function done(no, ver, where){
+        q.meta.no = no; q.meta.version = ver; q.meta.issuedAt = nowStr();
+        var local = lsGet(LS_Q) || [];
+        local = local.filter(function(x){ return !(x.no === no && x.version === ver); });
+        local.unshift({ no: no, version: ver, issuedAt: q.meta.issuedAt, name: sum.name, phone: sum.phone, models: sum.models,
+                        finalP: sum.finalP, multiCount: sum.multiCount, multiModels: sum.multiModels, quote: q });
+        lsSet(LS_Q, local.slice(0, 50));
+        renderSheet();
+        if(btn){ btn.disabled = false; btn.textContent = '💾 발행'; }
+        toast('✅ ' + no + (ver > 1 ? ' v' + ver : '') + ' 발행 완료 (' + where + ')');
+        resolve({ no: no, version: ver, where: where });
+      }
+      /* 데이터센터에 직접 저장 (2026-09-14) — GAS·시트를 거치지 않아 1초 안에 끝난다.
+         번호·판(version)·발행 시각은 서버가 정해서 돌려준다. 시트 [견적내역]은 GAS 가 15분마다 데이터센터에서 가져가 채운다. */
+      dcRpc('fn_quote_page_save', { p_no: q.meta.no || '', p_summary: sum, p_quote: q }).then(function(r){
+        if(!(r && r.ok)) throw new Error(r && r.error || 'save failed');
+        done(r.no, r.version || 1, '저장 완료');
+      }).catch(function(err){
+        done(q.meta.no || localNo(), (q.meta.version || 0) + 1, '⚠️ 저장 실패 · 이 브라우저에만');
+        if(!opts.silent){
+          qAlert('데이터센터 저장에 실패해 이 브라우저에만 저장했습니다.\n' + (err && err.message || err) + '\n\n잠시 후 [재발행]해주세요. 저장되지 않은 견적은 [고객에게 보내기]가 되지 않습니다.');
+        }
+      });
+    });
+  }
+  /* ── 발행 내역 검색 색인 ──
+     매장에서 쓰는 방식(이름 + 뒷 4자리)이 그대로 먹히도록:
+       · 검색어를 공백으로 쪼개 전부 포함해야 매칭 (AND)  → "최유정 3976" ✔
+       · 하이픈 뺀 숫자열도 색인               → "66003976", "01066003976" ✔
+       · 4자리 숫자를 넣으면 뒷 4자리 일치 건을 맨 위로 정렬 */
+  function histIndex(x){
+    var phone = String(x.phone || '');
+    var digits = phone.replace(/[^0-9]/g, '');
+    return {
+      phone: phone, digits: digits, last4: digits.slice(-4),
+      hay: [x.no, x.name, phone, digits, x.models, x.issuedAt, x.counselor, x.multiModels]
+             .filter(Boolean).join(' ').toLowerCase()
+    };
+  }
+  function histIx(x){ return x._ix || (x._ix = histIndex(x)); }
+  function phoneHtml(x, l4){
+    var ix = histIx(x);
+    if(!ix.phone) return '';
+    if(ix.last4 && (l4 === ix.last4 || !l4)){
+      var i = ix.phone.lastIndexOf(ix.last4);
+      if(i >= 0) return esc(ix.phone.slice(0, i)) + '<span class="q-hi-l4">' + esc(ix.last4) + '</span>' + esc(ix.phone.slice(i + 4));
+    }
+    return esc(ix.phone);
+  }
+  function renderHistory(list, where, l4){
+    var box = document.getElementById('qHist'), cnt = document.getElementById('qHistCnt');
+    if(!box) return;
+    if(cnt) cnt.textContent = where + ' · ' + list.length + '건';
+    if(!list.length){ box.innerHTML = '<div class="q-hint">조건에 맞는 발행 내역이 없습니다.<br>이름 · 연락처 뒷 4자리 · 견적번호 · 모델명으로 찾을 수 있습니다.</div>'; return; }
+    box.innerHTML = list.map(function(x){
+      var key = esc(x.no) + '|' + esc(x.version || 1);
+      var mc = num(x.multiCount);
+      var hit = l4 && histIx(x).last4 === l4;
+      return '<div class="q-hist-item' + (hit ? ' hit' : '') + '" data-qload="' + key + '">'
+        + '<div class="q-hi-main"><b>' + esc(x.no) + (x.version > 1 ? ' v' + x.version : '') + '</b> · '
+        + '<strong>' + esc(x.name || '-') + '</strong> ' + phoneHtml(x, l4)
+        + '<span class="s">' + esc(x.issuedAt || '') + ' · ' + esc(x.models || '') + ' · 혜택가 ' + fmt(num(x.finalP)) + '원'
+        + (mc > 0 ? ' · 다품목 ' + mc + '개' : '') + '</span></div>'
+        + '<button type="button" class="q-btn q-hi-load" data-qload="' + key + '">불러오기</button></div>';
+    }).join('');
+  }
+  var HIST = [], HIST_WHERE = '';
+  function filterHistory(keyword){
+    var raw = String(keyword || '').trim();
+    if(!raw){ renderHistory(HIST, HIST_WHERE || '발행 내역'); return; }
+    var toks = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    var filtered = HIST.filter(function(x){
+      var ix = histIx(x);
+      return toks.every(function(t){
+        if(/^[0-9]+$/.test(t)) return ix.digits.indexOf(t) >= 0 || ix.hay.indexOf(t) >= 0;
+        return ix.hay.indexOf(t) >= 0;
+      });
+    });
+    // 4자리 숫자를 넣었으면 "뒷 4자리 정확히 일치"를 위로
+    var l4 = toks.filter(function(t){ return /^[0-9]{4}$/.test(t); })[0] || '';
+    if(l4){
+      filtered.sort(function(a, b){
+        return (histIx(a).last4 === l4 ? 0 : 1) - (histIx(b).last4 === l4 ? 0 : 1);
+      });
+    }
+    renderHistory(filtered, (HIST_WHERE || '발행 내역') + ' · 검색', l4);
+  }
+  function loadHistory(done){
+    var local = lsGet(LS_Q) || [];
+    var box = document.getElementById('qHist'); if(box) box.innerHTML = '<div class="q-hint">불러오는 중…</div>';
+    dcRpc('fn_quote_page_list', { p_limit: 100 }).then(function(r){
+      if(!(r && r.ok)) throw new Error(r && r.error || 'load failed');
+      HIST = (r.quotes || []).map(function(x){ if(typeof x.quote === 'string'){ try { x.quote = JSON.parse(x.quote); } catch(e){ x.quote = null; } } return x; });
+      HIST_WHERE = '발행 내역'; renderHistory(HIST, HIST_WHERE); if(done) done();
+    }).catch(function(err){ HIST = local; HIST_WHERE = '이 브라우저(연결 실패)'; renderHistory(HIST, HIST_WHERE); toast('발행 내역 불러오기 실패: ' + (err && err.message || err), true); if(done) done(); });
+  }
+  /* 🔎 검색: 내역이 아직 없으면 불러온 뒤(기다렸다가) 검색어를 적용 */
+  function searchHistory(){
+    var inp = document.getElementById('qHistSearch');
+    var kw = inp ? inp.value : '';
+    var dAcc = document.getElementById('qHistSection');
+    if(dAcc && !dAcc.open) dAcc.open = true;
+    if(HIST.length){ filterHistory(kw); return; }
+    loadHistory(function(){ filterHistory(kw); });
+  }
+  function openHistoryPanel(){
+    if(isPhone()) sheetOpen(true);
+    else { modal.classList.remove('panel-off'); lsSet('sh_quote_panel_off', false); setTimeout(fitScale, 0); }
+    var dAcc = document.getElementById('qHistSection');
+    if(dAcc && !dAcc.open){ dAcc.open = true; var stA = accState(); stA.hist = true; lsSet(ACC_KEY, stA); }
+    loadHistory();
+    var target = document.getElementById('qHistSection');
+    if(target && target.scrollIntoView) setTimeout(function(){
+      try { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) {}
+    }, 40);
+  }
+  function loadQuoteFromHistory(key){
+    var parts = String(key).split('|'), no = parts[0], ver = parseInt(parts[1] || '1', 10);
+    var x = HIST.filter(function(h){ return h.no === no && (h.version || 1) === ver; })[0] || HIST.filter(function(h){ return h.no === no; })[0];
+    if(!x || !x.quote){ toast('견적 데이터를 불러올 수 없습니다', true); return; }
+    qConfirm(no + ' 견적을 불러옵니다.\n현재 작성 중인 내용은 [🕒 임시 저장]에 보관됩니다.', '불러오기').then(function(okl){
+      if(!okl) return;
+      snapshotDraft('발행 내역 불러오기');
+      QUOTE = x.quote; EDIT = true; syncEditBtn();
+      normalizeQuote(QUOTE);
+      if(!QUOTE.meta) QUOTE.meta = { no: no, version: ver, issuedAt: x.issuedAt || '' };
+      renderAll(); toast(no + ' 불러옴 — 다품목 지정·수정 금액까지 복원되었습니다');
+    });
+  }
+
+  /* ═══════════ 8) 인쇄 · 열기/닫기 ═══════════ */
+  function doPrint(){
+    document.body.classList.add('quote-print');
+    var cleanup = function(){ document.body.classList.remove('quote-print'); window.removeEventListener('afterprint', cleanup); };
+    window.addEventListener('afterprint', cleanup);
+    setTimeout(function(){ window.print(); setTimeout(cleanup, 1500); }, 120);
+  }
+  /* 🖨️ 인쇄 = 항상 "발행 후 인쇄"
+     · 인쇄물에 견적번호가 찍히고, 같은 내용이 데이터센터(담당자 화면 [견적서])에 남습니다.
+     · 이미 발행된 건이면 같은 번호의 다음 버전(v2, v3…)으로 추가 저장됩니다.
+     · 고객명·연락처가 비어 발행이 불가능할 때만 "발행 없이 인쇄"를 물어봅니다. */
+  function printQuote(){
+    var wasEdit = EDIT;
+    if(EDIT){ EDIT = false; syncEditBtn(); renderSheet(); }
+    var restore = function(){ if(wasEdit && !EDIT){ EDIT = true; syncEditBtn(); renderSheet(); } };
+    var go = function(){ doPrint(); setTimeout(restore, 2200); };
+    issueQuote({ silent: true }).then(go, function(err){
+      if(err && err.code === 'namecard'){ restore(); return; }
+      if(err && err.code === 'required'){
+        qConfirm('필수 정보(고객명·연락처·모델명·월 구독료)가 부족해 발행할 수 없습니다.\n견적번호 없이 인쇄만 진행할까요?', '인쇄 진행').then(function(okp){
+          if(okp) go(); else restore();
+        });
+        return;
+      }
+      go();
+    });
+  }
+  /* ── 📤 공유: 화면 그대로 PDF 생성 → 모바일은 공유 시트(카카오톡 등), PC는 다운로드 ── */
+  var SHARE_LIBS = null;
+  function loadShareLibs(){
+    if(window.jspdf && (window.domtoimage || window.html2canvas)) return Promise.resolve();
+    if(SHARE_LIBS) return SHARE_LIBS;
+    function ld(src){ return new Promise(function(res, rej){
+      var el = document.createElement('script'); el.src = src;
+      el.onload = res; el.onerror = function(){ rej(new Error('lib')); };
+      document.head.appendChild(el);
+    }); }
+    function ldAny(urls){ return urls.reduce(function(p, u){ return p.catch(function(){ return ld(u); }); }, Promise.reject(new Error('start'))); }
+    SHARE_LIBS = Promise.all([
+      /* 1순위: dom-to-image-more (실제 브라우저 렌더러 사용 — 한글 품질 최상) */
+      ldAny([
+        'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.10.2/dist/dom-to-image-more.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js'
+      ]).catch(function(){}),
+      /* 폴백 캡처 엔진 */
+      ld('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js').catch(function(){}),
+      ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+    ]).then(function(){
+      if(!window.jspdf || !(window.domtoimage || window.html2canvas)){ SHARE_LIBS = null; throw new Error('lib'); }
+    }, function(e){ SHARE_LIBS = null; throw e; });
+    return SHARE_LIBS;
+  }
+  /* 캡처 전에 시트 안 이미지를 data:로 인라인 — 다른 도메인 로고(CORS 차단)는 텍스트 로고로 대체 */
+  function inlineSheetImages(root){
+    var imgs = [].slice.call(root.querySelectorAll('img'));
+    return Promise.all(imgs.map(function(im){
+      var src = im.getAttribute('src') || '';
+      if(!src || src.indexOf('data:') === 0) return Promise.resolve();
+      return fetch(src, { mode: 'cors' }).then(function(r){
+        if(!r.ok) throw new Error('http');
+        return r.blob();
+      }).then(function(b){
+        return new Promise(function(res){
+          var fr = new FileReader();
+          fr.onload = function(){ im.setAttribute('src', fr.result); res(); };
+          fr.onerror = function(){ res(); };
+          fr.readAsDataURL(b);
+        });
+      }).catch(function(){
+        var span = document.createElement('span');
+        span.className = im.className;
+        span.style.cssText = 'font-family:\'Arial Black\',Arial,sans-serif;font-weight:900;color:#0a3594;font-size:15px;letter-spacing:-.3px;display:inline-block;line-height:1.15;';
+        span.textContent = im.getAttribute('alt') || 'SAMSUNG STORE';
+        if(im.parentNode) im.parentNode.replaceChild(span, im);
+      });
+    }));
+  }
+  function canvasBlank(cv){
+    try {
+      var ctx = cv.getContext('2d');
+      var y = Math.floor(cv.height / 2);
+      var d = ctx.getImageData(0, y, cv.width, 1).data;
+      for(var i = 0; i < d.length; i += 40){ if(d[i] < 245 || d[i + 1] < 245 || d[i + 2] < 245) return false; }
+      var y2 = Math.floor(cv.height / 4);
+      d = ctx.getImageData(0, y2, cv.width, 1).data;
+      for(var j = 0; j < d.length; j += 40){ if(d[j] < 245 || d[j + 1] < 245 || d[j + 2] < 245) return false; }
+      return true;
+    } catch(e){ return false; }
+  }
+  function capturePage(pg){
+    var opts = { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false };
+    function h2cPlain(){
+      if(!window.html2canvas) return Promise.reject(new Error('nolib'));
+      var sheet = document.getElementById('qSheet');
+      sheet.classList.add('sharecap');
+      function off(){ sheet.classList.remove('sharecap'); }
+      return window.html2canvas(pg, opts).then(function(cv){ off(); return cv; }, function(e){ off(); throw e; });
+    }
+    function h2cFo(){
+      if(!window.html2canvas) return Promise.reject(new Error('nolib'));
+      return window.html2canvas(pg, Object.assign({ foreignObjectRendering: true }, opts))
+        .then(function(cv){ return canvasBlank(cv) ? h2cPlain() : cv; }, h2cPlain);
+    }
+    /* 1순위 dom-to-image(-more): 브라우저 렌더러 그대로 → 화면과 동일한 품질 */
+    if(window.domtoimage){
+      var k = 2;
+      return window.domtoimage.toCanvas(pg, {
+        width: pg.offsetWidth * k, height: pg.offsetHeight * k, bgcolor: '#ffffff',
+        style: { transform: 'scale(' + k + ')', transformOrigin: 'top left', margin: '0' }
+      }).then(function(cv){ return canvasBlank(cv) ? h2cFo() : cv; }, h2cFo);
+    }
+    return h2cFo();
+  }
+  function buildSharePdf(){
+    var pages = [].slice.call(document.querySelectorAll('#qSheet .q-page'));
+    if(!pages.length) return Promise.reject(new Error('nopage'));
+    var doc = new window.jspdf.jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
+    var chain = Promise.resolve();
+    pages.forEach(function(pg, i){
+      chain = chain.then(function(){
+        return capturePage(pg).then(function(cv){
+          if(i > 0) doc.addPage();
+          doc.addImage(cv.toDataURL('image/jpeg', 0.93), 'JPEG', 0, 0, 210, 297);
+        });
+      });
+    });
+    return chain.then(function(){ return doc.output('blob'); });
+  }
+  function downloadBlob(blob, nm){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = nm;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    toast('📄 PDF가 다운로드되었습니다 — 카카오톡·문자에 첨부해 전송하세요');
+  }
+  /* ═══════════ 고객에게 보내기 — 링크 한 줄 ═══════════
+     PDF 를 브라우저에서 굽는 건 느리고(수십 초) 자주 실패한다.
+     고객은 주소 하나로 바로 열고, 필요하면 그 화면에서 인쇄·PDF 저장을 한다. */
+  var SEND_UA_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  function sendMsgText(d){
+    var money = d.monthly ? ('월 ' + Number(d.monthly).toLocaleString('ko-KR') + '원')
+              : (d.final ? Number(d.final).toLocaleString('ko-KR') + '원' : '');
+    return '[' + QUOTE_CFG.store.name + '] ' + (d.name || '') + ' 님 견적서입니다.\n'
+         + (d.models ? '· ' + d.models + '\n' : '') + (money ? '· ' + money + '\n' : '')
+         + d.url + '\n(' + d.expires_d + '일간 열람 가능)';
+  }
+  function sendCopy(t, msg){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){ toast(msg || '링크를 복사했습니다'); },
+        function(){ window.prompt('아래를 복사하세요', t); });
+    } else { window.prompt('아래를 복사하세요', t); }
+  }
+  function sendSheet(d){
+    var tel = String(d.phone || '').replace(/[^0-9]/g, '');
+    var m = document.createElement('div');
+    m.className = 'q-sendmask';
+    m.innerHTML = '<div class="q-sendbox">'
+      + '<div class="q-sendttl">📨 고객에게 보내기 <span>' + esc(d.no) + (d.ver > 1 ? ' · ' + d.ver + '차' : '') + '</span></div>'
+      + '<div class="q-sendsub"><b>' + esc(d.name || '') + '</b> 님' + (d.models ? ' · ' + esc(d.models) : '')
+      +   (d.monthly ? ' · 월 ' + Number(d.monthly).toLocaleString('ko-KR') + '원'
+                     : (d.final ? ' · ' + Number(d.final).toLocaleString('ko-KR') + '원' : '')) + '</div>'
+      + '<div class="q-sendurl">' + esc(d.url) + '</div>'
+      + '<div class="q-sendbtns">'
+      +   '<button type="button" data-a="copy">🔗 링크 복사</button>'
+      +   '<button type="button" data-a="sms">💬 문자로 보내기</button>'
+      +   '<button type="button" data-a="share">↗ 카카오 · 공유</button>'
+      +   '<a href="' + esc(d.url) + '" target="_blank" rel="noopener">👁 고객 화면 미리보기</a>'
+      + '</div>'
+      + '<div class="q-sendnote"><b>' + d.expires_d + '일</b> 뒤(' + esc(d.expires_at) + ')까지 열립니다'
+      +   (d.views ? ' · 지금까지 <b>' + d.views + '번</b> 열림' : '')
+      +   '<br>링크를 받은 사람만 볼 수 있습니다. 고객 화면에서 인쇄·PDF 저장이 됩니다.</div>'
+      + '<button type="button" class="q-sendclose" data-a="close">닫기</button>'
+      + '</div>';
+    m.addEventListener('click', function(e){
+      if(e.target === m){ m.remove(); return; }
+      var b = e.target.closest('[data-a]'); if(!b) return;
+      var a = b.getAttribute('data-a');
+      if(a === 'close'){ m.remove(); return; }
+      if(a === 'copy'){ sendCopy(d.url); return; }
+      if(a === 'sms'){
+        if(!SEND_UA_MOBILE){ toast('문자 자동 발송은 아직 연동 전입니다 — 링크를 복사해 보내주세요', true); sendCopy(d.url); return; }
+        var body = encodeURIComponent(sendMsgText(d));
+        location.href = (/iPhone|iPad/i.test(navigator.userAgent) ? 'sms:' + tel + '&body=' + body : 'sms:' + tel + '?body=' + body);
+        return;
+      }
+      if(a === 'share'){
+        var txt = sendMsgText(d);
+        if(navigator.share){
+          navigator.share({ title: (d.name || '') + ' 님 견적서', text: txt, url: d.url })
+            .catch(function(err){ if(err && err.name !== 'AbortError') sendCopy(txt, '문자 내용을 복사했습니다 — 카카오톡에 붙여 넣으세요'); });
+        } else { sendCopy(txt, '문자 내용을 복사했습니다 — 카카오톡에 붙여 넣으세요'); }
+      }
+    });
+    document.body.appendChild(m);
+  }
+  function sendQuoteLink(){
+    var btn = document.getElementById('qBtnSend');
+    var go = function(){
+      if(btn){ btn.disabled = true; btn.textContent = '📨 링크 만드는 중…'; }
+      dcRpc('fn_quote_page_share', { p_no: QUOTE.meta.no })
+        .then(function(r){
+          if(!r || !r.ok) throw new Error((r && (r.error || r.reason)) || 'share failed');
+          sendSheet(r);
+        })
+        .catch(function(e){ toast('링크를 만들지 못했습니다 — ' + (e && e.message ? e.message : ''), true); })
+        .then(function(){ if(btn){ btn.disabled = false; btn.textContent = '📨 고객에게 보내기'; } });
+    };
+    if(QUOTE.meta.no){ go(); return; }
+    if(btn){ btn.disabled = true; btn.textContent = '📨 발행 중…'; }
+    issueQuote({ silent: true }).then(function(){
+      if(btn){ btn.disabled = false; btn.textContent = '📨 고객에게 보내기'; }
+      if(!QUOTE.meta.no){ toast('먼저 발행이 되어야 보낼 수 있습니다', true); return; }
+      go();
+    }, function(){
+      if(btn){ btn.disabled = false; btn.textContent = '📨 고객에게 보내기'; }
+    });
+  }
+
+  function shareQuote(){
+    var wasEdit = EDIT;
+    if(EDIT){ EDIT = false; syncEditBtn(); renderSheet(); }
+    var restore = function(){ if(wasEdit && !EDIT){ EDIT = true; syncEditBtn(); renderSheet(); } };
+    var btn = document.getElementById('qBtnShare');
+    var go = function(){
+      if(btn){ btn.disabled = true; btn.textContent = '📤 PDF 생성 중…'; }
+      new Promise(function(r){ setTimeout(r, 500); })      /* QR 등 이미지 로드 여유 */
+        .then(loadShareLibs)
+        .then(function(){ return inlineSheetImages(document.getElementById('qSheet')); })
+        .then(function(){
+          return Promise.race([
+            buildSharePdf(),
+            new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('timeout')); }, 40000); })
+          ]);
+        })
+        .then(function(blob){
+          var nm = '삼성스토어시흥_구독견적서_' + (QUOTE.cust.name || '고객') + (QUOTE.meta.no ? '_' + QUOTE.meta.no : '') + '.pdf';
+          var file = null;
+          try { file = new File([blob], nm, { type: 'application/pdf' }); } catch(e){}
+          /* 공유 시트는 모바일·태블릿에서만 — PC는 Windows 공유(휴대폰과 연결 등) 전송이
+             불안정하므로 바로 다운로드해 카톡 PC·문자에 첨부하는 흐름으로 안내 */
+          var mobileUA = (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean')
+            ? navigator.userAgentData.mobile
+            : /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+          if(mobileUA && file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+            return navigator.share({ files: [file], title: nm.replace('.pdf', ''), text: QUOTE_CFG.store.name + ' 구독 견적서를 보내드립니다.' })
+              .then(function(){ toast('📤 공유 완료'); }, function(){ downloadBlob(blob, nm); });
+          }
+          downloadBlob(blob, nm);
+        })
+        .catch(function(){ toast('PDF 생성에 실패했습니다 — [🖨️ 인쇄/PDF]에서 "PDF로 저장"을 이용해 주세요', true); })
+        .then(function(){
+          if(btn){ btn.disabled = false; btn.textContent = '📤 공유'; }
+          restore();
+          if(!wasEdit) renderSheet();          /* 캡처용으로 바꾼 이미지 원복 */
+        });
+    };
+    /* 이미 발행된 견적은 재발행 없이 바로 PDF */
+    if(QUOTE.meta.no){ go(); return; }
+    if(btn){ btn.disabled = true; btn.textContent = '📤 발행 중…'; }
+    var issued = false;
+    /* 저장이 오래 걸리면 10초 후 견적번호 없이 PDF 진행 */
+    var slow = setTimeout(function(){
+      if(!issued){ issued = true; toast('저장이 지연되어 먼저 PDF를 만듭니다 — 발행은 뒤에서 계속됩니다'); go(); }
+    }, 10000);
+    issueQuote({ silent: true }).then(function(){
+      clearTimeout(slow);
+      if(!issued){ issued = true; go(); }
+      else renderSheet();                       /* 늦게 발행 완료 → 번호만 갱신 */
+    }, function(err){
+      clearTimeout(slow);
+      if(issued) return;
+      issued = true;
+      if(err && err.code === 'namecard'){ if(btn){ btn.disabled = false; btn.textContent = '📤 PDF'; } restore(); return; }
+      if(err && err.code === 'required'){
+        toast('필수 정보(고객명·연락처·모델명·월 구독료)를 먼저 입력하세요', true);
+        if(btn){ btn.disabled = false; btn.textContent = '📤 공유'; }
+        restore(); return;
+      }
+      go();
+    });
+  }
+  /* ═══════════ 9) 페이지 진입 — 계산기 핸드오프 · 수기 신규 · 프리셋 ═══════════ */
+  var LS_HANDOFF = 'sh_quote_handoff';
+  function defaultShow(){ return { payband: true, sub: false, multi: false, total: false, realM: false, sumBox: false, prepayLine: false }; }
+  function loadPreset(){
+    return lsGet('sh_quote_preset_' + (lsGet(LS_NC_SEL) || 'default')) || lsGet('sh_quote_preset_default') || null;
+  }
+  function blankItem(){
+    return { tab: '', model: '', name: '', isMain: true, hidden: false, care: '', careType: '', cycle: '',
+      months: 72, monthly: 0, total: 0, prepayAmt: 0, isPrepayNo: false, multiOk: false,
+      auto: { total: true, card: true }, cardMonthly: 0, cardName: '', cardTier: '',
+      disc: { sub: 0, multi: 0, prepay: 0, point: 0, card: 0 }, cardDesc: '', consumable: 0, giftcard: 0, note: '' };
+  }
+  function blankQuote(){
+    var d = new Date(), um = String(QUOTE_CFG.validDays || 7);
+    var pr = loadPreset() || {};
+    return {
+      meta: { no: '', version: 0, issuedAt: '', createdAt: nowStr() },
+      cust: { type: '구독', date: ymd(d), until: calcUntilDate(um, ymd(d)), untilMode: um, name: '', phone: '', birth: '', addr: '', carrier: '', revisit: '',
+              wedding: '', movein: '', proof: { recv: false, supp: false, appr: false }, memo: '' },
+      opt: { pointMode: pr.pointMode || 'cash', pointCommon: 0, prepayPct: 0, prepayRate: 0, card: '', multi: false, subHistory: '',
+             qrType: lsGet(LS_QR) || 'tel', showQR: (lsGet(LS_QR) || 'tel') !== 'none', namecardId: lsGet(LS_NC_SEL) || '',
+             lumpSum: 0, rewardOn: false, show: pr.show || defaultShow() },
+      items: [blankItem()],
+      extra: [{ label: '기타 혜택', amount: 0 }]
+    };
+  }
+  /* ── 🕒 임시 저장: 작성 중 자동 저장(복원용) + 화면을 비울 때 스냅샷 목록 보관 ── */
+  var LS_DRAFT = 'sh_quote_draft', LS_DRAFTS = 'sh_quote_drafts';
+  function draftMeaningful(q){
+    if(!q || !q.cust) return false;
+    return !!(String(q.cust.name || '').trim() || String(q.cust.phone || '').trim()
+      || (q.items || []).some(function(it){ return String(it.model || '').trim() || num(it.monthly) > 0; }));
+  }
+  var _draftTm = null;
+  function autosaveDraft(){
+    if(_draftTm) clearTimeout(_draftTm);
+    _draftTm = setTimeout(function(){
+      try {
+        if(draftMeaningful(QUOTE)) lsSet(LS_DRAFT, { t: Date.now(), quote: QUOTE });
+        else localStorage.removeItem(LS_DRAFT);
+      } catch(e){}
+    }, 400);
+  }
+  function draftLabelOf(q){
+    var models = (q.items || []).map(function(it){ return it.model; }).filter(Boolean).join(', ');
+    return (q.cust.name || '이름 없음') + (models ? ' · ' + models : '') + (q.meta && q.meta.no ? ' · ' + q.meta.no : '');
+  }
+  function pushDraftSnap(q, why, quiet){
+    try {
+      if(!draftMeaningful(q)) return;
+      var list = lsGet(LS_DRAFTS) || [];
+      var snap = { t: Date.now(), why: why || '', label: draftLabelOf(q), quote: JSON.parse(JSON.stringify(q)) };
+      list = list.filter(function(d){ return !(d.label === snap.label && snap.t - d.t < 60000); });
+      list.unshift(snap);
+      if(list.length > 10) list.length = 10;
+      lsSet(LS_DRAFTS, list);
+      if(!quiet) toast('🕒 작성 중이던 견적을 임시 저장했습니다 — 패널 [🕒 임시 저장]에서 복원');
+    } catch(e){}
+  }
+  function snapshotDraft(why){ pushDraftSnap(QUOTE, why); }
+  function restoreDraft(i){
+    var list = lsGet(LS_DRAFTS) || [];
+    var d = list[i]; if(!d || !d.quote){ toast('임시 견적을 찾을 수 없습니다', true); return; }
+    qConfirm('「' + (d.label || '임시 견적') + '」을(를) 불러옵니다.\n현재 작성 중인 내용은 임시 저장 목록에 보관됩니다.', '불러오기').then(function(ok){
+      if(!ok) return;
+      snapshotDraft('다른 임시 견적으로 전환');
+      var list2 = lsGet(LS_DRAFTS) || [];
+      QUOTE = d.quote; normalizeQuote(QUOTE); EDIT = true; syncEditBtn(); renderAll();
+      toast('🕒 임시 견적을 불러왔습니다');
+    });
+  }
+  function deleteDraft(i){
+    qConfirm('이 임시 견적을 삭제할까요?', '삭제').then(function(ok){
+      if(!ok) return;
+      var list = lsGet(LS_DRAFTS) || [];
+      list.splice(i, 1); lsSet(LS_DRAFTS, list); renderPanel();
+    });
+  }
+  function startBlank(){ QUOTE = blankQuote(); EDIT = true; syncEditBtn(); renderAll(); }
+  function importHandoff(notify, keep){
+    var hd = lsGet(LS_HANDOFF);
+    if(!keep){ try { localStorage.removeItem(LS_HANDOFF); } catch(e){} }
+    if(!hd || !hd.quote) return false;
+    if(Date.now() - (hd.t || 0) > 30 * 60000) return false;
+    var q = hd.quote;
+    normalizeQuote(q);
+    var pr = loadPreset();
+    if(pr && pr.show) q.opt.show = pr.show;
+    QUOTE = q; EDIT = true; syncEditBtn(); renderAll();
+    if(notify) toast('🧮 계산기 결과를 불러왔습니다 — 내용 확인 후 발행하세요');
+    return true;
+  }
+  window.addEventListener('storage', function(ev){
+    if(ev.key !== LS_HANDOFF || !ev.newValue) return;
+    var busy = QUOTE && (QUOTE.cust.name || QUOTE.items.some(function(it){ return num(it.monthly) > 0; }));
+    if(!busy){ importHandoff(true, true); return; }
+    qConfirm('계산기에서 새 견적 내용이 도착했습니다. 불러올까요?\n현재 작성 중인 내용은 [🕒 임시 저장]에 보관됩니다.', '불러오기').then(function(okh){
+      if(okh){ snapshotDraft('계산기 결과 수신'); importHandoff(true, true); }
+    });
+  });
+
+  /* ═══════════ 9-b) 🔎 기존 고객 불러오기 ═══════════
+     이름 또는 번호 뒷 4자리 → 고객명·연락처·주소·생년월일.
+     지난 견적이 있으면 통신사·예식일·입주일까지 이어서 채운다.
+     조회는 GAS 를 거친다 — DB 열쇠를 이 페이지에 두지 않기 위해서.                */
+  var CUST_ROWS = [], CUST_Q = '', CUST_NOTE = '';
+  /* 패널은 renderPanel() 때마다 통째로 다시 그려지므로, 검색어와 결과를 변수에 두고 같이 그린다 */
+  function custSearchHtml(){
+    return '<details class="q-acc" data-acc="cust" open>'
+      + '<summary>🔎 기존 고객 불러오기 <span class="r">이름 · 번호 뒷 4자리</span></summary>'
+      + '<div class="q-acc-b">'
+      +   '<div class="q-hist-tools">'
+      +     '<input type="search" id="qCustQ" placeholder="예) 최인환  또는  6000" enterkeyhint="search" value="' + esc(CUST_Q) + '">'
+      +     '<button type="button" class="q-btn" id="qCustBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)">찾기</button>'
+      +   '</div>'
+      +   '<div id="qCustRows" class="q-hist">' + custRowsHtml() + '</div>'
+      +   '<div class="q-hint">고르면 <b>고객명 · 연락처 · 주소 · 생년월일</b>이 채워집니다. '
+      +     '지난 견적이 있으면 <b>통신사 · 예식일 · 입주일</b>도 같이 따라옵니다. 새 고객이면 그냥 견적서에 바로 적으세요.</div>'
+      + '</div></details>';
+  }
+  function custRowsHtml(){
+    if(!CUST_ROWS.length) return CUST_NOTE ? '<div class="q-hint">' + esc(CUST_NOTE) + '</div>' : '';
+    return CUST_ROWS.map(function(x, i){
+      var lq = x.last_quote;
+      return '<div class="q-hist-item" data-qcust="' + i + '">'
+        + '<div class="q-hi-main"><strong>' + esc(x.name || '-') + '</strong> ' + esc(x.phone || '')
+        + '<span class="s">' + esc(x.addr || '주소 없음')
+        + (Number(x.orders) ? ' · 구매 ' + x.orders + '건' : '')
+        + (Number(x.consults) ? ' · 상담 ' + x.consults + '건' : '')
+        + (lq ? ' · 지난 견적 ' + esc(lq.no) + (lq.at ? ' (' + esc(lq.at) + ')' : '') : '')
+        + '</span></div>'
+        + '<button type="button" class="q-btn q-hi-load" data-qcust="' + i + '">불러오기</button></div>';
+    }).join('');
+  }
+  function renderCustRows(rows, note){
+    CUST_ROWS = rows || []; CUST_NOTE = CUST_ROWS.length ? '' : (note || '찾는 고객이 없습니다 — 새 고객으로 바로 적으세요');
+    var box = document.getElementById('qCustRows'); if(box) box.innerHTML = custRowsHtml();
+  }
+  function doCustSearch(){
+    var el = document.getElementById('qCustQ'); if(!el) return;
+    var q = (el.value || '').trim();
+    if(q.length < 2){ toast('두 글자 이상 넣어 주세요', true); return; }
+    CUST_Q = q;
+    var box = document.getElementById('qCustRows');
+    if(box) box.innerHTML = '<div class="q-hint">찾는 중…</div>';
+    dcRpc('fn_quote_page_customer', { p_q: q, p_limit: 8 }).then(function(r){
+      if(!r || !r.ok){ renderCustRows([], (r && r.error) ? ('불러오지 못했습니다 : ' + r.error) : '불러오지 못했습니다'); return; }
+      renderCustRows(r.rows || [], r.note);
+    }).catch(function(err){ renderCustRows([], '연결 실패 : ' + (err && err.message || err)); });
+  }
+  function pickCust(i){
+    var x = CUST_ROWS[i]; if(!x || !QUOTE) return;
+    var lq = x.last_quote || {};
+    QUOTE.cust.name  = x.name || QUOTE.cust.name;
+    if(x.phone) QUOTE.cust.phone = phoneFmt(x.phone);
+    QUOTE.cust.addr    = x.addr || lq.addr || QUOTE.cust.addr;
+    QUOTE.cust.birth   = x.birth || lq.birth || QUOTE.cust.birth;
+    QUOTE.cust.carrier = lq.carrier || QUOTE.cust.carrier;
+    QUOTE.cust.wedding = lq.wedding || QUOTE.cust.wedding;
+    QUOTE.cust.movein  = lq.movein  || QUOTE.cust.movein;
+    EDIT = true; syncEditBtn(); renderAll();
+    toast('👤 ' + (x.name || '고객') + ' 정보를 채웠습니다'
+      + (lq.no ? ' (지난 견적 ' + lq.no + ' 기준)' : '') + ' — 상품·금액은 새로 적으세요');
+  }
+  document.getElementById('qPanel').addEventListener('click', function(e){
+    var t = e.target.closest('[data-qcust]');
+    if(t){ pickCust(parseInt(t.getAttribute('data-qcust'), 10)); if(isPhone()) sheetOpen(false); return; }
+    if(e.target.closest('#qCustBtn')) doCustSearch();
+  });
+  document.getElementById('qPanel').addEventListener('keydown', function(e){
+    if(e.target && e.target.id === 'qCustQ' && e.key === 'Enter'){ e.preventDefault(); doCustSearch(); }
+  });
+
+  /* ═══════════ 9-c) 🔗 담당자 화면(store)에서 열기 ═══════════ */
+  var PENDING_COUNSELOR = '';
+  function qsGet(){ try { return new URLSearchParams(location.search || ''); } catch(e){ return null; } }
+  function stripQuoteParams(){
+    try {
+      var u = new URL(location.href);
+      ['no','v','name','phone','counselor','memo'].forEach(function(k){ u.searchParams.delete(k); });
+      history.replaceState(null, '', u.pathname + (u.search || '') + (u.hash || ''));
+    } catch(e){}
+  }
+  function applyCounselorName(nm){
+    if(!nm) return false;
+    var c = NAMECARDS.filter(function(x){ return String(x.name || '').trim() === nm; })[0];
+    if(!c) return false;
+    if(QUOTE && QUOTE.opt){ QUOTE.opt.namecardId = c.id; lsSet(LS_NC_SEL, c.id); }
+    return true;
+  }
+  function applyPendingCounselor(){
+    if(!PENDING_COUNSELOR) return;
+    if(applyCounselorName(PENDING_COUNSELOR)){ PENDING_COUNSELOR = ''; renderAll(); }
+  }
+  function prefillCust(nm, ph, memo){
+    if(!QUOTE || !QUOTE.cust) return;
+    if(nm) QUOTE.cust.name = nm;
+    if(ph) QUOTE.cust.phone = phoneFmt(ph);
+    if(memo && !QUOTE.cust.memo) QUOTE.cust.memo = memo;
+  }
+  function openFromUrl(){
+    var p = qsGet(); if(!p) return false;
+    var no   = String(p.get('no') || '').trim(),
+        nm   = String(p.get('name') || '').trim(),
+        ph   = String(p.get('phone') || '').trim(),
+        cs   = String(p.get('counselor') || '').trim(),
+        memo = String(p.get('memo') || '').trim(),
+        ver  = parseInt(p.get('v') || '0', 10) || 0;
+    if(!no && !nm && !ph) return false;
+
+    var prev = lsGet(LS_DRAFT);
+    if(prev && prev.quote && draftMeaningful(prev.quote)) pushDraftSnap(prev.quote, '담당자 화면에서 열기', true);
+    try { localStorage.removeItem(LS_DRAFT); } catch(e){}
+
+    PENDING_COUNSELOR = cs;
+    startBlank();
+    prefillCust(nm, ph, memo);
+    applyCounselorName(cs);
+    renderAll();
+    stripQuoteParams();
+
+    if(!no){
+      toast('🧾 ' + (nm || '고객') + ' — 담당자 화면에서 넘어왔습니다. 상품·금액을 채우고 발행하세요');
+      /* 이름·번호가 왔으면 지난 이력도 자동으로 찾아 둔다 */
+      if(nm || ph){ CUST_Q = ph ? ph.slice(-4) : nm; var qq = document.getElementById('qCustQ');
+        if(qq){ qq.value = CUST_Q; doCustSearch(); } }
+      return true;
+    }
+    toast('📄 견적 ' + no + ' 을(를) 불러오는 중…');
+    loadHistory(function(){
+      var hit = (ver ? HIST.filter(function(h){ return h.no === no && (h.version || 1) === ver; })[0] : null)
+             || HIST.filter(function(h){ return h.no === no; })[0];
+      if(hit && hit.quote){
+        QUOTE = hit.quote; normalizeQuote(QUOTE);
+        if(!QUOTE.meta) QUOTE.meta = { no: no, version: hit.version || 1, issuedAt: hit.issuedAt || '' };
+        if(!QUOTE.meta.no){ QUOTE.meta.no = no; QUOTE.meta.version = QUOTE.meta.version || hit.version || 1; QUOTE.meta.issuedAt = QUOTE.meta.issuedAt || hit.issuedAt || ''; }
+        EDIT = true; syncEditBtn();
+        applyCounselorName(cs);
+        renderAll();
+        toast('📄 ' + no + ((hit.version > 1) ? ' v' + hit.version : '') + ' 불러옴 — 고치고 [💾 발행]하면 다음 판으로 저장됩니다');
+      } else {
+        /* 최근 100건 밖의 오래된 견적 — 번호로 직접 가져온다 */
+        dcRpc('fn_quote_page_get', { p_no: no }).then(function(r){
+          if(r && r.ok && r.quote){
+            var q = (typeof r.quote === 'string') ? JSON.parse(r.quote) : r.quote;
+            QUOTE = q; normalizeQuote(QUOTE);
+            if(!QUOTE.meta) QUOTE.meta = { no: no, version: r.version || ver || 1, issuedAt: r.issuedAt || '' };
+            if(!QUOTE.meta.no){ QUOTE.meta.no = no; QUOTE.meta.version = QUOTE.meta.version || r.version || ver || 1; QUOTE.meta.issuedAt = QUOTE.meta.issuedAt || r.issuedAt || ''; }
+            EDIT = true; syncEditBtn(); applyCounselorName(cs); renderAll();
+            toast('📄 ' + no + ' 불러옴 — 고치고 [💾 발행]하면 다음 판으로 저장됩니다');
+          } else {
+            toast('견적 ' + no + ' 을(를) 발행 내역에서 찾지 못했습니다 — 새 견적으로 엽니다', true);
+          }
+        }).catch(function(){ toast('견적 ' + no + ' 을(를) 불러오지 못했습니다 — 새 견적으로 엽니다', true); });
+      }
+    });
+    return true;
+  }
+
+  modal.classList.add('open');
+  if(lsGet('sh_quote_panel_off')) modal.classList.add('panel-off');
+
+  /* 보안 코드를 아직 안 넣었으면 GAS 호출을 미룬다.
+     잠금 화면은 덮개일 뿐 그 아래 스크립트는 그대로 돌기 때문에,
+     미루지 않으면 네임카드·발행 내역을 "코드 없이" 부르게 되고
+     GAS 쪽 확인(CODE_ENFORCE)을 켠 순간 그 호출들이 막힌다. */
+  function shAuthed(){
+    try { if(localStorage.getItem('dc_session')) return true;
+          var e = localStorage.getItem('secure_auth_expiry');
+          return !!(e && Date.now() < parseInt(e, 10)); }
+    catch(err){ return true; }          /* localStorage 를 못 읽는 환경이면 예전처럼 바로 */
+  }
+  function whenAuthed(fn){
+    if(shAuthed()) return fn();
+    var t = setInterval(function(){ if(shAuthed()){ clearInterval(t); fn(); } }, 400);
+  }
+
+  /* /quote/ [견적서] 탭 안에서 열 때 (?embed=1 · 2026-11-17) — 지금 견적(저장 전 포함)을 받아 이 화면 기능 그대로 쓴다 */
+  var SH_EMBED = /[?&]embed=1/.test(location.search);
+  if(SH_EMBED){
+    window.addEventListener('message', function(e){
+      if(e.origin !== location.origin) return; var m = e.data || {}; if(m.t !== 'quote' || !m.d || !m.d.quote) return;
+      QUOTE = JSON.parse(JSON.stringify(m.d.quote)); normalizeQuote(QUOTE);
+      if(m.d.no){ QUOTE.meta = QUOTE.meta || {}; QUOTE.meta.no = m.d.no; QUOTE.meta.version = m.d.ver || QUOTE.meta.version || 1; }
+      EDIT = false; syncEditBtn();
+      if(m.d.counselor && !applyCounselorName(m.d.counselor)) PENDING_COUNSELOR = m.d.counselor;
+      renderAll();
+    });
+    /* 견적서에서 바꾼 설정을 /quote/ 로 돌려보냄 — /quote/ 가 견적에 담아 저장한다 (2026-11-18) */
+    var SH_BACK = '', SH_RENDER = renderSheet;
+    renderSheet = function(){ SH_RENDER(); try{
+      var o = QUOTE.opt || {}, c = QUOTE.cust || {};
+      var d = { opt: { show: o.show, qrType: o.qrType, pointMode: o.pointMode, lumpSum: o.lumpSum, namecardId: o.namecardId, rewardOn: o.rewardOn },
+                cust: { date: c.date || '', until: c.until || '', untilMode: c.untilMode || '' } };
+      var sig = JSON.stringify(d); if(sig === SH_BACK) return; SH_BACK = sig;
+      window.parent.postMessage({ t: 'sheetopt', d: d }, location.origin); }catch(e){} };
+    try { window.parent.postMessage({ t: 'qready' }, location.origin); } catch(e){}
+  }
+  whenAuthed(function initQuoteEntry(){
+    if(SH_EMBED) return;                            // ⓪ /quote/ 견적서 탭 — 견적은 postMessage 로 온다
+    if(openFromUrl()) return;                       // ① 담당자 화면에서 넘어온 주소
+    var prevDraft = lsGet(LS_DRAFT);
+    if(importHandoff(true)){                        // ② 계산기 핸드오프
+      if(prevDraft && prevDraft.quote && draftMeaningful(prevDraft.quote)){
+        pushDraftSnap(prevDraft.quote, '계산기 결과로 대체됨', true);
+      }
+      return;
+    }
+    if(prevDraft && prevDraft.quote && draftMeaningful(prevDraft.quote)){   // ③ 작성 중이던 견적
+      QUOTE = prevDraft.quote; normalizeQuote(QUOTE); EDIT = true; syncEditBtn(); renderAll();
+      toast('🕒 작성 중이던 견적을 복원했습니다 — 새로 시작하려면 [＋ 새 견적]');
+      return;
+    }
+    startBlank();                                   // ④ 빈 견적
+  });
+  whenAuthed(function(){ loadNamecards(false).then(applyPendingCounselor, applyPendingCounselor); });
+})();
+
+</script>
+</body>
+</html>

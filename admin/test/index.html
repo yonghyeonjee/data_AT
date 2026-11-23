@@ -1117,6 +1117,15 @@ table td input[type=checkbox], table th input[type=checkbox]{width:16px;height:1
 .prodraw summary{cursor:pointer;color:var(--muted);font-size:calc(12px * var(--font-scale));min-height:32px;display:flex;align-items:center}
 .campsug{position:absolute;z-index:30;left:0;right:0;top:100%;margin-top:4px;max-height:260px}
 .campsug .sug .note{margin-left:auto;font-size:calc(11.5px * var(--font-scale))}
+/* 채널 여러 개 고르기 (mvp_280) — 값은 숨은 #crmCh 에 쉼표로 */
+.chp-wrap{position:relative}
+.chp-btn{display:block;text-align:left;cursor:pointer;font:inherit;font-size:calc(13px * var(--font-scale));color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:26px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23555' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center}
+.chp-btn.on{border-color:var(--navy);color:var(--navy);font-weight:700}
+.chp{position:absolute;z-index:30;left:0;top:100%;margin-top:4px;min-width:min(260px,86vw);max-height:340px}
+.chp .chp-top{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.chp .chp-it{display:flex;align-items:center;gap:8px;min-height:34px;padding:2px 6px;border-radius:6px;cursor:pointer;font-size:calc(13px * var(--font-scale));font-weight:500;color:var(--ink);letter-spacing:0;margin:0}
+.chp .chp-it:hover{background:var(--navy-soft)} .chp .chp-it input{width:16px;height:16px;flex:none}
+@media (max-width:640px){ .chp .chp-it{min-height:40px} .chp .chp-top .btn{height:40px} }
 .smsc textarea.in{min-height:110px}
 /* 문자 보내기 — 센드온 문자보내기 양식 (mvp_211) */
 .scwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
@@ -1400,7 +1409,7 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
         <div class="home-grid">
           <div class="card home-todo"><h3>오늘 할 일 <span class="sub" id="todoSub"></span></h3><div id="todoList" class="todo"></div></div>
           <div class="card home-data"><h3>데이터 상태 <span class="sub" id="dsSub"></span></h3><div id="dataList" class="dlist"></div></div>
-          <div class="card"><h3>이번 달 채널 상위 <span class="chseg" id="chanSeg" role="radiogroup" aria-label="집계 기준"><button type="button" role="radio" data-b="dps" onclick="homeChan('dps')">DPS</button><button type="button" role="radio" data-b="ledger" onclick="homeChan('ledger')">원장</button></span> <span class="sub" id="chanSub"></span></h3><div id="chanList" class="barlist"></div></div>
+          <div class="card"><h3>이번 달 채널 상위 <span class="chseg" id="chanSeg" role="radiogroup" aria-label="집계 기준"><button type="button" role="radio" data-b="ledger" onclick="homeChan('ledger')">원장</button><button type="button" role="radio" data-b="dps" onclick="homeChan('dps')">DPS</button></span> <span class="sub" id="chanSub"></span></h3><div id="chanList" class="barlist"></div></div>
           <div class="card"><h3>최근 상담 <span class="sub">6건</span></h3><div class="tw"><table><thead><tr><th>일시</th><th>고객</th><th>관심</th><th>유입</th><th>담당</th><th>결과</th></tr></thead><tbody id="tbHomeConsults"></tbody></table></div></div>
           <div class="card"><h3>최근 적재 <span class="sub">파일 업로드</span></h3><div class="tw"><table><thead><tr><th>일시</th><th>원천</th><th>파일</th><th class="num">행</th><th>담당</th></tr></thead><tbody id="tbHomeUploads"></tbody></table></div></div>
           <div class="card home-links"><h3>바로가기</h3><div class="links" id="homeLinks"></div></div>
@@ -1411,7 +1420,7 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
       <div class="view hidden" id="v-exec">
         <div class="card" id="exHead">
           <h3>경영 지표 <span id="exSub">기간을 고르면 매출·고객·문의 → 구매 흐름·유입을 한 화면에서 봅니다 · 비교는 직전 같은 기간과 전년 같은 기간</span>
-            <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="seg2" id="exBasis" role="radiogroup" aria-label="매출 기준" title="DPS = DPS 사원별 실적(매장·온라인 전체 판매 전표) · 원장 = 통합 원장(샵링커·매장 판매 입력·이카운트·렌탈)"><button type="button" role="radio" data-b="dps" onclick="exBasisSet('dps')">DPS</button><button type="button" role="radio" data-b="ledger" onclick="exBasisSet('ledger')">원장</button></span><span class="note" id="exBuilt"></span><button class="btn sm ghost" onclick="loadExec(true)">새로고침</button></span></h3>
+            <span style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="seg2" id="exBasis" role="radiogroup" aria-label="매출 기준" title="DPS = DPS 사원별 실적(매장·온라인 전체 판매 전표) · 원장 = 통합 원장(샵링커·매장 판매 입력·이카운트·렌탈)"><button type="button" role="radio" data-b="ledger" onclick="exBasisSet('ledger')">원장</button><button type="button" role="radio" data-b="dps" onclick="exBasisSet('dps')">DPS</button></span><span class="note" id="exBuilt"></span><button class="btn sm ghost" onclick="loadExec(true)">새로고침</button></span></h3>
           <div class="qstat" data-view="exec"></div>
           <div class="home-hero exhero" id="exHero"></div>
         </div>
@@ -1522,7 +1531,7 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
           <!-- 출처 [현행 시스템 | 기존 app] 은 2026-10-30 가림 — 늘 현행 시스템 -->
           <div class="seg2 hidden" aria-hidden="true"><button class="on" id="ds-dc" onclick="setDashSrc('dc')">현행 시스템</button><button id="ds-gas" onclick="setDashSrc('gas')">대시보드 v4 (기존 app)</button></div>
           <span style="font-size:calc(12.5px * var(--font-scale));color:var(--muted)">집계 기준</span>
-          <div class="seg2" id="segBasis" role="radiogroup" aria-label="집계 기준" title="DPS = DPS 사원별목표/실적 기준(실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계) · 원장 = 주문 원천(샵링커·매장 입력·DPS 매장 전표) · 수기입력 = 담당자가 채널별로 적어 넣은 일매출"><button type="button" role="radio" aria-checked="true" class="on" id="db-dps" onclick="setDashBasis('dps')">DPS</button><button type="button" role="radio" aria-checked="false" id="db-ledger" onclick="setDashBasis('ledger')">원장</button><button type="button" role="radio" aria-checked="false" id="db-manual" onclick="setDashBasis('manual')">수기입력</button></div>
+          <div class="seg2" id="segBasis" role="radiogroup" aria-label="집계 기준" title="DPS = DPS 사원별목표/실적 기준(실적일 · 매장·온라인 모두 · DPS 화면과 같은 합계) · 원장 = 주문 원천(샵링커·매장 입력·DPS 매장 전표) · 수기입력 = 담당자가 채널별로 적어 넣은 일매출"><button type="button" role="radio" aria-checked="true" class="on" id="db-ledger" onclick="setDashBasis('ledger')">원장</button><button type="button" role="radio" aria-checked="false" id="db-dps" onclick="setDashBasis('dps')">DPS</button><button type="button" role="radio" aria-checked="false" id="db-manual" onclick="setDashBasis('manual')">수기입력</button></div>
           <span style="flex:1"></span>
           <span class="note" id="dashNote">Datacenter 데이터 · 최근 12개월 · 기간·채널·지표는 아래 대시보드 안에서 고릅니다</span>
           <button class="btn sm hidden" id="dashFreshBtn" onclick="dashApplyFresh()">새 자료 보기</button>
@@ -1965,13 +1974,16 @@ button[role=radio][aria-checked=true]::before,button[role=radio].on::before{bord
           </div>
           <div id="segNote" class="note hidden" style="margin:-6px 0 10px;padding:8px 10px;background:var(--bg2);border-radius:8px"></div>
           <div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
-            <div style="grid-column:span 2"><label>캠페인명 <span style="color:var(--bad)">필수</span>
-              <span class="note">감사로그·발송 이력·UTM 에 같은 이름이 쓰입니다</span></label>
+            <div style="grid-column:span 2"><label>캠페인명
+              <span class="note">추출은 비워도 됩니다 · 엑셀·문자 보내기·실번호 보기에는 필요 (감사로그·발송 이력·UTM 에 같은 이름)</span></label>
               <div style="display:flex;gap:6px"><input class="in" id="crmReason" placeholder="예: 2609_chuseok (발송 링크 관리의 캠페인 코드 · 누르면 목록)" autocomplete="off" autocapitalize="off" spellcheck="false" name="dc_campaign_reason" readonly onfocus="this.removeAttribute('readonly');campPick(this)" oninput="campPick(this)" onblur="campPickHide(this)">
               <button class="btn sm ghost" style="white-space:nowrap" onclick="utmQuick()" title="캠페인명의 코드로 단축 링크를 만듭니다 · 캠페인이 아직 없으면 먼저 등록합니다">링크 만들기</button>
               <button class="btn sm ghost" style="white-space:nowrap" onclick="show('utm')" title="캠페인·링크·클릭 전체 보기">발송 링크 관리</button></div></div>
             <div><label>키워드</label><input class="in" id="crmQ" placeholder="이름 · 최근상품 · 관심상품" onkeydown="if(event.key==='Enter')loadTargets(0)"></div>
-            <div><label>유입·구매 채널</label><select class="in" id="crmCh" onchange="crmRentalHint()"><option value="">전체</option></select></div>
+            <div class="chp-wrap"><label>유입·구매 채널 <span class="note">여러 개 선택</span></label>
+              <input type="hidden" id="crmCh" data-fk="chp">
+              <button type="button" class="in chp-btn" id="crmChBtn" aria-haspopup="true" aria-expanded="false" onclick="chPickToggle()">전체</button>
+              <div class="prodsug chp hidden" id="crmChBox"></div></div>
             <div><label>구매 카테고리</label><select class="in" id="crmCat"><option value="">전체</option></select></div>
             <div><label>지역</label><select class="in" id="crmRegion"><option value="">전체</option></select></div>
             <div><label>고객 구분</label><select class="in" id="crmKind"><option value="">전체</option><option value="personal">개인</option><option value="business">사업자</option></select></div>
@@ -3057,7 +3069,7 @@ function pct(a,b){ if(!b) return null; return Math.round((a-b)/b*1000)/10; }
 let HOME_CH={dps:[],ledger:[]};
 function homeChan(b){
   if(b){ try{ sessionStorage.setItem('dc_home_ch',b); }catch(e){} }
-  let k='dps'; try{ k=sessionStorage.getItem('dc_home_ch')||'dps'; }catch(e){}
+  let k='ledger'; try{ k=sessionStorage.getItem('dc_home_ch')||'ledger'; }catch(e){}   /* 기본 원장 (mvp_300) */
   document.querySelectorAll('#chanSeg button').forEach(x=>{ const on=x.dataset.b===k; x.classList.toggle('on',on); x.setAttribute('aria-checked',on?'true':'false'); });
   if($('chanSub')) $('chanSub').textContent=k==='dps'?'DPS 실적 순매출':'원장 순매출';
   const tc=HOME_CH[k]||[]; const mx=Math.max(1,...tc.map(x=>Number(x.net)||0));
@@ -3066,15 +3078,15 @@ function homeChan(b){
 async function loadHome(){
   let h, st; try{ [h,st]=await Promise.all([rpc('fn_home'), rpc('fn_data_stamp')]); }catch(e){ $('homeHero').innerHTML=`<div class="note">${esc(e.message)}</div>`; return; }
   const S=h.sales||{}, T=h.todo||{}, C=h.counts||{};
-  /* 매출 숫자는 DPS 기준이 크게, 원장은 아래 작은 글씨 (2026-10-30) · 날마다 DPS 를 아침에 받으므로 '어제' 를 본다 */
+  /* 매출 숫자는 원장이 크게, DPS 는 아래 작은 글씨 (2026-11-19 mvp_300 · 10-30 부터는 DPS 가 컸다) · 날마다 DPS 를 아침에 받으므로 '어제' 를 본다 */
   const D=h.sales_dps||{}, mom=pct(D.month_net, D.pm_same_net), lmom=pct(S.month_net, S.pm_same_net);
   const md=x=>x?String(x).slice(5).replace('-','/'):'';
   const dpsNote=D.fetched?`DPS ${esc(D.fetched)} 수집`:'DPS 자료 없음';
   $('homeHero').innerHTML=`
-    <div class="h"><small>어제 순매출 · DPS${D.yday?` (${md(D.yday)})`:''}</small><b>${wonK(D.yday_net||0)}</b><div class="d">주문 ${n(D.yday_orders||0)}건 · ${dpsNote}</div>
-      <div class="ld">원장 <em>${wonK(S.yday_net||0)}</em> · 주문 ${n(S.yday_orders||0)}건</div></div>
-    <div class="h"><small>이번 달 순매출 · DPS${D.last?` (${md(D.last)}까지)`:''}</small><b>${wonK(D.month_net||0)}</b><div class="d ${mom==null?'':mom>=0?'up':'down'}">${mom==null?'전월 동기 없음':(mom>=0?'▲':'▼')+' '+Math.abs(mom)+'% 전월 동기 '+wonK(D.pm_same_net||0)} · 주문 ${n(D.month_orders||0)}건</div>
-      <div class="ld">원장 <em>${wonK(S.month_net||0)}</em> · ${lmom==null?'전월 동기 없음':(lmom>=0?'▲':'▼')+' '+Math.abs(lmom)+'%'} · 주문 ${n(S.month_orders||0)}건</div></div>
+    <div class="h"><small>어제 순매출 · 원장</small><b>${wonK(S.yday_net||0)}</b><div class="d">주문 ${n(S.yday_orders||0)}건</div>
+      <div class="ld">DPS <em>${wonK(D.yday_net||0)}</em>${D.yday?` (${md(D.yday)})`:''} · 주문 ${n(D.yday_orders||0)}건 · ${dpsNote}</div></div>
+    <div class="h"><small>이번 달 순매출 · 원장</small><b>${wonK(S.month_net||0)}</b><div class="d ${lmom==null?'':lmom>=0?'up':'down'}">${lmom==null?'전월 동기 없음':(lmom>=0?'▲':'▼')+' '+Math.abs(lmom)+'% 전월 동기 '+wonK(S.pm_same_net||0)} · 주문 ${n(S.month_orders||0)}건</div>
+      <div class="ld">DPS <em>${wonK(D.month_net||0)}</em>${D.last?` (${md(D.last)}까지)`:''} · ${mom==null?'전월 동기 없음':(mom>=0?'▲':'▼')+' '+Math.abs(mom)+'%'} · 주문 ${n(D.month_orders||0)}건</div></div>
     <div class="h light"><small>이번 달 신규 고객</small><b>${n(S.new_customers_month||0)}<i>명</i></b><div class="d">고객 마스터 발송 가능 <b style="font-size:calc(13px * var(--font-scale))">${n(C.cust_sendable||0)}</b> (전체 ${n(C.customers||0)})<br>개인 ${n(C.cust_personal_sendable||0)} (${n(C.cust_personal||0)}) · 기업 ${n(C.cust_business_sendable||0)} (${n(C.cust_business||0)})</div></div>
     <div class="h light"><small>진행중 상담</small><b>${n(T.consult_open||0)}<i>건</i></b><div class="d">오늘 신규 ${n(T.consult_new_today||0)}건 · 콜백 지연 ${n(T.callback_due||0)}건</div></div>`;
   const todo=[
@@ -3605,8 +3617,12 @@ function renderPool(){
   const st=(POOL.state||[]).find(x=>x.scope===sc);
   const isItem=sc.indexOf('item:')===0;
   const sv=(POOL.saved||[]).find(x=>x.scope===sc), nx=(POOL.next||{})[sc];
-  $('poolState').textContent = on.length
-    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'} · 다음 ${nx||'(전원 휴가)'}${sv?` · 순서 저장 ${sv.at}${sv.by&&sv.by.indexOf('(')<0?` ${sv.by.split('@')[0]}`:''}`:''}`
+  /* 단순 순번 모드(mvp_302 · core.f_assign_simple) — 기본 순번표만 순서대로. 품목·접수 종류 규칙은 꺼져 있다 · 휴가자 건너뛰기는 mvp_304 에서 다시 켬 */
+  const simple=!!POOL.simple;
+  $('poolState').textContent = (simple && sc!=='default')
+    ? '지금은 단순 순번 모드라 이 규칙은 쓰지 않습니다 — 기본 순번(1번부터 차례로)만 돕니다'
+    : on.length
+    ? `${on.length}명 · 마지막 배정 ${st?`${st.last} (${st.at})`:'없음'} · 다음 ${nx||'(전원 휴가)'}${sv?` · 순서 저장 ${sv.at}${sv.by&&sv.by.indexOf('(')<0?` ${sv.by.split('@')[0]}`:''}`:''}${simple?' · 단순 순번 모드(휴무자는 건너뜀 · 품목·접수 종류 규칙 꺼짐)':''}`
     : (sc==='default' ? '기본 순번이 비어 있습니다 — 아무도 배정되지 않습니다'
        : isItem ? '이 품목 규칙 없음 → 접수 종류나 기본 순번을 씁니다'
                 : '이 종류 규칙 없음 → 기본 순번을 씁니다');
@@ -5214,7 +5230,7 @@ function loadFollowup(){ arLoad(); fuLoad('sub'); fuLoad('quote'); fuLoad('produ
 /* ═══ 경영 지표 (mvp_221 · 2026-10-16) — fn_exec_kpi(매출·고객·문의·유입·링크 · 서버 10분 캐시) + fn_inquiry_flow(문의 → 구매) + fn_utm_campaigns(캠페인) 를 기간 하나로 한 화면에 ═══ */
 let EX={d:null, flow:null, camps:null, seq:0};
 /* 매출 기준 — DPS 가 기본 (2026-10-30). 고른 기준은 그 탭 안에서만 기억 */
-function exBasis(){ let b='dps'; try{ b=sessionStorage.getItem('dc_ex_basis')||'dps'; }catch(e){} return b==='ledger'?'ledger':'dps'; }
+function exBasis(){ let b='ledger'; try{ b=sessionStorage.getItem('dc_ex_basis')||'ledger'; }catch(e){} return b==='dps'?'dps':'ledger'; }   /* 기본 원장 (2026-11-19 mvp_300) */
 function exBasisSync(){ const b=exBasis(); document.querySelectorAll('#exBasis button').forEach(x=>{ const on=x.dataset.b===b; x.classList.toggle('on',on); x.setAttribute('aria-checked',on?'true':'false'); }); }
 function exBasisSet(b){ try{ sessionStorage.setItem('dc_ex_basis',b); }catch(e){} exBasisSync(); EX.d=null; loadExec(); }
 const EX_CMP_NM={tm:'전월 같은 기간',lm:'전월',tw:'전주',lw:'전전주',yd:'전주 같은 요일',y:'전년 같은 기간',ly:'전전년'};
@@ -5283,7 +5299,12 @@ function exSeriesRender(){ const d=EX.d, S=d.series||[], g=d.grain; $('exSerSub'
     S.slice().reverse().map(x=>`<tr><td class="mono">${esc(exFmtP(x.p,g))}</td><td class="num"><b>${wonK(x.net)}</b></td><td class="num">${n(x.orders)}</td><td class="num">${n(x.buyers)}</td><td class="num">${n(x.new_buyers)}</td><td class="num">${n((Number(x.buyers)||0)-(Number(x.new_buyers)||0))}</td></tr>`).join('')}</tbody></table></div></details>`:''); }
 function exGroupsRender(){ const d=EX.d, s=d.sales||{}, pv=d.sales_prev||{}; const G=s.groups||[], PG=pv.groups||[]; const tot=Number(s.net)||0;
   $('exGroups').innerHTML=G.length?`<div class="tw"><table><thead><tr><th>묶음</th><th class="num">순매출</th><th class="num">비중</th><th class="num">${esc(exCmpLbl())} 대비</th><th class="num">주문</th><th class="num">식별 고객</th></tr></thead><tbody>${G.map(g=>{ const p=PG.find(x=>x.ct===g.ct); const dl=p&&Number(p.net)?Math.round((Number(g.net)-Number(p.net))/Math.abs(Number(p.net))*1000)/10:null;
-    return `<tr><td>${esc(g.ct)}</td><td class="num"><b>${wonK(g.net)}</b></td><td class="num">${tot?Math.round(Number(g.net)/tot*1000)/10:0}%</td><td class="num ${dl==null?'':dl>=0?'up':'down'}">${dl==null?'-':(dl>=0?'▲':'▼')+' '+Math.abs(dl)+'%'}</td><td class="num">${n(g.orders)}</td><td class="num">${g.ct==='오픈마켓'?'<span class="note">식별 불가</span>':n(g.buyers)}</td></tr>`; }).join('')}</tbody></table></div>`:'<div class="note">기간 안에 주문이 없습니다</div>'; }
+    return `<tr><td>${esc(g.ct)}</td><td class="num"><b>${wonK(g.net)}</b></td><td class="num">${tot?Math.round(Number(g.net)/tot*1000)/10:0}%</td><td class="num ${dl==null?'':dl>=0?'up':'down'}">${dl==null?'-':(dl>=0?'▲':'▼')+' '+Math.abs(dl)+'%'}</td><td class="num">${n(g.orders)}</td><td class="num">${g.ct==='오픈마켓'?'<span class="note">식별 불가</span>':n(g.buyers)}</td></tr>`; }).join('')}</tbody></table></div>`:'<div class="note">기간 안에 주문이 없습니다</div>'; $('exGroups').insertAdjacentHTML('beforeend', exChansHtml(d, s, pv)); }
+/* 몰 · 채널별 (mvp_300 · 2026-11-19) — 원장 기준: 온라인 몰 = 샵링커 주문의 몰 이름 · 매장 일반/구독 · VMS · 렌탈 · 직판(시트) */
+function exChansHtml(d, s, pv){ const C=(s&&s.channels)||[], PC=(pv&&pv.channels)||[]; if(!C.length) return ''; const tot=Number(s.net)||0;
+  const note=d&&d.basis==='dps'?'DPS 판매번호의 채널':'온라인 몰 = 샵링커 주문 · 매장 = 판매 입력·DPS 매장 전표 · 직판 = 시트(프로별 일 합계)';
+  return `<div style="margin:16px 0 6px;font-weight:700">몰 · 채널별 <span class="note" style="font-weight:400">${esc(note)}</span></div><div class="tw"><table><thead><tr><th>몰 · 채널</th><th class="num">순매출</th><th class="num">비중</th><th class="num">${esc(exCmpLbl())} 대비</th><th class="num">주문</th></tr></thead><tbody>${C.map(c=>{ const p=PC.find(x=>x.ch===c.ch); const dl=p&&Number(p.net)?Math.round((Number(c.net)-Number(p.net))/Math.abs(Number(p.net))*1000)/10:null;
+    return `<tr><td>${esc(c.ch||'-')}</td><td class="num"><b>${wonK(c.net)}</b></td><td class="num">${tot?Math.round(Number(c.net)/tot*1000)/10:0}%</td><td class="num ${dl==null?'':dl>=0?'up':'down'}">${dl==null?'-':(dl>=0?'▲':'▼')+' '+Math.abs(dl)+'%'}</td><td class="num">${Number(c.orders)?n(c.orders):'<span class="note">-</span>'}</td></tr>`; }).join('')}</tbody></table></div>`; }
 function exList(rows,k,v){ if(!rows.length) return '<div class="note">없음</div>'; const mx=Math.max(1,...rows.map(x=>Number(x[v])||0)); return `<div class="cdhb">${rows.map(x=>`<span class="n" title="${esc(x[k]||'')}">${esc(x[k]||'(없음)')}</span><span class="tr"><i style="width:${(100*(Number(x[v])||0)/mx).toFixed(1)}%"></i></span><span class="q"><b>${n(x[v])}</b></span>`).join('')}</div>`; }
 function exTrafficBars(S, grain){ if(!S.length) return ''; const cnt=S.length, W=Math.max(360, Math.min(760, cnt*40)), H=150, L=8,R=8,T=22,B=24, iw=W-L-R, ih=H-T-B; const mx=Math.max(1,...S.map(x=>Number(x.s)||0)); const slot=iw/cnt, bw=Math.min(28, slot*0.62); const show=cnt<=16, step=show?1:Math.ceil(cnt/12);
   return `<svg class="cdsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="기간별 세션"><line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}" stroke="#E4E7EC"/>${S.map((x,i)=>{ const cx=L+slot*i+slot/2, ht=(Number(x.s)||0)/mx*ih; return `<g><title>${esc(exFmtP(x.p,grain))} · 세션 ${n(x.s)} · 사용자 ${n(x.u)}</title><rect x="${(cx-bw/2).toFixed(1)}" y="${(T+ih-ht).toFixed(1)}" width="${bw.toFixed(1)}" height="${ht.toFixed(1)}" rx="3" fill="#0F766E"/>${show?`<text class="v" x="${cx.toFixed(1)}" y="${(T+ih-ht-4).toFixed(1)}" text-anchor="middle">${n(x.s)}</text>`:''}${i%step===0?`<text x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle">${esc(exFmtP(x.p,grain))}</text>`:''}</g>`; }).join('')}</svg>`; }
@@ -5535,7 +5556,7 @@ let PENDING_TG=(()=>{ try{ const q=new URLSearchParams(location.search); if(q.ge
   try{ history.replaceState(null,'',location.pathname+location.hash); }catch(e){} return o; }catch(e){ return null; } })();
 function tgApplyPending(){ const o=PENDING_TG; if(!o) return false; PENDING_TG=null; subSet('crm','pick'); try{ subApply('crm'); }catch(e){}
   setBasisQuiet('repeat'); $('crmAsof').value=iso(new Date()); $('crmDueLo').value=o.lo; $('crmDueHi').value=o.hi; fkSyncAll();
-  const sel=$('crmCh'); if(o.ch){ if(![...sel.options].some(x=>x.value===o.ch)){ const op=document.createElement('option'); op.textContent=o.ch; sel.appendChild(op); } sel.value=o.ch; }
+  if(o.ch) chSet([o.ch]);
   if(typeof segSync==='function') segSync();
   if(o.reason && !$('crmReason').value.trim()) $('crmReason').value=o.reason;
   toast(`VMS 대시보드에서 넘어온 조건 — 재구매 주기 · VMS · 예상재구매일 D${o.lo<0?o.lo:'+'+o.lo} ~ D${o.hi<0?o.hi:'+'+o.hi}`,'ok');
@@ -6326,7 +6347,7 @@ document.querySelectorAll('#segWf button').forEach(b=>b.addEventListener('click'
 
 let DASH_SRC='dc';          // dc=현행 시스템(Datacenter) · 기존 app(gas)은 2026-10-30 가림 — 남아 있던 선택도 지운다
 try{ localStorage.removeItem('dash_src2'); }catch(e){}
-let DASH_BASIS='dps';   // 열 때마다 DPS(사원별 실적)로 시작 — 고른 기준은 이 탭 안에서만(sessionStorage) · 2026-11-06 "dps 기준으로" (10-16 부터 원장이 기본이었다)
+let DASH_BASIS='ledger';   /* 2026-11-19 mvp_300 — 기본 원장 ("매출 대시보드, 경영 지표 모두 원장 기준으로") */   // 열 때마다 DPS(사원별 실적)로 시작 — 고른 기준은 이 탭 안에서만(sessionStorage) · 2026-11-06 "dps 기준으로" (10-16 부터 원장이 기본이었다)
 try{ localStorage.removeItem('dash_basis'); const _sb=sessionStorage.getItem('dash_basis'); if(_sb==='manual'||_sb==='ledger'||_sb==='dps') DASH_BASIS=_sb; }catch(e){}
 let GAS_DASH_URL=localStorage.getItem('gas_dash_url')||'';
 function setDashSrc(v){ v='dc'; DASH_SRC=v; localStorage.setItem('dash_src2',v); DASH_PAY=null; DASH_READY=false; $('dashFrame').src='about:blank'; loadDash(); }
@@ -6342,7 +6363,7 @@ async function setGasUrl(){
   $('dashFrame').src='about:blank'; loadDash();
 }
 let DASH_PAY=null, DASH_READY=false;
-const DASH_V='303';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
+const DASH_V='356';   /* 대시보드 iframe 주소의 판 — dash/index.html 을 바꾸면 올린다 (전엔 Date.now() 라 열 때마다 160KB 를 새로 받았다) */
 window.addEventListener('message',e=>{ const t=e.data&&e.data.type;
   if(t==='dash-ready'){ DASH_READY=true; dpSet({frame:1}); dashSend(); }
   else if(t==='dash-rendered'){ dpDone(); } });
@@ -7090,14 +7111,35 @@ function tgFillOptions(o){
   const chs=[...new Set([...(o.channels||[]),...(o.purchase_channels||[])])].sort();
   /* 선택지를 다시 그릴 때 이미 고른 값은 남긴다 — VMS 대시보드에서 넘어온 채널이 첫 추출 뒤 지워지던 것 (mvp_210) */
   const fill=(id,list)=>{ const el=$(id); const keep=el.value; el.innerHTML='<option value="">전체</option>'+list.map(x=>`<option>${esc(x)}</option>`).join(''); if(keep){ if(![...el.options].some(x=>x.value===keep)){ const op=document.createElement('option'); op.textContent=keep; el.appendChild(op); } el.value=keep; } };
-  fill('crmCh',chs); fill('crmCat',o.categories||[]); fill('crmRegion',o.regions||[]);
+  CH_LIST=chs; chPickPaint(); fill('crmCat',o.categories||[]); fill('crmRegion',o.regions||[]);
   if(typeof segSync==='function') segSync();
 }
+/* 채널 여러 개 고르기 (mvp_280) — 값 저장소는 숨은 #crmCh(쉼표로 이은 글자 · 저장 조건·조건 복사가 그대로 쓴다). 서버는 하나라도 맞는 고객을 준다 */
+var CH_LIST=[], CH_GODO=['P몰','S몰','AT몰','시흥몰'];   /* var — 화면 시작이 이 줄보다 먼저 불러도 TDZ 안 나게 */
+function chVals(){ return ($('crmCh').value||'').split(',').map(s=>s.trim()).filter(Boolean); }
+function chSet(list){ $('crmCh').value=[...new Set(list||[])].join(','); chPickPaint(); crmRentalHint(); }
+function chPickPaint(){ const btn=$('crmChBtn'); if(!btn) return; const v=chVals();
+  const godo=v.length===CH_GODO.length && CH_GODO.every(x=>v.includes(x));
+  btn.textContent=!v.length?'전체':godo?'고도몰 전체 (P·S·AT·시흥몰)':v.length<=2?v.join(' · '):`${v[0]} 외 ${v.length-1}개`;
+  btn.title=v.join(' · '); btn.classList.toggle('on',!!v.length);
+  if(!$('crmChBox').classList.contains('hidden')) chPickRender(); }
+function chPickRender(){ const v=chVals(); const rest=[...new Set([...CH_LIST,...v])].filter(x=>!CH_GODO.includes(x));
+  const it=x=>`<label class="chp-it"><input type="checkbox" value="${esc(x)}" ${v.includes(x)?'checked':''}>${esc(x)}</label>`;
+  const box=$('crmChBox');
+  box.innerHTML=`<div class="chp-top"><button type="button" class="btn sm ghost" onclick="chSet([])">전체 (조건 없음)</button><button type="button" class="btn sm ghost" onclick="chSet(CH_GODO)">고도몰 전체</button><button type="button" class="btn sm" style="margin-left:auto" onclick="chPickClose()">닫기</button></div>`
+    +`<div class="sh">고도몰 (자사몰)</div>`+CH_GODO.map(it).join('')+(rest.length?`<div class="sh">그 밖</div>`+rest.map(it).join(''):'');
+  box.onchange=()=>chSet([...box.querySelectorAll('input[type=checkbox]:checked')].map(i=>i.value)); }
+function chPickToggle(){ const box=$('crmChBox'); if(!box.classList.contains('hidden')) return chPickClose(); box.classList.remove('hidden'); $('crmChBtn').setAttribute('aria-expanded','true'); chPickRender(); }
+function chPickClose(){ $('crmChBox').classList.add('hidden'); $('crmChBtn').setAttribute('aria-expanded','false'); }
+document.addEventListener('click',e=>{ if(!e.target.closest('#crmChBox,#crmChBtn')) { const b=$('crmChBox'); if(b&&!b.classList.contains('hidden')) chPickClose(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const b=$('crmChBox'); if(b&&!b.classList.contains('hidden')) chPickClose(); } });
+(()=>{ const s=document.getElementById('crmCh'); if(s) s.addEventListener('fk:sync',chPickPaint); })();
 async function loadTargets(page){ crmRentalHint();
   const p=tgParams();
-  if(p.p_reason.length<3) return toast('캠페인명을 3자 이상 적어주세요 — 감사로그에 남습니다','bad');
+  /* 추출(가린 번호)은 캠페인명 없이 — 실번호 보기·엑셀·문자 보내기에는 필요 (mvp_280) */
+  if(p.p_unmask && p.p_reason.length<3) return toast('실명·실번호를 보려면 캠페인명을 3자 이상 적어주세요 — 감사로그에 남습니다','bad');
   if(TG_BASIS==='product' && !p.p_product) return toast('어떤 제품인지 먼저 적어주세요 (예: HAF-)','bad');
-  tgPage=Math.max(0,page||0);
+  chPickClose(); tgPage=Math.max(0,page||0);
   prodRenderSel(); qstatSet('busy');
   let d; try{ d=await rpc('fn_crm_targets_v2',{...p,p_limit:pgSize('targets'),p_offset:tgPage*pgSize('targets'),p_export:false}); }
   catch(e){ qstatSet('err'); return toast(e.message,'bad'); }
@@ -7120,7 +7162,7 @@ async function loadTargets(page){ crmRentalHint();
     ['제품',TG_BASIS==='product'?prodTokens().map(prodLabel).join(' | '):null],
     ['기준일',TG_BASIS==='repeat'?(s.asof||null):null],
     ['창',TG_BASIS==='repeat'?`D${p.p_due_lo==null?'-30':(p.p_due_lo<0?p.p_due_lo:'+'+p.p_due_lo)} ~ D${p.p_due_hi==null?'+14':(p.p_due_hi<0?p.p_due_hi:'+'+p.p_due_hi)}`:null],
-    ['키워드',p.p_q],['채널',p.p_channel],['카테고리',p.p_category],['지역',p.p_region],
+    ['키워드',p.p_q],['채널',p.p_channel?p.p_channel.replace(/,/g,' · '):null],['카테고리',p.p_category],['지역',p.p_region],
     ['구분',p.p_kind==='business'?'사업자':p.p_kind==='personal'?'개인':null],
     ['등급',p.p_grade?(p.p_grade==='로열블루,프레스티지'?'로열블루 이상':p.p_grade.replace(/,/g,'·')):null],
     ['최근구매',p.p_from||p.p_to?`${p.p_from||'…'}~${p.p_to||'…'}`:null],
@@ -7265,7 +7307,7 @@ async function applySegment(code){
   g.last_used_at=new Date().toISOString(); g.use_count=(g.use_count||0)+1;
   rpc('fn_crm_segment_touch',{p_code:code}).catch(()=>{});
   segToggle(false); segRender();
-  if($('crmReason').value.trim().length>=3) loadTargets(0);
+  loadTargets(0);
 }
 function clearSegment(){ SEG_CUR=null; $('segNote').classList.add('hidden'); segRender(); resetTargets(); }
 async function saveSegment(){
@@ -7398,8 +7440,7 @@ async function pasteCond(){
   set('crmFrom',d.p_from); set('crmTo',d.p_to); set('crmMinCnt',d.p_min_cnt); set('crmMinNet',d.p_min_net);
   set('crmDormant',d.p_dormant_days); set('crmNoSend',d.p_no_send_days); set('crmSort',d.p_sort||'recent');
   $('crmNext').classList.toggle('on', !!d.p_next_only);
-  if($('crmReason').value.trim().length>=3) loadTargets(0);
-  else toast('조건을 넣었습니다 — 캠페인명을 적고 [추출] 하세요','ok');
+  fkSyncAll(); loadTargets(0);
 }
 /* ═══════════════ 상담 대시보드 (mvp_158) — fn_consult_stats 하나로 그린다 ═══════════════
    기간은 상단 기간 바(P), 범위(매장/매장 외/전체)는 localStorage dc_cd_scope. 상품·금액은 f_consult_stats 의 interests/purchases/amount. */
@@ -8296,6 +8337,7 @@ function smsPreview(){ if(!TG||!$('smsBody')) return; const body=$('smsBody').va
 function smsTplPick(){ const code=$('smsTpl').value; const t=(SMS_CFG.templates||[]).find(x=>x.code===code); if(!t) return; $('smsBody').value=t.body||''; $('smsIsAd').classList.toggle('on',!!t.is_ad); smsPreview(); }
 async function smsOpenTargets(){
   if(!TG||!TG.total) return toast('먼저 추출하세요','bad');
+  if($('crmReason').value.trim().length<3) return toast('문자를 보내려면 캠페인명을 3자 이상 적어주세요 — 발송 이력이 이 이름으로 남습니다','bad');
   try{ await smsCfgEnsure(true); }catch(e){ return toast(e.message,'bad'); }
   if(!SMS_CFG.enabled) return toast('문자 기능이 꺼져 있습니다 — [메시지 발송 관리] 에서 켜세요','bad');
   const p=tgParams(); const camp=p.p_reason; const tpls=(SMS_CFG.templates||[]).filter(t=>t.active!==false && t.scope!=='store'); const live=SMS_CFG.mode==='live';

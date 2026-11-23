@@ -1,0 +1,32 @@
+-- mvp_301 · 2026-11-19 · 원장 기준 매장 = DPS 사원 실적 (DB 에 적용됨 · v342)
+-- "DPS 실적으로 맞춰" · (사원별목표/실적 캡처) "이 금액이 나와야하는거잖아 일반은 · 수집기로 수집해오니까 매장은 맞출 수 있잖아"
+-- "구독도 이 금액들을 전체, 각 상태로 보여주고 · 대표님은 왜 dps랑 안맞냐고 하시는거가 매장 매출이거든"
+--
+-- 원인: 원장 기준 매장 칸 = core.orders 의 DPS 매장 전표(dps) + 담당자 판매 입력(store · ~11/1 · 구독은 계약 금액) → 겹침.
+--   9월 3.30억 ↔ DPS 2.14억 · 10월 4.83억 ↔ 3.14억 · 11/1~17 1.52억 ↔ 1.45억 (DPS = 판매 속보 › 영업사원 = 사원별목표/실적 매장 6명)
+--
+-- 원문 백업: core.fn_src_backup tag 'before mvp_301' (f_dash_payload · f_exec_sales · f_exec_series · f_home_build)
+--
+-- ① core.f_dash_payload 부분 치환 14곳 (원장 기준일 때만 달라진다 — DPS·수기입력 기준은 그대로)
+--   · _dl(실적 줄 묶음)을 원장 기준에서도 채운다 — 매장 사원(core.staff dept '매장' 이고 l.staff_name 과 같은 이름) 줄만 ·
+--     채널은 전부 '매장(시흥)' · sub = false (구독 전표로 가르지 않는다)
+--   · 채널 목록: _dl 의 채널을 넣고, store_daily·orders 로 매장/매장구독을 넣던 조건은 수기입력 기준에만
+--   · cells: 원장 기준의 store_daily(일시불·구독) 보충과 orders(store·dps) 가지를 끄고 _dl 가지를 켠다
+--   · ocells·ccells·pcells: orders 의 store·dps 줄은 원장 기준에서 채널 이름을 null 로 → 빠짐(직판 구분만 남김) · _dl 가지 켬
+--   · staff(사원별 실적): 원장 기준에도 — 매장 사원만
+--   확인: 2026-11-01~17 원장 payload 매장(시흥) 144,557,447 = perf 매장 6명 합 = 판매 속보 › 영업사원 합
+--
+-- ② core.f_exec_sales (경영 지표 원장 판)
+--   tot 에서 source store·dps 제외 → spl/sp(매장 사원 실적: net · gross · refund · orders) 를 net·gross·refund·orders·avg_order 에 더함 ·
+--   groups '매장' = sp(식별 고객 수는 원장 그대로) · channels '매장(시흥) · DPS 실적' · 'store_net'
+-- ③ core.f_exec_series — 기간별 순매출·주문: store·dps 제외 + 매장 사원 실적
+-- ④ core.f_home_build — sales.yday_net · month_net · pm_same_net: store·dps 제외 + 매장 사원 실적
+--
+-- ⑤ 화면 (dash · dash/test): LSUB = 원장 + subc
+--   KPI '매장 · 일반 (DPS 실적)' · [사원|채널] 토글 숨김 · [매장(시흥) 일반 · 구독] 카드 = 일반(DPS 실적) : 구독(계약 · 해지완료 제외) 비율 +
+--   '구독 계약' 상자(신청일이 기간 안인 계약 전체 건·총구독료 + 접수/구독/해지완료 + 기간 안 실계약·상태 변경) · 구독 비중 추이도 같은 셈
+--   구독 금액은 매출 합계에 더하지 않는다.
+--   대조: DPS 구독계약조회(올인원) 2026-11-19 엑셀(신청일 10/01~11/19) 184건 729,848,640 — 구독 90 · 접수 63 · 해지완료 31
+--        dps.sub_contract 전날 수집분 180건 715,455,360 — 구독 86 · 접수 66 · 해지완료 28 (하루치 차이)
+--
+-- 남은 것: 장성원(대표님 명의)·온라인 담당 사원 실적은 원장 기준 매장에 넣지 않았다(온라인은 샵링커 쪽). 스마트 구독은 총액이 없어 구독 상자에 없다.

@@ -75,7 +75,7 @@ class Site:
 <meta name="description" content="%(desc)s">
 <meta name="keywords" content="%(kw)s">
 %(canon)s<meta property="og:type" content="website">
-<meta property="og:site_name" content="삼성스토어 구독센터">
+<meta property="og:site_name" content="삼성스토어 구독센터 시흥">
 <meta property="og:title" content="%(title)s">
 <meta property="og:description" content="%(desc)s">
 <meta property="og:url" content="%(url)s">
@@ -132,7 +132,7 @@ class Site:
     def foot(self):
         return '''</main>
 <footer class="gd-foot"><div class="in">
-    삼성스토어 시흥 · 삼성전자 공식 판매점 · 구독 상담 <a href="tel:%(tel)s">%(tel)s</a><br>
+    삼성스토어 시흥 · 삼성 구독센터 · 구독 상담 <a href="tel:%(tel)s">%(tel)s</a><br>
     <a href="%(shop)s/">쇼핑몰 홈</a> · <a href="%(home)s">구독센터</a> · <a href="%(bundle)s">다품목 계산기</a> · <a href="%(consult)s">구독 상담 신청</a> · <a href="%(sitemap)s">전체 페이지</a><br>
     표시된 월 구독료는 약정·케어·카드 조건에 따라 달라지며, 실제 납부액은 상담 때 안내해 드립니다.
 </div></footer>
@@ -224,8 +224,8 @@ class Site:
             if models:
                 name = re.sub(r'^삼성 | 구독 가격.*$', '', re.search(r'<h1>([^<]*)</h1>', body).group(1))
                 low = min(M.idx['m'][m][1] for m in models)
-                title = '삼성 %s 구독 가격 월 %s원~ | %s개 모델 비교 · 삼성스토어 구독센터' % (name, MP.fmt(low), MP.fmt(len(models)))
-                desc = '삼성 %s 구독 %s개 모델의 월 구독료를 한 번에 비교하세요. 월 %s원부터, 제휴카드 할인·선납 할인·방문케어 주기별 요금까지. 삼성스토어 시흥 구독 상담.' % (name, MP.fmt(len(models)), MP.fmt(low))
+                title = '삼성 %s 구독 가격 월 %s원~ | %s개 모델 비교 · 삼성 온라인 구독센터 시흥' % (name, MP.fmt(low), MP.fmt(len(models)))
+                desc = '삼성 %s 구독 %s개 모델의 월 구독료를 한 번에 비교하세요. 월 %s원부터, 제휴카드 할인·선납 할인·방문케어 주기별 요금까지. 삼성 온라인 구독센터 시흥(삼성스토어 시흥) 구독 상담.' % (name, MP.fmt(len(models)), MP.fmt(low))
                 body = body.replace('<div data-ss="list"></div>', '<div data-ss="list">%s</div>' % MP.cat_list_html(M, models, self.static_href), 1)
                 crumbs.append({'@type': 'ListItem', 'position': 2, 'name': name + ' 구독', 'item': self.site + self.dir + fname})
                 lds.append({'@context': 'https://schema.org', '@type': 'ItemList', 'name': '삼성 %s 구독 가격' % name, 'numberOfItems': min(len(models), 100),
@@ -235,7 +235,7 @@ class Site:
             lds.append({'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': crumbs})
         if kind == 'home':
             lds.append(MP.store_ld(self.site, self.dir + 'index.html'))
-            lds.append({'@context': 'https://schema.org', '@type': 'WebSite', 'name': '삼성스토어 구독센터', 'alternateName': ['삼성스토어 시흥 구독센터', '삼성 구독센터'], 'url': self.site + self.dir + 'index.html', 'inLanguage': 'ko-KR', 'publisher': {'@type': 'Organization', 'name': '(주)삼성앤텍'}})
+            lds.append({'@context': 'https://schema.org', '@type': 'WebSite', 'name': '삼성스토어 구독센터 시흥', 'alternateName': ['삼성 온라인 구독센터 시흥', '삼성 온라인 구독 센터 시흥', '삼성스토어 구독센터', '삼성 구독센터 시흥', '삼성스토어 시흥 구독센터', '시흥 삼성 구독센터', '삼성 구독센터'], 'url': self.site + self.dir + 'index.html', 'inLanguage': 'ko-KR', 'publisher': {'@type': 'Organization', 'name': '(주)삼성앤텍'}})
         if kind == 'guide' and getattr(self, 'articles', None):   # 구독 안내 페이지에 가이드 글 목록
             mk = '    <section class="ss-sec">\n        <h2>자주 묻는 질문</h2>'
             if mk in body: body = body.replace(mk, GP.Guides.index_html(self.articles, self.links) + mk, 1)
@@ -270,6 +270,7 @@ class Site:
     def inject_home(body, persona, band):
         # 홈: "품목별 대표 구독 모델" 앞에 다품목 띠, 그 뒤에 생활 유형별 추천
         marker = '    <section class="ss-sec">\n        <h2>품목별 대표 구독 모델</h2>'
+        if 'id="bundle"' in body: return body   # 2026-11-11 새 홈은 다품목 띠·추천 묶음을 본문에 직접 넣는다
         assert marker in body, '홈 본문 구조가 바뀌었습니다'
         i = body.index(marker)
         j = body.index('    </section>', i) + len('    </section>\n')
@@ -286,7 +287,7 @@ class Site:
                           '냉장고·김치냉장고·에어컨·TV·세탁기·정수기·청소기 등 삼성 AI 구독 가능 모델과 월 구독료를 한 번에 검색하세요. 삼성스토어 시흥 구독 전문 상담.',
                           '삼성 가전 구독, 삼성 구독료, AI 구독클럽, 냉장고 구독, 에어컨 구독, TV 구독, 세탁기 구독, 정수기 구독, 삼성스토어 시흥',
                           self.url + 'find.html', css) + '''<div class="sf-hero">
-    <p class="eyebrow">삼성 AI 구독클럽 공식 파트너 · 삼성스토어 시흥</p>
+    <p class="eyebrow">삼성 구독센터 · 삼성스토어 시흥</p>
     <h1>구독 상품 찾기</h1>
     <p class="desc">모델명이나 제품 종류로 검색하고, 월 구독료를 바로 비교하세요.<br>색상만 다른 모델은 하나로 묶어 보여 드리고, 마음에 드는 모델은 [+ 담기]로 묶음 계산기에 담을 수 있습니다.</p>
 </div>
@@ -363,7 +364,7 @@ class Site:
                           '냉장고·세탁기·TV·에어컨을 묶어 구독할 때 월 납부 합계를 바로 계산하세요. 약정·케어·선납·제휴카드 할인까지 넣은 다품목 구독 견적. 삼성스토어 시흥 구독센터.',
                           '삼성 다품목 구독, 가전 묶음 구독, 삼성 구독 계산기, 신혼 가전 구독, 입주 가전 구독, 삼성 AI 구독클럽, 삼성스토어 시흥',
                           self.url + 'bundle.html', css) + '''<div class="sb-hero">
-    <p class="eyebrow">삼성 AI 구독클럽 공식 파트너 · 삼성스토어 시흥</p>
+    <p class="eyebrow">삼성 구독센터 · 삼성스토어 시흥</p>
     <h1>다품목 구독 계산기</h1>
     <p class="desc">냉장고 + 세탁기 + TV처럼 여러 대를 묶어 구독할 때의 <b>월 납부 합계</b>를 계산합니다.
         대마다 약정·케어·선납을 고르고 제휴카드를 넣으면 한 대씩 본 금액과 똑같은 기준으로 합계가 나옵니다.</p>
@@ -384,15 +385,15 @@ class Site:
   .sm a:hover { color:#1d6fe8; text-decoration:underline; }
   .sm .top ul { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); font-size:14px; font-weight:600; }
 """
-        body = ['<div class="sm"><h1>삼성스토어 구독센터 전체 페이지</h1><p class="lead">구독센터의 모든 페이지와 구독 가능한 삼성 가전 모델별 상품 페이지 목록입니다. 모델을 누르면 약정·케어·제휴카드별 월 구독료를 바로 계산할 수 있습니다.</p>']
+        body = ['<div class="sm"><h1>삼성 온라인 구독센터 시흥 전체 페이지</h1><p class="lead">구독센터의 모든 페이지와 구독 가능한 삼성 가전 모델별 상품 페이지 목록입니다. 모델을 누르면 약정·케어·제휴카드별 월 구독료를 바로 계산할 수 있습니다.</p>']
         body.append('<section class="top"><h2>구독센터</h2><ul>' + ''.join('<li><a href="%s">%s</a></li>' % (self.dir + f, e(n)) for f, n in pages) + '</ul></section>')
         for cat, models in models_by_cat:
             body.append('<section><h2>삼성 %s 구독 모델 <small>(%d개)</small></h2><ul>' % (e(cat_names.get(cat, cat)), len(models)) +
                         ''.join('<li><a href="%s">%s</a></li>' % (self.static_href(m), m) for m in models) + '</ul></section>')
         body.append('</div>')
-        return (self.head('삼성 가전 구독 전체 페이지 · 모델별 구독 상품 목록 | 삼성스토어 구독센터',
-                          '삼성스토어 구독센터(삼성스토어 시흥)의 모든 페이지와 구독 가능한 삼성 가전 모델 전체 목록. 냉장고·세탁기·TV·에어컨 등 모델별 월 구독료 페이지로 바로 이동하세요.',
-                          '삼성 구독 모델 목록, 삼성 가전 구독 전체, 삼성스토어 구독센터', self.url + 'sitemap.html', css) +
+        return (self.head('삼성 가전 구독 전체 페이지 · 모델별 구독 상품 목록 | 삼성 온라인 구독센터 시흥',
+                          '삼성 온라인 구독센터 시흥(삼성스토어 시흥)의 모든 페이지와 구독 가능한 삼성 가전 모델 전체 목록. 냉장고·세탁기·TV·에어컨 등 모델별 월 구독료 페이지로 바로 이동하세요.',
+                          '삼성 구독 모델 목록, 삼성 가전 구독 전체, 삼성 온라인 구독센터 시흥, 삼성스토어 구독센터', self.url + 'sitemap.html', css) +
                 chr(10).join(body) + chr(10) + self.foot() + '</body>' + chr(10) + '</html>' + chr(10))
 
     # ---------- 전체 ----------

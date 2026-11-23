@@ -116,7 +116,12 @@ function main() {
     var md = cd.t[tier] || 0, base = cd.base ? (cd.base[tier] || md) : md, promoOff = false;
     // 삼성카드 추가 캐시백은 할인 전 월 구독료가 기준금액(7만원) 이상일 때만
     if (cd.minMonthly && cd.minMonthly[tier] && baseMonthly < cd.minMonthly[tier]) { md = base; promoOff = true; }
-    return { md: md, base: base, extra: md - base, promoOff: promoOff, min: cd.minMonthly && cd.minMonthly[tier] };
+    return { md: md, base: base, extra: md - base, promoOff: promoOff, min: cd.minMonthly && cd.minMonthly[tier], pm: +cd.m || 0 };
+  }
+  // 카드 혜택 총액 — 기본 할인은 계약 기간 내내, 프로모션(t − base)은 카드사 제공 기간(m 개월)까지만 (2026-11-16 본사 카드 혜택 시뮬레이션: KB국민·광주은행 36개월)
+  function cardTotalOf(use, ci, months) {
+    var ex = ci && ci.pm && months > ci.pm ? Math.max(0, use - (ci.base || 0)) : 0;
+    return Math.round(use * months - (ex ? ex * (months - ci.pm) : 0));
   }
   // 품목별 최대 선납 비율 — 이름 규칙(예: 의류케어 중 에어드레서) → 품목 → 기본값
   function prepayMax(info) {
@@ -157,6 +162,13 @@ function main() {
       return true;
     });
   }
+  /* 구독료 최대 n원 지원 (2026-11-17) — 본사 구독료 지원 리스트(sub_promo_amt.js · tools/sub/promo_list_from_xlsx.py) 월구독료 × 지원 개월 의 최댓값
+     판촉 기간(라이온즈 11/13~24) 안이면 판촉 개월 값, 아니면 평소 값 · 파일이 없으면 0 (금액 표시만 빠진다) */
+  function supAmt(model) {
+    var A = window.SUB_PROMO_AMT, a = A && A.m && A.m[model]; if (!a) return 0;
+    var t = today(), on = function (w) { return w && !(w.from && w.from > t) && !(w.to && w.to < t); };
+    return on(A.win) && a[1] > 0 ? a[1] : (!A.base || on(A.base)) ? a[0] : 0;
+  }
   function promoTexts(info) { return promoHits(info).filter(function (p) { return !!p.text; }).map(function (p) { return p.text; }); }
   /* N개월 구독료 상당 포인트 지원 (삼성 AI 구독 페스티벌 · 관리자 › 구독 혜택 정책 › 행사 문구에 개월 수·금액을 적으면 켜진다 · mvp_257)
      금액 = 모델별 금액표(amounts[모델]) → 모델 공통 금액(amount) → 개월 수 × 선택 요금제의 월 구독료(할인 전)
@@ -178,8 +190,9 @@ function main() {
   /* 적립 예정 멤버십 포인트 (mvp_258) — 삼성닷컴 구독 상품의 정률(rate %) + 기본(base %) 을 총구독료에 곱하고 상품별 추가 포인트(add)를 더한다.
      원본은 sub.model_point (수집기 tools/subpoint/collect.mjs 가 매일 삼성닷컴에서 받아 온다 · 관리자·매장에서 손 입력 가능) → sub_policy.js points[모델]
      행사 포인트(pointsOf · N개월 구독료 상당)와는 중복 지급이라 둘 다 보여 주고 둘 다 뺀다.
-     기준금액(base)은 요금제 행의 총구독료(plan[2] · DPS 올인원구독모델조회 '총구독료' total_fee) — 선납·카드를 바꿔도 변하지 않는다.
-     2026-11-06 매장 결정: 제품구독료(product_fee · plan[4]) 가 아니라 총구독료 기준으로 안내한다 */
+     기준금액(base)은 요금제 행의 제품구독료(plan[4] · DPS '제품구독료' product_fee = 총 구독금액 - 무상수리·케어 요금) — 선납·카드를 바꿔도 변하지 않는다.
+     2026-11-19 삼성닷컴 기준으로 되돌림: 삼성닷컴 안내 = [총 구독금액 - 무상수리서비스 요금 - 케어서비스 요금] × (기본 0.1% + 구독 n%)
+     (예: KU75MH80AFXKR 6년 2,669,040 × 6.1% = 162,811P — 삼성닷컴과 같음 · 11-06 의 총구독료 기준은 18,842P 더 크게 나왔음). plan[4] 가 없으면 총구독료 */
   function modelPointOf(model) { var pts = POL.points || {}; return pts[norm(model)] || null; }
   function memberPoints(model, base) {
     var mp = modelPointOf(model); if (!mp) return null;
@@ -207,14 +220,14 @@ function main() {
     r.cardInfo = (o.cardOn && o.card) ? cardMonthly(o.card, o.tier, monthly) : { md: 0 };
     r.cardMonthly = Math.min(r.cardInfo.md, Math.max(0, r.monthlyPay));
     r.cardCapped = r.cardInfo.md > r.cardMonthly;
-    r.cardTotal = Math.round(r.cardMonthly * months);
+    r.cardTotal = cardTotalOf(r.cardMonthly, r.cardInfo, months);
     r.finalMonthly = Math.max(0, r.monthlyPay - r.cardMonthly);
     r.expected = total - r.prepayDisc - r.autoDisc - r.cardTotal;   // 선납금 포함 실제 결제 총액
     // N개월 구독료 상당 포인트 지원 (mvp_257) — 결제 총액에서 빼서 "실제 구독료" 로 보여준다 (포인트는 결제 뒤 지급되므로 월 납부액은 그대로)
     var pt = pointsOf(info, plan);
     r.points = pt ? pt.amt : 0; r.pointsInfo = pt;
-    // 적립 예정 멤버십 포인트 (mvp_258) — 행사 포인트와 별도로 더 뺀다. 기준은 총구독료(plan[2]) — 선납·카드와 무관 (2026-11-06 제품구독료 → 총구독료)
-    r.pointBase = total;
+    // 적립 예정 멤버십 포인트 (mvp_258) — 행사 포인트와 별도로 더 뺀다. 기준은 제품구독료(plan[4]) — 선납·카드와 무관 (2026-11-19 삼성닷컴과 맞춤)
+    r.pointBase = plan[4] > 0 ? plan[4] : total;
     var mpt = memberPoints(info && info.model, r.pointBase);
     r.mpoints = mpt ? mpt.amt : 0; r.mpointsInfo = mpt;
     r.pointsAll = r.points + r.mpoints;
@@ -390,7 +403,9 @@ function main() {
       }
       cb();
     }
-    loadScript('sub_policy.js', function () { return !!window.SUB_POLICY; }, done, done);
+    var left = 2, both = function () { if (--left === 0) done(); };   // 구독료 지원 금액 파일도 같이 (없어도 계속)
+    loadScript('sub_policy.js', function () { return !!window.SUB_POLICY; }, both, both);
+    loadScript('sub_promo_amt.js', function () { return !!window.SUB_PROMO_AMT; }, both, both);
   }
 
   // 파일 요금 + 구독요금(우선) 병합. 결과 요금제가 하나도 없으면 null
@@ -470,7 +485,7 @@ function main() {
   window.SUB_CALC = {
     policy: function () { return POL; },
     getInfo: getInfo, calc: calc, plansOf: plansOf, findPlan: findPlan,
-    prepayMax: prepayMax, prepayRate: prepayRate, defaultPrepay: defaultPrepay, tierByModel: tierByModel, cardNames: cardNames, cardMonthly: cardMonthly,
+    prepayMax: prepayMax, prepayRate: prepayRate, defaultPrepay: defaultPrepay, tierByModel: tierByModel, cardNames: cardNames, cardMonthly: cardMonthly, cardTotalOf: cardTotalOf,
     splitCare: splitCare, joinCare: joinCare, typeOrder: TYPE_ORDER, typeLabel: TYPE_LABEL,
     defaultCard: function () { return defaultCard(); }, defaultTier: function (c) { return defaultTier(c); },
     autopayLabel: autopayLabel, inPeriod: inPeriod, fmt: fmt, pointsOf: pointsOf, pointPromos: pointPromos, memberPoints: memberPoints, modelPointOf: modelPointOf, siblings: siblings, siblingList: siblingList, cheapestOf: cheapestOf, subOnlyOf: subOnlyOf,
@@ -521,7 +536,7 @@ function main() {
       '<div class="subtab-head" role="tablist" aria-label="구매방식">' +
       '<button type="button" role="tab" class="subtab-btn" data-tab="lump"><span>일시불</span><strong data-slot="lump-price"></strong></button>' +
       '<button type="button" role="tab" class="subtab-btn" data-tab="sub"><span>구독<em class="subtab-badge">혜택</em></span><strong data-slot="sub-price"></strong><small data-slot="sub-month"></small>' +
-      '<em class="subtab-save" data-slot="sub-save" hidden></em></button>' +
+      '<em class="subtab-save" data-slot="sub-save" hidden></em><em class="subtab-lions" data-slot="lions" hidden>🏆 라이온즈 우승 기념 · 구독료 +6개월</em></button>' +
       '</div><div class="subtab-panel" data-slot="panel" hidden></div>';
     els.lumpPrice = root.querySelector('[data-slot="lump-price"]');
     els.subPrice = root.querySelector('[data-slot="sub-price"]');
@@ -546,6 +561,9 @@ function main() {
     var cur = current();   // 선택한 조건(약정·케어·선납·카드) 그대로의 월 납부 예상금액 — 아래 요약·하단 바와 같은 값
     if (cur) setHeadPrice(cur);
     else { els.subPrice.textContent = state.min ? '월 ' + fmt(state.min) + '원~' : ''; els.subMonth.textContent = ''; }
+    // 라이온즈 우승 기념 말풍선 (2026-11-13 ~ 24) — 이 상품이 기간 안 라이온즈 행사 대상일 때만 구독 버튼 위에
+    var lb = root.querySelector('[data-slot="lions"]');
+    if (lb) { var li0 = false; try { li0 = (state.info ? promoTexts(state.info) : []).some(function (t) { return /라이온즈/.test(t); }); } catch (e) {} lb.hidden = !li0; }
     els.subSave.hidden = true;   // 빨간 배지는 쓰지 않는다 — 절감액은 총액 옆 "(○○만원 저렴)" 으로
     root.classList.toggle('is-cheaper', !!state.best);
     var btns = root.querySelectorAll('.subtab-btn');
@@ -642,6 +660,9 @@ function main() {
     h += siblingsHtml(info);
     // 요약(저렴한 금액 또는 월 구독료)만 먼저 보여주고, 약정·케어·선납·카드 선택과 결제 예상 내역은 [조건별 구독가 확인하기] 안에 접어 둔다
     var top = h; h = '';
+    // 라이온즈 우승 기념 안내 띠 (2026-11-13 ~ 24) — 이 상품이 대상이면 패널 맨 위에 (말풍선 모양)
+    var lionsM = 0; promoHits(info).forEach(function (p) { if (/라이온즈/.test(p.text || '') && p.months > lionsM) lionsM = p.months; });
+    if (lionsM) top = '<p class="subtab-lionsbar"><b>🏆 라이온즈 우승 기념</b><span>구독료 지원 기존 ' + (lionsM - 6) + '개월 + <em>추가 6개월</em> = <strong>' + lionsM + '개월</strong></span>' + (supAmt(state.model) ? '<span class="subtab-lionsamt">구독료 최대 <strong>' + fmt(supAmt(state.model)) + '원</strong> 지원</span>' : '') + '<small>11/13(금) ~ 11/24(화) · 최장 약정 선택 시</small><a class="subtab-lionsmore" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=193" target="_blank" rel="noopener">행사 자세히 보기 →</a></p>' + top;
 
     // 약정 기간
     h += '<fieldset class="subtab-field"><legend>약정 기간</legend><div class="subtab-grid subtab-grid--years">';
@@ -714,15 +735,16 @@ function main() {
       var cd = cards[state.card];
       h += '<p class="subtab-sub">' + esc(state.card) + ' 결제 시 (전월 실적)</p><select data-tier aria-label="전월 실적 구간">';
       Object.keys(cd.t).forEach(function (t) {
-        var ci = cardMonthly(state.card, t, 1e12), txt = tierLabel(t) + ' · 월 -' + fmt(ci.base) + '원' + (ci.extra ? ' + 캐시백 ' + fmt(ci.extra) + '원' : '');
+        var ci = cardMonthly(state.card, t, 1e12), txt = tierLabel(t) + ' · 월 -' + fmt(ci.base) + '원' + (ci.extra ? ' + 프로모션 ' + fmt(ci.extra) + '원' : '');
         h += '<option value="' + esc(t) + '"' + (t === state.tier ? ' selected' : '') + '>' + txt + '</option>';
       });
       h += '</select><label class="subtab-check"><input type="checkbox" data-cardon' + (state.cardOn ? ' checked' : '') + '>' +
         '<span>제휴카드 혜택 적용</span><strong>' + (state.cardOn ? '월 -' + fmt(r.cardMonthly) + '원' : '미적용') + '</strong></label>';
       if (state.cardOn) {
         var ci2 = r.cardInfo;
-        h += '<dl class="subtab-cardbreak">' + row('기본 청구할인', '월 -' + fmt(ci2.base) + '원') +
-          (ci2.extra ? row('추가 캐시백 (최대 ' + cd.m + '개월)', '월 -' + fmt(ci2.extra) + '원') : '') + '</dl>';
+        h += '<dl class="subtab-cardbreak">' + row('기본 할인 (계약 기간 내내)', '월 -' + fmt(ci2.base) + '원') +
+          (ci2.extra ? row('프로모션 (최대 ' + cd.m + '개월)', '월 -' + fmt(ci2.extra) + '원') : '') + '</dl>';
+        if (ci2.extra && cd.m && r.months > cd.m) h += '<p class="subtab-sub">※ ' + r.months + '개월 중 ' + cd.m + '개월까지는 월 -' + fmt(r.cardMonthly) + '원, 그 뒤는 기본 할인만 반영했습니다.</p>';
         if (ci2.promoOff) h += '<p class="subtab-sub">※ 이 구간의 추가 캐시백은 월 구독료 ' + fmt(ci2.min) + '원 이상일 때 적용되어 기본 청구할인만 반영했습니다.</p>';
         if (r.cardCapped) h += '<p class="subtab-sub">※ 할인은 월 납부액(' + fmt(r.monthlyPay) + '원)까지만 적용됩니다.</p>';
       }
@@ -743,7 +765,7 @@ function main() {
     h += row('결제 예상액' + (r.pointsAll && cash ? ' <small>실제 결제</small>' : ''), fmt(r.expected) + '원', r.pointsAll && !cash ? '' : 'is-total');
     if (r.pointsAll && cash) h += row('월 납부액 <small>실제 결제</small>', '월 ' + fmt(r.finalMonthly) + '원', 'is-strong');
     if (r.points) h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', sg + fmt(r.points) + (cash ? 'P' : '원'), 'is-blue is-point');
-    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + '</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
+    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + ' (실제 계산은 예상보다 적거나 많을 수 있습니다.)</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
     if (r.pointsAll && !cash) {
       h += row('포인트 구독료로 사용한 실제 구독료', fmt(r.netTotal) + '원', 'is-total');
       h += ptRows(r);
@@ -793,8 +815,11 @@ function main() {
       '<div class="subtab-acc-body"' + (state.open ? '' : ' hidden') + '>' + h + '</div>';
 
     // 혜택 문구: 정책 기본 문구 + 기간 중인 행사 + 스킨 설정 extraPoints
-    var points = (POL.texts.points || []).concat(promoTexts(info), CFG.extraPoints || []);
-    if (points.length) h += '<ul class="subtab-points">' + points.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+    // 라이온즈 띠가 위에 있으면 아래 목록의 같은 라이온즈 문구는 뺀다 (2026-11-17 중복 정리) · 구독료 지원 행사 문구 끝에 최대 금액
+    var amt = supAmt(state.model), maxM = 0, hits = promoHits(info).filter(function (p) { return !!p.text && !(lionsM && /라이온즈/.test(p.text)); });
+    hits.forEach(function (p) { if (p.months > maxM) maxM = p.months; });
+    var points = (POL.texts.points || []).concat(hits.map(function (p) { return p.text + (amt && !lionsM && maxM && p.months === maxM ? ' (최대 ' + fmt(amt) + '원)' : ''); }), CFG.extraPoints || []);
+    if (points.length) h += '<ul class="subtab-points">' + points.map(function (t) { return /라이온즈/.test(t) ? '<li class="is-lions"><b>🏆 라이온즈 우승 기념</b>' + esc(t.replace(/^\s*라이온즈 우승 기념\s*·?\s*/, '')) + '</li>' : '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
 
     // 하단 고정 바 — 상담 신청만
     // CFG.source('goods'|'view'|…)·CFG.sourceName·CFG.utmSource 로 상담서에 남는 출처를 바꿀 수 있다 (구독 상품 페이지 sub_view 가 같은 파일을 쓴다)

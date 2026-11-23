@@ -1327,6 +1327,8 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 .cjt b{font-size:calc(13.5px * var(--font-scale));color:var(--ink);overflow-wrap:anywhere}
 .cjamt{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
 .cjs{color:var(--ink-2);font-size:calc(12.5px * var(--font-scale));margin-top:2px;overflow-wrap:anywhere;line-height:1.4}
+.cjmemo{margin-top:6px;padding:8px 10px;background:#F7F8FB;border:1px solid #E1E5EC;border-radius:8px;color:var(--ink);font-size:calc(12.5px * var(--font-scale));line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.cjmemo b{display:block;color:var(--ink-2);font-size:calc(11.5px * var(--font-scale));margin-bottom:2px}
 .cjtags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .cjmore{display:block;margin:10px auto 0;min-height:40px;padding:6px 18px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface,#fff);font-weight:700;color:var(--ink-2);cursor:pointer;font-family:inherit}
 .cjnote{color:var(--muted);font-size:calc(12px * var(--font-scale));margin-top:8px}
@@ -2283,7 +2285,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <div class="card" id="cLogCard">
       <h2 style="justify-content:flex-start;align-items:center">상담 · 가망고객 <span>사려다 만 고객도 남기기</span><button type="button" class="btn sm ghost" id="c_newBtn" style="margin-left:auto" onclick="consultNew()" title="적던 내용을 비우고 새 상담을 입력합니다">＋ 새 상담 입력</button></h2>
       <div class="cbar" style="margin-bottom:14px">
-        <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')})">구독 견적서 열기 ↗</button>
+        <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')})">구독 견적서 열기 ↗</button><button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')},true)" title="상담 견적(/quote/)을 이 고객·모델로 엽니다">new_견적서 ↗</button>
         <button class="btn sm ghost" onclick="openCalc()">구독료 계산기 ↗</button>
       </div>
       <div class="cstick hidden" id="c_stick" aria-live="polite">
@@ -4148,7 +4150,10 @@ const LINK_ICON={
    (견적서 페이지가 이 값을 읽도록 패치돼 있어야 프리필·기존 견적 열기가 된다) */
 /* 상담 줄 → 견적서에 담을 모델 코드들: 관심 모델(interest_model_code) + 내용의 '진단추천: 모델'(구독센터 상품 페이지에서 온 문의) + 관심 품목 글 속 모델형 토큰 */
 function qModels(x){ const out=[]; const add=v=>String(v||'').split(/[,\s·/]+/).forEach(t=>{ t=t.trim().toUpperCase().replace(/[^A-Z0-9\-]/g,''); if(/^[A-Z]{2}[A-Z0-9\-]{5,}$/.test(t)&&/\d/.test(t)&&!out.includes(t)) out.push(t); });
-  add(x.model); const m=/진단추천:\s*([A-Za-z0-9\-]+)/.exec(String(x.content||'')); if(m) add(m[1]); add(x.interest); return out.slice(0,8).join(','); }
+  add(x.model); const m=/진단추천:\s*([^/\n]+)/.exec(String(x.content||'')); if(m) add(m[1]); add(x.interest); return out.slice(0,12).join(','); }   // 2026-11-11: 진단추천 뒤 모델 전부(다품목 문의 'A,B,C')
+/* 다품목 계산기 문의의 '묶음조건(상담용): items=모델~약정~케어~선납,…&card=…&tier=…' → /quote/ 주소 값 (2026-11-11) */
+function qBundle(x){ const m=/items=([^\s/&]+)((?:&(?:card|tier|cardoff)=[^&\s/]*)*)/.exec(String(x.content||'')); if(!m) return {};
+  const o={items:m[1]}; (m[2]||'').split('&').forEach(kv=>{ const i=kv.indexOf('='); if(i>0) o[kv.slice(0,i)]=kv.slice(i+1); }); return o; }
 function openQuote(o,isNew){ o=o||{};
   const q=new URLSearchParams();
   if(o.no) q.set('no',o.no);
@@ -4158,6 +4163,8 @@ function openQuote(o,isNew){ o=o||{};
   if(o.memo) q.set('memo',o.memo);
   if(o.consult) q.set('consult',o.consult);                       // 상담 id — 견적서가 어느 문의에서 나왔는지 (2026-11-04)
   if(o.models) q.set('models',String(o.models).replace(/\s/g,'')); // 관심 모델(쉼표) — 견적서가 바로 담는다
+  if(o.items) q.set('items',o.items);                              // 다품목 계산기 묶음 조건(모델~약정~케어~선납) — /quote/ 가 그대로 담는다 (2026-11-11)
+  if(o.card) q.set('card',o.card); if(o.tier) q.set('tier',o.tier); if(o.cardoff) q.set('cardoff','1');
   if(ME) q.set('counselor',ME);
   const u=isNew? NEW_QUOTE_URL+(q.toString()?'?'+q.toString():'') : QUOTE_URL+(q.toString()?'&'+q.toString():'');
   window.open(u,isNew?'sat_quote_new':'sat_quote','noopener');
@@ -4692,6 +4699,7 @@ function skRowHtml(x,o){ o=o||{};
   A.push(`<button class="mini" onclick="cdOpen(${x.id})">상세 보기</button>`);
   if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
   A.push(`<button class="mini" onclick="openQuote({name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}',memo:'${esc([x.interest,x.model].filter(Boolean).join(' · ').replace(/'/g,''))}',consult:${x.id||0},models:'${esc(qModels(x))}'})">견적서 만들기 ↗</button>`);
+  { const bq=qBundle(x); A.push(`<button class="mini" title="상담 견적(/quote/)을 이 고객·문의 모델·조건으로 엽니다" onclick="openQuote({name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}',memo:'${esc([x.interest,x.model].filter(Boolean).join(' · ').replace(/'/g,''))}',consult:${x.id||0},models:'${esc(qModels(x))}',items:'${esc(bq.items||'')}',card:'${esc(bq.card||'')}',tier:'${esc(bq.tier||'')}',cardoff:'${esc(bq.cardoff||'')}'},true)">new_견적서 ↗</button>`); }
   return `<div class="item oc skrow" id="skrow_${x.id}"><div style="flex:1;min-width:0">
       <div class="ttl">${res}<b>${esc(x.name||'-')}</b> <small style="color:var(--muted)">${esc(x.phone||'')}</small>
         ${x.kind?`<span class="tag ${x.kind==='구독'?'sub':x.kind==='직판'?'direct':''}">${esc(x.kind)}</span>`:''}
@@ -5316,11 +5324,12 @@ const cjDate=s=> s?String(s).slice(0,10).replace(/-/g,'.'):'';
 const cjTag=(t,st)=> t?`<span class="cjtag"${st?` style="${st}"`:''}>${esc(t)}</span>`:'';
 const CJ_OK='background:#E8F4EA;color:#1E5E24', CJ_WARN='background:#FBF1DC;color:#6E4700', CJ_BAD='background:#FDECEC;color:#B3261E';
 function cjSubs(x){ return (Array.isArray(x&&x.subs)?x.subs:[]).map(u=>cjTag(['구독',u.kind,u.service,u.model,u.monthly?`월 ${cjWon(u.monthly)}`:'',u.months?`${u.months}개월`:'',u.end?`만료 ${cjDate(u.end)}`:'',u.status].filter(Boolean).join(' · '),'background:#E6F4F2;color:#0B5E57')).join(''); }
-function cjEv(e){ const K=CJ_K[e.k]||[e.k,'#3F4B5C','#EEF1F5'], x=e.x||{}, tg=[];
+function cjEv(e){ const K=CJ_K[e.k]||[e.k,'#3F4B5C','#EEF1F5'], x=e.x||{}, tg=[]; let s=e.s||'', memo='';
   if(e.k==='inq'||e.k==='consult'){
+    /* 담당자 화면: 유입 경로·캠페인 태그는 빼고, 고객이 문의할 때 남긴 메모를 전부 보인다 (요약 줄에 잘려 붙은 메모 앞부분은 떼어 냄) */
+    if(x.memo){ memo=String(x.memo).trim(); const hd=memo.replace(/\s+/g,' ').slice(0,12), i=hd?s.indexOf(hd):-1; if(i>=0) s=s.slice(0,i).replace(/[\s\/·]+$/,''); }
     if(x.result) tg.push(cjTag(CJ_RES[x.result]||x.result, x.result==='구매완료'?CJ_OK:x.result==='진행전'?CJ_BAD:''));
-    if(x.handler) tg.push(cjTag('담당 '+x.handler)); if(x.route) tg.push(cjTag(x.route));
-    if(x.campaign) tg.push(cjTag('캠페인 '+x.campaign,'background:#EAF0FC;color:#1D4FB8'));
+    if(x.handler) tg.push(cjTag('담당 '+x.handler));
     if(x.bought) tg.push(cjTag('구매 '+x.bought,CJ_OK)); if(x.superseded) tg.push(cjTag('다음 상담으로 이어짐')); }
   if(e.k==='quote'){ if(x.counselor) tg.push(cjTag('담당 '+x.counselor)); if(Number(x.monthly)) tg.push(cjTag('월 '+cjWon(x.monthly)+'원'));
     tg.push(x.sent_at?cjTag('고객에게 보냄 '+cjDate(x.sent_at)):cjTag('발행만 (안 보냄)'));
@@ -5331,9 +5340,10 @@ function cjEv(e){ const K=CJ_K[e.k]||[e.k,'#3F4B5C','#EEF1F5'], x=e.x||{}, tg=[]
     if(x.status) tg.push(cjTag(x.status)); if(x.handler) tg.push(cjTag('담당 '+x.handler)); tg.push(cjSubs(x)); }
   if(e.k==='dps'){ if(x.dup) tg.push(cjTag('원장 주문과 같은 구매일 수 있음',CJ_WARN)); tg.push(cjSubs(x)); }
   if(e.other) tg.push(cjTag('같은 번호 · 다른 이름','background:#F0ECFB;color:#5B3FB5'));
-  const at=String(e.at||''), amt=Number(e.amt), tags=tg.join('');
+  const at=String(e.at||''), tags=tg.join(''), cSub=(e.k==='buy'||e.k==='dps')&&Array.isArray(x.subs)&&x.subs.length?x.subs.reduce((t,u)=>t+(Number(u.monthly)||0)*(Number(u.months)||0),0):null;
+  const amt=cSub!=null?cSub:Number(e.amt);   /* 구독 계약이 붙은 구매는 임시 전표 금액 대신 계약 금액 (mvp_299) */
   return `<div class="cjev" data-k="${esc(e.k)}" data-m="${at.slice(0,7)}" style="--c:${K[1]};--cb:${K[2]}"><div class="cjd">${at.slice(5,10).replace('-','.')}<small>${at.slice(0,4)}${at.slice(11,16)&&at.slice(11,16)!=='00:00'&&e.k!=='dps'?' '+at.slice(11,16):''}</small></div><span class="cjdot" aria-hidden="true"></span>
-    <div><div class="cjt"><span class="cjk">${K[0]}</span><b>${esc(e.t||'')}</b>${e.amt!=null&&amt?`<span class="cjamt">${Math.round(amt).toLocaleString('ko-KR')}원</span>`:''}</div>${e.s?`<div class="cjs">${esc(e.s)}</div>`:''}${tags?`<div class="cjtags">${tags}</div>`:''}</div></div>`; }
+    <div><div class="cjt"><span class="cjk">${K[0]}</span><b>${esc(e.t||'')}</b>${cSub!=null?`<span class="cjamt" title="구독 계약 금액(월 요금 × 개월)">${cSub?'계약 '+Math.round(cSub).toLocaleString('ko-KR')+'원':'구독 계약'}</span>`:e.amt!=null&&amt?`<span class="cjamt">${Math.round(amt).toLocaleString('ko-KR')}원</span>`:''}</div>${s?`<div class="cjs">${esc(s)}</div>`:''}${memo?`<div class="cjmemo"><b>문의 메모</b>${esc(memo)}</div>`:''}${tags?`<div class="cjtags">${tags}</div>`:''}</div></div>`; }
 function cjVerdict(d){ const s=d.stages||{}, o=d.open, m=d.summary||{};
   if(s.inq&&s.buy_after_inq) return ['ok', Number(s.days_to_buy)===0?`문의한 날(${cjDate(s.inq)}) 바로 구매했습니다`:`문의 ${cjDate(s.inq)} → ${s.days_to_buy}일 뒤(${cjDate(s.buy_after_inq)}) 구매했습니다`];
   if(s.inq) return ['wait', `문의 ${cjDate(s.inq)} 뒤 아직 구매가 없습니다`+(o?` · 지금 ${CJ_RES[o.result]||o.result}${o.handler?' · 담당 '+o.handler:''}`:'')+(s.buy1?` · 그 전에 산 적은 있음 (마지막 ${cjDate(s.buy_last)})`:'')];
@@ -5409,7 +5419,7 @@ function renderMyCustomers(){
     return `<div class="cuitem" id="cu_${esc(x.key)}">
       <div class="head" role="button" tabindex="0" aria-expanded="false" onclick="cuToggle('${esc(x.key)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cuToggle('${esc(x.key)}')}">
         <div class="who"><b>${esc(x.name||'—')}</b><span class="ph">${x.phone||'번호 없음'}</span>${x.consent?'<span class="mine">수신동의</span>':''}${x.open_callback?'<span class="mine cb">콜백 대기</span>':''}</div>
-        <div class="meta">${ru?`<span class="res ${ru[0]}">${esc(ru[1])}</span>`:'<span class="res pre">구매만</span>'}<span>상담 ${x.consult_n||0}회</span><span class="${stale?'stale':''}">${cuAgo(d)}</span>${x.last_channel?`<span class="ch">${esc(x.last_channel)}</span>`:''}${x.last_interest?`<span class="it">${esc(x.last_interest)}</span>`:''}${x.orders?`<span>구매 ${x.orders}건${x.orders_sub?` <i class="kds">구독 ${x.orders_sub}</i>`:''} ${won(x.spent)}</span>`:''}</div>
+        <div class="meta">${ru?`<span class="res ${ru[0]}">${esc(ru[1])}</span>`:'<span class="res pre">구매만</span>'}<span>상담 ${x.consult_n||0}회</span><span class="${stale?'stale':''}">${cuAgo(d)}</span>${x.last_channel?`<span class="ch">${esc(x.last_channel)}</span>`:''}${x.last_interest?`<span class="it">${esc(x.last_interest)}</span>`:''}${x.orders?`<span>구매 ${x.orders}건${x.orders_sub?` <i class="kds">구독 ${x.orders_sub}</i>`:''}${Number(x.spent)||!x.orders_sub?' '+won(x.spent):''}</span>`:''}</div>
         <span class="chev" aria-hidden="true">펼치기 ▾</span>
       </div>
       <div class="body hidden" id="cub_${esc(x.key)}"></div>
@@ -5451,14 +5461,22 @@ async function cuToggle(key){
 /* 내 고객 펼침 맨 위 — 과거 구매를 바로 (주문 하나 = 한 줄 · 최근 5건 · 서버 fn_store_customer_detail 이 출처·주문번호로 묶어 준다 · 상담 입력 고정 헤더도 같은 목록) (v292) */
 function cuBuyHtml(key, os, cu){ const dt=v=>v?String(v).slice(0,10).replace(/-/g,'.'):'';
   if(!os.length) return `<div class="cubuy none"><div class="ht">구매 이력 <small>없음</small></div><div class="empty sm">원장·DPS 에 이 고객의 구매가 없습니다</div></div>`;
-  const n=Number(cu&&cu.orders!=null?cu.orders:os.length), spent=cu&&cu.spent!=null?Number(cu.spent):os.reduce((s,o)=>s+(Number(o.amount)||0)-(Number(o.refund)||0),0);
-  return `<div class="cubuy"><div class="ht">구매 이력 <small>${n}건 · ${won(spent)} · 마지막 ${dt(os[0].at)}</small></div>${os.slice(0,5).map(cbRow).join('')}${os.length>5?`<button type="button" class="mini more" onclick="cuDetOpen('${esc(key)}')">전체 ${os.length}건 보기 ▾</button>`:''}</div>`; }
+  const n=Number(cu&&cu.orders!=null?cu.orders:os.length), spent=cu&&cu.spent!=null?Number(cu.spent):buyNet(os), ss=subSum(os), hasSub=os.some(subOn);
+  const sm=[`${n}건`, (spent||!hasSub)?won(spent):'', hasSub?(ss?`구독 계약 ${won(ss)}`:'구독 계약'):'', `마지막 ${dt(os[0].at)}`].filter(Boolean).join(' · ');
+  return `<div class="cubuy"><div class="ht">구매 이력 <small>${sm}</small></div>${os.slice(0,5).map(cbRow).join('')}${os.length>5?`<button type="button" class="mini more" onclick="cuDetOpen('${esc(key)}')">전체 ${os.length}건 보기 ▾</button>`:''}</div>`; }
 /* 구매 구분 태그 — 구독 · 일반(일시불) · 직판. DPS 구독 줄은 종류·월 요금·개월·만료(subs)를 글로 (v293) */
 const KD_LAB={'구독':['sub','구독'],'일시불':['one','일반'],'직판':['dir','직판']};
 function kdTag(kind){ const ks=String(kind||'').split('·').map(x=>x.trim()).filter(Boolean); return ks.map(x=>{ const d=KD_LAB[x]||['one',x]; return `<span class="tag kd ${d[0]}" title="${esc(x)}">${esc(d[1])}</span>`; }).join(''); }
 function subTxt(o){ const u=Array.isArray(o&&o.subs)?o.subs:[]; return u.map(s=>[s.kind, s.monthly?`월 ${won(s.monthly)}`:'', s.months?`${s.months}개월`:'', s.end?`만료 ${String(s.end).slice(0,10).replace(/-/g,'.')}`:'', s.service, s.status&&s.status!=='접수'?s.status:''].filter(Boolean).join(' · ')).join(' / '); }
+/* 구독 계약이 붙은 DPS 줄 — 전표는 프로님이 구독 접수 때 만들었다 지우는 임시 전표(AA2P 1,000원 · A4용지 10원 등)라 금액을 쓰지 않고
+   계약 금액(월 요금 × 개월)을 보인다. 합계에서도 뺀다 (mvp_299) */
+const subOn=o=>Array.isArray(o&&o.subs)&&o.subs.length>0;
+function subAmt(o){ if(!subOn(o)) return null; return o.subs.reduce((t,s)=>t+(Number(s.monthly)||0)*(Number(s.months)||0),0); }
+function amtHtml(o){ if(!subOn(o)) return won(o.amount); const c=subAmt(o); return `<span class="subamt" title="구독 계약 금액(월 요금 × 개월) · 판매 전표는 임시 전표라 금액을 쓰지 않습니다">${c?'계약 '+won(c):'구독 계약'}</span>`; }
+const buyNet=os=>os.reduce((s,o)=>s+(subOn(o)?0:(Number(o.amount)||0)-(Number(o.refund)||0)),0);
+const subSum=os=>os.reduce((s,o)=>s+(subAmt(o)||0),0);
 function cbRow(o){ const dt=v=>v?String(v).slice(0,10).replace(/-/g,'.'):''; const su=subTxt(o);
-  return `<div class="cbrow"><b>${dt(o.at)}</b><span class="pn">${kdTag(o.kind)}${esc(o.product||'(상품명 없음)')}</span><span class="am">${won(o.amount)}${Number(o.refund)?` <i>환불 ${won(o.refund)}</i>`:''}</span><span class="hm">${esc([o.channel,o.status].filter(Boolean).join(' · '))}${su?` · ${esc(su)}`:''}${o.n>1?` · ${o.n}줄`:''}${o.handler&&o.handler!==ME?` · 담당 ${esc(o.handler)}`:''}</span></div>`; }
+  return `<div class="cbrow"><b>${dt(o.at)}</b><span class="pn">${kdTag(o.kind)}${esc(o.product||'(상품명 없음)')}</span><span class="am">${amtHtml(o)}${Number(o.refund)&&!subOn(o)?` <i>환불 ${won(o.refund)}</i>`:''}</span><span class="hm">${esc([o.channel,o.status].filter(Boolean).join(' · '))}${su?` · ${esc(su)}`:''}${o.n>1?` · ${o.n}줄`:''}${o.handler&&o.handler!==ME?` · 담당 ${esc(o.handler)}`:''}</span></div>`; }
 function cuDetOpen(key){ const b=$('cub_'+key); if(!b) return; const d=b.querySelector('details.cudet'); if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); } }
 /* 폰에서 찾기·기간 도구 접기/펼치기 — 값이 들어 있으면(검색어·기간) 자동으로 펼친다 */
 function toolsToggle(id, force){ const box=$(id), btn=$(id+'Btn'); if(!box||!btn) return;
@@ -5982,15 +6000,15 @@ function csShow(o){ const box=$('c_stick'); if(!box) return;
   if(list && n && window.innerWidth>640 && !$('cs_list').classList.contains('open')) csFold(true);
   /* 과거 구매(orders · 주문 하나 = 한 줄) — 있으면 [구매 N건] 버튼 · 넓은 화면은 바로 펼침 (v292) */
   const bb=$('cs_buyBtn'), bl=$('cs_buy'); if(bb&&bl){ const os=Array.isArray(o.orders)?o.orders:null; bb.classList.toggle('hidden',!os);
-    if(os){ const cu=o.cust||{}; const bn=Number(cu.orders!=null?cu.orders:os.length), spent=cu.spent!=null?Number(cu.spent):os.reduce((s,x)=>s+(Number(x.amount)||0)-(Number(x.refund)||0),0);
-      $('cs_buyCnt').textContent=bn; $('cs_buySum').textContent= bn ? `· ${wonS(spent)}원 · 마지막 ${csDt(os[0].at)}` : '· 기록 없음';
+    if(os){ const cu=o.cust||{}; const bn=Number(cu.orders!=null?cu.orders:os.length), spent=cu.spent!=null?Number(cu.spent):buyNet(os), ss=subSum(os), hasSub=os.some(subOn);
+      $('cs_buyCnt').textContent=bn; $('cs_buySum').textContent= bn ? '· '+[(spent||!hasSub)?`${wonS(spent)}원`:'', hasSub?(ss?`구독 계약 ${wonS(ss)}원`:'구독 계약'):'', `마지막 ${csDt(os[0].at)}`].filter(Boolean).join(' · ') : '· 기록 없음';
       bl.innerHTML= os.length ? os.map(csBuyRow).join('') : '<div class="empty sm">원장·DPS 에 이 고객의 구매가 없습니다</div>';
       if(!os.length) csBuyFold(false); else if(window.innerWidth>640 && !bl.classList.contains('open')) csBuyFold(true); }
     else { bl.innerHTML=''; csBuyFold(false); } } }
 function csBuyFold(force){ const l=$('cs_buy'), b=$('cs_buyBtn'); if(!l||!b) return; const open = force!==undefined ? !!force : !l.classList.contains('open');
   l.classList.toggle('open',open); b.setAttribute('aria-expanded',open?'true':'false'); $('cs_buyI').textContent = open?'접기 ▴':'보기 ▾'; }
-function csBuyRow(o){ const su=subTxt(o); return `<div class="crow2"><div class="l"><b>${csDt(o.at)}</b>${kdTag(o.kind)}${o.channel?`<span class="hm">${esc(o.channel)}</span>`:''}${Number(o.refund)?`<span class="hm" style="color:#B3261E">환불 ${won(o.refund)}</span>`:''}${o.handler&&o.handler!==ME?`<span class="hm">담당 ${esc(o.handler)}</span>`:''}</div>
-    <div class="c">${esc(o.product||'(상품명 없음)')}${o.n>1?` · ${o.n}줄`:''}${su?` · ${esc(su)}`:''}</div><div class="r"><span class="amt">${won(o.amount)}</span></div></div>`; }
+function csBuyRow(o){ const su=subTxt(o); return `<div class="crow2"><div class="l"><b>${csDt(o.at)}</b>${kdTag(o.kind)}${o.channel?`<span class="hm">${esc(o.channel)}</span>`:''}${Number(o.refund)&&!subOn(o)?`<span class="hm" style="color:#B3261E">환불 ${won(o.refund)}</span>`:''}${o.handler&&o.handler!==ME?`<span class="hm">담당 ${esc(o.handler)}</span>`:''}</div>
+    <div class="c">${esc(o.product||'(상품명 없음)')}${o.n>1?` · ${o.n}줄`:''}${su?` · ${esc(su)}`:''}</div><div class="r"><span class="amt">${amtHtml(o)}</span></div></div>`; }
 function csFold(force){ const l=$('cs_list'), b=$('cs_foldBtn'); const open = force!==undefined ? !!force : !l.classList.contains('open');
   l.classList.toggle('open',open); b.setAttribute('aria-expanded',open?'true':'false'); $('cs_foldI').textContent = open?'접기 ▴':'보기 ▾'; }
 function cFindToggle(force){ const b=$('c_findBox'), btn=$('c_findBtn'); const open = force!==undefined ? !!force : !b.classList.contains('open');

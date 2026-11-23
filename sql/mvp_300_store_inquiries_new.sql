@@ -1,6 +1,0 @@
--- mvp_300 (2026-11-23) — fn_store_inquiries: 새 문의(todo) = 연락 전(진행전) 상담 전부(출처·기간 무관).
--- 진행 중·완료는 그대로 최근 p_days 일의 폼·홈페이지·수동 접수. 그래서 카드 [새 문의] = 홈 흐름 띠 새 문의 = 내 상담 [새 문의].
--- 적용: 서버 본문에서 base 조건만 치환
---   where k.created_at >= v_from and k.deleted_at is null and (k.source in (...) or (...문의 접수...))
--- → where k.deleted_at is null and (k.result='진행전' or k.created_at >= v_from and (k.source in (...) or (...)))
--- 확인: 매장 담당자 8명 todo = fn_store_consults_my counts.pre (송희봉 2 · 이수혁 12 · 최태웅 1 · 차효범 1 …)

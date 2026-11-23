@@ -154,9 +154,9 @@ def e(s):
 
 def page_meta(M, i):
     title = M.product_name(i)
-    full = '%s 구독 가격 월 %s원~ (%s) | 삼성스토어 구독센터' % (title, fmt(i['min']), i['model'])
-    desc = '%s (%s) 삼성 AI 구독 월 %s원부터. 약정 기간·방문케어 주기·선납 할인·제휴카드 할인별 월 구독료를 바로 계산하고 구독 상담을 신청하세요.' % (title, i['model'], fmt(i['min']))
-    kw = ', '.join(x for x in [i['model'], title.replace('삼성 ', '') + ' 구독', '삼성 ' + i['cat_name'] + ' 구독', i['model'] + ' 구독', '삼성 AI 구독클럽', '삼성스토어 시흥'] if x)
+    full = '%s 구독 가격 월 %s원~ (%s) | 삼성 온라인 구독센터 시흥' % (title, fmt(i['min']), i['model'])
+    desc = '%s (%s) 삼성 AI 구독 월 %s원부터. 약정 기간·방문케어 주기·선납 할인·제휴카드 할인별 월 구독료를 바로 계산하고 삼성 온라인 구독센터 시흥에서 구독 상담을 신청하세요.' % (title, i['model'], fmt(i['min']))
+    kw = ', '.join(x for x in [i['model'], title.replace('삼성 ', '') + ' 구독', '삼성 ' + i['cat_name'] + ' 구독', i['model'] + ' 구독', '삼성 AI 구독클럽', '삼성 온라인 구독센터 시흥', '삼성스토어 시흥'] if x)
     return title, full, desc, kw
 
 
@@ -195,7 +195,7 @@ def body_html(M, i, title, links, static_href):
     head = ('<div class="sv-head"><div class="sv-img">%s</div><div class="sv-info">'
             '<p class="sv-cat">%s%s</p><h1 class="sv-title">%s</h1><p class="sv-model">모델명 <b>%s</b></p>'
             '<p class="sv-price"><small>구독 월</small> %s<small>원~</small></p>'
-            '<p class="sv-badge">삼성전자 AI 구독클럽 공식 파트너 · 무상수리 포함</p></div></div>') % (
+            '<p class="sv-badge">삼성 구독센터 · 무상수리 포함</p></div></div>') % (
         img, e(i['cat_name']), (' · ' + e(seg_label(i['seg']))) if i['seg'] else '', e(title), e(i['model']), fmt(i['min']))
     years = M.year_rows(i)
     table = ''
@@ -280,8 +280,8 @@ def ld_tag(objs):
 
 def store_ld(site, home):
     s = STORE
-    return {'@context': 'https://schema.org', '@type': 'ElectronicsStore', 'name': s['name'], 'alternateName': ['삼성스토어 구독센터', '삼성스토어 시흥 구독센터'], 'legalName': s['legal'], 'url': site + home,
+    return {'@context': 'https://schema.org', '@type': 'ElectronicsStore', 'name': s['name'], 'alternateName': ['삼성 온라인 구독센터 시흥', '삼성 온라인 구독 센터 시흥', '삼성스토어 구독센터', '삼성스토어 시흥 구독센터'], 'legalName': s['legal'], 'url': site + home,
             'telephone': s['tel'], 'image': 'https://db.samsungat.co.kr/sdp/sub/img/partner_cert_2026.jpg',
             'address': {'@type': 'PostalAddress', 'streetAddress': s['street'], 'addressLocality': s['locality'], 'addressRegion': s['region'], 'addressCountry': s['country']},
             'openingHours': s['hours'], 'brand': {'@type': 'Brand', 'name': 'Samsung'},
-            'description': '삼성전자 B2B AI 구독 파트너 · 삼성 AI 구독클럽 공식 파트너 매장. 가정·사업자 가전 구독 상담.'}
+            'description': '삼성전자 B2B AI 구독 파트너 · 삼성 AI 구독클럽 파트너 매장. 가정·사업자 가전 구독 상담.'}

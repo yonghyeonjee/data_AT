@@ -2283,7 +2283,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <div class="card" id="cLogCard">
       <h2 style="justify-content:flex-start;align-items:center">상담 · 가망고객 <span>사려다 만 고객도 남기기</span><button type="button" class="btn sm ghost" id="c_newBtn" style="margin-left:auto" onclick="consultNew()" title="적던 내용을 비우고 새 상담을 입력합니다">＋ 새 상담 입력</button></h2>
       <div class="cbar" style="margin-bottom:14px">
-        <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')})">구독 견적서 열기 ↗</button>
+        <button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')})">구독 견적서 열기 ↗</button><button class="btn sm ghost" onclick="openQuote({name:$('c_name').value.trim(), tel:$('c_phone').value.replace(/\D/g,''), memo:$('c_detail').value.trim(), consult:$('s_consult')&&$('s_consult').dataset.cid||'', models:[...(typeof cModels==='function'?cModels():[]), ...$('c_model').value.split(',')].map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')},true)" title="상담 견적(/quote/)을 이 고객·모델로 엽니다">new_견적서 ↗</button>
         <button class="btn sm ghost" onclick="openCalc()">구독료 계산기 ↗</button>
       </div>
       <div class="cstick hidden" id="c_stick" aria-live="polite">
@@ -4148,7 +4148,10 @@ const LINK_ICON={
    (견적서 페이지가 이 값을 읽도록 패치돼 있어야 프리필·기존 견적 열기가 된다) */
 /* 상담 줄 → 견적서에 담을 모델 코드들: 관심 모델(interest_model_code) + 내용의 '진단추천: 모델'(구독센터 상품 페이지에서 온 문의) + 관심 품목 글 속 모델형 토큰 */
 function qModels(x){ const out=[]; const add=v=>String(v||'').split(/[,\s·/]+/).forEach(t=>{ t=t.trim().toUpperCase().replace(/[^A-Z0-9\-]/g,''); if(/^[A-Z]{2}[A-Z0-9\-]{5,}$/.test(t)&&/\d/.test(t)&&!out.includes(t)) out.push(t); });
-  add(x.model); const m=/진단추천:\s*([A-Za-z0-9\-]+)/.exec(String(x.content||'')); if(m) add(m[1]); add(x.interest); return out.slice(0,8).join(','); }
+  add(x.model); const m=/진단추천:\s*([^/\n]+)/.exec(String(x.content||'')); if(m) add(m[1]); add(x.interest); return out.slice(0,12).join(','); }   // 2026-11-11: 진단추천 뒤 모델 전부(다품목 문의 'A,B,C')
+/* 다품목 계산기 문의의 '묶음조건(상담용): items=모델~약정~케어~선납,…&card=…&tier=…' → /quote/ 주소 값 (2026-11-11) */
+function qBundle(x){ const m=/items=([^\s/&]+)((?:&(?:card|tier|cardoff)=[^&\s/]*)*)/.exec(String(x.content||'')); if(!m) return {};
+  const o={items:m[1]}; (m[2]||'').split('&').forEach(kv=>{ const i=kv.indexOf('='); if(i>0) o[kv.slice(0,i)]=kv.slice(i+1); }); return o; }
 function openQuote(o,isNew){ o=o||{};
   const q=new URLSearchParams();
   if(o.no) q.set('no',o.no);
@@ -4158,9 +4161,12 @@ function openQuote(o,isNew){ o=o||{};
   if(o.memo) q.set('memo',o.memo);
   if(o.consult) q.set('consult',o.consult);                       // 상담 id — 견적서가 어느 문의에서 나왔는지 (2026-11-04)
   if(o.models) q.set('models',String(o.models).replace(/\s/g,'')); // 관심 모델(쉼표) — 견적서가 바로 담는다
+  if(o.items) q.set('items',o.items);                              // 다품목 계산기 묶음 조건(모델~약정~케어~선납) — /quote/ 가 그대로 담는다 (2026-11-11)
+  if(o.card) q.set('card',o.card); if(o.tier) q.set('tier',o.tier); if(o.cardoff) q.set('cardoff','1');
   if(ME) q.set('counselor',ME);
   const u=isNew? NEW_QUOTE_URL+(q.toString()?'?'+q.toString():'') : QUOTE_URL+(q.toString()?'&'+q.toString():'');
-  window.open(u,isNew?'sat_quote_new':'sat_quote','noopener');
+  // 상담 견적(/quote/)은 우리 화면 — noopener 를 빼야 이 창의 확인 상태(sessionStorage st_open)가 넘어가 뒷번호를 다시 묻지 않는다 (2026-11-12) · 옛 시흥몰 견적서는 그대로 끊고 연다
+  if(isNew) window.open(u,'_blank'); else window.open(u,'sat_quote','noopener');
 }
 function openCalc(){ window.open(CALC_URL,'sat_calc','noopener'); }
 function tabInfo(t){ const b=document.querySelector(`.tab[data-tab="${t}"]`); if(!b) return null;
@@ -4692,6 +4698,7 @@ function skRowHtml(x,o){ o=o||{};
   A.push(`<button class="mini" onclick="cdOpen(${x.id})">상세 보기</button>`);
   if(x.tel) A.push(`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`);
   A.push(`<button class="mini" onclick="openQuote({name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}',memo:'${esc([x.interest,x.model].filter(Boolean).join(' · ').replace(/'/g,''))}',consult:${x.id||0},models:'${esc(qModels(x))}'})">견적서 만들기 ↗</button>`);
+  { const bq=qBundle(x); A.push(`<button class="mini" title="상담 견적(/quote/)을 이 고객·문의 모델·조건으로 엽니다" onclick="openQuote({name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}',memo:'${esc([x.interest,x.model].filter(Boolean).join(' · ').replace(/'/g,''))}',consult:${x.id||0},models:'${esc(qModels(x))}',items:'${esc(bq.items||'')}',card:'${esc(bq.card||'')}',tier:'${esc(bq.tier||'')}',cardoff:'${esc(bq.cardoff||'')}'},true)">new_견적서 ↗</button>`); }
   return `<div class="item oc skrow" id="skrow_${x.id}"><div style="flex:1;min-width:0">
       <div class="ttl">${res}<b>${esc(x.name||'-')}</b> <small style="color:var(--muted)">${esc(x.phone||'')}</small>
         ${x.kind?`<span class="tag ${x.kind==='구독'?'sub':x.kind==='직판'?'direct':''}">${esc(x.kind)}</span>`:''}
@@ -5209,7 +5216,7 @@ function renderDueQuotes(){ const card=$('dqCard'); if(!card) return; const rows
   $('dqSub').textContent=`${rows.length}건 · 지남 ${rows.filter(o=>o.n<0).length} · 오늘 ${rows.filter(o=>o.n===0).length} · 3일 안 ${rows.filter(o=>o.n>0).length}`;
   $('dqList').innerHTML=rows.map(({x,n:dn})=>`<div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qUntil(x.until)} <small style="color:${dn<0?'#B3261E':dn===0?'#8A5A00':'var(--muted)'};font-weight:700">${dn<0?`${-dn}일 지남`:dn===0?'오늘 마감':`D-${dn}`}</small></div>
       <div class="m">${String(x.at||'').slice(5,10).replace('-','/')} 발행 · ${esc(x.models||'')}${x.monthly?` · 월 ${won(x.monthly)}`:x.final?` · ${won(x.final)}`:''}</div></div>
-      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="dqSms('${esc(x.no)}','${esc(x.name||'')}')" title="견적 링크·기한이 채워진 문자 — 내 폰 문자앱">💬 문자</button><button class="mini" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button></div></div>`).join('');
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="dqSms('${esc(x.no)}','${esc(x.name||'')}')" title="견적 링크·기한이 채워진 문자 — 내 폰 문자앱">💬 문자</button><button class="mini" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button><button class="mini" title="상담 견적 화면에서 이 견적을 불러와 고칩니다 · 저장하면 다음 차수" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1}},true)">수정 ↗</button></div></div>`).join('');
   return rows; }
 async function dqSms(no,name){ let d; try{ d=await rpc('fn_quote_share',{p_code:CODE,p_no:no}); }catch(e){ return toast(e.message,'bad'); }
   smsCompose({name:d.name||name||'', phone:(d.phone||'').replace(/\D/g,''), quote_no:d.no, kind:'quote', template:'quote_link',
@@ -5485,7 +5492,7 @@ function qUntil(u, small){ if(!u) return ''; const d=String(u).replace(/\./g,'-'
 function quoteRow(x){ return `
     <div class="item oc"><div><div class="p">${esc(x.name||'-')} <small style="color:var(--muted);font-weight:500">${x.phone||''}</small> <span class="tag">${esc(x.no)}${x.ver>1?' v'+x.ver:''}</span> ${qUntil(x.until)}</div>
       <div class="m">${String(x.at).slice(5,10).replace('-','/')} · ${esc(x.models||'')}${x.final?` · 최종 ${won(x.final)}`:''}${x.monthly?` · 월 ${won(x.monthly)}`:''}${x.memo?' · '+esc(x.memo):''}</div></div>
-      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button>${/개발|온라인/.test((STATUS&&STATUS.dept)||'')?`<button class="mini" style="opacity:.8" onclick="qtTest('${esc(x.no)}','${esc(x.name||'')}')" title="테스트로 만든 견적 — 목록·알림에서 뺍니다">테스트로</button>`:''}${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}','${esc(x.tel||'')}')">상담 입력</button>`:''}</div></div>`; }
+      <div class="act">${x.tel?`<a class="mini" href="tel:${x.tel}">📞</a>`:''}<button class="mini ok" onclick="qsOpen('${esc(x.no)}','${esc(x.name||'')}')">보내기</button><button class="mini" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1},name:'${esc(x.name||'')}',tel:'${esc(x.tel||'')}'})">열기 ↗</button><button class="mini" title="상담 견적 화면에서 이 견적을 불러와 고칩니다 · 저장하면 다음 차수" onclick="openQuote({no:'${esc(x.no)}',ver:${x.ver||1}},true)">수정 ↗</button>${/개발|온라인/.test((STATUS&&STATUS.dept)||'')?`<button class="mini" style="opacity:.8" onclick="qtTest('${esc(x.no)}','${esc(x.name||'')}')" title="테스트로 만든 견적 — 목록·알림에서 뺍니다">테스트로</button>`:''}${x.key?`<button class="mini" onclick="pickMine('${x.key}','${esc(x.name||'')}','${esc(x.tel||'')}')">상담 입력</button>`:''}</div></div>`; }
 async function qtTest(no, name){
   if(!confirm(`${name||no} 견적서를 테스트로 표시합니다.\n견적서 탭·홈 찾기·알림에서 빠집니다. 되살리려면 관리자 문의 관리 [견적] › [삭제됨]에서 복구하세요.`)) return;
   try{ await rpc('fn_store_quote_flag',{p_code:CODE,p_quote_no:no}); toast('테스트로 표시했습니다','ok');
@@ -7668,6 +7675,25 @@ async function logoutStore(){ if(!confirm('로그아웃할까요? 다시 쓰려�
   await sessionEnd(); location.reload(); }
 /* 뒷번호로 다시 확인 (2026-11-06): 자리 비움 잠금 · 창을 다시 열었을 때 — 세션이 살아 있으면 휴대폰 뒷번호 4자리만 */
 let UL_BOOT=false, STARTED=false;
+/* 상담 견적(/quote/)에서 방금 저장한 견적을 [상담 입력] 칸에 채운다 (2026-11-13) — /quote/ 가 남긴 dc_quote_handoff(30분) 를 한 번만 읽는다.
+   고객명이 비어 있거나 같은 고객일 때만 채우고, 다른 고객을 쓰는 중이면 건드리지 않는다. 저장은 담당자가 한다 */
+function quoteHandoff(){ try{ if(!STARTED||LOCKED) return; const raw=localStorage.getItem('dc_quote_handoff'); if(!raw) return; const h=JSON.parse(raw);
+    if(!h||!h.at||Date.now()-h.at>30*60*1000){ localStorage.removeItem('dc_quote_handoff'); return; }
+    if(h.by&&ME&&h.by!==ME) return;
+    const nm=$('c_name'), cur=(nm.value||'').trim(); if(cur&&cur!==String(h.name||'').trim()) return;
+    localStorage.removeItem('dc_quote_handoff');
+    if(h.go){ try{ goTab('consult'); cMode('log'); }catch(e){} }
+    if((h.cats||[]).length){ try{ const chips=[...$('c_cat').querySelectorAll('.chip')]; if(!chips.some(x=>x.classList.contains('on'))) chips.forEach(x=>{ if(h.cats.includes(x.dataset.v)) x.classList.add('on'); }); }catch(e){} }
+    if(!cur){ nm.value=h.name||''; const ph=$('c_phone'); if(!ph.value.trim()&&h.phone){ ph.value=h.phone; hyphen(ph); } }
+    (h.models||[]).forEach(cModelAdd); if(typeof subQuoteRender==='function') subQuoteRender();
+    const am=$('c_amount'); if(!am.value.trim()&&+h.amount>0){ am.value=String(Math.round(+h.amount)); comma(am); }
+    const ct=$('c_content'); if(h.text&&ct.value.indexOf(h.text)<0) ct.value=(ct.value.trim()?ct.value.trim()+'\n':'')+h.text;
+    toast(`${h.name||''} ${h.no?'견적 '+h.no:'견적'} 내용을 상담 입력에 채웠습니다 — 확인하고 저장하세요`,'ok'); }catch(e){} }
+/* 견적 화면에서 [상담 입력으로] 넘어온 직후에는 focus 가 안 올 수 있어 처음 20초 동안 몇 번 더 본다 */
+{ let n=0; const t=setInterval(()=>{ quoteHandoff(); if(++n>=20) clearInterval(t); },1000); }
+window.addEventListener('storage',e=>{ if(e.key==='dc_quote_handoff'&&e.newValue) quoteHandoff(); });
+window.addEventListener('focus',()=>quoteHandoff());
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') quoteHandoff(); });
 function ulShow(why){ LOCKED=true; $('ulName').textContent=(ME||CODE||'')+(ME||CODE?'님':'다시 확인'); $('ulSub').textContent=why||'휴대폰 번호 뒷자리 4개로 확인합니다';
   $('ulPin').value=''; $('ulErr').textContent=''; $('pinScreen').classList.add('hidden'); $('app').classList.add('hidden'); $('ulScreen').classList.remove('hidden'); sessTick(); setTimeout(()=>$('ulPin').focus(),50); }
 function ulOther(msg){ $('ulScreen').classList.add('hidden'); LOCKED=true; if(!$('pinInput').value && CODE) $('pinInput').value=CODE;
