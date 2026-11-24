@@ -2059,7 +2059,7 @@ async function shareQuote(){
     $('shareBody').innerHTML=`<div class="url" id="shareUrl">${esc(r.url)}</div><p class="hint">${esc(r.expires_at)} 까지 열립니다 · 열람 ${r.views||0}회</p>
       <div class="btns"><button class="btn blue" onclick="copyTxt(${JSON.stringify(r.url).replace(/"/g,'&quot;')})" title="주소만 복사 — 안내 문구는 [문자]·[공유]에만">링크 복사</button>
       <button class="btn kk" onclick="shareKakao()" title="안내 문구와 링크 복사 — 카카오톡 대화창에 붙여넣기">카카오톡</button>
-      <a class="btn" href="sms:${esc(String(Q.cust.phone).replace(/\D/g,''))}?body=${encodeURIComponent(txt)}">💬 문자</a>
+      <a class="btn" onclick="return shareSms()" title="휴대폰·태블릿: 문자 앱 열기 · PC: 안내 문구 복사" href="sms:${esc(String(Q.cust.phone).replace(/\D/g,''))}?body=${encodeURIComponent(txt)}">💬 문자</a>
       ${navigator.share?`<button class="btn" onclick="navigator.share({title:'${esc(Q.cust.name)} 님 견적서',text:${JSON.stringify(txt).replace(/"/g,'&quot;')},url:'${esc(r.url)}').catch(()=>{})">↗ 공유</button>`:''}
       <a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">고객 화면 미리보기</a></div>`; }
   catch(e){ $('shareBody').innerHTML='<div class="warn">'+esc(e.message)+'</div>'; }
@@ -2069,10 +2069,13 @@ async function shareQuote(){
 const KAKAO_JS_KEY='';
 let SHARE=null;
 function kakaoSdk(){ return new Promise((ok,no)=>{ if(window.Kakao){ ok(); return; } const el=document.createElement('script'); el.src='https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'; el.crossOrigin='anonymous'; el.onload=()=>ok(); el.onerror=()=>no(new Error('kakao sdk')); document.head.appendChild(el); }); }
+const isTouchDev=()=>/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/i.test(navigator.userAgent));
+/* [문자] — 휴대폰·태블릿은 문자 앱(sms:) 그대로, PC 는 문자 앱이 없으니 안내 문구 복사 (2026-11-24) */
+function shareSms(){ if(isTouchDev()||!SHARE) return true; copyTxt(SHARE.txt,'안내 문구 복사 완료 · 문자 입력 칸에 붙여넣기'); return false; }
 async function shareKakao(){ const sh=SHARE; if(!sh) return;
   if(KAKAO_JS_KEY){ try{ await kakaoSdk(); if(!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
       Kakao.Share.sendDefault({objectType:'text', text:sh.head, link:{mobileWebUrl:sh.url, webUrl:sh.url}, buttonTitle:'견적서 보기'}); return; }catch(e){} }
-  const touch=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/i.test(navigator.userAgent));
+  const touch=isTouchDev();
   await copyTxt(sh.txt, touch&&navigator.share?'안내 문구 복사 완료 · 공유 창에서 카카오톡 선택':'안내 문구 복사 완료 · 카카오톡 대화창에 붙여넣기');
   if(touch&&navigator.share) navigator.share({text:sh.txt}).catch(()=>{}); }
 async function copyTxt(t,msg){ try{ await navigator.clipboard.writeText(t); toast(msg||'복사했습니다'); }catch(e){ const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast(msg||'복사했습니다'); }catch(x){ toast('복사가 막혔습니다 · 링크를 길게 눌러 복사하세요'); } ta.remove(); } }
