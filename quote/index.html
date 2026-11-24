@@ -186,6 +186,7 @@ body.shfull{overflow:hidden}
   body.disp #fsBtn, body.disp #dpBtn{display:none !important} body.disp, body.disp *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body.disp .hero, body.disp .card{break-inside:avoid} body.disp .wrap{max-width:none;padding:0} }   /* 고객 화면 창 인쇄 — A4 (2026-11-23) */
 .custfind{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 2px} .custfind input{flex:1;min-width:200px} .custfind .lbl{margin:0}
+.cfhead{display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:13px;color:var(--mut);padding:2px 2px 0} .cfhead .btn{white-space:nowrap}
 .cfrows{display:flex;flex-direction:column;gap:6px;margin-top:6px} .cfrow{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--paper)} .cfrow small{color:var(--mut)}
 .showlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 14px} .showlist label{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
 .item .mid{display:contents}
@@ -1039,15 +1040,18 @@ function bindUntil(){
   $('c_umode').addEventListener('change',()=>{ const m=$('c_umode').value; Q.cust.untilMode=m; Q.cust.until=m==='none'?'':m==='custom'?(Q.cust.until||untilCalc('7',qdateNow())):untilCalc(m,qdateNow()); fillUntil(); renderShow(); renderSheet(); });
   $('c_until').addEventListener('change',()=>{ Q.cust.until=$('c_until').value||''; Q.cust.untilMode=Q.cust.until?'custom':'none'; fillUntil(); });
   $('showList').addEventListener('change',e=>{ const c=e.target.closest('[data-show]'); if(c) showSet(c.dataset.show,c.checked); });
-  $('cf_q').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); custFind(); } }); }
+  $('cf_q').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); custFind(); } else if(e.key==='Escape'){ custFindClose(); } });
+  $('cf_q').addEventListener('input',e=>{ if(!e.target.value.trim()) custFindClose(); }); }
 /* 기존 고객 불러오기 — 견적서와 같은 RPC(fn_quote_page_customer) · 고객 칸만 채우고 상품·금액은 그대로 */
 let CF_ROWS=[];
 async function custFind(){ const q=$('cf_q').value.trim(), box=$('cf_rows'); if(q.length<2){ toast('두 글자 이상 넣어 주세요'); return; }
   box.innerHTML='<div class="hint">찾는 중…</div>';
   try{ const r=await rpc('fn_quote_page_customer',{p_code:CODE||null, p_q:q, p_limit:8}); if(!r||!r.ok) throw new Error((r&&r.error)||'불러오지 못했습니다'); CF_ROWS=r.rows||[];
-    box.innerHTML=CF_ROWS.length? CF_ROWS.map((x,i)=>{ const lq=x.last_quote||{}; return `<div class="cfrow"><div><b>${esc(x.name||'(이름 없음)')}</b> <small>${esc(x.phone||'')}${x.addr?' · '+esc(x.addr):''}${lq.no?' · 지난 견적 '+esc(lq.no):''}</small></div><button type="button" class="btn" onclick="custPick(${i})">불러오기</button></div>`; }).join('')
-      : `<div class="hint">${esc(r.note||'찾는 고객이 없습니다 — 새 고객으로 바로 적으세요')}</div>`; }
+    box.innerHTML=CF_ROWS.length? `<div class="cfhead"><span>검색 결과 ${CF_ROWS.length}명 · 해당 고객 없으면 닫고 새 고객으로 입력</span><button type="button" class="btn" onclick="custFindClose()">✕ 선택 없이 닫기</button></div>`+CF_ROWS.map((x,i)=>{ const lq=x.last_quote||{}; return `<div class="cfrow"><div><b>${esc(x.name||'(이름 없음)')}</b> <small>${esc(x.phone||'')}${x.addr?' · '+esc(x.addr):''}${lq.no?' · 지난 견적 '+esc(lq.no):''}</small></div><button type="button" class="btn" onclick="custPick(${i})">불러오기</button></div>`; }).join('')
+      : `<div class="cfhead"><span>${esc(r.note||'찾는 고객이 없습니다 — 새 고객으로 바로 적으세요')}</span><button type="button" class="btn" onclick="custFindClose()">✕ 닫기</button></div>`; }
   catch(e){ box.innerHTML=`<div class="warn">${esc(e.message||String(e))}</div>`; } }
+/* 아무도 안 고르고 끝낼 때 (2026-11-24) — [선택 없이 닫기] · Esc · 검색 칸 비우기(✕) · 입력한 성명·연락처는 그대로 */
+function custFindClose(){ $('cf_rows').innerHTML=''; $('cf_q').value=''; CF_ROWS=[]; }
 function custPick(i){ const x=CF_ROWS[i]; if(!x) return; const lq=x.last_quote||{};
   Q.cust.name=x.name||Q.cust.name; if(x.phone) Q.cust.phone=x.phone; Q.cust.addr=x.addr||lq.addr||Q.cust.addr; Q.cust.birth=x.birth||lq.birth||Q.cust.birth;
   Q.cust.carrier=lq.carrier||Q.cust.carrier; Q.cust.wedding=lq.wedding||Q.cust.wedding; Q.cust.movein=lq.movein||Q.cust.movein;
