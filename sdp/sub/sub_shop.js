@@ -1114,7 +1114,8 @@ window.SUB_SHOP_READY = true;
     var td = new Date(), today = td.getFullYear() + '-' + ('0' + (td.getMonth() + 1)).slice(-2) + '-' + ('0' + td.getDate()).slice(-2);
     /* 라이온즈 우승 기념 삼성전자 대축제 (2026-11-13 ~ 11-24) — 기간 안에만 홈 배너 맨 앞 · 이벤트 화면 맨 위에 넣는다.
        고도몰에 올린 html 을 안 바꿔도 나오고, 11/25 부터는 저절로 안 나온다 (지원 개월 수는 SUB_POLICY.promos 의 라이온즈 행사가 같은 기간) */
-    if (today >= '2026-11-13' && today <= '2026-11-24' && !document.querySelector('[data-cta="promo_lions"]')) {
+    var LIONS_END = Date.now() >= Date.parse('2026-11-24T20:00:00+09:00');   // 라이온즈 행사는 11/24 오후 8시에 끝 (2026-11-24)
+    if (!LIONS_END && today >= '2026-11-13' && today <= '2026-11-24' && !document.querySelector('[data-cta="promo_lions"]')) {
       var lions = '<a class="ss-promo has-cap" data-until="2026-11-24" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=193" data-cta="promo_lions">' +
         '<div class="ss-promo-frame is-dark"><img class="ss-promo-pc ss-promo-all" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_511517418/e4561fc75e49ddc7c24e4fe4be90eeb2_60085.png" alt="라이온즈 우승 기념 삼성전자 대축제 · 삼성 AI 구독 최대 12개월 상당 구독 혜택 · 2026.11.13~11.24" width="1918" height="820" style="object-fit:cover">' +
         '<div class="ss-promo-txt is-white"><span>라이온즈 우승 기념 삼성전자 대축제</span><b>함께 이룬 V9,<br>함께 누릴 12일</b><p>삼성 AI 구독 <em>최대 12개월</em> 상당 구독 혜택</p><i>2026. 11. 13(금) ~ 11. 24(화) | 12일간</i></div></div>' +
@@ -1125,7 +1126,7 @@ window.SUB_SHOP_READY = true;
       // 홈·이벤트 화면 모두 시흥몰 메인 라이온즈 배너 배경 + 글자 · 누르면 라이온즈 상세 글(블로그 193)로 (2026-11-16 · 블로그 189 글이 지워져 그림도 사라짐)
       else if (lev) lev.insertAdjacentHTML('beforebegin', lions);
     }
-    $all('.ss-promo[data-until], .ss-month li[data-until]').forEach(function (a) { if (a.getAttribute('data-until') < today) a.parentNode.removeChild(a); });
+    $all('.ss-promo[data-until], .ss-month li[data-until]').forEach(function (a) { if (a.getAttribute('data-until') < today || (LIONS_END && a.getAttribute('data-until') <= '2026-11-24' && /라이온즈/.test(a.textContent || ''))) a.parentNode.removeChild(a); });
     // 배너 그림 칸을 모두 같은 비율로 (2026-11-16 · 그림 크기가 제각각이라 높이가 들쭉날쭉하던 것) — 그림은 잘리지 않게 다 보이고, 남는 곳은 같은 그림을 흐리게 깐다
     $all('.ss-promo > img').forEach(function (img) {
       var fr = document.createElement('div'); fr.className = 'ss-promo-frame';

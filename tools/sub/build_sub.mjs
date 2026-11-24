@@ -224,7 +224,13 @@ export function applyOverrides(DATA, ov) {
    dps: fn_sub_dps_export 응답 (있으면 요금표 원본 · 없으면 SDP 판의 DATA 로)
    ui: 화면 파일(sub_tab.js 등) 해시 — 판 번호 끝에 '+u<해시>' 로 붙여 화면만 고쳐도 상세페이지가 새 파일을 받게 한다 (?v=판 번호)
    → { 'sub_index.js': '…', 'sub_plans_tv.js': '…', …, 'sub_cards.js', 'sub_policy.js', 'version.js' } */
+/* 행사 끝 시각 — [문구에 든 말, 끝나는 날, 끝 시각(KST), 바꿀 끝 날] · 2026-11-24 라이온즈 우승 기념 오후 8시 종료.
+   빌드 때 그 시각이 지났으면 정책에서 바로 끝내고, 배포 파일 끝에도 같은 코드를 붙여 화면이 그 시각에 끝낸다 */
+const PROMO_CUT = [['라이온즈', '2026-11-24', '2026-11-24T20:00:00+09:00', '2026-11-23']];
+const PROMO_CUT_JS = `/* 행사 끝 시각 (2026-11-24 라이온즈 우승 기념은 오후 8시 종료) — 이 시각이 지나면 그날 끝나는 해당 행사를 전날 끝난 것으로 바꾼다. 구독센터·고도몰 구독탭·견적이 모두 이 파일을 쓰므로 한 곳에서 끝난다 */\n;(function(){var P=window.SUB_POLICY,C=[['라이온즈','2026-11-24','2026-11-24T20:00:00+09:00','2026-11-23']],n=Date.now();if(!P)return;C.forEach(function(c){if(n<Date.parse(c[2]))return;(P.promos||[]).forEach(function(p){if(p&&p.to===c[1]&&String(p.text||'').indexOf(c[0])>=0)p.to=c[3];});});})();\n`;
+function promoCut(policy) { const n = Date.now(); if (policy && policy.promos) PROMO_CUT.forEach(c => { if (n >= Date.parse(c[2])) policy.promos.forEach(p => { if (p && p.to === c[1] && String(p.text || '').includes(c[0])) p.to = c[3]; }); }); return policy; }
 export function buildSubFiles(rel, policy, dps, ui, rank, lumps) {
+  promoCut(policy);
   const CARD = varOf(rel, 'CARD') || {}, WATER = varOf(rel, 'WATER_POLICY') || {};
   let DATA, PREPAY_NO, src, dup = 0;
   if (dps && dps.items) { ({ DATA, PREPAY_NO, dup } = dpsToData(dps)); src = `DPS 수집 ${dps.fetch_id || ''}`; }
@@ -267,7 +273,7 @@ export function buildSubFiles(rel, policy, dps, ui, rank, lumps) {
   }
   out['sub_index.js'] = head + `window.SUB_INDEX=${JSON.stringify({ ver, src: dps ? 'dps' : 'sdp', cats, m: index, ...(Object.keys(save).length ? { save } : {}) })};\n`;
   out['sub_cards.js'] = head + `window.SUB_CARDS=${JSON.stringify(CARD)};\n`;
-  if (policy) out['sub_policy.js'] = head + `window.SUB_POLICY=${JSON.stringify(policy)};\n`;
+  if (policy) out['sub_policy.js'] = head + `window.SUB_POLICY=${JSON.stringify(policy)};\n` + PROMO_CUT_JS;
   out['version.js'] = `/* 상품상세 구독탭 데이터 판 — goods_view 가 5분마다 이 파일로 최신 판을 확인합니다 */\nvar SUB_VER = ${JSON.stringify(ver)};\nvar SUB_SDP_VER = ${JSON.stringify(rel.ver)};\nvar SUB_POLICY_VER = ${JSON.stringify(policy?.ver || '')};\nvar SUB_PUBLISHED_AT = ${JSON.stringify(rel.published_at || '')};\nvar SUB_DPS_VER = ${JSON.stringify(dps ? dpsVer(dps) : '')};\nvar SUB_MODELS = ${Object.keys(index).length};\n`;
   out.__stats = { models: Object.keys(index).length, cats: Object.keys(cats).length, cards: Object.keys(CARD).length, missing, src: dps ? 'dps' : 'sdp', dup, prepayNo: PREPAY_NO.length, overrides: ovStats };
   return out;
