@@ -1464,6 +1464,9 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 /* ── v381 : 머리 이름 '삼성스토어 시흥 상담 센터' — 넓은 화면만 (폰은 좁아 서랍 맨 위에만) ── */
 .topbar h1 .tbco{display:block;margin:0 0 1px;font-size:calc(11px * var(--font-scale));font-weight:700;color:var(--navy);letter-spacing:.02em}
 @media(max-width:899px){ .topbar h1 .tbco{display:none} }
+/* ── v384 : 판매 완료 직접 표시는 상담 상세 맨 아래 작은 줄로만 ── */
+.cd-sold{margin:12px 0 0;font-size:calc(12.5px * var(--font-scale));color:var(--muted);line-height:1.6}
+.cd-sold .linkbtn{border:0;background:none;padding:6px 2px;min-height:32px;color:var(--navy);font-weight:700;text-decoration:underline;cursor:pointer;font-size:inherit}
 </style>
 </head>
 <body>
@@ -1547,7 +1550,7 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <h3 id="cSaveTitle">저장 전 확인 · <span id="cSaveName"></span></h3>
     <div class="csv-sum" id="cSaveSum"></div>
     <div class="csv-l">상담 상태 <span class="hint">지금 상태가 맞는지 한 번 더 골라 주세요</span></div>
-    <div class="seg sm cres" id="cSaveRes" role="radiogroup" aria-label="상담 상태" onclick="const b=event.target.closest('button'); if(b) cSavePick(b.dataset.v)"><button type="button" data-v="진행전">새 문의</button><button type="button" data-v="진행중" class="on">상담중</button><button type="button" data-v="보류">상담보류</button><button type="button" data-v="상담완료">상담완료</button><button type="button" data-v="거절" class="rej">상담거절</button><button type="button" data-v="구매완료">판매 완료</button></div>
+    <div class="seg sm cres" id="cSaveRes" role="radiogroup" aria-label="상담 상태" onclick="const b=event.target.closest('button'); if(b) cSavePick(b.dataset.v)"><button type="button" data-v="진행전">새 문의</button><button type="button" data-v="진행중" class="on">상담중</button><button type="button" data-v="보류">상담보류</button><button type="button" data-v="상담완료">상담완료</button><button type="button" data-v="거절" class="rej">상담거절</button><button type="button" data-v="구매완료" class="hidden" id="cSaveSold">판매 완료</button></div>
     <p class="csv-hint" id="cSaveHint"></p>
     <div class="hidden" id="cSaveKindBox"><div class="csv-l">판매 구분</div><div class="seg" id="cSaveKind" role="radiogroup" aria-label="판매 구분" onclick="const b=event.target.closest('button'); if(b) segPick('cSaveKind',b.dataset.v)"><button type="button" data-v="일시불" class="on">일시불</button><button type="button" data-v="구독">구독</button><button type="button" data-v="직판">직판</button></div></div>
     <div class="btns" style="display:flex;gap:8px;margin-top:16px"><button type="button" class="btn ghost" style="width:auto;min-width:112px" onclick="cSaveClose()">돌아가기</button><button type="button" class="btn" id="cSaveBtn" style="width:auto;min-width:112px;margin-left:auto" onclick="cSaveOk()">이 상태로 저장</button></div>
@@ -2489,7 +2492,6 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
             <button type="button" data-v="보류">상담보류</button>
             <button type="button" data-v="상담완료" title="상담이 끝남 — DPS 판매 전표가 들어오면 판매완료로 바뀝니다">상담완료</button>
             <button type="button" data-v="거절" class="rej">상담거절</button>
-            <button type="button" data-v="구매완료">판매 완료</button>
           </div>
           <select class="in hidden" id="c_result" onchange="cResultChanged()">
             <option value="진행전">새 문의 (아직 통화 안 함)</option>
@@ -5798,7 +5800,7 @@ function renderCallbacks(cbs){
       <div class="when">${d}<b>${hm}</b></div>
       <div><div class="who">${esc(x.name)}<small>${x.phone||''}</small>${x.mine?'':`<span class="other">${esc(x.handler||'미배정')}</span>`}</div>
         <div class="what">${esc([x.interest,x.model].filter(Boolean).join(' '))}${x.content?' · '+esc(x.content):''}${x.expected?` · 예상 ${won(x.expected)}`:''}</div>
-        <div class="row">${x.tel?`<a class="call" href="tel:${x.tel}">📞 전화</a>`:''}<button class="done" onclick="cbAction(${x.id},'done')">완료</button><button onclick="cbAction(${x.id},'tomorrow')">내일로</button><button onclick="soldOpen(${x.id},'${esc(x.name)}')">판매 완료</button></div></div>
+        <div class="row">${x.tel?`<a class="call" href="tel:${x.tel}">📞 전화</a>`:''}<button class="done" onclick="cbAction(${x.id},'done')">완료</button><button onclick="cbAction(${x.id},'tomorrow')">내일로</button></div></div>
     </div>`; }).join(''):`<div class="empty">${cbs.length?'이 조건에 맞는 약속이 없습니다':'잡힌 약속이 없습니다. 상담 입력에서 콜백 예정을 남기면 여기에 뜹니다.'}</div>`;
 }
 /* 홈 방문 예약 — 콜백 약속 카드 아래 (mvp_278) · 상담 방문 예약 + 네이버·삼성스토어·전화 예약 · 오늘부터 30일 */
@@ -5956,7 +5958,6 @@ function renderMyConsults(){
     A.push(`<button class="mini" onclick="cdOpen(${x.id})" title="이 상담의 모든 내용 · 기록 · 같은 고객의 다른 상담">상세 보기</button>`);
     if(x.result!=='구매완료') A.push(`<button class="mini" onclick="ocPick(${x.id})" title="다음에 연락할 날짜·시간을 잡습니다 — 홈 [콜백 약속]에 뜹니다">📅 콜백</button>`);
     A.push(`<button class="mini" onclick="openQuote(${qArg}${qIsNew(x.quote)?',true':''})">${x.quote?(qIsNew(x.quote)?'상담 견적 열기':'견적서 열기'):'견적서 만들기'} ↗</button>`);
-    if(x.result!=='구매완료') A.push(`<button class="mini ok" onclick="soldOpen(${x.id},'${nm}')" title="팔았으면 — 구분만 고르면 판매 내역은 DPS 가 이어 줍니다">판매 완료</button>`);
     A2.push(`<button class="mini" onclick="ocToConsult(${x.id},'${esc(x.ref)}','${nm}','${esc(x.tel||'')}','${esc(x.interest||'')}')" title="이 건은 그대로 두고, 같은 고객으로 새 상담을 하나 더 적습니다">＋ 새 상담</button>`);
     A2.push(`<button class="mini" onclick="asgOpen([${x.id}],'${nm}')" title="다른 담당자에게 넘기기">넘기기</button>`);
     /* 개발·온라인사업부만: 테스트로 넣은 건을 숨겨 통계에서 뺀다 (관리자 문의 관리 [삭제됨]에서 복구) */
@@ -6028,7 +6029,7 @@ function mcSelSync(){
 const STATE_STEPS=[
   /* 상담 상태(새 문의 → 상담중 → 보류/종료/거절)와 판매는 다른 축이다 — 판매는 [판매 완료] 버튼(구분만 고름)으로만 된다. '종료' 는 구매 없이 끝낸 것 (v200 · mvp_259) */
   {v:'진행전',  l:'새 문의', act:'pre',    msg:'새 문의로 되돌림', hint:'아직 고객과 통화하지 않은 문의입니다. 통화했으면 [상담중]을 누르세요. 여기로 되돌리면 잡아 둔 콜백 약속도 지워집니다.'},
-  {v:'진행중',  l:'상담중',  act:'resume', hint:'고객과 상담이 진행 중인 건입니다. 다음 통화 약속은 [콜백]으로 잡고, 팔았으면 [판매 완료]를 누르세요.'},
+  {v:'진행중',  l:'상담중',  act:'resume', hint:'고객과 상담이 진행 중인 건입니다. 다음 통화 약속은 [콜백]으로 잡으세요. 판매는 DPS 에 넣으면 전표가 이어질 때 저절로 판매완료가 됩니다.'},
   {v:'보류',    l:'상담보류', act:'hold',  msg:'상담보류', hint:'고객 사정으로 잠시 멈춘 건입니다. 목록에는 남고, 다시 시작하면 [상담중]을 누르세요.'},
   {v:'상담완료',l:'상담완료', act:'done',  msg:'상담완료', hint:'상담이 끝난 건입니다. 이 고객의 DPS 판매 전표가 들어오면 저절로 판매완료로 바뀝니다.'},
   {v:'거절',    l:'상담거절', act:'reject', msg:'상담거절', hint:'고객이 거절한 건입니다. 구매 없이 끝납니다.'},
@@ -6341,6 +6342,7 @@ function cdHTML(d){
     <div class="sec"><div class="st">진행 기록 <small style="font-weight:500;color:var(--muted)">최근 것이 위</small></div>${journal||'<div class="empty sm">상태를 바꾼 기록이 없습니다</div>'}</div>
     ${moves?`<div class="sec a"><div class="st">배정 이력</div>${moves}</div>`:''}
     <div class="sec"><div class="st">같은 고객의 다른 상담 ${others.length}건</div>${others.length?others.map(csRow).join(''):'<div class="empty sm">이 고객의 다른 상담이 없습니다</div>'}</div>
+    ${canEdit&&!d.deleted_at&&d.result!=='구매완료'?`<p class="cd-sold">판매는 DPS 전표가 들어오면 저절로 판매완료가 됩니다. 전표가 안 이어지는 판매(다른 명의 등록 · 구독 · DPS 밖 판매)만 <button type="button" class="linkbtn" onclick="cdClose();soldOpen(${d.id},'${nm}')">직접 판매 완료로 표시</button></p>`:''}
     <div class="btns"><button class="btn ghost" onclick="cdClose()">닫기</button>${canEdit&&!d.deleted_at?`<button class="btn" onclick="cdClose();ocToConsult(${d.id},'${esc(d.ref||'')}','${nm}','${esc(d.tel||'')}','${esc(d.interest||'')}')">＋ 이 고객으로 새 상담</button>`:''}</div>`;
 }
 function histHTML(x){ if(!x.history||!x.history.length) return ''; return `<div class="h">이전 이력 ${x.consults?`· 상담 ${x.consults}건`:''} ${x.orders?`· 구매 ${x.orders}건`:''} ${x.handler?`· 담당 ${esc(x.handler)}${x.handler===ME?'<span class="mine">내 고객</span>':''}`:''}</div>`+
@@ -6646,7 +6648,7 @@ function submitConsult(){
   $('cSaveName').textContent=p.customer_name||$('c_name').value.trim()||'';
   $('cSaveSum').innerHTML=[['채널',cChNames()+(cChEtcOn()&&$('c_ch_etc').value.trim()?' ('+$('c_ch_etc').value.trim()+')':'')],['관심 품목',p.interest_category],['콜백',p.callback_at?fmtWhen(p.callback_at).join(' '):'']]
     .filter(r=>r[1]).map(r=>`<span><b>${r[0]}</b> ${esc(r[1])}</span>`).join('');
-  segPick('cSaveKind', p.sale_kind||cKindVal()); cSavePick(p.result||'진행중');
+  segPick('cSaveKind', p.sale_kind||cKindVal()); $('cSaveSold').classList.toggle('hidden', p.result!=='구매완료'); cSavePick(p.result||'진행중');   /* 판매 완료는 스위치로 골랐을 때만 (v384) */
   $('cSaveDlg').classList.remove('hidden'); setTimeout(()=>{ const b=$('cSaveBtn'); if(b) b.focus(); },50);
 }
 async function cSaveOk(){
