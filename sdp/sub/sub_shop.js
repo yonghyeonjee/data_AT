@@ -1114,7 +1114,7 @@ window.SUB_SHOP_READY = true;
     var td = new Date(), today = td.getFullYear() + '-' + ('0' + (td.getMonth() + 1)).slice(-2) + '-' + ('0' + td.getDate()).slice(-2);
     /* 라이온즈 우승 기념 삼성전자 대축제 (2026-11-13 ~ 11-24) — 기간 안에만 홈 배너 맨 앞 · 이벤트 화면 맨 위에 넣는다.
        고도몰에 올린 html 을 안 바꿔도 나오고, 11/25 부터는 저절로 안 나온다 (지원 개월 수는 SUB_POLICY.promos 의 라이온즈 행사가 같은 기간) */
-    var LIONS_END = Date.now() >= Date.parse('2026-11-24T20:00:00+09:00');   // 라이온즈 행사는 11/24 오후 8시에 끝 (2026-11-24)
+    var LIONS_END = Date.now() >= Date.parse('2026-11-24T19:00:00+09:00');   // 라이온즈 행사는 11/24 오후 7시에 끝 (2026-11-24)
     if (!LIONS_END && today >= '2026-11-13' && today <= '2026-11-24' && !document.querySelector('[data-cta="promo_lions"]')) {
       var lions = '<a class="ss-promo has-cap" data-until="2026-11-24" href="https://www.samsungsh.co.kr/board/view.php?&amp;bdId=blog&amp;sno=193" data-cta="promo_lions">' +
         '<div class="ss-promo-frame is-dark"><img class="ss-promo-pc ss-promo-all" src="https://cdn-saas-web-116-108.cdn-nhncommerce.com/samsungsh70_godomall_com/data/skin/front/designbook_air_RES/img/banner/slider_511517418/e4561fc75e49ddc7c24e4fe4be90eeb2_60085.png" alt="라이온즈 우승 기념 삼성전자 대축제 · 삼성 AI 구독 최대 12개월 상당 구독 혜택 · 2026.11.13~11.24" width="1918" height="820" style="object-fit:cover">' +
