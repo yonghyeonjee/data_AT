@@ -571,7 +571,7 @@ body.disp .greet .gme2 span{font-size:16px} body.disp .greet .gme2 b{font-size:3
         <span class="hint" id="prepayHint"></span></div>
       <div class="row"><span class="lbl">할부 결제 카드 <small class="hint">(일반 구매 중 할부로 고른 품목에만)</small></span>
         <div class="seg sm" id="lumpKind"></div> <span class="now" id="lumpNow"></span>
-        <span class="hint" id="lumpHint"></span></div>
+        <span class="hint" id="lumpHint"></span></div><div class="warn hidden" id="lumpLow" style="margin-top:6px"></div>
       </div>
       <div class="row hidden" id="preRow"><span class="lbl">선납금 <small class="hint">(계약 시 고객 결제 금액 · 총 금액)</small></span>
         <div class="seg" id="preIncl"><button data-v="1" onclick="Q.cond.preIncl=true; render()">포함</button><button data-v="0" onclick="Q.cond.preIncl=false; render()">별도 표시</button></div></div>
@@ -1586,7 +1586,7 @@ let SCN_PICK=null;
 function pickNow(){ return SCN_PICK||cmpSel(); }
 function pickDirty(){ if(!SCN_PICK) return false; const a=SCN_PICK.slice().sort().join('|'), b=cmpSel().slice().sort().join('|'); return a!==b; }
 function cmpPick(k,on){ const a=pickNow().filter(x=>x!==k); if(on) a.push(k); SCN_PICK=a; render(); }
-function scnDone(){ if(!SCN_PICK) return; Q.cond.cmpSel=SCN_PICK.slice(); SCN_PICK=null; if(!Q.cond.cmpSel.length&&SCN_F==='sel') SCN_F=''; render(); toast(Q.cond.cmpSel.length?'견적서·고객 화면에 '+Q.cond.cmpSel.length+'개 조합 반영':'견적서·고객 화면에서 비교 표를 뺐습니다'); }
+function scnDone(){ if(!SCN_PICK) return; Q.cond.cmpSel=SCN_PICK.slice(); SCN_PICK=null; SCN_F=Q.cond.cmpSel.length?'sel':(SCN_F==='sel'?'':SCN_F);   /* 고른 뒤에는 고른 조합만 — 전체는 「조합」에서 (2026-11-24) */ render(); toast(Q.cond.cmpSel.length?'견적서·고객 화면에 '+Q.cond.cmpSel.length+'개 조합 반영':'견적서·고객 화면에서 비교 표를 뺐습니다'); }
 function scnGo(){ SCN_ON=true; render(); setTimeout(()=>{ try{ $('t_scn').scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} },30); }
 function cmpRow(r){ const t=scnMon(r).replace(/<br>/g,'\n').replace(/<[^>]+>/g,''); return { label:r.label, sub:'구독 '+r.subN+'개 · 일반 '+r.lumpN+'개', cur:!!r.cur, subTotal:r.subN?Math.round(r.S.total):0, subNet:r.subN?Math.round(r.subNet):0, lump:r.lumpN&&!r.noPrice?Math.round(r.lumpNet):0, ben:Math.round(r.cash||0), total:r.noPrice?null:Math.round(r.total), mon:t }; }
 function cmpBenSet(k,v){ const t=String(v).replace(/[^0-9]/g,''), o=Object.assign({},Q.cond.cmpBen||{}); if(t==='') delete o[k]; else o[k]=+t; Q.cond.cmpBen=o; render(); }
@@ -1679,8 +1679,11 @@ function setBars(){ try{ const t=document.querySelector('.top'), b=$('bbar'), st
     [document.querySelector('.sum .card.cond'), $('t_detail')].forEach(el=>{ if(!el) return; if(getComputedStyle(el).position!=='sticky'){ el.style.top=''; return; }
       el.style.top=Math.min(th+8, innerHeight-bh-12-el.offsetHeight)+'px'; if(window.ResizeObserver&&!el._ro){ el._ro=new ResizeObserver(()=>setBars()); el._ro.observe(el); } }); }catch(e){} }
 window.addEventListener('resize',setBars);
-function render(){ seedItems(); setBars(); LAST=calcAll(); if(applyCardPreset()) LAST=calcAll(); renderEdit(LAST); $('bnEdit').innerHTML=bnHtml(); condNow(LAST); renderShow(); renderSheet(); draftSave(); }
+function render(){ seedItems(); setBars(); LAST=calcAll(); if(applyCardPreset()) LAST=calcAll(); renderEdit(LAST); $('bnEdit').innerHTML=bnHtml(); condNow(LAST); lumpLow(LAST); renderShow(); renderSheet(); draftSave(); }
 /* 견적 공통의 조건이 지금 견적에 얼마로 반영됐는지 (2026-11-17) — 적용 금액, 아니면 왜 0 인지 */
+/* 플러스페이 할부 100만원 미만 안내 (2026-11-24) — 견적서 양식 '6-12 할부_조건부' C10: 100만 미만이면 플페불가_SMP결제. 막지는 않고 상담사에게만 알림 */
+function lumpLow(R){ const e=$('lumpLow'); if(!e) return; const P=((R&&R.L&&R.L.parts)||[]).filter(x=>x.inst&&((LUMP&&LUMP.cards[x.kind])||{}).plus&&x.amount<1000000);
+  e.classList.toggle('hidden',!P.length); e.textContent=P.length?'플러스페이 할부 100만원 미만 ('+P.map(x=>x.months+'개월 '+won(x.amount)).join(' · ')+') — 플러스페이 불가 · SMP 결제 대상':''; }
 function condNow(R){ try{ const L=R.L, P=L.parts||[], ins=P.filter(x=>x.inst), one=P.filter(x=>!x.inst), set=(id,t,on)=>{ const e=$(id); if(!e) return; e.textContent=t; e.classList.toggle('off',!on); e.classList.toggle('hidden',!t); };
     if(!LUMP||!L.items.length){ ['lumpNow','cbNow','arsNow'].forEach(id=>set(id,L.items&&L.items.length?'':'일반 구매 품목 없음',false)); return; }
     const sum=(a,k)=>a.reduce((x,y)=>x+(y[k]||0),0);

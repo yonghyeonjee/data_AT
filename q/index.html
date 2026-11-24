@@ -582,14 +582,16 @@ function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
 
   /* 가격 조건 확인 (2026-11-17) — /quote/ 에서 상담사가 체크한 조합만 q.cmp 로 넘어온다. 총 지불 금액 비교만 짧게 */
   function cmpHtml(q){ var c = q && q.cmp; if(!c || !c.length) return '';
-    var h = '<div class="q-box q-cmp" style="margin-top:10px"><h3>📊 가격 조건 확인 <span style="font-weight:600;color:#666">(같은 제품 · 구독/일반 구매 조합별)</span></h3><table class="q-tbl" style="table-layout:fixed;width:100%"><colgroup><col style="width:34%"><col style="width:20%"><col style="width:20%"><col style="width:26%"></colgroup>'
-      + '<tr><th style="text-align:left;width:auto">구성</th><th style="width:auto;text-align:right">총 구독료</th><th style="width:auto;text-align:right">총 지불 금액</th><th style="width:auto;text-align:left">월 납부 금액</th></tr>';
-    c.forEach(function(r){
+    var h = '<div class="q-box q-cmp" style="margin-top:10px"><h3>📊 가격 조건 확인 <span style="font-weight:600;color:#666">(같은 제품 · 구독/일반 구매 조합별)</span></h3><table class="q-tbl" style="table-layout:fixed;width:100%"><colgroup><col style="width:24%"><col style="width:22%"><col style="width:14%"><col style="width:13%"><col style="width:11%"><col style="width:16%"></colgroup>'
+      + '<tr><th style="text-align:left;width:auto">구성</th><th style="width:auto;text-align:left">월 납부 금액</th><th style="width:auto;text-align:right">총 구독료</th><th style="width:auto;text-align:right">일반 구매</th><th style="width:auto;text-align:right">혜택</th><th style="width:auto;text-align:right">총 지불 합계</th></tr>';
+    c.forEach(function(r){ var nw = r.subNet != null, sn = nw ? r.subNet : r.subTotal;   /* 2026-11-24 칸 구성 = 고객 화면 (예전 저장분은 일반 구매·혜택 칸 비움) */
       h += '<tr' + (r.cur ? ' style="background:#FFF8E1"' : '') + '><td style="text-align:left"><b>' + esc(r.label) + '</b>' + (r.cur ? ' <span style="color:#B45309;font-weight:700">· 이 견적</span>' : '')
         + '<br><span style="font-size:.85em;color:#666">' + esc(r.sub || '') + '</span></td>'
-        + '<td class="num">' + (r.subTotal > 0 ? won(r.subTotal) : '—') + '</td>'
-        + '<td class="num"><b>' + (r.total == null ? '일시불가 미입력' : won(r.total)) + '</b></td>'
-        + '<td style="text-align:left;white-space:nowrap">' + esc(r.mon || '—').replace(/\n/g, '<br>') + '</td></tr>';
+        + '<td style="text-align:left">' + esc(r.mon || '—').replace(/\n/g, '<br>') + '</td>'
+        + '<td class="num">' + (sn > 0 ? won(sn) : '—') + '</td>'
+        + '<td class="num">' + (nw ? (r.lump > 0 ? won(r.lump) : '—') : '') + '</td>'
+        + '<td class="num">' + (nw ? (r.ben > 0 ? '−' + won(r.ben) : '—') : '') + '</td>'
+        + '<td class="num" style="font-size:1.12em;color:#4527A0"><b>' + (r.total == null ? '일시불가 미입력' : won(r.total)) + '</b></td></tr>';
     });
     return h + '</table></div>'; }
   function renderSheet(){
