@@ -1,0 +1,6 @@
+-- mvp_317 · 2026-11-24 · 판매현황 — 판매 완료 상담의 판매액 합계 (적용 기록)
+-- "조회되는 판매액의 합계도 나오게"
+-- public.fn_store_sale_consults 에 CTE amt 추가 (서버 원본 부분 치환 · 원문 core.fn_src_backup tag 'before mvp_317')
+--   amt = base 중 st='linked'(판매 완료 + 이어진 주문) 의 주문(source, order_no) 마다 sum(gross_amount - refund_amount) · 같은 주문은 한 번 · sale_kind 별 합
+--   응답에 'amount', 'amount_kind' {일시불, 구독, 직판}, 'amount_orders' — 거르개(p_state)와 무관하게 기간·담당 전체
+-- 화면(store · store/test): 판매현황 기간 [월|주|일] (기본 월) · ‹ › · 판매 완료 상담 맨 위 판매액 합계 · 보고용 텍스트
