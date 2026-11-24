@@ -334,6 +334,8 @@ body.iv-table .sum>.tot{display:none} body.iv-table .sum{grid-template-columns:m
 @media(max-width:560px){.hero .fx .sbox .sg{flex-wrap:wrap} .hero .fx .sbox .sg .c{flex:1 1 45%;border-top:1px solid rgba(255,255,255,.12)}} .hero .fx .sbox .c.tt b{color:#fff}
 .hero .fx .sbox .sn{padding:6px 12px;font-size:11.5px;opacity:.7;border-top:1px solid rgba(255,255,255,.12)}
 .hero .fx .r.mon{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:14px 16px;margin-bottom:8px}
+.hero .fx .r.lbig{background:rgba(245,190,130,.12);border:1px solid rgba(245,190,130,.45);border-radius:14px;padding:14px 16px;margin:4px 0 8px} .hero .fx .r.lbig .k{font-weight:800;font-size:20px} .hero .fx .r.lbig b{font-size:38px;font-weight:900;color:#F7CFA0} .hero .fx .r.lbig+.r,.hero .fx .r.lbig+.sst{border-top:0}
+@media(max-width:480px){.hero .fx .r.mon b,.hero .fx .r.lbig b{font-size:30px}}
 .hero .fx .r.mon+.r{border-top:0} .hero .fx .r.mon .k{font-weight:800;font-size:20px} .hero .fx .r.mon b{font-size:38px;font-weight:900;color:#FFE08A}
 .sec{display:inline-block;font-weight:800;font-size:13px;border-radius:8px;padding:2px 10px;color:#fff} .sec.s{background:var(--sub)} .sec.l{background:var(--lump)}
 .kv.total.fin .num{color:var(--sub);font-size:17px} .kv.total2 b{color:#1B2A5B}
@@ -471,6 +473,11 @@ table.x tr.tot td{font-weight:900;background:var(--gold-soft);color:var(--gold)}
 @keyframes needShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .loading{text-align:center;color:var(--mut);padding:40px 0}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+/* 견적 화면 인사말 — 담당 프로 이름 상자 (2026-11-24) */
+.greet.has-me{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:18px;align-items:center} .greet.has-me>p{grid-column:1} .greet .gme2{grid-column:2;grid-row:1/span 2;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 26px;border:2px solid #1428A0;border-radius:14px;background:#F3F6FF;white-space:nowrap}
+.greet .gme2 span{font-size:14px;color:#444;font-weight:600} .greet .gme2 b{font-size:28px;line-height:1.15;color:#1428A0;font-weight:900;letter-spacing:.02em}
+body.disp .greet .gme2 span{font-size:16px} body.disp .greet .gme2 b{font-size:36px}
+@media(max-width:640px){.greet.has-me{grid-template-columns:1fr} .greet .gme2{grid-column:1;grid-row:auto;margin-top:10px;justify-self:start}}
 /* 고객 화면 — 담당 프로 이름 크게 (2026-11-24) */
 .guide .gme{display:inline-flex;flex-direction:column;align-items:center;gap:calc(var(--u)*.3);margin-top:calc(var(--u)*1.2);padding:calc(var(--u)*.8) calc(var(--u)*4);border:2px solid #1428A0;border-radius:calc(var(--u)*2);background:#F3F6FF}
 .guide .gme span{font-size:calc(var(--u)*2.2);color:#444;font-weight:600} .guide .gme b{font-size:calc(var(--u)*4.4);line-height:1.1;color:#1428A0;font-weight:900;letter-spacing:.02em}
@@ -1633,12 +1640,8 @@ function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'
   if(!S.n&&!L.items.length) return row('','담은 품목이 없습니다','—');
   const out=[]; let first=true; const add=(k,v,d)=>{ out.push(row(first?'':'+',k,v,d)); first=false; }, sub=(k,v,d)=>out.push(row('−',k,v,d,'minus'));
   if(T.month) out.push(row('','월 비용',won(T.month),[T.mSub?'구독 '+won(T.mSub):''].concat(T.inst.map(x=>'할부 '+won(x.per)+' ('+x.months+'개월)')).filter(Boolean).join(' + ')+' · 월 통장 출금액','mon'));
-  if(L.items.length) add(L.months?'일반 구매':'일반 구매 · 일시불가',won(L.amount)+a);
-  if(L.fee) add('일반 구매 · 이용료',won(L.fee),'플러스페이 할부 이용료 · '+feeTxt(L));
   /* B&케어 구좌 할인은 따로 한 줄 (2026-11-16) — 고객 화면에서도 구좌 수와 할인 금액이 보이게 */
   const bnL=Math.min(L.bn||0,T.dL), bnS=Math.min(S.bn||0,T.dS), bnRow=(n,v)=>sub('B&amp;케어 '+n+'구좌 할인',won(v),'1구좌 '+won(BN.amt)+' 지원'+(bnPromoOn()?' ('+bnPromoTxt(1)+')':'')+' · 납입 월 '+won(n*BN.pay)+' 별도 · 중도 해지 시 지급 종료');
-  if(T.dL-bnL>0) sub('일반 구매 할인',won(T.dL-bnL),'청구할인 등');
-  if(bnL>0) bnRow(L.bnN,bnL);
   /* 구독 = 원래 견적서「고객님이 매달 내시는 금액」처럼 한 줄 여러 칸 (2026-11-19) — 월 구독료 합계 · 제휴카드 청구할인 · 월 구독료 혜택가(월 비용) · 총 구독료 · 할인 금액 · 구독 총액 */
   if(S.n){ const cs=cardsOf(S), cm=cs.reduce((a,c)=>a+c.m,0), cell=(k,v,d,c)=>`<div class="c${c?' '+c:''}"><span>${k}</span><b class="num">${v}</b>${d?`<small>${d}</small>`:''}</div>`;
     out.push(`<div class="sst"><span class="op">${first?'':'+'}</span><div class="sbox"><div class="sh"><span><i class="tg s">구독</i>고객님이 매달 내시는 금액</span><small>${S.maxM||''}${S.maxM?'개월':''}</small></div><div class="sg">`
@@ -1650,6 +1653,11 @@ function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'
       +(T.dS>0?cell('할인 금액','−'+won(T.dS),[cm>0?'카드 청구할인':'', bnS>0?'B&amp;케어 '+S.bnN+'구좌':''].filter(Boolean).join(' · '),'m'):'')
       +cell('구독 총액',won(T.subNet),(T.pre?'선납금 + ':'')+'총 구독료 − 할인','tt')
       +`</div><div class="sn">※ 월 구독료 혜택가는 제휴카드 청구할인까지 반영해 실제로 통장에서 빠져나가는 금액</div></div></div>`); first=false; }
+  /* 순서 (2026-11-24): 월 비용 → 바로 아래 구독 내용 → 다음 줄 일반 구매(일시불가)를 월 비용만큼 크게 */
+  if(L.items.length){ out.push(row(first?'':'+',L.months?'일반 구매':'일반 구매 · 일시불가',won(L.amount)+a,L.items.length+'품목'+(L.months?' · '+L.months+'개월 할부':' · 계약 시 일시 결제'),'lbig')); first=false; }
+  if(L.fee) add('일반 구매 · 이용료',won(L.fee),'플러스페이 할부 이용료 · '+feeTxt(L));
+  if(T.dL-bnL>0) sub('일반 구매 할인',won(T.dL-bnL),'청구할인 등');
+  if(bnL>0) bnRow(L.bnN,bnL);
   const parts=[L.items.length?'일반 '+won(T.lumpNet):'', S.n&&T.pre?'선납 '+won(T.pre):'', S.n?'할인 후 총 구독료 '+won(T.subNet-T.pre):''].filter(Boolean);
   return out.join('')
     +row('=','총 금액',won(T.pay)+a,(parts.length>1?parts.join(' + '):'')+(S.preOut?(parts.length>1?' · ':'')+'선납금 '+won(S.preOut)+' 별도':''),'sum')
@@ -1823,7 +1831,7 @@ function benPop(r,m){ const L=[], li=(c,k,v,d)=>L.push(`<li class="${c}"><span>$
 function renderShow0(){ try{ $('s_scn').innerHTML=custScn(); }catch(e){ $('s_scn').innerHTML=''; } const {S,L}=LASTC||LAST, name=Q.cust.name||'고객', bnK=S.bnN||L.bnN||0;
   $('bnCard').classList.toggle('hidden',!bnK); $('bnCard').innerHTML=bnK?bnCardHtml(bnK):'';
   $('c_l_ben_k').textContent='청구할인 · 캐시백(송금) · 조건부 캐시백'+(L.bn?' · B&케어팩 지원금':'')+(L.mv?' · 구독 쪽 정액 혜택':'');
-  $('greet').innerHTML=`<p class="g1">${esc(STORE.name)}을 찾아주신 <b>${esc(Q.cust.name?Q.cust.name+'님':'고객님')}</b>께 감사의 마음을 담아 최적의 견적을 찾고 있습니다.</p>${ME?`<p class="g2">지금 상담하는 상담사는 <b>${esc(ME)} 프로</b>입니다.</p>`:''}<p class="g3">${NPAY_TXT}</p>`;
+  $('greet').innerHTML=`<p class="g1">${esc(STORE.name)}을 찾아주신 <b>${esc(Q.cust.name?Q.cust.name+'님':'고객님')}</b>께 감사의 마음을 담아 최적의 견적을 찾고 있습니다.</p><p class="g3">${NPAY_TXT}</p>${ME?`<div class="gme2"><span>담당 프로</span><b>${esc(ME)} 프로</b></div>`:''}`; $('greet').classList.toggle('has-me',!!ME);
   $('s_title').textContent=`${name} 님 ${Q.cust.type} 견적`; $('s_sub').textContent=`${STORE.name} · ${(Q.issuedAt||todayStr()).replace(/-/g,'.')}${ME?' · 담당 '+ME:''} (${STORE.tel})`;
   $('fx').innerHTML=fxHtml(S,L);
   $('gal').innerHTML=Q.items.filter(it=>!it.hidden).map(it=>{ const r=S.R[it.m], im=imgOf(it.m);
