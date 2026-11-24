@@ -1458,6 +1458,9 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 .rp-lbl{font-weight:800;font-size:calc(15px * var(--font-scale));color:var(--ink)} .rp-lbl:empty{display:none}
 .kpi3 .rs-sum{grid-column:1/-1;background:#ECF7EF} .kpi3 .rs-sum .v{font-size:calc(22px * var(--font-scale));color:#1E6B2A} .kpi3 .rs-sum .k small{font-weight:500;margin-left:4px}
 .kpi3 .rs-sum .kd{display:block;font-size:calc(12px * var(--font-scale));color:var(--muted);margin-top:2px}
+/* ── v380 : 내 고객 [상담 상태 변경] ── */
+.cuitem .acts .mini.cust{display:inline-flex;align-items:center;gap:6px} .cuitem .acts .mini.cust .res{margin:0}
+#cuStDlg .lvdlg{width:min(520px,100%);max-height:calc(100dvh - 32px);overflow-y:auto} #cuStSeg{flex-wrap:wrap} #cuStSeg button{flex:1 1 30%;min-height:44px;min-width:max-content}
 </style>
 </head>
 <body>
@@ -1522,6 +1525,17 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
       <div class="f"><label for="ni_note">메모 <span class="hint">선택</span></label><input class="in" id="ni_note" placeholder="예: 이사 후 냉장고, 아이 방 에어컨" maxlength="120" autocomplete="off"></div>
     </div>
     <div class="btns" style="display:flex;gap:8px;margin-top:16px"><button type="button" class="btn ghost" style="width:auto;min-width:112px" onclick="niClose()">취소</button><button type="button" class="btn" id="niBtn" style="width:auto;min-width:112px;margin-left:auto" onclick="niOk()">저장</button></div>
+  </div>
+</div>
+<div class="lvmask hidden" id="cuStDlg" onclick="if(event.target===this)cuStClose()" onkeydown="if(event.key==='Escape')cuStClose()">
+  <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="cuStTitle">
+    <button type="button" class="lvx" onclick="cuStClose()" aria-label="닫기">✕</button>
+    <h3 id="cuStTitle">상담 상태 변경 · <span id="cuStName"></span></h3>
+    <p class="csv-state" id="cuStInfo"></p>
+    <div class="seg sm cres" id="cuStSeg" role="group" aria-label="상담 상태"></div>
+    <p class="csv-hint" id="cuStHint"></p>
+    <p class="hint" style="margin:0">판매완료는 DPS 전표가 이어지면 저절로 됩니다. 다른 상담의 상태는 아래 <b>상담·구매 자세히</b>의 [상세] 또는 상담 목록에서 바꿉니다.</p>
+    <div class="btns" style="display:flex;gap:8px;margin-top:14px"><button type="button" class="btn ghost" style="width:auto;min-width:112px;margin-left:auto" onclick="cuStClose()">닫기</button></div>
   </div>
 </div>
 <div class="lvmask hidden" id="cSaveDlg" onclick="if(event.target===this)cSaveClose()" onkeydown="if(event.key==='Escape')cSaveClose()">
@@ -5499,14 +5513,21 @@ function cjEv(e){ const K=CJ_K[e.k]||[e.k,'#3F4B5C','#EEF1F5'], x=e.x||{}, tg=[]
   const amt=cSub!=null?cSub:Number(e.amt);   /* 구독 계약이 붙은 구매는 임시 전표 금액 대신 계약 금액 (mvp_299) */
   return `<div class="cjev" data-k="${esc(e.k)}" data-m="${at.slice(0,7)}" style="--c:${K[1]};--cb:${K[2]}"><div class="cjd">${at.slice(5,10).replace('-','.')}<small>${at.slice(0,4)}${at.slice(11,16)&&at.slice(11,16)!=='00:00'&&e.k!=='dps'?' '+at.slice(11,16):''}</small></div><span class="cjdot" aria-hidden="true"></span>
     <div><div class="cjt"><span class="cjk">${K[0]}</span><b>${esc(e.t||'')}</b>${cSub!=null?`<span class="cjamt" title="구독 계약 금액(월 요금 × 개월)">${cSub?'계약 '+Math.round(cSub).toLocaleString('ko-KR')+'원':'구독 계약'}</span>`:e.amt!=null&&amt?`<span class="cjamt">${Math.round(amt).toLocaleString('ko-KR')}원</span>`:''}</div>${s?`<div class="cjs">${esc(s)}</div>`:''}${memo?`<div class="cjmemo"><b>문의 메모</b>${esc(memo)}</div>`:''}${tags?`<div class="cjtags">${tags}</div>`:''}</div></div>`; }
+/* v380 — '구매' 대신 '판매완료' · 문의(상담) 없이 판매가 먼저 있었으면 '상담 없이 판매완료' 로 표기 (매장에서 바로 사 간 고객 · 상담 입력을 못 한 경우).
+   내 고객 [＋ 관심 품목] 으로 남긴 상담(유입경로 '매장 구매 후')은 문의가 아니라 '다음 관심 품목' 으로 말한다 */
 function cjVerdict(d){ const s=d.stages||{}, o=d.open, m=d.summary||{};
-  if(s.inq&&s.buy_after_inq) return ['ok', Number(s.days_to_buy)===0?`문의한 날(${cjDate(s.inq)}) 바로 구매했습니다`:`문의 ${cjDate(s.inq)} → ${s.days_to_buy}일 뒤(${cjDate(s.buy_after_inq)}) 구매했습니다`];
-  if(s.inq) return ['wait', `문의 ${cjDate(s.inq)} 뒤 아직 구매가 없습니다`+(o?` · 지금 ${CJ_RES[o.result]||o.result}${o.handler?' · 담당 '+o.handler:''}`:'')+(s.buy1?` · 그 전에 산 적은 있음 (마지막 ${cjDate(s.buy_last)})`:'')];
-  if(s.buy1) return ['', `문의 기록 없이 구매만 ${cjN(m.buy)}건 · 처음 ${cjDate(s.buy1)} · 마지막 ${cjDate(s.buy_last)}`];
+  const talk=(d.events||[]).filter(e=>e.k==='inq'||e.k==='consult'), ni=talk.filter(e=>((e.x||{}).route)==='매장 구매 후'), onlyNi=talk.length>0&&ni.length===talk.length;
+  const now=o?` · 지금 ${CJ_RES[o.result]||o.result}${o.handler?' · 담당 '+o.handler:''}`:'';
+  const noTalkBuy = s.buy1 && (!s.inq || String(s.buy1).slice(0,10) < String(s.inq).slice(0,10) || onlyNi);   /* 상담 없이 판 것이 있음 */
+  if(s.inq&&s.buy_after_inq&&!onlyNi) return ['ok', (Number(s.days_to_buy)===0?`문의한 날(${cjDate(s.inq)}) 바로 판매완료`:`문의 ${cjDate(s.inq)} → ${s.days_to_buy}일 뒤(${cjDate(s.buy_after_inq)}) 판매완료`)+(noTalkBuy&&String(s.buy1).slice(0,10)<String(s.inq).slice(0,10)?` · 그 전에 상담 없이 판매완료 (${cjDate(s.buy1)})`:'')];
+  if(noTalkBuy && onlyNi) return ['ok', `상담 없이 판매완료 ${cjN(m.buy)}건 (처음 ${cjDate(s.buy1)} · 마지막 ${cjDate(s.buy_last)}) · ${cjDate(ni[0].at||s.inq)} 다음 관심 품목 남김${now}`];
+  if(s.inq) return ['wait', `문의 ${cjDate(s.inq)} 뒤 아직 판매완료 전`+now+(s.buy1?` · 그 전에 ${noTalkBuy?'상담 없이 ':''}판매완료 있음 (마지막 ${cjDate(s.buy_last)})`:'')];
+  if(s.buy1) return ['ok', `상담 없이 판매완료 ${cjN(m.buy)}건 · 처음 ${cjDate(s.buy1)} · 마지막 ${cjDate(s.buy_last)} — 매장에서 바로 사 간 고객 · [＋ 관심 품목]으로 다음 살 것을 남겨 두세요`];
   return ['', '아직 문의·구매 기록이 없습니다'+(s.seen?` · 명단에 들어온 날 ${cjDate(s.seen)}`:'')]; }
 function cjStrip(d){ const s=d.stages||{}, rep=Number(s.buy_days)>=2;
   const st=(lab,v)=>`<div class="cjst${v?' on':''}"><b>${lab}</b><span>${v?cjDate(v):'—'}</span></div>`, ar='<div class="cjar" aria-hidden="true">→</div>';
-  return `<div class="cjstrip" aria-label="단계">${st('처음 확인',s.seen)}${ar}${st('첫 문의',s.inq)}${ar}${st('견적',s.quote)}${ar}${s.inq?st('문의 뒤 구매',s.buy_after_inq):st('첫 구매',s.buy1)}${ar}${st(rep?`재구매 ${s.buy_days-1}회`:'재구매',rep?s.buy_last:null)}</div>`; }
+  return `<div class="cjstrip" aria-label="단계">${st('처음 확인',s.seen)}${ar}${st('첫 문의',s.inq)}${ar}${st('견적',s.quote)}${ar}${(()=>{ const tk=(d.events||[]).filter(e=>e.k==='inq'||e.k==='consult'), oni=tk.length>0&&tk.every(e=>((e.x||{}).route)==='매장 구매 후');
+    return (s.inq&&!oni) ? st('판매완료',s.buy_after_inq) : st(s.buy1?'판매완료 · 상담 없이':'판매완료',s.buy1); })()}${ar}${st(rep?`재구매 ${s.buy_days-1}회`:'재구매',rep?s.buy_last:null)}</div>`; }
 function cjHead(d,o){ o=o||{}; const P=d.people||[], main=P.find(p=>p.main)||P[0]||{}, nm=main.name||d.consult_name||'(이름 없음)', ph=main.phone||d.consult_phone||'', m=d.summary||{}, t=[];
   if(main.biz) t.push(cjTag('사업자'));
   t.push(P.some(p=>p.consent)?cjTag('수신동의',CJ_OK):cjTag('수신 미동의'));
@@ -5581,6 +5602,29 @@ function renderMyCustomers(){
       <div class="body hidden" id="cub_${esc(x.key)}"></div>
     </div>`; }).join('');
 }
+/* 내 고객 [상담 상태 변경] (v380) — 이 고객의 가장 최근 상담(삭제 안 된 것)의 상태를 바꾼다. 상세를 받기 전에는 버튼이 '불러오는 중' */
+function cuLastConsult(key){ const d=CU_DETAIL[key]; if(!d) return undefined; const ks=(d.consults||[]).slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))||(Number(b.id)-Number(a.id))); return ks[0]||null; }
+function cuStBtn(key){ const k=cuLastConsult(key);
+  if(k===undefined) return `<button type="button" class="mini" disabled>상담 상태 변경</button>`;
+  if(!k) return `<button type="button" class="mini" disabled title="이 고객은 상담 기록이 없습니다 — [＋ 상담 입력] 이나 [＋ 관심 품목] 으로 남기세요">상담 상태 변경</button>`;
+  const ru=RES_UI[k.result]||['pre',k.result||''];
+  return `<button type="button" class="mini cust" onclick="cuStOpen('${esc(key)}')" title="가장 최근 상담(${esc(String(k.at||'').slice(0,10))})의 상태를 바꿉니다">상담 상태 변경 <span class="res ${ru[0]}">${esc(ru[1])}</span></button>`; }
+let CU_ST=null;
+function cuStOpen(key){ const k=cuLastConsult(key); if(!k) return; CU_ST={key,id:k.id}; const x=CU_ROWS.find(r=>r.key===key)||{};
+  const cur = k.result==='종료'||k.result==='확인완료' ? '상담완료' : k.result;
+  $('cuStName').textContent=x.name||'';
+  $('cuStInfo').innerHTML=`가장 최근 상담 <b>${esc(String(k.at||'').slice(0,10).replace(/-/g,'.'))}</b> · ${esc([k.channel,k.route,k.interest].filter(Boolean).join(' · '))}${k.handler&&k.handler!==ME?` · 담당 ${esc(k.handler)}`:''}`;
+  $('cuStSeg').innerHTML=STATE_STEPS.filter(t=>t.v!=='구매완료'||cur==='구매완료').map(t=>{ const on=t.v===cur, act=on?null:(t.v==='진행중'&&cur==='진행전'?'start':t.act);
+    return `<button type="button" class="${on?'on':''}${t.v==='거절'?' rej':''}" ${act?`onclick="cuStSet('${act}','${esc(t.msg||t.l)}')"`:'disabled'} title="${esc(t.hint)}">${t.l}</button>`; }).join('');
+  const st=STATE_STEPS.find(t=>t.v===cur); $('cuStHint').textContent=st?st.hint:'';
+  $('cuStDlg').classList.remove('hidden'); }
+function cuStClose(){ $('cuStDlg').classList.add('hidden'); CU_ST=null; }
+async function cuStSet(action, what){ const c=CU_ST; if(!c) return;
+  try{ await rpc('fn_store_consult_update',{p_code:CODE,p_id:c.id,p_action:action}); }catch(e){ return toast(e.message,'bad'); }
+  cuStClose(); toast(`${what} 처리했습니다`,'ok');
+  try{ delete CU_DETAIL[c.key]; delete CU_JOUR[c.key]; }catch(e){} CU_SIG='';
+  try{ await loadMyCustomers(); }catch(e){} try{ const it=$('cu_'+c.key); if(it && !it.classList.contains('open')) await cuToggle(c.key); }catch(e){}
+  try{ await loadStatus(); render(); if(MC_LOADED) loadMyConsults(0); }catch(e){} }
 async function cuToggle(key){
   const it=$('cu_'+key), body=$('cub_'+key); if(!it||!body) return;
   const open=!it.classList.contains('open');
@@ -5588,7 +5632,7 @@ async function cuToggle(key){
   it.querySelector('.head').setAttribute('aria-expanded', open?'true':'false'); const ch=it.querySelector('.chev'); if(ch) ch.textContent = open?'접기 ▴':'펼치기 ▾';
   if(!open) return;
   const x=CU_ROWS.find(r=>r.key===key)||{};
-  const acts=`<div class="acts"><button class="mini pri" onclick="pickMine('${esc(key)}','${esc(x.name||'')}','${esc(x.tel||'')}')">＋ 상담 입력</button><button class="mini" onclick="niOpen('${esc(key)}','${esc(x.name||'')}')">＋ 관심 품목</button>${x.tel?`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`:''}</div>`;
+  const acts=`<div class="acts">${cuStBtn(key)}<button class="mini pri" onclick="pickMine('${esc(key)}','${esc(x.name||'')}','${esc(x.tel||'')}')">＋ 상담 입력</button><button class="mini" onclick="niOpen('${esc(key)}','${esc(x.name||'')}')">＋ 관심 품목</button>${x.tel?`<a class="mini" href="tel:${esc(x.tel)}">📞 전화</a>`:''}</div>`;
   /* 고객 흐름(mvp_198) — 문의·상담·견적·문자·구매(원장·DPS)를 한 줄로. 아래 '상담·구매 자세히' 는 전과 같은 목록 */
   if(!CU_DETAIL[key] || !(key in CU_JOUR)){
     body.innerHTML=acts+'<div class="empty">이력을 불러오는 중…</div>';
@@ -5598,9 +5642,10 @@ async function cuToggle(key){
     catch(e){ body.innerHTML=acts+`<div class="empty">${esc(e.message)}</div>`; return; }
   }
   const d=CU_DETAIL[key]||{}; const ks=d.consults||[], os=d.orders||[], jr=CU_JOUR[key];
+  const acts2=acts.replace(/<button type="button" class="mini" disabled>상담 상태 변경<\/button>/, cuStBtn(key));
   const dt=v=>v?String(v).slice(0,10).replace(/-/g,'.'):'';
   const hm=v=>v?String(v).slice(11,16):'';
-  body.innerHTML=acts+cuBuyHtml(key,os,d.customer)+(jr?cjHtml(jr,{noName:true}):'')+`<details class="cudet"${jr?'':' open'}><summary>상담·구매 자세히 · 상담 ${ks.length} · 구매 ${os.length}</summary>`+
+  body.innerHTML=acts2+cuBuyHtml(key,os,d.customer)+(jr?cjHtml(jr,{noName:true}):'')+`<details class="cudet"${jr?'':' open'}><summary>상담·구매 자세히 · 상담 ${ks.length} · 구매 ${os.length}</summary>`+
     `<div class="hsec"><div class="ht">상담 이력 <small>${ks.length}건</small></div>${ks.length?ks.map(k=>{ const ru=RES_UI[k.result]||['pre',k.result||'']; return `
       <div class="hrow">
         <div class="hl"><span class="res ${ru[0]}">${esc(ru[1])}</span><b>${dt(k.at)}</b>${k.done_at?`<span class="hmuted" style="color:var(--ok);font-weight:700">완료 ${dt(k.done_at)}</span>`:''}<span class="hmuted">${esc([k.channel,k.route,k.type,k.method].filter(Boolean).join(' · '))}</span>${k.handler&&k.handler!==ME?`<span class="hmuted">담당 ${esc(k.handler)}</span>`:''}<button type="button" class="mini hdet" onclick="cdOpen(${k.id})">상세</button></div>
