@@ -5586,6 +5586,19 @@ let CU_FLT='all', CU_PG=0;
 function cuFlt(v){ CU_FLT=segPick('cu_flt',v); CU_PG=0; renderMyCustomers(); }
 function cuGo(p){ CU_PG=p; renderMyCustomers(); }
 const cuMatch=(x,f)=> f==='all' ? true : f==='cb' ? !!x.open_callback : f==='stale' ? (x.consult_n>0 && Number(x.days)>=30) : f==='consent' ? !!x.consent : f==='buy' ? (!x.last_result && Number(x.spent)>5000 && x.name!==ME) : true;
+/* 내 고객 줄 상태 (v382 · mvp_318) — 사람 단위. 산 고객이면 '판매완료'(상담 없이 샀으면 '상담 없이' 표시),
+   [＋ 관심 품목] 으로 남긴 상담('매장 구매 후')은 상태가 아니라 '다음 관심' 으로 따로. 열린 실제 상담 뒤에 아직 판매가 없으면 그 상담 상태 */
+function cuState(x){
+  const T=(c,t,ti)=>`<span class="res ${c}"${ti?` title="${esc(ti)}"`:''}>${esc(t)}</span>`, L=v=>(RES_UI[v]||['pre',v])[1], C=v=>(RES_UI[v]||['pre'])[0];
+  const realRes=('last_real_result' in x)?x.last_real_result:x.last_result, realAt=('last_real_at' in x)?x.last_real_at:x.last_at;
+  const open=v=>['진행전','진행중','보류'].includes(v), bought=Number(x.orders)>0;
+  const soldAfter=bought && !!x.last_order_at && (!realAt || new Date(x.last_order_at).getTime() >= new Date(realAt).getTime()-86400000);
+  const ni=x.last_route==='매장 구매 후' && open(x.last_result) ? T('hold','다음 관심 · '+L(x.last_result),'[＋ 관심 품목]으로 남긴 다음 관심 품목') : '';
+  if(open(realRes) && !soldAfter) return T(C(realRes),L(realRes))+ni;
+  if(soldAfter) return T('buy','판매완료')+(realRes?'':T('pre','상담 없이','상담 기록 없이 판매만 있는 고객 — [＋ 관심 품목]으로 다음 살 것을 남겨 두세요'))+(open(realRes)?T(C(realRes),'상담 · '+L(realRes)):'')+ni;
+  if(realRes) return T(C(realRes),L(realRes))+ni;
+  if(x.last_result) return T(C(x.last_result),L(x.last_result));
+  return T('pre','구매만'); }
 function renderMyCustomers(){
   const box=$('mcuList'); const all=CU_ROWS, rows=all.filter(x=>cuMatch(x,CU_FLT)); const filtered=!!($('cu_q').value.trim()||periodOf('cu').from||periodOf('cu').to||$('cu_ch').value);
   segCount('cu_flt',{all:all.length, cb:all.filter(x=>cuMatch(x,'cb')).length, stale:all.filter(x=>cuMatch(x,'stale')).length, consent:all.filter(x=>cuMatch(x,'consent')).length, buy:all.filter(x=>cuMatch(x,'buy')).length});
@@ -5593,12 +5606,11 @@ function renderMyCustomers(){
   $('mcSub').textContent = rows.length ? `${rows.length}명${rows.length!==all.length?` / ${all.length}명`:''}${filtered?' · 조건 적용':''}${P.range?' · '+P.range:''}` : '';
   if(!rows.length){ box.innerHTML=`<div class="empty">${(filtered||CU_FLT!=='all')?'이 조건에 맞는 고객이 없습니다. 기간·채널·위 거르개를 [전체]로 두면 다 보입니다.':'아직 없습니다. 판매·상담에 고객명과 번호를 남기면 내 고객이 됩니다.'}</div>`; return; }
   box.innerHTML=P.rows.map(x=>{
-    const ru=RES_UI[x.last_result]||(x.last_result?['pre',x.last_result]:null);
     const d=Number(x.days); const stale=x.consult_n>0 && d>=30;
     return `<div class="cuitem" id="cu_${esc(x.key)}">
       <div class="head" role="button" tabindex="0" aria-expanded="false" onclick="cuToggle('${esc(x.key)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cuToggle('${esc(x.key)}')}">
         <div class="who"><b>${esc(x.name||'—')}</b><span class="ph">${x.phone||'번호 없음'}</span>${x.consent?'<span class="mine">수신동의</span>':''}${x.open_callback?'<span class="mine cb">콜백 대기</span>':''}</div>
-        <div class="meta">${ru?`<span class="res ${ru[0]}">${esc(ru[1])}</span>`:'<span class="res pre">구매만</span>'}<span>상담 ${x.consult_n||0}회</span><span class="${stale?'stale':''}">${cuAgo(d)}</span>${x.last_channel?`<span class="ch">${esc(x.last_channel)}</span>`:''}${x.last_interest?`<span class="it">${esc(x.last_interest)}</span>`:''}${x.orders?`<span>구매 ${x.orders}건${x.orders_sub?` <i class="kds">구독 ${x.orders_sub}</i>`:''}${Number(x.spent)||!x.orders_sub?' '+won(x.spent):''}</span>`:''}</div>
+        <div class="meta">${cuState(x)}<span>상담 ${x.consult_n||0}회</span><span class="${stale?'stale':''}">${cuAgo(d)}</span>${x.last_channel?`<span class="ch">${esc(x.last_channel)}</span>`:''}${x.last_interest?`<span class="it">${esc(x.last_interest)}</span>`:''}${x.orders?`<span>구매 ${x.orders}건${x.orders_sub?` <i class="kds">구독 ${x.orders_sub}</i>`:''}${Number(x.spent)||!x.orders_sub?' '+won(x.spent):''}</span>`:''}</div>
         ${x.last_interest?'':`<button type="button" class="mini cu-ni" onclick="event.stopPropagation();niOpen('${esc(x.key)}','${esc(x.name||'')}')" onkeydown="event.stopPropagation()">＋ 관심 품목</button>`}
         <span class="chev" aria-hidden="true">펼치기 ▾</span>
       </div>

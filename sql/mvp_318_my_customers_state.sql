@@ -1,0 +1,11 @@
+-- mvp_318 · 2026-11-24 · 내 고객 줄 상태 · 구독 혜택 안내 속도 (적용 기록)
+-- ① public.fn_store_my_customers — lateral k 에 (서버 원본 부분 치환 · 원문 core.fn_src_backup tag 'before mvp_318')
+--      (array_agg(k.inflow_route order by k.consult_at desc))[1] last_route,
+--      max(k.consult_at) filter (where coalesce(k.inflow_route,'') <> '매장 구매 후') last_real_at,
+--      (array_agg(k.result order by k.consult_at desc) filter (where coalesce(k.inflow_route,'') <> '매장 구매 후'))[1] last_real_result
+--    응답에 'last_route', 'last_real_at', 'last_real_result'
+-- ② sub.f_policy_view — pkg.n_dps 를 materialized CTE 로 (원문 tag 'before 2026-11-24 n_dps')
+--      'n_dps', (with dm as materialized (select distinct model, left(model, 6) p6 from dps.sub_model where active)
+--                select count(*) from sub.pkg_model m2 where m2.active and m2.sub_ok
+--                  and exists (select 1 from dm where dm.p6 = left(m2.model, 6) and sub.f_pkg_match(m2.model, dm.model))),
+--    fn_store_sub_policy 8.5초 → 1.2초 (anon 3초 제한)
