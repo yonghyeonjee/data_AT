@@ -334,7 +334,7 @@ body.iv-table .sum>.tot{display:none} body.iv-table .sum{grid-template-columns:m
 @media(max-width:560px){.hero .fx .sbox .sg{flex-wrap:wrap} .hero .fx .sbox .sg .c{flex:1 1 45%;border-top:1px solid rgba(255,255,255,.12)}} .hero .fx .sbox .c.tt b{color:#fff}
 .hero .fx .sbox .sn{padding:6px 12px;font-size:11.5px;opacity:.7;border-top:1px solid rgba(255,255,255,.12)}
 .hero .fx .r.mon{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:14px 16px;margin-bottom:8px}
-.hero .fx .r.lbig{background:rgba(245,190,130,.12);border:1px solid rgba(245,190,130,.45);border-radius:14px;padding:14px 16px;margin:4px 0 8px} .hero .fx .r.lbig .k{font-weight:800;font-size:20px} .hero .fx .r.lbig b{font-size:38px;font-weight:900;color:#F7CFA0} .hero .fx .r.lbig+.r,.hero .fx .r.lbig+.sst{border-top:0}
+.hero .fx .r.lbig{background:rgba(245,190,130,.12);border:1px solid rgba(245,190,130,.45);border-radius:14px;padding:14px 16px;margin:4px 0 8px} .hero .fx .r.lbig .k{font-weight:800;font-size:20px} .hero .fx .r.lbig b{font-size:38px;font-weight:900;color:#F7CFA0} .hero .fx .r.lbig small{opacity:1;font-size:14px} .hero .fx .r.lbig small em{font-style:normal;font-weight:900;font-size:19px;color:#F7CFA0;margin-left:2px} .hero .fx .r.lbig+.r,.hero .fx .r.lbig+.sst{border-top:0}
 @media(max-width:480px){.hero .fx .r.mon b,.hero .fx .r.lbig b{font-size:30px}}
 .hero .fx .r.mon+.r{border-top:0} .hero .fx .r.mon .k{font-weight:800;font-size:20px} .hero .fx .r.mon b{font-size:38px;font-weight:900;color:#FFE08A}
 .sec{display:inline-block;font-weight:800;font-size:13px;border-radius:8px;padding:2px 10px;color:#fff} .sec.s{background:var(--sub)} .sec.l{background:var(--lump)}
@@ -1654,7 +1654,7 @@ function fxHtml(S,L){ const miss=Q.items.filter(it=>!it.hidden&&it.mode==='lump'
       +cell('구독 총액',won(T.subNet),(T.pre?'선납금 + ':'')+'총 구독료 − 할인','tt')
       +`</div><div class="sn">※ 월 구독료 혜택가는 제휴카드 청구할인까지 반영해 실제로 통장에서 빠져나가는 금액</div></div></div>`); first=false; }
   /* 순서 (2026-11-24): 월 비용 → 바로 아래 구독 내용 → 다음 줄 일반 구매(일시불가)를 월 비용만큼 크게 */
-  if(L.items.length){ out.push(row(first?'':'+',L.months?'일반 구매':'일반 구매 · 일시불가',won(L.amount)+a,L.items.length+'품목'+(L.months?' · '+L.months+'개월 할부':' · 계약 시 일시 결제'),'lbig')); first=false; }
+  if(L.items.length){ out.push(row(first?'':'+',L.months?'일반 구매':'일반 구매 · 일시불가',won(L.amount)+a,L.items.length+'품목'+(T.inst.length?' · '+(L.parts||[]).map(x=>x.inst?x.months+'개월 할부 <em>월 '+won(x.per)+'</em>':'일시 결제 '+won(x.amount-x.bill)).join(' + '):' · 계약 시 일시 결제'),'lbig')); first=false; }
   if(L.fee) add('일반 구매 · 이용료',won(L.fee),'플러스페이 할부 이용료 · '+feeTxt(L));
   if(T.dL-bnL>0) sub('일반 구매 할인',won(T.dL-bnL),'청구할인 등');
   if(bnL>0) bnRow(L.bnN,bnL);
