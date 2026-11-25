@@ -1476,6 +1476,8 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 .deep-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px} .deep-btns .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:64px;padding:10px 12px;width:auto}
 .deep-btns .btn small{font-weight:500;font-size:calc(11.5px * var(--font-scale));opacity:.85}
 @media(max-width:480px){ .deep-btns{grid-template-columns:1fr} }
+/* ── v393 : 새 문의 응대 표시 ── */
+#cs_list .cs-this{margin:6px 0 -2px;font-size:calc(11.5px * var(--font-scale));font-weight:800;color:#1D4ED8}
 </style>
 </head>
 <body>
@@ -6196,7 +6198,7 @@ async function csLoadFromConsult(id){
     let od=null; if(d.key){ try{ if(!CU_DETAIL[d.key]) CU_DETAIL[d.key]=await rpc('fn_store_customer_detail',{p_code:CODE,p_key:d.key}); od=CU_DETAIL[d.key]||null; }catch(e){} }
     const cu=(od&&od.customer)||{}; const ph=d.phone||cu.phone||$('c_phone').value;
     if(ph&&!$('c_phone').value){ $('c_phone').value=String(ph).replace(/\D/g,''); hyphen($('c_phone')); }
-    csShow({name:d.name||$('c_name').value, phone:ph, list, orders: od?(od.orders||[]):undefined, cust:cu});
+    csShow({name:d.name||$('c_name').value, phone:ph, list, orders: od?(od.orders||[]):undefined, cust:cu, from:d});
   }catch(e){ csShow({name:$('c_name').value, phone:$('c_phone').value, list:[], err:e.message}); }
 }
 /* ── 잔디로 들어온 문의 : 처리 전 / 진행 중 / 완료 (mvp_299 · fn_store_inquiries) ── */
@@ -6281,13 +6283,17 @@ function csShow(o){ const box=$('c_stick'); if(!box) return;
   box.classList.remove('hidden');
   $('cs_name').textContent=o.name||'(이름 없음)'; $('cs_phone').textContent=o.phone?String(o.phone).replace(/(\d{3})(\d{3,4})(\d{4})$/,'$1-$2-$3'):'번호 없음';
   const list=o.list; const n=list?list.length:0;
-  $('cs_nth').textContent = list ? `${n+1}회째 상담` : '이력 확인 중…';
+  /* v393 — 아직 응대 전인 새 문의(진행전)에서 열었으면 그 문의는 '이전 상담' 이 아니라 지금 응대하는 문의 */
+  const fr = o.from && o.from.result==='진행전' ? o.from : null, others = fr ? (list||[]).filter(k=>k.id!==fr.id) : (list||[]);
+  $('cs_nth').textContent = !list ? '이력 확인 중…' : fr ? (others.length ? `새 문의 응대 · ${others.length+1}회째 상담` : '새 문의 응대 · 첫 상담') : `${n+1}회째 상담`;
   $('cs_cnt').textContent = n;
-  $('cs_list').innerHTML = o.err ? `<div class="empty sm">${esc(o.err)}</div>` : (list&&n ? list.map(csRow).join('') : '<div class="empty sm">이전 상담이 없습니다 — 첫 상담입니다</div>');
+  $('cs_list').innerHTML = o.err ? `<div class="empty sm">${esc(o.err)}</div>` : (list&&n ? list.map(k=>(fr&&k.id===fr.id?'<div class="cs-this">지금 응대하는 문의</div>':'')+csRow(k)).join('') : '<div class="empty sm">이전 상담이 없습니다 — 첫 상담입니다</div>');
   $('cs_foldBtn').classList.toggle('hidden', !list);
   /* 같은 고객의 열린 상담은 하나만 — 내(또는 미배정) 진행 중 건은 저장할 때 '상담완료'로 정리된다 */
-  const openMine = (list||[]).filter(k=>['진행전','진행중','보류'].includes(k.result) && (!k.handler || k.handler===ME)).length;
-  $('cs_note').innerHTML = openMine
+  const openMine = others.filter(k=>['진행전','진행중','보류'].includes(k.result) && (!k.handler || k.handler===ME)).length;
+  $('cs_note').innerHTML = fr
+    ? `<b>${esc(csDt(fr.at))} ${esc(fr.channel||fr.type||'문의')}</b>에 대한 상담을 적습니다. 저장하면 이 문의는 '새 문의'에서 빠지고 이 상담으로 이어집니다${openMine?` · 이 고객의 다른 진행 중 상담 ${openMine}건은 상담완료로 정리`:''}.`
+    : openMine
     ? `저장하면 이 고객의 <b>진행 중인 이전 상담 ${openMine}건은 상담완료로 정리</b>되고 새 상담이 이어집니다. 지워지는 건 없고 기록은 그대로 남습니다.`
     : `이 고객으로 <b>새 상담 한 건이 추가</b>됩니다. 이전 상담은 지워지지 않고 그대로 남습니다.`;
   /* 넓은 화면은 이전 상담을 바로 펼치고, 폰은 접어 둔다(폼이 가려지지 않게) */
