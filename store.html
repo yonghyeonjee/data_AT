@@ -1471,6 +1471,11 @@ html.fs-big .home-kpi{grid-template-columns:1fr 1fr}
 /* ── v384 : 판매 완료 직접 표시는 상담 상세 맨 아래 작은 줄로만 ── */
 .cd-sold{margin:12px 0 0;font-size:calc(12.5px * var(--font-scale));color:var(--muted);line-height:1.6}
 .cd-sold .linkbtn{border:0;background:none;padding:6px 2px;min-height:32px;color:var(--navy);font-weight:700;text-decoration:underline;cursor:pointer;font-size:inherit}
+/* ── v385 : 잔디 링크 — 이미 저장한 문의면 고르는 창 ── */
+#deepDlg .lvdlg{width:min(520px,100%)} #deepDlg .csv-state{line-height:1.7}
+.deep-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px} .deep-btns .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:64px;padding:10px 12px;width:auto}
+.deep-btns .btn small{font-weight:500;font-size:calc(11.5px * var(--font-scale));opacity:.85}
+@media(max-width:480px){ .deep-btns{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -1547,6 +1552,16 @@ try{ if(localStorage.getItem('staff_code') && (sessionStorage.getItem('st_open')
     <p class="csv-hint" id="cuStHint"></p>
     <p class="hint" style="margin:0">판매완료는 DPS 전표가 이어지면 저절로 됩니다. 다른 상담의 상태는 아래 <b>상담·구매 자세히</b>의 [상세] 또는 상담 목록에서 바꿉니다.</p>
     <div class="btns" style="display:flex;gap:8px;margin-top:14px"><button type="button" class="btn ghost" style="width:auto;min-width:112px;margin-left:auto" onclick="cuStClose()">닫기</button></div>
+  </div>
+</div>
+<div class="lvmask hidden" id="deepDlg" onclick="if(event.target===this)deepClose()" onkeydown="if(event.key==='Escape')deepClose()">
+  <div class="lvdlg" role="dialog" aria-modal="true" aria-labelledby="deepTitle">
+    <button type="button" class="lvx" onclick="deepClose()" aria-label="닫기">✕</button>
+    <h3 id="deepTitle">이미 상담을 남긴 문의 · <span id="deepName"></span></h3>
+    <p class="csv-state" id="deepInfo"></p>
+    <div class="csv-l">무엇을 할까요?</div>
+    <div class="deep-btns"><button type="button" class="btn" id="deepView" onclick="deepView()">이 고객 상담 보기<small>상담 목록에서 찾고 상세를 엽니다</small></button><button type="button" class="btn ghost" onclick="deepAdd()">추가 상담 입력<small>같은 고객으로 한 건 더 남깁니다</small></button></div>
+    <div class="btns" style="display:flex;margin-top:12px"><button type="button" class="btn ghost" style="width:auto;min-width:96px;margin-left:auto" onclick="deepClose()">닫기</button></div>
   </div>
 </div>
 <div class="lvmask hidden" id="cSaveDlg" onclick="if(event.target===this)cSaveClose()" onkeydown="if(event.key==='Escape')cSaveClose()">
@@ -6224,11 +6239,25 @@ async function deepOpen(id){ try{ sessionStorage.removeItem('dc_deep_c'); histor
   id=Number(id);
   try{ let d=await rpc('fn_store_consult_detail',{p_code:CODE,p_id:id});
     for(let i=0;i<6&&d&&d.superseded_by;i++) d=await rpc('fn_store_consult_detail',{p_code:CODE,p_id:d.superseded_by});
-    if(!['진행전','진행중','보류'].includes(d.result||'')){ goTab('inbox'); cdOpen(d.id); toast('이미 처리한 문의입니다 ('+(d.result||'')+') — 상세를 엽니다','ok'); return; }
+    /* v385 — 이미 상담을 저장한 문의(새 상담으로 이어졌거나 상태가 '새 문의' 가 아님)면 바로 입력하지 않고 고르게 한다 */
+    if(d.id!==id || (d.result||'')!=='진행전'){ deepAsk(d, id); return; }
     ocToConsult(d.id, d.ref||'', d.name||'', d.tel||'', d.interest||'');
     toast('잔디 문의 #'+id+' — 상담 입력을 열었습니다','ok');
   }catch(e){ goTab('inbox'); toast('문의 #'+id+' 를 열 수 없습니다 · '+(e.message||''),'bad'); }
 }
+let DEEP_D=null;
+function deepAsk(d, id0){ DEEP_D=d; const lab=(RES_UI[d.result]||[0,d.result||''])[1];
+  $('deepName').textContent=d.name||'고객';
+  $('deepInfo').innerHTML=`잔디 문의 <b>#${esc(String(id0))}</b> 는 이미 상담을 남긴 건입니다.<br>지금 상태 <span class="res ${(RES_UI[d.result]||['pre'])[0]}">${esc(lab)}</span> · 마지막 상담 ${esc(String(d.at||'').slice(0,10).replace(/-/g,'.'))}${d.ref?' · '+esc(d.ref):''}${d.handler?' · 담당 '+esc(d.handler):''}`;
+  goTab('inbox'); $('deepDlg').classList.remove('hidden'); setTimeout(()=>{ const b=$('deepView'); if(b) b.focus(); },50); }
+function deepClose(){ $('deepDlg').classList.add('hidden'); DEEP_D=null; }
+/* [이 고객 상담 보기] — 상담 목록을 이 고객으로 찾아 두고 마지막 상담 상세를 연다 */
+function deepView(){ const d=DEEP_D; deepClose(); if(!d) return; goTab('inbox');
+  const q=(String(d.tel||'').replace(/D/g,'').slice(-4).length===4 ? String(d.tel).replace(/D/g,'').slice(-4) : (d.name||''));
+  try{ $('mc_q').value=q; MC_FLT='all'; const fl=$('mc_flt'); if(fl) fl.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='all')); mcSearch(); }catch(e){}
+  cdOpen(d.id); }
+/* [추가 상담 입력] — 같은 고객으로 상담 한 건을 더 (이전 상담은 그대로) */
+function deepAdd(){ const d=DEEP_D; deepClose(); if(!d) return; ocToConsult(d.id, d.ref||'', d.name||'', d.tel||'', d.interest||''); toast('추가 상담 입력 — 저장하면 이 고객에게 상담이 한 건 더 남습니다','ok'); }
 /* 내 고객 탭·고객 검색 결과에서 [＋ 상담 입력] — 고객 키로 연결하고 이력을 헤더에 */
 async function pickMine(key,name,tel){ goTab('consult'); cMode('log'); custClear('c'); LINK.c=key; $('c_name').value=name||'';
   /* 내 고객 줄이 들고 있던 번호(tel)를 먼저 채운다 — DPS 판매로만 들어온 고객은 상담 이력이 없어 번호가 비어 있었다 (v292) */
