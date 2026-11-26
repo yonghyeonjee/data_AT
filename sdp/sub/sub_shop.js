@@ -919,8 +919,38 @@ window.SUB_SHOP_READY = true;
     var t = (POL && POL.texts) || {};
     return { main: t.bubble || '지금 삼성스토어 시흥에 문의를 남겨보세요.', gift: t.bubbleGift || '상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정' };
   }
+  /* 상담 도우미 (2026-11-26 · 정해진 답변형) — 처음 누를 때 sub_chat.js 를 받아 연다. 화면이 쓸 값은 SUB_SHOP_API 로 넘긴다 */
+  function chatApi() {
+    window.SUB_SHOP_API = {
+      rows: rows, byModel: byModel, pages: PAGES, idx: IDX, cards: CARDS, pol: POL, card1: CARD1, link: LINK,
+      tel: CFG.tel || (POL && POL.defaults && POL.defaults.tel) || '',
+      fmt: fmt, esc: esc, track: track, displayName: displayName, cardNet: cardNet, pointOf: pointOf, inStore: inStore,
+      viewHref: function (m) { return viewHref(m, 'chat'); }, catHref: catHref,
+      consultHref: function (r) { return consultHref(r || null, 'chat'); }, bubbleTexts: bubbleTexts
+    };
+  }
+  function openChat() {
+    chatApi();
+    if (window.SUB_CHAT) return window.SUB_CHAT.open();
+    if (openChat.busy) return; openChat.busy = true;
+    loadScript((CFG.dataBase || '/data/js/sub/') + 'sub_chat.js' + (CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || '')), function () {
+      openChat.busy = false; if (window.SUB_CHAT) window.SUB_CHAT.open();
+    });
+  }
+  window.SUB_CHAT_OPEN = openChat;
+  // 오른쪽 아래에 따로 떠 있는 둥근 상담 도우미 단추 (2026-11-26 · 삼성닷컴 상담 단추 모양 · 문의 바가 보이면 그 위에)
+  function chatFab() {
+    if (CFG.chat === false || document.getElementById('ssChatFab')) return;
+    var f = document.createElement('button'); f.type = 'button'; f.id = 'ssChatFab'; f.className = 'ss-chat-fab'; f.setAttribute('aria-label', '구독 상담 도우미 열기');
+    f.title = '구독 상담 도우미';
+    f.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="ssFabG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f6bff"/><stop offset="1" stop-color="#2fc4e8"/></linearGradient></defs>' +
+      '<path fill="url(#ssFabG)" d="M13 5c.6 4.6 2.9 6.9 7.5 7.5-4.6.6-6.9 2.9-7.5 7.5-.6-4.6-2.9-6.9-7.5-7.5C10.1 11.9 12.4 9.6 13 5z"/><path fill="url(#ssFabG)" d="M22.5 17c.35 2.6 1.65 3.9 4.25 4.25-2.6.35-3.9 1.65-4.25 4.25-.35-2.6-1.65-3.9-4.25-4.25 2.6-.35 3.9-1.65 4.25-4.25z"/><circle cx="24" cy="8" r="1.6" fill="#2fc4e8"/></svg>';
+    f.addEventListener('click', function () { track('ss_chat_fab'); openChat(); });
+    document.body.appendChild(f);
+  }
   function drawBubble() {
     if (CFG.bubble === false || document.getElementById('ssBubble')) return;
+    chatFab();
     try { if (sessionStorage.getItem('ss_bubble_off')) return; } catch (e) {}
     var t = bubbleTexts(), tel = CFG.tel || (POL && POL.defaults && POL.defaults.tel) || '';
     var b = document.createElement('div'); b.id = 'ssBubble'; b.className = 'ss-bubble'; b.setAttribute('role', 'complementary');
@@ -934,7 +964,13 @@ window.SUB_SHOP_READY = true;
     document.body.appendChild(space);
     document.body.appendChild(b);
     // 스크롤해도 크기 그대로 (2026-11-05) · ▼ 버튼으로 아래로 내리고 ▲ 로 다시 올린다 (이 브라우저 세션 동안 기억)
-    function fit() { space.style.height = b.classList.contains('is-on') && !b.classList.contains('is-fold') ? (b.offsetHeight + 24) + 'px' : '0'; }
+    function fit() {
+      space.style.height = b.classList.contains('is-on') && !b.classList.contains('is-fold') ? (b.offsetHeight + 24) + 'px' : '0';
+      // [구독 바로 답변] 단추가 문의 바(접었을 때는 ▲ 단추)에 가리지 않게 그 높이만큼 올린다
+      var h = 0;
+      if (b.classList.contains('is-on')) { var top = Math.min(b.getBoundingClientRect().top, fb.getBoundingClientRect().top); h = Math.max(0, Math.round(window.innerHeight - top)); }
+      document.documentElement.style.setProperty('--ss-bar-h', h + 'px');
+    }
     var fb = b.querySelector('.ss-bubble-fold');
     function setFold(on) {
       b.classList.toggle('is-fold', on);
@@ -946,6 +982,8 @@ window.SUB_SHOP_READY = true;
     }
     try { if (sessionStorage.getItem('ss_bubble_fold')) setFold(true); } catch (e) {}
     window.addEventListener('resize', fit);
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(b);   // 접기·작게 보기(is-mini)로 높이가 바뀔 때
+    b.addEventListener('transitionend', fit);
     setTimeout(function () { b.classList.add('is-on'); fit(); track('ss_bubble_view'); }, 1500);
     b.addEventListener('click', function (ev) {
       var x = ev.target.closest ? ev.target.closest('.ss-bubble-x, .ss-bubble-fold, a[data-cta]') : null;
