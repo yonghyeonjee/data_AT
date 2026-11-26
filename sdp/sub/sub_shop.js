@@ -4,10 +4,20 @@
 (function (w, d, id) { try {
   if (!/(^|\.)samsungsh\.co\.kr$/.test(location.hostname) || !/\/data\/gudok\//.test(location.pathname)) return;
   if ((w.google_tag_manager && w.google_tag_manager[id]) || d.querySelector('script[src*="' + id + '"]')) return;
-  w.dataLayer = w.dataLayer || [];
-  w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm' + '.js' });
-  var s = d.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtm' + '.js?id=' + id;
-  (d.head || d.documentElement).appendChild(s);
+  /* 2026-11-26 버벅임: GTM 이 페이스북·구글 광고·네이버 태그를 화면 그리는 도중에 줄줄이 실행해 첫 화면이 1~2초 멈췄다.
+     화면이 다 뜬 뒤(load + 2초) 또는 첫 스크롤·클릭·키 입력 때 — 둘 중 먼저 — 한 번만 불러온다 (방문 집계는 그대로) */
+  var done = false, ev = ['scroll', 'pointerdown', 'keydown', 'touchstart'];
+  function go() {
+    if (done) return; done = true;
+    ev.forEach(function (n) { w.removeEventListener(n, go, true); });
+    w.dataLayer = w.dataLayer || [];
+    w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm' + '.js' });
+    var s = d.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtm' + '.js?id=' + id;
+    (d.head || d.documentElement).appendChild(s);
+  }
+  ev.forEach(function (n) { w.addEventListener(n, go, { capture: true, passive: true }); });
+  var later = function () { setTimeout(go, 2000); };
+  if (d.readyState === 'complete') later(); else w.addEventListener('load', later);
 } catch (e) {} })(window, document, 'GTM-T497X5ZW');
 /* ===== 구독센터 공용 화면 | subscribe/sub_home.html · sub_c_<품목>.html · sub_card.html · sub_guide.html =====
    고도몰에는 얇은 html(검색용 제목·소개·FAQ 글 + SUB_SHOP_CONFIG)만 두고, 목록·가격·메뉴는 이 파일이 그린다.
@@ -1132,7 +1142,16 @@ window.SUB_SHOP_READY = true;
       var fr = document.createElement('div'); fr.className = 'ss-promo-frame';
       img.parentNode.insertBefore(fr, img); fr.appendChild(img);
     });
-    $all('.ss-promo-frame').forEach(function (fr) { var img = fr.querySelector('img'); if (img && img.getAttribute('src')) fr.style.setProperty('--ss-bg', 'url("' + img.getAttribute('src') + '")'); });
+    $all('.ss-promo-frame').forEach(function (fr) {
+      var img = fr.querySelector('img'); if (!img || !img.getAttribute('src')) return;
+      /* 그림 비율이 칸(5:2)과 거의 같으면 흐린 배경이 안 보이므로 그리지 않는다 — 큰 그림을 한 번 더 흐리게 그리는 비용 (2026-11-26 버벅임) */
+      var bg = function () { fr.style.setProperty('--ss-bg', 'url("' + img.getAttribute('src') + '")'); };
+      var fitR = function (w, h) { return w && h && Math.abs(w / h - 2.5) < 0.08; };
+      var wa = +img.getAttribute('width'), ha = +img.getAttribute('height');
+      if (wa && ha) { if (fitR(wa, ha)) fr.classList.add('is-fit'); else bg(); }
+      else if (img.complete && img.naturalWidth) { if (fitR(img.naturalWidth, img.naturalHeight)) fr.classList.add('is-fit'); else bg(); }
+      else img.addEventListener('load', function () { if (fitR(img.naturalWidth, img.naturalHeight)) fr.classList.add('is-fit'); else bg(); });
+    });
     // 배너 여러 장이면 5초마다 넘긴다 · 손가락·마우스로 끌어 넘기기 · 좌우 화살표 · 점 눌러 이동 · 키보드 ←→ (2026-11-16 다시 만듦)
     $all('[data-ss-slider]').forEach(function (sl) {
       var vis = function () { return [].filter.call(sl.children, function (c) { return c.offsetWidth > 0; }); };
