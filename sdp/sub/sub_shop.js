@@ -41,6 +41,8 @@ window.SUB_SHOP_READY = true;
 (function () {
   'use strict';
   var CFG = window.SUB_SHOP_CONFIG || {};
+  // 이 파일을 받은 곳(데이터센터 또는 예비 사본) — 상담 도우미(sub_chat.js)도 같은 곳에서 받는다 (상품 찾기·상품 페이지는 CFG.dataBase 가 예비 사본이라서)
+  var SELF_SRC = (document.currentScript && document.currentScript.src) || '';
   var IDX = window.SUB_INDEX;
   var root = document.getElementById('subShopRoot');
   // 메뉴만: 구독 상품 페이지(sub_view)·구독상품 찾기(sub_find)가 #subShopNav 를 만들고 이 파일을 불러온다
@@ -933,8 +935,9 @@ window.SUB_SHOP_READY = true;
     chatApi();
     if (window.SUB_CHAT) return window.SUB_CHAT.open();
     if (openChat.busy) return; openChat.busy = true;
-    loadScript((CFG.dataBase || '/data/js/sub/') + 'sub_chat.js' + (CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || '')), function () {
-      openChat.busy = false; if (window.SUB_CHAT) window.SUB_CHAT.open();
+    var src = /sub_shop\.js/.test(SELF_SRC) ? SELF_SRC.replace(/sub_shop\.js/, 'sub_chat.js') : (CFG.dataBase || '/data/js/sub/') + 'sub_chat.js' + (CFG.noVer ? '' : '?v=' + encodeURIComponent(CFG.ver || ''));
+    loadScript(src, function () {
+      openChat.busy = false; if (window.SUB_CHAT) window.SUB_CHAT.open(); else location.href = consultHref(null, 'chat_fail');   // 못 받으면 구독 문의로
     });
   }
   window.SUB_CHAT_OPEN = openChat;
