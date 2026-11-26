@@ -254,27 +254,23 @@
 <script src="https://db.samsungat.co.kr/sdp/sub/sub_plans_cooking.js" charset="utf-8"></script>
 <link rel="preload" as="script" href="https://db.samsungat.co.kr/sdp/sub/sub_shop.js">
 <script>
-    /* 데이터센터를 못 읽었으면(요금표 없음) 예비 사본으로 — 화면 파일은 판단 뒤 같은 주소(preload 해 둔 것)로 실행 */
+    /* 화면 파일 불러오기 (2026-11-26: document.write 대신 스크립트 태그를 붙인다 — 브라우저가 화면 그리기를 막지 않게)
+       데이터센터를 못 읽었으면(요금표 없음) 예비 사본으로 · 화면 파일을 못 받아도 예비 사본으로 */
     (function (c) {
+        var d = document, at = d.body || d.documentElement;
+        var css = function (b, v) { ["sub_shop.css"].forEach(function (f) { var l = d.createElement('link'); l.rel = 'stylesheet'; l.href = b + f + (v ? '?v=' + v : ''); d.head.appendChild(l); }); };
+        var js = function (src, err) { var s = d.createElement('script'); s.src = src; s.charset = 'utf-8'; s.async = false; if (err) s.onerror = err; at.appendChild(s); };
+        var local = function () {
+            c.dataBase = c.localBase; c.ver = c.localVer; c.noVer = false;
+            var v = encodeURIComponent(c.ver); css(c.dataBase, v); js(c.dataBase + 'sub_shop.js?v=' + v);
+        };
         if (window.SUB_INDEX) { if (window.SUB_VER) c.ver = window.SUB_VER; }
         else if (c.dcBase) {
             c.dcFailed = true; c.noVer = false; c.dataBase = c.localBase; c.ver = c.localVer;
-            var b = c.dataBase, v = encodeURIComponent(c.ver), h = '';
-            ["sub_shop.css"].forEach(function (f) { h += '<link rel="stylesheet" href="' + b + f + '?v=' + v + '">'; });
-            ["sub_index.js", "sub_static.js", "sub_catalog.js", "sub_cards.js", "sub_policy.js", "sub_plans_laundry.js", "sub_plans_cooking.js"].forEach(function (f) { h += '<script src="' + b + f + '?v=' + v + '" charset="utf-8"><\/script>'; });
-            document.write(h);
+            var v = encodeURIComponent(c.ver); css(c.dataBase, v);
+            ["sub_index.js", "sub_static.js", "sub_catalog.js", "sub_cards.js", "sub_policy.js", "sub_plans_laundry.js", "sub_plans_cooking.js"].forEach(function (f) { js(c.dataBase + f + '?v=' + v); });
         }
-        document.write('<script src="' + c.dataBase + 'sub_shop.js' + (c.noVer ? '' : '?v=' + encodeURIComponent(c.ver)) + '" charset="utf-8"><\/script>');
-    })(SUB_SHOP_CONFIG);
-</script>
-<script>
-    /* 화면 파일도 못 받았으면 예비 사본 */
-    (function (c) {
-        if (window.SUB_SHOP_READY || !c.localBase || c.dcFailed) return;
-        c.dataBase = c.localBase; c.ver = c.localVer; c.noVer = false;
-        var b = c.localBase, v = encodeURIComponent(c.localVer), h = '';
-        ["sub_shop.css"].forEach(function (f) { h += '<link rel="stylesheet" href="' + b + f + '?v=' + v + '">'; });
-        document.write(h + '<script src="' + b + 'sub_shop.js?v=' + v + '" charset="utf-8"><\/script>');
+        js(c.dataBase + 'sub_shop.js' + (c.noVer ? '' : '?v=' + encodeURIComponent(c.ver)), c.localBase && !c.dcFailed ? function () { if (!window.SUB_SHOP_READY) local(); } : null);
     })(SUB_SHOP_CONFIG);
 </script>
 </body>

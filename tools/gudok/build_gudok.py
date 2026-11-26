@@ -185,27 +185,23 @@ class Site:
     (function (c) { c.localBase = c.dataBase; c.localVer = c.ver; if (c.dcBase) { c.dataBase = c.dcBase; c.noVer = true; } })(%(c)s);
 </script>
 %(tag_css)s%(tag_data)s%(tag_pre)s<script>
-    /* 데이터센터를 못 읽었으면(요금표 없음) 예비 사본으로 — 화면 파일은 판단 뒤 같은 주소(preload 해 둔 것)로 실행 */
+    /* 화면 파일 불러오기 (2026-11-26: document.write 대신 스크립트 태그를 붙인다 — 브라우저가 화면 그리기를 막지 않게)
+       데이터센터를 못 읽었으면(요금표 없음) 예비 사본으로 · 화면 파일을 못 받아도 예비 사본으로 */
     (function (c) {
+        var d = document, at = d.body || d.documentElement;
+        var css = function (b, v) { %(css_json)s.forEach(function (f) { var l = d.createElement('link'); l.rel = 'stylesheet'; l.href = b + f + (v ? '?v=' + v : ''); d.head.appendChild(l); }); };
+        var js = function (src, err) { var s = d.createElement('script'); s.src = src; s.charset = 'utf-8'; s.async = false; if (err) s.onerror = err; at.appendChild(s); };
+        var local = function () {
+            c.dataBase = c.localBase; c.ver = c.localVer; c.noVer = false;
+            var v = encodeURIComponent(c.ver); css(c.dataBase, v); js(c.dataBase + 'sub_%(n)s.js?v=' + v);
+        };
         if (window.SUB_INDEX) { if (window.SUB_VER) c.ver = window.SUB_VER; }
         else if (c.dcBase) {
             c.dcFailed = true; c.noVer = false; c.dataBase = c.localBase; c.ver = c.localVer;
-            var b = c.dataBase, v = encodeURIComponent(c.ver), h = '';
-            %(css_json)s.forEach(function (f) { h += '<link rel="stylesheet" href="' + b + f + '?v=' + v + '">'; });
-            %(data_json)s.forEach(function (f) { h += '<script src="' + b + f + '?v=' + v + '" charset="utf-8"><\\/script>'; });
-            document.write(h);
+            var v = encodeURIComponent(c.ver); css(c.dataBase, v);
+            %(data_json)s.forEach(function (f) { js(c.dataBase + f + '?v=' + v); });
         }
-        document.write('<script src="' + c.dataBase + 'sub_%(n)s.js' + (c.noVer ? '' : '?v=' + encodeURIComponent(c.ver)) + '" charset="utf-8"><\\/script>');
-    })(%(c)s);
-</script>
-<script>
-    /* 화면 파일도 못 받았으면 예비 사본 */
-    (function (c) {
-        if (window.%(r)s || !c.localBase || c.dcFailed) return;
-        c.dataBase = c.localBase; c.ver = c.localVer; c.noVer = false;
-        var b = c.localBase, v = encodeURIComponent(c.localVer), h = '';
-        %(css_json)s.forEach(function (f) { h += '<link rel="stylesheet" href="' + b + f + '?v=' + v + '">'; });
-        document.write(h + '<script src="' + b + 'sub_%(n)s.js?v=' + v + '" charset="utf-8"><\\/script>');
+        js(c.dataBase + 'sub_%(n)s.js' + (c.noVer ? '' : '?v=' + encodeURIComponent(c.ver)), c.localBase && !c.dcFailed ? function () { if (!window.%(r)s) local(); } : null);
     })(%(c)s);
 </script>
 ''' % dict(c=c, r=ready_var, n=name, ver=B.VER, dc=dc, extra=extra, links=self.js_links(), tel=B.TEL,
