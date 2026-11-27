@@ -1,7 +1,7 @@
 /* 상품상세 구독탭 데이터 판 — goods_view 가 5분마다 이 파일로 최신 판을 확인합니다 */
-var SUB_VER = "261103-1+261116-1152+d261125-1807+u73b5";
+var SUB_VER = "261103-1+261116-1152+d261127-1432+u7176";
 var SUB_SDP_VER = "261103-1";
 var SUB_POLICY_VER = "261116-1152";
 var SUB_PUBLISHED_AT = "2026-11-03T03:30:15.192936+00:00";
-var SUB_DPS_VER = "d261125-1807";
-var SUB_MODELS = 1045;
+var SUB_DPS_VER = "d261127-1432";
+var SUB_MODELS = 1071;
