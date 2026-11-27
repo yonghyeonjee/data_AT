@@ -263,9 +263,9 @@ export function buildSubFiles(rel, policy, dps, ui, rank, lumps) {
         rec.w = {}; for (const [k, v] of Object.entries(WATER[model])) rec.w[k] = [v.disc, v.prepay];
       }
       plans[m] = rec;
-      // [품목키, 최저 월 구독료, 최저 자동납부 반영 총액, 월 구독료가 가장 낮은 요금제의 총구독료(멤버십 포인트 기준 · 2026-11-06)]
+      // [품목키, 최저 월 구독료, 최저 자동납부 반영 총액, 월 구독료가 가장 낮은 요금제의 제품구독료(멤버십 포인트 기준 · 2026-11-27 삼성닷컴과 같게 · 없으면 총구독료)]
       const cheap = p.reduce((a, x) => (x[3] < a[3] || (x[3] === a[3] && x[2] < a[2])) ? x : a, p[0]);
-      index[m] = [key, Math.min(...p.map(x => x[3])), Math.min(...p.map(x => netTotal(x, autopay))), cheap[2]];
+      index[m] = [key, Math.min(...p.map(x => x[3])), Math.min(...p.map(x => netTotal(x, autopay))), cheap[4] > 0 ? cheap[4] : cheap[2]];
       if (rank && rank[m] > 0) index[m].push(rank[m]);   // 5번째: 최근 12개월 구독 계약 순위 (구독센터 인기순 · mvp_279 · 계약 없으면 없음)
       if (lumps && lumps[m] > 0) { const sv = lumps[m] - bestNet(m, rec, cat, policy, CARD, kst); if (sv > 0) save[m] = sv; }   // 일시불(시흥몰 판매가)보다 저렴할 때만
     }
