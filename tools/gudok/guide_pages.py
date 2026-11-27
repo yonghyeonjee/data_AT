@@ -22,9 +22,33 @@ def tier_key(t):
     return int(m.group(1)) if m else 0
 
 
+def apply_periods(pol, days=7):
+    """sub.policy periods (mvp_321) — tools/sub/build_sub.mjs subPolicyPeriods 와 같은 규칙. 오늘(KST)+days 안에 시작하는 것까지 넣는다"""
+    import datetime as _dt
+    now = _dt.datetime.utcnow() + _dt.timedelta(hours=9)
+    t, today = (now + _dt.timedelta(days=days)).strftime('%Y-%m-%d'), now.strftime('%Y-%m-%d')
+    for q in pol.get('periods') or []:
+        if not q or q.get('on') or (q.get('from') and t < q['from']) or (q.get('to') and q['to'] < today):
+            continue
+        for path, v in (q.get('set') or {}).items():
+            o, ks = pol, path.split('.')
+            for k in ks[:-1]:
+                if not isinstance(o.get(k), dict):
+                    o[k] = {}
+                o = o[k]
+            o[ks[-1]] = v
+        if q.get('pointRate') is not None:
+            for m in (pol.get('points') or {}).values():
+                if m:
+                    m['rate'] = q['pointRate']; m.pop('total', None)
+        q['on'] = 1
+    return pol
+
+
 class Guides:
     def __init__(self, sub_dir):
         self.pol = MP.load_js_obj(os.path.join(sub_dir, 'sub_policy.js'))
+        apply_periods(self.pol)   # 고도몰에 올린 정적 글은 몇 주 그대로 있으므로 7일 안에 시작하는 달 정책(periods · mvp_321)을 미리 반영
         self.cards = MP.load_js_obj(os.path.join(sub_dir, 'sub_cards.js'))
 
     # ---------- 표 ----------

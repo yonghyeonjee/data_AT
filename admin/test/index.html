@@ -3242,6 +3242,12 @@ function renderSubPolicy(){
     <div class="spol-row"><label style="flex:1;min-width:300px">상담 신청 주소 <input class="in" id="sp_def_consult" value="${esc(D.consultUrl||'')}" style="flex:1"></label>
       <button class="btn sm" onclick="spSave('defaults',()=>({card:$('sp_def_card').value,tier:$('sp_def_tier').value.trim(),tierByModel:spPairs($('sp_def_tierby').value),consultUrl:$('sp_def_consult').value.trim(),tel:$('sp_def_tel').value.trim()}))">저장</button></div>
     <p class="spol-hint">상품상세 구독탭 머리의 금액·"카드 적용 시 최대 ○원 저렴" 배지, 구독센터 목록의 "카드 할인 시" 금액, 상세의 처음 선택값이 모두 이 카드·실적 구간으로 계산됩니다. 실적 구간은 카드 금액표의 구간 이름 그대로 (없는 이름이면 가장 낮은 구간). 전화를 비우면 전화 버튼이 빠집니다.</p></div>`);
+  /* 0-1 달이 바뀌는 정책 (mvp_321 · 2026-11-27) — 시작일 0시(KST)부터 아래 값으로 자동 전환 · 구독탭·구독센터·다품목 계산기·상담 견적 공통 */
+  h.push(`<div class="spol-sec"><h4>달이 바뀌는 정책 (예약) ${spStamp(up.periods)}</h4>
+    ${(P.periods||[]).map(q=>`<p class="spol-hint"><b>${esc(q.name||'')}</b> · ${esc(q.from||'')}${q.to?' ~ '+esc(q.to):' 부터'} — ${esc(Object.entries(q.set||{}).map(([k,v])=>k+' = '+JSON.stringify(v)).join(' · '))}${q.pointRate!=null?' · 멤버십 정률 포인트 '+esc(q.pointRate)+'%':''}${q.note?'<br>'+esc(q.note):''}</p>`).join('')||'<p class="spol-hint">예약된 정책 없음</p>'}
+    <textarea class="in" id="sp_periods" rows="6" style="width:100%;font-family:monospace;font-size:12px">${esc(JSON.stringify(P.periods||[],null,1))}</textarea>
+    <div class="spol-row"><button class="btn sm" onclick="spSave('periods',()=>{ let v; try{ v=JSON.parse($('sp_periods').value||'[]'); }catch(e){ throw new Error('형식 오류: '+e.message); } return v; })">저장</button></div>
+    <p class="spol-hint">형식: [{"from":"2026-12-01","name":"12월 구독 정책","set":{"autopay.rate":0,"multi.to":"2026-12-31"},"pointRate":2}] · set = 정책 경로와 값(autopay.rate 0 = 구독료 할인 미운영, 줄 숨김) · pointRate = 모든 모델 멤버십 정률 포인트(%) · 행사(구독료 지원)는 행사 문구의 기간으로 끝남</p></div>`);
   /* 1 자동납부 */
   h.push(`<div class="spol-sec"><h4>자동납부 할인 ${spStamp(up.autopay)}</h4>
     <div class="spol-row"><label>할인율 <input class="in num" id="sp_auto_rate" value="${esc(spPct(A.rate))}"> %</label>

@@ -149,6 +149,18 @@ export function checkPolicy(pol) {
     if (p.amounts != null) { if (typeof p.amounts !== 'object') err.push(`promos[${i}].amounts: {모델: 금액} 객체여야 합니다`);
       else for (const [m, v] of Object.entries(p.amounts)) if (!(Number.isInteger(v) && v > 0)) err.push(`promos[${i}].amounts.${m}: 양의 정수여야 합니다 (현재 ${JSON.stringify(v)})`); }
   });
+  // 달이 바뀌는 정책 (mvp_321): [{from, to?, name, set: {경로: 값}, pointRate?}] — 경로는 정책 안의 키를 점으로 (autopay.rate · multi.to …)
+  if (pol.periods != null) {
+    if (!Array.isArray(pol.periods)) err.push('periods: 목록이어야 합니다');
+    else pol.periods.forEach((q, i) => {
+      if (!q || typeof q !== 'object') { err.push(`periods[${i}]: {from, set} 객체여야 합니다`); return; }
+      if (!DATE.test(String(q.from || ''))) err.push(`periods[${i}].from: YYYY-MM-DD 형식이어야 합니다 (현재 ${JSON.stringify(q.from)})`);
+      period(q, `periods[${i}]`);
+      if (q.set != null && (typeof q.set !== 'object' || Array.isArray(q.set))) err.push(`periods[${i}].set: {경로: 값} 객체여야 합니다`);
+      for (const k of Object.keys(q.set || {})) if (!/^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*$/.test(k) || /^(points|periods)(\.|$)/.test(k)) err.push(`periods[${i}].set: 경로 ${k} 는 쓸 수 없습니다`);
+      if (q.pointRate != null && !(typeof q.pointRate === 'number' && q.pointRate >= 0 && q.pointRate <= 100)) err.push(`periods[${i}].pointRate: 0~100 (%) 숫자여야 합니다 (현재 ${JSON.stringify(q.pointRate)})`);
+    });
+  }
   // 적립 예정 멤버십 포인트 (mvp_258): {모델: {rate, base, add, total}} · rate·base 는 0~100 %, add·total 은 양의 정수
   if (pol.points != null) {
     if (typeof pol.points !== 'object' || Array.isArray(pol.points)) err.push('points: {모델: {rate, base, add, total}} 객체여야 합니다');
@@ -229,8 +241,32 @@ export function applyOverrides(DATA, ov) {
 const PROMO_CUT = [['라이온즈', '2026-11-24', '2026-11-24T18:00:00+09:00', '2026-11-23']];
 const PROMO_CUT_JS = `/* 행사 끝 시각 (2026-11-24 라이온즈 우승 기념은 오후 6시 종료) — 이 시각이 지나면 그날 끝나는 해당 행사를 전날 끝난 것으로 바꾼다. 구독센터·고도몰 구독탭·견적이 모두 이 파일을 쓰므로 한 곳에서 끝난다 */\n;(function(){var P=window.SUB_POLICY,C=[['라이온즈','2026-11-24','2026-11-24T18:00:00+09:00','2026-11-23']],n=Date.now();if(!P)return;C.forEach(function(c){if(n<Date.parse(c[2]))return;(P.promos||[]).forEach(function(p){if(p&&p.to===c[1]&&String(p.text||'').indexOf(c[0])>=0)p.to=c[3];});});})();\n`;
 function promoCut(policy) { const n = Date.now(); if (policy && policy.promos) PROMO_CUT.forEach(c => { if (n >= Date.parse(c[2])) policy.promos.forEach(p => { if (p && p.to === c[1] && String(p.text || '').includes(c[0])) p.to = c[3]; }); }); return policy; }
+/* 달이 바뀌는 정책 (mvp_321 · 2026-11-27 · 12월 구독 정책) — sub.policy 'periods' 한 줄에서 관리한다
+   [{from:'2026-12-01', to?, name, note?, set:{'autopay.rate':0, 'multi.to':'2026-12-31', …}, pointRate?: 2}]
+   from(KST 0시)~to 안이면 set 의 경로 값을 정책에 덮어쓰고, pointRate 가 있으면 모든 모델 멤버십 포인트 정률(%)을 그 값으로 바꾼다
+   (삼성닷컴 총포인트 total 은 옛 정률 값이라 버림 → 화면이 제품구독료 × 정률로 다시 계산).
+   빌드 때 이미 시작됐으면 배포 파일에 바로 넣고(on: 1 · 판 번호 +p<from>), 아직이면 배포 파일 끝에 붙인 같은 함수가 화면에서 그날 0시에 넣는다.
+   구독탭·구독센터·다품목 계산기·상담 견적(/quote/)이 모두 sub_policy.js 를 읽으므로 이 한 곳으로 같이 바뀐다. 화면 코드는 ES5 (고도몰 예전 브라우저) */
+export function subPolicyPeriods(P, t) {
+  if (!P || !P.periods || !P.periods.length) return P;
+  if (!t) t = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  P.periods.forEach(function (q) {
+    if (!q || q.on || (q.from && t < q.from) || (q.to && t > q.to)) return;
+    var s = q.set || {};
+    Object.keys(s).forEach(function (path) {
+      var ks = path.split('.'), o = P;
+      for (var i = 0; i < ks.length - 1; i++) { if (!o[ks[i]] || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; }
+      o[ks[ks.length - 1]] = s[path];
+    });
+    if (q.pointRate != null && P.points) Object.keys(P.points).forEach(function (m) { var v = P.points[m]; if (v) { v.rate = +q.pointRate; delete v.total; } });
+    q.on = 1; P.periodOn = q.name || q.from;
+  });
+  return P;
+}
+const PERIOD_JS = `/* 달이 바뀌는 정책 (periods) — 그날 0시(KST)에 화면에서 바로 바꾼다 · 원본 tools/sub/build_sub.mjs subPolicyPeriods */\n;(${subPolicyPeriods.toString()})(window.SUB_POLICY);\n`;
 export function buildSubFiles(rel, policy, dps, ui, rank, lumps) {
   promoCut(policy);
+  subPolicyPeriods(policy);
   const CARD = varOf(rel, 'CARD') || {}, WATER = varOf(rel, 'WATER_POLICY') || {};
   let DATA, PREPAY_NO, src, dup = 0;
   if (dps && dps.items) { ({ DATA, PREPAY_NO, dup } = dpsToData(dps)); src = `DPS 수집 ${dps.fetch_id || ''}`; }
@@ -241,7 +277,7 @@ export function buildSubFiles(rel, policy, dps, ui, rank, lumps) {
   if (policy && policy.overrides) { ovStats = applyOverrides(DATA, policy.overrides); policy = { ...policy }; delete policy.overrides; }
   if (policy) checkPolicy(policy);
   const autopay = policy?.autopay?.rate ?? 0.05;
-  const ver = rel.ver + (policy?.ver ? '+' + policy.ver : '') + (dps ? '+' + dpsVer(dps) : '') + (ui ? '+u' + ui : '');
+  const ver = rel.ver + (policy?.ver ? '+' + policy.ver : '') + (policy?.periodOn ? '+p' + String((policy.periods || []).filter(q => q && q.on).map(q => q.from).pop() || '').replace(/-/g, '').slice(2) : '') + (dps ? '+' + dpsVer(dps) : '') + (ui ? '+u' + ui : '');
   const head = `/* 상품상세 구독탭 데이터 | 데이터센터 배포판 ${ver} (db.samsungat.co.kr/sdp/sub · 요금표 원본 ${src} · 카드표 SDP 판 ${rel.ver} · 정책 sub.policy — 직접 고치지 마세요) */\n`;
   const out = {}, index = {}, cats = {}, missing = [], save = {};
   const kst = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
@@ -273,7 +309,7 @@ export function buildSubFiles(rel, policy, dps, ui, rank, lumps) {
   }
   out['sub_index.js'] = head + `window.SUB_INDEX=${JSON.stringify({ ver, src: dps ? 'dps' : 'sdp', cats, m: index, ...(Object.keys(save).length ? { save } : {}) })};\n`;
   out['sub_cards.js'] = head + `window.SUB_CARDS=${JSON.stringify(CARD)};\n`;
-  if (policy) out['sub_policy.js'] = head + `window.SUB_POLICY=${JSON.stringify(policy)};\n` + PROMO_CUT_JS;
+  if (policy) out['sub_policy.js'] = head + `window.SUB_POLICY=${JSON.stringify(policy)};\n` + PROMO_CUT_JS + PERIOD_JS;
   out['version.js'] = `/* 상품상세 구독탭 데이터 판 — goods_view 가 5분마다 이 파일로 최신 판을 확인합니다 */\nvar SUB_VER = ${JSON.stringify(ver)};\nvar SUB_SDP_VER = ${JSON.stringify(rel.ver)};\nvar SUB_POLICY_VER = ${JSON.stringify(policy?.ver || '')};\nvar SUB_PUBLISHED_AT = ${JSON.stringify(rel.published_at || '')};\nvar SUB_DPS_VER = ${JSON.stringify(dps ? dpsVer(dps) : '')};\nvar SUB_MODELS = ${Object.keys(index).length};\n`;
   out.__stats = { models: Object.keys(index).length, cats: Object.keys(cats).length, cards: Object.keys(CARD).length, missing, src: dps ? 'dps' : 'sdp', dup, prepayNo: PREPAY_NO.length, overrides: ovStats };
   return out;
