@@ -249,7 +249,7 @@ function main() {
     r.saving = (lump > 0 && r.netTotal < lump && CFG.lumpCompare !== 'never') ? lump - r.netTotal : 0;
     return r;
   }
-  function ptModeOf(v) { return v === 'cash' || v === 'full' ? v : 'split'; }   // 예전 값 melt → split
+  function ptModeOf(v) { return v === 'split' || v === 'full' ? v : 'cash'; }   // 기본 = 포인트로 따로 받기 (2026-11-27 · 예전 기본 split)
   function opts() { return { prepay: state.prepay, card: state.card, tier: state.tier, cardOn: state.cardOn, ptMode: state.ptMode }; }
 
   /* ---------- 세부유형 표시 이름 ---------- */
@@ -764,6 +764,11 @@ function main() {
     var cash = r.ptMode === 'cash', sg = cash ? '+' : '-';
     h += row('결제 예상액' + (r.pointsAll && cash ? ' <small>실제 결제</small>' : ''), fmt(r.expected) + '원', r.pointsAll && !cash ? '' : 'is-total');
     if (r.pointsAll && cash) h += row('월 납부액 <small>실제 결제</small>', '월 ' + fmt(r.finalMonthly) + '원', 'is-strong');
+    // 포인트 사용 방법 상자 = 포인트 줄 바로 위 (2026-11-27 · 예전엔 내역 맨 아래)
+    if (r.pointsAll) h += '</dl><div class="subtab-ptmode" role="radiogroup" aria-label="포인트 사용 방법"><p>포인트 사용 방법을 골라 보세요 <small>포인트 유지기간 ' + r.ptValid + '개월</small></p>' +
+      ptOpt(r, 'split', '구독료로 사용 · ' + r.ptValid + '개월 나눠서', r.ptValid + '개월 동안 월 ' + fmt(r.ptSplitPay) + '원') +
+      ptOpt(r, 'full', '구독료로 사용 · 전액 ' + r.ptFullN + '개월', r.ptFullN ? '처음 ' + r.ptFullN + '개월 월 0원' : '포인트가 월 구독료보다 적어요') +
+      ptOpt(r, 'cash', '포인트로 따로 받기', '월 ' + fmt(r.finalMonthly) + '원 결제 · ' + fmt(r.pointsAll) + 'P 현금처럼') + '</div><dl class="subtab-sum">';
     if (r.points) h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', sg + fmt(r.points) + (cash ? 'P' : '원'), 'is-blue is-point');
     if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + ' (실제 계산은 예상보다 적거나 많을 수 있습니다.)</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
     if (r.pointsAll && !cash) {
@@ -775,10 +780,6 @@ function main() {
     var cmp = CFG.lumpCompare || 'auto';
     if (lump > 0 && (cmp === 'always' || (cmp === 'auto' && r.saving))) h += row('일시불 구매가', fmt(lump) + '원', 'is-muted');
     h += '</dl>';
-    if (r.pointsAll) h += '<div class="subtab-ptmode" role="radiogroup" aria-label="포인트 사용 방법"><p>포인트 사용 방법을 골라 보세요 <small>포인트 유지기간 ' + r.ptValid + '개월</small></p>' +
-      ptOpt(r, 'split', '구독료로 사용 · ' + r.ptValid + '개월 나눠서', r.ptValid + '개월 동안 월 ' + fmt(r.ptSplitPay) + '원') +
-      ptOpt(r, 'full', '구독료로 사용 · 전액 ' + r.ptFullN + '개월', r.ptFullN ? '처음 ' + r.ptFullN + '개월 월 0원' : '포인트가 월 구독료보다 적어요') +
-      ptOpt(r, 'cash', '포인트로 따로 받기', '월 ' + fmt(r.finalMonthly) + '원 결제 · ' + fmt(r.pointsAll) + 'P 현금처럼') + '</div>';
     h += '</section>';
     // 일시불 vs 구독 한눈에 (2026-11-04 · 경쟁사 비교표) — 이 상품의 시흥몰 일시불가가 있을 때만
     if (lump > 0) {
