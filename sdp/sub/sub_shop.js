@@ -349,7 +349,7 @@ window.SUB_SHOP_READY = true;
   }
   function saveShort(v) { return v >= 10000 ? fmt(Math.floor(v / 10000)) + '만원' : fmt(v) + '원'; }   // 좁은 화면용 (내림)
   function saveNote(list) {
-    return list.some(saveOf) ? '<p class="ss-save-note">일시불 비교는 시흥몰 판매가 기준이며, 자동납부·제휴카드 청구할인(전월 실적 충족 시)·적립 포인트를 반영한 선납 없음 기준 최대 금액입니다.</p>' : '';
+    return list.some(saveOf) ? '<p class="ss-save-note">일시불 비교는 시흥몰 판매가 기준이며, ' + (window.SUB_POLICY && window.SUB_POLICY.autopay && window.SUB_POLICY.autopay.rate > 0 ? '자동납부·' : '') + '제휴카드 청구할인(전월 실적 충족 시)·적립 포인트를 반영한 선납 없음 기준 최대 금액입니다.</p>' : '';
   }
   /* 구독료 최대 n원 지원 (2026-11-17) — 본사 구독료 지원 리스트(sub_promo_amt.js · tools/sub/promo_list_from_xlsx.py) 월구독료 × 지원 개월 의 최댓값
      판촉 기간(라이온즈 11/13~24) 안이면 판촉 개월 값, 아니면 평소 값 · 색상이 여럿이면 가장 큰 값 */

@@ -208,7 +208,7 @@ function main() {
     var y = plan[0], care = plan[1], total = plan[2], monthly = plan[3], months = y * 12;
     var w = info.w && info.w[y + '_' + care];
     var r = { years: y, care: care, total: total, monthly: monthly, months: months };
-    r.autoDisc = w ? w[0] : calcDiscount(total, POL.autopay.rate, months);
+    r.autoDisc = !(POL.autopay.rate > 0) ? 0 : w ? w[0] : calcDiscount(total, POL.autopay.rate, months);   // 미운영(rate 0)이면 정수기 사전계산값도 쓰지 않는다 (2026-11-27)
     r.prepay = (o.prepay > 0 && o.prepay <= prepayMax(info) + 1e-9) ? o.prepay : 0;
     r.prepayRate = prepayRate(r.prepay);
     r.prepayAmt = r.prepay ? Math.round(Math.round((total * r.prepay / 1.1 / months) / 100) * 100 * months * 1.1) : 0;
@@ -758,7 +758,7 @@ function main() {
     h += '<section class="subtab-field" id="subTabDetail"><div class="subtab-legend">결제 예상 내역</div><dl class="subtab-sum">';
     h += row('총 구독금액 (' + r.years + '년)', fmt(r.total) + '원');
     if (r.prepay) h += row('선납 할인 (선납 ' + Math.round(r.prepay * 100) + '% · ' + Math.round(r.prepayRate * 100) + '%)', '-' + fmt(r.prepayDisc) + '원', 'is-blue');
-    h += row(esc(autopayLabel()), '-' + fmt(r.autoDisc) + '원', 'is-blue');
+    if (r.autoDisc > 0) h += row(esc(autopayLabel()), '-' + fmt(r.autoDisc) + '원', 'is-blue');
     if (r.cardTotal) h += row('제휴카드 혜택 (' + esc(state.card) + ')', '-' + fmt(r.cardTotal) + '원', 'is-blue');
     else h += row('제휴카드 혜택', state.card && !state.cardOn ? '적용 안 함' : '제휴카드 없음', 'is-muted');
     var cash = r.ptMode === 'cash', sg = cash ? '+' : '-';

@@ -268,7 +268,7 @@ window.SUB_FIND_READY = true;   // sub_find.html 이 데이터센터에서 이 �
       '<p class="sf-count" data-slot="count" aria-live="polite"></p>' +
       '<ul class="sf-grid" data-slot="grid"></ul>' +
       '<div class="sf-more-wrap"><button type="button" class="sf-more" data-slot="more" hidden>더 보기</button></div>' +
-      '<p class="sf-note">* 월 구독료는 VAT 포함, 최저 요금제 기준입니다. 자동납부 5% 할인·제휴카드·선납 혜택은 상품 페이지 또는 상담에서 확인하세요. 실제 청구 금액과 다를 수 있습니다.</p>';
+      '<p class="sf-note">* 월 구독료는 VAT 포함, 최저 요금제 기준입니다. 제휴카드·선납 등 혜택은 상품 페이지 또는 상담에서 확인하세요. 실제 청구 금액과 다를 수 있습니다.</p>';
     ['form', 'q', 'hot', 'cats', 'segs', 'bands', 'sort', 'count', 'grid', 'more'].forEach(function (k) { els[k] = root.querySelector('[data-slot="' + k + '"]'); });
     els.q.value = state.q;
     els.sort.innerHTML = SORTS.map(function (s) { return '<option value="' + s[0] + '">' + s[1] + '</option>'; }).join('');

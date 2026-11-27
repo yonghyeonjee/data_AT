@@ -356,7 +356,7 @@ window.SUB_BUNDLE_READY = true;
     els.sum.innerHTML =
       '<table class="sb-table"><tbody>' +
       '<tr><th>월 구독료 합계 <small>' + sum.n + '대 · 정가</small></th><td>' + fmt(sum.monthly) + '원</td></tr>' +
-      '<tr class="is-off"><th>' + esc(C.autopayLabel()) + '</th><td>− ' + fmt(sum.auto) + '원</td></tr>' +
+      (sum.auto > 0 ? '<tr class="is-off"><th>' + esc(C.autopayLabel()) + '</th><td>− ' + fmt(sum.auto) + '원</td></tr>' : '') +
       (sum.prepayAmt ? '<tr class="is-off"><th>선납금·선납 할인 <small>월 환산</small></th><td>− ' + fmt(sum.prepayMonthly) + '원</td></tr>' : '') +
       (mu && mu.off ? '<tr class="is-off"><th>' + esc(mu.mp.name || '다품목 구독 할인') + ' <small>' + esc(mu.labels.join(' · ')) + '</small></th><td>− ' + fmt(mu.off) + '원</td></tr>' : '') +
       (cardName ? '<tr class="is-off"><th>' + esc(cardName) + ' 청구할인 <small>' + sum.n + '건</small></th><td>− ' + fmt(sum.card) + '원</td></tr>' : '') +

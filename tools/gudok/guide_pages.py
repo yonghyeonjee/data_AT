@@ -69,7 +69,8 @@ class Guides:
     def articles(self, links):
         consult = links['consultUrl']
         cat = lambda k, n: '<a href="%s%s.html">%s 구독 가격</a>' % (links['catUrl'], k, n)
-        auto = pct((self.pol.get('autopay') or {}).get('rate', 0.05))
+        auto_rate = (self.pol.get('autopay') or {}).get('rate', 0.05)
+        auto_li = '<li><b>자동납부 할인</b> — 구독료 %s</li>\n' % pct(auto_rate) if auto_rate and auto_rate > 0 else ''   # 미운영이면 줄 없음
         yrs, mperiod, mu = self.multi_text()
         gift = '상담완료 시, 네이버 페이 1만원 증정 · 매장 방문 구매 완료 시 와인 증정'
         A = []
@@ -79,8 +80,7 @@ class Guides:
             answer='목돈 없이 시작하고 약정 기간 내내 무상수리를 받으려면 구독, 가장 적은 총액만 보면 제휴카드·선납·포인트를 넣어 계산해 봐야 합니다. 조건을 다 넣으면 구독 총 부담이 일시불보다 낮아지는 모델도 많습니다.',
             body='''<h2>구독 총 부담은 이렇게 계산해요</h2>
 <ol><li><b>총 구독금액</b> = 월 구독료 × 약정 개월 수</li>
-<li><b>자동납부 할인</b> — 구독료 %(auto)s</li>
-<li><b>선납 할인</b> — 신청할 때 일부를 먼저 내면 추가 할인 (<a href="%(g)sprepay.html">선납 할인 안내</a>)</li>
+%(auto_li)s<li><b>선납 할인</b> — 신청할 때 일부를 먼저 내면 추가 할인 (<a href="%(g)sprepay.html">선납 할인 안내</a>)</li>
 <li><b>제휴카드 청구할인</b> — 전월 실적에 따라 매월 할인 (<a href="%(g)scard-discount.html">카드별 할인표</a>)</li>
 <li><b>멤버십 포인트</b> — 적립 예정 포인트를 구독료로 쓰거나 따로 받아 현금처럼 사용 (<a href="%(g)spoints.html">포인트 사용법</a>)</li></ol>
 <p>이렇게 뺀 금액이 <b>실제 부담</b>이고, 일시불 판매가와 나란히 놓고 보면 됩니다. 구독센터 모델 페이지의 <b>「일시불 vs 구독 한눈에」</b> 표가 이 계산을 모델마다 자동으로 해 줍니다.</p>
@@ -91,7 +91,7 @@ class Guides:
 <h2>일시불이 유리한 경우</h2>
 <ul><li>제휴카드를 쓰지 않고 선납·포인트 혜택도 받지 않을 때</li>
 <li>약정 기간보다 짧게 쓰고 바꿀 계획일 때 (중도 해지는 위약금이 생길 수 있습니다)</li></ul>
-<p>정확한 금액은 모델·약정·케어·카드에 따라 달라집니다. %(gift)s.</p>''' % dict(auto=auto, g=links['guideDir'], gift=gift),
+<p>정확한 금액은 모델·약정·케어·카드에 따라 달라집니다. %(gift)s.</p>''' % dict(auto_li=auto_li, g=links['guideDir'], gift=gift),
             faq=[('구독이 일시불보다 항상 싼가요?', '아닙니다. 제휴카드 청구할인·선납 할인·멤버십 포인트를 받을 때 일시불보다 낮아지는 경우가 많고, 혜택을 받지 않으면 일시불이 더 낮을 수 있습니다. 모델 페이지의 비교표에서 조건별로 확인할 수 있습니다.'),
                  ('구독하면 무상수리는 얼마나 되나요?', '구독 약정 기간 동안 무상수리를 받습니다. 일시불 구매는 제품별 기본 보증 기간이 적용됩니다.')],
             links=[cat('aicombo', 'AI 콤보'), cat('tv', 'TV'), cat('ref', '냉장고')]))

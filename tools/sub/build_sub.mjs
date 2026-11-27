@@ -260,7 +260,7 @@ export function buildSubFiles(rel, policy, dps, ui, rank, lumps) {
       const rec = { s: info.s || '', p };
       if (noPre.has(m)) rec.np = 1;                       // 선납 미운영
       if (WATER[model]) {                                  // 정수기 본사 사전계산값: "년_케어" → [구독료 할인(5%), 선납 할인(5% 기준)]
-        rec.w = {}; for (const [k, v] of Object.entries(WATER[model])) rec.w[k] = [v.disc, v.prepay];
+        rec.w = {}; for (const [k, v] of Object.entries(WATER[model])) rec.w[k] = [autopay > 0 ? v.disc : 0, v.prepay];   // 구독료 할인 미운영이면 0 — 고도몰에 올라가 있는 예전 구독탭 판도 할인을 빼지 않게 (2026-11-27)
       }
       plans[m] = rec;
       // [품목키, 최저 월 구독료, 최저 자동납부 반영 총액, 월 구독료가 가장 낮은 요금제의 총구독료(멤버십 포인트 기준 · 2026-11-06)]
