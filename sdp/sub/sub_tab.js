@@ -606,16 +606,20 @@ function main() {
   function ptHelp(r, mode) {
     var q = {}, k; for (k in r) q[k] = r[k]; q.ptMode = mode;
     var M = r.finalMonthly, V = r.ptValid, P = fmt(r.pointsAll) + 'P';
-    if (mode === 'split') return '받는 포인트 ' + P + '를 유지기간 ' + V + '개월에 똑같이 나눠 매달 구독료에서 차감 (월 ' + fmt(Math.max(0, M - r.ptSplitPay)) + 'P씩) · 매달 조금씩 덜 내는 방식 · ' + ptPlan(q);
+    if (mode === 'split') return '받는 포인트 총 ' + P + '를 유지기간 ' + V + '개월에 똑같이 나눠 매달 구독료에서 차감 (월 ' + fmt(Math.max(0, M - r.ptSplitPay)) + 'P씩) · 매달 조금씩 덜 내는 방식 · ' + ptPlan(q);
     if (mode === 'full') return '포인트로 구독료 전액 차감 · 포인트를 다 쓸 때까지 월 0원, 그 뒤 원래 구독료 · ' + ptPlan(q);
     return '구독료는 매달 그대로 결제(월 ' + fmt(M) + '원) · 포인트 ' + P + '는 결제 뒤 따로 적립 · 유지기간 ' + V + '개월 안에 현금처럼 사용';
   }
   function ptHelpBox(r) {
+    return '<div class="subtab-ptmode-help"><b>' + (r.ptMode === 'split' ? '매달 나눠서 차감' : r.ptMode === 'full' ? '처음부터 전액 차감' : '차감 없이 포인트로 받기') + '</b> ' + esc(ptHelp(r, r.ptMode)) +
+      '</div>';
+  }
+  // 받는 포인트 총액 (2026-11-27 · 총액이 안 보여 헷갈린다는 의견) — 상자 맨 위
+  function ptTotalHead(r) {
     var parts = [];
     if (r.points) parts.push((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '구독료 지원 ') + fmt(r.points) + 'P');
     if (r.mpoints) parts.push('멤버십 ' + fmt(r.mpoints) + 'P');
-    return '<div class="subtab-ptmode-help"><b>' + (r.ptMode === 'split' ? '나눠서 사용' : r.ptMode === 'full' ? '전액 사용' : '따로 받기') + '</b> ' + esc(ptHelp(r, r.ptMode)) +
-      (parts.length > 1 ? '<small>포인트 합계 ' + fmt(r.pointsAll) + 'P = ' + esc(parts.join(' + ')) + '</small>' : '') + '</div>';
+    return '<div class="subtab-ptmode-total"><span>받는 포인트 총액</span><b>' + fmt(r.pointsAll) + 'P</b><small>' + esc(parts.join(' + ')) + ' · 유지기간 ' + r.ptValid + '개월</small></div>';
   }
   // 큰 글씨 한 줄 (하단 바·요약 박스)
   function ptMain(r) {
@@ -782,10 +786,11 @@ function main() {
     h += row('결제 예상액' + (r.pointsAll && cash ? ' <small>실제 결제</small>' : ''), fmt(r.expected) + '원', r.pointsAll && !cash ? '' : 'is-total');
     if (r.pointsAll && cash) h += row('월 납부액 <small>실제 결제</small>', '월 ' + fmt(r.finalMonthly) + '원', 'is-strong');
     // 포인트 사용 방법 상자 = 포인트 줄 바로 위 (2026-11-27 · 예전엔 내역 맨 아래)
-    if (r.pointsAll) h += '</dl><div class="subtab-ptmode" role="radiogroup" aria-label="포인트 사용 방법"><p>포인트 사용 방법을 골라 보세요 <small>포인트 유지기간 ' + r.ptValid + '개월</small></p>' +
-      ptOpt(r, 'split', '구독료로 사용 · ' + r.ptValid + '개월 나눠서', r.ptValid + '개월 동안 월 ' + fmt(r.ptSplitPay) + '원') +
-      ptOpt(r, 'full', '구독료로 사용 · 전액 ' + r.ptFullN + '개월', r.ptFullN ? '처음 ' + r.ptFullN + '개월 월 0원' : '포인트가 월 구독료보다 적어요') +
-      ptOpt(r, 'cash', '포인트로 따로 받기', '월 ' + fmt(r.finalMonthly) + '원 결제 · ' + fmt(r.pointsAll) + 'P 현금처럼') + ptHelpBox(r) + '</div><dl class="subtab-sum">';
+    if (r.pointsAll) h += '</dl><div class="subtab-ptmode" role="radiogroup" aria-label="포인트 사용 방법">' + ptTotalHead(r) + '<p class="subtab-ptmode-q">받은 포인트 사용 방법 선택</p>' +
+      // 버튼 이름 (2026-11-27 · '나눠서/전액'이 헷갈린다는 의견 — 무엇을 차감하는지 + 결제 흐름)
+      ptOpt(r, 'split', '매달 나눠서 차감', r.ptValid + '개월간 매달 ' + fmt(Math.round(Math.min(r.ptSplit, r.finalMonthly))) + 'P 차감 → 월 ' + fmt(r.ptSplitPay) + '원 결제') +
+      ptOpt(r, 'full', '처음부터 전액 차감', r.ptFullN ? '1~' + r.ptFullN + '개월 0원 → 이후 월 ' + fmt(r.finalMonthly) + '원' : '포인트가 월 구독료보다 적음') +
+      ptOpt(r, 'cash', '차감 없이 포인트로 받기', '매달 월 ' + fmt(r.finalMonthly) + '원 결제 · ' + fmt(r.pointsAll) + 'P 적립') + ptHelpBox(r) + '</div><dl class="subtab-sum">';
     if (r.points) h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', sg + fmt(r.points) + (cash ? 'P' : '원'), 'is-blue is-point');
     if (r.mpointsAsk) h += row('적립 예정 멤버십 포인트', '문의 후 확인', 'is-point is-mpoint');
     if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>제품구독료 ' + fmt(r.pointBase) + '원 × ' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + ' (실제 계산은 예상보다 적거나 많을 수 있습니다.)</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
