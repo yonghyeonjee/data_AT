@@ -293,6 +293,7 @@ window.SUB_SHOP_READY = true;
      구독료 지원 = SUB_POLICY.promos 중 기간 안 · 이 모델이 대상인 "N개월 구독료 상당" 행사 */
   function pointOf(m) {
     var pt = POL && POL.points && POL.points[m]; if (!pt) return 0;
+    if (pt.est) return 0;   // 2026-11-27 사용자 결정: 삼성닷컴에 값이 없는 모델(형제 모델 추정 est)은 포인트를 보이지 않는다(문의 후 확인)
     if (pt.total > 0) return +pt.total;   // 2026-11-27: 삼성닷컴이 준 값 그대로(최장 약정 최저 제품구독료 기준 · 상품 페이지 처음 화면과 같음)
     var e = IDX.m[m], base = e && e[3] > 0 ? e[3] : 0;   // 색인 4번째 = 월 구독료가 가장 낮은 요금제의 제품구독료 (build_sub.mjs · 예전 판은 총구독료)
     var v = Math.floor(base * (+pt.rate || 0) / 100) + Math.floor(base * (+pt.base || 0) / 100) + (+pt.add || 0);
