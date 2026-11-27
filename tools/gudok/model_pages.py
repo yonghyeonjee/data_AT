@@ -30,7 +30,12 @@ CENTER = [('aicombo', 'AI 콤보', 'laundry', r'콤보'), ('washer', '세탁기'
 
 def load_js_obj(path):
     src = open(path, encoding='utf-8').read()
-    return json.loads(re.search(r'=\s*(\{.*\})\s*;?\s*$', src, re.S).group(1))
+    m = re.search(r'=\s*(\{.*\})\s*;?\s*$', src, re.S)
+    try:
+        return json.loads(m.group(1))
+    except (AttributeError, ValueError):   # 끝에 코드가 붙은 배포 파일(sub_policy.js 행사 끝 시각·달이 바뀌는 정책) — 첫 window.X={…}; 줄만
+        m = re.search(r'^window\.[A-Z_]+\s*=\s*(\{.*\});\s*$', src, re.M)
+        return json.loads(m.group(1))
 
 
 def seg_label(seg):
