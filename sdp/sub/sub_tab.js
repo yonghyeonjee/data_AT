@@ -196,8 +196,10 @@ function main() {
   function modelPointOf(model) { var pts = POL.points || {}; return pts[norm(model)] || null; }
   function memberPoints(model, base) {
     var mp = modelPointOf(model); if (!mp) return null;
-    var rate = (+mp.rate || 0) + (+mp.base || 0), add = +mp.add || 0;
-    var amt = Math.floor(Math.max(0, base || 0) * rate / 100) + add;
+    if (mp.est) return { est: true, amt: 0 };   // 2026-11-27 사용자 결정: 삼성닷컴에 값이 없는 모델(형제 모델 추정)은 포인트를 빼고 '문의 후 확인'
+    var rate = (+mp.rate || 0) + (+mp.base || 0), add = +mp.add || 0, b = Math.max(0, base || 0);
+    // 삼성닷컴 membershipPolicy 와 같은 반올림: 정률(n%)·기본(0.1%)을 따로 버림한 뒤 더한다 (합쳐서 버림하면 1P 많아지는 경우가 있음 · 2026-11-27 모델 723개 대조 일치)
+    var amt = Math.floor(b * (+mp.rate || 0) / 100) + Math.floor(b * (+mp.base || 0) / 100) + add;
     return amt > 0 ? { amt: amt, rate: rate, add: add, pct: Math.round(rate * 100) / 100 } : null;
   }
   // 일시불 비교에 쓸 가격 — 상품 페이지의 모델일 때만 (같은 모델 다른 색상·구독 전용 모델로 바꾸면 이 상품의 일시불가와 비교하지 않는다)
@@ -229,7 +231,7 @@ function main() {
     // 적립 예정 멤버십 포인트 (mvp_258) — 행사 포인트와 별도로 더 뺀다. 기준은 제품구독료(plan[4]) — 선납·카드와 무관 (2026-11-19 삼성닷컴과 맞춤)
     r.pointBase = plan[4] > 0 ? plan[4] : total;
     var mpt = memberPoints(info && info.model, r.pointBase);
-    r.mpoints = mpt ? mpt.amt : 0; r.mpointsInfo = mpt;
+    r.mpoints = mpt ? mpt.amt : 0; r.mpointsInfo = mpt; r.mpointsAsk = !!(mpt && mpt.est);
     r.pointsAll = r.points + r.mpoints;
     r.expectedNet = r.expected - r.pointsAll;
     // 포인트 사용 방법 (2026-11-04) — 포인트 유지기간 CFG.pointValidMonths(기본 36개월) 안에 다 쓰는 것으로 계산
@@ -598,7 +600,22 @@ function main() {
   /* ---------- 포인트 사용 방법 (2026-11-04) ---------- */
   function ptOpt(r, mode, title, sub) {
     var on = r.ptMode === mode;
-    return optBtn('data-ptmode="' + mode + '" role="radio" aria-checked="' + on + '"', on, '<b>' + esc(title) + '</b><span>' + esc(sub) + '</span>');
+    return optBtn('data-ptmode="' + mode + '" role="radio" aria-checked="' + on + '" title="' + esc(ptHelp(r, mode)) + '"', on, '<b>' + esc(title) + '</b><span>' + esc(sub) + '</span>');
+  }
+  // 포인트 사용 방법 설명 (2026-11-27 · '나눠서'가 헷갈린다는 사용자 의견) — 버튼에 마우스를 올리면 title, 고른 방법은 상자 아래에 늘 보임
+  function ptHelp(r, mode) {
+    var q = {}, k; for (k in r) q[k] = r[k]; q.ptMode = mode;
+    var M = r.finalMonthly, V = r.ptValid, P = fmt(r.pointsAll) + 'P';
+    if (mode === 'split') return '받는 포인트 ' + P + '를 유지기간 ' + V + '개월에 똑같이 나눠 매달 구독료에서 차감 (월 ' + fmt(Math.max(0, M - r.ptSplitPay)) + 'P씩) · 매달 조금씩 덜 내는 방식 · ' + ptPlan(q);
+    if (mode === 'full') return '포인트로 구독료 전액 차감 · 포인트를 다 쓸 때까지 월 0원, 그 뒤 원래 구독료 · ' + ptPlan(q);
+    return '구독료는 매달 그대로 결제(월 ' + fmt(M) + '원) · 포인트 ' + P + '는 결제 뒤 따로 적립 · 유지기간 ' + V + '개월 안에 현금처럼 사용';
+  }
+  function ptHelpBox(r) {
+    var parts = [];
+    if (r.points) parts.push((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '구독료 지원 ') + fmt(r.points) + 'P');
+    if (r.mpoints) parts.push('멤버십 ' + fmt(r.mpoints) + 'P');
+    return '<div class="subtab-ptmode-help"><b>' + (r.ptMode === 'split' ? '나눠서 사용' : r.ptMode === 'full' ? '전액 사용' : '따로 받기') + '</b> ' + esc(ptHelp(r, r.ptMode)) +
+      (parts.length > 1 ? '<small>포인트 합계 ' + fmt(r.pointsAll) + 'P = ' + esc(parts.join(' + ')) + '</small>' : '') + '</div>';
   }
   // 큰 글씨 한 줄 (하단 바·요약 박스)
   function ptMain(r) {
@@ -768,9 +785,10 @@ function main() {
     if (r.pointsAll) h += '</dl><div class="subtab-ptmode" role="radiogroup" aria-label="포인트 사용 방법"><p>포인트 사용 방법을 골라 보세요 <small>포인트 유지기간 ' + r.ptValid + '개월</small></p>' +
       ptOpt(r, 'split', '구독료로 사용 · ' + r.ptValid + '개월 나눠서', r.ptValid + '개월 동안 월 ' + fmt(r.ptSplitPay) + '원') +
       ptOpt(r, 'full', '구독료로 사용 · 전액 ' + r.ptFullN + '개월', r.ptFullN ? '처음 ' + r.ptFullN + '개월 월 0원' : '포인트가 월 구독료보다 적어요') +
-      ptOpt(r, 'cash', '포인트로 따로 받기', '월 ' + fmt(r.finalMonthly) + '원 결제 · ' + fmt(r.pointsAll) + 'P 현금처럼') + '</div><dl class="subtab-sum">';
+      ptOpt(r, 'cash', '포인트로 따로 받기', '월 ' + fmt(r.finalMonthly) + '원 결제 · ' + fmt(r.pointsAll) + 'P 현금처럼') + ptHelpBox(r) + '</div><dl class="subtab-sum">';
     if (r.points) h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', sg + fmt(r.points) + (cash ? 'P' : '원'), 'is-blue is-point');
-    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + ' (실제 계산은 예상보다 적거나 많을 수 있습니다.)</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
+    if (r.mpointsAsk) h += row('적립 예정 멤버십 포인트', '문의 후 확인', 'is-point is-mpoint');
+    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>제품구독료 ' + fmt(r.pointBase) + '원 × ' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + ' (실제 계산은 예상보다 적거나 많을 수 있습니다.)</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
     if (r.pointsAll && !cash) {
       h += row('포인트 구독료로 사용한 실제 구독료', fmt(r.netTotal) + '원', 'is-total');
       h += ptRows(r);

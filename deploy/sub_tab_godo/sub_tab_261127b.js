@@ -196,8 +196,9 @@ function main() {
   function modelPointOf(model) { var pts = POL.points || {}; return pts[norm(model)] || null; }
   function memberPoints(model, base) {
     var mp = modelPointOf(model); if (!mp) return null;
-    var rate = (+mp.rate || 0) + (+mp.base || 0), add = +mp.add || 0;
-    var amt = Math.floor(Math.max(0, base || 0) * rate / 100) + add;
+    var rate = (+mp.rate || 0) + (+mp.base || 0), add = +mp.add || 0, b = Math.max(0, base || 0);
+    // 삼성닷컴 membershipPolicy 와 같은 반올림: 정률(n%)·기본(0.1%)을 따로 버림한 뒤 더한다 (합쳐서 버림하면 1P 많아지는 경우가 있음 · 2026-11-27 모델 723개 대조 일치)
+    var amt = Math.floor(b * (+mp.rate || 0) / 100) + Math.floor(b * (+mp.base || 0) / 100) + add;
     return amt > 0 ? { amt: amt, rate: rate, add: add, pct: Math.round(rate * 100) / 100 } : null;
   }
   // 일시불 비교에 쓸 가격 — 상품 페이지의 모델일 때만 (같은 모델 다른 색상·구독 전용 모델로 바꾸면 이 상품의 일시불가와 비교하지 않는다)
@@ -208,7 +209,7 @@ function main() {
     var y = plan[0], care = plan[1], total = plan[2], monthly = plan[3], months = y * 12;
     var w = info.w && info.w[y + '_' + care];
     var r = { years: y, care: care, total: total, monthly: monthly, months: months };
-    r.autoDisc = !(POL.autopay.rate > 0) ? 0 : w ? w[0] : calcDiscount(total, POL.autopay.rate, months);   // 미운영(rate 0)이면 정수기 사전계산값도 쓰지 않는다 (2026-11-27)
+    r.autoDisc = w ? w[0] : calcDiscount(total, POL.autopay.rate, months);
     r.prepay = (o.prepay > 0 && o.prepay <= prepayMax(info) + 1e-9) ? o.prepay : 0;
     r.prepayRate = prepayRate(r.prepay);
     r.prepayAmt = r.prepay ? Math.round(Math.round((total * r.prepay / 1.1 / months) / 100) * 100 * months * 1.1) : 0;
@@ -758,7 +759,7 @@ function main() {
     h += '<section class="subtab-field" id="subTabDetail"><div class="subtab-legend">결제 예상 내역</div><dl class="subtab-sum">';
     h += row('총 구독금액 (' + r.years + '년)', fmt(r.total) + '원');
     if (r.prepay) h += row('선납 할인 (선납 ' + Math.round(r.prepay * 100) + '% · ' + Math.round(r.prepayRate * 100) + '%)', '-' + fmt(r.prepayDisc) + '원', 'is-blue');
-    if (r.autoDisc > 0) h += row(esc(autopayLabel()), '-' + fmt(r.autoDisc) + '원', 'is-blue');
+    h += row(esc(autopayLabel()), '-' + fmt(r.autoDisc) + '원', 'is-blue');
     if (r.cardTotal) h += row('제휴카드 혜택 (' + esc(state.card) + ')', '-' + fmt(r.cardTotal) + '원', 'is-blue');
     else h += row('제휴카드 혜택', state.card && !state.cardOn ? '적용 안 함' : '제휴카드 없음', 'is-muted');
     var cash = r.ptMode === 'cash', sg = cash ? '+' : '-';
@@ -770,7 +771,7 @@ function main() {
       ptOpt(r, 'full', '구독료로 사용 · 전액 ' + r.ptFullN + '개월', r.ptFullN ? '처음 ' + r.ptFullN + '개월 월 0원' : '포인트가 월 구독료보다 적어요') +
       ptOpt(r, 'cash', '포인트로 따로 받기', '월 ' + fmt(r.finalMonthly) + '원 결제 · ' + fmt(r.pointsAll) + 'P 현금처럼') + '</div><dl class="subtab-sum">';
     if (r.points) h += row((r.pointsInfo.months ? r.pointsInfo.months + '개월 구독료 상당 ' : '') + '포인트 지원', sg + fmt(r.points) + (cash ? 'P' : '원'), 'is-blue is-point');
-    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + ' (실제 계산은 예상보다 적거나 많을 수 있습니다.)</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
+    if (r.mpoints) h += row('적립 예정 멤버십 포인트 <small>제품구독료 ' + fmt(r.pointBase) + '원 × ' + r.mpointsInfo.pct + '%' + (r.mpointsInfo.add ? ' + ' + fmt(r.mpointsInfo.add) + 'P' : '') + ' (실제 계산은 예상보다 적거나 많을 수 있습니다.)</small>', sg + fmt(r.mpoints) + 'P', 'is-blue is-point is-mpoint');
     if (r.pointsAll && !cash) {
       h += row('포인트 구독료로 사용한 실제 구독료', fmt(r.netTotal) + '원', 'is-total');
       h += ptRows(r);
