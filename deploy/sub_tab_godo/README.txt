@@ -1,3 +1,4 @@
+2026-11-28 · 스킨 sub_tab_v37_1128.html (판 261128a 그대로 · 이전 스킨 = goods/_sub_tab_261128a_bak.html): 내린 상품 목록 down — 이 상품번호로 직접 들어오면 구독상품 목록(cateCd=012)으로 넘김. 1000001001 [구독] DW30FB305CE0 (사용자 요청, 노출안함이어도 네이버 링크로 열리던 것).
 2026-11-28 · 판 261128a (스킨 sub_tab_v36_1128.html · 이전 스킨 = goods/_sub_tab_261127e_bak.html 로 rename): 261127e + 스킨 skipName: '[구독]' — 상품 이름(og:title)에 [구독]이 있으면 구독탭을 아예 띄우지 않음(시흥몰 [구독] 상품 · 사용자 요청). js·css = sdp/sub/sub_tab.js·css 복사본.
 2026-11-27 · 판 261127e (스킨 sub_tab_v35_1127.html · 이전 스킨 = goods/_sub_tab_261127d_bak.html 로 rename): 261127d + 포인트 상자 맨 위 받는 포인트 총액(내역·유지기간) · 버튼 이름 매달 나눠서 차감 / 처음부터 전액 차감 / 차감 없이 포인트로 받기. js·css = sdp/sub/sub_tab.js·css 복사본.
 2026-11-27 · 판 261127d (스킨 sub_tab_v34_1127.html · 이전 스킨 = goods/_sub_tab_261127c_bak.html 로 rename): 261127c + 구독료 할인(자동납부) 미운영 대비 — 정책 autopay.rate 가 0 이면 할인 0원(정수기 사전계산값도 안 씀)·「구독료 N% 할인」 줄 숨김. 11월 값(5%)에서는 화면 그대로. 12월 정책(단품 5% 미운영) 전환용. js·css = sdp/sub/sub_tab.js·css 복사본.
