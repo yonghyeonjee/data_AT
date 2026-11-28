@@ -1114,6 +1114,11 @@ function main() {
     var en = CFG.enabled === undefined ? true : CFG.enabled;
     if (en === false || en === 'false') return false;
     if (CFG.onlyGoods && CFG.onlyGoods.length && CFG.onlyGoods.indexOf(String(CFG.goodsNo)) < 0) return false;
+    // 상품 이름에 이 글자가 들어가면 구독탭을 아예 띄우지 않는다 (2026-11-28 사용자 요청: 시흥몰 [구독] 상품은 구독탭 기능 전부 빼기) — 고도몰 스킨 CFG.skipName: '[구독]'
+    if (CFG.skipName) {
+      var og = document.querySelector('meta[property="og:title"]'), gn = (og && og.getAttribute('content')) || document.title || '';
+      if (gn.indexOf(CFG.skipName) >= 0) return false;
+    }
     // 대표 카테고리가 구독상품(012)·그 하위인 상품은 구독 전용 상품 페이지 → 일시불 탭 없이 계산기만 띄운다 (구독 전용 페이지 모드 · 2026-11-02)
     //   CFG.subPage === false 면 예전처럼 아예 띄우지 않는다. 카테고리 목록은 CFG.skipCate 로 바꿀 수 있다
     var cate = document.querySelector('#frmView input[name="cateCd"]'), cc = cate ? String(cate.value || '') : '';
